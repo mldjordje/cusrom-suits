@@ -1,0 +1,14 @@
+MVP configurator integrated.
+
+- Tech: Next.js
+- Assets copied: 18 -> public/assets/suits/blue/
+- Data file: data.ts
+- Components: components/Sidebar.tsx, components/Preview.tsx
+- Page: app/(configurator)/page.tsx
+
+Image filenames in previewMap expect: model1_blue.png, model2_blue.png, model3_blue.png
+Update data.ts to match your exact asset names if different.
+
+Run:
+  npm install
+  npm run dev
