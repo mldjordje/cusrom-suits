@@ -1,0 +1,19 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+
+# Build
+.next/
+out/
+dist/
+
+# Env
+.env
+.env.local
+.env.development.local
+.env.production.local
+.env.test.local
+
+# Misc
+.DS_Store
+.vercel
