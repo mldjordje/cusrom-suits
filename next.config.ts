@@ -1,15 +1,26 @@
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const nextConfig: NextConfig = {
   images: {
+    // ✅ Dozvoljavamo slike i sa lokalnog backend-a i sa produkcije
     remotePatterns: [
       {
         protocol: "http",
         hostname: "localhost",
-        port: "",               // prazan string označava podrazumevani port (80)
-        pathname: "/custom-suits-backend/**"  // dozvoli sve putanje ispod /custom-suits-backend/
-      }
-    ]
+        port: "",
+        pathname: "/custom-suits-backend/**",
+      },
+      {
+        protocol: "https",
+        hostname: "customsuits.adspire.rs",
+        port: "",
+        pathname: "/custom-suits-backend/uploads/**",
+      },
+    ],
+    // ili alternativno ako koristiš Next 15+ možeš i domains
+    // domains: ["localhost", "customsuits.adspire.rs"],
   },
-  // ...ostala podešavanja (ukoliko postoje)
+  reactStrictMode: true,
 };
 
 export default nextConfig;
