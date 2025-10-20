@@ -2,16 +2,8 @@
   "version": 3,
   "pages404": true,
   "caseSensitive": false,
-  "basePath": "/custom-suits",
+  "basePath": "",
   "redirects": [
-    {
-      "source": "/custom-suits/",
-      "destination": "/custom-suits",
-      "basePath": false,
-      "internal": true,
-      "statusCode": 308,
-      "regex": "^/custom-suits/$"
-    },
     {
       "source": "/:path+/",
       "destination": "/:path+",
