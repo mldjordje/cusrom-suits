@@ -4,12 +4,11 @@ import React, { useEffect, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 
-// 🔹 Helper za dobijanje URL-a transparentne slike sa backend-a na osnovu imena fajla
+// 🔹 Ispravan putanja ka transparent slojevima
 const replaceColorInSrc = (src: string) => {
   const filename = src.split("/").pop();
   return `https://customsuits.adspire.rs/uploads/transparent/${filename}`;
 };
-
 
 type Props = {
   config: SuitState;
@@ -21,17 +20,16 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const currentSuit = suits.find((s) => s.id === config.styleId);
   if (!currentSuit) return null;
 
-  // 🔹 Učitavanje liste tkanina iz baze (za dobijanje tekstura i tona)
+  // 🔹 Poziva backend sa PUNIM URL-om
   useEffect(() => {
-  fetch("https://customsuits.adspire.rs/api/fabrics.php")
-    .then((res) => res.json())
-    .then((data) => {
-      if (data.success) setFabrics(data.data);
-    })
-    .catch((err) => console.error("Greška pri učitavanju tkanina:", err))
-    .finally(() => setLoading(false));
-}, []);
-
+    fetch("https://customsuits.adspire.rs/api/fabrics.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setFabrics(data.data);
+      })
+      .catch((err) => console.error("Greška pri učitavanju tkanina:", err))
+      .finally(() => setLoading(false));
+  }, []);
 
   const selectedFabric = fabrics.find((f) => f.id === config.colorId);
  const fabricTexture = selectedFabric?.texture || "";
