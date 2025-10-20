@@ -6,10 +6,10 @@ import { SuitState } from "../hooks/useSuitConfigurator";
 
 // 🔹 Helper za dobijanje URL-a transparentne slike sa backend-a na osnovu imena fajla
 const replaceColorInSrc = (src: string) => {
-  const filename = src.split("/").pop(); // npr. "sleeves.png" ili "lapel_wide.png"
-  return `https://customsuits.adspire.rs/custom-suits-backend/uploads/transparent/${filename}`;
-
+  const filename = src.split("/").pop();
+  return `https://customsuits.adspire.rs/uploads/transparent/${filename}`;
 };
+
 
 type Props = {
   config: SuitState;
