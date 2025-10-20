@@ -7,7 +7,8 @@ import { SuitState } from "../hooks/useSuitConfigurator";
 // 🔹 Helper za dobijanje URL-a transparentne slike sa backend-a na osnovu imena fajla
 const replaceColorInSrc = (src: string) => {
   const filename = src.split("/").pop(); // npr. "sleeves.png" ili "lapel_wide.png"
-  return `http://localhost/custom-suits-backend/uploads/transparent/${filename}`;
+  return `https://customsuits.adspire.rs/custom-suits-backend/uploads/transparent/${filename}`;
+
 };
 
 type Props = {
@@ -22,19 +23,19 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
 
   // 🔹 Učitavanje liste tkanina iz baze (za dobijanje tekstura i tona)
   useEffect(() => {
-    fetch("http://localhost/custom-suits-backend/api/fabrics.php")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) setFabrics(data.data);
-      })
-      .catch((err) => console.error("Greška pri učitavanju tkanina:", err))
-      .finally(() => setLoading(false));
-  }, []);
+  fetch("https://customsuits.adspire.rs/api/fabrics.php")
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.success) setFabrics(data.data);
+    })
+    .catch((err) => console.error("Greška pri učitavanju tkanina:", err))
+    .finally(() => setLoading(false));
+}, []);
+
 
   const selectedFabric = fabrics.find((f) => f.id === config.colorId);
-  const fabricTexture = selectedFabric?.texture
-    ? `http://localhost${selectedFabric.texture}`
-    : "";
+ const fabricTexture = selectedFabric?.texture || "";
+
   const tone = selectedFabric?.tone || "medium";
 
   // 🔹 Dinamičan filter i režim blend-a prema tonu tkanine
