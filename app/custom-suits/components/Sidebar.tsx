@@ -17,7 +17,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 
   // 🔹 Dinamičko učitavanje tkanina iz PHP API-ja
   useEffect(() => {
-    fetch("http://localhost/custom-suits-backend/api/fabrics.php")
+    fetch("https://customsuits.adspire.rs/api/fabrics.php")
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setFabrics(data.data);
@@ -95,11 +95,12 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                   {/* Prikaz teksture tkanine preko Next Image sa eksternog URL */}
                   <div className="relative w-full h-20">
                     <Image
-                      src={`http://localhost${fabric.texture}`}
-                      alt={fabric.name}
-                      fill
-                      style={{ objectFit: "cover" }}
-                    />
+  src={fabric.texture}
+  alt={fabric.name}
+  fill
+  style={{ objectFit: "cover" }}
+/>
+
                   </div>
                   <div
                     className={`text-xs py-2 ${
