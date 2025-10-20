@@ -1,5 +1,6 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Image from "next/image";
 import { suits } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 
@@ -10,24 +11,24 @@ type Props = {
 
 const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const [activeTab, setActiveTab] = useState<"FABRIC" | "STYLE" | "ACCENTS">("STYLE");
+  const [fabrics, setFabrics] = useState<any[]>([]);
   const currentSuit = suits.find((s) => s.id === config.styleId);
+  const [isOpen, setIsOpen] = useState(false);
 
-  // === FABRIC PRESETS ===
-  const fabrics = [
-    {
-      id: "blue",
-      name: "Navy Blue",
-      img: "/assets/fabrics/blue_fabric.jpg",
-    },
-    {
-      id: "black",
-      name: "Classic Black",
-      img: "/assets/fabrics/black_fabric.jpg",
-    },
-  ];
+  // 🔹 Dinamičko učitavanje tkanina iz PHP API-ja
+  useEffect(() => {
+    fetch("http://localhost/custom-suits-backend/api/fabrics.php")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) setFabrics(data.data);
+        else console.error("Greška u API odgovoru:", data);
+      })
+      .catch((err) => console.error("Greška pri učitavanju tkanina:", err));
+  }, []);
 
   return (
-    <div className="h-screen sticky top-0 overflow-y-auto flex flex-col bg-white px-8 py-8 border-r border-gray-200">
+    <div className="h-auto md:h-screen md:sticky md:top-0 overflow-y-auto flex flex-col bg-white px-4 md:px-8 py-6 md:py-8 border-b md:border-b-0 md:border-r border-gray-200 w-full md:w-80">
+
       {/* ===== LOGO ===== */}
       <div className="mb-10 flex items-center justify-start">
         <img src="/img/logo.png" alt="Brand logo" className="h-19 w-auto object-contain" />
@@ -76,34 +77,43 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
       {activeTab === "FABRIC" && (
         <section className="animate-fade-in">
           <h3 className="text-sm font-semibold text-[#444] mb-4">Fabric (Color)</h3>
-          <div className="grid grid-cols-2 gap-4">
-            {fabrics.map((fabric) => (
-              <button
-                key={fabric.id}
-                onClick={() => dispatch({ type: "SET_COLOR", payload: fabric.id })}
-                className={`relative border rounded-xl overflow-hidden transition-all duration-300 ${
-                  config.colorId === fabric.id
-                    ? "border-[#111] shadow-sm scale-105"
-                    : "border-[#ddd] hover:border-[#111]"
-                }`}
-              >
-                {/* preview tkanine */}
-                <img
-                  src={fabric.img}
-                  alt={fabric.name}
-                  className="w-full h-20 object-cover"
-                />
-                {/* naziv ispod slike */}
-                <div
-                  className={`text-xs py-2 ${
-                    config.colorId === fabric.id ? "text-[#111] font-medium" : "text-[#666]"
+
+          {fabrics.length === 0 ? (
+            <p className="text-gray-400 text-xs italic">Učitavanje tkanina...</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-4">
+              {fabrics.map((fabric) => (
+                <button
+                  key={fabric.id}
+                  onClick={() => dispatch({ type: "SET_COLOR", payload: fabric.id })}
+                  className={`relative border rounded-xl overflow-hidden transition-all duration-300 ${
+                    config.colorId === fabric.id
+                      ? "border-[#111] shadow-sm scale-105"
+                      : "border-[#ddd] hover:border-[#111]"
                   }`}
                 >
-                  {fabric.name}
-                </div>
-              </button>
-            ))}
-          </div>
+                  {/* Prikaz teksture tkanine preko Next Image sa eksternog URL */}
+                  <div className="relative w-full h-20">
+                    <Image
+                      src={`http://localhost${fabric.texture}`}
+                      alt={fabric.name}
+                      fill
+                      style={{ objectFit: "cover" }}
+                    />
+                  </div>
+                  <div
+                    className={`text-xs py-2 ${
+                      config.colorId === fabric.id
+                        ? "text-[#111] font-medium"
+                        : "text-[#666]"
+                    }`}
+                  >
+                    {fabric.name}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
         </section>
       )}
 
@@ -144,7 +154,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             </div>
           </div>
 
-          {/* Rever (lapel type) */}
+          {/* Rever (Lapel Type) */}
           {currentSuit && (
             <div>
               <h3 className="text-sm font-semibold text-[#444] mb-4">Lapel Type</h3>
@@ -173,7 +183,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             </div>
           )}
 
-          {/* Širina revera */}
+          {/* Širina revera (Lapel Width) */}
           {currentSuit && config.lapelId && (
             <div>
               <h3 className="text-sm font-semibold text-[#444] mb-4">Lapel Width</h3>
@@ -200,7 +210,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             </div>
           )}
 
-          {/* Džepovi */}
+          {/* Džepovi (Pocket Style) */}
           {currentSuit && (
             <div>
               <h3 className="text-sm font-semibold text-[#444] mb-4">Pocket Style</h3>
@@ -225,7 +235,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             </div>
           )}
 
-          {/* INTERIOR */}
+          {/* Unutrašnjost sakoa (Jacket Interior) */}
           {currentSuit?.interiors && (
             <div>
               <h3 className="text-sm font-semibold text-[#444] mb-4">Jacket Interior</h3>
@@ -250,7 +260,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             </div>
           )}
 
-          {/* BREAST POCKET */}
+          {/* Grudni džep (Breast Pocket) */}
           {currentSuit?.breastPocket && (
             <div>
               <h3 className="text-sm font-semibold text-[#444] mb-4">Breast Pocket</h3>
@@ -275,7 +285,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             </div>
           )}
 
-          {/* CUFFS */}
+          {/* Manžetne na pantalonama (Pants Cuffs) */}
           {currentSuit?.cuffs && (
             <div>
               <h3 className="text-sm font-semibold text-[#444] mb-4">Pants Cuffs</h3>

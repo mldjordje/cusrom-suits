@@ -1,5 +1,3 @@
-// data/options.ts
-
 // 🔹 Osnovni sloj odela (deo slike)
 export type SuitLayer = {
   id: string;
@@ -32,15 +30,20 @@ export type PocketOption = {
 export type InteriorOption = {
   id: string;
   name: string;
+   src?: string; 
   layers: SuitLayer[]; // svaki interior se sastoji od više slojeva
+  
 };
 
 // 🔹 Grudni džep
 export type BreastPocketOption = {
   id: string;
   name: string;
+  src?: string;    
   layers: SuitLayer[]; // podrška za više varijanti u budućnosti
 };
+
+// 🔹 Krajevi nogavica (cuffs na pantalonama)
 export type CuffOption = {
   id: string;
   name: string;
@@ -62,7 +65,7 @@ export type SuitModel = {
 };
 
 // ======================================================
-// 🔸 MODELI ODELA
+// 🔸 MODELI ODELA (Suit Models)
 // ======================================================
 
 export const suits: SuitModel[] = [
@@ -84,7 +87,11 @@ export const suits: SuitModel[] = [
         name: "Donji deo sakoa",
         src: "/assets/suits/blue/bottom_single_breasted+length_long+hemline_open.png",
       },
-      { id: "pants", name: "Pantalone", src: "/assets/suits/blue/length_long+cut_slim.png" },
+      {
+        id: "pants",
+        name: "Pantalone",
+        src: "/assets/suits/blue/length_long+cut_slim.png",
+      },
     ],
 
     lapels: [
@@ -133,8 +140,16 @@ export const suits: SuitModel[] = [
     ],
 
     pockets: [
-      { id: "double-welted", name: "Double-Welted", src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png" },
-      { id: "patched", name: "Patched", src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png" },
+      {
+        id: "double-welted",
+        name: "Double-Welted",
+        src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png",
+      },
+      {
+        id: "patched",
+        name: "Patched",
+        src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png",
+      },
     ],
 
     interiors: [
@@ -142,18 +157,42 @@ export const suits: SuitModel[] = [
         id: "Blue",
         name: "Blue Interior",
         layers: [
-          { id: "interior_base", name: "Base", src: "/assets/suits/blue/interior1.png" },
-          { id: "interior_left", name: "Left", src: "/assets/suits/blue/interior2.png" },
-          { id: "interior_right", name: "Right", src: "/assets/suits/blue/interior3.png" },
+          {
+            id: "interior_base",
+            name: "Base",
+            src: "/assets/suits/blue/interior1.png",
+          },
+          {
+            id: "interior_left",
+            name: "Left",
+            src: "/assets/suits/blue/interior2.png",
+          },
+          {
+            id: "interior_right",
+            name: "Right",
+            src: "/assets/suits/blue/interior3.png",
+          },
         ],
       },
       {
         id: "contrast",
         name: "Contrast Lining",
         layers: [
-          { id: "interior_base", name: "Base", src: "/assets/suits/blue/interiorback3.png" },
-          { id: "interior_left", name: "Left", src: "/assets/suits/blue/interiorblack1.png" },
-          { id: "interior_right", name: "Right", src: "/assets/suits/blue/interiorblack2.png" },
+          {
+            id: "interior_base",
+            name: "Base",
+            src: "/assets/suits/blue/interiorblack3.png",  // corrected filename
+          },
+          {
+            id: "interior_left",
+            name: "Left",
+            src: "/assets/suits/blue/interiorblack1.png",
+          },
+          {
+            id: "interior_right",
+            name: "Right",
+            src: "/assets/suits/blue/interiorblack2.png",
+          },
         ],
       },
     ],
@@ -162,7 +201,13 @@ export const suits: SuitModel[] = [
       {
         id: "standard",
         name: "Standard Pocket",
-        layers: [{ id: "breast", name: "Breast Pocket", src: "/assets/suits/blue/breast_pocket_classic.png" }],
+        layers: [
+          {
+            id: "breast",
+            name: "Breast Pocket",
+            src: "/assets/suits/blue/breast_pocket_classic.png",
+          },
+        ],
       },
       {
         id: "none",
@@ -170,9 +215,18 @@ export const suits: SuitModel[] = [
         layers: [],
       },
     ],
-     cuffs: [
-      { id: "plain", name: "Without Cuffs", src: "/assets/suits/blue/length_long+cut_slim.png" },
-      { id: "cuffed", name: "With Cuffs", src: "/assets/suits/blue/cuffs+length_long+cut_slim.png" },
+
+    cuffs: [
+      {
+        id: "plain",
+        name: "Without Cuffs",
+        src: "/assets/suits/blue/length_long+cut_slim.png",
+      },
+      {
+        id: "cuffed",
+        name: "With Cuffs",
+        src: "/assets/suits/blue/cuffs+length_long+cut_slim.png",
+      },
     ],
   },
 
@@ -198,7 +252,11 @@ export const suits: SuitModel[] = [
         name: "Donji deo sakoa",
         src: "/assets/suits/blue/bottom_single_breasted+length_long+hemline_open.png",
       },
-      { id: "pants", name: "Pantalone", src: "/assets/suits/blue/length_long+cut_slim.png" },
+      {
+        id: "pants",
+        name: "Pantalone",
+        src: "/assets/suits/blue/length_long+cut_slim.png",
+      },
     ],
 
     lapels: [
@@ -247,26 +305,59 @@ export const suits: SuitModel[] = [
     ],
 
     pockets: [
-      { id: "double-welted", name: "Double-Welted", src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png" },
-      { id: "patched", name: "Patched", src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png" },
+      {
+        id: "double-welted",
+        name: "Double-Welted",
+        src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png",
+      },
+      {
+        id: "patched",
+        name: "Patched",
+        src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png",
+      },
     ],
+
     interiors: [
       {
         id: "Blue",
         name: "Blue Interior",
         layers: [
-          { id: "interior_base", name: "Base", src: "/assets/suits/blue/interior1.png" },
-          { id: "interior_left", name: "Left", src: "/assets/suits/blue/interior2.png" },
-          { id: "interior_right", name: "Right", src: "/assets/suits/blue/interior3.png" },
+          {
+            id: "interior_base",
+            name: "Base",
+            src: "/assets/suits/blue/interior1.png",
+          },
+          {
+            id: "interior_left",
+            name: "Left",
+            src: "/assets/suits/blue/interior2.png",
+          },
+          {
+            id: "interior_right",
+            name: "Right",
+            src: "/assets/suits/blue/interior3.png",
+          },
         ],
       },
       {
         id: "contrast",
         name: "Contrast Lining",
         layers: [
-          { id: "interior_base", name: "Base", src: "/assets/suits/blue/interiorback3.png" },
-          { id: "interior_left", name: "Left", src: "/assets/suits/blue/interiorblack1.png" },
-          { id: "interior_right", name: "Right", src: "/assets/suits/blue/interiorblack2.png" },
+          {
+            id: "interior_base",
+            name: "Base",
+            src: "/assets/suits/blue/interiorblack3.png",
+          },
+          {
+            id: "interior_left",
+            name: "Left",
+            src: "/assets/suits/blue/interiorblack1.png",
+          },
+          {
+            id: "interior_right",
+            name: "Right",
+            src: "/assets/suits/blue/interiorblack2.png",
+          },
         ],
       },
     ],
@@ -275,7 +366,13 @@ export const suits: SuitModel[] = [
       {
         id: "standard",
         name: "Standard Pocket",
-        layers: [{ id: "breast", name: "Breast Pocket", src: "/assets/suits/blue/breast_pocket_classic.png" }],
+        layers: [
+          {
+            id: "breast",
+            name: "Breast Pocket",
+            src: "/assets/suits/blue/breast_pocket_classic.png",
+          },
+        ],
       },
       {
         id: "none",
@@ -283,9 +380,18 @@ export const suits: SuitModel[] = [
         layers: [],
       },
     ],
+
     cuffs: [
-      { id: "plain", name: "Without Cuffs", src: "/assets/suits/blue/length_long+cut_slim.png" },
-      { id: "cuffed", name: "With Cuffs", src: "/assets/suits/blue/cuffs+length_long+cut_slim.png" },
+      {
+        id: "plain",
+        name: "Without Cuffs",
+        src: "/assets/suits/blue/length_long+cut_slim.png",
+      },
+      {
+        id: "cuffed",
+        name: "With Cuffs",
+        src: "/assets/suits/blue/cuffs+length_long+cut_slim.png",
+      },
     ],
   },
 
@@ -296,13 +402,25 @@ export const suits: SuitModel[] = [
     icon: "/custom-suits/icons/double_4btn.png",
 
     layers: [
-      { id: "torso", name: "Sredina sakoa", src: "/assets/suits/blue/neck_double_breasted+buttons_4+lapel_medium+style_lapel_notch.png" },
+      {
+        id: "torso",
+        name: "Sredina sakoa",
+        src: "/assets/suits/blue/neck_double_breasted+buttons_4+lapel_medium+style_lapel_notch.png",
+      },
       { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/sleeves.png" },
-      { id: "bottom", name: "Donji deo sakoa", src: "/assets/suits/blue/bottom_double_breasted+length_long.png" },
-      { id: "pants", name: "Pantalone", src: "/assets/suits/blue/length_long+cut_slim.png" },
+      {
+        id: "bottom",
+        name: "Donji deo sakoa",
+        src: "/assets/suits/blue/bottom_double_breasted+length_long.png",
+      },
+      {
+        id: "pants",
+        name: "Pantalone",
+        src: "/assets/suits/blue/length_long+cut_slim.png",
+      },
     ],
 
-   lapels: [
+    lapels: [
       {
         id: "notch",
         name: "Notch Lapel",
@@ -347,27 +465,60 @@ export const suits: SuitModel[] = [
       },
     ],
 
-   pockets: [
-      { id: "double-welted", name: "Double-Welted", src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png" },
-      { id: "patched", name: "Patched", src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png" },
+    pockets: [
+      {
+        id: "double-welted",
+        name: "Double-Welted",
+        src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png",
+      },
+      {
+        id: "patched",
+        name: "Patched",
+        src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png",
+      },
     ],
-     interiors: [
+
+    interiors: [
       {
         id: "Blue",
         name: "Blue Interior",
         layers: [
-          { id: "interior_base", name: "Base", src: "/assets/suits/blue/interior1.png" },
-          { id: "interior_left", name: "Left", src: "/assets/suits/blue/interior2.png" },
-          { id: "interior_right", name: "Right", src: "/assets/suits/blue/interior3.png" },
+          {
+            id: "interior_base",
+            name: "Base",
+            src: "/assets/suits/blue/interior1.png",
+          },
+          {
+            id: "interior_left",
+            name: "Left",
+            src: "/assets/suits/blue/interior2.png",
+          },
+          {
+            id: "interior_right",
+            name: "Right",
+            src: "/assets/suits/blue/interior3.png",
+          },
         ],
       },
       {
         id: "contrast",
         name: "Contrast Lining",
         layers: [
-          { id: "interior_base", name: "Base", src: "/assets/suits/blue/interiorback3.png" },
-          { id: "interior_left", name: "Left", src: "/assets/suits/blue/interiorblack1.png" },
-          { id: "interior_right", name: "Right", src: "/assets/suits/blue/interiorblack2.png" },
+          {
+            id: "interior_base",
+            name: "Base",
+            src: "/assets/suits/blue/interiorblack3.png",
+          },
+          {
+            id: "interior_left",
+            name: "Left",
+            src: "/assets/suits/blue/interiorblack1.png",
+          },
+          {
+            id: "interior_right",
+            name: "Right",
+            src: "/assets/suits/blue/interiorblack2.png",
+          },
         ],
       },
     ],
@@ -376,7 +527,13 @@ export const suits: SuitModel[] = [
       {
         id: "standard",
         name: "Standard Pocket",
-        layers: [{ id: "breast", name: "Breast Pocket", src: "/assets/suits/blue/breast_pocket_classic.png" }],
+        layers: [
+          {
+            id: "breast",
+            name: "Breast Pocket",
+            src: "/assets/suits/blue/breast_pocket_classic.png",
+          },
+        ],
       },
       {
         id: "none",
@@ -384,9 +541,50 @@ export const suits: SuitModel[] = [
         layers: [],
       },
     ],
+
     cuffs: [
-      { id: "plain", name: "Without Cuffs", src: "/assets/suits/blue/length_long+cut_slim.png" },
-      { id: "cuffed", name: "With Cuffs", src: "/assets/suits/blue/cuffs+length_long+cut_slim.png" },
+      {
+        id: "plain",
+        name: "Without Cuffs",
+        src: "/assets/suits/blue/length_long+cut_slim.png",
+      },
+      {
+        id: "cuffed",
+        name: "With Cuffs",
+        src: "/assets/suits/blue/cuffs+length_long+cut_slim.png",
+      },
     ],
+  },
+];
+
+// ======================================================
+// 🔸 FABRICS (teksture tkanina)
+// ======================================================
+
+export const fabrics = [
+  {
+    id: "cream",
+    name: "Krem vunena tkanina",
+    texture: "/custom-suits/fabrics/cream.jpg",
+  },
+  {
+    id: "1",
+    name: "Svetla lanena tkanina",
+    texture: "/custom-suits/fabrics/1.png",
+  },
+  {
+    id: "2",
+    name: "Sivo-crna tkanina (tvil)",
+    texture: "/custom-suits/fabrics/2.png",
+  },
+  {
+    id: "blue",
+    name: "Plava vunena tkanina",
+    texture: "/custom-suits/fabrics/3.png",
+  },
+  {
+    id: "4",
+    name: "Tamnozelena vunena tkanina",
+    texture: "/custom-suits/fabrics/4.png",
   },
 ];

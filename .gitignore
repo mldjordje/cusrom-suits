@@ -1,19 +1,22 @@
-# Dependencies
-node_modules/
-npm-debug.log*
+# dependencies
+node_modules
+npm-debug.log
+yarn-error.log
 
-# Build
-.next/
-out/
-dist/
+# build output
+.next
+out
+dist
 
-# Env
+# local env files
 .env
 .env.local
-.env.development.local
-.env.production.local
-.env.test.local
+.env.production
+.env.development
 
-# Misc
+# OS junk
 .DS_Store
-.vercel
+Thumbs.db
+
+# backend (jer je već na cPanelu)
+custom-suits-backend
