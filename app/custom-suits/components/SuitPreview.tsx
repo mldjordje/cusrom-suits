@@ -179,7 +179,7 @@ const breastPocketLayers =
 
         {/* DÅ¾epovi na saku (npr. flapped ili patch pockets) */}
         {pocketSrc && (
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 z-10">
             <Image
               src={replaceColorInSrc(pocketSrc)}
               alt="pockets"
@@ -195,7 +195,7 @@ const breastPocketLayers =
         {/* Grudni dÅ¾ep (breast pocket) */}
        {breastPocketLayers &&
   breastPocketLayers.map((layer) => (
-    <div key={layer.id} className="absolute inset-0">
+    <div key={layer.id} className=\"absolute inset-0 z-20\">
       <Image
         src={replaceColorInSrc(layer.src)}
         alt={layer.name}
@@ -211,7 +211,7 @@ const breastPocketLayers =
 
         {/* Rever (Lapel) */}
         {lapelSrc && (
-          <div className="absolute inset-0">
+          <div className="absolute inset-0 z-0">
             <Image
               src={replaceColorInSrc(lapelSrc)}
               alt="lapel"
@@ -221,35 +221,38 @@ const breastPocketLayers =
               style={{
                 objectFit: "contain",
                 pointerEvents: "none",
+                // Apply base brightness only for peak on single_2btn or double_4btn (do NOT touch single_1btn)
                 filter:
-                  config.lapelId === "peak"
+                  config.lapelId === "peak" &&
+                  (currentSuit.id === "single_2btn" || currentSuit.id === "double_4btn")
                     ? (() => {
                         const model = currentSuit.id;
                         const width = config.lapelWidthId;
-                        let b = 1.1;
-                        if (model === "double_4btn") b = 1.15;
-                        if (width === "narrow") b -= 0.02;
-                        if (width === "wide") b += 0.02;
+                        let b = model === "double_4btn" ? 1.08 : 1.06; // softer now to avoid overbright
+                        if (width === "narrow") b -= 0.01;
+                        if (width === "wide") b += 0.01;
                         return `brightness(${b})`;
                       })()
                     : undefined,
               }}
             />
-            {/* Slight compensation for Peak lapel assets being darker */}
+            {/* Compensation for Peak lapel assets (restricted to single_2btn & double_4btn) */}
             <div
               className="absolute inset-0"
               style={fabricStyle(
                 lapelSrc,
                 (() => {
-                  if (config.lapelId !== "peak") return undefined;
+                  if (
+                    config.lapelId !== "peak" ||
+                    (currentSuit.id !== "single_2btn" && currentSuit.id !== "double_4btn")
+                  )
+                    return undefined;
                   const model = currentSuit.id;
                   const width = config.lapelWidthId;
-                  let brightness = 1.12;
-                  let opacityMult = 0.92;
-                  if (model === "double_4btn") { brightness = 1.14; opacityMult = 0.9; }
-                  if (model === "single_2btn" || model === "single_1btn") { brightness = 1.12; opacityMult = 0.92; }
-                  if (width === "narrow") brightness -= 0.02;
-                  if (width === "wide") brightness += 0.02;
+                  let brightness = model === "double_4btn" ? 1.06 : 1.04;
+                  let opacityMult = 0.96;
+                  if (width === "narrow") brightness -= 0.01;
+                  if (width === "wide") brightness += 0.01;
                   return { brightness, opacityMult, blendMode: 'overlay' } as const;
                 })()
               )}
@@ -294,4 +297,7 @@ const breastPocketLayers =
 };
 
 export default SuitPreview;
+
+
+
 
