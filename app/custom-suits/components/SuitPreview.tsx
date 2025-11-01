@@ -11,6 +11,18 @@ const replaceColorInSrc = (src: string) => {
   return `https://customsuits.adspire.rs/uploads/transparent/${webpName}`;
 };
 
+// Tuned per-tone blending presets
+const toneBlend = (tone: string) => {
+  switch (tone) {
+    case "light":
+      return { opacity: 0.9, blendMode: "multiply" as const, filter: "brightness(1.15) saturate(1.2)" };
+    case "dark":
+      return { opacity: 0.95, blendMode: "soft-light" as const, filter: "brightness(1.0) contrast(1.12)" };
+    default:
+      return { opacity: 0.92, blendMode: "overlay" as const, filter: "brightness(1.08) contrast(1.06)" };
+  }
+};
+
 type Props = {
   config: SuitState;
 };
@@ -38,13 +50,7 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const tone = selectedFabric?.tone || "medium";
 
   // 🔹 Dinamičan filter i režim blend-a prema tonu tkanine
-  const fabricFilter =
-    tone === "light"
-      ? "brightness(1.25) saturate(1.3)"
-      : tone === "dark"
-      ? "brightness(1) contrast(1.1)"
-      : "brightness(1.1) contrast(1.05)";
-  const blendMode = tone === "dark" ? "soft-light" : "overlay";
+  const { opacity: blendOpacity, blendMode, filter: fabricFilter } = toneBlend(tone);
 
   if (loading) {
     return (
@@ -82,9 +88,10 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
 
   // 🔹 Izbor slike za grudni džep (samo ako opcija uključuje džep)
   // 🔹 Unutrašnjost (uzima sve slojeve i renderuje ih redom)
-const interiorLayers =
-  config.interiorId &&
-  currentSuit.interiors?.find((i) => i.id === config.interiorId)?.layers;
+// Auto-activate default interior if none selected
+const defaultInterior = currentSuit.interiors?.[0];
+const activeInteriorId = config.interiorId ?? defaultInterior?.id;
+const interiorLayers = activeInteriorId && currentSuit.interiors?.find((i) => i.id === activeInteriorId)?.layers;
 
 // 🔹 Grudni džep (uzima sve slojeve)
 const breastPocketLayers =
@@ -101,7 +108,7 @@ const breastPocketLayers =
     backgroundImage: `url(${fabricTexture})`,
     backgroundSize: "cover",
     backgroundPosition: "center",
-    opacity: 0.95,
+    opacity: blendOpacity,
     mixBlendMode: blendMode,
     filter: fabricFilter,
     WebkitMaskImage: `url(${replaceColorInSrc(src)})`,

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { suits } from "../data/options";
+import { computePrice } from "../utils/price";
 import { SuitState } from "../hooks/useSuitConfigurator";
 
 type Props = {
@@ -25,6 +26,8 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
       })
       .catch((err) => console.error("Greška pri učitavanju tkanina:", err));
   }, []);
+
+  const price = computePrice(config, suits);
 
   return (
     <div className="h-auto md:h-screen md:sticky md:top-0 overflow-y-auto flex flex-col bg-white px-4 md:px-8 py-6 md:py-8 border-b md:border-b-0 md:border-r border-gray-200 w-full md:w-80">
@@ -71,12 +74,25 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
         })}
       </nav>
 
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-xs tracking-wider text-[#666]">Cena</span>
+        <span className="text-base font-semibold text-[#111]">€{price.total}</span>
+      </div>
       <div className="h-px bg-[#e6e6e6] -mx-8 mb-8" />
 
       {/* ===== FABRIC TAB ===== */}
       {activeTab === "FABRIC" && (
         <section className="animate-fade-in">
           <h3 className="text-sm font-semibold text-[#444] mb-4">Fabric (Color)</h3>
+
+          <a
+            href="https://customsuits.adspire.rs/upload_test.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center justify-center mb-4 px-3 py-2 text-xs font-medium rounded-md border border-[#111] text-[#111] hover:bg-[#111] hover:text-white transition"
+          >
+            Upload tkanine
+          </a>
 
           {fabrics.length === 0 ? (
             <p className="text-gray-400 text-xs italic">Učitavanje tkanina...</p>
