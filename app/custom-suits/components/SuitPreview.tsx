@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
@@ -195,7 +195,7 @@ const breastPocketLayers =
         {/* Grudni dÅ¾ep (breast pocket) */}
        {breastPocketLayers &&
   breastPocketLayers.map((layer) => (
-    <div key={layer.id} className=\"absolute inset-0 z-20\">
+    <div key={layer.id} className="absolute inset-0 z-20">
       <Image
         src={replaceColorInSrc(layer.src)}
         alt={layer.name}
