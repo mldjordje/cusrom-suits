@@ -12,6 +12,7 @@
     "upscale:transparent8x": "node scripts/upscale-transparent-8x.mjs",
     "prepare:transparent-deploy8x": "node scripts/prepare-transparent-deploy-8x.mjs",
     "luxify:transparent": "node scripts/luxify-transparent.mjs",
+    "luxify:transparent:v2": "node scripts/luxify-transparent-v2.mjs",
     "enhance:transparent": "node scripts/enhance-transparent.mjs",
     "zip:transparent-pro": "node scripts/zip-transparent-pro.mjs"
   },
@@ -41,3 +42,4 @@
     "typescript": "^5"
   }
 }
+
