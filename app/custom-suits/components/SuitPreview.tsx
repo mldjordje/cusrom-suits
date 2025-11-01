@@ -6,8 +6,9 @@ import { SuitState } from "../hooks/useSuitConfigurator";
 
 // 🔹 Ispravan putanja ka transparent slojevima
 const replaceColorInSrc = (src: string) => {
-  const filename = src.split("/").pop();
-  return `https://customsuits.adspire.rs/uploads/transparent/${filename}`;
+  const filename = src.split("/").pop() || "";
+  const webpName = filename.replace(/\.(png|jpg|jpeg)$/i, ".webp");
+  return `https://customsuits.adspire.rs/uploads/transparent/${webpName}`;
 };
 
 type Props = {
