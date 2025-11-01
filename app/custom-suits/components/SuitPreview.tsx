@@ -218,7 +218,22 @@ const breastPocketLayers =
               fill
               sizes="(max-width: 768px) 100vw, 520px"
               priority
-              style={{ objectFit: "contain", pointerEvents: "none" }}
+              style={{
+                objectFit: "contain",
+                pointerEvents: "none",
+                filter:
+                  config.lapelId === "peak"
+                    ? (() => {
+                        const model = currentSuit.id;
+                        const width = config.lapelWidthId;
+                        let b = 1.1;
+                        if (model === "double_4btn") b = 1.15;
+                        if (width === "narrow") b -= 0.02;
+                        if (width === "wide") b += 0.02;
+                        return `brightness(${b})`;
+                      })()
+                    : undefined,
+              }}
             />
             {/* Slight compensation for Peak lapel assets being darker */}
             <div
