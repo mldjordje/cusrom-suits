@@ -1,10 +1,10 @@
-"use client";
+﻿"use client";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 
-// 🔹 Ispravan putanja ka transparent slojevima
+// ðŸ”¹ Ispravan putanja ka transparent slojevima
 const replaceColorInSrc = (src: string) => {
   const filename = src.split("/").pop() || "";
   const webpName = filename.replace(/\.(png|jpg|jpeg)$/i, ".webp");
@@ -33,14 +33,14 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const currentSuit = suits.find((s) => s.id === config.styleId);
   if (!currentSuit) return null;
 
-  // 🔹 Poziva backend sa PUNIM URL-om
+  // ðŸ”¹ Poziva backend sa PUNIM URL-om
   useEffect(() => {
     fetch("https://customsuits.adspire.rs/api/fabrics.php")
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setFabrics(data.data);
       })
-      .catch((err) => console.error("Greška pri učitavanju tkanina:", err))
+      .catch((err) => console.error("GreÅ¡ka pri uÄitavanju tkanina:", err))
       .finally(() => setLoading(false));
   }, []);
 
@@ -49,13 +49,13 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
 
   const tone = selectedFabric?.tone || "medium";
 
-  // 🔹 Dinamičan filter i režim blend-a prema tonu tkanine
+  // ðŸ”¹ DinamiÄan filter i reÅ¾im blend-a prema tonu tkanine
   const { opacity: blendOpacity, blendMode, filter: fabricFilter } = toneBlend(tone);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-        Učitavanje tkanina...
+        UÄitavanje tkanina...
       </div>
     );
   }
@@ -63,17 +63,17 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   if (!selectedFabric) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-        Izaberi tkaninu da se prikaže odelo.
+        Izaberi tkaninu da se prikaÅ¾e odelo.
       </div>
     );
   }
 
-  // 🔹 Slojevi definisani za trenutni stil odela
+  // ðŸ”¹ Slojevi definisani za trenutni stil odela
   const baseLayers: SuitLayer[] = currentSuit.layers || [];
   const torsoLayers = baseLayers.filter((l) => l.id !== "pants");
   const pantsLayer = baseLayers.find((l) => l.id === "pants");
 
-  // 🔹 Izbor slike revera na osnovu selektovanog tipa i širine revera
+  // ðŸ”¹ Izbor slike revera na osnovu selektovanog tipa i Å¡irine revera
   const lapelSrc =
     config.lapelId &&
     config.lapelWidthId &&
@@ -81,52 +81,65 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
       ?.find((l) => l.id === config.lapelId)
       ?.widths.find((w) => w.id === config.lapelWidthId)?.src;
 
-  // 🔹 Izbor slike džepova na osnovu selektovanog stila džepova
+  // ðŸ”¹ Izbor slike dÅ¾epova na osnovu selektovanog stila dÅ¾epova
   const pocketSrc =
     config.pocketId &&
     currentSuit.pockets?.find((p) => p.id === config.pocketId)?.src;
 
-  // 🔹 Izbor slike za grudni džep (samo ako opcija uključuje džep)
-  // 🔹 Unutrašnjost (uzima sve slojeve i renderuje ih redom)
+  // ðŸ”¹ Izbor slike za grudni dÅ¾ep (samo ako opcija ukljuÄuje dÅ¾ep)
+  // ðŸ”¹ UnutraÅ¡njost (uzima sve slojeve i renderuje ih redom)
 // Auto-activate default interior if none selected
 const defaultInterior = currentSuit.interiors?.[0];
 const activeInteriorId = config.interiorId ?? defaultInterior?.id;
 const interiorLayers = activeInteriorId && currentSuit.interiors?.find((i) => i.id === activeInteriorId)?.layers;
 
-// 🔹 Grudni džep (uzima sve slojeve)
+// ðŸ”¹ Grudni dÅ¾ep (uzima sve slojeve)
 const breastPocketLayers =
   config.breastPocketId &&
   currentSuit.breastPocket?.find((bp) => bp.id === config.breastPocketId)?.layers;
 
-  // 🔹 Izbor slike manžetni na pantalonama ako su odabrane
+  // ðŸ”¹ Izbor slike manÅ¾etni na pantalonama ako su odabrane
   const cuffSrc =
     config.cuffId &&
     currentSuit.cuffs?.find((c) => c.id === config.cuffId)?.src;
 
-  // 🔹 Generisanje stila za overlay teksture tkanine (maskiranje oblikom sloja)
-  const fabricStyle = (src: string): React.CSSProperties => ({
-    backgroundImage: `url(${fabricTexture})`,
-    backgroundSize: "cover",
-    backgroundPosition: "center",
-    opacity: blendOpacity,
-    mixBlendMode: blendMode,
-    filter: fabricFilter,
-    WebkitMaskImage: `url(${replaceColorInSrc(src)})`,
-    WebkitMaskRepeat: "no-repeat",
-    WebkitMaskSize: "contain",
-    WebkitMaskPosition: "center",
-    maskImage: `url(${replaceColorInSrc(src)})`,
-    maskRepeat: "no-repeat",
-    maskSize: "contain",
-    maskPosition: "center",
-    pointerEvents: "none",
-  });
+  // ðŸ”¹ Generisanje stila za overlay teksture tkanine (maskiranje oblikom sloja)
+  const fabricStyle = (
+    src: string,
+    adjust?: { brightness?: number; opacityMult?: number }
+  ): React.CSSProperties => {
+    let style: React.CSSProperties = {
+      backgroundImage: `url(${fabricTexture})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      opacity: blendOpacity,
+      mixBlendMode: blendMode,
+      filter: fabricFilter,
+      WebkitMaskImage: `url(${replaceColorInSrc(src)})`,
+      WebkitMaskRepeat: "no-repeat",
+      WebkitMaskSize: "contain",
+      WebkitMaskPosition: "center",
+      maskImage: `url(${replaceColorInSrc(src)})`,
+      maskRepeat: "no-repeat",
+      maskSize: "contain",
+      maskPosition: "center",
+      pointerEvents: "none",
+    };
+    if (adjust?.brightness) {
+      style.filter = `${style.filter} brightness(${adjust.brightness})`;
+    }
+    if (adjust?.opacityMult) {
+      const op = typeof style.opacity === 'number' ? style.opacity : Number(style.opacity) || 1;
+      style.opacity = Math.max(0, Math.min(1, op * adjust.opacityMult));
+    }
+    return style;
+  };
 
   return (
     <div className="relative flex flex-col items-center justify-center w-full h-full bg-white">
       {/* === GORNJI DEO (SAKO + SLOJEVI) === */}
-      <div className="relative w-[320px] md:w-[420px] aspect-[2/3] mb-[-40px]">
-        {/* ==== UNUTRAŠNJOST SAKOA (bez tkanine) ==== */}
+      <div className="relative w-[360px] md:w-[520px] aspect-[2/3] mb-[-40px]">
+        {/* ==== UNUTRAÅ NJOST SAKOA (bez tkanine) ==== */}
 {interiorLayers &&
   interiorLayers.map((layer) => (
     <div key={layer.id} className="absolute inset-0">
@@ -134,7 +147,7 @@ const breastPocketLayers =
         src={replaceColorInSrc(layer.src)}
         alt={layer.name}
         fill
-        sizes="(max-width: 768px) 100vw, 420px"
+        sizes="(max-width: 768px) 100vw, 520px"
         priority
         style={{
           objectFit: "contain",
@@ -153,7 +166,7 @@ const breastPocketLayers =
               src={replaceColorInSrc(layer.src)}
               alt={layer.id}
               fill
-              sizes="(max-width: 768px) 100vw, 420px"
+              sizes="(max-width: 768px) 100vw, 520px"
               priority
               style={{ objectFit: "contain", pointerEvents: "none" }}
             />
@@ -161,14 +174,14 @@ const breastPocketLayers =
           </div>
         ))}
 
-        {/* Džepovi na saku (npr. flapped ili patch pockets) */}
+        {/* DÅ¾epovi na saku (npr. flapped ili patch pockets) */}
         {pocketSrc && (
           <div className="absolute inset-0">
             <Image
               src={replaceColorInSrc(pocketSrc)}
               alt="pockets"
               fill
-              sizes="(max-width: 768px) 100vw, 420px"
+              sizes="(max-width: 768px) 100vw, 520px"
               priority
               style={{ objectFit: "contain", pointerEvents: "none" }}
             />
@@ -176,7 +189,7 @@ const breastPocketLayers =
           </div>
         )}
 
-        {/* Grudni džep (breast pocket) */}
+        {/* Grudni dÅ¾ep (breast pocket) */}
        {breastPocketLayers &&
   breastPocketLayers.map((layer) => (
     <div key={layer.id} className="absolute inset-0">
@@ -184,7 +197,7 @@ const breastPocketLayers =
         src={replaceColorInSrc(layer.src)}
         alt={layer.name}
         fill
-        sizes="(max-width: 768px) 100vw, 420px"
+        sizes="(max-width: 768px) 100vw, 520px"
         priority
         style={{ objectFit: "contain", pointerEvents: "none" }}
       />
@@ -200,38 +213,46 @@ const breastPocketLayers =
               src={replaceColorInSrc(lapelSrc)}
               alt="lapel"
               fill
-              sizes="(max-width: 768px) 100vw, 420px"
+              sizes="(max-width: 768px) 100vw, 520px"
               priority
               style={{ objectFit: "contain", pointerEvents: "none" }}
             />
-            <div className="absolute inset-0" style={fabricStyle(lapelSrc)} />
+            {/* Slight compensation for Peak lapel assets being darker */}
+            <div
+              className="absolute inset-0"
+              style={fabricStyle(
+                lapelSrc,
+                // Increase brightness and slightly reduce opacity only for peak
+                config.lapelId === "peak" ? { brightness: 1.06, opacityMult: 0.96 } : undefined
+              )}
+            />
           </div>
         )}
       </div>
 
       {/* === DONJI DEO (PANTALONE) === */}
       {pantsLayer && (
-        <div className="relative w-[480px] md:w-[660px] aspect-[3/1] mt-[-20px]">
+        <div className="relative w-[540px] md:w-[760px] aspect-[3/1] mt-[-20px]">
           {/* Osnovni sloj pantalona */}
           <div className="absolute inset-0">
             <Image
               src={replaceColorInSrc(pantsLayer.src)}
               alt="pants"
               fill
-              sizes="(max-width: 768px) 100vw, 660px"
+              sizes="(max-width: 768px) 100vw, 760px"
               priority
               style={{ objectFit: "contain", pointerEvents: "none" }}
             />
             <div className="absolute inset-0" style={fabricStyle(pantsLayer.src)} />
           </div>
-          {/* Manžetne na pantalonama (ako su odabrane) */}
+          {/* ManÅ¾etne na pantalonama (ako su odabrane) */}
           {cuffSrc && (
             <div className="absolute inset-0">
               <Image
                 src={replaceColorInSrc(cuffSrc)}
                 alt="cuffs"
                 fill
-                sizes="(max-width: 768px) 100vw, 660px"
+                sizes="(max-width: 768px) 100vw, 760px"
                 priority
                 style={{ objectFit: "contain", pointerEvents: "none" }}
               />
@@ -245,3 +266,4 @@ const breastPocketLayers =
 };
 
 export default SuitPreview;
+
