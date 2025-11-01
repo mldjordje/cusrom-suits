@@ -106,7 +106,7 @@ const breastPocketLayers =
   // ðŸ”¹ Generisanje stila za overlay teksture tkanine (maskiranje oblikom sloja)
   const fabricStyle = (
     src: string,
-    adjust?: { brightness?: number; opacityMult?: number }
+    adjust?: { brightness?: number; opacityMult?: number; blendMode?: React.CSSProperties['mixBlendMode'] }
   ): React.CSSProperties => {
     let style: React.CSSProperties = {
       backgroundImage: `url(${fabricTexture})`,
@@ -131,6 +131,9 @@ const breastPocketLayers =
     if (adjust?.opacityMult) {
       const op = typeof style.opacity === 'number' ? style.opacity : Number(style.opacity) || 1;
       style.opacity = Math.max(0, Math.min(1, op * adjust.opacityMult));
+    }
+    if (adjust?.blendMode) {
+      style.mixBlendMode = adjust.blendMode;
     }
     return style;
   };
@@ -222,8 +225,18 @@ const breastPocketLayers =
               className="absolute inset-0"
               style={fabricStyle(
                 lapelSrc,
-                // Increase brightness and slightly reduce opacity only for peak
-                config.lapelId === "peak" ? { brightness: 1.06, opacityMult: 0.96 } : undefined
+                (() => {
+                  if (config.lapelId !== "peak") return undefined;
+                  const model = currentSuit.id;
+                  const width = config.lapelWidthId;
+                  let brightness = 1.12;
+                  let opacityMult = 0.92;
+                  if (model === "double_4btn") { brightness = 1.14; opacityMult = 0.9; }
+                  if (model === "single_2btn" || model === "single_1btn") { brightness = 1.12; opacityMult = 0.92; }
+                  if (width === "narrow") brightness -= 0.02;
+                  if (width === "wide") brightness += 0.02;
+                  return { brightness, opacityMult, blendMode: 'overlay' } as const;
+                })()
               )}
             />
           </div>
