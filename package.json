@@ -1,4 +1,4 @@
-{
+﻿{
   "name": "santos",
   "version": "0.1.0",
   "private": true,
@@ -14,7 +14,7 @@
     "luxify:transparent": "node scripts/luxify-transparent.mjs",
     "luxify:transparent:v2": "node scripts/luxify-transparent-v2.mjs",
     "enhance:transparent": "node scripts/enhance-transparent.mjs",
-    "zip:transparent-pro": "node scripts/zip-transparent-pro.mjs"
+    "zip:transparent-pro": "node scripts/zip-transparent-pro.mjs", "calibrate:single1": "node scripts/calibrate-single1btn-lapel.mjs"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -42,4 +42,5 @@
     "typescript": "^5"
   }
 }
+
 
