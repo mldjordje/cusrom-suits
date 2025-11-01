@@ -218,44 +218,12 @@ const breastPocketLayers =
               fill
               sizes="(max-width: 768px) 100vw, 520px"
               priority
-              style={{
-                objectFit: "contain",
-                pointerEvents: "none",
-                // Apply base brightness only for peak on single_2btn or double_4btn (do NOT touch single_1btn)
-                filter:
-                  config.lapelId === "peak" &&
-                  (currentSuit.id === "single_2btn" || currentSuit.id === "double_4btn")
-                    ? (() => {
-                        const model = currentSuit.id;
-                        const width = config.lapelWidthId;
-                        let b = model === "double_4btn" ? 1.08 : 1.06; // softer now to avoid overbright
-                        if (width === "narrow") b -= 0.01;
-                        if (width === "wide") b += 0.01;
-                        return `brightness(${b})`;
-                      })()
-                    : undefined,
-              }}
+              style={{ objectFit: "contain", pointerEvents: "none" }}
             />
-            {/* Compensation for Peak lapel assets (restricted to single_2btn & double_4btn) */}
+            {/* Lapel fabric overlay (no extra brightness at runtime) */}
             <div
               className="absolute inset-0"
-              style={fabricStyle(
-                lapelSrc,
-                (() => {
-                  if (
-                    config.lapelId !== "peak" ||
-                    (currentSuit.id !== "single_2btn" && currentSuit.id !== "double_4btn")
-                  )
-                    return undefined;
-                  const model = currentSuit.id;
-                  const width = config.lapelWidthId;
-                  let brightness = model === "double_4btn" ? 1.06 : 1.04;
-                  let opacityMult = 0.96;
-                  if (width === "narrow") brightness -= 0.01;
-                  if (width === "wide") brightness += 0.01;
-                  return { brightness, opacityMult, blendMode: 'overlay' } as const;
-                })()
-              )}
+              style={fabricStyle(lapelSrc)}
             />
           </div>
         )}
