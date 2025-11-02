@@ -1,46 +1,45 @@
 {
-  "name": "santos",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "upscale:transparent": "node scripts/upscale-transparent.mjs",
-    "prepare:transparent-deploy": "node scripts/prepare-transparent-deploy.mjs",
-    "upscale:transparent8x": "node scripts/upscale-transparent-8x.mjs",
-    "prepare:transparent-deploy8x": "node scripts/prepare-transparent-deploy-8x.mjs",
-    "luxify:transparent": "node scripts/luxify-transparent.mjs",
-    "luxify:transparent:v2": "node scripts/luxify-transparent-v2.mjs",
-    "enhance:transparent": "node scripts/enhance-transparent.mjs",
-    "zip:transparent-pro": "node scripts/zip-transparent-pro.mjs", "calibrate:single1": "node scripts/calibrate-single1btn-lapel.mjs"
-  },
-  "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.1",
-    "@headlessui/react": "^2.2.9",
-    "@heroicons/react": "^2.2.0",
-    "@mui/material": "^7.3.4",
-    "framer-motion": "^12.23.24",
-    "next": "15.5.4",
-    "react": "19.1.0",
-    "react-dom": "19.1.0"
-  },
-  "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "@tailwindcss/postcss": "^4.1.14",
-    "@types/node": "^20",
-    "@types/react": "^19.2.2",
-    "@types/react-dom": "^19.2.2",
-    "autoprefixer": "^10.4.21",
-    "eslint": "^9",
-    "eslint-config-next": "15.5.4",
-    "postcss": "^8.5.6",
-    "sharp": "^0.33.5",
-    "tailwindcss": "^4.1.14",
-    "typescript": "^5"
-  }
+    "name":  "santos",
+    "version":  "0.1.0",
+    "private":  true,
+    "scripts":  {
+                    "dev":  "next dev",
+                    "build":  "next build",
+                    "start":  "next start",
+                    "lint":  "eslint",
+                    "upscale:transparent":  "node scripts/upscale-transparent.mjs",
+                    "prepare:transparent-deploy":  "node scripts/prepare-transparent-deploy.mjs",
+                    "upscale:transparent8x":  "node scripts/upscale-transparent-8x.mjs",
+                    "prepare:transparent-deploy8x":  "node scripts/prepare-transparent-deploy-8x.mjs",
+                    "luxify:transparent":  "node scripts/luxify-transparent.mjs",
+                    "luxify:transparent:v2":  "node scripts/luxify-transparent-v2.mjs",
+                    "enhance:transparent":  "node scripts/enhance-transparent.mjs",
+                    "zip:transparent-pro":  "node scripts/zip-transparent-pro.mjs",
+                    "calibrate:single1":  "node scripts/calibrate-single1btn-lapel.mjs"
+                },
+    "dependencies":  {
+                         "@emotion/react":  "^11.14.0",
+                         "@emotion/styled":  "^11.14.1",
+                         "@headlessui/react":  "^2.2.9",
+                         "@heroicons/react":  "^2.2.0",
+                         "@mui/material":  "^7.3.4",
+                         "framer-motion":  "^12.23.24",
+                         "next":  "15.5.4",
+                         "react":  "19.1.0",
+                         "react-dom":  "19.1.0"
+                     },
+    "devDependencies":  {
+                            "@eslint/eslintrc":  "^3",
+                            "@tailwindcss/postcss":  "^4.1.14",
+                            "@types/node":  "^20",
+                            "@types/react":  "^19.2.2",
+                            "@types/react-dom":  "^19.2.2",
+                            "autoprefixer":  "^10.4.21",
+                            "eslint":  "^9",
+                            "eslint-config-next":  "15.5.4",
+                            "postcss":  "^8.5.6",
+                            "sharp":  "^0.33.5",
+                            "tailwindcss":  "^4.1.14",
+                            "typescript":  "^5"
+                        }
 }
-
-
