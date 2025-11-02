@@ -15,7 +15,8 @@
                     "luxify:transparent:v2":  "node scripts/luxify-transparent-v2.mjs",
                     "enhance:transparent":  "node scripts/enhance-transparent.mjs",
                     "zip:transparent-pro":  "node scripts/zip-transparent-pro.mjs",
-                    "calibrate:single1":  "node scripts/calibrate-single1btn-lapel.mjs"
+                    "calibrate:single1":  "node scripts/calibrate-single1btn-lapel.mjs",
+                    "normalize:transparent:all": "node scripts/normalize-transparent-all.mjs"
                 },
     "dependencies":  {
                          "@emotion/react":  "^11.14.0",
