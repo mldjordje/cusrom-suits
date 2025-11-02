@@ -37,7 +37,8 @@ const TARGET_WIDTH = 1100; // px
 
 // Single tone target for identical shade across all assets
 const TARGET_LUMA = 0.50; // 0..1 mid-gray
-const BRIGHTNESS_CLAMP = [0.85, 1.18]; // avoid extreme shifts
+// Tighter clamp to prevent micro-mismatch bands between stacked layers
+const BRIGHTNESS_CLAMP = [0.92, 1.08];
 
 // Heuristics for per-element tuning
 function isLapel(name) {
@@ -101,6 +102,9 @@ async function processFile(file) {
   const stats = await img.stats();
   const L = lumaFromStats(stats);
 
+  // Ensure alpha exists; avoid premultiply due to missing method in env
+  img = img.ensureAlpha();
+
   // 1) Brightness normalization for identical tone
   // Skip interiors (they're not part of fabric tone)
   if (!isInterior(file)) {
@@ -111,20 +115,27 @@ async function processFile(file) {
     }
   }
 
+  // 1b) Crisp alpha to eliminate 1px light seams around edges
+  if (!isInterior(file)) {
+    const alpha = sharp(file).ensureAlpha().extractChannel('alpha').threshold(240);
+    const rgb = sharp(file).ensureAlpha().removeAlpha();
+    img = rgb.joinChannel([alpha]);
+  }
+
   // 2) Detail tuning
   const name = path.basename(file);
   if (isLapel(name)) {
     // Lapels need crisp edges and clear fold highlights
-    img = img.gamma(1.05).sharpen(1.6, 1.0, 0.9);
+    img = img.gamma(1.03).sharpen(1.2, 0.9, 0.7);
   } else if (isPocket(name)) {
     // Accentuate welt/edge definition slightly more
-    img = img.modulate({ saturation: 1.04 }).sharpen(1.5, 1.0, 0.8);
+    img = img.modulate({ saturation: 1.02 }).sharpen(1.1, 0.9, 0.6);
   } else if (isTorsoOrBottom(name)) {
     // Avoid noise but keep clarity for large areas
-    img = img.gamma(1.02).sharpen(0.9, 0.9, 0.4);
+    img = img.gamma(1.01).sharpen(0.7, 0.8, 0.3);
   } else if (!isInterior(name)) {
     // Mild default enhancement
-    img = img.sharpen(0.8, 0.8, 0.4);
+    img = img.sharpen(0.6, 0.7, 0.3);
   }
 
   // 3) Downsize to performant width (keep alpha, preserve aspect)
@@ -134,9 +145,12 @@ async function processFile(file) {
   }
 
   // 4) Efficient WebP output with alpha
+  // Save with lossless WebP to fully avoid white seams on transparent edges
+  // Save lossless to avoid white seams on edges
   await img.webp({
-    quality: 82,       // visually lossless for these grayscale-ish layers
-    alphaQuality: 70,  // reduce alpha size while keeping crisp edges
+    lossless: true,
+    quality: 100,
+    alphaQuality: 100,
     effort: 4,
   }).toFile(out);
 }
@@ -152,4 +166,3 @@ async function main() {
 }
 
 main().catch((e) => { console.error(e); process.exit(1); });
-

@@ -205,9 +205,44 @@ const breastPocketLayers =
               priority
               style={{ objectFit: "contain", pointerEvents: "none" }}
             />
-            <div className="absolute inset-0" style={fabricStyle(layer.src)} />
           </div>
         ))}
+
+        {/* Jedan zajednički fabric overlay (union mask) za eliminaciju linije između slojeva */}
+        {(() => {
+          const maskSrcs: string[] = [];
+          torsoLayers.forEach((l) => maskSrcs.push(l.src));
+          if (lapelSrc) maskSrcs.push(lapelSrc);
+          if (pocketSrc) maskSrcs.push(pocketSrc);
+          const maskList = maskSrcs.map((s) => `url(${replaceColorInSrc(s)})`).join(',');
+          const repeatList = maskSrcs.map(() => 'no-repeat').join(',');
+          const sizeList = maskSrcs.map(() => 'contain').join(',');
+          const posList = maskSrcs.map(() => 'center').join(',');
+          const compList = maskSrcs.length > 0 ? new Array(maskSrcs.length).fill('add').join(',') : undefined;
+
+          const unionStyle: React.CSSProperties = {
+            backgroundImage: `url(${fabricTexture})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: blendOpacity,
+            mixBlendMode: blendMode,
+            filter: fabricFilter,
+            WebkitMaskImage: maskList,
+            WebkitMaskRepeat: repeatList,
+            WebkitMaskSize: sizeList,
+            WebkitMaskPosition: posList,
+            // @ts-ignore vendor property supported in Chromium/WebKit
+            WebkitMaskComposite: compList as any,
+            maskImage: maskList,
+            maskRepeat: repeatList,
+            maskSize: sizeList,
+            maskPosition: posList,
+            // @ts-ignore standard property in some browsers
+            maskComposite: compList as any,
+            pointerEvents: 'none',
+          };
+          return <div key="fabric-union" className="absolute inset-0" style={unionStyle} />;
+        })()}
 
         {shirtSrc && (
           <div className="absolute inset-0 z-10">
