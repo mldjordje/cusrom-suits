@@ -12,6 +12,8 @@ export type SuitState = {
   interiorId?: string;
   breastPocketId?: string;
   cuffId?: string;
+  showShirt?: boolean;
+  pantsPleatId?: string;
 };
 
 type Action =
@@ -25,6 +27,8 @@ type Action =
   | { type: "SET_INTERIOR"; payload: string }
   | { type: "SET_BREAST_POCKET"; payload: string }
   | { type: "SET_CUFF"; payload: string }
+  | { type: "TOGGLE_SHIRT" }
+  | { type: "SET_PANTS_PLEAT"; payload: string }
   | { type: "RESET" };
 
 export function useSuitConfigurator(
@@ -86,6 +90,12 @@ export function useSuitConfigurator(
       // 🔹 Izbor manžetni na pantalonama
       case "SET_CUFF":
         return { ...state, cuffId: action.payload };
+
+      case "TOGGLE_SHIRT":
+        return { ...state, showShirt: !state.showShirt };
+
+      case "SET_PANTS_PLEAT":
+        return { ...state, pantsPleatId: action.payload };
 
       // 🔹 Reset na početno stanje
       case "RESET":

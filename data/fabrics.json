@@ -1,0 +1,32 @@
+[
+  {
+    "id": "blue",
+    "name": "Plava vunena tkanina",
+    "price": 0,
+    "tone": "medium",
+    "description": "Klasična plava vunena tkanina.",
+    "texture": "/custom-suits/fabrics/3.png",
+    "zoom1": "/custom-suits/fabrics/3.png",
+    "zoom2": "/custom-suits/fabrics/3.png"
+  },
+  {
+    "id": "cream",
+    "name": "Krem vunena tkanina",
+    "price": 15,
+    "tone": "light",
+    "description": "Svetlija krem tkanina sa blagom teksturom.",
+    "texture": "/custom-suits/fabrics/cream.jpg",
+    "zoom1": "/custom-suits/fabrics/cream.jpg",
+    "zoom2": "/custom-suits/fabrics/cream.jpg"
+  },
+  {
+    "id": "2",
+    "name": "Sivo-crna tkanina (tvil)",
+    "price": 10,
+    "tone": "dark",
+    "description": "Tvill uzorak u sivo-crnim tonovima.",
+    "texture": "/custom-suits/fabrics/2.png",
+    "zoom1": "/custom-suits/fabrics/2.png",
+    "zoom2": "/custom-suits/fabrics/2.png"
+  }
+]

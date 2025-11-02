@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 
@@ -30,12 +30,15 @@ type Props = {
 const SuitPreview: React.FC<Props> = ({ config }) => {
   const [fabrics, setFabrics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false });
   const currentSuit = suits.find((s) => s.id === config.styleId);
   if (!currentSuit) return null;
 
   // ðŸ”¹ Poziva backend sa PUNIM URL-om
   useEffect(() => {
-    fetch("https://customsuits.adspire.rs/api/fabrics.php")
+    fetch("/api/fabrics", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setFabrics(data.data);
@@ -72,6 +75,8 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const baseLayers: SuitLayer[] = currentSuit.layers || [];
   const torsoLayers = baseLayers.filter((l) => l.id !== "pants");
   const pantsLayer = baseLayers.find((l) => l.id === "pants");
+  const shirtSrc = config.showShirt ? "/assets/suits/blue/shirt_to_jacket_open.png" : undefined;
+  const pantsPleatSrc = config.pantsPleatId === "double" ? "/assets/suits/blue/pleats_double.png" : undefined;
 
   // ðŸ”¹ Izbor slike revera na osnovu selektovanog tipa i Å¡irine revera
   const lapelSrc =
@@ -138,10 +143,37 @@ const breastPocketLayers =
     return style;
   };
 
+  const onWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
+    e.preventDefault();
+    const delta = -e.deltaY;
+    const next = Math.min(3, Math.max(1, scale + delta * 0.0015));
+    setScale(next);
+  };
+
+  const onMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    dragRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y, active: true };
+  };
+  const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    if (!dragRef.current.active) return;
+    setOffset({ x: e.clientX - dragRef.current.x, y: e.clientY - dragRef.current.y });
+  };
+  const onMouseUp = () => { dragRef.current.active = false; };
+
   return (
-    <div className="relative flex flex-col items-center justify-center w-full h-full bg-white">
+    <div
+      className="relative flex flex-col items-center justify-center w-full h-full bg-white touch-pan-y"
+      onWheel={onWheel}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      onMouseLeave={onMouseUp}
+      onMouseUp={onMouseUp}
+      style={{ cursor: scale > 1 ? (dragRef.current.active ? "grabbing" : "grab") : "default" }}
+    >
       {/* === GORNJI DEO (SAKO + SLOJEVI) === */}
-      <div className="relative w-[360px] md:w-[520px] aspect-[2/3] mb-[-40px]">
+      <div
+        className="relative w-[360px] md:w-[520px] aspect-[2/3] mb-[-40px]"
+        style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}
+      >
         {/* ==== UNUTRAÅ NJOST SAKOA (bez tkanine) ==== */}
 {interiorLayers &&
   interiorLayers.map((layer) => (
@@ -176,6 +208,19 @@ const breastPocketLayers =
             <div className="absolute inset-0" style={fabricStyle(layer.src)} />
           </div>
         ))}
+
+        {shirtSrc && (
+          <div className="absolute inset-0 z-10">
+            <Image
+              src={replaceColorInSrc(shirtSrc)}
+              alt="shirt"
+              fill
+              sizes="(max-width: 768px) 100vw, 520px"
+              priority
+              style={{ objectFit: "contain", pointerEvents: "none" }}
+            />
+          </div>
+        )}
 
         {/* DÅ¾epovi na saku (npr. flapped ili patch pockets) */}
         {pocketSrc && (
@@ -231,7 +276,10 @@ const breastPocketLayers =
 
       {/* === DONJI DEO (PANTALONE) === */}
       {pantsLayer && (
-        <div className="relative w-[540px] md:w-[760px] aspect-[3/1] mt-[-20px]">
+        <div
+          className="relative w-[540px] md:w-[760px] aspect-[3/1] mt-[-20px]"
+          style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}
+        >
           {/* Osnovni sloj pantalona */}
           <div className="absolute inset-0">
             <Image
@@ -256,6 +304,20 @@ const breastPocketLayers =
                 style={{ objectFit: "contain", pointerEvents: "none" }}
               />
               <div className="absolute inset-0" style={fabricStyle(cuffSrc)} />
+            </div>
+          )}
+
+          {pantsPleatSrc && (
+            <div className="absolute inset-0">
+              <Image
+                src={replaceColorInSrc(pantsPleatSrc)}
+                alt="pants-pleats"
+                fill
+                sizes="(max-width: 768px) 100vw, 760px"
+                priority
+                style={{ objectFit: "contain", pointerEvents: "none" }}
+              />
+              <div className="absolute inset-0" style={fabricStyle(pantsPleatSrc)} />
             </div>
           )}
         </div>

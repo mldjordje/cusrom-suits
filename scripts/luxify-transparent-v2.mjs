@@ -1,4 +1,4 @@
-import { promises as fs } from 'fs';
+﻿import { promises as fs } from 'fs';
 import path from 'path';
 import sharp from 'sharp';
 
@@ -63,13 +63,13 @@ async function processFile(file){
   const name = path.basename(file);
   if (isLapel(name)) {
     // Lapels: midtone pop + crisp edges
-    img = img.gamma(0.95).sharpen(1.5, 1.0, 0.8);
+    img = img.gamma(1.05).sharpen(1.5, 1.0, 0.8);
   } else if (isPocket(name)) {
     // Pockets: emphasize welt/edge more
     img = img.modulate({ brightness: 1.05, saturation: 1.06 }).sharpen(1.8, 1.0, 1.0);
   } else if (isTorsoOrBottom(name)) {
     // Torso/bottom: subtle clarity, avoid noise
-    img = img.gamma(0.97).sharpen(0.8, 0.8, 0.3);
+    img = img.gamma(1.03).sharpen(0.8, 0.8, 0.3);
   } else {
     // Default mild boost
     img = img.sharpen(0.8, 0.8, 0.4);
@@ -84,8 +84,9 @@ async function processFile(file){
 
 async function main(){
   let n=0; for await (const f of walk(SRC)){ await processFile(f); n++; if(n%10===0) console.log(`Processed ${n}...`); }
-  console.log(`Done ${n} files → ${OUT}`);
+  console.log(`Done ${n} files â†’ ${OUT}`);
 }
 
 main().catch(e=>{ console.error(e); process.exit(1); });
+
 

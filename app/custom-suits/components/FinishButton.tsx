@@ -8,9 +8,10 @@ type Props = {
 
 const FinishButton: React.FC<Props> = ({ config }) => {
   const handleClick = () => {
-    const json = JSON.stringify(config, null, 2);
-    navigator.clipboard.writeText(json);
-    alert("Configuration copied to clipboard:\n" + json);
+    const json = JSON.stringify(config);
+    const url = new URL(window.location.origin + "/custom-suits/measure");
+    url.searchParams.set("config", json);
+    window.location.href = url.toString();
   };
 
   return (
@@ -18,7 +19,7 @@ const FinishButton: React.FC<Props> = ({ config }) => {
       onClick={handleClick}
       className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
     >
-      Send Config
+      Continue to Measurements
     </button>
   );
 };
