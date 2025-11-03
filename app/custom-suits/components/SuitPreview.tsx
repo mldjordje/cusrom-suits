@@ -12,20 +12,21 @@ const replaceColorInSrc = (src: string) => {
   return `${TRANSPARENT_BASE}/${webpName}`;
 };
 
-// Overlay (fabric) stays bright; shading image above adds detail
+// Fabric overlay tuning (kept bright); shading above adds depth
 const toneOverlay = (tone: string) => {
   switch (tone) {
     case "light":
-      return { opacity: 1, blendMode: "normal" as const, filter: "brightness(1.02) saturate(1.04)" };
+      return { opacity: 1, blendMode: "normal" as const, filter: "brightness(1.02) contrast(1.02)" };
     case "dark":
-      return { opacity: 1, blendMode: "normal" as const, filter: "brightness(1.06)" };
+      return { opacity: 1, blendMode: "normal" as const, filter: "brightness(1.04)" };
     default:
-      return { opacity: 1, blendMode: "normal" as const, filter: "brightness(1.03) contrast(1.02)" };
+      return { opacity: 1, blendMode: "normal" as const, filter: "brightness(1.02) contrast(1.02)" };
   }
 };
 
-// Subtle shading strength on the grayscale silhouette
-const shadeOpacity = 0.6;
+// Depth constants for multiply shading
+const SHADE_OPACITY = 0.58;
+const SHADE_FILTER = "grayscale(1) contrast(1.18) brightness(0.96)";
 
 type Props = { config: SuitState };
 
@@ -51,32 +52,22 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const tone = selectedFabric?.tone || "medium";
   const { opacity: overlayOpacity, blendMode: overlayBlend, filter: overlayFilter } = toneOverlay(tone);
 
-  if (loading) return <div className="flex items-center justify-center h-full text-gray-400 text-sm">Učitavanje tkanina...</div>;
-  if (!selectedFabric) return <div className="flex items-center justify-center h-full text-gray-500 text-sm">Izaberi tkaninu da se prikaže odelo.</div>;
+  if (loading) return <div className="flex items-center justify-center h-full text-gray-400 text-sm">Ucitavanje tkanina...</div>;
+  if (!selectedFabric) return <div className="flex items-center justify-center h-full text-gray-500 text-sm">Izaberi tkaninu da se prikaze odelo.</div>;
 
   const baseLayers: SuitLayer[] = currentSuit.layers || [];
 
   const selectedLapel = currentSuit.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit.lapels?.[0];
-  const selectedLapelWidth =
-    selectedLapel?.widths.find((w) => w.id === config.lapelWidthId) ||
-    selectedLapel?.widths.find((w) => w.id === "medium") ||
-    selectedLapel?.widths?.[0];
+  const selectedLapelWidth = selectedLapel?.widths.find((w) => w.id === config.lapelWidthId) || selectedLapel?.widths.find((w) => w.id === "medium") || selectedLapel?.widths?.[0];
 
+  // Ensure torso sprite path matches selected lapel (type/width)
   const swapLapelInPath = (src: string, lapelType?: string, lapelWidth?: string) => {
     const type = lapelType ?? "notch";
     const width = lapelWidth ?? "medium";
-    return src.replace(
-      /lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/,
-      `lapel_${width}+style_lapel_${type}`
-    );
+    return src.replace(/lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/, `lapel_${width}+style_lapel_${type}`);
   };
 
-  const dynamicLayers = baseLayers.map((l) =>
-    l.id === "torso"
-      ? { ...l, src: swapLapelInPath(l.src, selectedLapel?.id, selectedLapelWidth?.id) }
-      : l
-  );
-
+  const dynamicLayers = baseLayers.map((l) => (l.id === "torso" ? { ...l, src: swapLapelInPath(l.src, selectedLapel?.id, selectedLapelWidth?.id) } : l));
   const torsoLayers = dynamicLayers.filter((l) => l.id !== "pants");
   const pantsLayer = dynamicLayers.find((l) => l.id === "pants");
 
@@ -108,20 +99,9 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
     pointerEvents: "none",
   });
 
-  const onWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
-    e.preventDefault();
-    const delta = -e.deltaY;
-    const next = Math.min(3, Math.max(1, scale + delta * 0.0015));
-    setScale(next);
-  };
-
-  const onMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    dragRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y, active: true };
-  };
-  const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    if (!dragRef.current.active) return;
-    setOffset({ x: e.clientX - dragRef.current.x, y: e.clientY - dragRef.current.y });
-  };
+  const onWheel: React.WheelEventHandler<HTMLDivElement> = (e) => { e.preventDefault(); const delta = -e.deltaY; setScale(Math.min(3, Math.max(1, scale + delta * 0.0015))); };
+  const onMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => { dragRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y, active: true }; };
+  const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => { if (!dragRef.current.active) return; setOffset({ x: e.clientX - dragRef.current.x, y: e.clientY - dragRef.current.y }); };
   const onMouseUp = () => { dragRef.current.active = false; };
 
   return (
@@ -139,88 +119,104 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
         className="relative w-[360px] md:w-[520px] aspect-[2/3] mb-[-40px]"
         style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}
       >
-        {/* Interior */}
+        {/* Interior (use transparent silhouettes so fabric does not affect) */}
         {interiorLayers && interiorLayers.map((layer) => (
           <div key={layer.id} className="absolute inset-0">
-            <Image
-              src={layer.src}
-              alt={layer.name}
-              fill
-              sizes="(max-width: 768px) 100vw, 520px"
-              priority
-              style={{ objectFit: "contain", pointerEvents: "none" }}
-            />
+            <Image src={replaceColorInSrc(layer.src)} alt={layer.name} fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none" }} />
           </div>
         ))}
 
-        {/* Torso + sleeves + bottom: fabric overlay, then shading */}
+        {/* Union fabric overlay for jacket (torso+sleeves+bottom+lapel) → no seams */}
+        {(() => {
+          const maskSrcs: string[] = [
+            ...torsoLayers.map((l) => l.src),
+            ...(lapelSrc ? [lapelSrc] : []),
+          ];
+          const maskList = maskSrcs.map((s) => `url(${replaceColorInSrc(s)})`).join(',');
+          const repeatList = maskSrcs.map(() => 'no-repeat').join(',');
+          const sizeList = maskSrcs.map(() => 'contain').join(',');
+          const posList = maskSrcs.map(() => 'center').join(',');
+          const compList = maskSrcs.length > 0 ? new Array(maskSrcs.length).fill('add').join(',') : undefined;
+          const unionStyle: React.CSSProperties = {
+            backgroundImage: `url(${fabricTexture})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            opacity: overlayOpacity,
+            mixBlendMode: overlayBlend,
+            filter: overlayFilter,
+            WebkitMaskImage: maskList,
+            WebkitMaskRepeat: repeatList,
+            WebkitMaskSize: sizeList,
+            WebkitMaskPosition: posList,
+            // @ts-ignore
+            WebkitMaskComposite: compList as any,
+            maskImage: maskList,
+            maskRepeat: repeatList,
+            maskSize: sizeList,
+            maskPosition: posList,
+            // @ts-ignore
+            maskComposite: compList as any,
+            pointerEvents: 'none',
+          };
+          return <div className="absolute inset-0" style={unionStyle} />;
+        })()}
+
+        {/* Per-layer shading on top for depth (uses original color sprites) */}
         {torsoLayers.map((layer) => (
           <div key={layer.id} className="absolute inset-0">
-            <div className="absolute inset-0" style={fabricStyle(layer.src)} />
-            <Image
-              src={layer.src}
-              alt={layer.id}
-              fill
-              sizes="(max-width: 768px) 100vw, 520px"
-              priority
-              style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }}
-            />
+            <Image src={layer.src} alt={layer.id} fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: SHADE_OPACITY, filter: SHADE_FILTER }} />
           </div>
         ))}
 
         {shirtSrc && (
           <div className="absolute inset-0 z-10">
-            <Image src={replaceColorInSrc(shirtSrc)} alt="shirt" fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none" }} />
+            <Image src={shirtSrc} alt="shirt" fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none" }} />
           </div>
         )}
 
-        {/* Hip pockets */}
+        {/* Hip pockets (fabric + shading) */}
         {pocketSrc && (
           <div className="absolute inset-0 z-10">
             <div className="absolute inset-0" style={fabricStyle(pocketSrc)} />
-            <Image src={pocketSrc} alt="pockets" fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
+            <Image src={pocketSrc} alt="pockets" fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: SHADE_OPACITY, filter: SHADE_FILTER }} />
           </div>
         )}
 
-        {/* Breast pocket */}
+        {/* Breast pocket (fabric + shading) */}
         {breastPocketLayers && breastPocketLayers.map((layer) => (
           <div key={layer.id} className="absolute inset-0 z-20">
             <div className="absolute inset-0" style={fabricStyle(layer.src)} />
-            <Image src={layer.src} alt={layer.name} fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
+            <Image src={layer.src} alt={layer.name} fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: SHADE_OPACITY, filter: SHADE_FILTER }} />
           </div>
         ))}
 
-        {/* Lapel */}
+        {/* Lapel shading (fabric already comes from union overlay) */}
         {lapelSrc && (
           <div className="absolute inset-0 z-0">
-            <div className="absolute inset-0" style={fabricStyle(lapelSrc)} />
-            <Image src={lapelSrc} alt="lapel" fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
+            <Image src={lapelSrc} alt="lapel" fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: SHADE_OPACITY, filter: SHADE_FILTER }} />
           </div>
         )}
       </div>
 
       {/* === LOWER (PANTS) === */}
       {pantsLayer && (
-        <div
-          className="relative w-[540px] md:w-[760px] aspect-[3/1] mt-[-20px]"
-          style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}
-        >
+        <div className="relative w-[540px] md:w-[760px] aspect-[3/1] mt-[-20px]" style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}>
           <div className="absolute inset-0">
             <div className="absolute inset-0" style={fabricStyle(pantsLayer.src)} />
-            <Image src={pantsLayer.src} alt="pants" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
+            <Image src={pantsLayer.src} alt="pants" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: SHADE_OPACITY, filter: SHADE_FILTER }} />
           </div>
 
           {cuffSrc && (
             <div className="absolute inset-0">
               <div className="absolute inset-0" style={fabricStyle(cuffSrc)} />
-              <Image src={cuffSrc} alt="cuffs" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
+              <Image src={cuffSrc} alt="cuffs" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: SHADE_OPACITY, filter: SHADE_FILTER }} />
             </div>
           )}
 
           {pantsPleatSrc && (
             <div className="absolute inset-0">
               <div className="absolute inset-0" style={fabricStyle(pantsPleatSrc)} />
-              <Image src={pantsPleatSrc} alt="pants-pleats" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
+              <Image src={pantsPleatSrc} alt="pants-pleats" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: SHADE_OPACITY, filter: SHADE_FILTER }} />
             </div>
           )}
         </div>
