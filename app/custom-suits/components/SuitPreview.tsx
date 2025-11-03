@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 
-const TRANSPARENT_BASE = process.env.NEXT_PUBLIC_TRANSPARENT_BASE ?? "https://customsuits.adspire.rs/uploads/transparent_normalized";
+const TRANSPARENT_BASE = process.env.NEXT_PUBLIC_TRANSPARENT_BASE ?? "https://customsuits.adspire.rs/uploads/transparent";
 
 const replaceColorInSrc = (src: string) => {
   const filename = src.split("/").pop() || "";
@@ -57,15 +57,26 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const baseLayers: SuitLayer[] = currentSuit.layers || [];
 
   const selectedLapel = currentSuit.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit.lapels?.[0];
-  const selectedLapelWidth = selectedLapel?.widths.find((w) => w.id === config.lapelWidthId) || selectedLapel?.widths.find((w) => w.id === "medium") || selectedLapel?.widths?.[0];
+  const selectedLapelWidth =
+    selectedLapel?.widths.find((w) => w.id === config.lapelWidthId) ||
+    selectedLapel?.widths.find((w) => w.id === "medium") ||
+    selectedLapel?.widths?.[0];
 
   const swapLapelInPath = (src: string, lapelType?: string, lapelWidth?: string) => {
     const type = lapelType ?? "notch";
     const width = lapelWidth ?? "medium";
-    return src.replace(/lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/, `lapel_${width}+style_lapel_${type}`);
+    return src.replace(
+      /lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/,
+      `lapel_${width}+style_lapel_${type}`
+    );
   };
 
-  const dynamicLayers = baseLayers.map((l) => (l.id === "torso" ? { ...l, src: swapLapelInPath(l.src, selectedLapel?.id, selectedLapelWidth?.id) } : l));
+  const dynamicLayers = baseLayers.map((l) =>
+    l.id === "torso"
+      ? { ...l, src: swapLapelInPath(l.src, selectedLapel?.id, selectedLapelWidth?.id) }
+      : l
+  );
+
   const torsoLayers = dynamicLayers.filter((l) => l.id !== "pants");
   const pantsLayer = dynamicLayers.find((l) => l.id === "pants");
 
@@ -97,9 +108,20 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
     pointerEvents: "none",
   });
 
-  const onWheel: React.WheelEventHandler<HTMLDivElement> = (e) => { e.preventDefault(); const delta = -e.deltaY; setScale(Math.min(3, Math.max(1, scale + delta * 0.0015))); };
-  const onMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => { dragRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y, active: true }; };
-  const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => { if (!dragRef.current.active) return; setOffset({ x: e.clientX - dragRef.current.x, y: e.clientY - dragRef.current.y }); };
+  const onWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
+    e.preventDefault();
+    const delta = -e.deltaY;
+    const next = Math.min(3, Math.max(1, scale + delta * 0.0015));
+    setScale(next);
+  };
+
+  const onMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    dragRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y, active: true };
+  };
+  const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    if (!dragRef.current.active) return;
+    setOffset({ x: e.clientX - dragRef.current.x, y: e.clientY - dragRef.current.y });
+  };
   const onMouseUp = () => { dragRef.current.active = false; };
 
   return (
@@ -112,18 +134,37 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
       onMouseUp={onMouseUp}
       style={{ cursor: scale > 1 ? (dragRef.current.active ? "grabbing" : "grab") : "default" }}
     >
-      <div className="relative w-[360px] md:w-[520px] aspect-[2/3] mb-[-40px]" style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}>
+      {/* === UPPER (JACKET) === */}
+      <div
+        className="relative w-[360px] md:w-[520px] aspect-[2/3] mb-[-40px]"
+        style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}
+      >
+        {/* Interior */}
         {interiorLayers && interiorLayers.map((layer) => (
           <div key={layer.id} className="absolute inset-0">
-            <Image src={replaceColorInSrc(layer.src)} alt={layer.name} fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none" }} />
+            <Image
+              src={replaceColorInSrc(layer.src)}
+              alt={layer.name}
+              fill
+              sizes="(max-width: 768px) 100vw, 520px"
+              priority
+              style={{ objectFit: "contain", pointerEvents: "none" }}
+            />
           </div>
         ))}
 
+        {/* Torso + sleeves + bottom: fabric overlay, then shading */}
         {torsoLayers.map((layer) => (
           <div key={layer.id} className="absolute inset-0">
-            {/* fabric overlay first (bright), shading image above with multiply */}
             <div className="absolute inset-0" style={fabricStyle(layer.src)} />
-            <Image src={replaceColorInSrc(layer.src)} alt={layer.id} fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity }} />
+            <Image
+              src={replaceColorInSrc(layer.src)}
+              alt={layer.id}
+              fill
+              sizes="(max-width: 768px) 100vw, 520px"
+              priority
+              style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity }}
+            />
           </div>
         ))}
 
@@ -133,6 +174,7 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
           </div>
         )}
 
+        {/* Hip pockets */}
         {pocketSrc && (
           <div className="absolute inset-0 z-10">
             <div className="absolute inset-0" style={fabricStyle(pocketSrc)} />
@@ -140,6 +182,7 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
           </div>
         )}
 
+        {/* Breast pocket */}
         {breastPocketLayers && breastPocketLayers.map((layer) => (
           <div key={layer.id} className="absolute inset-0 z-20">
             <div className="absolute inset-0" style={fabricStyle(layer.src)} />
@@ -147,6 +190,7 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
           </div>
         ))}
 
+        {/* Lapel */}
         {lapelSrc && (
           <div className="absolute inset-0 z-0">
             <div className="absolute inset-0" style={fabricStyle(lapelSrc)} />
@@ -155,18 +199,24 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
         )}
       </div>
 
+      {/* === LOWER (PANTS) === */}
       {pantsLayer && (
-        <div className="relative w-[540px] md:w-[760px] aspect-[3/1] mt-[-20px]" style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}>
+        <div
+          className="relative w-[540px] md:w-[760px] aspect-[3/1] mt-[-20px]"
+          style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}
+        >
           <div className="absolute inset-0">
             <div className="absolute inset-0" style={fabricStyle(pantsLayer.src)} />
             <Image src={replaceColorInSrc(pantsLayer.src)} alt="pants" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity }} />
           </div>
+
           {cuffSrc && (
             <div className="absolute inset-0">
               <div className="absolute inset-0" style={fabricStyle(cuffSrc)} />
               <Image src={replaceColorInSrc(cuffSrc)} alt="cuffs" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity }} />
             </div>
           )}
+
           {pantsPleatSrc && (
             <div className="absolute inset-0">
               <div className="absolute inset-0" style={fabricStyle(pantsPleatSrc)} />
