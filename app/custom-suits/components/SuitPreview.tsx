@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 
-// ðŸ”¹ Ispravan putanja ka transparent slojevima
+// Ispravan putanja ka transparent slojevima
 const replaceColorInSrc = (src: string) => {
   const filename = src.split("/").pop() || "";
   const webpName = filename.replace(/\.(png|jpg|jpeg)$/i, ".webp");
@@ -36,29 +36,29 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const currentSuit = suits.find((s) => s.id === config.styleId);
   if (!currentSuit) return null;
 
-  // ðŸ”¹ Poziva backend sa PUNIM URL-om
+  // Poziva backend sa PUNIM URL-om
   useEffect(() => {
     fetch("/api/fabrics", { cache: "no-store" })
       .then((res) => res.json())
       .then((data) => {
         if (data.success) setFabrics(data.data);
       })
-      .catch((err) => console.error("GreÅ¡ka pri uÄitavanju tkanina:", err))
+      .catch((err) => console.error("Greska pri ucitavanju tkanina:", err))
       .finally(() => setLoading(false));
   }, []);
 
   const selectedFabric = fabrics.find((f) => f.id === config.colorId);
- const fabricTexture = selectedFabric?.texture || "";
+  const fabricTexture = selectedFabric?.texture || "";
 
   const tone = selectedFabric?.tone || "medium";
 
-  // ðŸ”¹ DinamiÄan filter i reÅ¾im blend-a prema tonu tkanine
+  // Dinamican filter i rezim blend-a prema tonu tkanine
   const { opacity: blendOpacity, blendMode, filter: fabricFilter } = toneBlend(tone);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-        UÄitavanje tkanina...
+        Ucitavanje tkanina...
       </div>
     );
   }
@@ -66,49 +66,64 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   if (!selectedFabric) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-        Izaberi tkaninu da se prikaÅ¾e odelo.
+        Izaberi tkaninu da se prikaze odelo.
       </div>
     );
   }
 
-  // ðŸ”¹ Slojevi definisani za trenutni stil odela
+  // Slojevi definisani za trenutni stil odela
   const baseLayers: SuitLayer[] = currentSuit.layers || [];
-  const torsoLayers = baseLayers.filter((l) => l.id !== "pants");
-  const pantsLayer = baseLayers.find((l) => l.id === "pants");
+
+  // Ensure lapel selection always has a concrete width/type for image derivations
+  const selectedLapel =
+    currentSuit.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit.lapels?.[0];
+  const selectedLapelWidth =
+    selectedLapel?.widths.find((w) => w.id === config.lapelWidthId) ||
+    selectedLapel?.widths.find((w) => w.id === "medium") ||
+    selectedLapel?.widths?.[0];
+
+  // When lapel changes, the torso base sprite in options still points to
+  // a default lapel variant (e.g. notch/medium). Update the torso image path
+  // to match the currently selected lapel type/width so masks stay in sync.
+  const swapLapelInPath = (src: string, lapelType?: string, lapelWidth?: string) => {
+    const type = lapelType ?? "notch";
+    const width = lapelWidth ?? "medium";
+    return src.replace(
+      /lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/,
+      `lapel_${width}+style_lapel_${type}`
+    );
+  };
+
+  const dynamicLayers = baseLayers.map((l) =>
+    l.id === "torso"
+      ? { ...l, src: swapLapelInPath(l.src, selectedLapel?.id, selectedLapelWidth?.id) }
+      : l
+  );
+
+  const torsoLayers = dynamicLayers.filter((l) => l.id !== "pants");
+  const pantsLayer = dynamicLayers.find((l) => l.id === "pants");
   const shirtSrc = config.showShirt ? "/assets/suits/blue/shirt_to_jacket_open.png" : undefined;
   const pantsPleatSrc = config.pantsPleatId === "double" ? "/assets/suits/blue/pleats_double.png" : undefined;
 
-  // ðŸ”¹ Izbor slike revera na osnovu selektovanog tipa i Å¡irine revera
-  const lapelSrc =
-    config.lapelId &&
-    config.lapelWidthId &&
-    currentSuit.lapels
-      ?.find((l) => l.id === config.lapelId)
-      ?.widths.find((w) => w.id === config.lapelWidthId)?.src;
+  // Lapel image based on selected type and width (with defaults)
+  const lapelSrc = selectedLapelWidth?.src;
 
-  // ðŸ”¹ Izbor slike dÅ¾epova na osnovu selektovanog stila dÅ¾epova
-  const pocketSrc =
-    config.pocketId &&
-    currentSuit.pockets?.find((p) => p.id === config.pocketId)?.src;
+  // Pocket image based on selection
+  const pocketSrc = config.pocketId && currentSuit.pockets?.find((p) => p.id === config.pocketId)?.src;
 
-  // ðŸ”¹ Izbor slike za grudni dÅ¾ep (samo ako opcija ukljuÄuje dÅ¾ep)
-  // ðŸ”¹ UnutraÅ¡njost (uzima sve slojeve i renderuje ih redom)
-// Auto-activate default interior if none selected
-const defaultInterior = currentSuit.interiors?.[0];
-const activeInteriorId = config.interiorId ?? defaultInterior?.id;
-const interiorLayers = activeInteriorId && currentSuit.interiors?.find((i) => i.id === activeInteriorId)?.layers;
+  // Cuffs image on pants if selected
+  const cuffSrc = config.cuffId && currentSuit.cuffs?.find((c) => c.id === config.cuffId)?.src;
 
-// ðŸ”¹ Grudni dÅ¾ep (uzima sve slojeve)
-const breastPocketLayers =
-  config.breastPocketId &&
-  currentSuit.breastPocket?.find((bp) => bp.id === config.breastPocketId)?.layers;
+  // Interior (render all layers in order)
+  const defaultInterior = currentSuit.interiors?.[0];
+  const activeInteriorId = config.interiorId ?? defaultInterior?.id;
+  const interiorLayers = activeInteriorId && currentSuit.interiors?.find((i) => i.id === activeInteriorId)?.layers;
 
-  // ðŸ”¹ Izbor slike manÅ¾etni na pantalonama ako su odabrane
-  const cuffSrc =
-    config.cuffId &&
-    currentSuit.cuffs?.find((c) => c.id === config.cuffId)?.src;
+  // Breast pocket (all layers)
+  const breastPocketLayers =
+    config.breastPocketId && currentSuit.breastPocket?.find((bp) => bp.id === config.breastPocketId)?.layers;
 
-  // ðŸ”¹ Generisanje stila za overlay teksture tkanine (maskiranje oblikom sloja)
+  // Generate style for fabric texture overlay masked by a given layer
   const fabricStyle = (
     src: string,
     adjust?: { brightness?: number; opacityMult?: number; blendMode?: React.CSSProperties['mixBlendMode'] }
@@ -174,25 +189,23 @@ const breastPocketLayers =
         className="relative w-[360px] md:w-[520px] aspect-[2/3] mb-[-40px]"
         style={{ transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`, transformOrigin: "center" }}
       >
-        {/* ==== UNUTRAÅ NJOST SAKOA (bez tkanine) ==== */}
-{interiorLayers &&
-  interiorLayers.map((layer) => (
-    <div key={layer.id} className="absolute inset-0">
-      <Image
-        src={replaceColorInSrc(layer.src)}
-        alt={layer.name}
-        fill
-        sizes="(max-width: 768px) 100vw, 520px"
-        priority
-        style={{
-          objectFit: "contain",
-          pointerEvents: "none",
-        }}
-      />
-    </div>
-  ))}
-
-
+        {/* ==== UNUTRASNJOST SAKOA (bez tkanine) ==== */}
+        {interiorLayers &&
+          interiorLayers.map((layer) => (
+            <div key={layer.id} className="absolute inset-0">
+              <Image
+                src={replaceColorInSrc(layer.src)}
+                alt={layer.name}
+                fill
+                sizes="(max-width: 768px) 100vw, 520px"
+                priority
+                style={{
+                  objectFit: "contain",
+                  pointerEvents: "none",
+                }}
+              />
+            </div>
+          ))}
 
         {/* Osnovni slojevi sakoa (torzo, rukavi itd.) */}
         {torsoLayers.map((layer) => (
@@ -208,13 +221,12 @@ const breastPocketLayers =
           </div>
         ))}
 
-        {/* Jedan zajednički fabric overlay (union mask) za eliminaciju linije između slojeva */}
+        {/* Jedan zajednicki fabric overlay (union mask) */}
         {(() => {
           const maskSrcs: string[] = [];
           torsoLayers.forEach((l) => maskSrcs.push(l.src));
           if (lapelSrc) maskSrcs.push(lapelSrc);
-          
-          
+
           const maskList = maskSrcs.map((s) => `url(${replaceColorInSrc(s)})`).join(',');
           const repeatList = maskSrcs.map(() => 'no-repeat').join(',');
           const sizeList = maskSrcs.map(() => 'contain').join(',');
@@ -259,7 +271,7 @@ const breastPocketLayers =
           </div>
         )}
 
-        {/* DÅ¾epovi na saku (npr. flapped ili patch pockets) */}
+        {/* Dzepovi na saku */}
         {pocketSrc && (
           <div className="absolute inset-0 z-10">
             <Image
@@ -274,22 +286,21 @@ const breastPocketLayers =
           </div>
         )}
 
-        {/* Grudni dÅ¾ep (breast pocket) */}
-       {breastPocketLayers &&
-  breastPocketLayers.map((layer) => (
-    <div key={layer.id} className="absolute inset-0 z-20">
-      <Image
-        src={replaceColorInSrc(layer.src)}
-        alt={layer.name}
-        fill
-        sizes="(max-width: 768px) 100vw, 520px"
-        priority
-        style={{ objectFit: "contain", pointerEvents: "none" }}
-      />
-      <div className="absolute inset-0" style={fabricStyle(layer.src)} />
-    </div>
-  ))}
-
+        {/* Grudni dzep */}
+        {breastPocketLayers &&
+          breastPocketLayers.map((layer) => (
+            <div key={layer.id} className="absolute inset-0 z-20">
+              <Image
+                src={replaceColorInSrc(layer.src)}
+                alt={layer.name}
+                fill
+                sizes="(max-width: 768px) 100vw, 520px"
+                priority
+                style={{ objectFit: "contain", pointerEvents: "none" }}
+              />
+              <div className="absolute inset-0" style={fabricStyle(layer.src)} />
+            </div>
+          ))}
 
         {/* Rever (Lapel) */}
         {lapelSrc && (
@@ -324,7 +335,7 @@ const breastPocketLayers =
             />
             <div className="absolute inset-0" style={fabricStyle(pantsLayer.src)} />
           </div>
-          {/* ManÅ¾etne na pantalonama (ako su odabrane) */}
+          {/* Manzetne na pantalonama */}
           {cuffSrc && (
             <div className="absolute inset-0">
               <Image
@@ -359,10 +370,3 @@ const breastPocketLayers =
 };
 
 export default SuitPreview;
-
-
-
-
-
-
-
