@@ -265,19 +265,9 @@ export const suits: SuitModel[] = [
         name: "Notch Lapel",
         widths: [
           {
-            id: "narrow",
-            name: "Narrow",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_narrow+style_lapel_notch.png",
-          },
-          {
             id: "medium",
             name: "Medium",
             src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_medium+style_lapel_notch.png",
-          },
-          {
-            id: "wide",
-            name: "Wide",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_wide+style_lapel_notch.png",
           },
         ],
       },
@@ -286,19 +276,9 @@ export const suits: SuitModel[] = [
         name: "Peak Lapel",
         widths: [
           {
-            id: "narrow",
-            name: "Narrow",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_narrow+style_lapel_peak.png",
-          },
-          {
             id: "medium",
             name: "Medium",
             src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_medium+style_lapel_peak.png",
-          },
-          {
-            id: "wide",
-            name: "Wide",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_wide+style_lapel_peak.png",
           },
         ],
       },
@@ -426,40 +406,9 @@ export const suits: SuitModel[] = [
         name: "Notch Lapel",
         widths: [
           {
-            id: "narrow",
-            name: "Narrow",
-            src: "/assets/suits/blue/neck_double_breasted+buttons_4+lapel_narrow+style_lapel_notch.png",
-          },
-          {
             id: "medium",
             name: "Medium",
             src: "/assets/suits/blue/neck_double_breasted+buttons_4+lapel_medium+style_lapel_notch.png",
-          },
-          {
-            id: "wide",
-            name: "Wide",
-            src: "/assets/suits/blue/neck_double_breasted+buttons_4+lapel_wide+style_lapel_notch.png",
-          },
-        ],
-      },
-      {
-        id: "peak",
-        name: "Peak Lapel",
-        widths: [
-          {
-            id: "narrow",
-            name: "Narrow",
-            src: "/assets/suits/blue/neck_double_breasted+buttons_4+lapel_narrow+style_lapel_peak.png",
-          },
-          {
-            id: "medium",
-            name: "Medium",
-            src: "/assets/suits/blue/neck_double_breasted+buttons_4+lapel_medium+style_lapel_peak.png",
-          },
-          {
-            id: "wide",
-            name: "Wide",
-            src: "/assets/suits/blue/neck_double_breasted+buttons_4+lapel_wide+style_lapel_peak.png",
           },
         ],
       },

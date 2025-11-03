@@ -55,7 +55,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/admin/linings": {
+    "/custom-suits": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -68,8 +68,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/admin/linings",
-      "dataRoute": "/admin/linings.rsc",
+      "srcRoute": "/custom-suits",
+      "dataRoute": "/custom-suits.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
@@ -127,7 +127,7 @@
         "x-next-revalidate-tag-token"
       ]
     },
-    "/custom-suits": {
+    "/admin/linings": {
       "experimentalBypassFor": [
         {
           "type": "header",
@@ -140,8 +140,8 @@
         }
       ],
       "initialRevalidateSeconds": false,
-      "srcRoute": "/custom-suits",
-      "dataRoute": "/custom-suits.rsc",
+      "srcRoute": "/admin/linings",
+      "dataRoute": "/admin/linings.rsc",
       "allowHeader": [
         "host",
         "x-matched-path",
