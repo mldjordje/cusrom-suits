@@ -172,6 +172,16 @@ export default function SuitPreview({ config }: Props) {
           />
         ))}
 
+        {/* Premium depth overlays (soft-light highlights and vignette) */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%), radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,0.07), rgba(0,0,0,0) 55%)",
+            mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
+          }}
+        />
+
         {/* Jacket parts */}
         {bodyLayers.map((l) => (
           <div key={l.id} className="absolute inset-0">
@@ -223,6 +233,15 @@ export default function SuitPreview({ config }: Props) {
               ...fabricMaskStyle(pants.src, "center"),
               transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
               transformOrigin: "center",
+            }}
+          />
+          {/* Premium depth overlays for pants */}
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                "radial-gradient(120% 120% at 20% 10%, rgba(255,255,255,0.05), rgba(255,255,255,0) 50%), radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,0.06), rgba(0,0,0,0) 55%)",
+              mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
             }}
           />
           <img
