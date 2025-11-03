@@ -129,7 +129,13 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
 
         {/* Union fabric overlay for torso + sleeves + bottom + lapel (no seams) */}
         {(() => {
-          const maskSrcs: string[] = [...torsoLayers.map((l) => l.src), ...(lapelSrc ? [lapelSrc] : [])];
+          const torsoBase = baseLayers.filter((l) => l.id !== 'pants');
+          const maskArr = [
+            ...torsoLayers.map((l) => l.src),
+            ...torsoBase.map((l) => l.src),
+            ...(lapelSrc ? [lapelSrc] : []),
+          ];
+          const maskSrcs: string[] = Array.from(new Set(maskArr));
           const maskList = maskSrcs.map((s) => `url(${replaceColorInSrc(s)})`).join(',');
           const repeatList = maskSrcs.map(() => 'no-repeat').join(',');
           const sizeList = maskSrcs.map(() => 'contain').join(',');
