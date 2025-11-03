@@ -189,7 +189,7 @@ export default function SuitPreview({ config }: Props) {
               src={pants.src}
               alt={pants.name}
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{ opacity: 0.38, filter: "grayscale(1) contrast(1.18)" }}
+              style={{ opacity: 0.35, filter: "grayscale(1) contrast(1.18)", mixBlendMode: "multiply" as any }}
             />
           </div>
         )}
@@ -209,7 +209,7 @@ export default function SuitPreview({ config }: Props) {
               src={l.src}
               alt={l.name}
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{ opacity: 0.42, filter: "grayscale(1) contrast(1.16)" }}
+              style={{ opacity: 0.4, filter: "grayscale(1) contrast(1.16)", mixBlendMode: "multiply" as any }}
             />
           </div>
         ))}
