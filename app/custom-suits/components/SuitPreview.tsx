@@ -94,12 +94,7 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const pantsPleatSrc = config.pantsPleatId === "double" ? "/assets/suits/blue/pleats_double.png" : undefined;
 
   // ├░┼╕ΓÇ¥┬╣ Izbor slike revera na osnovu selektovanog tipa i ├à┬íirine revera
-  const lapelSrc =
-    config.lapelId &&
-    config.lapelWidthId &&
-    currentSuit.lapels
-      ?.find((l) => l.id === config.lapelId)
-      ?.widths.find((w) => w.id === config.lapelWidthId)?.src;
+  const lapelSrc = selectedLapelWidth?.src;
 
   // ├░┼╕ΓÇ¥┬╣ Izbor slike d├à┬╛epova na osnovu selektovanog stila d├à┬╛epova
   const pocketSrc =
