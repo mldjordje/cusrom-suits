@@ -25,7 +25,7 @@ const toneOverlay = (tone: string) => {
 };
 
 // Subtle shading strength on the grayscale silhouette
-const shadeOpacity = 0.38;
+const shadeOpacity = 0.6;
 
 type Props = { config: SuitState };
 
@@ -143,7 +143,7 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
         {interiorLayers && interiorLayers.map((layer) => (
           <div key={layer.id} className="absolute inset-0">
             <Image
-              src={replaceColorInSrc(layer.src)}
+              src={layer.src}
               alt={layer.name}
               fill
               sizes="(max-width: 768px) 100vw, 520px"
@@ -158,12 +158,12 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
           <div key={layer.id} className="absolute inset-0">
             <div className="absolute inset-0" style={fabricStyle(layer.src)} />
             <Image
-              src={replaceColorInSrc(layer.src)}
+              src={layer.src}
               alt={layer.id}
               fill
               sizes="(max-width: 768px) 100vw, 520px"
               priority
-              style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity }}
+              style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }}
             />
           </div>
         ))}
@@ -178,7 +178,7 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
         {pocketSrc && (
           <div className="absolute inset-0 z-10">
             <div className="absolute inset-0" style={fabricStyle(pocketSrc)} />
-            <Image src={replaceColorInSrc(pocketSrc)} alt="pockets" fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity }} />
+            <Image src={pocketSrc} alt="pockets" fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
           </div>
         )}
 
@@ -186,7 +186,7 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
         {breastPocketLayers && breastPocketLayers.map((layer) => (
           <div key={layer.id} className="absolute inset-0 z-20">
             <div className="absolute inset-0" style={fabricStyle(layer.src)} />
-            <Image src={replaceColorInSrc(layer.src)} alt={layer.name} fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity }} />
+            <Image src={layer.src} alt={layer.name} fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
           </div>
         ))}
 
@@ -194,7 +194,7 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
         {lapelSrc && (
           <div className="absolute inset-0 z-0">
             <div className="absolute inset-0" style={fabricStyle(lapelSrc)} />
-            <Image src={replaceColorInSrc(lapelSrc)} alt="lapel" fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity }} />
+            <Image src={lapelSrc} alt="lapel" fill sizes="(max-width: 768px) 100vw, 520px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
           </div>
         )}
       </div>
@@ -207,20 +207,20 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
         >
           <div className="absolute inset-0">
             <div className="absolute inset-0" style={fabricStyle(pantsLayer.src)} />
-            <Image src={replaceColorInSrc(pantsLayer.src)} alt="pants" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity }} />
+            <Image src={pantsLayer.src} alt="pants" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
           </div>
 
           {cuffSrc && (
             <div className="absolute inset-0">
               <div className="absolute inset-0" style={fabricStyle(cuffSrc)} />
-              <Image src={replaceColorInSrc(cuffSrc)} alt="cuffs" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity }} />
+              <Image src={cuffSrc} alt="cuffs" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
             </div>
           )}
 
           {pantsPleatSrc && (
             <div className="absolute inset-0">
               <div className="absolute inset-0" style={fabricStyle(pantsPleatSrc)} />
-              <Image src={replaceColorInSrc(pantsPleatSrc)} alt="pants-pleats" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity }} />
+              <Image src={pantsPleatSrc} alt="pants-pleats" fill sizes="(max-width: 768px) 100vw, 760px" priority style={{ objectFit: "contain", pointerEvents: "none", mixBlendMode: "multiply", opacity: shadeOpacity, filter: "grayscale(1) brightness(0.78) contrast(1.22)" }} />
             </div>
           )}
         </div>
