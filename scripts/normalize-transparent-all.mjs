@@ -63,6 +63,14 @@ function isInterior(name) {
   const b = path.basename(name).toLowerCase();
   return b.startsWith('interior');
 }
+function isSingle1Lapel(name) {
+  const b = path.basename(name).toLowerCase();
+  return b.includes('neck_single_breasted+buttons_1') && b.includes('lapel_');
+}
+function isSingle1Bottom(name) {
+  const b = path.basename(name).toLowerCase();
+  return b.includes('bottom_single_breasted+length_long');
+}
 
 async function* walk(dir) {
   const entries = await fs.readdir(dir, { withFileTypes: true });
@@ -93,34 +101,50 @@ function lumaFromStats(stats) {
   return 0.2126 * rn + 0.7152 * gn + 0.0722 * bn;
 }
 
+// Robust luma that ignores fully/near transparent pixels
+async function maskedLuma(file) {
+  const { data, info } = await sharp(file).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width, height, channels } = info; // RGBA
+  const A = channels === 4 ? 3 : channels - 1;
+  let sum = 0, count = 0;
+  for (let i = 0; i < data.length; i += channels) {
+    const a = data[i + A];
+    if (a < 16) continue; // ignore near-transparent
+    const r = data[i] / 255;
+    const g = data[i + 1] / 255;
+    const b = data[i + 2] / 255;
+    sum += 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    count++;
+  }
+  if (count === 0) return 0.5;
+  return sum / count;
+}
+
 async function processFile(file) {
   const out = dest(file);
   await fs.mkdir(path.dirname(out), { recursive: true });
 
   let img = sharp(file);
   const meta = await img.metadata();
-  const stats = await img.stats();
-  const L = lumaFromStats(stats);
+  const L = await maskedLuma(file);
 
-  // Ensure alpha exists; avoid premultiply due to missing method in env
+  // Ensure alpha exists
   img = img.ensureAlpha();
 
   // 1) Brightness normalization for identical tone
   // Skip interiors (they're not part of fabric tone)
   if (!isInterior(file)) {
     if (L > 0.02 && L < 0.98) {
-      let factor = TARGET_LUMA / (L || 0.5);
+      const desired = (globalThis.__SINGLE1_BASELINE_LUMA__ && isSingle1Lapel(file))
+        ? globalThis.__SINGLE1_BASELINE_LUMA__
+        : TARGET_LUMA;
+      let factor = desired / (L || 0.5);
       factor = Math.max(BRIGHTNESS_CLAMP[0], Math.min(BRIGHTNESS_CLAMP[1], factor));
       img = img.modulate({ brightness: factor });
     }
   }
 
-  // 1b) Crisp alpha to eliminate 1px light seams around edges
-  if (!isInterior(file)) {
-    const alpha = sharp(file).ensureAlpha().extractChannel('alpha').threshold(240);
-    const rgb = sharp(file).ensureAlpha().removeAlpha();
-    img = rgb.joinChannel([alpha]);
-  }
+  // Note: avoid alpha re-quantization to keep shapes intact
 
   // 2) Detail tuning
   const name = path.basename(file);
@@ -156,6 +180,17 @@ async function processFile(file) {
 }
 
 async function main() {
+  // Discover baseline luma from single-breasted (1 button) bottom to match lapels
+  for await (const f of walk(SRC)) {
+    if (isSingle1Bottom(f)) {
+      try {
+        const L = await maskedLuma(f);
+        globalThis.__SINGLE1_BASELINE_LUMA__ = L;
+        console.log(`Single-1 baseline luma: ${L.toFixed(3)}`);
+        break;
+      } catch {}
+    }
+  }
   let n = 0;
   for await (const f of walk(SRC)) {
     await processFile(f);
