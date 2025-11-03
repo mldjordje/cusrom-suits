@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 import Image from "next/image";
 import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
@@ -45,8 +45,8 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const tone = selectedFabric?.tone || "medium";
   const { opacity: blendOpacity, blendMode, filter: fabricFilter } = toneBlend(tone);
 
-  if (loading) return <div className="flex items-center justify-center h-full text-gray-400 text-sm">Ucitavanje tkanina...</div>;
-  if (!selectedFabric) return <div className="flex items-center justify-center h-full text-gray-500 text-sm">Izaberi tkaninu da se prika�e odelo.</div>;
+  if (loading) return <div className="flex items-center justify-center h-full text-gray-400 text-sm">Učitavanje tkanina...</div>;
+  if (!selectedFabric) return <div className="flex items-center justify-center h-full text-gray-500 text-sm">Izaberi tkaninu da se prikaže odelo.</div>;
 
   const baseLayers: SuitLayer[] = currentSuit.layers || [];
 
