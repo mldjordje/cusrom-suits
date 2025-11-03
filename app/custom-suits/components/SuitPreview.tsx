@@ -242,7 +242,8 @@ const breastPocketLayers =
             maskComposite: compList as any,
             pointerEvents: 'none',
           };
-          return <div key="fabric-union" className="absolute inset-0" style={unionStyle} />;
+          const unionKey = `fabric-union-${maskList}-${fabricTexture}`;
+          return <div key={unionKey} className="absolute inset-0" style={unionStyle} />;
         })()}
 
         {shirtSrc && (
@@ -269,6 +270,7 @@ const breastPocketLayers =
               priority
               style={{ objectFit: "contain", pointerEvents: "none" }}
             />
+            <div className="absolute inset-0" style={fabricStyle(pocketSrc)} />
           </div>
         )}
 
@@ -284,6 +286,7 @@ const breastPocketLayers =
         priority
         style={{ objectFit: "contain", pointerEvents: "none" }}
       />
+      <div className="absolute inset-0" style={fabricStyle(layer.src)} />
     </div>
   ))}
 
