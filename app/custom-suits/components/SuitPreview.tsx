@@ -103,21 +103,23 @@ export default function SuitPreview({ config }: Props) {
   })();
 
   // Helper: build a fabric-masked layer using a silhouette as mask (all silhouettes share same canvas size)
-  const fabricMaskStyle = (src: string): React.CSSProperties => ({
+  const fabricMaskStyle = (
+    src: string,
+    align: "center" | "top center" = "center"
+  ): React.CSSProperties => ({
     backgroundImage: `url(${fabricTexture})`,
     backgroundSize: "cover",
-    backgroundPosition: "center",
+    backgroundPosition: align,
     opacity: fabricOpacity,
     filter: fabricFilter,
     WebkitMaskImage: `url(${toTransparentSilhouette(src)})`,
     WebkitMaskRepeat: "no-repeat",
-    // Use contain+center so the mask scales exactly like the visible sprite (object-contain)
     WebkitMaskSize: "contain",
-    WebkitMaskPosition: "center",
+    WebkitMaskPosition: align,
     maskImage: `url(${toTransparentSilhouette(src)})`,
     maskRepeat: "no-repeat",
     maskSize: "contain",
-    maskPosition: "center",
+    maskPosition: align,
     pointerEvents: "none",
   });
 
@@ -180,7 +182,7 @@ export default function SuitPreview({ config }: Props) {
             <div
               className="absolute inset-0"
               style={{
-                ...fabricMaskStyle(pants.src),
+                ...fabricMaskStyle(pants.src, "top center"),
                 transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
                 transformOrigin: "center",
               }}
@@ -189,7 +191,12 @@ export default function SuitPreview({ config }: Props) {
               src={pants.src}
               alt={pants.name}
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{ opacity: 0.35, filter: "grayscale(1) contrast(1.18)", mixBlendMode: "multiply" as any }}
+              style={{
+                opacity: 0.35,
+                filter: "grayscale(1) contrast(1.18)",
+                objectPosition: "top center",
+                mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"],
+              }}
             />
           </div>
         )}
@@ -209,7 +216,11 @@ export default function SuitPreview({ config }: Props) {
               src={l.src}
               alt={l.name}
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{ opacity: 0.4, filter: "grayscale(1) contrast(1.16)", mixBlendMode: "multiply" as any }}
+              style={{
+                opacity: 0.4,
+                filter: "grayscale(1) contrast(1.16)",
+                mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"],
+              }}
             />
           </div>
         ))}
