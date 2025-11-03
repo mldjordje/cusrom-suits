@@ -102,13 +102,85 @@
         "x-next-revalidated-tags",
         "x-next-revalidate-tag-token"
       ]
+    },
+    "/admin/linings": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/admin/linings",
+      "dataRoute": "/admin/linings.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/custom-suits/measure": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/custom-suits/measure",
+      "dataRoute": "/custom-suits/measure.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
+    },
+    "/admin/fabrics": {
+      "experimentalBypassFor": [
+        {
+          "type": "header",
+          "key": "next-action"
+        },
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "multipart/form-data;.*"
+        }
+      ],
+      "initialRevalidateSeconds": false,
+      "srcRoute": "/admin/fabrics",
+      "dataRoute": "/admin/fabrics.rsc",
+      "allowHeader": [
+        "host",
+        "x-matched-path",
+        "x-prerender-revalidate",
+        "x-prerender-revalidate-if-generated",
+        "x-next-revalidated-tags",
+        "x-next-revalidate-tag-token"
+      ]
     }
   },
   "dynamicRoutes": {},
   "notFoundRoutes": [],
   "preview": {
-    "previewModeId": "057920f7a755327a7349783a45b97eaa",
-    "previewModeSigningKey": "f7d1708c34c18021f6587f3b361b3908e587f0092512bb98cac7a719868e95d2",
-    "previewModeEncryptionKey": "96a1bd894e635d9282d3ad5d5cb2dbd850d8b41234df66eb3d72d64549dd5af8"
+    "previewModeId": "cf77d936cba8372cac912eda569dc097",
+    "previewModeSigningKey": "815cebc936e07093237c9bdabd0b7981f9e1cea9e0f8d643dbaa6ccc16a240b8",
+    "previewModeEncryptionKey": "0a8dd86e546acad14db6c97b67c432040906a38a24015c8712393193b756846b"
   }
 }

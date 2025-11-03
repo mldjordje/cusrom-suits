@@ -33,10 +33,28 @@
       "namedRegex": "^/_not\\-found(?:/)?$"
     },
     {
+      "page": "/admin/fabrics",
+      "regex": "^/admin/fabrics(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/fabrics(?:/)?$"
+    },
+    {
+      "page": "/admin/linings",
+      "regex": "^/admin/linings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin/linings(?:/)?$"
+    },
+    {
       "page": "/custom-suits",
       "regex": "^/custom\\-suits(?:/)?$",
       "routeKeys": {},
       "namedRegex": "^/custom\\-suits(?:/)?$"
+    },
+    {
+      "page": "/custom-suits/measure",
+      "regex": "^/custom\\-suits/measure(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/custom\\-suits/measure(?:/)?$"
     },
     {
       "page": "/favicon.ico",

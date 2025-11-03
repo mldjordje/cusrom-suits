@@ -92,13 +92,17 @@ export default function SuitPreview({ config }: Props) {
   const pocketSrc = config.pocketId && currentSuit.pockets?.find((p) => p.id === config.pocketId)?.src;
   const cuffSrc = config.cuffId && currentSuit.cuffs?.find((c) => c.id === config.cuffId)?.src;
   const pantsPleatSrc = config.pantsPleatId === "double" ? "/assets/suits/blue/pleats_double.png" : undefined;
-  const interiorLayers = (() => {
+  const interiorLayers: SuitLayer[] | undefined = (() => {
     const defaultInterior = currentSuit.interiors?.[0];
     const activeInteriorId = config.interiorId ?? defaultInterior?.id;
-    return activeInteriorId && currentSuit.interiors?.find((i) => i.id === activeInteriorId)?.layers;
+    const found = currentSuit.interiors?.find((i) => i.id === activeInteriorId);
+    return Array.isArray(found?.layers) ? found.layers : undefined;
   })();
-  const breastPocketLayers =
-    config.breastPocketId && currentSuit.breastPocket?.find((bp) => bp.id === config.breastPocketId)?.layers;
+  const breastPocketLayers: SuitLayer[] | undefined = (() => {
+    const id = config.breastPocketId;
+    const found = id ? currentSuit.breastPocket?.find((bp) => bp.id === id) : undefined;
+    return Array.isArray(found?.layers) ? found.layers : undefined;
+  })();
 
   // Helper: build a fabric-masked layer using a silhouette as mask (all silhouettes share same canvas size)
   const fabricMaskStyle = (src: string): React.CSSProperties => ({
@@ -245,4 +249,3 @@ export default function SuitPreview({ config }: Props) {
     </div>
   );
 }
-
