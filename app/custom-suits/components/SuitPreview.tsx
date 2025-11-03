@@ -4,12 +4,10 @@ import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 
-// Map colored sprite filename to a hosted transparent silhouette (same canvas size)
-const toTransparentSilhouette = (src: string) => {
-  const filename = src.split("/").pop() || "";
-  const webp = filename.replace(/\.(png|jpg|jpeg)$/i, ".webp");
-  return `https://customsuits.adspire.rs/uploads/transparent/${webp}`;
-};
+// Use the original sprite itself as the mask.
+// PNGs already have transparent outside and exact canvas size, giving perfect alignment
+// and removing dependency on remote silhouettes that may 404 and break masking.
+const toTransparentSilhouette = (src: string) => src;
 
 // Keep fabric bright enough; small tweaks by tone
 const toneBlend = (tone?: string) => {
@@ -113,12 +111,13 @@ export default function SuitPreview({ config }: Props) {
     filter: fabricFilter,
     WebkitMaskImage: `url(${toTransparentSilhouette(src)})`,
     WebkitMaskRepeat: "no-repeat",
-    WebkitMaskSize: "100% 100%", // FIX: avoid per-image scaling differences that caused seams
-    WebkitMaskPosition: "0 0",
+    // Use contain+center so the mask scales exactly like the visible sprite (object-contain)
+    WebkitMaskSize: "contain",
+    WebkitMaskPosition: "center",
     maskImage: `url(${toTransparentSilhouette(src)})`,
     maskRepeat: "no-repeat",
-    maskSize: "100% 100%",
-    maskPosition: "0 0",
+    maskSize: "contain",
+    maskPosition: "center",
     pointerEvents: "none",
   });
 
