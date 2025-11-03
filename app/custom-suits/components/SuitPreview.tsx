@@ -152,14 +152,10 @@ export default function SuitPreview({ config }: Props) {
 
   return (
     <div className="w-full select-none">
-      {/* Maintain consistent canvas proportion to keep all silhouettes aligned */}
+      {/* CANVAS: Jacket (images are 600x733) */}
       <div
         className="relative mx-auto"
-        style={{
-          width: "100%",
-          aspectRatio: "3 / 5",
-          maxWidth: 720,
-        }}
+        style={{ width: "100%", aspectRatio: "600 / 733", maxWidth: 720 }}
         onWheel={onWheel}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
@@ -176,38 +172,13 @@ export default function SuitPreview({ config }: Props) {
           />
         ))}
 
-        {/* Pants: fabric + shading */}
-        {pants && (
-          <div className="absolute inset-0">
-            <div
-              className="absolute inset-0"
-              style={{
-                ...fabricMaskStyle(pants.src, "top center"),
-                transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-                transformOrigin: "center",
-              }}
-            />
-            <img
-              src={pants.src}
-              alt={pants.name}
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{
-                opacity: 0.35,
-                filter: "grayscale(1) contrast(1.18)",
-                objectPosition: "top center",
-                mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"],
-              }}
-            />
-          </div>
-        )}
-
         {/* Jacket parts */}
         {bodyLayers.map((l) => (
           <div key={l.id} className="absolute inset-0">
             <div
               className="absolute inset-0"
               style={{
-                ...fabricMaskStyle(l.src),
+                ...fabricMaskStyle(l.src, "center"),
                 transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
                 transformOrigin: "center",
               }}
@@ -225,25 +196,11 @@ export default function SuitPreview({ config }: Props) {
           </div>
         ))}
 
-        {/* Optional overlays */}
+        {/* Optional overlays on jacket */}
         {pocketSrc && (
           <img
             src={pocketSrc}
             alt="Pockets"
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-          />
-        )}
-        {cuffSrc && (
-          <img
-            src={cuffSrc}
-            alt="Cuffs"
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-          />
-        )}
-        {pantsPleatSrc && (
-          <img
-            src={pantsPleatSrc}
-            alt="Pleats"
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
           />
         )}
@@ -256,6 +213,34 @@ export default function SuitPreview({ config }: Props) {
           />
         ))}
       </div>
+
+      {/* CANVAS: Pants (images are 600x350) */}
+      {pants && (
+        <div className="relative mx-auto mt-2" style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720 }}>
+          <div
+            className="absolute inset-0"
+            style={{
+              ...fabricMaskStyle(pants.src, "center"),
+              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+              transformOrigin: "center",
+            }}
+          />
+          <img
+            src={pants.src}
+            alt={pants.name}
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+            style={{ opacity: 0.35, filter: "grayscale(1) contrast(1.18)", mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
+          />
+
+          {/* Optional overlays for pants */}
+          {cuffSrc && (
+            <img src={cuffSrc} alt="Cuffs" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+          )}
+          {pantsPleatSrc && (
+            <img src={pantsPleatSrc} alt="Pleats" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+          )}
+        </div>
+      )}
     </div>
   );
 }

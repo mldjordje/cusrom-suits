@@ -29,6 +29,13 @@
       "static/chunks/main-app-a57f6dfd9dc3534a.js",
       "static/chunks/app/api/linings/route-b432dc570a30f9ca.js"
     ],
+    "/admin/linings/page": [
+      "static/chunks/webpack-ef4ec7c03150432e.js",
+      "static/chunks/4bd1b696-c023c6e3521b1417.js",
+      "static/chunks/255-112b0fabacdea389.js",
+      "static/chunks/main-app-a57f6dfd9dc3534a.js",
+      "static/chunks/app/admin/linings/page-d1f8bf0766999404.js"
+    ],
     "/admin/fabrics/page": [
       "static/chunks/webpack-ef4ec7c03150432e.js",
       "static/chunks/4bd1b696-c023c6e3521b1417.js",
@@ -43,20 +50,13 @@
       "static/chunks/main-app-a57f6dfd9dc3534a.js",
       "static/chunks/app/custom-suits/measure/page-1433a65650654da9.js"
     ],
-    "/admin/linings/page": [
-      "static/chunks/webpack-ef4ec7c03150432e.js",
-      "static/chunks/4bd1b696-c023c6e3521b1417.js",
-      "static/chunks/255-112b0fabacdea389.js",
-      "static/chunks/main-app-a57f6dfd9dc3534a.js",
-      "static/chunks/app/admin/linings/page-d1f8bf0766999404.js"
-    ],
     "/custom-suits/page": [
       "static/chunks/webpack-ef4ec7c03150432e.js",
       "static/chunks/4bd1b696-c023c6e3521b1417.js",
       "static/chunks/255-112b0fabacdea389.js",
       "static/chunks/main-app-a57f6dfd9dc3534a.js",
       "static/chunks/239-a45b47c38ed1b157.js",
-      "static/chunks/app/custom-suits/page-b32044a8cc42a98d.js"
+      "static/chunks/app/custom-suits/page-f7e0dd96295d1a46.js"
     ],
     "/page": [
       "static/chunks/webpack-ef4ec7c03150432e.js",
