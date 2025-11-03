@@ -214,6 +214,7 @@ const breastPocketLayers =
           torsoLayers.forEach((l) => maskSrcs.push(l.src));
           if (lapelSrc) maskSrcs.push(lapelSrc);
           if (pocketSrc) maskSrcs.push(pocketSrc);
+          if (breastPocketLayers) breastPocketLayers.forEach((l) => maskSrcs.push(l.src));
           const maskList = maskSrcs.map((s) => `url(${replaceColorInSrc(s)})`).join(',');
           const repeatList = maskSrcs.map(() => 'no-repeat').join(',');
           const sizeList = maskSrcs.map(() => 'contain').join(',');
@@ -268,7 +269,6 @@ const breastPocketLayers =
               priority
               style={{ objectFit: "contain", pointerEvents: "none" }}
             />
-            <div className="absolute inset-0" style={fabricStyle(pocketSrc)} />
           </div>
         )}
 
@@ -284,7 +284,6 @@ const breastPocketLayers =
         priority
         style={{ objectFit: "contain", pointerEvents: "none" }}
       />
-      <div className="absolute inset-0" style={fabricStyle(layer.src)} />
     </div>
   ))}
 
@@ -299,11 +298,6 @@ const breastPocketLayers =
               sizes="(max-width: 768px) 100vw, 520px"
               priority
               style={{ objectFit: "contain", pointerEvents: "none" }}
-            />
-            {/* Lapel fabric overlay (no extra brightness at runtime) */}
-            <div
-              className="absolute inset-0"
-              style={fabricStyle(lapelSrc)}
             />
           </div>
         )}
