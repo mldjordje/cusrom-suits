@@ -4,16 +4,23 @@ import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 
-// tvoje slike sa servera
-const CDN_BASE = "https://customsuits.adspire.rs/uploads/transparent";
+// 🔹 CDN baze
+const TRANSPARENT_BASE = "https://customsuits.adspire.rs/uploads/transparent";
+const SHADING_BASE = "https://customsuits.adspire.rs/uploads/shading";
 
-// funkcija da dobiješ putanju
+// 🔹 funkcija da dobiješ putanju maske
 const layerSrc = (src: string) => {
   const file = src.split("/").pop()?.replace(/\.(png|jpg|jpeg)$/i, ".webp");
-  return `${CDN_BASE}/${file}`;
+  return `${TRANSPARENT_BASE}/${file}`;
 };
 
-// realistično ponašanje tkanine
+// 🔹 funkcija da dobiješ shading sloj
+const shadingSrc = (src: string) => {
+  const file = src.split("/").pop()?.replace(/\.(png|jpg|jpeg)$/i, ".webp");
+  return `${SHADING_BASE}/${file}`;
+};
+
+// 🔹 realistično ponašanje tkanine
 const toneBlend = (tone: string) => {
   switch (tone) {
     case "light":
@@ -24,9 +31,9 @@ const toneBlend = (tone: string) => {
       };
     case "dark":
       return {
-        opacity: 0.95,
+        opacity: 0.94,
         blendMode: "multiply" as const,
-        filter: "brightness(1.05) contrast(1.15)",
+        filter: "brightness(1.05) contrast(1.12)",
       };
     default:
       return {
@@ -49,7 +56,7 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const currentSuit = suits.find((s) => s.id === config.styleId);
   if (!currentSuit) return null;
 
-  // učitaj tkanine
+  // 🔹 učitaj tkanine iz API-ja
   useEffect(() => {
     fetch("/api/fabrics", { cache: "no-store" })
       .then((res) => res.json())
@@ -62,10 +69,12 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const tone = fabric?.tone || "medium";
   const { opacity, blendMode, filter } = toneBlend(tone);
 
-  if (loading) return <div className="text-gray-400 text-sm text-center">Učitavanje...</div>;
-  if (!fabric) return <div className="text-gray-500 text-sm text-center">Izaberi tkaninu...</div>;
+  if (loading)
+    return <div className="text-gray-400 text-sm text-center">Učitavanje...</div>;
+  if (!fabric)
+    return <div className="text-gray-500 text-sm text-center">Izaberi tkaninu...</div>;
 
-  // lapel sinhronizacija
+  // 🔹 sinhronizacija lapela
   const baseLayers: SuitLayer[] = currentSuit.layers || [];
   const lapel = currentSuit.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit.lapels?.[0];
   const lapelWidth =
@@ -89,7 +98,7 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
   const pocketSrc = config.pocketId && currentSuit.pockets?.find((p) => p.id === config.pocketId)?.src;
   const cuffSrc = config.cuffId && currentSuit.cuffs?.find((c) => c.id === config.cuffId)?.src;
 
-  // maska tkanine
+  // 🔹 maska tkanine
   const fabricStyle = (src: string): React.CSSProperties => ({
     backgroundImage: `url(${fabricTexture})`,
     backgroundSize: "cover",
@@ -116,7 +125,8 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
     dragRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y, active: true };
   };
   const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
-    if (dragRef.current.active) setOffset({ x: e.clientX - dragRef.current.x, y: e.clientY - dragRef.current.y });
+    if (dragRef.current.active)
+      setOffset({ x: e.clientX - dragRef.current.x, y: e.clientY - dragRef.current.y });
   };
   const onMouseUp = () => (dragRef.current.active = false);
 
@@ -139,11 +149,43 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
         }}
       >
         {torso.map((layer) => (
-          <div key={layer.id} className="absolute inset-0" style={fabricStyle(layer.src)} />
+          <div key={layer.id} className="absolute inset-0">
+            {/* tkanina */}
+            <div className="absolute inset-0" style={fabricStyle(layer.src)} />
+            {/* senka */}
+            <Image
+              src={shadingSrc(layer.src)}
+              alt={`${layer.id}-shade`}
+              fill
+              sizes="(max-width:768px) 100vw, 520px"
+              priority
+              style={{
+                objectFit: "contain",
+                mixBlendMode: "multiply",
+                opacity: 0.65,
+                pointerEvents: "none",
+              }}
+            />
+          </div>
         ))}
 
         {[lapelSrc, pocketSrc].filter(Boolean).map((src) => (
-          <div key={src} className="absolute inset-0" style={fabricStyle(src!)} />
+          <div key={src} className="absolute inset-0">
+            <div className="absolute inset-0" style={fabricStyle(src!)} />
+            <Image
+              src={shadingSrc(src!)}
+              alt="lapel-shade"
+              fill
+              sizes="(max-width:768px) 100vw, 520px"
+              priority
+              style={{
+                objectFit: "contain",
+                mixBlendMode: "multiply",
+                opacity: 0.65,
+                pointerEvents: "none",
+              }}
+            />
+          </div>
         ))}
       </div>
 
@@ -156,9 +198,39 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
             transformOrigin: "center",
           }}
         >
-          <div className="absolute inset-0" style={fabricStyle(pants.src)} />
+          <div className="absolute inset-0">
+            <div className="absolute inset-0" style={fabricStyle(pants.src)} />
+            <Image
+              src={shadingSrc(pants.src)}
+              alt="pants-shade"
+              fill
+              sizes="(max-width:768px) 100vw, 760px"
+              priority
+              style={{
+                objectFit: "contain",
+                mixBlendMode: "multiply",
+                opacity: 0.65,
+                pointerEvents: "none",
+              }}
+            />
+          </div>
           {[cuffSrc].filter(Boolean).map((src) => (
-            <div key={src} className="absolute inset-0" style={fabricStyle(src!)} />
+            <div key={src} className="absolute inset-0">
+              <div className="absolute inset-0" style={fabricStyle(src!)} />
+              <Image
+                src={shadingSrc(src!)}
+                alt="cuff-shade"
+                fill
+                sizes="(max-width:768px) 100vw, 760px"
+                priority
+                style={{
+                  objectFit: "contain",
+                  mixBlendMode: "multiply",
+                  opacity: 0.65,
+                  pointerEvents: "none",
+                }}
+              />
+            </div>
           ))}
         </div>
       )}
