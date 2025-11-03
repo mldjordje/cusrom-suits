@@ -73,8 +73,23 @@ const SuitPreview: React.FC<Props> = ({ config }) => {
 
   // ├░┼╕ΓÇ¥┬╣ Slojevi definisani za trenutni stil odela
   const baseLayers: SuitLayer[] = currentSuit.layers || [];
-  const torsoLayers = baseLayers.filter((l) => l.id !== "pants");
-  const pantsLayer = baseLayers.find((l) => l.id === "pants");
+
+  // Keep torso sprite in sync with selected lapel so the mask matches when lapel changes
+  const selectedLapel = currentSuit.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit.lapels?.[0];
+  const selectedLapelWidth =
+    selectedLapel?.widths.find((w) => w.id === config.lapelWidthId) ||
+    selectedLapel?.widths.find((w) => w.id === "medium") ||
+    selectedLapel?.widths?.[0];
+  const swapLapelInPath = (src: string, lapelType?: string, lapelWidth?: string) => {
+    const type = lapelType ?? "notch";
+    const width = lapelWidth ?? "medium";
+    return src.replace(/lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/, `lapel_${width}+style_lapel_${type}`);
+  };
+  const dynamicLayers = baseLayers.map((l) => (
+    l.id === "torso" ? { ...l, src: swapLapelInPath(l.src, selectedLapel?.id, selectedLapelWidth?.id) } : l
+  ));
+  const torsoLayers = dynamicLayers.filter((l) => l.id !== "pants");
+  const pantsLayer = dynamicLayers.find((l) => l.id === "pants");
   const shirtSrc = config.showShirt ? "/assets/suits/blue/shirt_to_jacket_open.png" : undefined;
   const pantsPleatSrc = config.pantsPleatId === "double" ? "/assets/suits/blue/pleats_double.png" : undefined;
 
@@ -359,7 +374,6 @@ const breastPocketLayers =
 };
 
 export default SuitPreview;
-
 
 
 
