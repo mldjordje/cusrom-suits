@@ -213,8 +213,8 @@ const breastPocketLayers =
           const maskSrcs: string[] = [];
           torsoLayers.forEach((l) => maskSrcs.push(l.src));
           if (lapelSrc) maskSrcs.push(lapelSrc);
-          if (pocketSrc) maskSrcs.push(pocketSrc);
-          if (breastPocketLayers) breastPocketLayers.forEach((l) => maskSrcs.push(l.src));
+          
+          
           const maskList = maskSrcs.map((s) => `url(${replaceColorInSrc(s)})`).join(',');
           const repeatList = maskSrcs.map(() => 'no-repeat').join(',');
           const sizeList = maskSrcs.map(() => 'contain').join(',');
@@ -356,6 +356,9 @@ const breastPocketLayers =
 };
 
 export default SuitPreview;
+
+
+
 
 
 
