@@ -344,21 +344,39 @@ export default function SuitPreview({ config }: Props) {
           </div>
         ))}
 
-        {/* Optional overlays on jacket */}
+        {/* Optional overlays on jacket (fabric-masked) */}
         {pocketSrc && (
-          <img
-            src={pocketSrc}
-            alt="Pockets"
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-          />
-        )}
+          <>
+            <div
+              className="absolute inset-0"
+              style={{
+                ...fabricMaskStyle(pocketSrc, "center", JACKET_CANVAS),
+                backgroundRepeat: "no-repeat",
+                opacity: fabricOpacity,
+                filter: fabricFilter,
+              }}
+            />
+            <img
+              src={toBlueStructSrc(pocketSrc)}
+              alt="Pockets struct"
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+              style={{ opacity: 0.18, filter: "grayscale(1) contrast(1.1)", mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
+            />
+          </>
+        ))}
         {breastPocketLayers?.map((l) => (
-          <img
-            key={`bp-${l.id}`}
-            src={l.src}
-            alt={l.name}
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-          />
+          <React.Fragment key={`bp-${l.id}`}>
+            <div
+              className="absolute inset-0"
+              style={{ ...fabricMaskStyle(l.src, "center", JACKET_CANVAS), opacity: fabricOpacity, filter: fabricFilter }}
+            />
+            <img
+              src={toBlueStructSrc(l.src)}
+              alt={l.name}
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+              style={{ opacity: 0.18, filter: "grayscale(1) contrast(1.1)", mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
+            />
+          </React.Fragment>
         ))}
       </div>
 
@@ -418,7 +436,18 @@ export default function SuitPreview({ config }: Props) {
 
           {/* Optional overlays for pants */}
           {cuffSrc && (
-            <img src={cuffSrc} alt="Cuffs" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+            <>
+              <div
+                className="absolute inset-0"
+                style={{ ...fabricMaskStyle(cuffSrc, "center", PANTS_CANVAS), opacity: fabricOpacity, filter: fabricFilter }}
+              />
+              <img
+                src={toBlueStructSrc(cuffSrc)}
+                alt="Cuffs"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                style={{ opacity: 0.16, filter: "grayscale(1) contrast(1.08)", mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
+              />
+            </>
           )}
           {pantsPleatSrc && (
             <img src={pantsPleatSrc} alt="Pleats" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
