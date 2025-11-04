@@ -56,10 +56,10 @@ const toneVisual = (tone?: string) => {
     };
   if (tone === "light")
     return {
-      shadeOpacity: 0.36,
-      shadeContrast: 1.1,
-      softLightTop: 0.07,
-      softLightBottom: 0.05,
+      shadeOpacity: 0.34,
+      shadeContrast: 1.06,
+      softLightTop: 0.045,
+      softLightBottom: 0.04,
       detailScale: "24%",
       detailOpacity: 0.30,
       detailBlend: "overlay" as React.CSSProperties["mixBlendMode"],
@@ -181,11 +181,11 @@ export default function SuitPreview({ config }: Props) {
       filter: fabricFilter,
       WebkitMaskImage: `url(${toTransparentSilhouette(src)})`,
       WebkitMaskRepeat: "no-repeat",
-      WebkitMaskSize: "contain",
+      WebkitMaskSize: "100% 100%",
       WebkitMaskPosition: align,
       maskImage: `url(${toTransparentSilhouette(src)})`,
       maskRepeat: "no-repeat",
-      maskSize: "contain",
+      maskSize: "100% 100%",
       maskPosition: align,
       pointerEvents: "none",
     } as React.CSSProperties;
