@@ -124,7 +124,7 @@ export default function SuitPreview({ config }: Props) {
 
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
-  const { opacity: fabricOpacity, filter: fabricFilter, blendMode: fabricBlend } = toneBlend(selectedFabric?.tone);
+  const { opacity: fabricOpacity, filter: fabricFilter } = toneBlend(selectedFabric?.tone);
   const vis = toneVisual(selectedFabric?.tone);
 
   if (loading) {
@@ -195,7 +195,6 @@ export default function SuitPreview({ config }: Props) {
       backgroundRepeat: 'no-repeat',
       opacity: fabricOpacity,
       filter: fabricFilter,
-      mixBlendMode: fabricBlend,
       WebkitMaskImage: toTransparentSilhouette(src),
       WebkitMaskRepeat: "no-repeat",
       WebkitMaskSize: "contain",
