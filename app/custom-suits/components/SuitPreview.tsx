@@ -179,9 +179,9 @@ export default function SuitPreview({ config }: Props) {
     const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
     return {
       backgroundImage: `url(${fabricTexture})`,
-      backgroundSize: bgSize,
-      backgroundPosition: bgPos,
-      backgroundRepeat: "no-repeat",
+      backgroundSize: 'cover',
+      backgroundPosition: 'center',
+      backgroundRepeat: 'no-repeat',
       opacity: fabricOpacity,
       filter: fabricFilter,
       WebkitMaskImage: toTransparentSilhouette(src),
@@ -284,14 +284,33 @@ export default function SuitPreview({ config }: Props) {
         {/* Jacket parts */}
         {bodyLayers.map((l) => (
           <div key={l.id} className="absolute inset-0">
-            {/* Base color wash temporarily disabled to avoid gray cast */}
+            {/* Base color wash (subtle, adds softness) */}
+            <div
+              className="absolute inset-0"
+              style={{
+                ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
+                opacity: Math.min(1, fabricOpacity * 0.18),
+                filter: `${fabricFilter} blur(5px) saturate(1.02)`,
+              }}
+            />
+            {/* Primary fabric */}
             <div
               className="absolute inset-0"
               style={{
                 ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
               }}
             />
-            {/* Detail layer disabled for clarity */}
+            {/* Fine detail (very light) */}
+            <div
+              className="absolute inset-0"
+              style={{
+                ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
+                backgroundSize: vis.detailScale,
+                opacity: l.id === "sleeves" ? 0.06 : 0.1,
+                filter: "contrast(1.02)",
+                mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
+              }}
+            />
             <img
               src={shadeSrcWebP(l.src)} onError={(e)=>{const f=shadeSrcPNG(l.src); if(e.currentTarget.src!==f) e.currentTarget.src=f;}}
               alt={l.name}
@@ -356,13 +375,13 @@ export default function SuitPreview({ config }: Props) {
       {/* CANVAS: Pants (images are 600x350) */}
       {pants && (
         <div className="relative mx-auto mt-2" style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720 }}>
-          {/* Base color wash for pants */}
+          {/* Base color wash for pants (subtle) */}
           <div
             className="absolute inset-0"
             style={{
               ...fabricMaskStyle(pants.src, "center", PANTS_CANVAS),
-              opacity: Math.min(1, fabricOpacity * 0.74),
-              filter: `${fabricFilter} blur(${vis.washBlur}px) saturate(1.05) brightness(1.01)`,
+              opacity: Math.min(1, fabricOpacity * 0.16),
+              filter: `${fabricFilter} blur(4px) saturate(1.02)`,
             }}
           />
           <div
