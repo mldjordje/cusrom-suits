@@ -13,13 +13,21 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const [fabrics, setFabrics] = useState<any[]>([]);
   const currentSuit = suits.find((s) => s.id === config.styleId);
 
+  const [toneFilter, setToneFilter] = useState<"all"|"light"|"medium"|"dark">("all");
+  const [sort, setSort] = useState<"date_desc"|"date_asc">("date_desc");
+
   useEffect(() => {
-    const url = `${getBackendBase()}fabrics.php`;
+    const base = getBackendBase();
+    const qs = new URLSearchParams();
+    if (toneFilter !== "all") qs.set("tone", toneFilter);
+    if (sort === "date_asc") { qs.set("sort", "created_at"); qs.set("order", "asc"); }
+    else { qs.set("sort", "created_at"); qs.set("order", "desc"); }
+    const url = `${base}fabrics.php` + (qs.toString()?`?${qs.toString()}`:"");
     fetch(url, { cache: "no-store" })
       .then((r) => r.json())
       .then((j) => { if (j.success) setFabrics(j.data); })
       .catch((e) => { console.error("Fabrics load error", e); });
-  }, []);
+  }, [toneFilter, sort]);
 
   const price = computePrice(config, suits);
   const fabricsNormalized = fabrics.map((x:any) => ({ ...x, id: String(x.id) }));
@@ -71,8 +79,20 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
       {/* FABRICS */}
       {activeTab === "FABRIC" && (
         <section className="animate-fade-in">
-          <h3 className="text-sm font-semibold text-[#444] mb-4">Fabric (Color)</h3>
+          <h3 className="text-sm font-semibold text-[#444] mb-2">Fabric (Color)</h3>
           <a href={uploadUrl} target="_blank" rel="noopener" className="inline-flex items-center justify-center mb-4 px-3 py-2 text-xs font-medium rounded-md border border-[#111] text-[#111] hover:bg-[#111] hover:text-white transition">CMS za tkanine</a>
+          <div className="flex items-center gap-3 mb-4">
+            <select className="border rounded p-2 text-xs" value={toneFilter} onChange={(e)=>setToneFilter(e.target.value as any)}>
+              <option value="all">All tones</option>
+              <option value="light">Light</option>
+              <option value="medium">Medium</option>
+              <option value="dark">Dark</option>
+            </select>
+            <select className="border rounded p-2 text-xs" value={sort} onChange={(e)=>setSort(e.target.value as any)}>
+              <option value="date_desc">Newest</option>
+              <option value="date_asc">Oldest</option>
+            </select>
+          </div>
           {fabrics.length === 0 ? (
             <p className="text-gray-400 text-xs italic">Učitavanje tkanina...</p>
           ) : (
