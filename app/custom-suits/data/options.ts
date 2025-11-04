@@ -385,7 +385,8 @@ export const suits: SuitModel[] = [
       {
         id: "torso",
         name: "Sredina sakoa",
-        src: "/assets/suits/blue/neck_double_breasted+buttons_4+lapel_medium+style_lapel_notch.png",
+        // Use transparent torso sprites so peak/notch swaps are available
+        src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_medium+style_lapel_notch.png",
       },
       { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/sleeves.png" },
       {
@@ -408,7 +409,18 @@ export const suits: SuitModel[] = [
           {
             id: "medium",
             name: "Medium",
-            src: "/assets/suits/blue/neck_double_breasted+buttons_4+lapel_medium+style_lapel_notch.png",
+            src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_medium+style_lapel_notch.png",
+          },
+        ],
+      },
+      {
+        id: "peak",
+        name: "Peak Lapel",
+        widths: [
+          {
+            id: "medium",
+            name: "Medium",
+            src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_medium+style_lapel_peak.png",
           },
         ],
       },
