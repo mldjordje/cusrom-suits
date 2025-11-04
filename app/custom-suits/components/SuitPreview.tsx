@@ -363,7 +363,7 @@ export default function SuitPreview({ config }: Props) {
               style={{ opacity: 0.18, filter: "grayscale(1) contrast(1.1)", mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
             />
           </>
-        ))}
+        )}
         {breastPocketLayers?.map((l) => (
           <React.Fragment key={`bp-${l.id}`}>
             <div
