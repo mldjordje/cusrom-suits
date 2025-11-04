@@ -4,6 +4,7 @@ import Image from "next/image";
 import { suits } from "../data/options";
 import { computePrice } from "../utils/price";
 import { SuitState } from "../hooks/useSuitConfigurator";
+import { getBackendBase } from "../utils/backend";
 
 type Props = { config: SuitState; dispatch: React.Dispatch<any> };
 
@@ -13,11 +14,11 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const currentSuit = suits.find((s) => s.id === config.styleId);
 
   useEffect(() => {
-    const BACKEND_BASE = (process.env.NEXT_PUBLIC_BACKEND_BASE || "").replace(/\/?$/, "/");
-    const url = BACKEND_BASE ? `${BACKEND_BASE}fabrics.php` : "/api/fabrics";
+    const url = `${getBackendBase()}fabrics.php`;
     fetch(url, { cache: "no-store" })
       .then((r) => r.json())
-      .then((j) => { if (j.success) setFabrics(j.data); });
+      .then((j) => { if (j.success) setFabrics(j.data); })
+      .catch((e) => { console.error("Fabrics load error", e); });
   }, []);
 
   const price = computePrice(config, suits);

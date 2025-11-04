@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
+import { getBackendBase } from "../utils/backend";
 
 // Use the original sprite itself as the mask.
 // PNGs already have transparent outside and exact canvas size, giving perfect alignment
@@ -37,14 +38,13 @@ export default function SuitPreview({ config }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    const BACKEND_BASE = (process.env.NEXT_PUBLIC_BACKEND_BASE || "").replace(/\/?$/, "/");
-    const url = BACKEND_BASE ? `${BACKEND_BASE}fabrics.php` : "/api/fabrics";
+    const url = `${getBackendBase()}fabrics.php`;
     fetch(url, { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         if (!cancelled && data?.success) setFabrics(data.data);
       })
-      .catch(() => {})
+      .catch((e) => { console.error("Fabrics load error", e); })
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;

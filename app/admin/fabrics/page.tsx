@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { getBackendBase } from "../../custom-suits/utils/backend";
 
 type PhpFabric = {
   id: number | string;
@@ -10,7 +11,7 @@ type PhpFabric = {
 };
 
 export default function FabricsAdminPage() {
-  const BACKEND_BASE = (process.env.NEXT_PUBLIC_BACKEND_BASE || "").replace(/\/?$/, "/");
+  const BACKEND_BASE = getBackendBase();
   const [list, setList] = useState<PhpFabric[]>([]);
   const [name, setName] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -131,4 +132,3 @@ export default function FabricsAdminPage() {
     </div>
   );
 }
-
