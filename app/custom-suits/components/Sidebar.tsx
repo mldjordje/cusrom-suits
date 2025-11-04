@@ -13,13 +13,16 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const currentSuit = suits.find((s) => s.id === config.styleId);
 
   useEffect(() => {
-    fetch("/api/fabrics", { cache: "no-store" })
+    const BACKEND_BASE = (process.env.NEXT_PUBLIC_BACKEND_BASE || "").replace(/\/?$/, "/");
+    const url = BACKEND_BASE ? `${BACKEND_BASE}fabrics.php` : "/api/fabrics";
+    fetch(url, { cache: "no-store" })
       .then((r) => r.json())
       .then((j) => { if (j.success) setFabrics(j.data); });
   }, []);
 
   const price = computePrice(config, suits);
-  const fabricPrice = fabrics.find((f) => f.id === config.colorId)?.price ?? 0;
+  const fabricsNormalized = fabrics.map((x:any) => ({ ...x, id: String(x.id) }));
+  const fabricPrice = fabricsNormalized.find((f:any) => f.id === config.colorId)?.price ?? 0;
 
   return (
     <div className="h-auto md:h-screen md:sticky md:top-0 overflow-y-auto flex flex-col bg-white px-4 md:px-8 py-6 md:py-8 border-b md:border-b-0 md:border-r border-gray-200 w-full md:w-80">
@@ -67,7 +70,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             <p className="text-gray-400 text-xs italic">Učitavanje tkanina...</p>
           ) : (
             <div className="grid grid-cols-2 gap-4">
-              {fabrics.map((fabric) => (
+              {fabricsNormalized.map((fabric) => (
                 <button key={fabric.id} onClick={() => dispatch({ type: "SET_COLOR", payload: fabric.id })} className={`relative border rounded-xl overflow-hidden transition-all duration-300 ${config.colorId === fabric.id ? "border-[#111] shadow-sm scale-105" : "border-[#ddd] hover:border-[#111]"}`}>
                   <div className="relative w-full h-20">
                     <Image src={fabric.texture} alt={fabric.name} fill style={{ objectFit: "cover" }} />
@@ -231,3 +234,4 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 };
 
 export default Sidebar;
+

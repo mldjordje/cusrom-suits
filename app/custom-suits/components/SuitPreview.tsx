@@ -37,7 +37,9 @@ export default function SuitPreview({ config }: Props) {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/fabrics", { cache: "no-store" })
+    const BACKEND_BASE = (process.env.NEXT_PUBLIC_BACKEND_BASE || "").replace(/\/?$/, "/");
+    const url = BACKEND_BASE ? `${BACKEND_BASE}fabrics.php` : "/api/fabrics";
+    fetch(url, { cache: "no-store" })
       .then((r) => r.json())
       .then((data) => {
         if (!cancelled && data?.success) setFabrics(data.data);
@@ -49,7 +51,7 @@ export default function SuitPreview({ config }: Props) {
     };
   }, []);
 
-  const selectedFabric = fabrics.find((f) => f.id === config.colorId);
+  const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
   const { opacity: fabricOpacity, filter: fabricFilter } = toneBlend(selectedFabric?.tone);
 
