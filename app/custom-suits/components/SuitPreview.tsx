@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
@@ -6,9 +6,9 @@ import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
 import { getBackendBase } from "../utils/backend";
 
-// Use the original sprite itself as the mask.
-// PNGs already have transparent outside and exact canvas size, giving perfect alignment
-// and removing dependency on remote silhouettes that may 404 and break masking.
+/* =====================================================================================
+   CDN helpers (ostaju jer maske i strukturalni sprite-ovi su i dalje iz transparent/)
+===================================================================================== */
 const cdnTransparent = getTransparentCdnBase();
 
 const fileBase = (p: string) => {
@@ -16,71 +16,82 @@ const fileBase = (p: string) => {
   return i >= 0 ? p.slice(i + 1) : p;
 };
 
-// Build WebP/PNG pair for CDN assets and prefer WebP with PNG fallback
 const cdnPair = (src: string) => {
   const base = fileBase(src).replace(/\.(png|jpg|jpeg|webp)$/i, "");
   return { webp: `${cdnTransparent}${base}.webp`, png: `${cdnTransparent}${base}.png` } as const;
 };
 
-// For CSS masks we can provide multiple URLs; browser uses the first that loads
+// Koristimo originalni transparent sprite kao CSS masku (WebP -> PNG fallback u listi)
 const toTransparentSilhouette = (src: string) => {
   const u = cdnPair(src);
   return `url(${u.webp}), url(${u.png})`;
 };
 
-// Shade <img>: start with WebP and on error fallback to PNG
-const shadeSrcWebP = (src: string) => cdnPair(src).webp;
-const shadeSrcPNG = (src: string) => cdnPair(src).png;
+/* =====================================================================================
+   Vizuelni presetovi (ton, kontrast, spekular, ivice)
+===================================================================================== */
 
-// Structural overlays from colored sprites removed to avoid tinted backgrounds; rely on transparent silhouettes only
+// Globalni noise (1x1 tiled PNG ~ neutral gray dots). Sprečava "plastičan" izgled.
+// Mali je, base64 inline (nema eksternih poziva).
+const NOISE_DATA =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWMYefz/fwAI1QLS/7j4OQAAAABJRU5ErkJggg==";
 
-// Keep fabric bright enough; tone-aware tweaks
+type Tone = "light" | "medium" | "dark" | undefined;
+
+// Ton-mapiranje (čuva dubinu crne, pojačava midtone, ali ne “pegla” svetla)
 const toneBlend = (tone?: string) => {
-  switch (tone) {
-    case "light":
-      return { opacity: 1, filter: "brightness(1.03) contrast(1.02)" } as const;
+  switch (tone as Tone) {
     case "dark":
-      return { opacity: 1, filter: "brightness(1.06) contrast(1.02)" } as const;
+      return { opacity: 1, filter: "brightness(1.04) contrast(1.20) saturate(1.12)" } as const;
+    case "light":
+      return { opacity: 1, filter: "brightness(1.06) contrast(1.10) saturate(1.08)" } as const;
     default:
-      return { opacity: 1, filter: "brightness(1.03) contrast(1.03)" } as const;
+      return { opacity: 1, filter: "brightness(1.05) contrast(1.14) saturate(1.10)" } as const;
   }
 };
 
-// Visual coefficients by tone for shading/highlights and detail texture
+// Parametri za “premium” svetlo po tonu — top/bottom soft-light, edge glow, highlight
 const toneVisual = (tone?: string) => {
   if (tone === "dark")
     return {
-      shadeOpacity: 0.42,
-      shadeContrast: 1.16,
       softLightTop: 0.08,
-      softLightBottom: 0.08,
-      detailScale: "22%",
-      detailOpacity: 0.26,
-      detailBlend: "soft-light" as React.CSSProperties["mixBlendMode"],
-      washBlur: 10,
+      softLightBottom: 0.07,
+      edgeGlow: 0.055,
+      specular: 0.22,
+      noise: 0.22,
+      vignette: 0.25,
+      fineDetail: 0.10,
+      fineDetailSleeve: 0.06,
+      detailScale: "24%",
     };
   if (tone === "light")
     return {
-      shadeOpacity: 0.34,
-      shadeContrast: 1.06,
-      softLightTop: 0.045,
-      softLightBottom: 0.04,
-      detailScale: "24%",
-      detailOpacity: 0.30,
-      detailBlend: "overlay" as React.CSSProperties["mixBlendMode"],
-      washBlur: 12,
+      softLightTop: 0.06,
+      softLightBottom: 0.05,
+      edgeGlow: 0.04,
+      specular: 0.16,
+      noise: 0.16,
+      vignette: 0.18,
+      fineDetail: 0.10,
+      fineDetailSleeve: 0.06,
+      detailScale: "26%",
     };
   return {
-    shadeOpacity: 0.38,
-    shadeContrast: 1.14,
-    softLightTop: 0.085,
-    softLightBottom: 0.075,
-    detailScale: "24%",
-    detailOpacity: 0.28,
-    detailBlend: "overlay" as React.CSSProperties["mixBlendMode"],
-    washBlur: 11,
+    softLightTop: 0.07,
+    softLightBottom: 0.06,
+    edgeGlow: 0.05,
+    specular: 0.20,
+    noise: 0.19,
+    vignette: 0.21,
+    fineDetail: 0.10,
+    fineDetailSleeve: 0.06,
+    detailScale: "25%",
   };
 };
+
+/* =====================================================================================
+   Komponenta
+===================================================================================== */
 
 type Props = { config: SuitState };
 
@@ -88,7 +99,7 @@ export default function SuitPreview({ config }: Props) {
   const [fabrics, setFabrics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fabric pan/zoom state (applies only to fabric, not silhouettes)
+  // Pan/zoom samo na teksturu tkanine (ne menja maske)
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false });
@@ -104,7 +115,7 @@ export default function SuitPreview({ config }: Props) {
       .then((data) => {
         if (!cancelled && data?.success) setFabrics(data.data);
       })
-      .catch((e) => { console.error("Fabrics load error", e); })
+      .catch((e) => console.error("Fabrics load error", e))
       .finally(() => !cancelled && setLoading(false));
     return () => {
       cancelled = true;
@@ -113,21 +124,28 @@ export default function SuitPreview({ config }: Props) {
 
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
-  const { opacity: fabricOpacity, filter: fabricFilter } = toneBlend(selectedFabric?.tone);
+
+  const tb = toneBlend(selectedFabric?.tone);
   const vis = toneVisual(selectedFabric?.tone);
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-400 text-sm">Učitavanje tkanina…</div>
+      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
+        Učitavanje tkanina…
+      </div>
     );
   }
   if (!selectedFabric) {
     return (
-      <div className="flex items-center justify-center h-full text-gray-500 text-sm">Izaberi tkaninu da vidiš odelo.</div>
+      <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+        Izaberi tkaninu da vidiš odelo.
+      </div>
     );
   }
 
-  // 1) Ensure torso sprite matches selected lapel so the mask lines up
+  /* -----------------------------------------------------------------------------
+     Dinamička zamena revera (da maska uvek prati izabrani rever)
+  ----------------------------------------------------------------------------- */
   const baseLayers: SuitLayer[] = currentSuit.layers || [];
   const selectedLapel =
     currentSuit.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit.lapels?.[0];
@@ -149,54 +167,96 @@ export default function SuitPreview({ config }: Props) {
     l.id === "torso" ? { ...l, src: swapLapelInPath(l.src, selectedLapel?.id, selectedLapelWidth?.id) } : l
   );
 
-  // 2) Optional overlays from options
-  const pocketSrc = config.pocketId && currentSuit.pockets?.find((p) => p.id === config.pocketId)?.src;
-  const cuffSrc = config.cuffId && currentSuit.cuffs?.find((c) => c.id === config.cuffId)?.src;
-  const pantsPleatSrc = config.pantsPleatId === "double" ? "/assets/suits/blue/pleats_double.png" : undefined;
+  /* -----------------------------------------------------------------------------
+     Opcioni slojevi (pockets/cuffs/breast pocket/interior)
+  ----------------------------------------------------------------------------- */
+  const pocketSrc =
+    config.pocketId && currentSuit.pockets?.find((p) => p.id === config.pocketId)?.src;
+
+  const cuffSrc =
+    config.cuffId && currentSuit.cuffs?.find((c) => c.id === config.cuffId)?.src;
+
+  const pantsPleatSrc =
+    config.pantsPleatId === "double" ? "/assets/suits/blue/pleats_double.png" : undefined;
+
   const interiorLayers: SuitLayer[] | undefined = (() => {
-    const defaultInterior = currentSuit.interiors?.[0];
-    const activeInteriorId = config.interiorId ?? defaultInterior?.id;
-    const found = currentSuit.interiors?.find((i) => i.id === activeInteriorId);
+    const def = currentSuit.interiors?.[0];
+    const active = config.interiorId ?? def?.id;
+    const found = currentSuit.interiors?.find((i) => i.id === active);
     return Array.isArray(found?.layers) ? found.layers : undefined;
   })();
+
   const breastPocketLayers: SuitLayer[] | undefined = (() => {
     const id = config.breastPocketId;
     const found = id ? currentSuit.breastPocket?.find((bp) => bp.id === id) : undefined;
     return Array.isArray(found?.layers) ? found.layers : undefined;
   })();
 
-  // Helper: build a fabric-masked layer using a silhouette as mask
-  // Important: Keep identical background mapping across parts by using fixed pixel bgSize/bgPosition
+  /* -----------------------------------------------------------------------------
+     Canvas konstante
+  ----------------------------------------------------------------------------- */
   const JACKET_CANVAS = { w: 600, h: 733 } as const;
   const PANTS_CANVAS = { w: 600, h: 350 } as const;
 
+  /* -----------------------------------------------------------------------------
+     Helperi za tkaninu (sa pan/zoom param.)
+  ----------------------------------------------------------------------------- */
   const fabricMaskStyle = (
     src: string,
-    align: "center" | "top center" = "center",
     canvas: { w: number; h: number } = JACKET_CANVAS
   ): React.CSSProperties => {
+    // koristimo pan/zoom nad teksturom
     const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
     const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
     return {
       backgroundImage: `url(${fabricTexture})`,
-      backgroundSize: 'cover',
-      backgroundPosition: 'center',
-      backgroundRepeat: 'no-repeat',
-      opacity: fabricOpacity,
-      filter: fabricFilter,
+      backgroundSize: bgSize,
+      backgroundPosition: bgPos,
+      backgroundRepeat: "repeat", // dozvoljavamo ponavljanje zbog weave obrazaca
+      opacity: tb.opacity,
+      filter: tb.filter,
       WebkitMaskImage: toTransparentSilhouette(src),
       WebkitMaskRepeat: "no-repeat",
       WebkitMaskSize: "contain",
-      WebkitMaskPosition: align,
+      WebkitMaskPosition: "center",
       maskImage: toTransparentSilhouette(src),
       maskRepeat: "no-repeat",
       maskSize: "contain",
-      maskPosition: align,
+      maskPosition: "center",
       pointerEvents: "none",
     } as React.CSSProperties;
   };
 
-  // Fabric pan/zoom handlers
+  // “Fine detail” overlay koristi istu teksturu, ali sitniji scale i drugačiji blend
+  const fineDetailStyle = (
+    src: string,
+    opacity: number,
+    size: string,
+    canvas: { w: number; h: number }
+  ): React.CSSProperties => {
+    return {
+      backgroundImage: `url(${fabricTexture})`,
+      backgroundRepeat: "repeat",
+      backgroundSize: size,
+      backgroundPosition: "center",
+      opacity,
+      mixBlendMode: "soft-light",
+      filter: "contrast(1.04)",
+      WebkitMaskImage: toTransparentSilhouette(src),
+      WebkitMaskRepeat: "no-repeat",
+      WebkitMaskSize: "contain",
+      WebkitMaskPosition: "center",
+      maskImage: toTransparentSilhouette(src),
+      maskRepeat: "no-repeat",
+      maskSize: "contain",
+      maskPosition: "center",
+      pointerEvents: "none",
+    } as React.CSSProperties;
+  };
+
+  /* -----------------------------------------------------------------------------
+     Pan/zoom handlers
+  ----------------------------------------------------------------------------- */
   const onWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
     e.preventDefault();
     const delta = -e.deltaY;
@@ -213,19 +273,109 @@ export default function SuitPreview({ config }: Props) {
     if (dragRef.current.active) dragRef.current.active = false;
   };
 
-  // Render order:
-  // - interiors (below jacket so they show through openings)
-  // - pants fabric + shade
-  // - jacket parts fabric + shade (sleeves, torso, bottom)
-  // - option overlays (pockets, cuffs, breast pocket)
-
-  // Prepare grouping by ids for deterministic order
+  /* -----------------------------------------------------------------------------
+     Render redosled
+  ----------------------------------------------------------------------------- */
   const pants = suitLayers.find((l) => l.id === "pants");
   const bodyLayers = suitLayers.filter((l) => l.id !== "pants");
 
+  /* -----------------------------------------------------------------------------
+     Simulirani shading/specular bez foldera:
+     - global vignette (multiply)
+     - top/bottom soft-light tok
+     - centralni vertical specular (overlay)
+     - edge glow (soft-light)
+     - micro-noise (overlay)
+     - per-part dodatni gradijenti (rukavi, ramena, rever)
+  ----------------------------------------------------------------------------- */
+  const GlobalPremiumOverlays: React.FC = () => (
+    <>
+      {/* Vignette */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `radial-gradient(100% 130% at 50% 0%, rgba(0,0,0,${vis.vignette}), rgba(0,0,0,0) 70%)`,
+          mixBlendMode: "multiply",
+        }}
+      />
+      {/* Top->Bottom flow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `linear-gradient(180deg, rgba(255,255,255,${vis.softLightTop}) 0%, rgba(0,0,0,${vis.softLightBottom}) 100%)`,
+          mixBlendMode: "soft-light",
+        }}
+      />
+      {/* Vertical specular */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(255,255,255,0.18) 48%, rgba(255,255,255,0.06) 50%, rgba(0,0,0,0.08) 52%)",
+          mixBlendMode: "overlay",
+          opacity: vis.specular,
+        }}
+      />
+      {/* Edge glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 20%, rgba(255,255,255,0) 80%, rgba(255,255,255,0.05))",
+          mixBlendMode: "soft-light",
+          opacity: vis.edgeGlow,
+        }}
+      />
+      {/* Micro-noise */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `url(${NOISE_DATA})`,
+          backgroundRepeat: "repeat",
+          backgroundSize: "auto",
+          mixBlendMode: "overlay",
+          opacity: vis.noise,
+          filter: "contrast(1.05)",
+        }}
+      />
+    </>
+  );
+
+  // Per-part naglasci (ramena/rukavi + rever)
+  const TorsoLapelEmphasis: React.FC = () => (
+    <div
+      className="absolute inset-0 pointer-events-none"
+      style={{
+        background:
+          // V senka ka dugmetu + blage dijagonalne svetle ivice revera
+          `radial-gradient(80% 80% at 50% 12%, rgba(0,0,0,0.06), rgba(0,0,0,0) 45%),` +
+          `linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 25%),` +
+          `linear-gradient(225deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 25%)`,
+        mixBlendMode: "soft-light",
+      }}
+    />
+  );
+
+  const SleeveShoulderEmphasis: React.FC = () => (
+    <div
+      className="absolute inset-0 pointer-events-none"
+      style={{
+        background:
+          // Blagi highlight po ramenima + zasenčenje ka laktu
+          `radial-gradient(60% 40% at 20% 5%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),` +
+          `radial-gradient(60% 40% at 80% 5%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),` +
+          `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0) 30%, rgba(0,0,0,0.05) 60%, rgba(0,0,0,0) 85%)`,
+        mixBlendMode: "soft-light",
+      }}
+    />
+  );
+
+  /* =====================================================================================
+     RENDER
+  ====================================================================================== */
   return (
-    <div className="w-full select-none">
-      {/* CANVAS: Jacket (images are 600x733) */}
+    <div className="w-full select-none bg-white">
+      {/* ======================== JACKET CANVAS ======================== */}
       <div
         className="relative mx-auto"
         style={{ width: "100%", aspectRatio: "600 / 733", maxWidth: 720 }}
@@ -235,7 +385,7 @@ export default function SuitPreview({ config }: Props) {
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseUp}
       >
-        {/* Interiors below fabric */}
+        {/* Interiors (ispod tkanine) */}
         {interiorLayers?.map((l) => (
           <img
             key={`int-${l.id}`}
@@ -245,206 +395,187 @@ export default function SuitPreview({ config }: Props) {
           />
         ))}
 
-        {/* Optional shirt overlay (between interiors and fabric) */}
+        {/* Opcioni “shirt” između interiora i tkanine */}
         {config.showShirt && (
           <img
             src={`${cdnTransparent}shirt_to_jacket_open.png`}
             onError={(e) => {
-              // Fallback to local asset if remote shirt is missing on CDN
               const local = "/assets/suits/transparent/shirt_to_jacket_open.png";
               if (e.currentTarget.src !== local) e.currentTarget.src = local;
             }}
             alt="Shirt"
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-            style={{ opacity: 1 }}
           />
         )}
 
-        {/* Premium depth overlays (soft-light highlights and vignette) */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              `radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,${vis.softLightTop}), rgba(255,255,255,0) 60%), radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,${vis.softLightBottom}), rgba(0,0,0,0) 55%)`,
-            mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
-          }}
-        />
-        {/* Edge light to crispen silhouette */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background:
-              "linear-gradient(90deg, rgba(255,255,255,0.045), rgba(255,255,255,0) 15%)," +
-              "linear-gradient(270deg, rgba(255,255,255,0.045), rgba(255,255,255,0) 15%)," +
-              "radial-gradient(80% 40% at 50% -10%, rgba(255,255,255,0.04), rgba(255,255,255,0) 70%)",
-            mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
-          }}
-        />
-
-        {/* Jacket parts */}
-        {bodyLayers.map((l) => (
-          <div key={l.id} className="absolute inset-0">
-            {/* Base color wash (subtle, adds softness) */}
-            <div
-              className="absolute inset-0"
-              style={{
-                ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
-                opacity: Math.min(1, fabricOpacity * 0.18),
-                filter: `${fabricFilter} blur(5px) saturate(1.02)`,
-              }}
-            />
-            {/* Primary fabric */}
-            <div
-              className="absolute inset-0"
-              style={{
-                ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
-              }}
-            />
-            {/* Fine detail (very light) */}
-            <div
-              className="absolute inset-0"
-              style={{
-                ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
-                backgroundSize: vis.detailScale,
-                opacity: l.id === "sleeves" ? 0.06 : 0.1,
-                filter: "contrast(1.02)",
-                mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
-              }}
-            />
-            <img
-              src={shadeSrcWebP(l.src)} onError={(e)=>{const f=shadeSrcPNG(l.src); if(e.currentTarget.src!==f) e.currentTarget.src=f;}}
-              alt={l.name}
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{
-                opacity: vis.shadeOpacity,
-                filter: `grayscale(1) contrast(${vis.shadeContrast}) blur(0.2px)`,
-                mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"],
-              }}
-            />
-            {/* Lapel emphasis: subtle V shadow + edge soft-light */}
-            {l.id === "torso" && (
+        {/* BODY LAYERS (torzo, rukavi, donji deo) */}
+        {suitLayers
+          .filter((l) => l.id !== "pants")
+          .map((l) => (
+            <div key={l.id} className="absolute inset-0">
+              {/* Blagi “wash” za mekoću */}
               <div
-                className="absolute inset-0 pointer-events-none"
+                className="absolute inset-0"
                 style={{
-                  background:
-                    `radial-gradient(80% 80% at 50% 10%, rgba(0,0,0,${Math.max(0.04, vis.softLightBottom - 0.02)}), rgba(0,0,0,0) 45%),` +
-                    `linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 25%),` +
-                    `linear-gradient(225deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 25%)`,
-                  mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
+                  ...fabricMaskStyle(l.src, JACKET_CANVAS),
+                  opacity: 0.18,
+                  filter: `${tb.filter} blur(4px) saturate(1.02)`,
                 }}
               />
-            )}
-          </div>
-        ))}
+              {/* Primarna tkanina */}
+              <div className="absolute inset-0" style={{ ...fabricMaskStyle(l.src, JACKET_CANVAS) }} />
+              {/* Fine detail (sitni weave refleksi) */}
+              <div
+                className="absolute inset-0"
+                style={{
+                  ...fineDetailStyle(
+                    l.src,
+                    l.id === "sleeves" ? vis.fineDetailSleeve : vis.fineDetail,
+                    vis.detailScale,
+                    JACKET_CANVAS
+                  ),
+                }}
+              />
+              {/* Per-part naglasci */}
+              {l.id === "torso" && <TorsoLapelEmphasis />}
+              {l.id === "sleeves" && <SleeveShoulderEmphasis />}
+            </div>
+          ))}
 
-        {/* Optional overlays on jacket (fabric-masked) */}
+        {/* Opcioni džepovi (fabric-masked) */}
         {pocketSrc && (
-          <>
+          <div className="absolute inset-0">
+            <div className="absolute inset-0" style={{ ...fabricMaskStyle(pocketSrc, JACKET_CANVAS) }} />
+            {/* Mikro kontrast na rubovima džepova */}
             <div
-              className="absolute inset-0"
+              className="absolute inset-0 pointer-events-none"
               style={{
-                ...fabricMaskStyle(pocketSrc, "center", JACKET_CANVAS),
-                opacity: fabricOpacity,
-                filter: fabricFilter,
+                background:
+                  "linear-gradient(180deg, rgba(0,0,0,0.10), rgba(0,0,0,0) 20%, rgba(0,0,0,0) 80%, rgba(0,0,0,0.10))",
+                mixBlendMode: "multiply",
+                opacity: 0.18,
+                WebkitMaskImage: toTransparentSilhouette(pocketSrc),
+                WebkitMaskRepeat: "no-repeat",
+                WebkitMaskSize: "contain",
+                WebkitMaskPosition: "center",
+                maskImage: toTransparentSilhouette(pocketSrc),
+                maskRepeat: "no-repeat",
+                maskSize: "contain",
+                maskPosition: "center",
               }}
             />
-            <img
-              src={shadeSrcWebP(pocketSrc as string)} onError={(e)=>{const f=shadeSrcPNG(pocketSrc as string); if(e.currentTarget.src!==f) e.currentTarget.src=f;}}
-              alt="Pockets shade"
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{ opacity: 0.18, filter: `grayscale(1) contrast(${Math.max(1.05, vis.shadeContrast - 0.06)})`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
-            />
-          </>
+          </div>
         )}
+
+        {/* Breast pocket (ako postoji set slojeva) */}
         {breastPocketLayers?.map((l) => (
           <React.Fragment key={`bp-${l.id}`}>
+            <div className="absolute inset-0" style={{ ...fabricMaskStyle(l.src, JACKET_CANVAS) }} />
             <div
-              className="absolute inset-0"
-              style={{ ...fabricMaskStyle(l.src, "center", JACKET_CANVAS), opacity: fabricOpacity, filter: fabricFilter }}
-            />
-            <img
-              src={shadeSrcWebP(l.src)} onError={(e)=>{const f=shadeSrcPNG(l.src); if(e.currentTarget.src!==f) e.currentTarget.src=f;}}
-              alt={l.name}
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{ opacity: 0.16, filter: `grayscale(1) contrast(${Math.max(1.05, vis.shadeContrast - 0.08)})`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                background:
+                  "linear-gradient(180deg, rgba(0,0,0,0.10), rgba(0,0,0,0) 25%, rgba(0,0,0,0) 75%, rgba(0,0,0,0.10))",
+                mixBlendMode: "multiply",
+                opacity: 0.16,
+                WebkitMaskImage: toTransparentSilhouette(l.src),
+                WebkitMaskRepeat: "no-repeat",
+                WebkitMaskSize: "contain",
+                WebkitMaskPosition: "center",
+                maskImage: toTransparentSilhouette(l.src),
+                maskRepeat: "no-repeat",
+                maskSize: "contain",
+                maskPosition: "center",
+              }}
             />
           </React.Fragment>
         ))}
+
+        {/* Global premium overlays (za jaknu) */}
+        <GlobalPremiumOverlays />
       </div>
 
-      {/* CANVAS: Pants (images are 600x350) */}
+      {/* ======================== PANTS CANVAS ======================== */}
       {pants && (
-        <div className="relative mx-auto mt-2" style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720 }}>
-          {/* Base color wash for pants (subtle) */}
+        <div
+          className="relative mx-auto mt-2"
+          style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720 }}
+        >
+          {/* Blagi wash */}
           <div
             className="absolute inset-0"
             style={{
-              ...fabricMaskStyle(pants.src, "center", PANTS_CANVAS),
-              opacity: Math.min(1, fabricOpacity * 0.16),
-              filter: `${fabricFilter} blur(4px) saturate(1.02)`,
+              ...fabricMaskStyle(pants.src, PANTS_CANVAS),
+              opacity: 0.16,
+              filter: `${tb.filter} blur(3px) saturate(1.02)`,
             }}
           />
+          {/* Primarna tkanina */}
+          <div className="absolute inset-0" style={{ ...fabricMaskStyle(pants.src, PANTS_CANVAS) }} />
+          {/* Fine weave detalj */}
           <div
             className="absolute inset-0"
             style={{
-              ...fabricMaskStyle(pants.src, "center", PANTS_CANVAS),
+              ...fineDetailStyle(pants.src, Math.max(0, vis.fineDetail - 0.02), vis.detailScale, PANTS_CANVAS),
+              filter: "contrast(1.05)",
             }}
           />
-          {/* Fine weave detail for pants */}
-          <div
-            className="absolute inset-0"
-            style={{
-              ...fabricMaskStyle(pants.src, "center", PANTS_CANVAS),
-              backgroundRepeat: "repeat",
-              backgroundSize: vis.detailScale,
-              opacity: Math.max(0, vis.detailOpacity - 0.08),
-              filter: "contrast(1.04)",
-              mixBlendMode: vis.detailBlend,
-            }}
-          />
-          {/* Premium depth overlays for pants */}
+          {/* Per-part dubina pantalona (senka pri pojasu + na dnu) */}
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                `radial-gradient(120% 120% at 20% 10%, rgba(255,255,255,${Math.max(0.04, vis.softLightTop-0.02)}), rgba(255,255,255,0) 50%), ` +
-                `radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,${Math.max(0.05, vis.softLightBottom-0.01)}), rgba(0,0,0,0) 55%)`,
-              mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
+                `linear-gradient(180deg, rgba(0,0,0,0.07), rgba(0,0,0,0) 35%),` +
+                `linear-gradient(0deg, rgba(0,0,0,0.06), rgba(0,0,0,0) 65%)`,
+              mixBlendMode: "multiply",
+              WebkitMaskImage: toTransparentSilhouette(pants.src),
+              WebkitMaskRepeat: "no-repeat",
+              WebkitMaskSize: "contain",
+              WebkitMaskPosition: "center",
+              maskImage: toTransparentSilhouette(pants.src),
+              maskRepeat: "no-repeat",
+              maskSize: "contain",
+              maskPosition: "center",
             }}
           />
-          {/* Shade using transparent silhouette */}
-          <img
-            src={shadeSrcWebP(pants.src)} onError={(e)=>{const f=shadeSrcPNG(pants.src); if(e.currentTarget.src!==f) e.currentTarget.src=f;}}
-            alt={pants.name}
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-            style={{ opacity: 0.34, filter: `grayscale(1) contrast(${vis.shadeContrast}) blur(0.15px)`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
-          />
 
-          {/* Optional overlays for pants */}
+          {/* Cuffs (opciono) */}
           {cuffSrc && (
             <>
+              <div className="absolute inset-0" style={{ ...fabricMaskStyle(cuffSrc, PANTS_CANVAS) }} />
               <div
-                className="absolute inset-0"
-                style={{ ...fabricMaskStyle(cuffSrc, "center", PANTS_CANVAS), opacity: fabricOpacity, filter: fabricFilter }}
-              />
-              <img
-                src={shadeSrcWebP(cuffSrc as string)} onError={(e)=>{const f=shadeSrcPNG(cuffSrc as string); if(e.currentTarget.src!==f) e.currentTarget.src=f;}}
-                alt="Cuffs"
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                style={{ opacity: 0.16, filter: `grayscale(1) contrast(${Math.max(1.04, vis.shadeContrast - 0.1)})`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "linear-gradient(180deg, rgba(0,0,0,0.12), rgba(0,0,0,0) 40%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.12))",
+                  mixBlendMode: "multiply",
+                  opacity: 0.16,
+                  WebkitMaskImage: toTransparentSilhouette(cuffSrc),
+                  WebkitMaskRepeat: "no-repeat",
+                  WebkitMaskSize: "contain",
+                  WebkitMaskPosition: "center",
+                  maskImage: toTransparentSilhouette(cuffSrc),
+                  maskRepeat: "no-repeat",
+                  maskSize: "contain",
+                  maskPosition: "center",
+                }}
               />
             </>
           )}
+
+          {/* Pleats (png overlay, bez maske) */}
           {pantsPleatSrc && (
-            <img src={pantsPleatSrc} alt="Pleats" className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+            <img
+              src={pantsPleatSrc}
+              alt="Pleats"
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+            />
           )}
+
+          {/* Global premium overlays (za pantalone) */}
+          <GlobalPremiumOverlays />
         </div>
       )}
     </div>
   );
 }
-
-
-
-
-
