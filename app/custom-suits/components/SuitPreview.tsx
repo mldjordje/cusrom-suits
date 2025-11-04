@@ -42,9 +42,9 @@ type Tone = "light" | "medium" | "dark" | undefined;
 const toneBlend = (tone?: string) => {
   switch (tone as Tone) {
     case "dark":
-      return { opacity: 1, filter: "brightness(1.04) contrast(1.20) saturate(1.12)" } as const;
+      return { opacity: 1, filter: "brightness(1.05) contrast(1.18) saturate(1.1)" } as const;
     case "light":
-      return { opacity: 1, filter: "brightness(1.06) contrast(1.10) saturate(1.08)" } as const;
+      return { opacity: 1, filter: "brightness(1.02) contrast(1.10) saturate(1.05)" } as const;
     default:
       return { opacity: 1, filter: "brightness(1.05) contrast(1.14) saturate(1.10)" } as const;
   }
@@ -241,7 +241,7 @@ export default function SuitPreview({ config }: Props) {
       backgroundPosition: "center",
       opacity,
       mixBlendMode: "soft-light",
-      filter: "contrast(1.04)",
+      filter: "contrast(1.12) brightness(1.05)",
       WebkitMaskImage: toTransparentSilhouette(src),
       WebkitMaskRepeat: "no-repeat",
       WebkitMaskSize: "contain",
@@ -374,7 +374,12 @@ export default function SuitPreview({ config }: Props) {
      RENDER
   ====================================================================================== */
   return (
-    <div className="w-full select-none bg-white">
+    <div
+      className="w-full select-none"
+      style={{
+        background: "radial-gradient(100% 160% at 50% 0%, #f5f5f5 0%, #ffffff 100%)",
+      }}
+    >
       {/* ======================== JACKET CANVAS ======================== */}
       <div
         className="relative mx-auto"
@@ -434,6 +439,35 @@ export default function SuitPreview({ config }: Props) {
                     vis.detailScale,
                     JACKET_CANVAS
                   ),
+                }}
+              />
+              {/* Ambient depth simulation */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "radial-gradient(90% 100% at 50% 20%, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.04) 40%, rgba(255,255,255,0.04) 80%, rgba(255,255,255,0) 100%)",
+                  mixBlendMode: "soft-light",
+                }}
+              />
+              {/* Shoulder and side shadow */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "linear-gradient(90deg, rgba(0,0,0,0.20) 0%, rgba(0,0,0,0.05) 20%, rgba(0,0,0,0) 40%, rgba(0,0,0,0) 60%, rgba(0,0,0,0.05) 80%, rgba(0,0,0,0.20) 100%)",
+                  mixBlendMode: "multiply",
+                  opacity: 0.6,
+                }}
+              />
+              {/* Lapel highlight */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    "linear-gradient(135deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 25%), linear-gradient(225deg, rgba(255,255,255,0.22), rgba(255,255,255,0) 25%)",
+                  mixBlendMode: "screen",
+                  opacity: 0.3,
                 }}
               />
               {/* Per-part naglasci */}
