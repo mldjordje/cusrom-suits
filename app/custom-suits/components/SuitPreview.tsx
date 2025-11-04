@@ -176,11 +176,11 @@ export default function SuitPreview({ config }: Props) {
       filter: fabricFilter,
       WebkitMaskImage: `url(${toTransparentSilhouette(src)})`,
       WebkitMaskRepeat: "no-repeat",
-      WebkitMaskSize: "100% 100%",
+      WebkitMaskSize: "contain",
       WebkitMaskPosition: align,
       maskImage: `url(${toTransparentSilhouette(src)})`,
       maskRepeat: "no-repeat",
-      maskSize: "100% 100%",
+      maskSize: "contain",
       maskPosition: align,
       pointerEvents: "none",
     } as React.CSSProperties;
@@ -274,34 +274,14 @@ export default function SuitPreview({ config }: Props) {
         {/* Jacket parts */}
         {bodyLayers.map((l) => (
           <div key={l.id} className="absolute inset-0">
-            {/* Base color wash (smooths fabric tone) */}
-            <div
-              className="absolute inset-0"
-              style={{
-                ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
-                opacity: Math.min(1, fabricOpacity * 0.76),
-                filter: `${fabricFilter} blur(${vis.washBlur}px) saturate(1.06) brightness(1.02)`,
-              }}
-            />
+            {/* Base color wash temporarily disabled to avoid gray cast */}
             <div
               className="absolute inset-0"
               style={{
                 ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
               }}
             />
-            {/* Fine weave detail (adds premium texture) */}
-            <div
-              className="absolute inset-0"
-              style={{
-                ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
-                backgroundRepeat: "repeat",
-                // smaller scale to repeat the weave pattern
-                backgroundSize: vis.detailScale,
-                opacity: l.id === "sleeves" ? Math.max(0, vis.detailOpacity - 0.06) : vis.detailOpacity,
-                filter: "contrast(1.05)",
-                mixBlendMode: vis.detailBlend,
-              }}
-            />
+            {/* Detail layer disabled for clarity */}
             <img
               src={toShadeSrc(l.src)}
               alt={l.name}
