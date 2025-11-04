@@ -16,11 +16,21 @@ const fileBase = (p: string) => {
   return i >= 0 ? p.slice(i + 1) : p;
 };
 
-// Always use remote transparent silhouettes for perfect alpha masks
-const toTransparentSilhouette = (src: string) => `${cdnTransparent}${fileBase(src)}`;
+// Build WebP/PNG pair for CDN assets and prefer WebP with PNG fallback
+const cdnPair = (src: string) => {
+  const base = fileBase(src).replace(/\.(png|jpg|jpeg|webp)$/i, "");
+  return { webp: `${cdnTransparent}${base}.webp`, png: `${cdnTransparent}${base}.png` } as const;
+};
 
-// Also use the same transparent silhouette as a multiply shade overlay
-const toShadeSrc = (src: string) => `${cdnTransparent}${fileBase(src)}`;
+// For CSS masks we can provide multiple URLs; browser uses the first that loads
+const toTransparentSilhouette = (src: string) => {
+  const u = cdnPair(src);
+  return `url(${u.webp}), url(${u.png})`;
+};
+
+// Shade <img>: start with WebP and on error fallback to PNG
+const shadeSrcWebP = (src: string) => cdnPair(src).webp;
+const shadeSrcPNG = (src: string) => cdnPair(src).png;
 
 // Structural overlays from colored sprites removed to avoid tinted backgrounds; rely on transparent silhouettes only
 
@@ -174,11 +184,11 @@ export default function SuitPreview({ config }: Props) {
       backgroundRepeat: "no-repeat",
       opacity: fabricOpacity,
       filter: fabricFilter,
-      WebkitMaskImage: `url(${toTransparentSilhouette(src)})`,
+      WebkitMaskImage: toTransparentSilhouette(src),
       WebkitMaskRepeat: "no-repeat",
       WebkitMaskSize: "contain",
       WebkitMaskPosition: align,
-      maskImage: `url(${toTransparentSilhouette(src)})`,
+      maskImage: toTransparentSilhouette(src),
       maskRepeat: "no-repeat",
       maskSize: "contain",
       maskPosition: align,
@@ -283,7 +293,7 @@ export default function SuitPreview({ config }: Props) {
             />
             {/* Detail layer disabled for clarity */}
             <img
-              src={toShadeSrc(l.src)}
+              src={shadeSrcWebP(l.src)} onError={(e)=>{const f=shadeSrcPNG(l.src); if(e.currentTarget.src!==f) e.currentTarget.src=f;}}
               alt={l.name}
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
               style={{
@@ -320,7 +330,7 @@ export default function SuitPreview({ config }: Props) {
               }}
             />
             <img
-              src={toShadeSrc(pocketSrc)}
+              src={shadeSrcWebP(pocketSrc as string)} onError={(e)=>{const f=shadeSrcPNG(pocketSrc as string); if(e.currentTarget.src!==f) e.currentTarget.src=f;}}
               alt="Pockets shade"
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
               style={{ opacity: 0.18, filter: `grayscale(1) contrast(${Math.max(1.05, vis.shadeContrast - 0.06)})`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
@@ -334,7 +344,7 @@ export default function SuitPreview({ config }: Props) {
               style={{ ...fabricMaskStyle(l.src, "center", JACKET_CANVAS), opacity: fabricOpacity, filter: fabricFilter }}
             />
             <img
-              src={toShadeSrc(l.src)}
+              src={shadeSrcWebP(l.src)} onError={(e)=>{const f=shadeSrcPNG(l.src); if(e.currentTarget.src!==f) e.currentTarget.src=f;}}
               alt={l.name}
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
               style={{ opacity: 0.16, filter: `grayscale(1) contrast(${Math.max(1.05, vis.shadeContrast - 0.08)})`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
@@ -385,7 +395,7 @@ export default function SuitPreview({ config }: Props) {
           />
           {/* Shade using transparent silhouette */}
           <img
-            src={toShadeSrc(pants.src)}
+            src={shadeSrcWebP(pants.src)} onError={(e)=>{const f=shadeSrcPNG(pants.src); if(e.currentTarget.src!==f) e.currentTarget.src=f;}}
             alt={pants.name}
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             style={{ opacity: 0.34, filter: `grayscale(1) contrast(${vis.shadeContrast}) blur(0.15px)`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
@@ -399,7 +409,7 @@ export default function SuitPreview({ config }: Props) {
                 style={{ ...fabricMaskStyle(cuffSrc, "center", PANTS_CANVAS), opacity: fabricOpacity, filter: fabricFilter }}
               />
               <img
-                src={toShadeSrc(cuffSrc)}
+                src={shadeSrcWebP(cuffSrc as string)} onError={(e)=>{const f=shadeSrcPNG(cuffSrc as string); if(e.currentTarget.src!==f) e.currentTarget.src=f;}}
                 alt="Cuffs"
                 className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                 style={{ opacity: 0.16, filter: `grayscale(1) contrast(${Math.max(1.04, vis.shadeContrast - 0.1)})`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
@@ -414,4 +424,8 @@ export default function SuitPreview({ config }: Props) {
     </div>
   );
 }
+
+
+
+
 
