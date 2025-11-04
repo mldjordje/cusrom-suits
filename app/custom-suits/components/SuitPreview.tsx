@@ -22,16 +22,23 @@ const toTransparentSilhouette = (src: string) => `${cdnTransparent}${fileBase(sr
 // Also use the same transparent silhouette as a multiply shade overlay
 const toShadeSrc = (src: string) => `${cdnTransparent}${fileBase(src)}`;
 
-// Keep fabric bright enough; small tweaks by tone
+// Keep fabric bright enough; tone-aware tweaks
 const toneBlend = (tone?: string) => {
   switch (tone) {
     case "light":
-      return { opacity: 1, filter: "brightness(1.04) contrast(1.02)" } as const;
-    case "dark":
-      return { opacity: 1, filter: "brightness(1.06)" } as const;
-    default:
       return { opacity: 1, filter: "brightness(1.03) contrast(1.02)" } as const;
+    case "dark":
+      return { opacity: 1, filter: "brightness(1.06) contrast(1.02)" } as const;
+    default:
+      return { opacity: 1, filter: "brightness(1.03) contrast(1.03)" } as const;
   }
+};
+
+// Visual coefficients by tone for shading/highlights
+const toneVisual = (tone?: string) => {
+  if (tone === "dark") return { shadeOpacity: 0.46, shadeContrast: 1.24, softLightTop: 0.12, softLightBottom: 0.10 };
+  if (tone === "light") return { shadeOpacity: 0.32, shadeContrast: 1.12, softLightTop: 0.06, softLightBottom: 0.05 };
+  return { shadeOpacity: 0.38, shadeContrast: 1.18, softLightTop: 0.08, softLightBottom: 0.07 };
 };
 
 type Props = { config: SuitState };
@@ -66,6 +73,7 @@ export default function SuitPreview({ config }: Props) {
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
   const { opacity: fabricOpacity, filter: fabricFilter } = toneBlend(selectedFabric?.tone);
+  const vis = toneVisual(selectedFabric?.tone);
 
   if (loading) {
     return (
@@ -191,7 +199,7 @@ export default function SuitPreview({ config }: Props) {
           className="absolute inset-0 pointer-events-none"
           style={{
             background:
-              "radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%), radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,0.07), rgba(0,0,0,0) 55%)",
+              `radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,${vis.softLightTop}), rgba(255,255,255,0) 60%), radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,${vis.softLightBottom}), rgba(0,0,0,0) 55%)`,
             mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
           }}
         />
@@ -212,8 +220,8 @@ export default function SuitPreview({ config }: Props) {
               alt={l.name}
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
               style={{
-                opacity: 0.36,
-                filter: "grayscale(1) contrast(1.18)",
+                opacity: vis.shadeOpacity,
+                filter: `grayscale(1) contrast(${vis.shadeContrast}) blur(0.2px)`,
                 mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"],
               }}
             />
