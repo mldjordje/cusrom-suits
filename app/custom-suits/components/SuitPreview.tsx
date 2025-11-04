@@ -34,11 +34,40 @@ const toneBlend = (tone?: string) => {
   }
 };
 
-// Visual coefficients by tone for shading/highlights
+// Visual coefficients by tone for shading/highlights and detail texture
 const toneVisual = (tone?: string) => {
-  if (tone === "dark") return { shadeOpacity: 0.46, shadeContrast: 1.24, softLightTop: 0.12, softLightBottom: 0.10 };
-  if (tone === "light") return { shadeOpacity: 0.32, shadeContrast: 1.12, softLightTop: 0.06, softLightBottom: 0.05 };
-  return { shadeOpacity: 0.38, shadeContrast: 1.18, softLightTop: 0.08, softLightBottom: 0.07 };
+  if (tone === "dark")
+    return {
+      shadeOpacity: 0.42,
+      shadeContrast: 1.16,
+      softLightTop: 0.08,
+      softLightBottom: 0.08,
+      detailScale: "22%",
+      detailOpacity: 0.26,
+      detailBlend: "soft-light" as React.CSSProperties["mixBlendMode"],
+      washBlur: 10,
+    };
+  if (tone === "light")
+    return {
+      shadeOpacity: 0.36,
+      shadeContrast: 1.1,
+      softLightTop: 0.07,
+      softLightBottom: 0.05,
+      detailScale: "24%",
+      detailOpacity: 0.30,
+      detailBlend: "overlay" as React.CSSProperties["mixBlendMode"],
+      washBlur: 12,
+    };
+  return {
+    shadeOpacity: 0.38,
+    shadeContrast: 1.14,
+    softLightTop: 0.085,
+    softLightBottom: 0.075,
+    detailScale: "24%",
+    detailOpacity: 0.28,
+    detailBlend: "overlay" as React.CSSProperties["mixBlendMode"],
+    washBlur: 11,
+  };
 };
 
 type Props = { config: SuitState };
@@ -203,6 +232,17 @@ export default function SuitPreview({ config }: Props) {
             mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
           }}
         />
+        {/* Edge light to crispen silhouette */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            background:
+              "linear-gradient(90deg, rgba(255,255,255,0.045), rgba(255,255,255,0) 15%)," +
+              "linear-gradient(270deg, rgba(255,255,255,0.045), rgba(255,255,255,0) 15%)," +
+              "radial-gradient(80% 40% at 50% -10%, rgba(255,255,255,0.04), rgba(255,255,255,0) 70%)",
+            mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
+          }}
+        />
 
         {/* Jacket parts */}
         {bodyLayers.map((l) => (
@@ -212,8 +252,8 @@ export default function SuitPreview({ config }: Props) {
               className="absolute inset-0"
               style={{
                 ...fabricMaskStyle(l.src, "center"),
-                opacity: Math.min(1, fabricOpacity * 0.75),
-                filter: `${fabricFilter} blur(10px) saturate(1.06) brightness(1.02)`,
+                opacity: Math.min(1, fabricOpacity * 0.76),
+                filter: `${fabricFilter} blur(${vis.washBlur}px) saturate(1.06) brightness(1.02)`,
                 transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
                 transformOrigin: "center",
               }}
@@ -233,10 +273,10 @@ export default function SuitPreview({ config }: Props) {
                 ...fabricMaskStyle(l.src, "center"),
                 backgroundRepeat: "repeat",
                 // smaller scale to repeat the weave pattern
-                backgroundSize: "28%",
-                opacity: 0.34,
-                filter: "contrast(1.06)",
-                mixBlendMode: "overlay" as React.CSSProperties["mixBlendMode"],
+                backgroundSize: vis.detailScale,
+                opacity: l.id === "sleeves" ? Math.max(0, vis.detailOpacity - 0.06) : vis.detailOpacity,
+                filter: "contrast(1.05)",
+                mixBlendMode: vis.detailBlend,
                 transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
                 transformOrigin: "center",
               }}
@@ -280,8 +320,8 @@ export default function SuitPreview({ config }: Props) {
             className="absolute inset-0"
             style={{
               ...fabricMaskStyle(pants.src, "center"),
-              opacity: Math.min(1, fabricOpacity * 0.75),
-              filter: `${fabricFilter} blur(10px) saturate(1.06) brightness(1.02)`,
+              opacity: Math.min(1, fabricOpacity * 0.74),
+              filter: `${fabricFilter} blur(${vis.washBlur}px) saturate(1.05) brightness(1.01)`,
               transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
               transformOrigin: "center",
             }}
@@ -300,10 +340,10 @@ export default function SuitPreview({ config }: Props) {
             style={{
               ...fabricMaskStyle(pants.src, "center"),
               backgroundRepeat: "repeat",
-              backgroundSize: "28%",
-              opacity: 0.32,
-              filter: "contrast(1.05)",
-              mixBlendMode: "overlay" as React.CSSProperties["mixBlendMode"],
+              backgroundSize: vis.detailScale,
+              opacity: Math.max(0, vis.detailOpacity - 0.08),
+              filter: "contrast(1.04)",
+              mixBlendMode: vis.detailBlend,
               transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
               transformOrigin: "center",
             }}
@@ -313,7 +353,8 @@ export default function SuitPreview({ config }: Props) {
             className="absolute inset-0 pointer-events-none"
             style={{
               background:
-                "radial-gradient(120% 120% at 20% 10%, rgba(255,255,255,0.05), rgba(255,255,255,0) 50%), radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,0.06), rgba(0,0,0,0) 55%)",
+                `radial-gradient(120% 120% at 20% 10%, rgba(255,255,255,${Math.max(0.04, vis.softLightTop-0.02)}), rgba(255,255,255,0) 50%), ` +
+                `radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,${Math.max(0.05, vis.softLightBottom-0.01)}), rgba(0,0,0,0) 55%)`,
               mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
             }}
           />
