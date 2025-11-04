@@ -406,22 +406,18 @@ export const suits: SuitModel[] = [
         id: "notch",
         name: "Notch Lapel",
         widths: [
-          {
-            id: "medium",
-            name: "Medium",
-            src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_medium+style_lapel_notch.png",
-          },
+          { id: "narrow", name: "Narrow", src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_narrow+style_lapel_notch.png" },
+          { id: "medium", name: "Medium", src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_medium+style_lapel_notch.png" },
+          { id: "wide", name: "Wide", src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_wide+style_lapel_notch.png" },
         ],
       },
       {
         id: "peak",
         name: "Peak Lapel",
         widths: [
-          {
-            id: "medium",
-            name: "Medium",
-            src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_medium+style_lapel_peak.png",
-          },
+          { id: "narrow", name: "Narrow", src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_narrow+style_lapel_peak.png" },
+          { id: "medium", name: "Medium", src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_medium+style_lapel_peak.png" },
+          { id: "wide", name: "Wide", src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_wide+style_lapel_peak.png" },
         ],
       },
     ],

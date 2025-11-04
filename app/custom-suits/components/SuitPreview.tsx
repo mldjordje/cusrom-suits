@@ -3,12 +3,24 @@
 import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
+import { getTransparentCdnBase } from "../utils/backend";
 import { getBackendBase } from "../utils/backend";
 
 // Use the original sprite itself as the mask.
 // PNGs already have transparent outside and exact canvas size, giving perfect alignment
 // and removing dependency on remote silhouettes that may 404 and break masking.
-const toTransparentSilhouette = (src: string) => src;
+const cdnTransparent = getTransparentCdnBase();
+
+const fileBase = (p: string) => {
+  const i = p.lastIndexOf("/");
+  return i >= 0 ? p.slice(i + 1) : p;
+};
+
+// Always use remote transparent silhouettes for perfect alpha masks
+const toTransparentSilhouette = (src: string) => `${cdnTransparent}${fileBase(src)}`;
+
+// Also use the same transparent silhouette as a multiply shade overlay
+const toShadeSrc = (src: string) => `${cdnTransparent}${fileBase(src)}`;
 
 // Keep fabric bright enough; small tweaks by tone
 const toneBlend = (tone?: string) => {
@@ -196,12 +208,12 @@ export default function SuitPreview({ config }: Props) {
               }}
             />
             <img
-              src={l.src}
+              src={toShadeSrc(l.src)}
               alt={l.name}
               className="absolute inset-0 w-full h-full object-contain pointer-events-none"
               style={{
-                opacity: 0.4,
-                filter: "grayscale(1) contrast(1.16)",
+                opacity: 0.36,
+                filter: "grayscale(1) contrast(1.18)",
                 mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"],
               }}
             />
