@@ -3,9 +3,9 @@
   "/api/fabrics/route": "app/api/fabrics/route.js",
   "/api/linings/route": "app/api/linings/route.js",
   "/favicon.ico/route": "app/favicon.ico/route.js",
-  "/admin/fabrics/page": "app/admin/fabrics/page.js",
   "/admin/linings/page": "app/admin/linings/page.js",
   "/custom-suits/measure/page": "app/custom-suits/measure/page.js",
   "/custom-suits/page": "app/custom-suits/page.js",
+  "/admin/fabrics/page": "app/admin/fabrics/page.js",
   "/page": "app/page.js"
 }
