@@ -22,6 +22,13 @@ const toTransparentSilhouette = (src: string) => `${cdnTransparent}${fileBase(sr
 // Also use the same transparent silhouette as a multiply shade overlay
 const toShadeSrc = (src: string) => `${cdnTransparent}${fileBase(src)}`;
 
+// Structural overlay (grayscale from colored sprites) to bring seams/creases
+const toBlueStructSrc = (src: string) => {
+  // Accept both transparent and colored paths; always resolve to blue set
+  const base = fileBase(src);
+  return `/assets/suits/blue/${base}`;
+};
+
 // Keep fabric bright enough; tone-aware tweaks
 const toneBlend = (tone?: string) => {
   switch (tone) {
@@ -281,6 +288,17 @@ export default function SuitPreview({ config }: Props) {
                 transformOrigin: "center",
               }}
             />
+            {/* Structural grayscale from colored sprite (seams/creases) */}
+            <img
+              src={toBlueStructSrc(l.src)}
+              alt={l.name + " structure"}
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+              style={{
+                opacity: l.id === "torso" ? Math.max(0.14, vis.detailOpacity - 0.06) : Math.max(0.12, vis.detailOpacity - 0.08),
+                filter: `grayscale(1) contrast(${Math.max(1.1, vis.shadeContrast - 0.06)}) brightness(0.98) blur(0.25px)`,
+                mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"],
+              }}
+            />
             <img
               src={toShadeSrc(l.src)}
               alt={l.name}
@@ -291,6 +309,19 @@ export default function SuitPreview({ config }: Props) {
                 mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"],
               }}
             />
+            {/* Lapel emphasis: subtle V shadow + edge soft-light */}
+            {l.id === "torso" && (
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background:
+                    `radial-gradient(80% 80% at 50% 10%, rgba(0,0,0,${Math.max(0.04, vis.softLightBottom - 0.02)}), rgba(0,0,0,0) 45%),` +
+                    `linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 25%),` +
+                    `linear-gradient(225deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 25%)`,
+                  mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
+                }}
+              />
+            )}
           </div>
         ))}
 
@@ -357,6 +388,13 @@ export default function SuitPreview({ config }: Props) {
                 `radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,${Math.max(0.05, vis.softLightBottom-0.01)}), rgba(0,0,0,0) 55%)`,
               mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
             }}
+          />
+          {/* Structural grayscale for pants seams */}
+          <img
+            src={toBlueStructSrc(pants.src)}
+            alt={pants.name + " structure"}
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+            style={{ opacity: Math.max(0.10, vis.detailOpacity - 0.10), filter: `grayscale(1) contrast(${Math.max(1.08, vis.shadeContrast - 0.08)}) blur(0.2px)`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
           />
           <img
             src={toShadeSrc(pants.src)}
