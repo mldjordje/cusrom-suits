@@ -230,6 +230,16 @@ export default function SuitPreview({ config }: Props) {
           />
         ))}
 
+        {/* Optional shirt overlay (between interiors and fabric) */}
+        {config.showShirt && (
+          <img
+            src={`${cdnTransparent}shirt_to_jacket_open.png`}
+            alt="Shirt"
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+            style={{ opacity: 1 }}
+          />
+        )}
+
         {/* Premium depth overlays (soft-light highlights and vignette) */}
         <div
           className="absolute inset-0 pointer-events-none"
