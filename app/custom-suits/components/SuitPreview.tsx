@@ -34,26 +34,15 @@ const shadeSrcPNG = (src: string) => cdnPair(src).png;
 
 // Structural overlays from colored sprites removed to avoid tinted backgrounds; rely on transparent silhouettes only
 
-// Tone-aware fabric compositing settings for realistic depth and contrast
+// Keep fabric bright enough; tone-aware tweaks
 const toneBlend = (tone?: string) => {
   switch (tone) {
-    case "dark":
-      return {
-        opacity: 0.75,
-        filter: "brightness(1.05) contrast(1.15) saturate(1.1)",
-        blendMode: "multiply" as React.CSSProperties["mixBlendMode"],
-      } as const;
     case "light":
-      return {
-        opacity: 0.9,
-        blendMode: "overlay" as React.CSSProperties["mixBlendMode"],
-      } as const;
-    case "medium":
+      return { opacity: 1, filter: "brightness(1.03) contrast(1.02)" } as const;
+    case "dark":
+      return { opacity: 1, filter: "brightness(1.06) contrast(1.02)" } as const;
     default:
-      return {
-        opacity: 0.85,
-        blendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
-      } as const;
+      return { opacity: 1, filter: "brightness(1.03) contrast(1.03)" } as const;
   }
 };
 
@@ -124,7 +113,7 @@ export default function SuitPreview({ config }: Props) {
 
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
-  const { opacity: fabricOpacity, filter: fabricFilter, blendMode: fabricBlend } = toneBlend(selectedFabric?.tone);
+  const { opacity: fabricOpacity, filter: fabricFilter } = toneBlend(selectedFabric?.tone);
   const vis = toneVisual(selectedFabric?.tone);
 
   if (loading) {
@@ -195,7 +184,6 @@ export default function SuitPreview({ config }: Props) {
       backgroundRepeat: 'no-repeat',
       opacity: fabricOpacity,
       filter: fabricFilter,
-      mixBlendMode: fabricBlend,
       WebkitMaskImage: toTransparentSilhouette(src),
       WebkitMaskRepeat: "no-repeat",
       WebkitMaskSize: "contain",
@@ -239,8 +227,8 @@ export default function SuitPreview({ config }: Props) {
     <div className="w-full select-none">
       {/* CANVAS: Jacket (images are 600x733) */}
       <div
-        className="relative mx-auto bg-white"
-        style={{ width: "100%", aspectRatio: "600 / 733", maxWidth: 720, filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.18)) drop-shadow(0 8px 16px rgba(0,0,0,0.12))" }}
+        className="relative mx-auto"
+        style={{ width: "100%", aspectRatio: "600 / 733", maxWidth: 720 }}
         onWheel={onWheel}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
@@ -278,14 +266,6 @@ export default function SuitPreview({ config }: Props) {
           style={{
             background:
               `radial-gradient(120% 100% at 50% 0%, rgba(255,255,255,${vis.softLightTop}), rgba(255,255,255,0) 60%), radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,${vis.softLightBottom}), rgba(0,0,0,0) 55%)`,
-            mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
-          }}
-        />
-        {/* Vertical highlight to simulate fabric sheen */}
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{
-            background: "linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.0) 55%, rgba(255,255,255,0.08) 85%, rgba(255,255,255,0.0) 100%)",
             mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
           }}
         />
@@ -394,7 +374,7 @@ export default function SuitPreview({ config }: Props) {
 
       {/* CANVAS: Pants (images are 600x350) */}
       {pants && (
-        <div className="relative mx-auto mt-2 bg-white" style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720, filter: "drop-shadow(0 1px 1px rgba(0,0,0,0.18)) drop-shadow(0 8px 16px rgba(0,0,0,0.12))" }}>
+        <div className="relative mx-auto mt-2" style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720 }}>
           {/* Base color wash for pants (subtle) */}
           <div
             className="absolute inset-0"
@@ -429,14 +409,6 @@ export default function SuitPreview({ config }: Props) {
               background:
                 `radial-gradient(120% 120% at 20% 10%, rgba(255,255,255,${Math.max(0.04, vis.softLightTop-0.02)}), rgba(255,255,255,0) 50%), ` +
                 `radial-gradient(140% 120% at 50% 120%, rgba(0,0,0,${Math.max(0.05, vis.softLightBottom-0.01)}), rgba(0,0,0,0) 55%)`,
-              mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
-            }}
-          />
-          {/* Vertical highlight for pants */}
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background: "linear-gradient(180deg, rgba(255,255,255,0.2) 0%, rgba(255,255,255,0.0) 60%, rgba(255,255,255,0.08) 90%, rgba(255,255,255,0.0) 100%)",
               mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
             }}
           />
