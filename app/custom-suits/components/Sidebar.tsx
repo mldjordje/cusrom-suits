@@ -25,6 +25,12 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const fabricsNormalized = fabrics.map((x:any) => ({ ...x, id: String(x.id) }));
   const fabricPrice = fabricsNormalized.find((f:any) => f.id === config.colorId)?.price ?? 0;
 
+  const uploadUrl = (() => {
+    const base = getBackendBase(); // e.g. https://customsuits.adspire.rs/api/
+    const root = base.replace(/\/api\/?$/i, "/");
+    return root + "upload_test.html";
+  })();
+
   return (
     <div className="h-auto md:h-screen md:sticky md:top-0 overflow-y-auto flex flex-col bg-white px-4 md:px-8 py-6 md:py-8 border-b md:border-b-0 md:border-r border-gray-200 w-full md:w-80">
       {/* LOGO */}
@@ -66,7 +72,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
       {activeTab === "FABRIC" && (
         <section className="animate-fade-in">
           <h3 className="text-sm font-semibold text-[#444] mb-4">Fabric (Color)</h3>
-          <a href="/admin/fabrics" className="inline-flex items-center justify-center mb-4 px-3 py-2 text-xs font-medium rounded-md border border-[#111] text-[#111] hover:bg-[#111] hover:text-white transition">CMS za tkanine</a>
+          <a href={uploadUrl} target="_blank" rel="noopener" className="inline-flex items-center justify-center mb-4 px-3 py-2 text-xs font-medium rounded-md border border-[#111] text-[#111] hover:bg-[#111] hover:text-white transition">CMS za tkanine</a>
           {fabrics.length === 0 ? (
             <p className="text-gray-400 text-xs italic">Učitavanje tkanina...</p>
           ) : (
