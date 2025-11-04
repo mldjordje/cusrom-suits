@@ -207,10 +207,36 @@ export default function SuitPreview({ config }: Props) {
         {/* Jacket parts */}
         {bodyLayers.map((l) => (
           <div key={l.id} className="absolute inset-0">
+            {/* Base color wash (smooths fabric tone) */}
             <div
               className="absolute inset-0"
               style={{
                 ...fabricMaskStyle(l.src, "center"),
+                opacity: Math.min(1, fabricOpacity * 0.75),
+                filter: `${fabricFilter} blur(10px) saturate(1.06) brightness(1.02)`,
+                transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+                transformOrigin: "center",
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                ...fabricMaskStyle(l.src, "center"),
+                transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+                transformOrigin: "center",
+              }}
+            />
+            {/* Fine weave detail (adds premium texture) */}
+            <div
+              className="absolute inset-0"
+              style={{
+                ...fabricMaskStyle(l.src, "center"),
+                backgroundRepeat: "repeat",
+                // smaller scale to repeat the weave pattern
+                backgroundSize: "28%",
+                opacity: 0.34,
+                filter: "contrast(1.06)",
+                mixBlendMode: "overlay" as React.CSSProperties["mixBlendMode"],
                 transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
                 transformOrigin: "center",
               }}
@@ -249,10 +275,35 @@ export default function SuitPreview({ config }: Props) {
       {/* CANVAS: Pants (images are 600x350) */}
       {pants && (
         <div className="relative mx-auto mt-2" style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720 }}>
+          {/* Base color wash for pants */}
           <div
             className="absolute inset-0"
             style={{
               ...fabricMaskStyle(pants.src, "center"),
+              opacity: Math.min(1, fabricOpacity * 0.75),
+              filter: `${fabricFilter} blur(10px) saturate(1.06) brightness(1.02)`,
+              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+              transformOrigin: "center",
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              ...fabricMaskStyle(pants.src, "center"),
+              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+              transformOrigin: "center",
+            }}
+          />
+          {/* Fine weave detail for pants */}
+          <div
+            className="absolute inset-0"
+            style={{
+              ...fabricMaskStyle(pants.src, "center"),
+              backgroundRepeat: "repeat",
+              backgroundSize: "28%",
+              opacity: 0.32,
+              filter: "contrast(1.05)",
+              mixBlendMode: "overlay" as React.CSSProperties["mixBlendMode"],
               transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
               transformOrigin: "center",
             }}
@@ -267,10 +318,10 @@ export default function SuitPreview({ config }: Props) {
             }}
           />
           <img
-            src={pants.src}
+            src={toShadeSrc(pants.src)}
             alt={pants.name}
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-            style={{ opacity: 0.35, filter: "grayscale(1) contrast(1.18)", mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
+            style={{ opacity: 0.34, filter: `grayscale(1) contrast(${vis.shadeContrast}) blur(0.15px)`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
           />
 
           {/* Optional overlays for pants */}
