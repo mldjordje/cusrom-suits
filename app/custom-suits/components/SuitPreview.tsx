@@ -22,12 +22,7 @@ const toTransparentSilhouette = (src: string) => `${cdnTransparent}${fileBase(sr
 // Also use the same transparent silhouette as a multiply shade overlay
 const toShadeSrc = (src: string) => `${cdnTransparent}${fileBase(src)}`;
 
-// Structural overlay (grayscale from colored sprites) to bring seams/creases
-const toBlueStructSrc = (src: string) => {
-  // Accept both transparent and colored paths; always resolve to blue set
-  const base = fileBase(src);
-  return `/assets/suits/blue/${base}`;
-};
+// Structural overlays from colored sprites removed to avoid tinted backgrounds; rely on transparent silhouettes only
 
 // Keep fabric bright enough; tone-aware tweaks
 const toneBlend = (tone?: string) => {
@@ -309,15 +304,7 @@ export default function SuitPreview({ config }: Props) {
             />
             {/* Structural grayscale from colored sprite (seams/creases) */}
             <img
-              src={toBlueStructSrc(l.src)}
-              alt={l.name + " structure"}
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{
-                opacity: l.id === "torso" ? Math.max(0.14, vis.detailOpacity - 0.06) : Math.max(0.12, vis.detailOpacity - 0.08),
-                filter: `grayscale(1) contrast(${Math.max(1.1, vis.shadeContrast - 0.06)}) brightness(0.98) blur(0.25px)`,
-                mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"],
-              }}
-            />
+              
             <img
               src={toShadeSrc(l.src)}
               alt={l.name}
@@ -357,11 +344,7 @@ export default function SuitPreview({ config }: Props) {
               }}
             />
             <img
-              src={toBlueStructSrc(pocketSrc)}
-              alt="Pockets struct"
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{ opacity: 0.18, filter: "grayscale(1) contrast(1.1)", mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
-            />
+              
           </>
         )}
         {breastPocketLayers?.map((l) => (
@@ -371,11 +354,7 @@ export default function SuitPreview({ config }: Props) {
               style={{ ...fabricMaskStyle(l.src, "center", JACKET_CANVAS), opacity: fabricOpacity, filter: fabricFilter }}
             />
             <img
-              src={toBlueStructSrc(l.src)}
-              alt={l.name}
-              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-              style={{ opacity: 0.18, filter: "grayscale(1) contrast(1.1)", mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
-            />
+              
           </React.Fragment>
         ))}
       </div>
@@ -422,11 +401,7 @@ export default function SuitPreview({ config }: Props) {
           />
           {/* Structural grayscale for pants seams */}
           <img
-            src={toBlueStructSrc(pants.src)}
-            alt={pants.name + " structure"}
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-            style={{ opacity: Math.max(0.10, vis.detailOpacity - 0.10), filter: `grayscale(1) contrast(${Math.max(1.08, vis.shadeContrast - 0.08)}) blur(0.2px)`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
-          />
+            
           <img
             src={toShadeSrc(pants.src)}
             alt={pants.name}
@@ -442,11 +417,7 @@ export default function SuitPreview({ config }: Props) {
                 style={{ ...fabricMaskStyle(cuffSrc, "center", PANTS_CANVAS), opacity: fabricOpacity, filter: fabricFilter }}
               />
               <img
-                src={toBlueStructSrc(cuffSrc)}
-                alt="Cuffs"
-                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-                style={{ opacity: 0.16, filter: "grayscale(1) contrast(1.08)", mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
-              />
+                
             </>
           )}
           {pantsPleatSrc && (
@@ -457,3 +428,4 @@ export default function SuitPreview({ config }: Props) {
     </div>
   );
 }
+
