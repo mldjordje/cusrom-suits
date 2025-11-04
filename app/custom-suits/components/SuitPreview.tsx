@@ -234,6 +234,11 @@ export default function SuitPreview({ config }: Props) {
         {config.showShirt && (
           <img
             src={`${cdnTransparent}shirt_to_jacket_open.png`}
+            onError={(e) => {
+              // Fallback to local asset if remote shirt is missing on CDN
+              const local = "/assets/suits/transparent/shirt_to_jacket_open.png";
+              if (e.currentTarget.src !== local) e.currentTarget.src = local;
+            }}
             alt="Shirt"
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
             style={{ opacity: 1 }}
