@@ -302,9 +302,6 @@ export default function SuitPreview({ config }: Props) {
                 mixBlendMode: vis.detailBlend,
               }}
             />
-            {/* Structural grayscale from colored sprite (seams/creases) */}
-            <img
-              
             <img
               src={toShadeSrc(l.src)}
               alt={l.name}
@@ -338,13 +335,16 @@ export default function SuitPreview({ config }: Props) {
               className="absolute inset-0"
               style={{
                 ...fabricMaskStyle(pocketSrc, "center", JACKET_CANVAS),
-                backgroundRepeat: "no-repeat",
                 opacity: fabricOpacity,
                 filter: fabricFilter,
               }}
             />
             <img
-              
+              src={toShadeSrc(pocketSrc)}
+              alt="Pockets shade"
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+              style={{ opacity: 0.18, filter: `grayscale(1) contrast(${Math.max(1.05, vis.shadeContrast - 0.06)})`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
+            />
           </>
         )}
         {breastPocketLayers?.map((l) => (
@@ -354,7 +354,11 @@ export default function SuitPreview({ config }: Props) {
               style={{ ...fabricMaskStyle(l.src, "center", JACKET_CANVAS), opacity: fabricOpacity, filter: fabricFilter }}
             />
             <img
-              
+              src={toShadeSrc(l.src)}
+              alt={l.name}
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+              style={{ opacity: 0.16, filter: `grayscale(1) contrast(${Math.max(1.05, vis.shadeContrast - 0.08)})`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
+            />
           </React.Fragment>
         ))}
       </div>
@@ -399,9 +403,7 @@ export default function SuitPreview({ config }: Props) {
               mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
             }}
           />
-          {/* Structural grayscale for pants seams */}
-          <img
-            
+          {/* Shade using transparent silhouette */}
           <img
             src={toShadeSrc(pants.src)}
             alt={pants.name}
@@ -417,7 +419,11 @@ export default function SuitPreview({ config }: Props) {
                 style={{ ...fabricMaskStyle(cuffSrc, "center", PANTS_CANVAS), opacity: fabricOpacity, filter: fabricFilter }}
               />
               <img
-                
+                src={toShadeSrc(cuffSrc)}
+                alt="Cuffs"
+                className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                style={{ opacity: 0.16, filter: `grayscale(1) contrast(${Math.max(1.04, vis.shadeContrast - 0.1)})`, mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"] }}
+              />
             </>
           )}
           {pantsPleatSrc && (
