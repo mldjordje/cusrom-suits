@@ -374,12 +374,7 @@ export default function SuitPreview({ config }: Props) {
      RENDER
   ====================================================================================== */
   return (
-    <div
-      className="w-full select-none"
-      style={{
-        background: "radial-gradient(100% 160% at 50% 0%, #f5f5f5 0%, #ffffff 100%)",
-      }}
-    >
+    <div className="w-full select-none bg-white">
       {/* ======================== JACKET CANVAS ======================== */}
       <div
         className="relative mx-auto"
