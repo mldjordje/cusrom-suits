@@ -160,26 +160,36 @@ export default function SuitPreview({ config }: Props) {
     return Array.isArray(found?.layers) ? found.layers : undefined;
   })();
 
-  // Helper: build a fabric-masked layer using a silhouette as mask (all silhouettes share same canvas size)
+  // Helper: build a fabric-masked layer using a silhouette as mask
+  // Important: Keep identical background mapping across parts by using fixed pixel bgSize/bgPosition
+  const JACKET_CANVAS = { w: 600, h: 733 } as const;
+  const PANTS_CANVAS = { w: 600, h: 350 } as const;
+
   const fabricMaskStyle = (
     src: string,
-    align: "center" | "top center" = "center"
-  ): React.CSSProperties => ({
-    backgroundImage: `url(${fabricTexture})`,
-    backgroundSize: "cover",
-    backgroundPosition: align,
-    opacity: fabricOpacity,
-    filter: fabricFilter,
-    WebkitMaskImage: `url(${toTransparentSilhouette(src)})`,
-    WebkitMaskRepeat: "no-repeat",
-    WebkitMaskSize: "contain",
-    WebkitMaskPosition: align,
-    maskImage: `url(${toTransparentSilhouette(src)})`,
-    maskRepeat: "no-repeat",
-    maskSize: "contain",
-    maskPosition: align,
-    pointerEvents: "none",
-  });
+    align: "center" | "top center" = "center",
+    canvas: { w: number; h: number } = JACKET_CANVAS
+  ): React.CSSProperties => {
+    const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
+    const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
+    return {
+      backgroundImage: `url(${fabricTexture})`,
+      backgroundSize: bgSize,
+      backgroundPosition: bgPos,
+      backgroundRepeat: "no-repeat",
+      opacity: fabricOpacity,
+      filter: fabricFilter,
+      WebkitMaskImage: `url(${toTransparentSilhouette(src)})`,
+      WebkitMaskRepeat: "no-repeat",
+      WebkitMaskSize: "contain",
+      WebkitMaskPosition: align,
+      maskImage: `url(${toTransparentSilhouette(src)})`,
+      maskRepeat: "no-repeat",
+      maskSize: "contain",
+      maskPosition: align,
+      pointerEvents: "none",
+    } as React.CSSProperties;
+  };
 
   // Fabric pan/zoom handlers
   const onWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
@@ -273,34 +283,28 @@ export default function SuitPreview({ config }: Props) {
             <div
               className="absolute inset-0"
               style={{
-                ...fabricMaskStyle(l.src, "center"),
+                ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
                 opacity: Math.min(1, fabricOpacity * 0.76),
                 filter: `${fabricFilter} blur(${vis.washBlur}px) saturate(1.06) brightness(1.02)`,
-                transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-                transformOrigin: "center",
               }}
             />
             <div
               className="absolute inset-0"
               style={{
-                ...fabricMaskStyle(l.src, "center"),
-                transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-                transformOrigin: "center",
+                ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
               }}
             />
             {/* Fine weave detail (adds premium texture) */}
             <div
               className="absolute inset-0"
               style={{
-                ...fabricMaskStyle(l.src, "center"),
+                ...fabricMaskStyle(l.src, "center", JACKET_CANVAS),
                 backgroundRepeat: "repeat",
                 // smaller scale to repeat the weave pattern
                 backgroundSize: vis.detailScale,
                 opacity: l.id === "sleeves" ? Math.max(0, vis.detailOpacity - 0.06) : vis.detailOpacity,
                 filter: "contrast(1.05)",
                 mixBlendMode: vis.detailBlend,
-                transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-                transformOrigin: "center",
               }}
             />
             {/* Structural grayscale from colored sprite (seams/creases) */}
@@ -365,33 +369,27 @@ export default function SuitPreview({ config }: Props) {
           <div
             className="absolute inset-0"
             style={{
-              ...fabricMaskStyle(pants.src, "center"),
+              ...fabricMaskStyle(pants.src, "center", PANTS_CANVAS),
               opacity: Math.min(1, fabricOpacity * 0.74),
               filter: `${fabricFilter} blur(${vis.washBlur}px) saturate(1.05) brightness(1.01)`,
-              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-              transformOrigin: "center",
             }}
           />
           <div
             className="absolute inset-0"
             style={{
-              ...fabricMaskStyle(pants.src, "center"),
-              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-              transformOrigin: "center",
+              ...fabricMaskStyle(pants.src, "center", PANTS_CANVAS),
             }}
           />
           {/* Fine weave detail for pants */}
           <div
             className="absolute inset-0"
             style={{
-              ...fabricMaskStyle(pants.src, "center"),
+              ...fabricMaskStyle(pants.src, "center", PANTS_CANVAS),
               backgroundRepeat: "repeat",
               backgroundSize: vis.detailScale,
               opacity: Math.max(0, vis.detailOpacity - 0.08),
               filter: "contrast(1.04)",
               mixBlendMode: vis.detailBlend,
-              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
-              transformOrigin: "center",
             }}
           />
           {/* Premium depth overlays for pants */}
