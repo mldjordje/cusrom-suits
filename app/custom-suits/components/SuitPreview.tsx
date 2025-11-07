@@ -1,4 +1,4 @@
-Ôªø"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
@@ -61,7 +61,7 @@ const NOISE_DATA =
 
 type Tone = "light" | "medium" | "dark" | undefined;
 
-// Ton-mapiranje (cuva dubinu crne, pojacava midtone, ali ne ÔøΩpeglaÔøΩ svetla)
+// Ton-mapiranje (cuva dubinu crne, pojacava midtone, ali ne ?pegla? svetla)
 const toneBlend = (tone?: string) => {
   switch (tone as Tone) {
     case "dark":
@@ -73,7 +73,7 @@ const toneBlend = (tone?: string) => {
   }
 };
 
-// Parametri za ÔøΩpremiumÔøΩ svetlo po tonu ÔøΩ top/bottom soft-light, edge glow, highlight
+// Parametri za ?premium? svetlo po tonu ? top/bottom soft-light, edge glow, highlight
 const toneVisual = (tone?: string) => {
   if (tone === "dark")
     return {
@@ -208,7 +208,7 @@ export default function SuitPreview({ config }: Props) {
     img.src = fabricTexture;
   }, [fabricTexture]);
 
-  // Build a single union mask (PNG data URL) over torso+sleeves+bottom to eliminate any anti‚Äëalias seams
+  // Build a single union mask (PNG data URL) over torso+sleeves+bottom to eliminate any anti-alias seams
   useEffect(() => {
     // Recompute adjusted layers locally so we don't depend on suitLayers declared below
     const baseLayersLocal: SuitLayer[] = currentSuit?.layers || [];
@@ -398,14 +398,14 @@ export default function SuitPreview({ config }: Props) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-        Ucitavanje tkaninaÔøΩ
+        Ucitavanje tkanina?
       </div>
     );
   }
   if (!selectedFabric) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-        Izaberi tkaninu da vidiÔøΩ odelo.
+        Izaberi tkaninu da vidi? odelo.
       </div>
     );
   }
@@ -562,7 +562,9 @@ export default function SuitPreview({ config }: Props) {
     const style: React.CSSProperties = {
       backgroundColor: fabricAvgColor || toneBaseColor,
     };
-    if (jacketUnionMask) {
+    // FIX: sleeves transparency ó use union mask ONLY for torso/bottom, not for sleeves
+    const containsSleeves = layers.some((l) => l.id === "sleeves");
+    if (jacketUnionMask && !containsSleeves) {
       Object.assign(style, {
         WebkitMaskImage: `url(${jacketUnionMask})`,
         WebkitMaskRepeat: "no-repeat",
@@ -606,7 +608,11 @@ export default function SuitPreview({ config }: Props) {
     }
 
     const t = (selectedFabric?.tone || "medium") as Tone;
-    const opacity = t === "dark" ? 0.14 : t === "light" ? 0.20 : 0.17;
+    // FIX: sleeves transparency ó increase fabric visibility when sleeves are in the set
+    const includesSleevesOrPants = layers.some((l) => l.id === "sleeves" || l.id === "pants");
+    const opacity = includesSleevesOrPants
+      ? (t === "dark" ? 0.20 : t === "light" ? 0.26 : 0.23)
+      : (t === "dark" ? 0.14 : t === "light" ? 0.20 : 0.17);
 
     return {
       backgroundImage: `url(${fabricTexture})`,
@@ -812,7 +818,7 @@ export default function SuitPreview({ config }: Props) {
     } as React.CSSProperties;
   };
 
-  // ÔøΩFine detailÔøΩ overlay koristi istu teksturu, ali sitniji scale i drugaciji blend
+  // ?Fine detail? overlay koristi istu teksturu, ali sitniji scale i drugaciji blend
   const fineDetailStyle = (
     src: string,
     opacity: number,
@@ -874,7 +880,7 @@ export default function SuitPreview({ config }: Props) {
      - per-part dodatni gradijenti (rukavi, ramena, rever)
   ----------------------------------------------------------------------------- */
   // Global overlays uklonjeni sa canvas-a da ne prave pozadinski halo izvan maske.
-  // ZadrÔøΩavamo per-part naglaske i generisane mape.
+  // Zadr?avamo per-part naglaske i generisane mape.
 
   // Per-part naglasci (ramena/rukavi + rever)
   const TorsoLapelEmphasis: React.FC = () => (
@@ -930,7 +936,7 @@ export default function SuitPreview({ config }: Props) {
           />
         ))}
 
-        {/* Opcioni ÔøΩshirtÔøΩ izmedu interiora i tkanine */}
+        {/* Opcioni ?shirt? izmedu interiora i tkanine */}
         {config.showShirt && (
           <img
             src={`${cdnTransparent}shirt_to_jacket_open.png`}
@@ -1193,7 +1199,7 @@ export default function SuitPreview({ config }: Props) {
           .filter((l) => l.id !== "pants")
           .map((l) => (
             <div key={l.id} className="absolute inset-0">
-              {/* Blagi "wash" za mekoƒáu (umeren, ujednaƒçen) */}
+              {/* Blagi "wash" za mekocu (umeren, ujednacen) */}
               <div
                 className="absolute inset-0"
                 style={{
@@ -1232,7 +1238,7 @@ export default function SuitPreview({ config }: Props) {
                 className="absolute inset-0"
                 style={{ display: "none" }}
               />
-              {/* Edges/Seams definition (mek≈°e na rukavima da ne pravi liniju) */}
+              {/* Edges/Seams definition (meköe na rukavima da ne pravi liniju) */}
               <div className="absolute inset-0" style={{ display: "none" }} />
               {/* Per-part naglasci */}
               {l.id === "torso" && <TorsoLapelEmphasis />}
@@ -1240,13 +1246,13 @@ export default function SuitPreview({ config }: Props) {
             </div>
           ))}
 
-        {/* Opcioni dÔøΩepovi (fabric-masked) */}
+        {/* Opcioni d?epovi (fabric-masked) */}
         {pocketSrc && (
           <div className="absolute inset-0">
             <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pocketSrc) }} />
             <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pocketSrc, JACKET_CANVAS) }} />
             <div className="absolute inset-0" style={{ display: "none" }} />
-            {/* Mikro kontrast na rubovima dÔøΩepova */}
+            {/* Mikro kontrast na rubovima d?epova */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
@@ -1264,7 +1270,7 @@ export default function SuitPreview({ config }: Props) {
                 maskPosition: "center",
               }}
             />
-            {/* Shading/specular za dÔøΩepove (ako postoje) */}
+            {/* Shading/specular za d?epove (ako postoje) */}
             <div className="absolute inset-0" style={{ display: "none" }} />
             <div className="absolute inset-0" style={{ display: "none" }} />
           </div>
@@ -1319,8 +1325,8 @@ export default function SuitPreview({ config }: Props) {
           {/* Solid base color + subtle weave */}
           <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
           <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS) }} />
-          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.50)} />
-          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'soft-light', 0.24)} />
+          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.60)} />
+          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'soft-light', 0.18)} />
           {/* Fine weave detalj */}
           <div
             className="absolute inset-0"
