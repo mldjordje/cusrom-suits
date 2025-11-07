@@ -383,6 +383,55 @@ export default function SuitPreview({ config }: Props) {
     } as React.CSSProperties;
   };
 
+  // Unified weave overlay across provided layers (prevents visible weave seams)
+  const unifiedWeaveOverlayStyle = (layers: SuitLayer[], canvas: { w: number; h: number }) => {
+    const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
+    const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
+
+    const maskImages: string[] = [];
+    const maskSizes: string[] = [];
+    const maskRepeats: string[] = [];
+    const maskPositions: string[] = [];
+    for (const L of layers) {
+      const u = cdnPair(L.src);
+      maskImages.push(`url(${u.webp})`, `url(${u.png})`);
+      maskSizes.push("contain", "contain");
+      maskRepeats.push("no-repeat", "no-repeat");
+      maskPositions.push("center", "center");
+    }
+
+    const t = (selectedFabric?.tone || "medium") as Tone;
+    const opacity = t === "dark" ? 0.14 : t === "light" ? 0.20 : 0.17;
+
+    return {
+      backgroundImage: `url(${fabricTexture})`,
+      backgroundSize: bgSize,
+      backgroundPosition: bgPos,
+      backgroundRepeat: "repeat",
+      mixBlendMode: "soft-light",
+      opacity,
+      WebkitMaskImage: maskImages.join(", "),
+      WebkitMaskRepeat: maskRepeats.join(", "),
+      WebkitMaskSize: maskSizes.join(", "),
+      WebkitMaskPosition: maskPositions.join(", "),
+      maskImage: maskImages.join(", "),
+      maskRepeat: maskRepeats.join(", "),
+      maskSize: maskSizes.join(", "),
+      maskPosition: maskPositions.join(", "),
+      pointerEvents: "none",
+    } as React.CSSProperties;
+  };
+
+  // Feather the inner sleeve seam so torso/sleeve transition is invisible
+  const sleevesFeatherStyle: React.CSSProperties = {
+    background:
+      `linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 14%),` +
+      `linear-gradient(270deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 14%)`,
+    mixBlendMode: "soft-light",
+    opacity: 0.7,
+    pointerEvents: "none",
+  };
+
   // Bring back baked folds/highlights from transparent base sprite (alpha PNG/WebP)
   const baseSpriteOverlayStyle = (
     src: string,
@@ -607,9 +656,16 @@ export default function SuitPreview({ config }: Props) {
         )}
 
         {/* Unified fabric base (torso + sleeves + bottom) to remove seams */}
-        <div
+      <div
           className="absolute inset-0"
           style={unifiedFabricBaseStyle(
+            suitLayers.filter((x) => x.id === "torso" || x.id === "sleeves" || x.id === "bottom"),
+            JACKET_CANVAS
+          )}
+        />
+        <div
+          className="absolute inset-0"
+          style={unifiedWeaveOverlayStyle(
             suitLayers.filter((x) => x.id === "torso" || x.id === "sleeves" || x.id === "bottom"),
             JACKET_CANVAS
           )}
@@ -632,6 +688,9 @@ export default function SuitPreview({ config }: Props) {
               {/* Reintroduce baked sprite details (shadows/folds) */}
               <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'multiply', l.id === 'sleeves' ? 0.18 : 0.30)} />
               <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'soft-light', l.id === 'sleeves' ? 0.10 : 0.16)} />
+              {l.id === 'sleeves' && (
+                <div className="absolute inset-0" style={sleevesFeatherStyle} />
+              )}
               {/* Fine detail (sitni weave refleksi) */}
               <div
                 className="absolute inset-0"
@@ -750,7 +809,8 @@ export default function SuitPreview({ config }: Props) {
           {/* Solid base color + subtle weave */}
           <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
           <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS) }} />
-          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.30)} />
+          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.45)} />
+          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'soft-light', 0.20)} />
           {/* Fine weave detalj */}
           <div
             className="absolute inset-0"
@@ -764,14 +824,14 @@ export default function SuitPreview({ config }: Props) {
             className="absolute inset-0"
             style={shadingOverlayStyle(
               pants.src,
-              selectedFabric?.tone === "dark" ? 0.18 : selectedFabric?.tone === "light" ? 0.12 : 0.15
+              selectedFabric?.tone === "dark" ? 0.24 : selectedFabric?.tone === "light" ? 0.16 : 0.20
             )}
           />
           <div
             className="absolute inset-0"
             style={specularOverlayStyle(
               pants.src,
-              selectedFabric?.tone === "dark" ? 0.12 : selectedFabric?.tone === "light" ? 0.09 : 0.10
+              selectedFabric?.tone === "dark" ? 0.14 : selectedFabric?.tone === "light" ? 0.10 : 0.12
             )}
           />
           {/* Per-part dubina pantalona (senka pri pojasu + na dnu) */}
