@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
@@ -713,7 +713,7 @@ export default function SuitPreview({ config }: Props) {
     return {
       backgroundImage: `url(${fabricTexture})`,
       backgroundRepeat: "repeat",
-      // FIX: weave scale — consistent pixel tile size
+      // FIX: weave scale â€” consistent pixel tile size
       backgroundSize: `${Math.round(canvas.h * 0.25)}px ${Math.round(canvas.h * 0.25)}px`,
       backgroundPosition: bgPos,
       opacity: vis.fineDetail,
@@ -829,7 +829,9 @@ export default function SuitPreview({ config }: Props) {
     opacity: number,
     size: string,
     canvas: { w: number; h: number }
-  ): React.CSSProperties => {\n    // FIX: weave scale\n    const weavePx = Math.round(canvas.h * 0.25);
+  ): React.CSSProperties => {
+    // FIX: weave scale
+    const weavePx = Math.round(canvas.h * 0.25);
     return {
       backgroundImage: `url(${fabricTexture})`,
       backgroundRepeat: "repeat",
@@ -1151,7 +1153,8 @@ export default function SuitPreview({ config }: Props) {
               backgroundSize: "contain",
               backgroundPosition: "center",
               mixBlendMode: "overlay",
-              opacity: 0.16,\n              pointerEvents: "none",
+              opacity: 0.16,
+              pointerEvents: "none",
             }}
           />
         )}
