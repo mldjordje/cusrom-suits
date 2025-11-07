@@ -1021,39 +1021,32 @@ export default function SuitPreview({ config }: Props) {
           />
         ))}
 
-        {/* LAYER 2: Fabric texture */}
+        {/* LAYER 2: Fabric texture (masked by its own sprite) */}
         {allJacketLayers.map((l) => (
           <div
-            key={`fabric-multiply-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${fabricTexture}), url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
-              backgroundRepeat: 'repeat, no-repeat, no-repeat',
-              backgroundSize: 'cover, contain, contain',
-              backgroundPosition: 'center, center, center',
-              mixBlendMode: 'multiply',
-              opacity: 0.75,
-              filter: 'brightness(1.05) contrast(1.05)',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
-
-        {/* Soft-light for realism */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`fabric-soft-${l.id}`}
+            key={`fabric-${l.id}`}
             className="absolute inset-0"
             style={{
               backgroundImage: `url(${fabricTexture})`,
               backgroundRepeat: 'repeat',
               backgroundSize: 'cover',
+              backgroundPosition: 'center',
               mixBlendMode: 'soft-light',
-              opacity: 0.35,
+              opacity: 0.5,
+              WebkitMaskImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskSize: 'contain',
+              WebkitMaskPosition: 'center',
+              maskImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
+              maskRepeat: 'no-repeat',
+              maskSize: 'contain',
+              maskPosition: 'center',
               pointerEvents: 'none',
             }}
           />
         ))}
+
+        
 
         {/* LAYER 3: Specular highlights */}
         {allJacketLayers.map((l) => (
@@ -1066,7 +1059,7 @@ export default function SuitPreview({ config }: Props) {
               backgroundSize: 'contain',
               backgroundPosition: 'center',
               mixBlendMode: 'overlay',
-              opacity: 0.12,
+              opacity: 0.08,
               pointerEvents: 'none',
             }}
           />
@@ -1089,22 +1082,7 @@ export default function SuitPreview({ config }: Props) {
           />
         ))}
 
-        {/* LAYER 5: Edge shadows */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`edge-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${edgesPair(l.src).webp}), url(${edgesPair(l.src).png})`,
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'multiply',
-              opacity: 0.15,
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+        
       </div>
       {/* ======================== PANTS CANVAS ======================== */}
       {pants && (
@@ -1122,32 +1100,28 @@ export default function SuitPreview({ config }: Props) {
               pointerEvents: 'none',
             }}
           />
-          {/* LAYER 2: Fabric texture blended with transparent base */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${fabricTexture}), url(${cdnPair(pants.src).webp}), url(${cdnPair(pants.src).png})`,
-              backgroundRepeat: 'repeat, no-repeat, no-repeat',
-              backgroundSize: 'cover, contain, contain',
-              backgroundPosition: 'center, center, center',
-              mixBlendMode: 'multiply',
-              opacity: 0.75,
-              filter: 'brightness(1.05) contrast(1.05)',
-              pointerEvents: 'none',
-            }}
-          />
-          {/* Soft-light for realism */}
+          {/* LAYER 2: Fabric texture (masked by its own sprite) */}
           <div
             className="absolute inset-0"
             style={{
               backgroundImage: `url(${fabricTexture})`,
               backgroundRepeat: 'repeat',
               backgroundSize: 'cover',
+              backgroundPosition: 'center',
               mixBlendMode: 'soft-light',
-              opacity: 0.35,
+              opacity: 0.5,
+              WebkitMaskImage: `url(${cdnPair(pants.src).webp}), url(${cdnPair(pants.src).png})`,
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskSize: 'contain',
+              WebkitMaskPosition: 'center',
+              maskImage: `url(${cdnPair(pants.src).webp}), url(${cdnPair(pants.src).png})`,
+              maskRepeat: 'no-repeat',
+              maskSize: 'contain',
+              maskPosition: 'center',
               pointerEvents: 'none',
             }}
           />
+          
           {/* Specular and edges */}
           <div
             className="absolute inset-0"
