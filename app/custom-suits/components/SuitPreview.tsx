@@ -1,4 +1,4 @@
-"use client";
+ï»¿"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
@@ -562,7 +562,7 @@ export default function SuitPreview({ config }: Props) {
     const style: React.CSSProperties = {
       backgroundColor: fabricAvgColor || toneBaseColor,
     };
-    // FIX: sleeves transparency — use union mask ONLY for torso/bottom, not for sleeves
+    // FIX: sleeves transparency ? use union mask ONLY for torso/bottom, not for sleeves
     const containsSleeves = layers.some((l) => l.id === "sleeves");
     if (jacketUnionMask && !containsSleeves) {
       Object.assign(style, {
@@ -608,7 +608,7 @@ export default function SuitPreview({ config }: Props) {
     }
 
     const t = (selectedFabric?.tone || "medium") as Tone;
-    // FIX: sleeves transparency — increase fabric visibility when sleeves are in the set
+    // FIX: sleeves transparency ? increase fabric visibility when sleeves are in the set
     const includesSleevesOrPants = layers.some((l) => l.id === "sleeves" || l.id === "pants");
     const opacity = includesSleevesOrPants
       ? (t === "dark" ? 0.20 : t === "light" ? 0.26 : 0.23)
@@ -1238,7 +1238,7 @@ export default function SuitPreview({ config }: Props) {
                 className="absolute inset-0"
                 style={{ display: "none" }}
               />
-              {/* Edges/Seams definition (mekše na rukavima da ne pravi liniju) */}
+              {/* Edges/Seams definition (mek?e na rukavima da ne pravi liniju) */}
               <div className="absolute inset-0" style={{ display: "none" }} />
               {/* Per-part naglasci */}
               {l.id === "torso" && <TorsoLapelEmphasis />}
@@ -1491,6 +1491,7 @@ export default function SuitPreview({ config }: Props) {
     // Note: if needed we can pass a union mask in future; current callers use per-part masks
     return style;
   };
+
 
 
 
