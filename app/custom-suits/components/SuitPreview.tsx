@@ -1005,6 +1005,107 @@ export default function SuitPreview({ config }: Props) {
           />
         )}
         {/* CLEAN FABRIC MODE — unified jacket mask */}
+        {/* BALANCED FABRIC MODE — reintroduce realism overlays */}
+        <div className="absolute inset-0" style={unifiedFabricBaseStyle(allJacketLayers, JACKET_CANVAS)} />
+        <div className="absolute inset-0" style={unifiedWeaveOverlayStyle(allJacketLayers, JACKET_CANVAS)} />
+        <div className="absolute inset-0" style={{ ...unifiedFineDetailOverlayStyle(JACKET_CANVAS) }} />
+
+        {/* BALANCED FABRIC MODE — restored baseSprite folds (all parts) */}
+        {allJacketLayers.map((l) => (
+          <React.Fragment key={s-}>
+            <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'multiply', 0.35)} />
+            {selectedFabric?.tone === 'light' && (
+              <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'soft-light', 0.15)} />
+            )}
+            {/* BALANCED FABRIC MODE — fine weave restored */}
+            <div
+              className="absolute inset-0"
+              style={{
+                ...fineDetailStyle(l.src, vis.fineDetail, vis.detailScale, JACKET_CANVAS),
+                mixBlendMode: 'soft-light',
+                filter: 'contrast(1.04)',
+              }}
+            />
+          </React.Fragment>
+        ))}
+
+        {/* Composites over torso+bottom only (exclude sleeves) */}
+        {compositesReady && compositeBase && (
+          <>
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: url(),
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                mixBlendMode: 'multiply',
+                opacity: 0.45,
+                pointerEvents: 'none',
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: url(),
+                backgroundRepeat: 'no-repeat',
+                backgroundSize: 'contain',
+                backgroundPosition: 'center',
+                mixBlendMode: 'soft-light',
+                opacity: 0.20,
+                pointerEvents: 'none',
+              }}
+            />
+          </>
+        )}
+        {compositesReady && compositeSpecular && (
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: url(),
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              mixBlendMode: 'overlay',
+              opacity: 0.16,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+        {compositesReady && compositeEdges && (
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: url(),
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              mixBlendMode: 'multiply',
+              opacity: 0.10,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+
+        {/* BALANCED FABRIC MODE — subtle AO crease */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              linear-gradient(90deg, rgba(0,0,0,0.22) 49.5%, rgba(0,0,0,0.06) 50%, rgba(255,255,255,0) 52%),
+            mixBlendMode: 'multiply',
+            opacity: 0.14,
+            WebkitMaskImage: jacketUnionMask ? ('url(' + jacketUnionMask + ')') : undefined,
+            WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+            WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
+            WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
+            maskImage: jacketUnionMask ? ('url(' + jacketUnionMask + ')') : undefined,
+            maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+            maskSize: jacketUnionMask ? 'contain' : undefined,
+            maskPosition: jacketUnionMask ? 'center' : undefined,
+            pointerEvents: 'none',
+          }}
+        />
         <div className="absolute inset-0" style={unifiedFabricBaseStyle(allJacketLayers, JACKET_CANVAS)} />
         <div className="absolute inset-0" style={unifiedWeaveOverlayStyle(allJacketLayers, JACKET_CANVAS)} />
         <div className="absolute inset-0" style={{ ...unifiedFineDetailOverlayStyle(JACKET_CANVAS) }} />
