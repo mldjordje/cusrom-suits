@@ -20,6 +20,7 @@ const FLATTEN = hasFlag("--flatten"); // kopira transparent PNG/WebP i u koren o
 fs.mkdirSync(`${OUTPUT_DIR}/transparent`, { recursive: true });
 fs.mkdirSync(`${OUTPUT_DIR}/shading`, { recursive: true });
 fs.mkdirSync(`${OUTPUT_DIR}/specular`, { recursive: true });
+fs.mkdirSync(`${OUTPUT_DIR}/edges`, { recursive: true });
 
 if (!fs.existsSync(INPUT_DIR)) {
   console.error(`Ulazni folder ne postoji: ${INPUT_DIR}`);
@@ -78,6 +79,15 @@ for (const f of files) {
     )}`,
     { stdio: "inherit" }
   );
+
+  // 4) Edges (seams/ivice) iz DARK varijante – high-pass + normalizacija
+  //    Ovo daje definiciju šavova i pregiba koja fali kod čistih maski.
+  execSync(
+    `magick ${q(darkPath)} -alpha off -colorspace Gray ( -clone 0 -blur 0x2 ) -compose minus -composite -level 5%,45% ${q(
+      `${OUTPUT_DIR}/edges/${base}.png`
+    )}`,
+    { stdio: "inherit" }
+  );
 }
 
 // 4) WebP export (lossless za čiste edge-ove sa alfom)
@@ -85,6 +95,7 @@ try {
   execSync(`magick mogrify -format webp -define webp:lossless=true ${q(`${OUTPUT_DIR}/transparent/*.png`)}`);
   execSync(`magick mogrify -format webp -define webp:lossless=true ${q(`${OUTPUT_DIR}/shading/*.png`)}`);
   execSync(`magick mogrify -format webp -define webp:lossless=true ${q(`${OUTPUT_DIR}/specular/*.png`)}`);
+  execSync(`magick mogrify -format webp -define webp:lossless=true ${q(`${OUTPUT_DIR}/edges/*.png`)}`);
 } catch (e) {
   console.warn("WebP konverzija nije uspela (da li je ImageMagick instaliran?)");
 }
@@ -102,5 +113,5 @@ console.log("Gotovo. Rezultati u:");
 console.log(` - ${OUTPUT_DIR}/transparent (baza)`);
 console.log(` - ${OUTPUT_DIR}/shading`);
 console.log(` - ${OUTPUT_DIR}/specular`);
+console.log(` - ${OUTPUT_DIR}/edges`);
 if (FLATTEN) console.log(` - ${OUTPUT_DIR} (flatten za app)`);
-

@@ -36,6 +36,13 @@ const specularPair = (src: string) => {
     png: `${cdnTransparent}specular/${base}.png`,
   } as const;
 };
+const edgesPair = (src: string) => {
+  const base = fileBase(src).replace(/\.(png|jpg|jpeg|webp)$/i, "");
+  return {
+    webp: `${cdnTransparent}edges/${base}.webp`,
+    png: `${cdnTransparent}edges/${base}.png`,
+  } as const;
+};
 
 // Koristimo originalni transparent sprite kao CSS masku (WebP -> PNG fallback u listi)
 const toTransparentSilhouette = (src: string) => {
@@ -292,6 +299,30 @@ export default function SuitPreview({ config }: Props) {
       filter: "saturate(1.02)",
     } as React.CSSProperties;
   };
+  const edgesOverlayStyle = (
+    src: string,
+    opacity = 0.38
+  ): React.CSSProperties => {
+    const u = edgesPair(src);
+    return {
+      backgroundImage: `url(${u.webp}), url(${u.png})`,
+      backgroundRepeat: "no-repeat",
+      backgroundSize: "contain",
+      backgroundPosition: "center",
+      mixBlendMode: "multiply",
+      opacity,
+      WebkitMaskImage: toTransparentSilhouette(src),
+      WebkitMaskRepeat: "no-repeat",
+      WebkitMaskSize: "contain",
+      WebkitMaskPosition: "center",
+      maskImage: toTransparentSilhouette(src),
+      maskRepeat: "no-repeat",
+      maskSize: "contain",
+      maskPosition: "center",
+      pointerEvents: "none",
+      filter: "contrast(1.1)",
+    } as React.CSSProperties;
+  };
 
   // “Fine detail” overlay koristi istu teksturu, ali sitniji scale i drugačiji blend
   const fineDetailStyle = (
@@ -519,6 +550,8 @@ export default function SuitPreview({ config }: Props) {
                   (selectedFabric?.tone === "dark" ? 0.20 : selectedFabric?.tone === "light" ? 0.14 : 0.17)
                 )}
               />
+              {/* Edges/Seams definition */}
+              <div className="absolute inset-0" style={edgesOverlayStyle(l.src, 0.42)} />
               {/* Per-part naglasci */}
               {l.id === "torso" && <TorsoLapelEmphasis />}
               {l.id === "sleeves" && <SleeveShoulderEmphasis />}
