@@ -1004,111 +1004,105 @@ export default function SuitPreview({ config }: Props) {
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
           />
         )}
-        {/* CLEAN FABRIC MODE ï¿½ unified jacket mask */}
-        {/* BALANCED FABRIC MODE ï¿½ reintroduce realism overlays */}
-        <div className="absolute inset-0" style={unifiedFabricBaseStyle(allJacketLayers, JACKET_CANVAS)} />
-        <div className="absolute inset-0" style={unifiedWeaveOverlayStyle(allJacketLayers, JACKET_CANVAS)} />
-        <div className="absolute inset-0" style={{ ...unifiedFineDetailOverlayStyle(JACKET_CANVAS) }} />
-
-        {/* BALANCED FABRIC MODE ï¿½ restored baseSprite folds (all parts) */}
+        {/* LAYER 1: Transparent base (details and shadows) */}
         {allJacketLayers.map((l) => (
-          <React.Fragment key={'bs-' + l.id}>
-            <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'multiply', 0.35)} />
-            {selectedFabric?.tone === 'light' && (
-              <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'soft-light', 0.15)} />
-            )}
-            {/* BALANCED FABRIC MODE ï¿½ fine weave restored */}
-            <div
-              className="absolute inset-0"
-              style={{
-                ...fineDetailStyle(l.src, vis.fineDetail, vis.detailScale, JACKET_CANVAS),
-                mixBlendMode: 'soft-light',
-                filter: 'contrast(1.04)',
-              }}
-            />
-          </React.Fragment>
-        ))}
-
-        {/* Composites over torso+bottom only (exclude sleeves) */}
-        {compositesReady && compositeBase && (
-          <>
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `url(${compositeBase})`,
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: 'contain',
-                backgroundPosition: 'center',
-                mixBlendMode: 'multiply',
-                opacity: 0.45,
-                pointerEvents: 'none',
-              }}
-            />
-            <div
-              className="absolute inset-0"
-              style={{
-                backgroundImage: `url(${compositeBase})`,
-                backgroundRepeat: 'no-repeat',
-                backgroundSize: 'contain',
-                backgroundPosition: 'center',
-                mixBlendMode: 'soft-light',
-                opacity: 0.20,
-                pointerEvents: 'none',
-              }}
-            />
-          </>
-        )}
-        {compositesReady && compositeSpecular && (
           <div
+            key={`base-${l.id}`}
             className="absolute inset-0"
             style={{
-              backgroundImage: `url(${compositeSpecular})`,
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'overlay',
-              opacity: 0.16,
-              pointerEvents: 'none',
-            }}
-          />
-        )}
-        {compositesReady && compositeEdges && (
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${compositeEdges})`,
+              backgroundImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
               backgroundRepeat: 'no-repeat',
               backgroundSize: 'contain',
               backgroundPosition: 'center',
               mixBlendMode: 'multiply',
-              opacity: 0.10,
+              opacity: 0.65,
               pointerEvents: 'none',
             }}
           />
-        )}
+        ))}
 
-        {/* BALANCED FABRIC MODE — subtle AO crease */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'linear-gradient(90deg, rgba(0,0,0,0.22) 49.5%, rgba(0,0,0,0.06) 50%, rgba(255,255,255,0) 52%)',
-            mixBlendMode: 'multiply',
-            opacity: 0.14,
-            WebkitMaskImage: jacketUnionMask ? ('url(' + jacketUnionMask + ')') : undefined,
-            WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-            WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
-            WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
-            maskImage: jacketUnionMask ? ('url(' + jacketUnionMask + ')') : undefined,
-            maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-            maskSize: jacketUnionMask ? 'contain' : undefined,
-            maskPosition: jacketUnionMask ? 'center' : undefined,
-            pointerEvents: 'none',
-          }}
-        />
-        <div className="absolute inset-0" style={unifiedFabricBaseStyle(allJacketLayers, JACKET_CANVAS)} />
-        <div className="absolute inset-0" style={unifiedWeaveOverlayStyle(allJacketLayers, JACKET_CANVAS)} />
-        <div className="absolute inset-0" style={{ ...unifiedFineDetailOverlayStyle(JACKET_CANVAS) }} />
+        {/* LAYER 2: Fabric texture */}
+        {allJacketLayers.map((l) => (
+          <div
+            key={`fabric-${l.id}`}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${fabricTexture})`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: 'cover',
+              mixBlendMode: 'soft-light',
+              opacity: 0.45,
+              WebkitMaskImage: toTransparentSilhouette(l.src),
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskSize: 'contain',
+              WebkitMaskPosition: 'center',
+              maskImage: toTransparentSilhouette(l.src),
+              maskRepeat: 'no-repeat',
+              maskSize: 'contain',
+              maskPosition: 'center',
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
+
+        {/* LAYER 3: Fine weave overlay */}
+        {allJacketLayers.map((l) => (
+          <div
+            key={`fine-${l.id}`}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${fabricTexture})`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: `${Math.round(JACKET_CANVAS.h * 0.22)}px ${Math.round(JACKET_CANVAS.h * 0.22)}px`,
+              opacity: 0.10,
+              mixBlendMode: 'normal',
+              filter: 'contrast(1.04)',
+              WebkitMaskImage: toTransparentSilhouette(l.src),
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskSize: 'contain',
+              WebkitMaskPosition: 'center',
+              maskImage: toTransparentSilhouette(l.src),
+              maskRepeat: 'no-repeat',
+              maskSize: 'contain',
+              maskPosition: 'center',
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
+
+        {/* LAYER 4: Specular highlights */}
+        {allJacketLayers.map((l) => (
+          <div
+            key={`spec-${l.id}`}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${specularPair(l.src).webp}), url(${specularPair(l.src).png})`,
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              mixBlendMode: 'overlay',
+              opacity: 0.15,
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
+
+        {/* LAYER 5: Edge shadows */}
+        {allJacketLayers.map((l) => (
+          <div
+            key={`edge-${l.id}`}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${edgesPair(l.src).webp}), url(${edgesPair(l.src).png})`,
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              mixBlendMode: 'multiply',
+              opacity: 0.15,
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
       </div>
       {/* ======================== PANTS CANVAS ======================== */}
       {pants && (
