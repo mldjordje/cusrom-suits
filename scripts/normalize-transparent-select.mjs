@@ -1,4 +1,4 @@
-// Normalize brightness (tone) for a subset of transparent sprites by glob/regex
+﻿// Normalize brightness (tone) for a subset of transparent sprites by glob/regex
 // Usage examples:
 //  node scripts/normalize-transparent-select.mjs --match "neck_double_breasted+buttons_4+lapel_narrow+style_lapel_peak"
 //  node scripts/normalize-transparent-select.mjs --regex "lapel_narrow.*style_lapel_peak"
@@ -8,7 +8,8 @@ import path from 'path';
 import sharp from 'sharp';
 
 const ROOT = process.cwd();
-const DIR = path.join(ROOT, 'custom-suits-backend', 'uploads', 'transparent');
+let DIR = path.join(ROOT, 'custom-suits-backend', 'uploads', 'transparent');
+const ALT = path.join(ROOT, 'custom-suits-backend', 'custom-suits-backend', 'uploads', 'transparent');
 const CLAMP = [0.80, 1.25];
 
 function arg(flag, def){ const i = process.argv.indexOf(flag); return i>=0?process.argv[i+1]:def; }
@@ -35,7 +36,7 @@ function webpOut(file){ return file.replace(/\.(png|webp)$/i, '.webp'); }
 
 async function main(){
   const files = [];
-  for await (const f of walk(DIR)) files.push(f);
+  try { await fs.access(DIR); } catch { DIR = ALT; } for await (const f of walk(DIR)) files.push(f);
   let selected = files;
   if (MATCH) selected = selected.filter(f => path.basename(f).includes(MATCH));
   if (REGEX){ const rx = new RegExp(REGEX,'i'); selected = selected.filter(f => rx.test(path.basename(f))); }
@@ -63,4 +64,7 @@ async function main(){
 }
 
 main().catch(e=>{ console.error(e); process.exit(1); });
+
+
+
 

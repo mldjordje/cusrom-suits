@@ -84,7 +84,7 @@ const toneVisual = (tone?: string) => {
       noise: 0.16,
       vignette: 0.25,
       fineDetail: 0.06,
-      fineDetailSleeve: 0.04,
+      fineDetailSleeve: 0.06,
       detailScale: "24%",
     };
   if (tone === "light")
@@ -96,7 +96,7 @@ const toneVisual = (tone?: string) => {
       noise: 0.12,
       vignette: 0.18,
       fineDetail: 0.07,
-      fineDetailSleeve: 0.05,
+      fineDetailSleeve: 0.07,
       detailScale: "26%",
     };
   return {
@@ -107,7 +107,7 @@ const toneVisual = (tone?: string) => {
     noise: 0.15,
     vignette: 0.21,
     fineDetail: 0.08,
-    fineDetailSleeve: 0.05,
+    fineDetailSleeve: 0.08,
     detailScale: "25%",
   };
 };
@@ -988,6 +988,119 @@ export default function SuitPreview({ config }: Props) {
             />
           </>
         )}
+        {/* QUICK FALLBACK while composites initialize: per-part overlays to avoid flat frame */}
+        {!compositesReady && (
+          <>
+            {suitLayers
+              .filter((l) => l.id === "torso" || l.id === "sleeves" || l.id === "bottom")
+              .map((l) => (
+                <React.Fragment key={`fb-${l.id}`}>
+                  {/* Base sprite detail (multiply + soft-light) */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundSize: "contain",
+                      backgroundPosition: "center",
+                      mixBlendMode: "multiply",
+                      opacity: 0.4,
+                      WebkitMaskImage: toTransparentSilhouette(l.src),
+                      WebkitMaskRepeat: "no-repeat",
+                      WebkitMaskSize: "contain",
+                      WebkitMaskPosition: "center",
+                      maskImage: toTransparentSilhouette(l.src),
+                      maskRepeat: "no-repeat",
+                      maskSize: "contain",
+                      maskPosition: "center",
+                      pointerEvents: "none",
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundSize: "contain",
+                      backgroundPosition: "center",
+                      mixBlendMode: "soft-light",
+                      opacity: 0.18,
+                      WebkitMaskImage: toTransparentSilhouette(l.src),
+                      WebkitMaskRepeat: "no-repeat",
+                      WebkitMaskSize: "contain",
+                      WebkitMaskPosition: "center",
+                      maskImage: toTransparentSilhouette(l.src),
+                      maskRepeat: "no-repeat",
+                      maskSize: "contain",
+                      maskPosition: "center",
+                      pointerEvents: "none",
+                    }}
+                  />
+                  {/* Generated per-part shading/specular/edges if present on CDN */}
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${shadingPair(l.src).webp}), url(${shadingPair(l.src).png})`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundSize: "contain",
+                      backgroundPosition: "center",
+                      mixBlendMode: "multiply",
+                      opacity: selectedFabric?.tone === "dark" ? 0.22 : selectedFabric?.tone === "light" ? 0.14 : 0.18,
+                      WebkitMaskImage: toTransparentSilhouette(l.src),
+                      WebkitMaskRepeat: "no-repeat",
+                      WebkitMaskSize: "contain",
+                      WebkitMaskPosition: "center",
+                      maskImage: toTransparentSilhouette(l.src),
+                      maskRepeat: "no-repeat",
+                      maskSize: "contain",
+                      maskPosition: "center",
+                      pointerEvents: "none",
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${specularPair(l.src).webp}), url(${specularPair(l.src).png})`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundSize: "contain",
+                      backgroundPosition: "center",
+                      mixBlendMode: "overlay",
+                      opacity: 0.12,
+                      WebkitMaskImage: toTransparentSilhouette(l.src),
+                      WebkitMaskRepeat: "no-repeat",
+                      WebkitMaskSize: "contain",
+                      WebkitMaskPosition: "center",
+                      maskImage: toTransparentSilhouette(l.src),
+                      maskRepeat: "no-repeat",
+                      maskSize: "contain",
+                      maskPosition: "center",
+                      pointerEvents: "none",
+                    }}
+                  />
+                  <div
+                    className="absolute inset-0"
+                    style={{
+                      backgroundImage: `url(${edgesPair(l.src).webp}), url(${edgesPair(l.src).png})`,
+                      backgroundRepeat: "no-repeat",
+                      backgroundSize: "contain",
+                      backgroundPosition: "center",
+                      mixBlendMode: "multiply",
+                      opacity: 0.16,
+                      WebkitMaskImage: toTransparentSilhouette(l.src),
+                      WebkitMaskRepeat: "no-repeat",
+                      WebkitMaskSize: "contain",
+                      WebkitMaskPosition: "center",
+                      maskImage: toTransparentSilhouette(l.src),
+                      maskRepeat: "no-repeat",
+                      maskSize: "contain",
+                      maskPosition: "center",
+                      pointerEvents: "none",
+                    }}
+                  />
+                </React.Fragment>
+              ))}
+          </>
+        )}
         {compositesReady && compositeShading && (
           <div
             className="absolute inset-0"
@@ -1040,7 +1153,7 @@ export default function SuitPreview({ config }: Props) {
                 background: '#ffffff',
                 mixBlendMode: 'screen',
                 opacity:
-                  selectedFabric?.tone === 'dark' ? 0.14 : selectedFabric?.tone === 'light' ? 0.06 : 0.10,
+                  selectedFabric?.tone === 'dark' ? 0.16 : selectedFabric?.tone === 'light' ? 0.08 : 0.12,
                 WebkitMaskImage: `url(${sleevesMask})`,
                 WebkitMaskRepeat: 'no-repeat',
                 WebkitMaskSize: 'contain',
@@ -1058,7 +1171,7 @@ export default function SuitPreview({ config }: Props) {
               style={{
                 background: '#ffffff',
                 mixBlendMode: 'soft-light',
-                opacity: 0.08,
+                opacity: selectedFabric?.tone === 'dark' ? 0.10 : selectedFabric?.tone === 'light' ? 0.06 : 0.08,
                 WebkitMaskImage: `url(${sleevesMask})`,
                 WebkitMaskRepeat: 'no-repeat',
                 WebkitMaskSize: 'contain',
@@ -1212,7 +1325,7 @@ export default function SuitPreview({ config }: Props) {
           <div
             className="absolute inset-0"
             style={{
-              ...fineDetailStyle(pants.src, Math.max(0, vis.fineDetail - 0.04), vis.detailScale, PANTS_CANVAS),
+              ...fineDetailStyle(pants.src, vis.fineDetail, vis.detailScale, PANTS_CANVAS),
               filter: "contrast(1.03)",
             }}
           />
@@ -1253,6 +1366,42 @@ export default function SuitPreview({ config }: Props) {
               maskRepeat: "no-repeat",
               maskSize: "contain",
               maskPosition: "center",
+            }}
+          />
+
+          {/* Equalize pants vs jacket (tone cohesion) */}
+          <div
+            className="absolute inset-0"
+            style={{
+              background: '#ffffff',
+              mixBlendMode: 'screen',
+              opacity: selectedFabric?.tone === 'dark' ? 0.16 : selectedFabric?.tone === 'light' ? 0.08 : 0.12,
+              WebkitMaskImage: toTransparentSilhouette(pants.src),
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskSize: 'contain',
+              WebkitMaskPosition: 'center',
+              maskImage: toTransparentSilhouette(pants.src),
+              maskRepeat: 'no-repeat',
+              maskSize: 'contain',
+              maskPosition: 'center',
+              pointerEvents: 'none',
+            }}
+          />
+          <div
+            className="absolute inset-0"
+            style={{
+              background: '#ffffff',
+              mixBlendMode: 'soft-light',
+              opacity: selectedFabric?.tone === 'dark' ? 0.10 : selectedFabric?.tone === 'light' ? 0.06 : 0.08,
+              WebkitMaskImage: toTransparentSilhouette(pants.src),
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskSize: 'contain',
+              WebkitMaskPosition: 'center',
+              maskImage: toTransparentSilhouette(pants.src),
+              maskRepeat: 'no-repeat',
+              maskSize: 'contain',
+              maskPosition: 'center',
+              pointerEvents: 'none',
             }}
           />
 
