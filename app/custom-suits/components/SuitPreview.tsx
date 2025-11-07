@@ -304,6 +304,24 @@ export default function SuitPreview({ config }: Props) {
     } as React.CSSProperties;
   };
 
+  // Bring back baked folds/highlights from transparent base sprite (alpha PNG/WebP)
+  const baseSpriteOverlayStyle = (
+    src: string,
+    blend: 'multiply' | 'soft-light' | 'overlay' = 'multiply',
+    opacity = 0.35
+  ): React.CSSProperties => {
+    const u = cdnPair(src);
+    return {
+      backgroundImage: `url(${u.webp}), url(${u.png})`,
+      backgroundRepeat: "no-repeat",
+      backgroundSize: "contain",
+      backgroundPosition: "center",
+      mixBlendMode: blend,
+      opacity,
+      pointerEvents: "none",
+    } as React.CSSProperties;
+  };
+
   // Shading/specular overlays (auto-use if files exist on CDN)
   const shadingOverlayStyle = (
     src: string,
@@ -525,8 +543,12 @@ export default function SuitPreview({ config }: Props) {
               />
               {/* Solid base color */}
               <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(l.src) }} />
-              {/* Subtle weave over color */}
+              {/* Subtle weave over color */
+              }
               <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(l.src, JACKET_CANVAS) }} />
+              {/* Reintroduce baked sprite details (shadows/folds) */}
+              <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'multiply', 0.32)} />
+              <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'soft-light', 0.18)} />
               {/* Fine detail (sitni weave refleksi) */}
               <div
                 className="absolute inset-0"
@@ -569,6 +591,7 @@ export default function SuitPreview({ config }: Props) {
           <div className="absolute inset-0">
             <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pocketSrc) }} />
             <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pocketSrc, JACKET_CANVAS) }} />
+            <div className="absolute inset-0" style={baseSpriteOverlayStyle(pocketSrc, 'multiply', 0.28)} />
             {/* Mikro kontrast na rubovima d�epova */}
             <div
               className="absolute inset-0 pointer-events-none"
@@ -598,6 +621,7 @@ export default function SuitPreview({ config }: Props) {
           <React.Fragment key={`bp-${l.id}`}>
             <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(l.src) }} />
             <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(l.src, JACKET_CANVAS) }} />
+            <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'multiply', 0.26)} />
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
@@ -641,6 +665,7 @@ export default function SuitPreview({ config }: Props) {
           {/* Solid base color + subtle weave */}
           <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
           <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS) }} />
+          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.30)} />
           {/* Fine weave detalj */}
           <div
             className="absolute inset-0"
@@ -688,6 +713,7 @@ export default function SuitPreview({ config }: Props) {
             <>
               <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(cuffSrc) }} />
               <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(cuffSrc, PANTS_CANVAS) }} />
+              <div className="absolute inset-0" style={baseSpriteOverlayStyle(cuffSrc, 'multiply', 0.26)} />
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
