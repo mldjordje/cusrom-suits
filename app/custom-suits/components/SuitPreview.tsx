@@ -1117,10 +1117,10 @@ export default function SuitPreview({ config }: Props) {
           <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
           <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS) }} />
           <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.45)} />
-        </div>
           <div className="absolute inset-0" style={shadingOverlayStyle(pants.src, 0.20)} />
           <div className="absolute inset-0" style={specularOverlayStyle(pants.src, 0.14)} />
           <div className="absolute inset-0" style={{ ...fineDetailStyle(pants.src, 0.08, vis.detailScale, PANTS_CANVAS) }} />
+        </div>
       )}
     </div>
   );
