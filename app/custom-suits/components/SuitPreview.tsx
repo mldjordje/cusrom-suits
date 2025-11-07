@@ -151,6 +151,14 @@ export default function SuitPreview({ config }: Props) {
   const tb = toneBlend(selectedFabric?.tone);
   const vis = toneVisual(selectedFabric?.tone);
 
+  // Solid base color by tone, used under subtle fabric weave
+  const toneBaseColor = (() => {
+    const t = (selectedFabric?.tone || "medium") as Tone;
+    if (t === "dark") return "#2b2b2b";
+    if (t === "light") return "#c8c8c8";
+    return "#8f8f8f";
+  })();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400 text-sm">
@@ -238,6 +246,52 @@ export default function SuitPreview({ config }: Props) {
       backgroundRepeat: "repeat", // dozvoljavamo ponavljanje zbog weave obrazaca
       opacity: tb.opacity,
       filter: tb.filter,
+      WebkitMaskImage: toTransparentSilhouette(src),
+      WebkitMaskRepeat: "no-repeat",
+      WebkitMaskSize: "contain",
+      WebkitMaskPosition: "center",
+      maskImage: toTransparentSilhouette(src),
+      maskRepeat: "no-repeat",
+      maskSize: "contain",
+      maskPosition: "center",
+      pointerEvents: "none",
+    } as React.CSSProperties;
+  };
+
+  // Solid color fill under the weave, same mask
+  const colorBaseMaskStyle = (
+    src: string
+  ): React.CSSProperties => {
+    return {
+      backgroundColor: toneBaseColor,
+      WebkitMaskImage: toTransparentSilhouette(src),
+      WebkitMaskRepeat: "no-repeat",
+      WebkitMaskSize: "contain",
+      WebkitMaskPosition: "center",
+      maskImage: toTransparentSilhouette(src),
+      maskRepeat: "no-repeat",
+      maskSize: "contain",
+      maskPosition: "center",
+      pointerEvents: "none",
+    } as React.CSSProperties;
+  };
+
+  // Subtle weave overlay on top of solid base (reduced visibility)
+  const fabricWeaveOverlayStyle = (
+    src: string,
+    canvas: { w: number; h: number } = JACKET_CANVAS
+  ): React.CSSProperties => {
+    const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
+    const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
+    const t = (selectedFabric?.tone || "medium") as Tone;
+    const op = t === "dark" ? 0.14 : t === "light" ? 0.20 : 0.17;
+    return {
+      backgroundImage: `url(${fabricTexture})`,
+      backgroundSize: bgSize,
+      backgroundPosition: bgPos,
+      backgroundRepeat: "repeat",
+      opacity: op,
+      mixBlendMode: "soft-light",
       WebkitMaskImage: toTransparentSilhouette(src),
       WebkitMaskRepeat: "no-repeat",
       WebkitMaskSize: "contain",
@@ -469,8 +523,10 @@ export default function SuitPreview({ config }: Props) {
                   filter: `${tb.filter} blur(4px) saturate(1.02)`,
                 }}
               />
-              {/* Primarna tkanina */}
-              <div className="absolute inset-0" style={{ ...fabricMaskStyle(l.src, JACKET_CANVAS) }} />
+              {/* Solid base color */}
+              <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(l.src) }} />
+              {/* Subtle weave over color */}
+              <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(l.src, JACKET_CANVAS) }} />
               {/* Fine detail (sitni weave refleksi) */}
               <div
                 className="absolute inset-0"
@@ -511,7 +567,8 @@ export default function SuitPreview({ config }: Props) {
         {/* Opcioni d�epovi (fabric-masked) */}
         {pocketSrc && (
           <div className="absolute inset-0">
-            <div className="absolute inset-0" style={{ ...fabricMaskStyle(pocketSrc, JACKET_CANVAS) }} />
+            <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pocketSrc) }} />
+            <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pocketSrc, JACKET_CANVAS) }} />
             {/* Mikro kontrast na rubovima d�epova */}
             <div
               className="absolute inset-0 pointer-events-none"
@@ -539,7 +596,8 @@ export default function SuitPreview({ config }: Props) {
         {/* Breast pocket (ako postoji set slojeva) */}
         {breastPocketLayers?.map((l) => (
           <React.Fragment key={`bp-${l.id}`}>
-            <div className="absolute inset-0" style={{ ...fabricMaskStyle(l.src, JACKET_CANVAS) }} />
+            <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(l.src) }} />
+            <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(l.src, JACKET_CANVAS) }} />
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
@@ -580,8 +638,9 @@ export default function SuitPreview({ config }: Props) {
               filter: `${tb.filter} blur(3px) saturate(1.02)`,
             }}
           />
-          {/* Primarna tkanina */}
-          <div className="absolute inset-0" style={{ ...fabricMaskStyle(pants.src, PANTS_CANVAS) }} />
+          {/* Solid base color + subtle weave */}
+          <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
+          <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS) }} />
           {/* Fine weave detalj */}
           <div
             className="absolute inset-0"
@@ -627,7 +686,8 @@ export default function SuitPreview({ config }: Props) {
           {/* Cuffs (opciono) */}
           {cuffSrc && (
             <>
-              <div className="absolute inset-0" style={{ ...fabricMaskStyle(cuffSrc, PANTS_CANVAS) }} />
+              <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(cuffSrc) }} />
+              <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(cuffSrc, PANTS_CANVAS) }} />
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
