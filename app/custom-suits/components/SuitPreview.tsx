@@ -167,6 +167,7 @@ export default function SuitPreview({ config }: Props) {
   const [compositeSpecular, setCompositeSpecular] = useState<string | null>(null);
   const [compositeEdges, setCompositeEdges] = useState<string | null>(null);
   const [sleevesMask, setSleevesMask] = useState<string | null>(null);
+  const [torsoMask, setTorsoMask] = useState<string | null>(null);
   const compositesReady = Boolean(compositeBase && compositeShading && compositeSpecular && compositeEdges);
   useEffect(() => {
     if (!fabricTexture) {
@@ -395,6 +396,45 @@ export default function SuitPreview({ config }: Props) {
         ctx.drawImage(img, dx, dy, dw, dh);
         if (!cancelled) setSleevesMask(c.toDataURL("image/png"));
       } catch { if (!cancelled) setSleevesMask(null); }
+    })();
+    return () => { cancelled = true; };
+  }, [currentSuit, config.lapelId, config.lapelWidthId]);
+
+  // Build torso-only mask for side feathering (to hide vertical armhole seams)
+  useEffect(() => {
+    const baseLayersLocal: SuitLayer[] = currentSuit?.layers || [];
+    const selectedLapelLocal =
+      currentSuit?.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit?.lapels?.[0];
+    const selectedLapelWidthLocal =
+      selectedLapelLocal?.widths.find((w) => w.id === config.lapelWidthId) ||
+      selectedLapelLocal?.widths.find((w) => w.id === "medium") ||
+      selectedLapelLocal?.widths?.[0];
+    const swap = (src: string) =>
+      src.replace(
+        /lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/,
+        `lapel_${selectedLapelWidthLocal?.id || "medium"}+style_lapel_${selectedLapelLocal?.id || "notch"}`
+      );
+    const adjusted = baseLayersLocal.map((l) => (l.id === "torso" ? { ...l, src: swap(l.src) } : l));
+    const torsoPart = adjusted.find((x) => x.id === "torso");
+    if (!torsoPart) { setTorsoMask(null); return; }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = JACKET_CANVAS.w; c.height = JACKET_CANVAS.h;
+        const ctx = c.getContext("2d"); if (!ctx) return;
+        const pair = cdnPair(torsoPart.src);
+        const tryLoad = (url: string) => new Promise<HTMLImageElement>((resolve, reject) => { const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>resolve(i); i.onerror=reject; i.src=url; });
+        let img: HTMLImageElement | null = null;
+        try { img = await tryLoad(pair.webp); } catch { try { img = await tryLoad(pair.png); } catch {} }
+        if (!img) return;
+        const scale = Math.min(c.width / img.width, c.height / img.height);
+        const dw = Math.round(img.width * scale); const dh = Math.round(img.height * scale);
+        const dx = Math.round((c.width - dw) / 2); const dy = Math.round((c.height - dh) / 2);
+        ctx.drawImage(img, dx, dy, dw, dh);
+        if (!cancelled) setTorsoMask(c.toDataURL("image/png"));
+      } catch { if (!cancelled) setTorsoMask(null); }
     })();
     return () => { cancelled = true; };
   }, [currentSuit, config.lapelId, config.lapelWidthId]);
@@ -647,6 +687,24 @@ export default function SuitPreview({ config }: Props) {
     opacity: 0.3,
     pointerEvents: "none",
   };
+
+  // Torso side feather to hide inner sleeve vertical line (applies only to torso area)
+  const torsoArmholeFeatherStyle: React.CSSProperties = {
+    background:
+      `linear-gradient(90deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 14%),` +
+      `linear-gradient(270deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 14%)`,
+    mixBlendMode: 'screen',
+    opacity: selectedFabric?.tone === 'light' ? 0.28 : selectedFabric?.tone === 'dark' ? 0.18 : 0.22,
+    WebkitMaskImage: torsoMask ? `url(${torsoMask})` : undefined,
+    WebkitMaskRepeat: 'no-repeat',
+    WebkitMaskSize: 'contain',
+    WebkitMaskPosition: 'center',
+    maskImage: torsoMask ? `url(${torsoMask})` : undefined,
+    maskRepeat: 'no-repeat',
+    maskSize: 'contain',
+    maskPosition: 'center',
+    pointerEvents: 'none',
+  } as React.CSSProperties;
 
   // Feather the top seam of the bottom piece (waist) to eliminate horizontal line
   // FIX: waist band fully softened
@@ -1142,7 +1200,7 @@ export default function SuitPreview({ config }: Props) {
               backgroundSize: "contain",
               backgroundPosition: "center",
               mixBlendMode: "multiply",
-              opacity: selectedFabric?.tone === "dark" ? 0.22 : selectedFabric?.tone === "light" ? 0.16 : 0.18,
+              opacity: selectedFabric?.tone === "dark" ? 0.22 : selectedFabric?.tone === "light" ? 0.14 : 0.18,
               pointerEvents: "none",
             }}
           />
@@ -1219,6 +1277,27 @@ export default function SuitPreview({ config }: Props) {
             />
           </>
         )}
+        {/* Anti-waist neutralizer to remove any residual horizontal band */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background:
+              `linear-gradient(180deg, rgba(255,255,255,0.22) 47%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0) 54%)`,
+            mixBlendMode: 'screen',
+            opacity: selectedFabric?.tone === 'light' ? 0.14 : 0.10,
+            WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+            WebkitMaskRepeat: 'no-repeat',
+            WebkitMaskSize: 'contain',
+            WebkitMaskPosition: 'center',
+            maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+            maskRepeat: 'no-repeat',
+            maskSize: 'contain',
+            maskPosition: 'center',
+            pointerEvents: 'none',
+          }}
+        />
+        {/* Apply torso side feather to hide inner sleeve seam */}
+        <div className="absolute inset-0" style={torsoArmholeFeatherStyle} />
         {/* AO to deepen lapel crease + waist */}
         <div className="absolute inset-0" style={jacketAOStyle} />
 
