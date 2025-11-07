@@ -54,14 +54,14 @@ const toTransparentSilhouette = (src: string) => {
    Vizuelni presetovi (ton, kontrast, spekular, ivice)
 ===================================================================================== */
 
-// Globalni noise (1x1 tiled PNG ~ neutral gray dots). Sprečava "plastičan" izgled.
+// Globalni noise (1x1 tiled PNG ~ neutral gray dots). Sprecava "plastican" izgled.
 // Mali je, base64 inline (nema eksternih poziva).
 const NOISE_DATA =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWMYefz/fwAI1QLS/7j4OQAAAABJRU5ErkJggg==";
 
 type Tone = "light" | "medium" | "dark" | undefined;
 
-// Ton-mapiranje (čuva dubinu crne, pojačava midtone, ali ne “pegla” svetla)
+// Ton-mapiranje (cuva dubinu crne, pojacava midtone, ali ne �pegla� svetla)
 const toneBlend = (tone?: string) => {
   switch (tone as Tone) {
     case "dark":
@@ -73,18 +73,18 @@ const toneBlend = (tone?: string) => {
   }
 };
 
-// Parametri za “premium” svetlo po tonu — top/bottom soft-light, edge glow, highlight
+// Parametri za �premium� svetlo po tonu � top/bottom soft-light, edge glow, highlight
 const toneVisual = (tone?: string) => {
   if (tone === "dark")
     return {
       softLightTop: 0.08,
       softLightBottom: 0.07,
       edgeGlow: 0.055,
-      specular: 0.22,
-      noise: 0.22,
+      specular: 0.18,
+      noise: 0.16,
       vignette: 0.25,
-      fineDetail: 0.10,
-      fineDetailSleeve: 0.06,
+      fineDetail: 0.06,
+      fineDetailSleeve: 0.04,
       detailScale: "24%",
     };
   if (tone === "light")
@@ -92,22 +92,22 @@ const toneVisual = (tone?: string) => {
       softLightTop: 0.06,
       softLightBottom: 0.05,
       edgeGlow: 0.04,
-      specular: 0.16,
-      noise: 0.16,
+      specular: 0.13,
+      noise: 0.12,
       vignette: 0.18,
-      fineDetail: 0.10,
-      fineDetailSleeve: 0.06,
+      fineDetail: 0.07,
+      fineDetailSleeve: 0.05,
       detailScale: "26%",
     };
   return {
     softLightTop: 0.07,
     softLightBottom: 0.06,
     edgeGlow: 0.05,
-    specular: 0.20,
-    noise: 0.19,
+    specular: 0.16,
+    noise: 0.15,
     vignette: 0.21,
-    fineDetail: 0.10,
-    fineDetailSleeve: 0.06,
+    fineDetail: 0.08,
+    fineDetailSleeve: 0.05,
     detailScale: "25%",
   };
 };
@@ -154,20 +154,20 @@ export default function SuitPreview({ config }: Props) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-        Učitavanje tkanina…
+        Ucitavanje tkanina�
       </div>
     );
   }
   if (!selectedFabric) {
     return (
       <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-        Izaberi tkaninu da vidiš odelo.
+        Izaberi tkaninu da vidi� odelo.
       </div>
     );
   }
 
   /* -----------------------------------------------------------------------------
-     Dinamička zamena revera (da maska uvek prati izabrani rever)
+     Dinamicka zamena revera (da maska uvek prati izabrani rever)
   ----------------------------------------------------------------------------- */
   const baseLayers: SuitLayer[] = currentSuit.layers || [];
   const selectedLapel =
@@ -324,7 +324,7 @@ export default function SuitPreview({ config }: Props) {
     } as React.CSSProperties;
   };
 
-  // “Fine detail” overlay koristi istu teksturu, ali sitniji scale i drugačiji blend
+  // �Fine detail� overlay koristi istu teksturu, ali sitniji scale i drugaciji blend
   const fineDetailStyle = (
     src: string,
     opacity: number,
@@ -385,58 +385,8 @@ export default function SuitPreview({ config }: Props) {
      - micro-noise (overlay)
      - per-part dodatni gradijenti (rukavi, ramena, rever)
   ----------------------------------------------------------------------------- */
-  const GlobalPremiumOverlays: React.FC = () => (
-    <>
-      {/* Vignette */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `radial-gradient(100% 130% at 50% 0%, rgba(0,0,0,${vis.vignette}), rgba(0,0,0,0) 70%)`,
-          mixBlendMode: "multiply",
-        }}
-      />
-      {/* Top->Bottom flow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background: `linear-gradient(180deg, rgba(255,255,255,${vis.softLightTop}) 0%, rgba(0,0,0,${vis.softLightBottom}) 100%)`,
-          mixBlendMode: "soft-light",
-        }}
-      />
-      {/* Vertical specular */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(255,255,255,0.18) 48%, rgba(255,255,255,0.06) 50%, rgba(0,0,0,0.08) 52%)",
-          mixBlendMode: "overlay",
-          opacity: vis.specular,
-        }}
-      />
-      {/* Edge glow */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            "linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 20%, rgba(255,255,255,0) 80%, rgba(255,255,255,0.05))",
-          mixBlendMode: "soft-light",
-          opacity: vis.edgeGlow,
-        }}
-      />
-      {/* Micro-noise */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          backgroundImage: `url(${NOISE_DATA})`,
-          backgroundRepeat: "repeat",
-          backgroundSize: "auto",
-          mixBlendMode: "overlay",
-          opacity: vis.noise,
-          filter: "contrast(1.05)",
-        }}
-      />
-    </>
-  );
+  // Global overlays uklonjeni sa canvas-a da ne prave pozadinski halo izvan maske.
+  // Zadr�avamo per-part naglaske i generisane mape.
 
   // Per-part naglasci (ramena/rukavi + rever)
   const TorsoLapelEmphasis: React.FC = () => (
@@ -458,7 +408,7 @@ export default function SuitPreview({ config }: Props) {
       className="absolute inset-0 pointer-events-none"
       style={{
         background:
-          // Blagi highlight po ramenima + zasenčenje ka laktu
+          // Blagi highlight po ramenima + zasencenje ka laktu
           `radial-gradient(60% 40% at 20% 5%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),` +
           `radial-gradient(60% 40% at 80% 5%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),` +
           `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0) 30%, rgba(0,0,0,0.05) 60%, rgba(0,0,0,0) 85%)`,
@@ -492,7 +442,7 @@ export default function SuitPreview({ config }: Props) {
           />
         ))}
 
-        {/* Opcioni “shirt” između interiora i tkanine */}
+        {/* Opcioni �shirt� izmedu interiora i tkanine */}
         {config.showShirt && (
           <img
             src={`${cdnTransparent}shirt_to_jacket_open.png`}
@@ -510,7 +460,7 @@ export default function SuitPreview({ config }: Props) {
           .filter((l) => l.id !== "pants")
           .map((l) => (
             <div key={l.id} className="absolute inset-0">
-              {/* Blagi “wash” za mekoću */}
+              {/* Blagi �wash� za mekocu */}
               <div
                 className="absolute inset-0"
                 style={{
@@ -538,31 +488,31 @@ export default function SuitPreview({ config }: Props) {
                 className="absolute inset-0"
                 style={shadingOverlayStyle(
                   l.src,
-                  // blago pojačaj na dark tonovima
-                  (selectedFabric?.tone === "dark" ? 0.26 : selectedFabric?.tone === "light" ? 0.18 : 0.22)
+                  // smanjen intenzitet da izbegnemo �prljav� look
+                  (selectedFabric?.tone === "dark" ? 0.20 : selectedFabric?.tone === "light" ? 0.14 : 0.17)
                 )}
               />
               <div
                 className="absolute inset-0"
                 style={specularOverlayStyle(
                   l.src,
-                  // prilagodi specular prema tonu
-                  (selectedFabric?.tone === "dark" ? 0.20 : selectedFabric?.tone === "light" ? 0.14 : 0.17)
+                  // ne�niji specular
+                  (selectedFabric?.tone === "dark" ? 0.15 : selectedFabric?.tone === "light" ? 0.11 : 0.13)
                 )}
               />
               {/* Edges/Seams definition */}
-              <div className="absolute inset-0" style={edgesOverlayStyle(l.src, 0.42)} />
+              <div className="absolute inset-0" style={edgesOverlayStyle(l.src, 0.28)} />
               {/* Per-part naglasci */}
               {l.id === "torso" && <TorsoLapelEmphasis />}
               {l.id === "sleeves" && <SleeveShoulderEmphasis />}
             </div>
           ))}
 
-        {/* Opcioni džepovi (fabric-masked) */}
+        {/* Opcioni d�epovi (fabric-masked) */}
         {pocketSrc && (
           <div className="absolute inset-0">
             <div className="absolute inset-0" style={{ ...fabricMaskStyle(pocketSrc, JACKET_CANVAS) }} />
-            {/* Mikro kontrast na rubovima džepova */}
+            {/* Mikro kontrast na rubovima d�epova */}
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
@@ -580,7 +530,7 @@ export default function SuitPreview({ config }: Props) {
                 maskPosition: "center",
               }}
             />
-            {/* Shading/specular za džepove (ako postoje) */}
+            {/* Shading/specular za d�epove (ako postoje) */}
             <div className="absolute inset-0" style={shadingOverlayStyle(pocketSrc, 0.18)} />
             <div className="absolute inset-0" style={specularOverlayStyle(pocketSrc, 0.12)} />
           </div>
@@ -612,8 +562,7 @@ export default function SuitPreview({ config }: Props) {
           </React.Fragment>
         ))}
 
-        {/* Global premium overlays (za jaknu) */}
-        <GlobalPremiumOverlays />
+        {/* Global overlays uklonjeni da ne stvaraju pozadinski halo */}
       </div>
 
       {/* ======================== PANTS CANVAS ======================== */}
@@ -637,8 +586,8 @@ export default function SuitPreview({ config }: Props) {
           <div
             className="absolute inset-0"
             style={{
-              ...fineDetailStyle(pants.src, Math.max(0, vis.fineDetail - 0.02), vis.detailScale, PANTS_CANVAS),
-              filter: "contrast(1.05)",
+              ...fineDetailStyle(pants.src, Math.max(0, vis.fineDetail - 0.04), vis.detailScale, PANTS_CANVAS),
+              filter: "contrast(1.03)",
             }}
           />
           {/* Shading/specular za pantalone (ako postoje) */}
@@ -646,14 +595,14 @@ export default function SuitPreview({ config }: Props) {
             className="absolute inset-0"
             style={shadingOverlayStyle(
               pants.src,
-              selectedFabric?.tone === "dark" ? 0.22 : selectedFabric?.tone === "light" ? 0.16 : 0.19
+              selectedFabric?.tone === "dark" ? 0.18 : selectedFabric?.tone === "light" ? 0.12 : 0.15
             )}
           />
           <div
             className="absolute inset-0"
             style={specularOverlayStyle(
               pants.src,
-              selectedFabric?.tone === "dark" ? 0.16 : selectedFabric?.tone === "light" ? 0.11 : 0.13
+              selectedFabric?.tone === "dark" ? 0.12 : selectedFabric?.tone === "light" ? 0.09 : 0.10
             )}
           />
           {/* Per-part dubina pantalona (senka pri pojasu + na dnu) */}
@@ -711,9 +660,10 @@ export default function SuitPreview({ config }: Props) {
           )}
 
           {/* Global premium overlays (za pantalone) */}
-          <GlobalPremiumOverlays />
+          
         </div>
       )}
     </div>
   );
 }
+
