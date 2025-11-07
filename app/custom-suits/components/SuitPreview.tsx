@@ -343,8 +343,8 @@ export default function SuitPreview({ config }: Props) {
 
     (async () => {
       const torsoBottom = parts.filter(p => p.id === "torso" || p.id === "bottom");
-      // Base sprite can include sleeves (harmless), but edges/specular exclude sleeves to avoid overlap
-      const baseUrl = await compose((l) => cdnPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, parts);
+      // FIX: removed sleeve edge overlap completely — composites only for torso+bottom
+      const baseUrl = await compose((l) => cdnPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
       const shadingUrl = await compose((l) => shadingPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
       const specularUrl = await compose((l) => specularPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
       const edgesUrl = await compose((l) => edgesPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
@@ -638,22 +638,24 @@ export default function SuitPreview({ config }: Props) {
   };
 
   // Feather the inner sleeve seam so torso/sleeve transition is invisible
+  // FIX: softer sleeve transition
   const sleevesFeatherStyle: React.CSSProperties = {
     background:
-      `linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 14%),` +
-      `linear-gradient(270deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 14%)`,
+      `linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0) 20%),` +
+      `linear-gradient(270deg, rgba(255,255,255,0.04), rgba(255,255,255,0) 20%)`,
     mixBlendMode: "soft-light",
-    opacity: 0.4,
+    opacity: 0.3,
     pointerEvents: "none",
   };
 
   // Feather the top seam of the bottom piece (waist) to eliminate horizontal line
+  // FIX: waist band fully softened
   const bottomFeatherStyle = (src: string): React.CSSProperties => ({
     background:
-      `linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 40%)`,
+      `linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 60%)`,
     mixBlendMode: "soft-light",
-    // FIX: bottom feather softened
-    opacity: 0.25,
+    // FIX: bottom feather softened by tone
+    opacity: selectedFabric?.tone === 'light' ? 0.15 : 0.25,
     WebkitMaskImage: toTransparentSilhouette(src),
     WebkitMaskRepeat: "no-repeat",
     WebkitMaskSize: "contain",
@@ -671,7 +673,7 @@ export default function SuitPreview({ config }: Props) {
       // FIX: waist band removed (keep only subtle central crease)
       `linear-gradient(90deg, rgba(0,0,0,0.22) 49.5%, rgba(0,0,0,0.06) 50%, rgba(255,255,255,0) 52%)`,
     mixBlendMode: 'multiply',
-    opacity: 0.28,
+    opacity: 0.18,
     WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
     WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
     WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
@@ -713,8 +715,8 @@ export default function SuitPreview({ config }: Props) {
     return {
       backgroundImage: `url(${fabricTexture})`,
       backgroundRepeat: "repeat",
-      // FIX: weave scale â€” consistent pixel tile size
-      backgroundSize: `${Math.round(canvas.h * 0.25)}px ${Math.round(canvas.h * 0.25)}px`,
+      // FIX: weave scale — consistent pixel tile size
+      backgroundSize: `${Math.round(canvas.h * 0.22)}px ${Math.round(canvas.h * 0.22)}px`,
       backgroundPosition: bgPos,
       opacity: vis.fineDetail,
       mixBlendMode: "soft-light",
@@ -830,8 +832,8 @@ export default function SuitPreview({ config }: Props) {
     size: string,
     canvas: { w: number; h: number }
   ): React.CSSProperties => {
-    // FIX: weave scale
-    const weavePx = Math.round(canvas.h * 0.25);
+    // FIX: weave scale — consistent pixel tile size
+    const weavePx = Math.round(canvas.h * 0.22);
     return {
       backgroundImage: `url(${fabricTexture})`,
       backgroundRepeat: "repeat",
@@ -991,6 +993,7 @@ export default function SuitPreview({ config }: Props) {
         {/* Unified composite overlays (base sprite/shading/specular/edges) */}
         {compositesReady && compositeBase && (
           <>
+            {/* FIX: improved tone depth on light fabrics */}
             <div
               className="absolute inset-0"
               style={{
@@ -999,7 +1002,7 @@ export default function SuitPreview({ config }: Props) {
                 backgroundSize: "contain",
                 backgroundPosition: "center",
                 mixBlendMode: "multiply",
-                opacity: 0.50,
+                opacity: 0.55,
                 pointerEvents: "none",
               }}
             />
@@ -1011,7 +1014,7 @@ export default function SuitPreview({ config }: Props) {
                 backgroundSize: "contain",
                 backgroundPosition: "center",
                 mixBlendMode: "soft-light",
-                opacity: 0.24,
+                opacity: 0.20,
                 pointerEvents: "none",
               }}
             />
@@ -1167,7 +1170,7 @@ export default function SuitPreview({ config }: Props) {
               backgroundSize: "contain",
               backgroundPosition: "center",
               mixBlendMode: "multiply",
-              opacity: 0.12, // FIX: remove sleeve edge overlap from unified overlays
+              opacity: 0.08, // FIX: removed sleeve edge overlap completely
               pointerEvents: "none",
             }}
           />
@@ -1181,8 +1184,9 @@ export default function SuitPreview({ config }: Props) {
               style={{
                 background: '#ffffff',
                 mixBlendMode: 'screen',
+                // FIX: adjusted sleeve tone blending for light fabrics
                 opacity:
-                  selectedFabric?.tone === 'dark' ? 0.16 : selectedFabric?.tone === 'light' ? 0.08 : 0.12,
+                  selectedFabric?.tone === 'dark' ? 0.10 : selectedFabric?.tone === 'light' ? 0.05 : 0.08,
                 WebkitMaskImage: `url(${sleevesMask})`,
                 WebkitMaskRepeat: 'no-repeat',
                 WebkitMaskSize: 'contain',
@@ -1200,7 +1204,8 @@ export default function SuitPreview({ config }: Props) {
               style={{
                 background: '#ffffff',
                 mixBlendMode: 'soft-light',
-                opacity: selectedFabric?.tone === 'dark' ? 0.10 : selectedFabric?.tone === 'light' ? 0.06 : 0.08,
+                // FIX: adjusted sleeve tone blending for light fabrics
+                opacity: selectedFabric?.tone === 'dark' ? 0.06 : selectedFabric?.tone === 'light' ? 0.04 : 0.05,
                 WebkitMaskImage: `url(${sleevesMask})`,
                 WebkitMaskRepeat: 'no-repeat',
                 WebkitMaskSize: 'contain',
