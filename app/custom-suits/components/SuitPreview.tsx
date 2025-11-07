@@ -532,13 +532,13 @@ export default function SuitPreview({ config }: Props) {
           .filter((l) => l.id !== "pants")
           .map((l) => (
             <div key={l.id} className="absolute inset-0">
-              {/* Blagi �wash� za mekocu */}
+              {/* Blagi "wash" za mekoću (manje na rukavima da ne pravi prelaz) */}
               <div
                 className="absolute inset-0"
                 style={{
                   ...fabricMaskStyle(l.src, JACKET_CANVAS),
-                  opacity: 0.18,
-                  filter: `${tb.filter} blur(4px) saturate(1.02)`,
+                  opacity: l.id === "sleeves" ? 0.06 : 0.12,
+                  filter: `${tb.filter} blur(3px) saturate(1.02)`,
                 }}
               />
               {/* Solid base color */}
@@ -547,8 +547,14 @@ export default function SuitPreview({ config }: Props) {
               }
               <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(l.src, JACKET_CANVAS) }} />
               {/* Reintroduce baked sprite details (shadows/folds) */}
-              <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'multiply', 0.32)} />
-              <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'soft-light', 0.18)} />
+              <div
+                className="absolute inset-0"
+                style={baseSpriteOverlayStyle(l.src, 'multiply', l.id === 'sleeves' ? 0.18 : 0.32)}
+              />
+              <div
+                className="absolute inset-0"
+                style={baseSpriteOverlayStyle(l.src, 'soft-light', l.id === 'sleeves' ? 0.10 : 0.18)}
+              />
               {/* Fine detail (sitni weave refleksi) */}
               <div
                 className="absolute inset-0"
@@ -566,20 +572,22 @@ export default function SuitPreview({ config }: Props) {
                 className="absolute inset-0"
                 style={shadingOverlayStyle(
                   l.src,
-                  // smanjen intenzitet da izbegnemo �prljav� look
-                  (selectedFabric?.tone === "dark" ? 0.20 : selectedFabric?.tone === "light" ? 0.14 : 0.17)
+                  l.id === 'sleeves'
+                    ? (selectedFabric?.tone === "dark" ? 0.10 : selectedFabric?.tone === "light" ? 0.07 : 0.09)
+                    : (selectedFabric?.tone === "dark" ? 0.20 : selectedFabric?.tone === "light" ? 0.14 : 0.17)
                 )}
               />
               <div
                 className="absolute inset-0"
                 style={specularOverlayStyle(
                   l.src,
-                  // ne�niji specular
-                  (selectedFabric?.tone === "dark" ? 0.15 : selectedFabric?.tone === "light" ? 0.11 : 0.13)
+                  l.id === 'sleeves'
+                    ? (selectedFabric?.tone === "dark" ? 0.08 : selectedFabric?.tone === "light" ? 0.06 : 0.07)
+                    : (selectedFabric?.tone === "dark" ? 0.15 : selectedFabric?.tone === "light" ? 0.11 : 0.13)
                 )}
               />
-              {/* Edges/Seams definition */}
-              <div className="absolute inset-0" style={edgesOverlayStyle(l.src, 0.28)} />
+              {/* Edges/Seams definition (mekše na rukavima da ne pravi liniju) */}
+              <div className="absolute inset-0" style={edgesOverlayStyle(l.src, l.id === 'sleeves' ? 0.16 : 0.28)} />
               {/* Per-part naglasci */}
               {l.id === "torso" && <TorsoLapelEmphasis />}
               {l.id === "sleeves" && <SleeveShoulderEmphasis />}
