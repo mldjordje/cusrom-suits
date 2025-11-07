@@ -1035,7 +1035,7 @@ export default function SuitPreview({ config }: Props) {
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage: url(),
+                backgroundImage: `url(${compositeBase})`,
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: 'contain',
                 backgroundPosition: 'center',
@@ -1047,7 +1047,7 @@ export default function SuitPreview({ config }: Props) {
             <div
               className="absolute inset-0"
               style={{
-                backgroundImage: url(),
+                backgroundImage: `url(${compositeBase})`,
                 backgroundRepeat: 'no-repeat',
                 backgroundSize: 'contain',
                 backgroundPosition: 'center',
@@ -1062,7 +1062,7 @@ export default function SuitPreview({ config }: Props) {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: url(),
+              backgroundImage: `url(${compositeSpecular})`,
               backgroundRepeat: 'no-repeat',
               backgroundSize: 'contain',
               backgroundPosition: 'center',
@@ -1076,7 +1076,7 @@ export default function SuitPreview({ config }: Props) {
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: url(),
+              backgroundImage: `url(${compositeEdges})`,
               backgroundRepeat: 'no-repeat',
               backgroundSize: 'contain',
               backgroundPosition: 'center',
