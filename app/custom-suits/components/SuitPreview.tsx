@@ -723,7 +723,7 @@ export default function SuitPreview({ config }: Props) {
                 )}
               />
               {/* Edges/Seams definition (mekše na rukavima da ne pravi liniju) */}
-              <div className="absolute inset-0" style={edgesOverlayStyle(l.src, l.id === 'sleeves' ? 0.14 : 0.22)} />
+              <div className="absolute inset-0" style={edgesOverlayStyle(l.src, l.id === 'sleeves' ? 0.14 : (l.id === 'bottom' ? 0.10 : 0.20))} />
               {/* Per-part naglasci */}
               {l.id === "torso" && <TorsoLapelEmphasis />}
               {l.id === "sleeves" && <SleeveShoulderEmphasis />}
