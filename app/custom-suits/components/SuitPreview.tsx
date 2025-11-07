@@ -1087,12 +1087,12 @@ export default function SuitPreview({ config }: Props) {
           />
         )}
 
-        {/* BALANCED FABRIC MODE ï¿½ subtle AO crease */}
+        {/* BALANCED FABRIC MODE — subtle AO crease */}
         <div
           className="absolute inset-0"
           style={{
             background:
-              linear-gradient(90deg, rgba(0,0,0,0.22) 49.5%, rgba(0,0,0,0.06) 50%, rgba(255,255,255,0) 52%),
+              'linear-gradient(90deg, rgba(0,0,0,0.22) 49.5%, rgba(0,0,0,0.06) 50%, rgba(255,255,255,0) 52%)',
             mixBlendMode: 'multiply',
             opacity: 0.14,
             WebkitMaskImage: jacketUnionMask ? ('url(' + jacketUnionMask + ')') : undefined,
