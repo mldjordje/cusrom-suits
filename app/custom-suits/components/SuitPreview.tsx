@@ -166,6 +166,7 @@ export default function SuitPreview({ config }: Props) {
   const [compositeShading, setCompositeShading] = useState<string | null>(null);
   const [compositeSpecular, setCompositeSpecular] = useState<string | null>(null);
   const [compositeEdges, setCompositeEdges] = useState<string | null>(null);
+  const compositesReady = Boolean(compositeBase && compositeShading && compositeSpecular && compositeEdges);
   useEffect(() => {
     if (!fabricTexture) {
       setFabricAvgColor(null);
@@ -276,7 +277,7 @@ export default function SuitPreview({ config }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [currentSuit, config.lapelId, config.lapelWidthId]);
+  }, [currentSuit, config.lapelId, config.lapelWidthId, fabricTexture]);
 
   // Build unified sprite composites (base/shading/specular/edges) for jacket parts
   useEffect(() => {
@@ -919,7 +920,7 @@ export default function SuitPreview({ config }: Props) {
         />
 
         {/* Unified composite overlays (base sprite/shading/specular/edges) */}
-        {compositeBase && (
+        {compositesReady && compositeBase && (
           <>
             <div
               className="absolute inset-0"
@@ -947,7 +948,7 @@ export default function SuitPreview({ config }: Props) {
             />
           </>
         )}
-        {compositeShading && (
+        {compositesReady && compositeShading && (
           <div
             className="absolute inset-0"
             style={{
@@ -961,7 +962,7 @@ export default function SuitPreview({ config }: Props) {
             }}
           />
         )}
-        {compositeSpecular && (
+        {compositesReady && compositeSpecular && (
           <div
             className="absolute inset-0"
             style={{
@@ -975,7 +976,7 @@ export default function SuitPreview({ config }: Props) {
             }}
           />
         )}
-        {compositeEdges && (
+        {compositesReady && compositeEdges && (
           <div
             className="absolute inset-0"
             style={{
@@ -1253,6 +1254,7 @@ export default function SuitPreview({ config }: Props) {
     // Note: if needed we can pass a union mask in future; current callers use per-part masks
     return style;
   };
+
 
 
 
