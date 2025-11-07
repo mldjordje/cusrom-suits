@@ -432,6 +432,23 @@ export default function SuitPreview({ config }: Props) {
     pointerEvents: "none",
   };
 
+  // Feather the top seam of the bottom piece (waist) to eliminate horizontal line
+  const bottomFeatherStyle = (src: string): React.CSSProperties => ({
+    background:
+      `linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 22%)`,
+    mixBlendMode: "soft-light",
+    opacity: 0.8,
+    WebkitMaskImage: toTransparentSilhouette(src),
+    WebkitMaskRepeat: "no-repeat",
+    WebkitMaskSize: "contain",
+    WebkitMaskPosition: "center",
+    maskImage: toTransparentSilhouette(src),
+    maskRepeat: "no-repeat",
+    maskSize: "contain",
+    maskPosition: "center",
+    pointerEvents: "none",
+  });
+
   // Bring back baked folds/highlights from transparent base sprite (alpha PNG/WebP)
   const baseSpriteOverlayStyle = (
     src: string,
@@ -686,10 +703,13 @@ export default function SuitPreview({ config }: Props) {
                 }}
               />
               {/* Reintroduce baked sprite details (shadows/folds) */}
-              <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'multiply', l.id === 'sleeves' ? 0.18 : 0.30)} />
+              <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'multiply', l.id === 'sleeves' ? 0.18 : 0.34)} />
               <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'soft-light', l.id === 'sleeves' ? 0.10 : 0.16)} />
               {l.id === 'sleeves' && (
                 <div className="absolute inset-0" style={sleevesFeatherStyle} />
+              )}
+              {l.id === 'bottom' && (
+                <div className="absolute inset-0" style={bottomFeatherStyle(l.src)} />
               )}
               {/* Fine detail (sitni weave refleksi) */}
               <div
@@ -723,7 +743,7 @@ export default function SuitPreview({ config }: Props) {
                 )}
               />
               {/* Edges/Seams definition (mekše na rukavima da ne pravi liniju) */}
-              <div className="absolute inset-0" style={edgesOverlayStyle(l.src, l.id === 'sleeves' ? 0.14 : (l.id === 'bottom' ? 0.10 : 0.20))} />
+              <div className="absolute inset-0" style={edgesOverlayStyle(l.src, l.id === 'sleeves' ? 0.10 : (l.id === 'bottom' ? 0.08 : 0.20))} />
               {/* Per-part naglasci */}
               {l.id === "torso" && <TorsoLapelEmphasis />}
               {l.id === "sleeves" && <SleeveShoulderEmphasis />}
