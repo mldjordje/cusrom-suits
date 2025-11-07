@@ -235,6 +235,91 @@ export const suits: SuitModel[] = [
     ],
   },
 
+  {
+    id: "double_6btn",
+    name: "Dvoredno (6 dugmadi)",
+    colorId: "blue",
+    icon: "/custom-suits/icons/double_6btn.png",
+
+    layers: [
+      {
+        id: "torso",
+        name: "Sredina sakoa",
+        // Transparent torso sprite za peak/notch zamene
+        src: "/assets/suits/transparent/neck_double_breasted+buttons_6+lapel_medium+style_lapel_notch.png",
+      },
+      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/sleeves.png" },
+      {
+        id: "bottom",
+        name: "Donji deo sakoa",
+        src: "/assets/suits/blue/bottom_double_breasted+length_long.png",
+      },
+      {
+        id: "pants",
+        name: "Pantalone",
+        src: "/assets/suits/blue/length_long+cut_slim.png",
+      },
+    ],
+
+    lapels: [
+      {
+        id: "notch",
+        name: "Notch Lapel",
+        widths: [
+          { id: "narrow", name: "Narrow", src: "/assets/suits/transparent/neck_double_breasted+buttons_6+lapel_narrow+style_lapel_notch.png" },
+          { id: "medium", name: "Medium", src: "/assets/suits/transparent/neck_double_breasted+buttons_6+lapel_medium+style_lapel_notch.png" },
+          { id: "wide", name: "Wide", src: "/assets/suits/transparent/neck_double_breasted+buttons_6+lapel_wide+style_lapel_notch.png" },
+        ],
+      },
+      {
+        id: "peak",
+        name: "Peak Lapel",
+        widths: [
+          { id: "narrow", name: "Narrow", src: "/assets/suits/transparent/neck_double_breasted+buttons_6+lapel_narrow+style_lapel_peak.png" },
+          { id: "medium", name: "Medium", src: "/assets/suits/transparent/neck_double_breasted+buttons_6+lapel_medium+style_lapel_peak.png" },
+          { id: "wide", name: "Wide", src: "/assets/suits/transparent/neck_double_breasted+buttons_6+lapel_wide+style_lapel_peak.png" },
+        ],
+      },
+    ],
+
+    pockets: [
+      { id: "double-welted", name: "Double-Welted", src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png" },
+      { id: "patched", name: "Patched", src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png" },
+      { id: "flap", name: "Flap", src: "/assets/suits/blue/hip_pockets_with_flap+fit_slim.png" },
+    ],
+
+    interiors: [
+      {
+        id: "Blue",
+        name: "Blue Interior",
+        layers: [
+          { id: "interior_base", name: "Base", src: "/assets/suits/blue/interior1.png" },
+          { id: "interior_left", name: "Left", src: "/assets/suits/blue/interior2.png" },
+          { id: "interior_right", name: "Right", src: "/assets/suits/blue/interior3.png" },
+        ],
+      },
+      {
+        id: "contrast",
+        name: "Contrast Lining",
+        layers: [
+          { id: "interior_base", name: "Base", src: "/assets/suits/blue/interiorblack3.png" },
+          { id: "interior_left", name: "Left", src: "/assets/suits/blue/interiorblack1.png" },
+          { id: "interior_right", name: "Right", src: "/assets/suits/blue/interiorblack2.png" },
+        ],
+      },
+    ],
+
+    breastPocket: [
+      { id: "standard", name: "Standard Pocket", layers: [ { id: "breast", name: "Breast Pocket", src: "/assets/suits/blue/breast_pocket_classic.png" } ] },
+      { id: "none", name: "No Pocket", layers: [] },
+    ],
+
+    cuffs: [
+      { id: "plain", name: "Without Cuffs", src: "/assets/suits/blue/length_long+cut_slim.png" },
+      { id: "cuffed", name: "With Cuffs", src: "/assets/suits/blue/cuffs+length_long+cut_slim.png" },
+    ],
+  },
+
   // ---------------------------------------------------
   // Ostali modeli (isti princip)
   // ---------------------------------------------------
