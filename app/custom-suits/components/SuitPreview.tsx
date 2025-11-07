@@ -1014,8 +1014,8 @@ export default function SuitPreview({ config }: Props) {
               backgroundRepeat: 'no-repeat',
               backgroundSize: 'contain',
               backgroundPosition: 'center',
-              mixBlendMode: 'multiply',
-              opacity: 0.65,
+              mixBlendMode: 'normal',
+              opacity: 1,
               pointerEvents: 'none',
             }}
           />
@@ -1032,11 +1032,11 @@ export default function SuitPreview({ config }: Props) {
               backgroundSize: 'cover',
               mixBlendMode: 'soft-light',
               opacity: 0.45,
-              WebkitMaskImage: toTransparentSilhouette(l.src),
+              WebkitMaskImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
               WebkitMaskRepeat: 'no-repeat',
               WebkitMaskSize: 'contain',
               WebkitMaskPosition: 'center',
-              maskImage: toTransparentSilhouette(l.src),
+              maskImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
               maskRepeat: 'no-repeat',
               maskSize: 'contain',
               maskPosition: 'center',
@@ -1045,32 +1045,7 @@ export default function SuitPreview({ config }: Props) {
           />
         ))}
 
-        {/* LAYER 3: Fine weave overlay */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`fine-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${fabricTexture})`,
-              backgroundRepeat: 'repeat',
-              backgroundSize: `${Math.round(JACKET_CANVAS.h * 0.22)}px ${Math.round(JACKET_CANVAS.h * 0.22)}px`,
-              opacity: 0.10,
-              mixBlendMode: 'normal',
-              filter: 'contrast(1.04)',
-              WebkitMaskImage: toTransparentSilhouette(l.src),
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskSize: 'contain',
-              WebkitMaskPosition: 'center',
-              maskImage: toTransparentSilhouette(l.src),
-              maskRepeat: 'no-repeat',
-              maskSize: 'contain',
-              maskPosition: 'center',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
-
-        {/* LAYER 4: Specular highlights */}
+        {/* LAYER 3: Specular highlights */}
         {allJacketLayers.map((l) => (
           <div
             key={`spec-${l.id}`}
@@ -1081,7 +1056,24 @@ export default function SuitPreview({ config }: Props) {
               backgroundSize: 'contain',
               backgroundPosition: 'center',
               mixBlendMode: 'overlay',
-              opacity: 0.15,
+              opacity: 0.12,
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
+
+        {/* LAYER 4: Edge shadows */}
+        {allJacketLayers.map((l) => (
+          <div
+            key={`edge-${l.id}`}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${edgesPair(l.src).webp}), url(${edgesPair(l.src).png})`,
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              mixBlendMode: 'multiply',
+              opacity: 0.12,
               pointerEvents: 'none',
             }}
           />
