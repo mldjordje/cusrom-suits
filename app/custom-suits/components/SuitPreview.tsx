@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
@@ -302,7 +302,8 @@ export default function SuitPreview({ config }: Props) {
     const compose = async (
       picker: (l: SuitLayer) => { webp: string; png: string },
       w: number,
-      h: number
+      h: number,
+      customParts?: SuitLayer[]
     ) => {
       const c = document.createElement("canvas");
       c.width = w;
@@ -310,7 +311,8 @@ export default function SuitPreview({ config }: Props) {
       const ctx = c.getContext("2d");
       if (!ctx) return null;
       ctx.clearRect(0, 0, w, h);
-      for (const L of parts) {
+      const loopParts = customParts || parts;
+      for (const L of loopParts) {
         const p = picker(L);
         const tryLoad = (url: string) =>
           new Promise<HTMLImageElement>((resolve, reject) => {
@@ -340,10 +342,12 @@ export default function SuitPreview({ config }: Props) {
     };
 
     (async () => {
-      const baseUrl = await compose((l) => cdnPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h);
-      const shadingUrl = await compose((l) => shadingPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h);
-      const specularUrl = await compose((l) => specularPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h);
-      const edgesUrl = await compose((l) => edgesPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h);
+      const torsoBottom = parts.filter(p => p.id === "torso" || p.id === "bottom");
+      // Base sprite can include sleeves (harmless), but edges/specular exclude sleeves to avoid overlap
+      const baseUrl = await compose((l) => cdnPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, parts);
+      const shadingUrl = await compose((l) => shadingPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
+      const specularUrl = await compose((l) => specularPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
+      const edgesUrl = await compose((l) => edgesPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
       if (!cancelled) {
         setCompositeBase(baseUrl);
         setCompositeShading(shadingUrl);
@@ -639,16 +643,17 @@ export default function SuitPreview({ config }: Props) {
       `linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 14%),` +
       `linear-gradient(270deg, rgba(255,255,255,0.06), rgba(255,255,255,0) 14%)`,
     mixBlendMode: "soft-light",
-    opacity: 0.7,
+    opacity: 0.4,
     pointerEvents: "none",
   };
 
   // Feather the top seam of the bottom piece (waist) to eliminate horizontal line
   const bottomFeatherStyle = (src: string): React.CSSProperties => ({
     background:
-      `linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 22%)`,
+      `linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 40%)`,
     mixBlendMode: "soft-light",
-    opacity: 0.8,
+    // FIX: bottom feather softened
+    opacity: 0.25,
     WebkitMaskImage: toTransparentSilhouette(src),
     WebkitMaskRepeat: "no-repeat",
     WebkitMaskSize: "contain",
@@ -663,11 +668,10 @@ export default function SuitPreview({ config }: Props) {
   // Ambient occlusion for jacket (lapel and waist emphasis)
   const jacketAOStyle: React.CSSProperties = {
     background:
-      // central crease and waist band
-      `linear-gradient(90deg, rgba(0,0,0,0.22) 49.5%, rgba(0,0,0,0.06) 50%, rgba(255,255,255,0) 52%),` +
-      `linear-gradient(180deg, rgba(0,0,0,0.18) 46%, rgba(0,0,0,0) 64%)`,
+      // FIX: waist band removed (keep only subtle central crease)
+      `linear-gradient(90deg, rgba(0,0,0,0.22) 49.5%, rgba(0,0,0,0.06) 50%, rgba(255,255,255,0) 52%)`,
     mixBlendMode: 'multiply',
-    opacity: 0.45,
+    opacity: 0.28,
     WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
     WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
     WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
@@ -709,7 +713,8 @@ export default function SuitPreview({ config }: Props) {
     return {
       backgroundImage: `url(${fabricTexture})`,
       backgroundRepeat: "repeat",
-      backgroundSize: vis.detailScale,
+      // FIX: weave scale — consistent pixel tile size
+      backgroundSize: `${Math.round(canvas.h * 0.25)}px ${Math.round(canvas.h * 0.25)}px`,
       backgroundPosition: bgPos,
       opacity: vis.fineDetail,
       mixBlendMode: "soft-light",
@@ -824,11 +829,11 @@ export default function SuitPreview({ config }: Props) {
     opacity: number,
     size: string,
     canvas: { w: number; h: number }
-  ): React.CSSProperties => {
+  ): React.CSSProperties => {\n    // FIX: weave scale\n    const weavePx = Math.round(canvas.h * 0.25);
     return {
       backgroundImage: `url(${fabricTexture})`,
       backgroundRepeat: "repeat",
-      backgroundSize: size,
+      backgroundSize: `${weavePx}px ${weavePx}px`,
       backgroundPosition: "center",
       opacity,
       mixBlendMode: "soft-light",
@@ -949,18 +954,34 @@ export default function SuitPreview({ config }: Props) {
           />
         )}
 
-        {/* Unified fabric base (torso + sleeves + bottom) to remove seams */}
-      <div
+        {/* FIX: do not use union mask for sleeves (prevents transparency/edge artifacts) */}
+        {/* A) Torso + Bottom (use union mask) */}
+        <div
           className="absolute inset-0"
           style={unifiedFabricBaseStyle(
-            suitLayers.filter((x) => x.id === "torso" || x.id === "sleeves" || x.id === "bottom"),
+            suitLayers.filter((x) => x.id === "torso" || x.id === "bottom"),
             JACKET_CANVAS
           )}
         />
         <div
           className="absolute inset-0"
           style={unifiedWeaveOverlayStyle(
-            suitLayers.filter((x) => x.id === "torso" || x.id === "sleeves" || x.id === "bottom"),
+            suitLayers.filter((x) => x.id === "torso" || x.id === "bottom"),
+            JACKET_CANVAS
+          )}
+        />
+        {/* B) Sleeves (force per-part masking) */}
+        <div
+          className="absolute inset-0"
+          style={unifiedFabricBaseStyle(
+            suitLayers.filter((x) => x.id === "sleeves"),
+            JACKET_CANVAS
+          )}
+        />
+        <div
+          className="absolute inset-0"
+          style={unifiedWeaveOverlayStyle(
+            suitLayers.filter((x) => x.id === "sleeves"),
             JACKET_CANVAS
           )}
         />
@@ -1130,8 +1151,7 @@ export default function SuitPreview({ config }: Props) {
               backgroundSize: "contain",
               backgroundPosition: "center",
               mixBlendMode: "overlay",
-              opacity: 0.16,
-              pointerEvents: "none",
+              opacity: 0.16,\n              pointerEvents: "none",
             }}
           />
         )}
@@ -1144,7 +1164,7 @@ export default function SuitPreview({ config }: Props) {
               backgroundSize: "contain",
               backgroundPosition: "center",
               mixBlendMode: "multiply",
-              opacity: 0.20,
+              opacity: 0.12, // FIX: remove sleeve edge overlap from unified overlays
               pointerEvents: "none",
             }}
           />
@@ -1336,7 +1356,7 @@ export default function SuitPreview({ config }: Props) {
             }}
           />
           {/* Shading/specular za pantalone (ako postoje) */}
-          <div className="absolute inset-0" style={shadingOverlayStyle(pants.src, selectedFabric?.tone === "dark" ? 0.26 : selectedFabric?.tone === "light" ? 0.18 : 0.22)} />
+          <div className="absolute inset-0" style={shadingOverlayStyle(pants.src, selectedFabric?.tone === "dark" ? 0.26 : selectedFabric?.tone === "light" ? 0.16 : 0.22)} />
           <div className="absolute inset-0" style={specularOverlayStyle(pants.src, 0.16)} />
           <div
             className="absolute inset-0 pointer-events-none"
