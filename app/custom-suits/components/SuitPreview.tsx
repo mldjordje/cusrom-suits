@@ -159,6 +159,48 @@ export default function SuitPreview({ config }: Props) {
     return "#8f8f8f";
   })();
 
+  // Average color from fabric texture (to better match hue)
+  const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
+  useEffect(() => {
+    if (!fabricTexture) {
+      setFabricAvgColor(null);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      try {
+        const c = document.createElement("canvas");
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        const w = 32,
+          h = 32;
+        c.width = w;
+        c.height = h;
+        ctx.drawImage(img, 0, 0, w, h);
+        const d = ctx.getImageData(0, 0, w, h).data;
+        let r = 0,
+          g = 0,
+          b = 0,
+          n = 0;
+        for (let i = 0; i < d.length; i += 4) {
+          const a = d[i + 3];
+          if (a < 10) continue;
+          r += d[i];
+          g += d[i + 1];
+          b += d[i + 2];
+          n++;
+        }
+        if (n > 0) {
+          const toHex = (x: number) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0");
+          setFabricAvgColor(`#${toHex(r / n)}${toHex(g / n)}${toHex(b / n)}`);
+        } else setFabricAvgColor(null);
+      } catch {}
+    };
+    img.onerror = () => setFabricAvgColor(null);
+    img.src = fabricTexture;
+  }, [fabricTexture]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full text-gray-400 text-sm">
@@ -263,7 +305,7 @@ export default function SuitPreview({ config }: Props) {
     src: string
   ): React.CSSProperties => {
     return {
-      backgroundColor: toneBaseColor,
+      backgroundColor: fabricAvgColor || toneBaseColor,
       WebkitMaskImage: toTransparentSilhouette(src),
       WebkitMaskRepeat: "no-repeat",
       WebkitMaskSize: "contain",

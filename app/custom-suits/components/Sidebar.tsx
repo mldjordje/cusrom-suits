@@ -155,8 +155,16 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
               <h3 className="text-sm font-semibold text-[#444] mb-4">Lapel Width</h3>
               <div className="flex gap-3 flex-wrap">
                 {currentSuit.lapels.find((l) => l.id === config.lapelId)?.widths.map((width) => (
-                  <button key={width.id} onClick={() => dispatch({ type: "SET_LAPEL_WIDTH", payload: width.id })} className={`px-4 py-2 text-xs rounded-md border transition ${config.lapelWidthId === width.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}>
-                    {width.name}
+                  <button
+                    key={width.id}
+                    onClick={() => dispatch({ type: "SET_LAPEL_WIDTH", payload: width.id })}
+                    className={`px-2 py-2 text-xs rounded-md border transition flex flex-col items-center gap-1 w-28 ${config.lapelWidthId === width.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}
+                  >
+                    {width.src && (
+                      // thumb from transparent assets
+                      <img src={width.src} alt={width.name} className="h-14 w-full object-contain" />
+                    )}
+                    <span>{width.name}</span>
                   </button>
                 ))}
               </div>
@@ -169,8 +177,13 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
               <h3 className="text-sm font-semibold text-[#444] mb-4">Pocket Style</h3>
               <div className="grid grid-cols-2 gap-3">
                 {currentSuit.pockets?.map((pocket) => (
-                  <button key={pocket.id} onClick={() => dispatch({ type: "SET_POCKET", payload: pocket.id })} className={`border rounded-md py-3 text-xs transition ${config.pocketId === pocket.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}>
-                    {pocket.name}
+                  <button
+                    key={pocket.id}
+                    onClick={() => dispatch({ type: "SET_POCKET", payload: pocket.id })}
+                    className={`border rounded-md p-2 text-xs transition flex flex-col items-center gap-1 ${config.pocketId === pocket.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}
+                  >
+                    {pocket.src && <img src={pocket.src} alt={pocket.name} className="h-14 w-full object-contain" />}
+                    <span>{pocket.name}</span>
                   </button>
                 ))}
               </div>
@@ -197,8 +210,13 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
               <h3 className="text-sm font-semibold text-[#444] mb-4">Breast Pocket</h3>
               <div className="grid grid-cols-2 gap-3">
                 {currentSuit.breastPocket.map((bp) => (
-                  <button key={bp.id} onClick={() => dispatch({ type: "SET_BREAST_POCKET", payload: bp.id })} className={`border rounded-md py-3 text-xs transition ${config.breastPocketId === bp.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}>
-                    {bp.name}
+                  <button
+                    key={bp.id}
+                    onClick={() => dispatch({ type: "SET_BREAST_POCKET", payload: bp.id })}
+                    className={`border rounded-md p-2 text-xs transition flex flex-col items-center gap-1 ${config.breastPocketId === bp.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}
+                  >
+                    {bp.src && <img src={bp.src} alt={bp.name} className="h-14 w-full object-contain" />}
+                    <span>{bp.name}</span>
                   </button>
                 ))}
               </div>
@@ -211,8 +229,13 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
               <h3 className="text-sm font-semibold text-[#444] mb-4">Pants Cuffs</h3>
               <div className="grid grid-cols-2 gap-3">
                 {currentSuit.cuffs.map((cuff) => (
-                  <button key={cuff.id} onClick={() => dispatch({ type: "SET_CUFF", payload: cuff.id })} className={`border rounded-md py-3 text-xs transition ${config.cuffId === cuff.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}>
-                    {cuff.name}
+                  <button
+                    key={cuff.id}
+                    onClick={() => dispatch({ type: "SET_CUFF", payload: cuff.id })}
+                    className={`border rounded-md p-2 text-xs transition flex flex-col items-center gap-1 ${config.cuffId === cuff.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}
+                  >
+                    {cuff.src && <img src={cuff.src} alt={cuff.name} className="h-14 w-full object-contain" />}
+                    <span>{cuff.name}</span>
                   </button>
                 ))}
               </div>

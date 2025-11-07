@@ -150,6 +150,11 @@ export const suits: SuitModel[] = [
         name: "Patched",
         src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png",
       },
+      {
+        id: "flap",
+        name: "Flap",
+        src: "/assets/suits/blue/hip_pockets_with_flap+fit_slim.png",
+      },
     ],
 
     interiors: [
@@ -295,6 +300,11 @@ export const suits: SuitModel[] = [
         name: "Patched",
         src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png",
       },
+      {
+        id: "flap",
+        name: "Flap",
+        src: "/assets/suits/blue/hip_pockets_with_flap+fit_slim.png",
+      },
     ],
 
     interiors: [
@@ -432,6 +442,11 @@ export const suits: SuitModel[] = [
         id: "patched",
         name: "Patched",
         src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png",
+      },
+      {
+        id: "flap",
+        name: "Flap",
+        src: "/assets/suits/blue/hip_pockets_with_flap+fit_slim.png",
       },
     ],
 
