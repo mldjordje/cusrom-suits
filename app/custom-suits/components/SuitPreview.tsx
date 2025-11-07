@@ -162,6 +162,10 @@ export default function SuitPreview({ config }: Props) {
   // Average color from fabric texture (to better match hue)
   const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
+  const [compositeBase, setCompositeBase] = useState<string | null>(null);
+  const [compositeShading, setCompositeShading] = useState<string | null>(null);
+  const [compositeSpecular, setCompositeSpecular] = useState<string | null>(null);
+  const [compositeEdges, setCompositeEdges] = useState<string | null>(null);
   useEffect(() => {
     if (!fabricTexture) {
       setFabricAvgColor(null);
@@ -267,6 +271,82 @@ export default function SuitPreview({ config }: Props) {
         if (!cancelled) setJacketUnionMask(c.toDataURL("image/png"));
       } catch {
         if (!cancelled) setJacketUnionMask(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentSuit, config.lapelId, config.lapelWidthId]);
+
+  // Build unified sprite composites (base/shading/specular/edges) for jacket parts
+  useEffect(() => {
+    const baseLayersLocal: SuitLayer[] = currentSuit?.layers || [];
+    const selectedLapelLocal =
+      currentSuit?.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit?.lapels?.[0];
+    const selectedLapelWidthLocal =
+      selectedLapelLocal?.widths.find((w) => w.id === config.lapelWidthId) ||
+      selectedLapelLocal?.widths.find((w) => w.id === "medium") ||
+      selectedLapelLocal?.widths?.[0];
+    const swap = (src: string) =>
+      src.replace(
+        /lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/,
+        `lapel_${selectedLapelWidthLocal?.id || "medium"}+style_lapel_${selectedLapelLocal?.id || "notch"}`
+      );
+    const adjusted = baseLayersLocal.map((l) => (l.id === "torso" ? { ...l, src: swap(l.src) } : l));
+    const parts = adjusted.filter((x) => x.id === "torso" || x.id === "sleeves" || x.id === "bottom");
+    if (!parts.length) return;
+
+    let cancelled = false;
+    const compose = async (
+      picker: (l: SuitLayer) => { webp: string; png: string },
+      w: number,
+      h: number
+    ) => {
+      const c = document.createElement("canvas");
+      c.width = w;
+      c.height = h;
+      const ctx = c.getContext("2d");
+      if (!ctx) return null;
+      ctx.clearRect(0, 0, w, h);
+      for (const L of parts) {
+        const p = picker(L);
+        const tryLoad = (url: string) =>
+          new Promise<HTMLImageElement>((resolve, reject) => {
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => resolve(img);
+            img.onerror = reject;
+            img.src = url;
+          });
+        let img: HTMLImageElement | null = null;
+        try {
+          img = await tryLoad(p.webp);
+        } catch {
+          try {
+            img = await tryLoad(p.png);
+          } catch {}
+        }
+        if (!img) continue;
+        const scale = Math.min(w / img.width, h / img.height);
+        const dw = Math.round(img.width * scale);
+        const dh = Math.round(img.height * scale);
+        const dx = Math.round((w - dw) / 2);
+        const dy = Math.round((h - dh) / 2);
+        ctx.drawImage(img, dx, dy, dw, dh);
+      }
+      return c.toDataURL("image/png");
+    };
+
+    (async () => {
+      const baseUrl = await compose((l) => cdnPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h);
+      const shadingUrl = await compose((l) => shadingPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h);
+      const specularUrl = await compose((l) => specularPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h);
+      const edgesUrl = await compose((l) => edgesPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h);
+      if (!cancelled) {
+        setCompositeBase(baseUrl);
+        setCompositeShading(shadingUrl);
+        setCompositeSpecular(specularUrl);
+        setCompositeEdges(edgesUrl);
       }
     })();
     return () => {
@@ -487,7 +567,7 @@ export default function SuitPreview({ config }: Props) {
     const t = (selectedFabric?.tone || "medium") as Tone;
     const opacity = t === "dark" ? 0.14 : t === "light" ? 0.20 : 0.17;
 
-    const style: React.CSSProperties = {
+    return {
       backgroundImage: `url(${fabricTexture})`,
       backgroundSize: bgSize,
       backgroundPosition: bgPos,
@@ -495,31 +575,15 @@ export default function SuitPreview({ config }: Props) {
       mixBlendMode: "soft-light",
       opacity,
       pointerEvents: "none",
-    };
-    if (jacketUnionMask) {
-      Object.assign(style, {
-        WebkitMaskImage: `url(${jacketUnionMask})`,
-        WebkitMaskRepeat: "no-repeat",
-        WebkitMaskSize: "contain",
-        WebkitMaskPosition: "center",
-        maskImage: `url(${jacketUnionMask})`,
-        maskRepeat: "no-repeat",
-        maskSize: "contain",
-        maskPosition: "center",
-      } as React.CSSProperties);
-    } else {
-      Object.assign(style, {
-        WebkitMaskImage: maskImages.join(", "),
-        WebkitMaskRepeat: maskRepeats.join(", "),
-        WebkitMaskSize: maskSizes.join(", "),
-        WebkitMaskPosition: maskPositions.join(", "),
-        maskImage: maskImages.join(", "),
-        maskRepeat: maskRepeats.join(", "),
-        maskSize: maskSizes.join(", "),
-        maskPosition: maskPositions.join(", "),
-      } as React.CSSProperties);
-    }
-    return style;
+      WebkitMaskImage: maskImages.join(", "),
+      WebkitMaskRepeat: maskRepeats.join(", "),
+      WebkitMaskSize: maskSizes.join(", "),
+      WebkitMaskPosition: maskPositions.join(", "),
+      maskImage: maskImages.join(", "),
+      maskRepeat: maskRepeats.join(", "),
+      maskSize: maskSizes.join(", "),
+      maskPosition: maskPositions.join(", "),
+    } as React.CSSProperties;
   };
 
   // Feather the inner sleeve seam so torso/sleeve transition is invisible
@@ -548,6 +612,53 @@ export default function SuitPreview({ config }: Props) {
     maskPosition: "center",
     pointerEvents: "none",
   });
+
+  // Unified wash overlay (soft blur) over the whole jacket via union mask
+  const unifiedWashOverlayStyle = (canvas: { w: number; h: number }) => {
+    const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
+    const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
+    return {
+      backgroundImage: `url(${fabricTexture})`,
+      backgroundSize: bgSize,
+      backgroundPosition: bgPos,
+      backgroundRepeat: "repeat",
+      opacity: 0,
+      filter: `${tb.filter} blur(3px) saturate(1.02)`,
+      WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+      WebkitMaskRepeat: jacketUnionMask ? "no-repeat" : undefined,
+      WebkitMaskSize: jacketUnionMask ? "contain" : undefined,
+      WebkitMaskPosition: jacketUnionMask ? "center" : undefined,
+      maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+      maskRepeat: jacketUnionMask ? "no-repeat" : undefined,
+      maskSize: jacketUnionMask ? "contain" : undefined,
+      maskPosition: jacketUnionMask ? "center" : undefined,
+      pointerEvents: "none",
+    } as React.CSSProperties;
+  };
+
+  // Unified fine detail overlay (subtle weave highlights) over union mask
+  const unifiedFineDetailOverlayStyle = (canvas: { w: number; h: number }) => {
+    const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
+    const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
+    return {
+      backgroundImage: `url(${fabricTexture})`,
+      backgroundRepeat: "repeat",
+      backgroundSize: vis.detailScale,
+      backgroundPosition: bgPos,
+      opacity: vis.fineDetail,
+      mixBlendMode: "soft-light",
+      filter: "contrast(1.04)",
+      WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+      WebkitMaskRepeat: jacketUnionMask ? "no-repeat" : undefined,
+      WebkitMaskSize: jacketUnionMask ? "contain" : undefined,
+      WebkitMaskPosition: jacketUnionMask ? "center" : undefined,
+      maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+      maskRepeat: jacketUnionMask ? "no-repeat" : undefined,
+      maskSize: jacketUnionMask ? "contain" : undefined,
+      maskPosition: jacketUnionMask ? "center" : undefined,
+      pointerEvents: "none",
+    } as React.CSSProperties;
+  };
 
   // Bring back baked folds/highlights from transparent base sprite (alpha PNG/WebP)
   const baseSpriteOverlayStyle = (
@@ -788,6 +899,78 @@ export default function SuitPreview({ config }: Props) {
           )}
         />
 
+        {/* Unified composite overlays (base sprite/shading/specular/edges) */}
+        {compositeBase && (
+          <>
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url(${compositeBase})`,
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "contain",
+                backgroundPosition: "center",
+                mixBlendMode: "multiply",
+                opacity: 0.30,
+                pointerEvents: "none",
+              }}
+            />
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: `url(${compositeBase})`,
+                backgroundRepeat: "no-repeat",
+                backgroundSize: "contain",
+                backgroundPosition: "center",
+                mixBlendMode: "soft-light",
+                opacity: 0.16,
+                pointerEvents: "none",
+              }}
+            />
+          </>
+        )}
+        {compositeShading && (
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${compositeShading})`,
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "contain",
+              backgroundPosition: "center",
+              mixBlendMode: "multiply",
+              opacity: selectedFabric?.tone === "dark" ? 0.18 : selectedFabric?.tone === "light" ? 0.13 : 0.16,
+              pointerEvents: "none",
+            }}
+          />
+        )}
+        {compositeSpecular && (
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${compositeSpecular})`,
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "contain",
+              backgroundPosition: "center",
+              mixBlendMode: "overlay",
+              opacity: selectedFabric?.tone === "dark" ? 0.12 : selectedFabric?.tone === "light" ? 0.09 : 0.10,
+              pointerEvents: "none",
+            }}
+          />
+        )}
+        {compositeEdges && (
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: `url(${compositeEdges})`,
+              backgroundRepeat: "no-repeat",
+              backgroundSize: "contain",
+              backgroundPosition: "center",
+              mixBlendMode: "multiply",
+              opacity: 0.14,
+              pointerEvents: "none",
+            }}
+          />
+        )}
+
         {/* BODY LAYERS (torzo, rukavi, donji deo) */}
         {suitLayers
           .filter((l) => l.id !== "pants")
@@ -798,13 +981,13 @@ export default function SuitPreview({ config }: Props) {
                 className="absolute inset-0"
                 style={{
                   ...fabricMaskStyle(l.src, JACKET_CANVAS),
-                  opacity: 0.08,
+                  opacity: 0,
                   filter: `${tb.filter} blur(3px) saturate(1.02)`,
                 }}
               />
               {/* Reintroduce baked sprite details (shadows/folds) */}
-              <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'multiply', l.id === 'sleeves' ? 0.18 : 0.34)} />
-              <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'soft-light', l.id === 'sleeves' ? 0.10 : 0.16)} />
+              <div className="absolute inset-0" style={{ display: "none" }} />
+              <div className="absolute inset-0" style={{ display: "none" }} />
               {l.id === 'sleeves' && (
                 <div className="absolute inset-0" style={sleevesFeatherStyle} />
               )}
@@ -826,24 +1009,14 @@ export default function SuitPreview({ config }: Props) {
               {/* Generated shading/specular (ako postoje na CDN-u) */}
               <div
                 className="absolute inset-0"
-                style={shadingOverlayStyle(
-                  l.src,
-                  l.id === 'sleeves'
-                    ? (selectedFabric?.tone === "dark" ? 0.10 : selectedFabric?.tone === "light" ? 0.07 : 0.09)
-                    : (selectedFabric?.tone === "dark" ? 0.18 : selectedFabric?.tone === "light" ? 0.13 : 0.16)
-                )}
+                style={{ display: "none" }}
               />
               <div
                 className="absolute inset-0"
-                style={specularOverlayStyle(
-                  l.src,
-                  l.id === 'sleeves'
-                    ? (selectedFabric?.tone === "dark" ? 0.08 : selectedFabric?.tone === "light" ? 0.06 : 0.07)
-                    : (selectedFabric?.tone === "dark" ? 0.13 : selectedFabric?.tone === "light" ? 0.10 : 0.12)
-                )}
+                style={{ display: "none" }}
               />
               {/* Edges/Seams definition (mekše na rukavima da ne pravi liniju) */}
-              <div className="absolute inset-0" style={edgesOverlayStyle(l.src, l.id === 'sleeves' ? 0.10 : (l.id === 'bottom' ? 0.08 : 0.20))} />
+              <div className="absolute inset-0" style={{ display: "none" }} />
               {/* Per-part naglasci */}
               {l.id === "torso" && <TorsoLapelEmphasis />}
               {l.id === "sleeves" && <SleeveShoulderEmphasis />}
@@ -855,7 +1028,7 @@ export default function SuitPreview({ config }: Props) {
           <div className="absolute inset-0">
             <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pocketSrc) }} />
             <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pocketSrc, JACKET_CANVAS) }} />
-            <div className="absolute inset-0" style={baseSpriteOverlayStyle(pocketSrc, 'multiply', 0.28)} />
+            <div className="absolute inset-0" style={{ display: "none" }} />
             {/* Mikro kontrast na rubovima d�epova */}
             <div
               className="absolute inset-0 pointer-events-none"
@@ -875,8 +1048,8 @@ export default function SuitPreview({ config }: Props) {
               }}
             />
             {/* Shading/specular za d�epove (ako postoje) */}
-            <div className="absolute inset-0" style={shadingOverlayStyle(pocketSrc, 0.18)} />
-            <div className="absolute inset-0" style={specularOverlayStyle(pocketSrc, 0.12)} />
+            <div className="absolute inset-0" style={{ display: "none" }} />
+            <div className="absolute inset-0" style={{ display: "none" }} />
           </div>
         )}
 
@@ -885,7 +1058,7 @@ export default function SuitPreview({ config }: Props) {
           <React.Fragment key={`bp-${l.id}`}>
             <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(l.src) }} />
             <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(l.src, JACKET_CANVAS) }} />
-            <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'multiply', 0.26)} />
+            <div className="absolute inset-0" style={{ display: "none" }} />
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
@@ -903,8 +1076,8 @@ export default function SuitPreview({ config }: Props) {
                 maskPosition: "center",
               }}
             />
-            <div className="absolute inset-0" style={shadingOverlayStyle(l.src, 0.16)} />
-            <div className="absolute inset-0" style={specularOverlayStyle(l.src, 0.11)} />
+            <div className="absolute inset-0" style={{ display: "none" }} />
+            <div className="absolute inset-0" style={{ display: "none" }} />
           </React.Fragment>
         ))}
 
@@ -929,8 +1102,8 @@ export default function SuitPreview({ config }: Props) {
           {/* Solid base color + subtle weave */}
           <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
           <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS) }} />
-          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.45)} />
-          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'soft-light', 0.20)} />
+          <div className="absolute inset-0" style={{ display: "none" }} />
+          <div className="absolute inset-0" style={{ display: "none" }} />
           {/* Fine weave detalj */}
           <div
             className="absolute inset-0"
@@ -942,17 +1115,11 @@ export default function SuitPreview({ config }: Props) {
           {/* Shading/specular za pantalone (ako postoje) */}
           <div
             className="absolute inset-0"
-            style={shadingOverlayStyle(
-              pants.src,
-              selectedFabric?.tone === "dark" ? 0.24 : selectedFabric?.tone === "light" ? 0.16 : 0.20
-            )}
+            style={{ display: "none" }}
           />
           <div
             className="absolute inset-0"
-            style={specularOverlayStyle(
-              pants.src,
-              selectedFabric?.tone === "dark" ? 0.14 : selectedFabric?.tone === "light" ? 0.10 : 0.12
-            )}
+            style={{ display: "none" }}
           />
           {/* Per-part dubina pantalona (senka pri pojasu + na dnu) */}
           <div
@@ -978,7 +1145,7 @@ export default function SuitPreview({ config }: Props) {
             <>
               <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(cuffSrc) }} />
               <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(cuffSrc, PANTS_CANVAS) }} />
-              <div className="absolute inset-0" style={baseSpriteOverlayStyle(cuffSrc, 'multiply', 0.26)} />
+              <div className="absolute inset-0" style={{ display: "none" }} />
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
@@ -996,8 +1163,8 @@ export default function SuitPreview({ config }: Props) {
                   maskPosition: "center",
                 }}
               />
-              <div className="absolute inset-0" style={shadingOverlayStyle(cuffSrc, 0.16)} />
-              <div className="absolute inset-0" style={specularOverlayStyle(cuffSrc, 0.11)} />
+              <div className="absolute inset-0" style={{ display: "none" }} />
+              <div className="absolute inset-0" style={{ display: "none" }} />
             </>
           )}
 
@@ -1017,4 +1184,46 @@ export default function SuitPreview({ config }: Props) {
     </div>
   );
 }
+
+
+  // Unified sprite overlay composer (base/shading/specular/edges)
+  const unifiedSpriteOverlayStyle = (
+    layers: SuitLayer[],
+    kind: 'base' | 'shading' | 'specular' | 'edges',
+    blend: 'multiply' | 'soft-light' | 'overlay',
+    opacity: number,
+    unionMask?: string | null
+  ): React.CSSProperties => {
+    const images: string[] = [];
+    const sizes: string[] = [];
+    const repeats: string[] = [];
+    const positions: string[] = [];
+    for (const L of layers) {
+      const pair = kind === 'base' ? cdnPair(L.src)
+        : kind === 'shading' ? shadingPair(L.src)
+        : kind === 'specular' ? specularPair(L.src)
+        : edgesPair(L.src);
+      images.push(`url(${pair.webp})`, `url(${pair.png})`);
+      sizes.push('contain', 'contain');
+      repeats.push('no-repeat', 'no-repeat');
+      positions.push('center', 'center');
+    }
+    const style: React.CSSProperties = {
+      backgroundImage: images.join(', '),
+      backgroundRepeat: repeats.join(', '),
+      backgroundSize: sizes.join(', '),
+      backgroundPosition: positions.join(', '),
+      mixBlendMode: blend,
+      opacity,
+      pointerEvents: 'none',
+    };
+    // Note: if needed we can pass a union mask in future; current callers use per-part masks
+    return style;
+  };
+
+
+
+
+
+
 
