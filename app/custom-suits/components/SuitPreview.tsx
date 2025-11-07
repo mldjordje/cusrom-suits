@@ -344,7 +344,7 @@ export default function SuitPreview({ config }: Props) {
 
     (async () => {
       const torsoBottom = parts.filter(p => p.id === "torso" || p.id === "bottom");
-      // FIX: removed sleeve edge overlap completely — composites only for torso+bottom
+      // FIX: removed sleeve edge overlap completely ï¿½ composites only for torso+bottom
       const baseUrl = await compose((l) => cdnPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
       const shadingUrl = await compose((l) => shadingPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
       const specularUrl = await compose((l) => specularPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
@@ -770,7 +770,7 @@ export default function SuitPreview({ config }: Props) {
     return {
       backgroundImage: `url(${fabricTexture})`,
       backgroundRepeat: "repeat",
-      // FIX: weave scale — consistent pixel tile size
+      // FIX: weave scale ï¿½ consistent pixel tile size
       backgroundSize: `${Math.round(canvas.h * 0.22)}px ${Math.round(canvas.h * 0.22)}px`,
       backgroundPosition: bgPos,
       opacity: vis.fineDetail,
@@ -887,7 +887,7 @@ export default function SuitPreview({ config }: Props) {
     size: string,
     canvas: { w: number; h: number }
   ): React.CSSProperties => {
-    // FIX: weave scale — consistent pixel tile size
+    // FIX: weave scale ï¿½ consistent pixel tile size
     const weavePx = Math.round(canvas.h * 0.22);
     return {
       backgroundImage: `url(${fabricTexture})`,
@@ -1004,20 +1004,20 @@ export default function SuitPreview({ config }: Props) {
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
           />
         )}
-        {/* CLEAN FABRIC MODE — unified jacket mask */}
-        {/* BALANCED FABRIC MODE — reintroduce realism overlays */}
+        {/* CLEAN FABRIC MODE ï¿½ unified jacket mask */}
+        {/* BALANCED FABRIC MODE ï¿½ reintroduce realism overlays */}
         <div className="absolute inset-0" style={unifiedFabricBaseStyle(allJacketLayers, JACKET_CANVAS)} />
         <div className="absolute inset-0" style={unifiedWeaveOverlayStyle(allJacketLayers, JACKET_CANVAS)} />
         <div className="absolute inset-0" style={{ ...unifiedFineDetailOverlayStyle(JACKET_CANVAS) }} />
 
-        {/* BALANCED FABRIC MODE — restored baseSprite folds (all parts) */}
+        {/* BALANCED FABRIC MODE ï¿½ restored baseSprite folds (all parts) */}
         {allJacketLayers.map((l) => (
-          <React.Fragment key={s-}>
+          <React.Fragment key={'bs-' + l.id}>
             <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'multiply', 0.35)} />
             {selectedFabric?.tone === 'light' && (
               <div className="absolute inset-0" style={baseSpriteOverlayStyle(l.src, 'soft-light', 0.15)} />
             )}
-            {/* BALANCED FABRIC MODE — fine weave restored */}
+            {/* BALANCED FABRIC MODE ï¿½ fine weave restored */}
             <div
               className="absolute inset-0"
               style={{
@@ -1087,7 +1087,7 @@ export default function SuitPreview({ config }: Props) {
           />
         )}
 
-        {/* BALANCED FABRIC MODE — subtle AO crease */}
+        {/* BALANCED FABRIC MODE ï¿½ subtle AO crease */}
         <div
           className="absolute inset-0"
           style={{
@@ -1113,11 +1113,14 @@ export default function SuitPreview({ config }: Props) {
       {/* ======================== PANTS CANVAS ======================== */}
       {pants && (
         <div className="relative mx-auto mt-2" style={{ width: '100%', aspectRatio: '600 / 350', maxWidth: 720 }}>
-          {/* CLEAN FABRIC MODE — unified pants tone */}
+          {/* CLEAN FABRIC MODE ï¿½ unified pants tone */}
           <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
           <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS) }} />
           <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.45)} />
         </div>
+          <div className="absolute inset-0" style={shadingOverlayStyle(pants.src, 0.20)} />
+          <div className="absolute inset-0" style={specularOverlayStyle(pants.src, 0.14)} />
+          <div className="absolute inset-0" style={{ ...fineDetailStyle(pants.src, 0.08, vis.detailScale, PANTS_CANVAS) }} />
       )}
     </div>
   );
