@@ -613,6 +613,25 @@ export default function SuitPreview({ config }: Props) {
     pointerEvents: "none",
   });
 
+  // Ambient occlusion for jacket (lapel and waist emphasis)
+  const jacketAOStyle: React.CSSProperties = {
+    background:
+      // central crease and waist band
+      `linear-gradient(90deg, rgba(0,0,0,0.22) 49.5%, rgba(0,0,0,0.06) 50%, rgba(255,255,255,0) 52%),` +
+      `linear-gradient(180deg, rgba(0,0,0,0.18) 46%, rgba(0,0,0,0) 64%)`,
+    mixBlendMode: 'multiply',
+    opacity: 0.45,
+    WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+    WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+    WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
+    WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
+    maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+    maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+    maskSize: jacketUnionMask ? 'contain' : undefined,
+    maskPosition: jacketUnionMask ? 'center' : undefined,
+    pointerEvents: 'none',
+  } as React.CSSProperties;
+
   // Unified wash overlay (soft blur) over the whole jacket via union mask
   const unifiedWashOverlayStyle = (canvas: { w: number; h: number }) => {
     const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
@@ -910,7 +929,7 @@ export default function SuitPreview({ config }: Props) {
                 backgroundSize: "contain",
                 backgroundPosition: "center",
                 mixBlendMode: "multiply",
-                opacity: 0.30,
+                opacity: 0.50,
                 pointerEvents: "none",
               }}
             />
@@ -922,7 +941,7 @@ export default function SuitPreview({ config }: Props) {
                 backgroundSize: "contain",
                 backgroundPosition: "center",
                 mixBlendMode: "soft-light",
-                opacity: 0.16,
+                opacity: 0.24,
                 pointerEvents: "none",
               }}
             />
@@ -937,7 +956,7 @@ export default function SuitPreview({ config }: Props) {
               backgroundSize: "contain",
               backgroundPosition: "center",
               mixBlendMode: "multiply",
-              opacity: selectedFabric?.tone === "dark" ? 0.18 : selectedFabric?.tone === "light" ? 0.13 : 0.16,
+              opacity: selectedFabric?.tone === "dark" ? 0.22 : selectedFabric?.tone === "light" ? 0.16 : 0.18,
               pointerEvents: "none",
             }}
           />
@@ -951,7 +970,7 @@ export default function SuitPreview({ config }: Props) {
               backgroundSize: "contain",
               backgroundPosition: "center",
               mixBlendMode: "overlay",
-              opacity: selectedFabric?.tone === "dark" ? 0.12 : selectedFabric?.tone === "light" ? 0.09 : 0.10,
+              opacity: 0.16,
               pointerEvents: "none",
             }}
           />
@@ -965,11 +984,13 @@ export default function SuitPreview({ config }: Props) {
               backgroundSize: "contain",
               backgroundPosition: "center",
               mixBlendMode: "multiply",
-              opacity: 0.14,
+              opacity: 0.20,
               pointerEvents: "none",
             }}
           />
         )}
+        {/* AO to deepen lapel crease + waist */}
+        <div className="absolute inset-0" style={jacketAOStyle} />
 
         {/* BODY LAYERS (torzo, rukavi, donji deo) */}
         {suitLayers
@@ -1102,8 +1123,8 @@ export default function SuitPreview({ config }: Props) {
           {/* Solid base color + subtle weave */}
           <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
           <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS) }} />
-          <div className="absolute inset-0" style={{ display: "none" }} />
-          <div className="absolute inset-0" style={{ display: "none" }} />
+          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.50)} />
+          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'soft-light', 0.24)} />
           {/* Fine weave detalj */}
           <div
             className="absolute inset-0"
@@ -1113,13 +1134,25 @@ export default function SuitPreview({ config }: Props) {
             }}
           />
           {/* Shading/specular za pantalone (ako postoje) */}
+          <div className="absolute inset-0" style={shadingOverlayStyle(pants.src, selectedFabric?.tone === "dark" ? 0.26 : selectedFabric?.tone === "light" ? 0.18 : 0.22)} />
+          <div className="absolute inset-0" style={specularOverlayStyle(pants.src, 0.16)} />
           <div
-            className="absolute inset-0"
-            style={{ display: "none" }}
-          />
-          <div
-            className="absolute inset-0"
-            style={{ display: "none" }}
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                `linear-gradient(180deg, rgba(0,0,0,0.18), rgba(0,0,0,0) 35%),` +
+                `linear-gradient(0deg, rgba(0,0,0,0.14), rgba(0,0,0,0) 55%)`,
+              mixBlendMode: 'multiply',
+              WebkitMaskImage: toTransparentSilhouette(pants.src),
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskSize: 'contain',
+              WebkitMaskPosition: 'center',
+              maskImage: toTransparentSilhouette(pants.src),
+              maskRepeat: 'no-repeat',
+              maskSize: 'contain',
+              maskPosition: 'center',
+              opacity: 0.35,
+            }}
           />
           {/* Per-part dubina pantalona (senka pri pojasu + na dnu) */}
           <div
