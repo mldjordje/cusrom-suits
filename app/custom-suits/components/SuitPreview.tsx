@@ -161,6 +161,7 @@ export default function SuitPreview({ config }: Props) {
 
   // Average color from fabric texture (to better match hue)
   const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
+  const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   useEffect(() => {
     if (!fabricTexture) {
       setFabricAvgColor(null);
@@ -200,6 +201,78 @@ export default function SuitPreview({ config }: Props) {
     img.onerror = () => setFabricAvgColor(null);
     img.src = fabricTexture;
   }, [fabricTexture]);
+
+  // Build a single union mask (PNG data URL) over torso+sleeves+bottom to eliminate any anti‑alias seams
+  useEffect(() => {
+    // Recompute adjusted layers locally so we don't depend on suitLayers declared below
+    const baseLayersLocal: SuitLayer[] = currentSuit?.layers || [];
+    const selectedLapelLocal =
+      currentSuit?.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit?.lapels?.[0];
+    const selectedLapelWidthLocal =
+      selectedLapelLocal?.widths.find((w) => w.id === config.lapelWidthId) ||
+      selectedLapelLocal?.widths.find((w) => w.id === "medium") ||
+      selectedLapelLocal?.widths?.[0];
+
+    const swap = (src: string) =>
+      src.replace(
+        /lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/,
+        `lapel_${selectedLapelWidthLocal?.id || "medium"}+style_lapel_${selectedLapelLocal?.id || "notch"}`
+      );
+    const adjusted = baseLayersLocal.map((l) => (l.id === "torso" ? { ...l, src: swap(l.src) } : l));
+
+    const torso = adjusted.find((x) => x.id === "torso");
+    const sleevesL = adjusted.find((x) => x.id === "sleeves");
+    const bottomL = adjusted.find((x) => x.id === "bottom");
+    const parts = [torso, sleevesL, bottomL].filter(Boolean) as SuitLayer[];
+    if (!parts.length) return setJacketUnionMask(null);
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = JACKET_CANVAS.w;
+        c.height = JACKET_CANVAS.h;
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.globalCompositeOperation = "source-over";
+        for (const L of parts) {
+          // try webp then png
+          const pair = cdnPair(L.src);
+          const tryLoad = (url: string) =>
+            new Promise<HTMLImageElement>((resolve, reject) => {
+              const img = new Image();
+              img.crossOrigin = "anonymous";
+              img.onload = () => resolve(img);
+              img.onerror = reject;
+              img.src = url;
+            });
+          let img: HTMLImageElement | null = null;
+          try {
+            img = await tryLoad(pair.webp);
+          } catch {
+            try {
+              img = await tryLoad(pair.png);
+            } catch {}
+          }
+          if (!img) continue;
+          const scale = Math.min(c.width / img.width, c.height / img.height);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const dx = Math.round((c.width - w) / 2);
+          const dy = Math.round((c.height - h) / 2);
+          // draw alpha as mask (opaque where sprite has pixels)
+          ctx.drawImage(img, dx, dy, w, h);
+        }
+        if (!cancelled) setJacketUnionMask(c.toDataURL("image/png"));
+      } catch {
+        if (!cancelled) setJacketUnionMask(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [currentSuit, config.lapelId, config.lapelWidthId]);
 
   if (loading) {
     return (
@@ -365,22 +438,33 @@ export default function SuitPreview({ config }: Props) {
       maskPositions.push("center", "center");
     }
 
-    const t = (selectedFabric?.tone || "medium") as Tone;
-    const weaveOpacity = t === "dark" ? 0.14 : t === "light" ? 0.20 : 0.17;
-
-    return {
-      // Solid tint from sampled fabric color
+    const style: React.CSSProperties = {
       backgroundColor: fabricAvgColor || toneBaseColor,
-      // Underlay weave as second background via pseudo pattern on sibling; simpler: add a separate overlay below per-part layers
-      WebkitMaskImage: maskImages.join(", "),
-      WebkitMaskRepeat: maskRepeats.join(", "),
-      WebkitMaskSize: maskSizes.join(", "),
-      WebkitMaskPosition: maskPositions.join(", "),
-      maskImage: maskImages.join(", "),
-      maskRepeat: maskRepeats.join(", "),
-      maskSize: maskSizes.join(", "),
-      maskPosition: maskPositions.join(", "),
-    } as React.CSSProperties;
+    };
+    if (jacketUnionMask) {
+      Object.assign(style, {
+        WebkitMaskImage: `url(${jacketUnionMask})`,
+        WebkitMaskRepeat: "no-repeat",
+        WebkitMaskSize: "contain",
+        WebkitMaskPosition: "center",
+        maskImage: `url(${jacketUnionMask})`,
+        maskRepeat: "no-repeat",
+        maskSize: "contain",
+        maskPosition: "center",
+      } as React.CSSProperties);
+    } else {
+      Object.assign(style, {
+        WebkitMaskImage: maskImages.join(", "),
+        WebkitMaskRepeat: maskRepeats.join(", "),
+        WebkitMaskSize: maskSizes.join(", "),
+        WebkitMaskPosition: maskPositions.join(", "),
+        maskImage: maskImages.join(", "),
+        maskRepeat: maskRepeats.join(", "),
+        maskSize: maskSizes.join(", "),
+        maskPosition: maskPositions.join(", "),
+      } as React.CSSProperties);
+    }
+    return style;
   };
 
   // Unified weave overlay across provided layers (prevents visible weave seams)
@@ -403,23 +487,39 @@ export default function SuitPreview({ config }: Props) {
     const t = (selectedFabric?.tone || "medium") as Tone;
     const opacity = t === "dark" ? 0.14 : t === "light" ? 0.20 : 0.17;
 
-    return {
+    const style: React.CSSProperties = {
       backgroundImage: `url(${fabricTexture})`,
       backgroundSize: bgSize,
       backgroundPosition: bgPos,
       backgroundRepeat: "repeat",
       mixBlendMode: "soft-light",
       opacity,
-      WebkitMaskImage: maskImages.join(", "),
-      WebkitMaskRepeat: maskRepeats.join(", "),
-      WebkitMaskSize: maskSizes.join(", "),
-      WebkitMaskPosition: maskPositions.join(", "),
-      maskImage: maskImages.join(", "),
-      maskRepeat: maskRepeats.join(", "),
-      maskSize: maskSizes.join(", "),
-      maskPosition: maskPositions.join(", "),
       pointerEvents: "none",
-    } as React.CSSProperties;
+    };
+    if (jacketUnionMask) {
+      Object.assign(style, {
+        WebkitMaskImage: `url(${jacketUnionMask})`,
+        WebkitMaskRepeat: "no-repeat",
+        WebkitMaskSize: "contain",
+        WebkitMaskPosition: "center",
+        maskImage: `url(${jacketUnionMask})`,
+        maskRepeat: "no-repeat",
+        maskSize: "contain",
+        maskPosition: "center",
+      } as React.CSSProperties);
+    } else {
+      Object.assign(style, {
+        WebkitMaskImage: maskImages.join(", "),
+        WebkitMaskRepeat: maskRepeats.join(", "),
+        WebkitMaskSize: maskSizes.join(", "),
+        WebkitMaskPosition: maskPositions.join(", "),
+        maskImage: maskImages.join(", "),
+        maskRepeat: maskRepeats.join(", "),
+        maskSize: maskSizes.join(", "),
+        maskPosition: maskPositions.join(", "),
+      } as React.CSSProperties);
+    }
+    return style;
   };
 
   // Feather the inner sleeve seam so torso/sleeve transition is invisible
