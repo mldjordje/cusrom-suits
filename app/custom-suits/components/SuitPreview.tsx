@@ -166,6 +166,7 @@ export default function SuitPreview({ config }: Props) {
   const [compositeShading, setCompositeShading] = useState<string | null>(null);
   const [compositeSpecular, setCompositeSpecular] = useState<string | null>(null);
   const [compositeEdges, setCompositeEdges] = useState<string | null>(null);
+  const [sleevesMask, setSleevesMask] = useState<string | null>(null);
   const compositesReady = Boolean(compositeBase && compositeShading && compositeSpecular && compositeEdges);
   useEffect(() => {
     if (!fabricTexture) {
@@ -353,6 +354,45 @@ export default function SuitPreview({ config }: Props) {
     return () => {
       cancelled = true;
     };
+  }, [currentSuit, config.lapelId, config.lapelWidthId]);
+
+  // Build sleeves-only mask to equalize sleeves vs torso (lighten sleeves slightly)
+  useEffect(() => {
+    const baseLayersLocal: SuitLayer[] = currentSuit?.layers || [];
+    const selectedLapelLocal =
+      currentSuit?.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit?.lapels?.[0];
+    const selectedLapelWidthLocal =
+      selectedLapelLocal?.widths.find((w) => w.id === config.lapelWidthId) ||
+      selectedLapelLocal?.widths.find((w) => w.id === "medium") ||
+      selectedLapelLocal?.widths?.[0];
+    const swap = (src: string) =>
+      src.replace(
+        /lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/,
+        `lapel_${selectedLapelWidthLocal?.id || "medium"}+style_lapel_${selectedLapelLocal?.id || "notch"}`
+      );
+    const adjusted = baseLayersLocal.map((l) => (l.id === "torso" ? { ...l, src: swap(l.src) } : l));
+    const sleevesPart = adjusted.find((x) => x.id === "sleeves");
+    if (!sleevesPart) { setSleevesMask(null); return; }
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = JACKET_CANVAS.w; c.height = JACKET_CANVAS.h;
+        const ctx = c.getContext("2d"); if (!ctx) return;
+        const pair = cdnPair(sleevesPart.src);
+        const tryLoad = (url: string) => new Promise<HTMLImageElement>((resolve, reject) => { const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>resolve(i); i.onerror=reject; i.src=url; });
+        let img: HTMLImageElement | null = null;
+        try { img = await tryLoad(pair.webp); } catch { try { img = await tryLoad(pair.png); } catch {} }
+        if (!img) return;
+        const scale = Math.min(c.width / img.width, c.height / img.height);
+        const dw = Math.round(img.width * scale); const dh = Math.round(img.height * scale);
+        const dx = Math.round((c.width - dw) / 2); const dy = Math.round((c.height - dh) / 2);
+        ctx.drawImage(img, dx, dy, dw, dh);
+        if (!cancelled) setSleevesMask(c.toDataURL("image/png"));
+      } catch { if (!cancelled) setSleevesMask(null); }
+    })();
+    return () => { cancelled = true; };
   }, [currentSuit, config.lapelId, config.lapelWidthId]);
 
   if (loading) {
@@ -989,6 +1029,48 @@ export default function SuitPreview({ config }: Props) {
               pointerEvents: "none",
             }}
           />
+        )}
+        {/* Lighten sleeves slightly to match torso (no seam, same union tonality) */}
+        {sleevesMask && (
+          <>
+            {/* Equalize sleeves vs torso: gentle screen lighten */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: '#ffffff',
+                mixBlendMode: 'screen',
+                opacity:
+                  selectedFabric?.tone === 'dark' ? 0.14 : selectedFabric?.tone === 'light' ? 0.06 : 0.10,
+                WebkitMaskImage: `url(${sleevesMask})`,
+                WebkitMaskRepeat: 'no-repeat',
+                WebkitMaskSize: 'contain',
+                WebkitMaskPosition: 'center',
+                maskImage: `url(${sleevesMask})`,
+                maskRepeat: 'no-repeat',
+                maskSize: 'contain',
+                maskPosition: 'center',
+                pointerEvents: 'none',
+              }}
+            />
+            {/* Midtone cohesion */}
+            <div
+              className="absolute inset-0"
+              style={{
+                background: '#ffffff',
+                mixBlendMode: 'soft-light',
+                opacity: 0.08,
+                WebkitMaskImage: `url(${sleevesMask})`,
+                WebkitMaskRepeat: 'no-repeat',
+                WebkitMaskSize: 'contain',
+                WebkitMaskPosition: 'center',
+                maskImage: `url(${sleevesMask})`,
+                maskRepeat: 'no-repeat',
+                maskSize: 'contain',
+                maskPosition: 'center',
+                pointerEvents: 'none',
+              }}
+            />
+          </>
         )}
         {/* AO to deepen lapel crease + waist */}
         <div className="absolute inset-0" style={jacketAOStyle} />
