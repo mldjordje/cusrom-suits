@@ -16,6 +16,9 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const [toneFilter, setToneFilter] = useState<"all"|"light"|"medium"|"dark">("all");
   const [sort, setSort] = useState<"date_desc"|"date_asc">("date_desc");
 
+  const toTransparentThumb = (src?: string) =>
+    src ? src.replace(/\/assets\/suits\/[a-zA-Z0-9_-]+\//, "/assets/suits/transparent/") : src;
+
   useEffect(() => {
     const base = getBackendBase();
     const qs = new URLSearchParams();
@@ -161,8 +164,11 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                     className={`px-2 py-2 text-xs rounded-md border transition flex flex-col items-center gap-1 w-28 ${config.lapelWidthId === width.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}
                   >
                     {width.src && (
-                      // thumb from transparent assets
-                      <img src={width.src} alt={width.name} className="h-14 w-full object-contain" />
+                      <img
+                        src={toTransparentThumb(width.src)}
+                        alt={width.name}
+                        className="h-14 w-full object-contain"
+                      />
                     )}
                     <span>{width.name}</span>
                   </button>
@@ -182,7 +188,13 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                     onClick={() => dispatch({ type: "SET_POCKET", payload: pocket.id })}
                     className={`border rounded-md p-2 text-xs transition flex flex-col items-center gap-1 ${config.pocketId === pocket.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}
                   >
-                    {pocket.src && <img src={pocket.src} alt={pocket.name} className="h-14 w-full object-contain" />}
+                    {pocket.src && (
+                      <img
+                        src={toTransparentThumb(pocket.src)}
+                        alt={pocket.name}
+                        className="h-14 w-full object-contain"
+                      />
+                    )}
                     <span>{pocket.name}</span>
                   </button>
                 ))}
@@ -215,7 +227,13 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                     onClick={() => dispatch({ type: "SET_BREAST_POCKET", payload: bp.id })}
                     className={`border rounded-md p-2 text-xs transition flex flex-col items-center gap-1 ${config.breastPocketId === bp.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}
                   >
-                    {bp.src && <img src={bp.src} alt={bp.name} className="h-14 w-full object-contain" />}
+                    {bp.src && (
+                      <img
+                        src={toTransparentThumb(bp.src)}
+                        alt={bp.name}
+                        className="h-14 w-full object-contain"
+                      />
+                    )}
                     <span>{bp.name}</span>
                   </button>
                 ))}
@@ -234,7 +252,13 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                     onClick={() => dispatch({ type: "SET_CUFF", payload: cuff.id })}
                     className={`border rounded-md p-2 text-xs transition flex flex-col items-center gap-1 ${config.cuffId === cuff.id ? "border-[#111] bg-[#fafafa] font-semibold" : "border-[#ddd] hover:border-[#111]"}`}
                   >
-                    {cuff.src && <img src={cuff.src} alt={cuff.name} className="h-14 w-full object-contain" />}
+                    {cuff.src && (
+                      <img
+                        src={toTransparentThumb(cuff.src)}
+                        alt={cuff.name}
+                        className="h-14 w-full object-contain"
+                      />
+                    )}
                     <span>{cuff.name}</span>
                   </button>
                 ))}
