@@ -6,7 +6,7 @@ import BaseLayer from './layers/BaseLayer';
 import FabricUnion from './layers/FabricUnion';
 import PerPartOverlays from './layers/PerPartOverlays';
 import GlobalOverlays from './layers/GlobalOverlays';
-import { Tone, getToneConfig, toneBlend } from "../utils/visual";
+import { Tone, Level, getToneConfig, toneBlend } from "../utils/visual";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
@@ -60,9 +60,9 @@ const NOISE_DATA =
    Komponenta
 ===================================================================================== */
 
-type Props = { config: SuitState };
+type Props = { config: SuitState; level?: Level };
 
-export default function SuitPreview({ config }: Props) {
+export default function SuitPreview({ config, level = 'medium' }: Props) {
   const [fabrics, setFabrics] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -92,8 +92,8 @@ export default function SuitPreview({ config }: Props) {
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
 
-  const tb = toneBlend(selectedFabric?.tone);
-  const vis = getToneConfig((selectedFabric?.tone as Tone) || undefined);
+  const tb = toneBlend(selectedFabric?.tone, level);
+  const vis = getToneConfig((selectedFabric?.tone as Tone) || undefined, level);
 
   // Solid base color by tone, used under subtle fabric weave
   const toneBaseColor = (() => {
@@ -954,57 +954,9 @@ export default function SuitPreview({ config }: Props) {
           />
         )}
         {/* LAYER 1: Base outlines (multiply, subtle) */}
-        <BaseOutlines layers={allJacketLayers} cdnPair={cdnPair} imageSet={imageSet} />
+        <BaseOutlines layers={allJacketLayers} cdnPair={cdnPair} imageSet={imageSet} opacity={vis.baseOutlineOpacity} />
 
-        {/* Tone base (union mask) */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundColor: fabricAvgColor || toneBaseColor,
-            WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-            WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-            WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
-            WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
-            maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-            maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-            maskSize: jacketUnionMask ? 'contain' : undefined,
-            maskPosition: jacketUnionMask ? 'center' : undefined,
-            pointerEvents: 'none',
-          }}
-        />
-        {/* LAYER 2: Fabric union overlay with pan/zoom */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${fabricTexture})`,
-            backgroundRepeat: 'repeat',
-            backgroundSize: `${Math.round(JACKET_CANVAS.w * scale)}px ${Math.round(JACKET_CANVAS.h * scale)}px`,
-            backgroundPosition: `${Math.round(offset.x)}px ${Math.round(offset.y)}px`,
-            mixBlendMode: (selectedFabric?.tone === 'light' ? 'overlay' : 'soft-light') as any,
-            opacity: (selectedFabric?.tone === 'dark' ? 0.28 : (selectedFabric?.tone === 'light' ? 0.36 : 0.32)),
-            filter: tb.filter,
-            WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-            WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-            WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
-            WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
-            maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-            maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-            maskSize: jacketUnionMask ? 'contain' : undefined,
-            maskPosition: jacketUnionMask ? 'center' : undefined,
-            pointerEvents: 'none',
-          }}
-        />
-
-        {/* LAYER 2.5: Shading (multiply, tone-adapted) */}
-        <PerPartOverlays layers={allJacketLayers} tone={selectedFabric?.tone as Tone} shadingPair={shadingPair} specularPair={specularPair} />
-
-        {/* LAYER 3: Specular highlights */}
-        
-
-        <GlobalOverlays jacketUnionMask={jacketUnionMask ?? undefined} noiseData={NOISE_DATA} vignetteStrength={vis.vignetteStrength} noiseOpacity={vis.noiseOpacity} />
-
-        
-      </div>
+        <BaseLayer maskUrl={jacketUnionMask ?? undefined} color={fabricAvgColor || toneBaseColor} />
       {/* ======================== PANTS CANVAS ======================== */}
       {pants && (
         <div className="relative mx-auto mt-2" style={{ width: '100%', aspectRatio: '600 / 350', maxWidth: 720 }}>
@@ -1025,24 +977,14 @@ export default function SuitPreview({ config }: Props) {
             shadingPair={shadingPair}
             specularPair={specularPair}
           />
-          {/* Subtle base outlines */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: imageSet(cdnPair(pants.src).webp, cdnPair(pants.src).png),
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'multiply',
-              opacity: 0.30,
-              pointerEvents: 'none',
-            }}
-          />
+        {/* Subtle base outlines */}
+        <BaseOutlines layers={[pants]} cdnPair={cdnPair} imageSet={imageSet} opacity={vis.pantsOutlineOpacity} />
         </div>
       )}
     </div>
   );
 }
+
 
 
 

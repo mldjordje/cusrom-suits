@@ -28,13 +28,14 @@ async function chooseAvailable(pair: Pair): Promise<string | null> {
 type Props = {
   layers: SuitLayer[];
   tone?: Tone;
+  level?: import("../../utils/visual").Level;
   shadingPair: (src: string) => Pair;
   specularPair: (src: string) => Pair;
   imageSet?: (webp: string, png: string) => string; // not used with graceful fallback
 };
 
-export const PerPartOverlays: React.FC<Props> = ({ layers, tone, shadingPair, specularPair }) => {
-  const cfg = getToneConfig(tone);
+export const PerPartOverlays: React.FC<Props> = ({ layers, tone, level, shadingPair, specularPair }) => {
+  const cfg = getToneConfig(tone, level);
   const [urls, setUrls] = useState<Record<string, { shading: string | null; specular: string | null }>>({});
 
   useEffect(() => {
@@ -90,4 +91,3 @@ export const PerPartOverlays: React.FC<Props> = ({ layers, tone, shadingPair, sp
 };
 
 export default PerPartOverlays;
-
