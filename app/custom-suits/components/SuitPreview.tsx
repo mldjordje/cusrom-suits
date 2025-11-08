@@ -1086,33 +1086,53 @@ export default function SuitPreview({ config }: Props) {
             key={`spec-${l.id}`}
             className="absolute inset-0"
             style={{
-              backgroundImage: `url(${specularPair(l.src).webp}), url(${specularPair(l.src).png})`,
+              backgroundImage: imageSet(specularPair(l.src).webp, specularPair(l.src).png),
               backgroundRepeat: 'no-repeat',
               backgroundSize: 'contain',
               backgroundPosition: 'center',
-              mixBlendMode: 'overlay',
-              opacity: 0.08,
+              mixBlendMode: (selectedFabric?.tone === 'dark' ? 'soft-light' : (selectedFabric?.tone === 'light' ? 'screen' : 'overlay')) as any,
+              opacity: (selectedFabric?.tone === 'dark' ? 0.08 : (selectedFabric?.tone === 'light' ? 0.12 : 0.10)),
               pointerEvents: 'none',
             }}
           />
         ))}
 
-        {/* LAYER 4: Edge shadows */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`edge-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${edgesPair(l.src).webp}), url(${edgesPair(l.src).png})`,
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'multiply',
-              opacity: 0.12,
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+        {/* Global AO/Vignette (union) */}
+        <div
+          className="absolute inset-0"
+          style={{
+            background: `radial-gradient(closest-side, rgba(0,0,0,${(0.09)}), rgba(0,0,0,0) 70%)`,
+            mixBlendMode: 'multiply',
+            WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+            WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+            WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
+            WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
+            maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+            maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+            maskSize: jacketUnionMask ? 'contain' : undefined,
+            maskPosition: jacketUnionMask ? 'center' : undefined,
+            pointerEvents: 'none',
+          }}
+        />
+        {/* Micro-noise (union) */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${NOISE_DATA})`,
+            backgroundRepeat: 'repeat',
+            mixBlendMode: 'overlay',
+            opacity: 0.05,
+            WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+            WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+            WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
+            WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
+            maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+            maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+            maskSize: jacketUnionMask ? 'contain' : undefined,
+            maskPosition: jacketUnionMask ? 'center' : undefined,
+            pointerEvents: 'none',
+          }}
+        />
 
         
       </div>
