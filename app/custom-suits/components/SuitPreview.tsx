@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useEffect, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
@@ -38,19 +38,13 @@ const specularPair = (src: string) => {
     webp: `${cdnTransparent}specular/${base}.webp`,
     png: `${cdnTransparent}specular/${base}.png`,
   } as const;
-};
-const edgesPair = (src: string) => {
-  const base = fileBase(src).replace(/\.(png|jpg|jpeg|webp)$/i, "");
-  return {
+};\n  return {
     webp: `${cdnTransparent}edges/${base}.webp`,
     png: `${cdnTransparent}edges/${base}.png`,
   } as const;
 };
 
-// Koristimo originalni transparent sprite kao CSS masku (WebP -> PNG fallback u listi)
-const toTransparentSilhouette = (src: string) => {
-  const u = cdnPair(src);
-  return `url(${u.webp}), url(${u.png})`;
+// Koristimo originalni transparent sprite kao CSS masku (WebP -> PNG fallback u listi)\n  return `url(${u.webp}), url(${u.png})`;
 };
 
 /* =====================================================================================
@@ -347,7 +341,7 @@ export default function SuitPreview({ config }: Props) {
 
     (async () => {
       const torsoBottom = parts.filter(p => p.id === "torso" || p.id === "bottom");
-      // FIX: removed sleeve edge overlap completely ï¿½ composites only for torso+bottom
+      // FIX: removed sleeve edge overlap completely � composites only for torso+bottom
       const baseUrl = await compose((l) => cdnPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
       const shadingUrl = await compose((l) => shadingPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
       const specularUrl = await compose((l) => specularPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
@@ -773,7 +767,7 @@ export default function SuitPreview({ config }: Props) {
     return {
       backgroundImage: `url(${fabricTexture})`,
       backgroundRepeat: "repeat",
-      // FIX: weave scale ï¿½ consistent pixel tile size
+      // FIX: weave scale � consistent pixel tile size
       backgroundSize: `${Math.round(canvas.h * 0.22)}px ${Math.round(canvas.h * 0.22)}px`,
       backgroundPosition: bgPos,
       opacity: vis.fineDetail,
@@ -890,7 +884,7 @@ export default function SuitPreview({ config }: Props) {
     size: string,
     canvas: { w: number; h: number }
   ): React.CSSProperties => {
-    // FIX: weave scale ï¿½ consistent pixel tile size
+    // FIX: weave scale � consistent pixel tile size
     const weavePx = Math.round(canvas.h * 0.22);
     return {
       backgroundImage: `url(${fabricTexture})`,
@@ -1232,3 +1226,4 @@ export default function SuitPreview({ config }: Props) {
     </div>
   );
 }
+
