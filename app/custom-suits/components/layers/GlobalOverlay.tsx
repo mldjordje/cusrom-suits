@@ -16,6 +16,14 @@ export const GlobalOverlay: React.FC<Props> = ({ noiseData, settings }) => (
         backgroundImage: `url(${noiseData})`,
         backgroundRepeat: "repeat",
         opacity: settings.noise,
+        mixBlendMode: "overlay",
+        pointerEvents: "none",
+      }}
+    />
+    <div
+      className="absolute inset-0"
+      style={{
+        background: `radial-gradient(circle at 50% 25%, rgba(255,255,255,${settings.highlightTop}), transparent 55%), linear-gradient(200deg, rgba(0,0,0,${settings.highlightBottom}), transparent 60%)`,
         mixBlendMode: "soft-light",
         pointerEvents: "none",
       }}
@@ -23,18 +31,9 @@ export const GlobalOverlay: React.FC<Props> = ({ noiseData, settings }) => (
     <div
       className="absolute inset-0"
       style={{
-        background:
-          `linear-gradient(180deg, rgba(255,255,255,${settings.highlightTop}), transparent 40%),` +
-          `linear-gradient(0deg, rgba(0,0,0,${settings.highlightBottom}), transparent 45%)`,
-        mixBlendMode: "soft-light",
-        opacity: 0.8,
-        pointerEvents: "none",
-      }}
-    />
-    <div
-      className="absolute inset-0"
-      style={{
-        boxShadow: `inset 0 0 160px rgba(0,0,0,${settings.vignette})`,
+        background: `radial-gradient(circle at 50% 60%, rgba(0,0,0,${settings.vignette}) 55%, transparent 85%)`,
+        mixBlendMode: "multiply",
+        opacity: 0.9,
         pointerEvents: "none",
       }}
     />

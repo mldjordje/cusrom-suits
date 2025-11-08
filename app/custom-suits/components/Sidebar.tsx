@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import React, { useState } from "react";
 import Image from "next/image";
-import { suits } from "../data/options";
+import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { computePrice } from "../utils/price";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getBackendBase } from "../utils/backend";
@@ -24,7 +24,14 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   });
 
   const price = computePrice(config, suits);
-  const fabricsNormalized = fabrics.map((x:any) => ({ ...x, id: String(x.id) }));
+  const fabricsNormalized = fabrics.length
+    ? fabrics.map((x: any) => ({ ...x, id: String(x.id) }))
+    : fallbackFabrics.map((fabric) => ({
+        ...fabric,
+        id: String(fabric.id),
+        price: (fabric as any).price ?? 0,
+        tone: (fabric as any).tone ?? "medium",
+      }));
   const normalizedQuery = fabricQuery.trim().toLowerCase();
   const filteredFabrics = normalizedQuery
     ? fabricsNormalized.filter((fabric: any) => {

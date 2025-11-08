@@ -17,7 +17,7 @@ type Props = {
   textureScale?: number;
 };
 
-const buildMask = (mask?: string | null, fallback?: SpritePair) =>
+const buildMask = (mask?: string | null, fallback?: SpritePair | null) =>
   mask ? `url(${mask})` : fallback ? spriteBackground(fallback) : undefined;
 
 export const FabricUnion: React.FC<Props> = ({
@@ -60,6 +60,7 @@ export const FabricUnion: React.FC<Props> = ({
 
     return layers.map((layer) => {
       const sprite = resolve(layer);
+      if (!sprite) return null;
       const maskImage = buildMask(undefined, sprite);
       return (
         <div
@@ -116,6 +117,7 @@ export const FabricUnion: React.FC<Props> = ({
 
     return layers.map((layer) => {
       const sprite = resolve(layer);
+      if (!sprite) return null;
       const maskImage = buildMask(undefined, sprite);
       return (
         <div

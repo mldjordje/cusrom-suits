@@ -7,6 +7,7 @@ export type PanZoomState = {
   offset: { x: number; y: number };
 };
 
-export type LayerResolver = (layer: SuitLayer) => SpritePair;
+export type LayerResolver = (layer: SuitLayer) => SpritePair | null;
 
-export const spriteBackground = (pair: SpritePair) => `url(${pair.webp}), url(${pair.png})`;
+export const spriteBackground = (pair?: SpritePair | null) =>
+  pair ? `url(${pair.webp}), url(${pair.png})` : undefined;

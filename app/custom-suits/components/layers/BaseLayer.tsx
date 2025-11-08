@@ -51,6 +51,7 @@ export const BaseLayer: React.FC<Props> = ({
     <>
       {layers.map((layer) => {
         const image = resolve(layer);
+        if (!image) return null;
         return (
           <div
             key={`base-${layer.id}`}

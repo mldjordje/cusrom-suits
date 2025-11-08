@@ -346,9 +346,12 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
     } as React.CSSProperties;
   };
 
-  const shadingOverlayStyle = (src: string, opacity = vis.shadingOpacity): React.CSSProperties => {
+  const shadingOverlayStyle = (
+    src: string,
+    opacity = vis.shadingOpacity
+  ): React.CSSProperties | null => {
     const sprite = shadingPair(src);
-    if (!sprite) return { display: "none" };
+    if (!sprite) return null;
     return {
       backgroundImage: `url(${sprite.webp}), url(${sprite.png})`,
       backgroundRepeat: "no-repeat",
@@ -364,9 +367,9 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
     src: string,
     opacity = vis.specularOpacity,
     blendMode: React.CSSProperties["mixBlendMode"] = vis.specularBlend
-  ): React.CSSProperties => {
+  ): React.CSSProperties | null => {
     const sprite = specularPair(src);
-    if (!sprite) return { display: "none" };
+    if (!sprite) return null;
     return {
       backgroundImage: `url(${sprite.webp}), url(${sprite.png})`,
       backgroundRepeat: "no-repeat",
@@ -463,7 +466,7 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
   ====================================================================================== */
   const allJacketLayers = suitLayers.filter((x) => x.id === 'torso' || x.id === 'sleeves' || x.id === 'bottom');
   return (
-    <div className="relative w-full select-none bg-white">
+    <div className="relative w-full select-none">
       {assetWarnings.length > 0 && (
         <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2 rounded-md bg-red-600/90 px-3 py-1 text-xs text-white shadow">
           Nedostaju sprite fajlovi ({assetWarnings.length})
@@ -511,27 +514,6 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
           mask={jacketUnionMask}
           textureScale={vis.weaveSharpness}
         />
-        {jacketUnionMask && (
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              background:
-                `radial-gradient(70% 45% at 50% 0%, rgba(255,255,255,0.25), transparent 65%),` +
-                `linear-gradient(180deg, rgba(0,0,0,0.25), transparent 35%)`,
-              backgroundColor: vis.ambientTint,
-              mixBlendMode: "soft-light",
-              opacity: vis.ambientOpacity,
-              WebkitMaskImage: `url(${jacketUnionMask})`,
-              WebkitMaskRepeat: "no-repeat",
-              WebkitMaskSize: "contain",
-              WebkitMaskPosition: "center",
-              maskImage: `url(${jacketUnionMask})`,
-              maskRepeat: "no-repeat",
-              maskSize: "contain",
-              maskPosition: "center",
-            }}
-          />
-        )}
         <ShadingLayer
           opacity={vis.shadingOpacity}
           blendMode="multiply"
@@ -548,26 +530,33 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
         <BaseOutlines opacity={vis.edgesOpacity} mask={jacketUnionMask} composite={compositeEdges} />
       </div>
       {/* ======================== PANTS CANVAS ======================== */}
-      {pants && (
-        <div className="relative mx-auto mt-2" style={{ width: '100%', aspectRatio: '600 / 350', maxWidth: 720 }}>
-          {/* CLEAN FABRIC MODE - unified pants tone */}
-          <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
-          <div
-            className="absolute inset-0"
-            style={{
-              ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS, {
-                opacity: vis.textureOpacity,
-                blend: vis.textureBlend,
-                scale: vis.weaveSharpness,
-              }),
-            }}
-          />
-          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.45)} />
-          <div className="absolute inset-0" style={shadingOverlayStyle(pants.src, vis.shadingOpacity)} />
-          <div className="absolute inset-0" style={specularOverlayStyle(pants.src, vis.specularOpacity, vis.specularBlend)} />
-          <div className="absolute inset-0" style={{ ...fineDetailStyle(pants.src, vis.detailOpacity, vis.detailScale, PANTS_CANVAS) }} />
-        </div>
-      )}
+      {pants &&
+        (() => {
+          const shadingStyle = shadingOverlayStyle(pants.src, vis.shadingOpacity);
+          const specularStyle = specularOverlayStyle(pants.src, vis.specularOpacity, vis.specularBlend);
+          return (
+            <div className="relative mx-auto mt-2" style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720 }}>
+              <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
+              <div
+                className="absolute inset-0"
+                style={{
+                  ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS, {
+                    opacity: vis.textureOpacity,
+                    blend: vis.textureBlend,
+                    scale: vis.weaveSharpness,
+                  }),
+                }}
+              />
+              <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, "multiply", 0.45)} />
+              {shadingStyle && <div className="absolute inset-0" style={shadingStyle} />}
+              {specularStyle && <div className="absolute inset-0" style={specularStyle} />}
+              <div
+                className="absolute inset-0"
+                style={{ ...fineDetailStyle(pants.src, vis.detailOpacity, vis.detailScale, PANTS_CANVAS) }}
+              />
+            </div>
+          );
+        })()}
     </div>
   );
 }
