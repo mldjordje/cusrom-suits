@@ -1139,63 +1139,79 @@ export default function SuitPreview({ config }: Props) {
       {/* ======================== PANTS CANVAS ======================== */}
       {pants && (
         <div className="relative mx-auto mt-2" style={{ width: '100%', aspectRatio: '600 / 350', maxWidth: 720 }}>
-          {/* LAYER 1: Transparent base (original grayscale layer) */}
+          {/* Pants: tone base + fabric (masked by pants), then shading/specular, then subtle base */}
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: `url(${cdnPair(pants.src).webp}), url(${cdnPair(pants.src).png})`,
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'normal',
-              opacity: 1,
-              pointerEvents: 'none',
-            }}
-          />
-          {/* LAYER 2: Fabric texture (masked by its own sprite) */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${fabricTexture})`,
-              backgroundRepeat: 'repeat',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              mixBlendMode: 'soft-light',
-              opacity: 0.5,
-              WebkitMaskImage: `url(${cdnPair(pants.src).webp}), url(${cdnPair(pants.src).png})`,
+              backgroundColor: fabricAvgColor || toneBaseColor,
+              WebkitMaskImage: `url(${cdnPair(pants.src).png)` as any,
               WebkitMaskRepeat: 'no-repeat',
               WebkitMaskSize: 'contain',
               WebkitMaskPosition: 'center',
-              maskImage: `url(${cdnPair(pants.src).webp}), url(${cdnPair(pants.src).png})`,
+              maskImage: `url(${cdnPair(pants.src).png)` as any,
               maskRepeat: 'no-repeat',
               maskSize: 'contain',
               maskPosition: 'center',
               pointerEvents: 'none',
             }}
           />
-          
-          {/* Specular and edges */}
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: `url(${specularPair(pants.src).webp}), url(${specularPair(pants.src).png})`,
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'overlay',
-              opacity: 0.12,
+              backgroundImage: `url(${fabricTexture})`,
+              backgroundRepeat: 'repeat',
+              backgroundSize: `${Math.round(PANTS_CANVAS.w * scale)}px ${Math.round(PANTS_CANVAS.h * scale)}px`,
+              backgroundPosition: `${Math.round(offset.x)}px ${Math.round(offset.y)}px`,
+              mixBlendMode: (selectedFabric?.tone === 'light' ? 'overlay' : 'soft-light') as any,
+              opacity: (selectedFabric?.tone === 'dark' ? 0.28 : (selectedFabric?.tone === 'light' ? 0.36 : 0.32)),
+              filter: tb.filter,
+              WebkitMaskImage: `url(${cdnPair(pants.src).png)` as any,
+              WebkitMaskRepeat: 'no-repeat',
+              WebkitMaskSize: 'contain',
+              WebkitMaskPosition: 'center',
+              maskImage: `url(${cdnPair(pants.src).png)` as any,
+              maskRepeat: 'no-repeat',
+              maskSize: 'contain',
+              maskPosition: 'center',
               pointerEvents: 'none',
             }}
           />
+          {/* Shading */}
           <div
             className="absolute inset-0"
             style={{
-              backgroundImage: `url(${edgesPair(pants.src).webp}), url(${edgesPair(pants.src).png})`,
+              backgroundImage: imageSet(shadingPair(pants.src).webp, shadingPair(pants.src).png),
               backgroundRepeat: 'no-repeat',
               backgroundSize: 'contain',
               backgroundPosition: 'center',
               mixBlendMode: 'multiply',
-              opacity: 0.10,
+              opacity: (selectedFabric?.tone === 'dark' ? 0.28 : (selectedFabric?.tone === 'light' ? 0.40 : 0.35)),
+              pointerEvents: 'none',
+            }}
+          />
+          {/* Specular */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: imageSet(specularPair(pants.src).webp, specularPair(pants.src).png),
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              mixBlendMode: (selectedFabric?.tone === 'dark' ? 'soft-light' : (selectedFabric?.tone === 'light' ? 'screen' : 'overlay')) as any,
+              opacity: (selectedFabric?.tone === 'dark' ? 0.08 : (selectedFabric?.tone === 'light' ? 0.12 : 0.10)),
+              pointerEvents: 'none',
+            }}
+          />
+          {/* Subtle base outlines */}
+          <div
+            className="absolute inset-0"
+            style={{
+              backgroundImage: imageSet(cdnPair(pants.src).webp, cdnPair(pants.src).png),
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              mixBlendMode: 'multiply',
+              opacity: 0.30,
               pointerEvents: 'none',
             }}
           />
