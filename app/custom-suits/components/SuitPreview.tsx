@@ -982,6 +982,60 @@ export default function SuitPreview({ config }: Props) {
      RENDER
   ====================================================================================== */
   const allJacketLayers = suitLayers.filter((x) => x.id === 'torso' || x.id === 'sleeves' || x.id === 'bottom');
+  // Small inline components to keep JSX tidy
+  const PerPartOverlay: React.FC<{ kind: 'shading' | 'specular' }> = ({ kind }) => (
+    <>
+      {allJacketLayers.map((l) => (
+        <div
+          key={`${kind}-${l.id}`}
+          className="absolute inset-0"
+          style={{
+            backgroundImage:
+              kind === 'shading'
+                ? imageSet(shadingPair(l.src).webp, shadingPair(l.src).png)
+                : imageSet(specularPair(l.src).webp, specularPair(l.src).png),
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            mixBlendMode:
+              kind === 'shading'
+                ? ('multiply' as any)
+                : ((selectedFabric?.tone === 'dark'
+                    ? 'soft-light'
+                    : selectedFabric?.tone === 'light'
+                    ? 'screen'
+                    : 'overlay') as any),
+            opacity:
+              kind === 'shading'
+                ? (selectedFabric?.tone === 'dark' ? 0.28 : selectedFabric?.tone === 'light' ? 0.40 : 0.35)
+                : (selectedFabric?.tone === 'dark' ? 0.08 : selectedFabric?.tone === 'light' ? 0.12 : 0.10),
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+    </>
+  );
+
+  const BaseOutlines: React.FC = () => (
+    <>
+      {allJacketLayers.map((l) => (
+        <div
+          key={`base-${l.id}`}
+          className="absolute inset-0"
+          style={{
+            backgroundImage: imageSet(cdnPair(l.src).webp, cdnPair(l.src).png),
+            backgroundRepeat: 'no-repeat',
+            backgroundSize: 'contain',
+            backgroundPosition: 'center',
+            mixBlendMode: 'multiply',
+            opacity: 0.35,
+            pointerEvents: 'none',
+          }}
+        />
+      ))}
+    </>
+  );
+
   return (
     <div className="w-full select-none bg-white">
       <div
@@ -1008,21 +1062,7 @@ export default function SuitPreview({ config }: Props) {
           />
         )}
         {/* LAYER 1: Base outlines (multiply, subtle) */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`base-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: imageSet(cdnPair(l.src).webp, cdnPair(l.src).png),
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'multiply',
-              opacity: 0.35,
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+        <BaseOutlines />
 
         {/* Tone base (union mask) */}
         <div
@@ -1064,38 +1104,10 @@ export default function SuitPreview({ config }: Props) {
         />
 
         {/* LAYER 2.5: Shading (multiply, tone-adapted) */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`shading-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: imageSet(shadingPair(l.src).webp, shadingPair(l.src).png),
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'multiply',
-              opacity: (selectedFabric?.tone === 'dark' ? 0.28 : (selectedFabric?.tone === 'light' ? 0.40 : 0.35)),
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+        <PerPartOverlay kind='shading' />
 
         {/* LAYER 3: Specular highlights */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`spec-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: imageSet(specularPair(l.src).webp, specularPair(l.src).png),
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: (selectedFabric?.tone === 'dark' ? 'soft-light' : (selectedFabric?.tone === 'light' ? 'screen' : 'overlay')) as any,
-              opacity: (selectedFabric?.tone === 'dark' ? 0.08 : (selectedFabric?.tone === 'light' ? 0.12 : 0.10)),
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+        <PerPartOverlay kind='specular' />
 
         {/* Global AO/Vignette (union) */}
         <div
