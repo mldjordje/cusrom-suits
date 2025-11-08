@@ -1001,7 +1001,7 @@ export default function SuitPreview({ config }: Props) {
         {/* LAYER 3: Specular highlights */}
         
 
-        <GlobalOverlays jacketUnionMask={jacketUnionMask ?? undefined} noiseData={NOISE_DATA} vignetteStrength={0.09} noiseOpacity={0.05} />
+        <GlobalOverlays jacketUnionMask={jacketUnionMask ?? undefined} noiseData={NOISE_DATA} vignetteStrength={vis.vignetteStrength} noiseOpacity={vis.noiseOpacity} />
 
         
       </div>
@@ -1043,6 +1043,7 @@ export default function SuitPreview({ config }: Props) {
     </div>
   );
 }
+
 
 
 
