@@ -1,6 +1,7 @@
 import { getTransparentCdnBase } from "./backend";
 
 export type SpritePair = { webp: string; png: string };
+type LayerFolder = "shading" | "specular" | "edges";
 
 let cachedBase: string | null = null;
 const transparentBase = () => {
@@ -14,19 +15,40 @@ export const spriteFileBase = (src: string) => {
   return clean.replace(/\.(png|jpg|jpeg|webp)$/i, "");
 };
 
-const buildPair = (src: string, folder?: "shading" | "specular" | "edges") => {
-  const base = spriteFileBase(src);
+const FALLBACK_SOURCES: Record<string, Partial<Record<LayerFolder, string | null>>> = {
+  sleeves: {
+    shading: "interior+sleeves",
+    specular: "interior+sleeves",
+    edges: "interior+sleeves",
+  },
+  "length_long+cut_slim": {
+    shading: null,
+    specular: null,
+    edges: null,
+  },
+};
+
+const remapBaseName = (name: string, folder?: LayerFolder) => {
+  if (!folder) return name;
+  const fallback = FALLBACK_SOURCES[name]?.[folder];
+  if (fallback === null) return null;
+  return fallback ?? name;
+};
+
+const buildPair = (src: string, folder?: LayerFolder) => {
+  const baseName = remapBaseName(spriteFileBase(src), folder);
+  if (baseName === null) return null;
   const prefix = folder ? `${transparentBase()}${folder}/` : transparentBase();
   return {
-    webp: `${prefix}${base}.webp`,
-    png: `${prefix}${base}.png`,
+    webp: `${prefix}${baseName}.webp`,
+    png: `${prefix}${baseName}.png`,
   } as SpritePair;
 };
 
-export const cdnPair = (src: string) => buildPair(src);
-export const shadingPair = (src: string) => buildPair(src, "shading");
-export const specularPair = (src: string) => buildPair(src, "specular");
-export const edgesPair = (src: string) => buildPair(src, "edges");
+export const cdnPair = (src: string) => buildPair(src) as SpritePair;
+export const shadingPair = (src: string): SpritePair | null => buildPair(src, "shading");
+export const specularPair = (src: string): SpritePair | null => buildPair(src, "specular");
+export const edgesPair = (src: string): SpritePair | null => buildPair(src, "edges");
 
 export const toTransparentSilhouette = (src: string) => {
   const pair = cdnPair(src);
@@ -73,31 +95,45 @@ const getManifest = async () => {
   return manifestPromise;
 };
 
+const relativeFromBase = (url: string) => {
+  const base = transparentBase();
+  if (url.startsWith(base)) return url.slice(base.length);
+  if (typeof window !== "undefined" && base.startsWith("/")) {
+    const absolute = `${window.location.origin}${base}`;
+    if (url.startsWith(absolute)) return url.slice(absolute.length);
+  }
+  if (typeof window !== "undefined" && base.startsWith("http")) {
+    return url.startsWith(base) ? url.slice(base.length) : null;
+  }
+  return null;
+};
+
 const manifestHit = async (url: string) => {
   if (typeof window === "undefined") return null;
-  const localUrl = url.startsWith("/") || url.startsWith(window.location.origin);
-  if (!localUrl) return null;
   const manifest = await getManifest();
   if (!manifest) return null;
-  const parts = url.split("/");
-  const rawFile = parts[parts.length - 1] || "";
-  const file = rawFile.split("?")[0];
+  const relative = relativeFromBase(url);
+  if (!relative) return null;
+  const segments = relative.split("/").filter(Boolean);
+  const file = segments.pop();
   if (!file) return null;
-  const group = url.includes("/shading/")
-    ? "shading"
-    : url.includes("/specular/")
-    ? "specular"
-    : url.includes("/edges/")
-    ? "edges"
-    : "base";
-  const bucket = (manifest as any)[group] as Set<string> | undefined;
-  if (!bucket) return group === "base" ? null : true;
+  const parentFolder = segments.pop();
+  const group: keyof ManifestSets =
+    parentFolder === "shading"
+      ? "shading"
+      : parentFolder === "specular"
+      ? "specular"
+      : parentFolder === "edges"
+      ? "edges"
+      : "base";
+  const bucket = manifest[group];
+  if (!bucket || bucket.size === 0) return group === "base" ? null : false;
   if (bucket.has(file)) return true;
   if (file.toLowerCase().endsWith(".webp")) {
     const pngName = file.replace(/\.webp$/i, ".png");
     if (bucket.has(pngName)) return true;
   }
-  return group === "base" ? null : true;
+  return false;
 };
 
 export const ensureAssetAvailable = async (url: string) => {
@@ -105,9 +141,9 @@ export const ensureAssetAvailable = async (url: string) => {
   if (availabilityCache.has(url)) return availabilityCache.get(url)!;
 
   const manifestResult = await manifestHit(url);
-  if (manifestResult) {
-    availabilityCache.set(url, true);
-    return true;
+  if (manifestResult !== null) {
+    availabilityCache.set(url, manifestResult);
+    return manifestResult;
   }
 
   try {

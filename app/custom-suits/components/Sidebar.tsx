@@ -41,6 +41,46 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
     return root + "upload_test.html";
   })();
 
+  const ChipGroup = ({
+    title,
+    options,
+    selectedId,
+    onSelect,
+  }: {
+    title: string;
+    options: { id: string; label: string }[];
+    selectedId?: string;
+    onSelect: (id: string) => void;
+  }) => {
+    if (!options.length) return null;
+    return (
+      <div className="mb-5">
+        <h3 className="text-sm font-semibold text-[#444] mb-2">{title}</h3>
+        <div className="flex flex-wrap gap-2">
+          {options.map((option) => {
+            const active = selectedId === option.id;
+            return (
+              <button
+                key={option.id}
+                onClick={() => onSelect(option.id)}
+                className={`rounded-full border px-3 py-1.5 text-xs transition ${
+                  active ? "border-[#111] bg-[#111] text-white" : "border-[#d4d4d4] text-[#555] hover:border-[#111]"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
+  const lapels = currentSuit?.lapels ?? [];
+  const selectedLapelId = config.lapelId || lapels[0]?.id;
+  const activeLapel = lapels.find((lapel) => lapel.id === selectedLapelId) || lapels[0];
+  const selectedLapelWidthId = config.lapelWidthId || activeLapel?.widths[0]?.id;
+
   return (
     <div className="h-auto md:h-screen md:sticky md:top-0 overflow-y-auto flex flex-col bg-white px-4 md:px-8 py-6 md:py-8 border-b md:border-b-0 md:border-r border-gray-200 w-full md:w-80">
       {/* LOGO */}
@@ -152,6 +192,83 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
       {activeTab === "ACCENTS" && (
         <section className="animate-fade-in text-sm text-[#777] italic">
           <p>Accents customization coming soon.</p>
+        </section>
+      )}
+
+      {/* STYLE */}
+      {activeTab === "STYLE" && (
+        <section className="animate-fade-in">
+          {!currentSuit ? (
+            <p className="text-xs text-[#777]">Model nije pronađen.</p>
+          ) : (
+            <>
+              <ChipGroup
+                title="Model"
+                options={suits.map((suit) => ({ id: suit.id, label: suit.name }))}
+                selectedId={config.styleId}
+                onSelect={(id) => dispatch({ type: "SET_STYLE", payload: id })}
+              />
+
+              <ChipGroup
+                title="Lapel Type"
+                options={lapels.map((lapel) => ({ id: lapel.id, label: lapel.name }))}
+                selectedId={selectedLapelId}
+                onSelect={(id) => dispatch({ type: "SET_LAPEL", payload: id })}
+              />
+
+              {activeLapel?.widths?.length ? (
+                <ChipGroup
+                  title="Lapel Width"
+                  options={activeLapel.widths.map((width) => ({ id: width.id, label: width.name }))}
+                  selectedId={selectedLapelWidthId}
+                  onSelect={(id) => dispatch({ type: "SET_LAPEL_WIDTH", payload: id })}
+                />
+              ) : null}
+
+              <ChipGroup
+                title="Jacket Pockets"
+                options={(currentSuit.pockets || []).map((pocket) => ({ id: pocket.id, label: pocket.name }))}
+                selectedId={config.pocketId}
+                onSelect={(id) => dispatch({ type: "SET_POCKET", payload: id })}
+              />
+
+              <ChipGroup
+                title="Breast Pocket"
+                options={(currentSuit.breastPocket || []).map((option) => ({ id: option.id, label: option.name }))}
+                selectedId={config.breastPocketId}
+                onSelect={(id) => dispatch({ type: "SET_BREAST_POCKET", payload: id })}
+              />
+
+              <ChipGroup
+                title="Interior"
+                options={(currentSuit.interiors || []).map((option) => ({ id: option.id, label: option.name }))}
+                selectedId={config.interiorId}
+                onSelect={(id) => dispatch({ type: "SET_INTERIOR", payload: id })}
+              />
+
+              <ChipGroup
+                title="Pant Finish"
+                options={(currentSuit.cuffs || []).map((option) => ({ id: option.id, label: option.name }))}
+                selectedId={config.cuffId}
+                onSelect={(id) => dispatch({ type: "SET_CUFF", payload: id })}
+              />
+
+              <div className="flex items-center justify-between rounded-lg border border-dashed border-[#d9d9d9] px-3 py-2 mt-4">
+                <div>
+                  <p className="text-xs font-semibold text-[#444]">Show shirt layer</p>
+                  <p className="text-[11px] text-[#777]">Koristi bele košulje za preview.</p>
+                </div>
+                <button
+                  onClick={() => dispatch({ type: "TOGGLE_SHIRT" })}
+                  className={`px-3 py-1 rounded-full text-xs font-medium transition ${
+                    config.showShirt ? "bg-[#111] text-white" : "border border-[#ccc] text-[#555]"
+                  }`}
+                >
+                  {config.showShirt ? "On" : "Off"}
+                </button>
+              </div>
+            </>
+          )}
         </section>
       )}
 

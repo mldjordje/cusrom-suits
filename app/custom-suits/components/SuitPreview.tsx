@@ -186,7 +186,8 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
     }
     let cancelled = false;
     const urls = new Set<string>();
-    const enqueue = (pair: { webp: string; png: string }) => {
+    const enqueue = (pair: { webp: string; png: string } | null) => {
+      if (!pair) return;
       urls.add(pair.webp);
       urls.add(pair.png);
     };
@@ -218,7 +219,7 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
 
     let cancelled = false;
     const compose = async (
-      picker: (l: SuitLayer) => { webp: string; png: string },
+      picker: (l: SuitLayer) => ({ webp: string; png: string } | null),
       w: number,
       h: number,
       customParts?: SuitLayer[]
@@ -232,6 +233,7 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
       const loopParts = customParts || parts;
       for (const L of loopParts) {
         const p = picker(L);
+        if (!p) continue;
         const tryLoad = (url: string) =>
           new Promise<HTMLImageElement>((resolve, reject) => {
             const img = new Image();
@@ -346,6 +348,7 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
 
   const shadingOverlayStyle = (src: string, opacity = vis.shadingOpacity): React.CSSProperties => {
     const sprite = shadingPair(src);
+    if (!sprite) return { display: "none" };
     return {
       backgroundImage: `url(${sprite.webp}), url(${sprite.png})`,
       backgroundRepeat: "no-repeat",
@@ -363,6 +366,7 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
     blendMode: React.CSSProperties["mixBlendMode"] = vis.specularBlend
   ): React.CSSProperties => {
     const sprite = specularPair(src);
+    if (!sprite) return { display: "none" };
     return {
       backgroundImage: `url(${sprite.webp}), url(${sprite.png})`,
       backgroundRepeat: "no-repeat",
