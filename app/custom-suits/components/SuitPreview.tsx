@@ -1063,7 +1063,22 @@ export default function SuitPreview({ config }: Props) {
           }}
         />
 
-        
+        {/* LAYER 2.5: Shading (multiply, tone-adapted) */}
+        {allJacketLayers.map((l) => (
+          <div
+            key={`shading-${l.id}`}
+            className="absolute inset-0"
+            style={{
+              backgroundImage: imageSet(shadingPair(l.src).webp, shadingPair(l.src).png),
+              backgroundRepeat: 'no-repeat',
+              backgroundSize: 'contain',
+              backgroundPosition: 'center',
+              mixBlendMode: 'multiply',
+              opacity: (selectedFabric?.tone === 'dark' ? 0.28 : (selectedFabric?.tone === 'light' ? 0.40 : 0.35)),
+              pointerEvents: 'none',
+            }}
+          />
+        ))}
 
         {/* LAYER 3: Specular highlights */}
         {allJacketLayers.map((l) => (
