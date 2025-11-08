@@ -1,0 +1,1021 @@
+"use client";
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  // ?Fine detail? overlay koristi istu teksturu, ali sitniji scale i drugaciji blend
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+
+  /* -----------------------------------------------------------------------------
+     Pan/zoom handlers
+  ----------------------------------------------------------------------------- */
+  const onWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
+    e.preventDefault();
+    const delta = -e.deltaY;
+    setScale((s) => Math.min(3, Math.max(1, s + delta * 0.0015)));
+  };
+  const onMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    dragRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y, active: true };
+  };
+  const onMouseMove: React.MouseEventHandler<HTMLDivElement> = (e) => {
+    if (!dragRef.current.active) return;
+    setOffset({ x: e.clientX - dragRef.current.x, y: e.clientY - dragRef.current.y });
+  };
+  const onMouseUp: React.MouseEventHandler<HTMLDivElement> = () => {
+    if (dragRef.current.active) dragRef.current.active = false;
+  };
+
+  /* -----------------------------------------------------------------------------
+     Render redosled
+  ----------------------------------------------------------------------------- */
+  const pants = suitLayers.find((l) => l.id === "pants");
+  const bodyLayers = suitLayers.filter((l) => l.id !== "pants");
+
+  /* -----------------------------------------------------------------------------
+     Simulirani shading/specular bez foldera:
+     - global vignette (multiply)
+     - top/bottom soft-light tok
+     - centralni vertical specular (overlay)
+     - edge glow (soft-light)
+     - micro-noise (overlay)
+     - per-part dodatni gradijenti (rukavi, ramena, rever)
+  ----------------------------------------------------------------------------- */
+  // Global overlays uklonjeni sa canvas-a da ne prave pozadinski halo izvan maske.
+  // Zadr?avamo per-part naglaske i generisane mape.
+
+  // Per-part naglasci (ramena/rukavi + rever)
+  const TorsoLapelEmphasis: React.FC = () => (
+    <div
+      className="absolute inset-0 pointer-events-none"
+      style={{
+        background:
+          // V senka ka dugmetu + blage dijagonalne svetle ivice revera
+          `radial-gradient(80% 80% at 50% 12%, rgba(0,0,0,0.06), rgba(0,0,0,0) 45%),` +
+          `linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 25%),` +
+          `linear-gradient(225deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 25%)`,
+        mixBlendMode: "normal",
+      }}
+    />
+  );
+
+  const SleeveShoulderEmphasis: React.FC = () => (
+    <div
+      className="absolute inset-0 pointer-events-none"
+      style={{
+        background:
+          // Blagi highlight po ramenima + zasencenje ka laktu
+          `radial-gradient(60% 40% at 20% 5%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),` +
+          `radial-gradient(60% 40% at 80% 5%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),` +
+          `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0) 30%, rgba(0,0,0,0.05) 60%, rgba(0,0,0,0) 85%)`,
+        mixBlendMode: "normal",
+      }}
+    />
+  );
+
+  /* =====================================================================================
+     RENDER
+  ====================================================================================== */
+  const allJacketLayers = suitLayers.filter((x) => x.id === 'torso' || x.id === 'sleeves' || x.id === 'bottom');
+  // Small inline components to keep JSX tidy
+  
+
+  
+
+  return (
+    <div className="w-full select-none bg-white">
+      <div
+        className="relative mx-auto"
+        style={{ width: '100%', aspectRatio: '600 / 733', maxWidth: 720 }}
+        onWheel={onWheel}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+      >
+        {interiorLayers?.map((l) => (
+          <img key={`int-${l.id}`} src={l.src} alt={l.name} className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+        ))}
+        {config.showShirt && (
+          <img
+            src={`${cdnTransparent}shirt_to_jacket_open.png`}
+            onError={(e) => {
+              const local = '/assets/suits/transparent/shirt_to_jacket_open.png';
+              if (e.currentTarget.src !== local) e.currentTarget.src = local;
+            }}
+            alt="Shirt"
+            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+          />
+        )}
+        {/* LAYER 1: Base outlines (multiply, subtle) */}
+        <BaseOutlines layers={allJacketLayers} cdnPair={cdnPair} imageSet={imageSet} opacity={vis.baseOutlineOpacity} />
+
+        {/* Union tone base and fabric for jacket */}
+        <BaseLayer maskUrl={jacketUnionMask ?? undefined} color={fabricAvgColor || toneBaseColor} />
+        <FabricUnion
+          fabricUrl={fabricTexture}
+          maskUrl={jacketUnionMask ?? undefined}
+          tone={selectedFabric?.tone as Tone}
+          canvasSize={JACKET_CANVAS}
+          scale={scale}
+          offset={offset}
+          filter={tb.filter}
+        />
+        {/* Per-part overlays for jacket */}
+        <PerPartOverlays
+          layers={allJacketLayers}
+          tone={selectedFabric?.tone as Tone}
+          level={level}
+          shadingPair={shadingPair}
+          specularPair={specularPair}
+        />
+        {/* Global AO + micro-noise for jacket */}
+        <GlobalOverlays jacketUnionMask={jacketUnionMask ?? undefined} noiseData={NOISE_DATA} vignetteStrength={vis.vignetteStrength} noiseOpacity={vis.noiseOpacity} />
+      </div>
+      {/* ======================== PANTS CANVAS ======================== */}
+      {pants && (
+        <div className="relative mx-auto mt-2" style={{ width: '100%', aspectRatio: '600 / 350', maxWidth: 720 }}>
+          {/* Pants: tone base + fabric (masked by pants), then shading/specular, then subtle base */}
+          <BaseLayer maskUrl={cdnPair(pants.src).png} color={fabricAvgColor || toneBaseColor} />
+          <FabricUnion
+            fabricUrl={fabricTexture}
+            maskUrl={cdnPair(pants.src).png}
+            tone={selectedFabric?.tone as Tone}
+            canvasSize={PANTS_CANVAS}
+            scale={scale}
+            offset={offset}
+            filter={tb.filter}
+          />
+          <PerPartOverlays
+            layers={[pants]}
+            tone={selectedFabric?.tone as Tone}
+            shadingPair={shadingPair}
+            specularPair={specularPair}
+          />
+        {/* Subtle base outlines */}
+        <BaseOutlines layers={[pants]} cdnPair={cdnPair} imageSet={imageSet} opacity={vis.pantsOutlineOpacity} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

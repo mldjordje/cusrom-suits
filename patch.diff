@@ -1,0 +1,24 @@
+*** Begin Patch
+*** Update File: app/custom-suits/components/SuitPreview.tsx
+@@
+-      {pants && (
+-        <div className="relative mx-auto mt-2" style={{ width: '100%', aspectRatio: '600 / 350', maxWidth: 720 }}>
+-          {/* CLEAN FABRIC MODE — unified pants tone */}
+-          <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
+-          <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS) }} />
+-          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.45)} />
+-        </div>
+-      )}
++      {pants && (
++        <div className="relative mx-auto mt-2" style={{ width: '100%', aspectRatio: '600 / 350', maxWidth: 720 }}>
++          {/* CLEAN FABRIC MODE — unified pants tone */}
++          <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
++          <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS) }} />
++          <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.45)} />
++          {/* BALANCED FABRIC MODE — realism overlays for pants */}
++          <div className="absolute inset-0" style={shadingOverlayStyle(pants.src, 0.20)} />
++          <div className="absolute inset-0" style={specularOverlayStyle(pants.src, 0.14)} />
++          <div className="absolute inset-0" style={{ ...fineDetailStyle(pants.src, 0.08, vis.detailScale, PANTS_CANVAS) }} />
++        </div>
++      )}
+*** End Patch
