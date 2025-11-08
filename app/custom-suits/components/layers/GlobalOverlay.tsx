@@ -1,20 +1,21 @@
 "use client";
 
 import React from "react";
+import { ToneVisual } from "../../utils/visual";
 
 type Props = {
   noiseData: string;
-  noiseOpacity?: number;
+  settings: ToneVisual;
 };
 
-export const GlobalOverlay: React.FC<Props> = ({ noiseData, noiseOpacity = 0.08 }) => (
+export const GlobalOverlay: React.FC<Props> = ({ noiseData, settings }) => (
   <>
     <div
       className="absolute inset-0"
       style={{
         backgroundImage: `url(${noiseData})`,
         backgroundRepeat: "repeat",
-        opacity: noiseOpacity,
+        opacity: settings.noise,
         mixBlendMode: "soft-light",
         pointerEvents: "none",
       }}
@@ -23,10 +24,17 @@ export const GlobalOverlay: React.FC<Props> = ({ noiseData, noiseOpacity = 0.08 
       className="absolute inset-0"
       style={{
         background:
-          "radial-gradient(circle at top, rgba(255,255,255,0.15), transparent 60%)," +
-          "radial-gradient(circle at bottom, rgba(0,0,0,0.15), transparent 70%)",
+          `linear-gradient(180deg, rgba(255,255,255,${settings.softLightTop}), transparent 40%),` +
+          `linear-gradient(0deg, rgba(0,0,0,${settings.softLightBottom}), transparent 45%)`,
         mixBlendMode: "soft-light",
-        opacity: 0.35,
+        opacity: 0.8,
+        pointerEvents: "none",
+      }}
+    />
+    <div
+      className="absolute inset-0"
+      style={{
+        boxShadow: `inset 0 0 160px rgba(0,0,0,${settings.vignette})`,
         pointerEvents: "none",
       }}
     />

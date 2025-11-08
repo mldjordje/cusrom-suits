@@ -5,6 +5,7 @@ import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
 import { getBackendBase } from "../utils/backend";
+import { NOISE_DATA, toneBlend, toneVisual, getToneBaseColor } from "../utils/visual";
 import { BaseLayer } from "./layers/BaseLayer";
 import { FabricUnion } from "./layers/FabricUnion";
 import { ShadingLayer } from "./layers/ShadingLayer";
@@ -57,68 +58,6 @@ const toTransparentSilhouette = (src: string) => {
 };
 
 /* =====================================================================================
-   Vizuelni presetovi (ton, kontrast, spekular, ivice)
-===================================================================================== */
-
-// Globalni noise (1x1 tiled PNG ~ neutral gray dots). Sprecava "plastican" izgled.
-// Mali je, base64 inline (nema eksternih poziva).
-const NOISE_DATA =
-  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWMYefz/fwAI1QLS/7j4OQAAAABJRU5ErkJggg==";
-
-type Tone = "light" | "medium" | "dark" | undefined;
-
-// Ton-mapiranje (cuva dubinu crne, pojacava midtone, ali ne ?pegla? svetla)
-const toneBlend = (tone?: string) => {
-  switch (tone as Tone) {
-    case "dark":
-      return { opacity: 1, filter: "brightness(1.04) contrast(1.20) saturate(1.12)" } as const;
-    case "light":
-      return { opacity: 1, filter: "brightness(1.06) contrast(1.10) saturate(1.08)" } as const;
-    default:
-      return { opacity: 1, filter: "brightness(1.05) contrast(1.14) saturate(1.10)" } as const;
-  }
-};
-
-// Parametri za ?premium? svetlo po tonu ? top/bottom soft-light, edge glow, highlight
-const toneVisual = (tone?: string) => {
-  if (tone === "dark")
-    return {
-      softLightTop: 0.08,
-      softLightBottom: 0.07,
-      edgeGlow: 0.055,
-      specular: 0.18,
-      noise: 0.16,
-      vignette: 0.25,
-      fineDetail: 0.06,
-      fineDetailSleeve: 0.06,
-      detailScale: "24%",
-    };
-  if (tone === "light")
-    return {
-      softLightTop: 0.06,
-      softLightBottom: 0.05,
-      edgeGlow: 0.04,
-      specular: 0.13,
-      noise: 0.12,
-      vignette: 0.18,
-      fineDetail: 0.07,
-      fineDetailSleeve: 0.07,
-      detailScale: "26%",
-    };
-  return {
-    softLightTop: 0.07,
-    softLightBottom: 0.06,
-    edgeGlow: 0.05,
-    specular: 0.16,
-    noise: 0.15,
-    vignette: 0.21,
-    fineDetail: 0.08,
-    fineDetailSleeve: 0.08,
-    detailScale: "25%",
-  };
-};
-
-/* =====================================================================================
    Komponenta
 ===================================================================================== */
 
@@ -157,13 +96,7 @@ export default function SuitPreview({ config }: Props) {
   const tb = toneBlend(selectedFabric?.tone);
   const vis = toneVisual(selectedFabric?.tone);
 
-  // Solid base color by tone, used under subtle fabric weave
-  const toneBaseColor = (() => {
-    const t = (selectedFabric?.tone || "medium") as Tone;
-    if (t === "dark") return "#2b2b2b";
-    if (t === "light") return "#c8c8c8";
-    return "#8f8f8f";
-  })();
+  const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
 
   // Average color from fabric texture (to better match hue)
   const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
@@ -1036,7 +969,7 @@ export default function SuitPreview({ config }: Props) {
           blendMode="overlay"
           mask={jacketUnionMask}
         />
-        <GlobalOverlay noiseData={NOISE_DATA} noiseOpacity={0.12} />
+        <GlobalOverlay noiseData={NOISE_DATA} settings={vis} />
         <BaseOutlines
           layers={allJacketLayers}
           resolve={(layer) => edgesPair(layer.src)}
