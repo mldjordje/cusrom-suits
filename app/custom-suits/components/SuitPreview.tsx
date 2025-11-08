@@ -1024,30 +1024,44 @@ export default function SuitPreview({ config }: Props) {
           />
         ))}
 
-        {/* LAYER 2: Fabric texture (masked by its own sprite) */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`fabric-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${fabricTexture})`,
-              backgroundRepeat: 'repeat',
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-              mixBlendMode: 'soft-light',
-              opacity: 0.5,
-              WebkitMaskImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskSize: 'contain',
-              WebkitMaskPosition: 'center',
-              maskImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
-              maskRepeat: 'no-repeat',
-              maskSize: 'contain',
-              maskPosition: 'center',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+        {/* Tone base (union mask) */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundColor: fabricAvgColor || toneBaseColor,
+            WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+            WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+            WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
+            WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
+            maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+            maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+            maskSize: jacketUnionMask ? 'contain' : undefined,
+            maskPosition: jacketUnionMask ? 'center' : undefined,
+            pointerEvents: 'none',
+          }}
+        />
+        {/* LAYER 2: Fabric union overlay with pan/zoom */}
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url(${fabricTexture})`,
+            backgroundRepeat: 'repeat',
+            backgroundSize: `${Math.round(JACKET_CANVAS.w * scale)}px ${Math.round(JACKET_CANVAS.h * scale)}px`,
+            backgroundPosition: `${Math.round(offset.x)}px ${Math.round(offset.y)}px`,
+            mixBlendMode: (selectedFabric?.tone === 'light' ? 'overlay' : 'soft-light') as any,
+            opacity: (selectedFabric?.tone === 'dark' ? 0.28 : (selectedFabric?.tone === 'light' ? 0.36 : 0.32)),
+            filter: tb.filter,
+            WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+            WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+            WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
+            WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
+            maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+            maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
+            maskSize: jacketUnionMask ? 'contain' : undefined,
+            maskPosition: jacketUnionMask ? 'center' : undefined,
+            pointerEvents: 'none',
+          }}
+        />
 
         
 
