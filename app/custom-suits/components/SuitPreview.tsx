@@ -957,7 +957,28 @@ export default function SuitPreview({ config, level = 'medium' }: Props) {
         {/* LAYER 1: Base outlines (multiply, subtle) */}
         <BaseOutlines layers={allJacketLayers} cdnPair={cdnPair} imageSet={imageSet} opacity={vis.baseOutlineOpacity} />
 
+        {/* Union tone base and fabric for jacket */}
         <BaseLayer maskUrl={jacketUnionMask ?? undefined} color={fabricAvgColor || toneBaseColor} />
+        <FabricUnion
+          fabricUrl={fabricTexture}
+          maskUrl={jacketUnionMask ?? undefined}
+          tone={selectedFabric?.tone as Tone}
+          canvasSize={JACKET_CANVAS}
+          scale={scale}
+          offset={offset}
+          filter={tb.filter}
+        />
+        {/* Per-part overlays for jacket */}
+        <PerPartOverlays
+          layers={allJacketLayers}
+          tone={selectedFabric?.tone as Tone}
+          level={level}
+          shadingPair={shadingPair}
+          specularPair={specularPair}
+        />
+        {/* Global AO + micro-noise for jacket */}
+        <GlobalOverlays jacketUnionMask={jacketUnionMask ?? undefined} noiseData={NOISE_DATA} vignetteStrength={vis.vignetteStrength} noiseOpacity={vis.noiseOpacity} />
+      </div>
       {/* ======================== PANTS CANVAS ======================== */}
       {pants && (
         <div className="relative mx-auto mt-2" style={{ width: '100%', aspectRatio: '600 / 350', maxWidth: 720 }}>
