@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import BaseOutlines from './layers/BaseOutlines';
+import PerPartOverlay from './layers/PerPartOverlay';
+import GlobalOverlays from './layers/GlobalOverlays';
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
@@ -977,58 +980,9 @@ export default function SuitPreview({ config }: Props) {
   ====================================================================================== */
   const allJacketLayers = suitLayers.filter((x) => x.id === 'torso' || x.id === 'sleeves' || x.id === 'bottom');
   // Small inline components to keep JSX tidy
-  const PerPartOverlay: React.FC<{ kind: 'shading' | 'specular' }> = ({ kind }) => (
-    <>
-      {allJacketLayers.map((l) => (
-        <div
-          key={`${kind}-${l.id}`}
-          className="absolute inset-0"
-          style={{
-            backgroundImage:
-              kind === 'shading'
-                ? imageSet(shadingPair(l.src).webp, shadingPair(l.src).png)
-                : imageSet(specularPair(l.src).webp, specularPair(l.src).png),
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: 'contain',
-            backgroundPosition: 'center',
-            mixBlendMode:
-              kind === 'shading'
-                ? ('multiply' as any)
-                : ((selectedFabric?.tone === 'dark'
-                    ? 'soft-light'
-                    : selectedFabric?.tone === 'light'
-                    ? 'screen'
-                    : 'overlay') as any),
-            opacity:
-              kind === 'shading'
-                ? (selectedFabric?.tone === 'dark' ? 0.28 : selectedFabric?.tone === 'light' ? 0.40 : 0.35)
-                : (selectedFabric?.tone === 'dark' ? 0.08 : selectedFabric?.tone === 'light' ? 0.12 : 0.10),
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
-    </>
-  );
+  
 
-  const BaseOutlines: React.FC = () => (
-    <>
-      {allJacketLayers.map((l) => (
-        <div
-          key={`base-${l.id}`}
-          className="absolute inset-0"
-          style={{
-            backgroundImage: imageSet(cdnPair(l.src).webp, cdnPair(l.src).png),
-            backgroundRepeat: 'no-repeat',
-            backgroundSize: 'contain',
-            backgroundPosition: 'center',
-            mixBlendMode: 'multiply',
-            opacity: 0.35,
-            pointerEvents: 'none',
-          }}
-        />
-      ))}
-    </>
-  );
+  
 
   return (
     <div className="w-full select-none bg-white">
@@ -1056,7 +1010,7 @@ export default function SuitPreview({ config }: Props) {
           />
         )}
         {/* LAYER 1: Base outlines (multiply, subtle) */}
-        <BaseOutlines />
+        <BaseOutlines layers={allJacketLayers} cdnPair={cdnPair} imageSet={imageSet} />
 
         {/* Tone base (union mask) */}
         <div
@@ -1098,47 +1052,12 @@ export default function SuitPreview({ config }: Props) {
         />
 
         {/* LAYER 2.5: Shading (multiply, tone-adapted) */}
-        <PerPartOverlay kind='shading' />
+        <PerPartOverlay kind='shading' layers={allJacketLayers} tone={selectedFabric?.tone as any} shadingPair={shadingPair} specularPair={specularPair} imageSet={imageSet} />
 
         {/* LAYER 3: Specular highlights */}
-        <PerPartOverlay kind='specular' />
+        <PerPartOverlay kind='specular' layers={allJacketLayers} tone={selectedFabric?.tone as any} shadingPair={shadingPair} specularPair={specularPair} imageSet={imageSet} />
 
-        {/* Global AO/Vignette (union) */}
-        <div
-          className="absolute inset-0"
-          style={{
-            background: `radial-gradient(closest-side, rgba(0,0,0,${(0.09)}), rgba(0,0,0,0) 70%)`,
-            mixBlendMode: 'multiply',
-            WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-            WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-            WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
-            WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
-            maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-            maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-            maskSize: jacketUnionMask ? 'contain' : undefined,
-            maskPosition: jacketUnionMask ? 'center' : undefined,
-            pointerEvents: 'none',
-          }}
-        />
-        {/* Micro-noise (union) */}
-        <div
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `url(${NOISE_DATA})`,
-            backgroundRepeat: 'repeat',
-            mixBlendMode: 'overlay',
-            opacity: 0.05,
-            WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-            WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-            WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
-            WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
-            maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-            maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-            maskSize: jacketUnionMask ? 'contain' : undefined,
-            maskPosition: jacketUnionMask ? 'center' : undefined,
-            pointerEvents: 'none',
-          }}
-        />
+        <GlobalOverlays jacketUnionMask={jacketUnionMask ?? undefined} noiseData={NOISE_DATA} vignetteStrength={0.09} noiseOpacity={0.05} />
 
         
       </div>
@@ -1226,4 +1145,8 @@ export default function SuitPreview({ config }: Props) {
     </div>
   );
 }
+
+
+
+
 
