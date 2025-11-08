@@ -1,0 +1,12 @@
+[20-Oct-2025 12:47:34 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function escapeshellarg() in /home/webwiser/public_html/custom-suits-backend/api/upload_fabric.php:33
+Stack trace:
+#0 {main}
+  thrown in /home/webwiser/public_html/custom-suits-backend/api/upload_fabric.php on line 33
+[20-Oct-2025 12:47:50 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function escapeshellarg() in /home/webwiser/public_html/custom-suits-backend/api/upload_fabric.php:33
+Stack trace:
+#0 {main}
+  thrown in /home/webwiser/public_html/custom-suits-backend/api/upload_fabric.php on line 33
+[20-Oct-2025 12:49:51 UTC] PHP Fatal error:  Uncaught Error: Call to undefined function escapeshellarg() in /home/webwiser/public_html/custom-suits-backend/api/upload_fabric.php:35
+Stack trace:
+#0 {main}
+  thrown in /home/webwiser/public_html/custom-suits-backend/api/upload_fabric.php on line 35

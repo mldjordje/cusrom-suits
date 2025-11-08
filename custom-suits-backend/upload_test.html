@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="sr">
+<head>
+  <meta charset="UTF-8">
+  <title>Upravljanje tkaninama</title>
+</head>
+<body style="font-family: sans-serif; margin: 40px;">
+  <h2>Dodaj novu tkaninu</h2>
+  <form action="api/upload_fabric.php" method="post" enctype="multipart/form-data">
+    <label>Naziv tkanine:</label><br>
+    <input type="text" name="name" required><br><br>
+
+    <label>Izaberi sliku:</label><br>
+    <input type="file" name="texture" accept="image/*" required><br><br>
+
+    <button type="submit">Dodaj tkaninu</button>
+  </form>
+  <h3>Postojeće tkanine</h3>
+  <div id="list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px"></div>
+
+  <script>
+    async function loadFabrics(){
+      const box = document.getElementById('list');
+      box.innerHTML = 'Učitavanje...';
+      const res = await fetch('api/fabrics.php');
+      const data = await res.json();
+      if(!data.success){ box.textContent = 'Greška pri učitavanju.'; return; }
+      box.innerHTML = '';
+      data.data.forEach(f => {
+        const card = document.createElement('div');
+        card.style.border='1px solid #ddd'; card.style.borderRadius='12px'; card.style.padding='12px';
+        card.innerHTML = `
+          <img src="${f.texture}" alt="${f.name}" style="width:100%;height:140px;object-fit:cover;border-radius:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+            <div>
+              <div style="font-weight:600">${f.name}</div>
+              <div style="font-size:12px;color:#666">ID: ${f.id} | tone: ${f.tone||''}</div>
+            </div>
+            <button onclick="delFabric(${f.id})" style="cursor:pointer;padding:8px 12px;border-radius:8px;border:1px solid #111;background:#fff;color:#111">Obriši</button>
+          </div>`;
+        box.appendChild(card);
+      });
+    }
+    async function delFabric(id){
+      if(!confirm('Obrisati tkaninu #'+id+'?')) return;
+      const res = await fetch('api/delete_fabric.php', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({id}) });
+      const out = await res.json();
+      if(!out.success){ alert('Greška: '+(out.error||'')); return; }
+      loadFabrics();
+    }
+    loadFabrics();
+  </script>
+</body>
+</html>
+
