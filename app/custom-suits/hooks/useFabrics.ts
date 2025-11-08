@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { fabrics as fallbackFabrics } from "../data/options";
 import { getBackendBase } from "../utils/backend";
 
 export type FabricQuery = {
@@ -20,6 +21,8 @@ export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fallbackList = (fallbackFabrics as unknown[]) as T[];
+
   const searchKey = useMemo(() => {
     const params = new URLSearchParams();
     if (query?.tone) params.set("tone", query.tone);
@@ -38,15 +41,19 @@ export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
       .then((response) => response.json())
       .then((payload) => {
         if (cancelled) return;
-        if (payload?.success) {
-          setFabrics(payload.data);
+        const list = Array.isArray(payload?.data) ? payload.data : [];
+        if (payload?.success && list.length) {
+          setFabrics(list);
           setError(null);
         } else {
-          setError(payload?.message || "Neuspelo učitavanje tkanina");
+          setFabrics(fallbackList);
+          setError(payload?.message || "Fallback na lokalne tkanine.");
         }
       })
       .catch((err) => {
-        if (!cancelled) setError(err?.message || "Neuspelo učitavanje tkanina");
+        if (cancelled) return;
+        setFabrics(fallbackList);
+        setError(err?.message || "Neuspelo učitavanje tkanina. Koristimo fallback.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -55,7 +62,7 @@ export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
     return () => {
       cancelled = true;
     };
-  }, [searchKey]);
+  }, [fallbackList, searchKey]);
 
   return { fabrics, loading, error };
 }

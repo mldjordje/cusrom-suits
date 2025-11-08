@@ -10,7 +10,7 @@ type Props = {
 
 export const SpecularLayer: React.FC<Props> = ({
   opacity = 0.12,
-  blendMode = "overlay",
+  blendMode = "soft-light",
   composite,
   mask,
 }) => {

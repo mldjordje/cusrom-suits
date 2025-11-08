@@ -3,7 +3,8 @@
 import React, { useEffect, useState } from "react";
 import SuitPreview from "../components/SuitPreview";
 import { useSuitConfigurator } from "../hooks/useSuitConfigurator";
-import { suits } from "../data/options";
+import { suits, fabrics as fallbackFabrics } from "../data/options";
+import { useFabrics } from "../hooks/useFabrics";
 
 const LEVELS = {
   low: { contrast: 0.92, saturate: 0.95 },
@@ -20,6 +21,9 @@ export default function CustomSuitDebugPage() {
   const [config, dispatch] = useSuitConfigurator({ styleId: DEFAULT_STYLE, colorId: DEFAULT_COLOR });
   const [fps, setFps] = useState(0);
   const [level, setLevel] = useState<Level>("medium");
+  const { fabrics, loading: fabricsLoading } = useFabrics();
+  const fabricList = fabrics.length ? fabrics : fallbackFabrics;
+  const selectedFabric = fabricList.find((fabric) => String(fabric.id) === String(config.colorId));
 
   useEffect(() => {
     let frames = 0;
@@ -59,6 +63,38 @@ export default function CustomSuitDebugPage() {
               <span className="text-base font-normal text-white/60">fps</span>
             </div>
             <p className="text-white/60">Realtime measurement via requestAnimationFrame.</p>
+          </section>
+
+          <section>
+            <div className="mb-2 flex items-center justify-between">
+              <h2 className="text-lg font-semibold text-white">Fabrics</h2>
+              <span className="text-xs uppercase tracking-widest text-white/60">
+                Tone: {selectedFabric?.tone || "medium"}
+              </span>
+            </div>
+            {fabricsLoading && fabrics.length === 0 ? (
+              <p className="text-white/60 text-xs">Loading fabrics...</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 max-h-64 overflow-y-auto pr-1">
+                {fabricList.map((fabric) => {
+                  const active = String(fabric.id) === String(config.colorId);
+                  return (
+                    <button
+                      key={fabric.id}
+                      onClick={() => dispatch({ type: "SET_COLOR", payload: String(fabric.id) })}
+                      className={`rounded-lg border p-2 text-left text-xs transition ${
+                        active ? "border-white bg-white/90 text-black" : "border-white/30 text-white/80 hover:border-white/60"
+                      }`}
+                    >
+                      <div className="font-semibold">{fabric.name || `#${fabric.id}`}</div>
+                      <div className="text-[10px] uppercase tracking-wider text-white/70">
+                        Tone: {fabric.tone || "medium"}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
           </section>
 
           <section>

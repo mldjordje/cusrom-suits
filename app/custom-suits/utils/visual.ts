@@ -29,8 +29,8 @@ const LEVEL_MULTIPLIER: Record<ContrastLevel, number> = {
 };
 
 const SPECULAR_BLEND: Record<Tone, ToneVisual["specularBlend"]> = {
-  light: "screen",
-  medium: "overlay",
+  light: "soft-light",
+  medium: "soft-light",
   dark: "soft-light",
 };
 
@@ -97,6 +97,8 @@ export const toneVisual = (tone?: string, level: ContrastLevel = "medium"): Tone
     weaveSharpness: weaveSharpnessBase,
   };
 };
+
+export const getToneConfig = toneVisual;
 
 export const getToneBaseColor = (tone?: string) => {
   const safe = (tone as Tone) || "medium";
