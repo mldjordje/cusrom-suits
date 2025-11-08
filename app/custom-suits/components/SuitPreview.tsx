@@ -2,8 +2,11 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import BaseOutlines from './layers/BaseOutlines';
-import PerPartOverlay from './layers/PerPartOverlay';
+import BaseLayer from './layers/BaseLayer';
+import FabricUnion from './layers/FabricUnion';
+import PerPartOverlays from './layers/PerPartOverlays';
 import GlobalOverlays from './layers/GlobalOverlays';
+import { Tone, getToneConfig, toneBlend } from "../utils/visual";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
@@ -41,15 +44,7 @@ const specularPair = (src: string) => {
     webp: `${cdnTransparent}specular/${base}.webp`,
     png: `${cdnTransparent}specular/${base}.png`,
   } as const;
-};\n  return {
-    webp: `${cdnTransparent}edges/${base}.webp`,
-    png: `${cdnTransparent}edges/${base}.png`,
-  } as const;
-};
-
-// Koristimo originalni transparent sprite kao CSS masku (WebP -> PNG fallback u listi)\n  return `url(${u.webp}), url(${u.png})`;
-};
-
+};\n\n
 /* =====================================================================================
    Vizuelni presetovi (ton, kontrast, spekular, ivice)
 ===================================================================================== */
@@ -59,58 +54,7 @@ const specularPair = (src: string) => {
 const NOISE_DATA =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWMYefz/fwAI1QLS/7j4OQAAAABJRU5ErkJggg==";
 
-type Tone = "light" | "medium" | "dark" | undefined;
-
-// Ton-mapiranje (cuva dubinu crne, pojacava midtone, ali ne ?pegla? svetla)
-const toneBlend = (tone?: string) => {
-  switch (tone as Tone) {
-    case "dark":
-      return { opacity: 1, filter: "brightness(1.04) contrast(1.20) saturate(1.12)" } as const;
-    case "light":
-      return { opacity: 1, filter: "brightness(1.06) contrast(1.10) saturate(1.08)" } as const;
-    default:
-      return { opacity: 1, filter: "brightness(1.05) contrast(1.14) saturate(1.10)" } as const;
-  }
-};
-
-// Parametri za ?premium? svetlo po tonu ? top/bottom soft-light, edge glow, highlight
-const toneVisual = (tone?: string) => {
-  if (tone === "dark")
-    return {
-      softLightTop: 0.08,
-      softLightBottom: 0.07,
-      edgeGlow: 0.055,
-      specular: 0.18,
-      noise: 0.16,
-      vignette: 0.25,
-      fineDetail: 0.06,
-      fineDetailSleeve: 0.06,
-      detailScale: "24%",
-    };
-  if (tone === "light")
-    return {
-      softLightTop: 0.06,
-      softLightBottom: 0.05,
-      edgeGlow: 0.04,
-      specular: 0.13,
-      noise: 0.12,
-      vignette: 0.18,
-      fineDetail: 0.07,
-      fineDetailSleeve: 0.07,
-      detailScale: "26%",
-    };
-  return {
-    softLightTop: 0.07,
-    softLightBottom: 0.06,
-    edgeGlow: 0.05,
-    specular: 0.16,
-    noise: 0.15,
-    vignette: 0.21,
-    fineDetail: 0.08,
-    fineDetailSleeve: 0.08,
-    detailScale: "25%",
-  };
-};
+// tone helpers moved to utils/visual
 
 /* =====================================================================================
    Komponenta
@@ -149,7 +93,7 @@ export default function SuitPreview({ config }: Props) {
   const fabricTexture = selectedFabric?.texture || "";
 
   const tb = toneBlend(selectedFabric?.tone);
-  const vis = toneVisual(selectedFabric?.tone);
+  const vis = getToneConfig((selectedFabric?.tone as Tone) || undefined);
 
   // Solid base color by tone, used under subtle fabric weave
   const toneBaseColor = (() => {
@@ -1052,10 +996,10 @@ export default function SuitPreview({ config }: Props) {
         />
 
         {/* LAYER 2.5: Shading (multiply, tone-adapted) */}
-        <PerPartOverlay kind='shading' layers={allJacketLayers} tone={selectedFabric?.tone as any} shadingPair={shadingPair} specularPair={specularPair} imageSet={imageSet} />
+        <PerPartOverlays layers={allJacketLayers} tone={selectedFabric?.tone as Tone} shadingPair={shadingPair} specularPair={specularPair} />
 
         {/* LAYER 3: Specular highlights */}
-        <PerPartOverlay kind='specular' layers={allJacketLayers} tone={selectedFabric?.tone as any} shadingPair={shadingPair} specularPair={specularPair} imageSet={imageSet} />
+        
 
         <GlobalOverlays jacketUnionMask={jacketUnionMask ?? undefined} noiseData={NOISE_DATA} vignetteStrength={0.09} noiseOpacity={0.05} />
 
@@ -1065,67 +1009,21 @@ export default function SuitPreview({ config }: Props) {
       {pants && (
         <div className="relative mx-auto mt-2" style={{ width: '100%', aspectRatio: '600 / 350', maxWidth: 720 }}>
           {/* Pants: tone base + fabric (masked by pants), then shading/specular, then subtle base */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundColor: fabricAvgColor || toneBaseColor,
-              WebkitMaskImage: `url(${cdnPair(pants.src).png})` as any,
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskSize: 'contain',
-              WebkitMaskPosition: 'center',
-              maskImage: `url(${cdnPair(pants.src).png})` as any,
-              maskRepeat: 'no-repeat',
-              maskSize: 'contain',
-              maskPosition: 'center',
-              pointerEvents: 'none',
-            }}
+          <BaseLayer maskUrl={cdnPair(pants.src).png} color={fabricAvgColor || toneBaseColor} />
+          <FabricUnion
+            fabricUrl={fabricTexture}
+            maskUrl={cdnPair(pants.src).png}
+            tone={selectedFabric?.tone as Tone}
+            canvasSize={PANTS_CANVAS}
+            scale={scale}
+            offset={offset}
+            filter={tb.filter}
           />
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${fabricTexture})`,
-              backgroundRepeat: 'repeat',
-              backgroundSize: `${Math.round(PANTS_CANVAS.w * scale)}px ${Math.round(PANTS_CANVAS.h * scale)}px`,
-              backgroundPosition: `${Math.round(offset.x)}px ${Math.round(offset.y)}px`,
-              mixBlendMode: (selectedFabric?.tone === 'light' ? 'overlay' : 'soft-light') as any,
-              opacity: (selectedFabric?.tone === 'dark' ? 0.28 : (selectedFabric?.tone === 'light' ? 0.36 : 0.32)),
-              filter: tb.filter,
-              WebkitMaskImage: `url(${cdnPair(pants.src).png})` as any,
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskSize: 'contain',
-              WebkitMaskPosition: 'center',
-              maskImage: `url(${cdnPair(pants.src).png})` as any,
-              maskRepeat: 'no-repeat',
-              maskSize: 'contain',
-              maskPosition: 'center',
-              pointerEvents: 'none',
-            }}
-          />
-          {/* Shading */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: imageSet(shadingPair(pants.src).webp, shadingPair(pants.src).png),
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'multiply',
-              opacity: (selectedFabric?.tone === 'dark' ? 0.28 : (selectedFabric?.tone === 'light' ? 0.40 : 0.35)),
-              pointerEvents: 'none',
-            }}
-          />
-          {/* Specular */}
-          <div
-            className="absolute inset-0"
-            style={{
-              backgroundImage: imageSet(specularPair(pants.src).webp, specularPair(pants.src).png),
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: (selectedFabric?.tone === 'dark' ? 'soft-light' : (selectedFabric?.tone === 'light' ? 'screen' : 'overlay')) as any,
-              opacity: (selectedFabric?.tone === 'dark' ? 0.08 : (selectedFabric?.tone === 'light' ? 0.12 : 0.10)),
-              pointerEvents: 'none',
-            }}
+          <PerPartOverlays
+            layers={[pants]}
+            tone={selectedFabric?.tone as Tone}
+            shadingPair={shadingPair}
+            specularPair={specularPair}
           />
           {/* Subtle base outlines */}
           <div
@@ -1145,6 +1043,9 @@ export default function SuitPreview({ config }: Props) {
     </div>
   );
 }
+
+
+
 
 
 
