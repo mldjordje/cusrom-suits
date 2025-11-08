@@ -1007,18 +1007,18 @@ export default function SuitPreview({ config }: Props) {
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
           />
         )}
-        {/* LAYER 1: Transparent base (details and shadows) */}
+        {/* LAYER 1: Base outlines (multiply, subtle) */}
         {allJacketLayers.map((l) => (
           <div
             key={`base-${l.id}`}
             className="absolute inset-0"
             style={{
-              backgroundImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
+              backgroundImage: imageSet(cdnPair(l.src).webp, cdnPair(l.src).png),
               backgroundRepeat: 'no-repeat',
               backgroundSize: 'contain',
               backgroundPosition: 'center',
-              mixBlendMode: 'normal',
-              opacity: 1,
+              mixBlendMode: 'multiply',
+              opacity: 0.35,
               pointerEvents: 'none',
             }}
           />
