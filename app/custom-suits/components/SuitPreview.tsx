@@ -5,6 +5,12 @@ import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
 import { getBackendBase } from "../utils/backend";
+import { BaseLayer } from "./layers/BaseLayer";
+import { FabricUnion } from "./layers/FabricUnion";
+import { ShadingLayer } from "./layers/ShadingLayer";
+import { SpecularLayer } from "./layers/SpecularLayer";
+import { GlobalOverlay } from "./layers/GlobalOverlay";
+import { BaseOutlines } from "./layers/BaseOutlines";
 
 /* =====================================================================================
    CDN helpers (ostaju jer maske i strukturalni sprite-ovi su i dalje iz transparent/)
@@ -169,6 +175,7 @@ export default function SuitPreview({ config }: Props) {
   const [sleevesMask, setSleevesMask] = useState<string | null>(null);
   const [torsoMask, setTorsoMask] = useState<string | null>(null);
   const compositesReady = Boolean(compositeBase && compositeShading && compositeSpecular && compositeEdges);
+  const panZoom = { scale, offset };
   useEffect(() => {
     if (!fabricTexture) {
       setFabricAvgColor(null);
@@ -1004,97 +1011,38 @@ export default function SuitPreview({ config }: Props) {
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
           />
         )}
-        {/* LAYER 1: Transparent base (details and shadows) */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`base-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'normal',
-              opacity: 1,
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
-
-        {/* LAYER 2: Fabric texture */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`fabric-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${fabricTexture})`,
-              backgroundRepeat: 'repeat',
-              backgroundSize: 'cover',
-              mixBlendMode: 'soft-light',
-              opacity: 0.45,
-              WebkitMaskImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
-              WebkitMaskRepeat: 'no-repeat',
-              WebkitMaskSize: 'contain',
-              WebkitMaskPosition: 'center',
-              maskImage: `url(${cdnPair(l.src).webp}), url(${cdnPair(l.src).png})`,
-              maskRepeat: 'no-repeat',
-              maskSize: 'contain',
-              maskPosition: 'center',
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
-
-        {/* LAYER 3: Specular highlights */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`spec-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${specularPair(l.src).webp}), url(${specularPair(l.src).png})`,
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'overlay',
-              opacity: 0.12,
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
-
-        {/* LAYER 4: Edge shadows */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`edge-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${edgesPair(l.src).webp}), url(${edgesPair(l.src).png})`,
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'multiply',
-              opacity: 0.12,
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
-
-        {/* LAYER 5: Edge shadows */}
-        {allJacketLayers.map((l) => (
-          <div
-            key={`edge-${l.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: `url(${edgesPair(l.src).webp}), url(${edgesPair(l.src).png})`,
-              backgroundRepeat: 'no-repeat',
-              backgroundSize: 'contain',
-              backgroundPosition: 'center',
-              mixBlendMode: 'multiply',
-              opacity: 0.15,
-              pointerEvents: 'none',
-            }}
-          />
-        ))}
+        <BaseLayer layers={allJacketLayers} resolve={(layer) => cdnPair(layer.src)} />
+        <FabricUnion
+          layers={allJacketLayers}
+          resolve={(layer) => cdnPair(layer.src)}
+          fabricTexture={fabricTexture}
+          toneStyle={tb}
+          baseColor={toneBaseColor}
+          fabricAvgColor={fabricAvgColor}
+          panZoom={panZoom}
+          mask={jacketUnionMask}
+        />
+        <ShadingLayer
+          layers={allJacketLayers}
+          resolve={(layer) => shadingPair(layer.src)}
+          opacity={0.2}
+          blendMode="multiply"
+          mask={jacketUnionMask}
+        />
+        <SpecularLayer
+          layers={allJacketLayers}
+          resolve={(layer) => specularPair(layer.src)}
+          opacity={0.12}
+          blendMode="overlay"
+          mask={jacketUnionMask}
+        />
+        <GlobalOverlay noiseData={NOISE_DATA} noiseOpacity={0.12} />
+        <BaseOutlines
+          layers={allJacketLayers}
+          resolve={(layer) => edgesPair(layer.src)}
+          opacity={0.18}
+          mask={jacketUnionMask}
+        />
       </div>
       {/* ======================== PANTS CANVAS ======================== */}
       {pants && (
