@@ -8,12 +8,13 @@ type Props = {
   layers: SuitLayer[];
   resolve: LayerResolver;
   fabricTexture?: string;
-  toneStyle: React.CSSProperties;
+  textureStyle: React.CSSProperties;
   baseColor: string;
   fabricAvgColor?: string | null;
   panZoom: PanZoomState;
   canvas: { w: number; h: number };
   mask?: string | null;
+  textureScale?: number;
 };
 
 const buildMask = (mask?: string | null, fallback?: SpritePair) =>
@@ -23,14 +24,17 @@ export const FabricUnion: React.FC<Props> = ({
   layers,
   resolve,
   fabricTexture,
-  toneStyle,
+  textureStyle,
   baseColor,
   fabricAvgColor,
   panZoom,
   canvas,
   mask,
+  textureScale = 1,
 }) => {
-  const bgSize = `${Math.round(canvas.w * panZoom.scale)}px ${Math.round(canvas.h * panZoom.scale)}px`;
+  const bgSize = `${Math.round(canvas.w * panZoom.scale * textureScale)}px ${Math.round(
+    canvas.h * panZoom.scale * textureScale
+  )}px`;
   const bgPos = `${Math.round(panZoom.offset.x)}px ${Math.round(panZoom.offset.y)}px`;
 
   const renderBaseFill = () => {
@@ -86,7 +90,7 @@ export const FabricUnion: React.FC<Props> = ({
       backgroundRepeat: "repeat",
       backgroundSize: bgSize,
       backgroundPosition: bgPos,
-      ...toneStyle,
+      ...textureStyle,
       pointerEvents: "none",
     };
 

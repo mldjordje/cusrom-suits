@@ -1,66 +1,95 @@
 export type Tone = "light" | "medium" | "dark";
+export type ContrastLevel = "low" | "medium" | "high";
 
 export type ToneVisual = {
-  softLightTop: number;
-  softLightBottom: number;
-  edgeGlow: number;
-  specular: number;
+  shadingOpacity: number;
+  specularOpacity: number;
+  specularBlend: "screen" | "overlay" | "soft-light";
+  textureBlend: "overlay" | "soft-light";
+  textureOpacity: number;
   noise: number;
   vignette: number;
-  fineDetail: number;
-  fineDetailSleeve: number;
-  detailScale: string;
+  highlightTop: number;
+  highlightBottom: number;
+  ambientTint: string;
+  ambientOpacity: number;
+  edgesOpacity: number;
+  detailScale: number;
+  detailOpacity: number;
+  weaveSharpness: number;
 };
 
 export const NOISE_DATA =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVQImWMYefz/fwAI1QLS/7j4OQAAAABJRU5ErkJggg==";
 
-export const toneBlend = (tone?: string) => {
-  switch ((tone as Tone) || "medium") {
-    case "dark":
-      return { opacity: 1, filter: "brightness(1.04) contrast(1.2) saturate(1.12)" } as const;
-    case "light":
-      return { opacity: 1, filter: "brightness(1.06) contrast(1.1) saturate(1.08)" } as const;
-    default:
-      return { opacity: 1, filter: "brightness(1.05) contrast(1.14) saturate(1.1)" } as const;
-  }
+const LEVEL_MULTIPLIER: Record<ContrastLevel, number> = {
+  low: 0.85,
+  medium: 1,
+  high: 1.15,
 };
 
-export const toneVisual = (tone?: string): ToneVisual => {
-  if (tone === "dark")
-    return {
-      softLightTop: 0.08,
-      softLightBottom: 0.07,
-      edgeGlow: 0.055,
-      specular: 0.18,
-      noise: 0.16,
-      vignette: 0.25,
-      fineDetail: 0.06,
-      fineDetailSleeve: 0.06,
-      detailScale: "24%",
-    };
-  if (tone === "light")
-    return {
-      softLightTop: 0.06,
-      softLightBottom: 0.05,
-      edgeGlow: 0.04,
-      specular: 0.13,
-      noise: 0.12,
-      vignette: 0.18,
-      fineDetail: 0.07,
-      fineDetailSleeve: 0.07,
-      detailScale: "26%",
-    };
+const SPECULAR_BLEND: Record<Tone, ToneVisual["specularBlend"]> = {
+  light: "screen",
+  medium: "overlay",
+  dark: "soft-light",
+};
+
+const TEXTURE_BLEND: Record<Tone, ToneVisual["textureBlend"]> = {
+  light: "overlay",
+  medium: "soft-light",
+  dark: "soft-light",
+};
+
+const AMBIENT_TINT: Record<Tone, string> = {
+  light: "rgba(253, 248, 245, 1)",
+  medium: "rgba(248, 244, 238, 1)",
+  dark: "rgba(243, 241, 236, 1)",
+};
+
+export const toneBlend = (tone?: string, level: ContrastLevel = "medium") => {
+  const safeTone = (tone as Tone) || "medium";
+  const levelMul = LEVEL_MULTIPLIER[level];
+  const filterBase = {
+    light: "brightness(1.08) contrast(1.05) saturate(1.04)",
+    medium: "brightness(1.05) contrast(1.1) saturate(1.08)",
+    dark: "brightness(1.02) contrast(1.15) saturate(1.15)",
+  }[safeTone];
   return {
-    softLightTop: 0.07,
-    softLightBottom: 0.06,
-    edgeGlow: 0.05,
-    specular: 0.16,
-    noise: 0.15,
-    vignette: 0.21,
-    fineDetail: 0.08,
-    fineDetailSleeve: 0.08,
-    detailScale: "25%",
+    opacity: levelMul >= 1 ? 1 : 0.98 + levelMul * 0.02,
+    filter: `${filterBase} contrast(${(0.95 + levelMul * 0.1).toFixed(2)})`,
+  } as const;
+};
+
+export const toneVisual = (tone?: string, level: ContrastLevel = "medium"): ToneVisual => {
+  const safeTone = (tone as Tone) || "medium";
+  const levelMul = LEVEL_MULTIPLIER[level];
+
+  const shadingBase = { light: 0.4, medium: 0.35, dark: 0.28 }[safeTone];
+  const specularBase = { light: 0.12, medium: 0.1, dark: 0.08 }[safeTone];
+  const textureBase = { light: 0.36, medium: 0.32, dark: 0.28 }[safeTone];
+  const noiseBase = { light: 0.06, medium: 0.07, dark: 0.08 }[safeTone];
+  const vignetteBase = { light: 0.18, medium: 0.22, dark: 0.27 }[safeTone];
+  const edgesBase = { light: 0.07, medium: 0.065, dark: 0.06 }[safeTone];
+  const detailScaleBase = { light: 0.21, medium: 0.23, dark: 0.24 }[safeTone];
+  const detailOpacityBase = { light: 0.12, medium: 0.1, dark: 0.09 }[safeTone];
+  const weaveSharpnessBase = { light: 1.05, medium: 1, dark: 0.95 }[safeTone];
+
+  return {
+    shadingOpacity: Number((shadingBase * levelMul).toFixed(3)),
+    specularOpacity: Number((specularBase * (level === "low" ? 0.9 : level === "high" ? 1.1 : 1)).toFixed(3)),
+    specularBlend: SPECULAR_BLEND[safeTone],
+    textureBlend: TEXTURE_BLEND[safeTone],
+    textureOpacity: Number((textureBase * (level === "high" ? 1.05 : level === "low" ? 0.92 : 1)).toFixed(3)),
+    noise: Math.min(0.25, noiseBase * (level === "high" ? 1.2 : 1)),
+    vignette: Math.min(0.42, vignetteBase * (level === "high" ? 1.15 : level === "low" ? 0.9 : 1)),
+    highlightTop: safeTone === "light" ? 0.08 : safeTone === "dark" ? 0.1 : 0.09,
+    highlightBottom: safeTone === "light" ? 0.07 : safeTone === "dark" ? 0.08 : 0.075,
+    ambientTint: AMBIENT_TINT[safeTone],
+    ambientOpacity: safeTone === "light" ? 0.09 : safeTone === "dark" ? 0.06 : 0.075,
+    edgesOpacity: Number((edgesBase * (safeTone === "dark" ? 1.1 : 1)).toFixed(3)),
+    detailScale: detailScaleBase,
+    detailOpacity: Number((detailOpacityBase * (levelMul >= 1 ? levelMul : 1)).toFixed(3)),
+    weaveSharpness: weaveSharpnessBase,
   };
 };
 

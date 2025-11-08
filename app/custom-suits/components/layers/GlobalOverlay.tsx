@@ -24,8 +24,8 @@ export const GlobalOverlay: React.FC<Props> = ({ noiseData, settings }) => (
       className="absolute inset-0"
       style={{
         background:
-          `linear-gradient(180deg, rgba(255,255,255,${settings.softLightTop}), transparent 40%),` +
-          `linear-gradient(0deg, rgba(0,0,0,${settings.softLightBottom}), transparent 45%)`,
+          `linear-gradient(180deg, rgba(255,255,255,${settings.highlightTop}), transparent 40%),` +
+          `linear-gradient(0deg, rgba(0,0,0,${settings.highlightBottom}), transparent 45%)`,
         mixBlendMode: "soft-light",
         opacity: 0.8,
         pointerEvents: "none",

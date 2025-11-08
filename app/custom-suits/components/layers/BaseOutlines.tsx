@@ -1,12 +1,7 @@
 "use client";
 
 import React from "react";
-import { SuitLayer } from "../../data/options";
-import { LayerResolver, spriteBackground } from "./types";
-
 type Props = {
-  layers: SuitLayer[];
-  resolve: LayerResolver;
   opacity?: number;
   composite?: string | null;
   mask?: string | null;

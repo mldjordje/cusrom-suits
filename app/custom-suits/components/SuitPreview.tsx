@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
-import { NOISE_DATA, toneBlend, toneVisual, getToneBaseColor } from "../utils/visual";
+import { NOISE_DATA, toneBlend, toneVisual, getToneBaseColor, ContrastLevel } from "../utils/visual";
 import { cdnPair, shadingPair, specularPair, edgesPair, toTransparentSilhouette, ensureAssetAvailable } from "../utils/assets";
 import { useFabrics } from "../hooks/useFabrics";
 import { BaseLayer } from "./layers/BaseLayer";
@@ -23,9 +23,9 @@ const cdnTransparent = getTransparentCdnBase();
    Komponenta
 ===================================================================================== */
 
-type Props = { config: SuitState };
+type Props = { config: SuitState; level?: ContrastLevel };
 
-export default function SuitPreview({ config }: Props) {
+export default function SuitPreview({ config, level = "medium" }: Props) {
   const { fabrics, loading: fabricsLoading } = useFabrics();
 
   // Pan/zoom samo na teksturu tkanine (ne menja maske)
@@ -64,8 +64,8 @@ export default function SuitPreview({ config }: Props) {
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
 
-  const tb = toneBlend(selectedFabric?.tone);
-  const vis = toneVisual(selectedFabric?.tone);
+  const tb = toneBlend(selectedFabric?.tone, level);
+  const vis = toneVisual(selectedFabric?.tone, level);
 
   const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
 
@@ -270,25 +270,10 @@ export default function SuitPreview({ config }: Props) {
       cancelled = true;
     };
   }, [suitLayers]);
-  const pocketSrc =
-    config.pocketId && currentSuit.pockets?.find((p) => p.id === config.pocketId)?.src;
-
-  const cuffSrc =
-    config.cuffId && currentSuit.cuffs?.find((c) => c.id === config.cuffId)?.src;
-
-  const pantsPleatSrc =
-    config.pantsPleatId === "double" ? "/assets/suits/blue/pleats_double.png" : undefined;
-
   const interiorLayers: SuitLayer[] | undefined = (() => {
     const def = currentSuit.interiors?.[0];
     const active = config.interiorId ?? def?.id;
     const found = currentSuit.interiors?.find((i) => i.id === active);
-    return Array.isArray(found?.layers) ? found.layers : undefined;
-  })();
-
-  const breastPocketLayers: SuitLayer[] | undefined = (() => {
-    const id = config.breastPocketId;
-    const found = id ? currentSuit.breastPocket?.find((bp) => bp.id === id) : undefined;
     return Array.isArray(found?.layers) ? found.layers : undefined;
   })();
 
@@ -316,19 +301,22 @@ export default function SuitPreview({ config }: Props) {
 
   const fabricWeaveOverlayStyle = (
     src: string,
-    canvas: { w: number; h: number } = JACKET_CANVAS
+    canvas: { w: number; h: number } = JACKET_CANVAS,
+    options?: { opacity?: number; blend?: React.CSSProperties["mixBlendMode"]; scale?: number }
   ): React.CSSProperties => {
-    const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
+    const scaleFactor = options?.scale ?? vis.weaveSharpness;
+    const bgSize = `${Math.round(canvas.w * panZoom.scale * scaleFactor)}px ${Math.round(
+      canvas.h * panZoom.scale * scaleFactor
+    )}px`;
     const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
-    const tone = selectedFabric?.tone || "medium";
-    const opacity = tone === "dark" ? 0.14 : tone === "light" ? 0.2 : 0.17;
     return {
       backgroundImage: fabricTexture ? `url(${fabricTexture})` : undefined,
       backgroundSize: bgSize,
       backgroundPosition: bgPos,
       backgroundRepeat: "repeat",
-      opacity,
-      mixBlendMode: "normal",
+      opacity: options?.opacity ?? vis.textureOpacity,
+      mixBlendMode: options?.blend ?? vis.textureBlend,
+      filter: tb.filter,
       WebkitMaskImage: toTransparentSilhouette(src),
       WebkitMaskRepeat: "no-repeat",
       WebkitMaskSize: "contain",
@@ -358,7 +346,7 @@ export default function SuitPreview({ config }: Props) {
     } as React.CSSProperties;
   };
 
-  const shadingOverlayStyle = (src: string, opacity = 0.2): React.CSSProperties => {
+  const shadingOverlayStyle = (src: string, opacity = vis.shadingOpacity): React.CSSProperties => {
     const sprite = shadingPair(src);
     return {
       backgroundImage: `url(${sprite.webp}), url(${sprite.png})`,
@@ -371,14 +359,18 @@ export default function SuitPreview({ config }: Props) {
     } as React.CSSProperties;
   };
 
-  const specularOverlayStyle = (src: string, opacity = 0.12): React.CSSProperties => {
+  const specularOverlayStyle = (
+    src: string,
+    opacity = vis.specularOpacity,
+    blendMode: React.CSSProperties["mixBlendMode"] = vis.specularBlend
+  ): React.CSSProperties => {
     const sprite = specularPair(src);
     return {
       backgroundImage: `url(${sprite.webp}), url(${sprite.png})`,
       backgroundRepeat: "no-repeat",
       backgroundSize: "contain",
       backgroundPosition: "center",
-      mixBlendMode: "screen",
+      mixBlendMode: blendMode,
       opacity,
       pointerEvents: "none",
     } as React.CSSProperties;
@@ -386,15 +378,15 @@ export default function SuitPreview({ config }: Props) {
 
   const fineDetailStyle = (
     src: string,
-    opacity = 0.08,
-    detailScale = "25%",
+    opacity = vis.detailOpacity,
+    detailScale = vis.detailScale,
     canvas: { w: number; h: number } = JACKET_CANVAS
   ): React.CSSProperties => {
-    const bgSize = `${Math.round(canvas.h * 0.22)}px ${Math.round(canvas.h * 0.22)}px`;
+    const weavePx = Math.max(6, Math.round(canvas.h * detailScale));
     return {
       backgroundImage: fabricTexture ? `url(${fabricTexture})` : undefined,
       backgroundRepeat: "repeat",
-      backgroundSize: bgSize,
+      backgroundSize: `${weavePx}px ${weavePx}px`,
       backgroundPosition: `${Math.round(offset.x)}px ${Math.round(offset.y)}px`,
       opacity,
       mixBlendMode: "normal",
@@ -448,6 +440,14 @@ export default function SuitPreview({ config }: Props) {
   // Global overlays uklonjeni sa canvas-a da ne prave pozadinski halo izvan maske.
   // Zadr?avamo per-part naglaske i generisane mape.
 
+  if (!selectedFabric) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+        {fabricsLoading ? "Ucitavanje tkanina..." : "Odaberi tkaninu da vidiš preview."}
+      </div>
+    );
+  }
+
   /* =====================================================================================
      RENDER
   ====================================================================================== */
@@ -492,52 +492,74 @@ export default function SuitPreview({ config }: Props) {
           layers={allJacketLayers}
           resolve={(layer) => cdnPair(layer.src)}
           fabricTexture={fabricTexture}
-          toneStyle={tb}
+          textureStyle={{ ...tb, mixBlendMode: vis.textureBlend, opacity: vis.textureOpacity }}
           baseColor={toneBaseColor}
           fabricAvgColor={fabricAvgColor}
           panZoom={panZoom}
           canvas={JACKET_CANVAS}
           mask={jacketUnionMask}
+          textureScale={vis.weaveSharpness}
         />
+        {jacketUnionMask && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              background:
+                `radial-gradient(70% 45% at 50% 0%, rgba(255,255,255,0.25), transparent 65%),` +
+                `linear-gradient(180deg, rgba(0,0,0,0.25), transparent 35%)`,
+              backgroundColor: vis.ambientTint,
+              mixBlendMode: "soft-light",
+              opacity: vis.ambientOpacity,
+              WebkitMaskImage: `url(${jacketUnionMask})`,
+              WebkitMaskRepeat: "no-repeat",
+              WebkitMaskSize: "contain",
+              WebkitMaskPosition: "center",
+              maskImage: `url(${jacketUnionMask})`,
+              maskRepeat: "no-repeat",
+              maskSize: "contain",
+              maskPosition: "center",
+            }}
+          />
+        )}
         <ShadingLayer
-          layers={allJacketLayers}
-          resolve={(layer) => shadingPair(layer.src)}
-          opacity={0.2}
+          opacity={vis.shadingOpacity}
           blendMode="multiply"
           mask={jacketUnionMask}
           composite={compositeShading}
         />
         <SpecularLayer
-          layers={allJacketLayers}
-          resolve={(layer) => specularPair(layer.src)}
-          opacity={vis.specular}
-          blendMode="overlay"
+          opacity={vis.specularOpacity}
+          blendMode={vis.specularBlend}
           mask={jacketUnionMask}
           composite={compositeSpecular}
         />
         <GlobalOverlay noiseData={NOISE_DATA} settings={vis} />
-        <BaseOutlines
-          layers={allJacketLayers}
-          resolve={(layer) => edgesPair(layer.src)}
-          opacity={0.18}
-          mask={jacketUnionMask}
-          composite={compositeEdges}
-        />
+        <BaseOutlines opacity={vis.edgesOpacity} mask={jacketUnionMask} composite={compositeEdges} />
       </div>
       {/* ======================== PANTS CANVAS ======================== */}
       {pants && (
         <div className="relative mx-auto mt-2" style={{ width: '100%', aspectRatio: '600 / 350', maxWidth: 720 }}>
-          {/* CLEAN FABRIC MODE � unified pants tone */}
+          {/* CLEAN FABRIC MODE - unified pants tone */}
           <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
-          <div className="absolute inset-0" style={{ ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS) }} />
+          <div
+            className="absolute inset-0"
+            style={{
+              ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS, {
+                opacity: vis.textureOpacity,
+                blend: vis.textureBlend,
+                scale: vis.weaveSharpness,
+              }),
+            }}
+          />
           <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, 'multiply', 0.45)} />
-          <div className="absolute inset-0" style={shadingOverlayStyle(pants.src, 0.20)} />
-          <div className="absolute inset-0" style={specularOverlayStyle(pants.src, 0.14)} />
-          <div className="absolute inset-0" style={{ ...fineDetailStyle(pants.src, 0.08, vis.detailScale, PANTS_CANVAS) }} />
+          <div className="absolute inset-0" style={shadingOverlayStyle(pants.src, vis.shadingOpacity)} />
+          <div className="absolute inset-0" style={specularOverlayStyle(pants.src, vis.specularOpacity, vis.specularBlend)} />
+          <div className="absolute inset-0" style={{ ...fineDetailStyle(pants.src, vis.detailOpacity, vis.detailScale, PANTS_CANVAS) }} />
         </div>
       )}
     </div>
   );
 }
+
 
 

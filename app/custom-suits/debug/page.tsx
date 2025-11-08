@@ -47,7 +47,7 @@ export default function CustomSuitDebugPage() {
               transition: "filter 150ms ease",
             }}
           >
-            <SuitPreview config={config} />
+            <SuitPreview config={config} level={level} />
           </div>
         </div>
 
