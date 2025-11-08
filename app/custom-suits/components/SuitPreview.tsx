@@ -44,7 +44,8 @@ const specularPair = (src: string) => {
     webp: `${cdnTransparent}specular/${base}.webp`,
     png: `${cdnTransparent}specular/${base}.png`,
   } as const;
-};\n\n
+};
+
 /* =====================================================================================
    Vizuelni presetovi (ton, kontrast, spekular, ivice)
 ===================================================================================== */
@@ -984,6 +985,7 @@ export default function SuitPreview({ config, level = 'medium' }: Props) {
     </div>
   );
 }
+
 
 
 
