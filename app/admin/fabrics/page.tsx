@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import { getBackendBase } from "../../custom-suits/utils/backend";
 
 type PhpFabric = {
@@ -21,7 +21,7 @@ export default function FabricsAdminPage() {
 
   const usingPhpApi = Boolean(BACKEND_BASE);
 
-  const load = async () => {
+  const load = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
@@ -42,9 +42,9 @@ export default function FabricsAdminPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [BACKEND_BASE, usingPhpApi]);
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, [load]);
 
   const submit = async (ev: React.FormEvent) => {
     ev.preventDefault();

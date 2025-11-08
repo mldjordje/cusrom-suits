@@ -1,4 +1,5 @@
 "use client";
+/* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
@@ -18,6 +19,8 @@ import { BaseOutlines } from "./layers/BaseOutlines";
    CDN helpers (ostaju jer maske i strukturalni sprite-ovi su i dalje iz transparent/)
 ===================================================================================== */
 const cdnTransparent = getTransparentCdnBase();
+const JACKET_CANVAS = { w: 600, h: 733 } as const;
+const PANTS_CANVAS = { w: 600, h: 350 } as const;
 
 /* =====================================================================================
    Komponenta
@@ -33,12 +36,13 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const dragRef = useRef<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false });
 
-  const currentSuit = suits.find((s) => s.id === config.styleId);
-  if (!currentSuit) return null;
+  const currentSuit = useMemo(
+    () => suits.find((s) => s.id === config.styleId) ?? null,
+    [config.styleId]
+  );
 
-  const baseLayers: SuitLayer[] = currentSuit.layers || [];
   const selectedLapel =
-    currentSuit.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit.lapels?.[0];
+    currentSuit?.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit?.lapels?.[0];
   const selectedLapelWidth =
     selectedLapel?.widths.find((w) => w.id === config.lapelWidthId) ||
     selectedLapel?.widths.find((w) => w.id === "medium") ||
@@ -54,12 +58,13 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
   };
 
   const suitLayers = useMemo(() => {
-    return baseLayers.map((layer) =>
+    if (!currentSuit?.layers) return [];
+    return currentSuit.layers.map((layer) =>
       layer.id === "torso"
         ? { ...layer, src: swapLapelInPath(layer.src, selectedLapel?.id, selectedLapelWidth?.id) }
         : layer
     );
-  }, [baseLayers, selectedLapel?.id, selectedLapelWidth?.id]);
+  }, [currentSuit, selectedLapel?.id, selectedLapelWidth?.id]);
 
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
@@ -271,18 +276,11 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
     };
   }, [suitLayers]);
   const interiorLayers: SuitLayer[] | undefined = (() => {
-    const def = currentSuit.interiors?.[0];
+    const def = currentSuit?.interiors?.[0];
     const active = config.interiorId ?? def?.id;
-    const found = currentSuit.interiors?.find((i) => i.id === active);
+    const found = currentSuit?.interiors?.find((i) => i.id === active);
     return Array.isArray(found?.layers) ? found.layers : undefined;
   })();
-
-  /* -----------------------------------------------------------------------------
-     Canvas konstante
-  ----------------------------------------------------------------------------- */
-  const JACKET_CANVAS = { w: 600, h: 733 } as const;
-  const PANTS_CANVAS = { w: 600, h: 350 } as const;
-
   /* -----------------------------------------------------------------------------
      Helperi za tkaninu (sa pan/zoom param.)
   ----------------------------------------------------------------------------- */
@@ -440,10 +438,18 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
   // Global overlays uklonjeni sa canvas-a da ne prave pozadinski halo izvan maske.
   // Zadr?avamo per-part naglaske i generisane mape.
 
+  if (!currentSuit) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+        Stil nije dostupan za prikaz.
+      </div>
+    );
+  }
+
   if (!selectedFabric) {
     return (
       <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
-        {fabricsLoading ? "Ucitavanje tkanina..." : "Odaberi tkaninu da vidiš preview."}
+        {fabricsLoading ? "Ucitavanje tkanina..." : "Odaberi tkaninu da vidis preview."}
       </div>
     );
   }
@@ -461,6 +467,7 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
       )}
       <div
         className="relative mx-auto"
+        data-testid="jacket-preview"
         style={{ width: '100%', aspectRatio: '600 / 733', maxWidth: 720 }}
         onWheel={onWheel}
         onMouseDown={onMouseDown}

@@ -1,0 +1,9 @@
+<IfModule mod_headers.c>
+  <FilesMatch "\.(png|jpg|jpeg|gif|webp|json|zip)$">
+    Header set Access-Control-Allow-Origin "https://custom-suits.vercel.app"
+    Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+    Header set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+  </FilesMatch>
+</IfModule>
+
+AddType image/webp .webp
