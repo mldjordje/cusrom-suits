@@ -12,6 +12,7 @@ type Props = {
   baseColor: string;
   fabricAvgColor?: string | null;
   panZoom: PanZoomState;
+  canvas: { w: number; h: number };
   mask?: string | null;
 };
 
@@ -26,9 +27,10 @@ export const FabricUnion: React.FC<Props> = ({
   baseColor,
   fabricAvgColor,
   panZoom,
+  canvas,
   mask,
 }) => {
-  const bgSize = `${Math.round(600 * panZoom.scale)}px ${Math.round(733 * panZoom.scale)}px`;
+  const bgSize = `${Math.round(canvas.w * panZoom.scale)}px ${Math.round(canvas.h * panZoom.scale)}px`;
   const bgPos = `${Math.round(panZoom.offset.x)}px ${Math.round(panZoom.offset.y)}px`;
 
   const renderBaseFill = () => {

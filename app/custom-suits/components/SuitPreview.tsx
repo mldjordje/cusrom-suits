@@ -65,7 +65,6 @@ type Props = { config: SuitState };
 
 export default function SuitPreview({ config }: Props) {
   const [fabrics, setFabrics] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Pan/zoom samo na teksturu tkanine (ne menja maske)
   const [scale, setScale] = useState(1);
@@ -83,8 +82,7 @@ export default function SuitPreview({ config }: Props) {
       .then((data) => {
         if (!cancelled && data?.success) setFabrics(data.data);
       })
-      .catch((e) => console.error("Fabrics load error", e))
-      .finally(() => !cancelled && setLoading(false));
+      .catch((e) => console.error("Fabrics load error", e));
     return () => {
       cancelled = true;
     };
@@ -105,9 +103,6 @@ export default function SuitPreview({ config }: Props) {
   const [compositeShading, setCompositeShading] = useState<string | null>(null);
   const [compositeSpecular, setCompositeSpecular] = useState<string | null>(null);
   const [compositeEdges, setCompositeEdges] = useState<string | null>(null);
-  const [sleevesMask, setSleevesMask] = useState<string | null>(null);
-  const [torsoMask, setTorsoMask] = useState<string | null>(null);
-  const compositesReady = Boolean(compositeBase && compositeShading && compositeSpecular && compositeEdges);
   const panZoom = { scale, offset };
   useEffect(() => {
     if (!fabricTexture) {
@@ -283,12 +278,10 @@ export default function SuitPreview({ config }: Props) {
     };
 
     (async () => {
-      const torsoBottom = parts.filter(p => p.id === "torso" || p.id === "bottom");
-      // FIX: removed sleeve edge overlap completely � composites only for torso+bottom
-      const baseUrl = await compose((l) => cdnPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
-      const shadingUrl = await compose((l) => shadingPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
-      const specularUrl = await compose((l) => specularPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
-      const edgesUrl = await compose((l) => edgesPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, torsoBottom);
+      const baseUrl = await compose((l) => cdnPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, parts);
+      const shadingUrl = await compose((l) => shadingPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, parts);
+      const specularUrl = await compose((l) => specularPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, parts);
+      const edgesUrl = await compose((l) => edgesPair(l.src), JACKET_CANVAS.w, JACKET_CANVAS.h, parts);
       if (!cancelled) {
         setCompositeBase(baseUrl);
         setCompositeShading(shadingUrl);
@@ -301,98 +294,7 @@ export default function SuitPreview({ config }: Props) {
     };
   }, [currentSuit, config.lapelId, config.lapelWidthId]);
 
-  // Build sleeves-only mask to equalize sleeves vs torso (lighten sleeves slightly)
-  useEffect(() => {
-    const baseLayersLocal: SuitLayer[] = currentSuit?.layers || [];
-    const selectedLapelLocal =
-      currentSuit?.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit?.lapels?.[0];
-    const selectedLapelWidthLocal =
-      selectedLapelLocal?.widths.find((w) => w.id === config.lapelWidthId) ||
-      selectedLapelLocal?.widths.find((w) => w.id === "medium") ||
-      selectedLapelLocal?.widths?.[0];
-    const swap = (src: string) =>
-      src.replace(
-        /lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/,
-        `lapel_${selectedLapelWidthLocal?.id || "medium"}+style_lapel_${selectedLapelLocal?.id || "notch"}`
-      );
-    const adjusted = baseLayersLocal.map((l) => (l.id === "torso" ? { ...l, src: swap(l.src) } : l));
-    const sleevesPart = adjusted.find((x) => x.id === "sleeves");
-    if (!sleevesPart) { setSleevesMask(null); return; }
 
-    let cancelled = false;
-    (async () => {
-      try {
-        const c = document.createElement("canvas");
-        c.width = JACKET_CANVAS.w; c.height = JACKET_CANVAS.h;
-        const ctx = c.getContext("2d"); if (!ctx) return;
-        const pair = cdnPair(sleevesPart.src);
-        const tryLoad = (url: string) => new Promise<HTMLImageElement>((resolve, reject) => { const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>resolve(i); i.onerror=reject; i.src=url; });
-        let img: HTMLImageElement | null = null;
-        try { img = await tryLoad(pair.webp); } catch { try { img = await tryLoad(pair.png); } catch {} }
-        if (!img) return;
-        const scale = Math.min(c.width / img.width, c.height / img.height);
-        const dw = Math.round(img.width * scale); const dh = Math.round(img.height * scale);
-        const dx = Math.round((c.width - dw) / 2); const dy = Math.round((c.height - dh) / 2);
-        ctx.drawImage(img, dx, dy, dw, dh);
-        if (!cancelled) setSleevesMask(c.toDataURL("image/png"));
-      } catch { if (!cancelled) setSleevesMask(null); }
-    })();
-    return () => { cancelled = true; };
-  }, [currentSuit, config.lapelId, config.lapelWidthId]);
-
-  // Build torso-only mask for side feathering (to hide vertical armhole seams)
-  useEffect(() => {
-    const baseLayersLocal: SuitLayer[] = currentSuit?.layers || [];
-    const selectedLapelLocal =
-      currentSuit?.lapels?.find((l) => l.id === config.lapelId) ?? currentSuit?.lapels?.[0];
-    const selectedLapelWidthLocal =
-      selectedLapelLocal?.widths.find((w) => w.id === config.lapelWidthId) ||
-      selectedLapelLocal?.widths.find((w) => w.id === "medium") ||
-      selectedLapelLocal?.widths?.[0];
-    const swap = (src: string) =>
-      src.replace(
-        /lapel_(narrow|medium|wide)\+style_lapel_(notch|peak)/,
-        `lapel_${selectedLapelWidthLocal?.id || "medium"}+style_lapel_${selectedLapelLocal?.id || "notch"}`
-      );
-    const adjusted = baseLayersLocal.map((l) => (l.id === "torso" ? { ...l, src: swap(l.src) } : l));
-    const torsoPart = adjusted.find((x) => x.id === "torso");
-    if (!torsoPart) { setTorsoMask(null); return; }
-
-    let cancelled = false;
-    (async () => {
-      try {
-        const c = document.createElement("canvas");
-        c.width = JACKET_CANVAS.w; c.height = JACKET_CANVAS.h;
-        const ctx = c.getContext("2d"); if (!ctx) return;
-        const pair = cdnPair(torsoPart.src);
-        const tryLoad = (url: string) => new Promise<HTMLImageElement>((resolve, reject) => { const i=new Image(); i.crossOrigin='anonymous'; i.onload=()=>resolve(i); i.onerror=reject; i.src=url; });
-        let img: HTMLImageElement | null = null;
-        try { img = await tryLoad(pair.webp); } catch { try { img = await tryLoad(pair.png); } catch {} }
-        if (!img) return;
-        const scale = Math.min(c.width / img.width, c.height / img.height);
-        const dw = Math.round(img.width * scale); const dh = Math.round(img.height * scale);
-        const dx = Math.round((c.width - dw) / 2); const dy = Math.round((c.height - dh) / 2);
-        ctx.drawImage(img, dx, dy, dw, dh);
-        if (!cancelled) setTorsoMask(c.toDataURL("image/png"));
-      } catch { if (!cancelled) setTorsoMask(null); }
-    })();
-    return () => { cancelled = true; };
-  }, [currentSuit, config.lapelId, config.lapelWidthId]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-full text-gray-400 text-sm">
-        Ucitavanje tkanina?
-      </div>
-    );
-  }
-  if (!selectedFabric) {
-    return (
-      <div className="flex items-center justify-center h-full text-gray-500 text-sm">
-        Izaberi tkaninu da vidi? odelo.
-      </div>
-    );
-  }
 
   /* -----------------------------------------------------------------------------
      Dinamicka zamena revera (da maska uvek prati izabrani rever)
@@ -452,205 +354,8 @@ export default function SuitPreview({ config }: Props) {
   /* -----------------------------------------------------------------------------
      Helperi za tkaninu (sa pan/zoom param.)
   ----------------------------------------------------------------------------- */
-  const fabricMaskStyle = (
-    src: string,
-    canvas: { w: number; h: number } = JACKET_CANVAS
-  ): React.CSSProperties => {
-    // koristimo pan/zoom nad teksturom
-    const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
-    const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
-    return {
-      backgroundImage: `url(${fabricTexture})`,
-      backgroundSize: bgSize,
-      backgroundPosition: bgPos,
-      backgroundRepeat: "repeat", // dozvoljavamo ponavljanje zbog weave obrazaca
-      opacity: tb.opacity,
-      filter: tb.filter,
-      WebkitMaskImage: toTransparentSilhouette(src),
-      WebkitMaskRepeat: "no-repeat",
-      WebkitMaskSize: "contain",
-      WebkitMaskPosition: "center",
-      maskImage: toTransparentSilhouette(src),
-      maskRepeat: "no-repeat",
-      maskSize: "contain",
-      maskPosition: "center",
-      pointerEvents: "none",
-    } as React.CSSProperties;
-  };
-
-  // Solid color fill under the weave, same mask
-  const colorBaseMaskStyle = (
-    src: string
-  ): React.CSSProperties => {
-    return {
-      backgroundColor: fabricAvgColor || toneBaseColor,
-      WebkitMaskImage: toTransparentSilhouette(src),
-      WebkitMaskRepeat: "no-repeat",
-      WebkitMaskSize: "contain",
-      WebkitMaskPosition: "center",
-      maskImage: toTransparentSilhouette(src),
-      maskRepeat: "no-repeat",
-      maskSize: "contain",
-      maskPosition: "center",
-      pointerEvents: "none",
-    } as React.CSSProperties;
-  };
-
-  // Subtle weave overlay on top of solid base (reduced visibility)
-  const fabricWeaveOverlayStyle = (
-    src: string,
-    canvas: { w: number; h: number } = JACKET_CANVAS
-  ): React.CSSProperties => {
-    const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
-    const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
-    const t = (selectedFabric?.tone || "medium") as Tone;
-    const op = t === "dark" ? 0.14 : t === "light" ? 0.20 : 0.17;
-    return {
-      backgroundImage: `url(${fabricTexture})`,
-      backgroundSize: bgSize,
-      backgroundPosition: bgPos,
-      backgroundRepeat: "repeat",
-      opacity: op,
-      mixBlendMode: "normal",
-      WebkitMaskImage: toTransparentSilhouette(src),
-      WebkitMaskRepeat: "no-repeat",
-      WebkitMaskSize: "contain",
-      WebkitMaskPosition: "center",
-      maskImage: toTransparentSilhouette(src),
-      maskRepeat: "no-repeat",
-      maskSize: "contain",
-      maskPosition: "center",
-      pointerEvents: "none",
-    } as React.CSSProperties;
-  };
-
-  // Unified fabric base across multiple layers to avoid seams (e.g., torso + sleeves)
-  const unifiedFabricBaseStyle = (layers: SuitLayer[], canvas: { w: number; h: number }) => {
-    const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
-    const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
-
-    const maskImages: string[] = [];
-    const maskSizes: string[] = [];
-    const maskRepeats: string[] = [];
-    const maskPositions: string[] = [];
-    for (const L of layers) {
-      const u = cdnPair(L.src);
-      // WebP first, PNG fallback
-      maskImages.push(`url(${u.webp})`);
-      maskImages.push(`url(${u.png})`);
-      maskSizes.push("contain", "contain");
-      maskRepeats.push("no-repeat", "no-repeat");
-      maskPositions.push("center", "center");
-    }
-
-    const style: React.CSSProperties = {
-      backgroundColor: fabricAvgColor || toneBaseColor,
-    };
-    // FIX: sleeves transparency ? use union mask ONLY for torso/bottom, not for sleeves
-    const containsSleeves = layers.some((l) => l.id === "sleeves");
-    if (jacketUnionMask) {
-      Object.assign(style, {
-        WebkitMaskImage: `url(${jacketUnionMask})`,
-        WebkitMaskRepeat: "no-repeat",
-        WebkitMaskSize: "contain",
-        WebkitMaskPosition: "center",
-        maskImage: `url(${jacketUnionMask})`,
-        maskRepeat: "no-repeat",
-        maskSize: "contain",
-        maskPosition: "center",
-      } as React.CSSProperties);
-    } else {
-      Object.assign(style, {
-        WebkitMaskImage: (jacketUnionMask ? `url(${jacketUnionMask})` : maskImages.join(", ")),
-        WebkitMaskRepeat: (jacketUnionMask ? "no-repeat" : maskRepeats.join(", ")),
-        WebkitMaskSize: (jacketUnionMask ? "contain" : maskSizes.join(", ")),
-        WebkitMaskPosition: (jacketUnionMask ? "center" : maskPositions.join(", ")),
-        maskImage: (jacketUnionMask ? `url(${jacketUnionMask})` : maskImages.join(", ")),
-        maskRepeat: (jacketUnionMask ? "no-repeat" : maskRepeats.join(", ")),
-        maskSize: (jacketUnionMask ? "contain" : maskSizes.join(", ")),
-        maskPosition: (jacketUnionMask ? "center" : maskPositions.join(", ")),
-      } as React.CSSProperties);
-    }
-    return style;
-  };
-
-  // Unified weave overlay across provided layers (prevents visible weave seams)
-  const unifiedWeaveOverlayStyle = (layers: SuitLayer[], canvas: { w: number; h: number }) => {
-    const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
-    const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
-
-    const maskImages: string[] = [];
-    const maskSizes: string[] = [];
-    const maskRepeats: string[] = [];
-    const maskPositions: string[] = [];
-    for (const L of layers) {
-      const u = cdnPair(L.src);
-      maskImages.push(`url(${u.webp})`, `url(${u.png})`);
-      maskSizes.push("contain", "contain");
-      maskRepeats.push("no-repeat", "no-repeat");
-      maskPositions.push("center", "center");
-    }
-
-    const t = (selectedFabric?.tone || "medium") as Tone;
-    // FIX: sleeves transparency ? increase fabric visibility when sleeves are in the set
-    const opacity = 1;
-
-    return {
-      backgroundImage: `url(${fabricTexture})`,
-      backgroundSize: bgSize,
-      backgroundPosition: bgPos,
-      backgroundRepeat: "repeat",
-      mixBlendMode: "normal",
-      opacity,
-      pointerEvents: "none",
-      WebkitMaskImage: (jacketUnionMask ? `url(${jacketUnionMask})` : maskImages.join(", ")),
-      WebkitMaskRepeat: (jacketUnionMask ? "no-repeat" : maskRepeats.join(", ")),
-      WebkitMaskSize: (jacketUnionMask ? "contain" : maskSizes.join(", ")),
-      WebkitMaskPosition: (jacketUnionMask ? "center" : maskPositions.join(", ")),
-      maskImage: (jacketUnionMask ? `url(${jacketUnionMask})` : maskImages.join(", ")),
-      maskRepeat: (jacketUnionMask ? "no-repeat" : maskRepeats.join(", ")),
-      maskSize: (jacketUnionMask ? "contain" : maskSizes.join(", ")),
-      maskPosition: (jacketUnionMask ? "center" : maskPositions.join(", ")),
-    } as React.CSSProperties;
-  };
-
-  // Feather the inner sleeve seam so torso/sleeve transition is invisible
-  // FIX: softer sleeve transition
-  const sleevesFeatherStyle: React.CSSProperties = {
-    background:
-      `linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0) 20%),` +
-      `linear-gradient(270deg, rgba(255,255,255,0.04), rgba(255,255,255,0) 20%)`,
-    mixBlendMode: "normal",
-    opacity: 0.3,
-    pointerEvents: "none",
-  };
-
-  // Torso side feather to hide inner sleeve vertical line (applies only to torso area)
-  const torsoArmholeFeatherStyle: React.CSSProperties = {
-    background:
-      `linear-gradient(90deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 14%),` +
-      `linear-gradient(270deg, rgba(255,255,255,0.20), rgba(255,255,255,0) 14%)`,
-    mixBlendMode: 'screen',
-    opacity: selectedFabric?.tone === 'light' ? 0.28 : selectedFabric?.tone === 'dark' ? 0.18 : 0.22,
-    WebkitMaskImage: torsoMask ? `url(${torsoMask})` : undefined,
-    WebkitMaskRepeat: 'no-repeat',
-    WebkitMaskSize: 'contain',
-    WebkitMaskPosition: 'center',
-    maskImage: torsoMask ? `url(${torsoMask})` : undefined,
-    maskRepeat: 'no-repeat',
-    maskSize: 'contain',
-    maskPosition: 'center',
-    pointerEvents: 'none',
-  } as React.CSSProperties;
-
-  // Feather the top seam of the bottom piece (waist) to eliminate horizontal line
-  // FIX: waist band fully softened
-  const bottomFeatherStyle = (src: string): React.CSSProperties => ({
-    background:
-      `linear-gradient(180deg, rgba(255,255,255,0.10) 0%, rgba(255,255,255,0.0) 60%)`,
-    mixBlendMode: "normal",
-    // FIX: bottom feather softened by tone
-    opacity: selectedFabric?.tone === 'light' ? 0.15 : 0.25,
+  const colorBaseMaskStyle = (src: string): React.CSSProperties => ({
+    backgroundColor: fabricAvgColor || toneBaseColor,
     WebkitMaskImage: toTransparentSilhouette(src),
     WebkitMaskRepeat: "no-repeat",
     WebkitMaskSize: "contain",
@@ -662,81 +367,41 @@ export default function SuitPreview({ config }: Props) {
     pointerEvents: "none",
   });
 
-  // Ambient occlusion for jacket (lapel and waist emphasis)
-  const jacketAOStyle: React.CSSProperties = {
-    background:
-      // FIX: waist band removed (keep only subtle central crease)
-      `linear-gradient(90deg, rgba(0,0,0,0.22) 49.5%, rgba(0,0,0,0.06) 50%, rgba(255,255,255,0) 52%)`,
-    mixBlendMode: 'multiply',
-    opacity: 0.18,
-    WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-    WebkitMaskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-    WebkitMaskSize: jacketUnionMask ? 'contain' : undefined,
-    WebkitMaskPosition: jacketUnionMask ? 'center' : undefined,
-    maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-    maskRepeat: jacketUnionMask ? 'no-repeat' : undefined,
-    maskSize: jacketUnionMask ? 'contain' : undefined,
-    maskPosition: jacketUnionMask ? 'center' : undefined,
-    pointerEvents: 'none',
-  } as React.CSSProperties;
-
-  // Unified wash overlay (soft blur) over the whole jacket via union mask
-  const unifiedWashOverlayStyle = (canvas: { w: number; h: number }) => {
+  const fabricWeaveOverlayStyle = (
+    src: string,
+    canvas: { w: number; h: number } = JACKET_CANVAS
+  ): React.CSSProperties => {
     const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
     const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
+    const tone = selectedFabric?.tone || "medium";
+    const opacity = tone === "dark" ? 0.14 : tone === "light" ? 0.2 : 0.17;
     return {
-      backgroundImage: `url(${fabricTexture})`,
+      backgroundImage: fabricTexture ? `url(${fabricTexture})` : undefined,
       backgroundSize: bgSize,
       backgroundPosition: bgPos,
       backgroundRepeat: "repeat",
-      opacity: 0,
-      filter: `${tb.filter} blur(3px) saturate(1.02)`,
-      WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-      WebkitMaskRepeat: jacketUnionMask ? "no-repeat" : undefined,
-      WebkitMaskSize: jacketUnionMask ? "contain" : undefined,
-      WebkitMaskPosition: jacketUnionMask ? "center" : undefined,
-      maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-      maskRepeat: jacketUnionMask ? "no-repeat" : undefined,
-      maskSize: jacketUnionMask ? "contain" : undefined,
-      maskPosition: jacketUnionMask ? "center" : undefined,
-      pointerEvents: "none",
-    } as React.CSSProperties;
-  };
-
-  // Unified fine detail overlay (subtle weave highlights) over union mask
-  const unifiedFineDetailOverlayStyle = (canvas: { w: number; h: number }) => {
-    const bgSize = `${Math.round(canvas.w * scale)}px ${Math.round(canvas.h * scale)}px`;
-    const bgPos = `${Math.round(offset.x)}px ${Math.round(offset.y)}px`;
-    return {
-      backgroundImage: `url(${fabricTexture})`,
-      backgroundRepeat: "repeat",
-      // FIX: weave scale � consistent pixel tile size
-      backgroundSize: `${Math.round(canvas.h * 0.22)}px ${Math.round(canvas.h * 0.22)}px`,
-      backgroundPosition: bgPos,
-      opacity: vis.fineDetail,
+      opacity,
       mixBlendMode: "normal",
-      filter: "contrast(1.04)",
-      WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-      WebkitMaskRepeat: jacketUnionMask ? "no-repeat" : undefined,
-      WebkitMaskSize: jacketUnionMask ? "contain" : undefined,
-      WebkitMaskPosition: jacketUnionMask ? "center" : undefined,
-      maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
-      maskRepeat: jacketUnionMask ? "no-repeat" : undefined,
-      maskSize: jacketUnionMask ? "contain" : undefined,
-      maskPosition: jacketUnionMask ? "center" : undefined,
+      WebkitMaskImage: toTransparentSilhouette(src),
+      WebkitMaskRepeat: "no-repeat",
+      WebkitMaskSize: "contain",
+      WebkitMaskPosition: "center",
+      maskImage: toTransparentSilhouette(src),
+      maskRepeat: "no-repeat",
+      maskSize: "contain",
+      maskPosition: "center",
       pointerEvents: "none",
     } as React.CSSProperties;
   };
 
-  // Bring back baked folds/highlights from transparent base sprite (alpha PNG/WebP)
   const baseSpriteOverlayStyle = (
     src: string,
-    blend: 'multiply' | 'soft-light' | 'overlay' = 'multiply',
+    blend: "multiply" | "soft-light" | "overlay" = "multiply",
     opacity = 0.35
   ): React.CSSProperties => {
-    const u = cdnPair(src);
+    const sprite = cdnPair(src);
     return {
-      backgroundImage: `url(${u.webp}), url(${u.png})`,
+      backgroundImage: `url(${sprite.webp}), url(${sprite.png})`,
       backgroundRepeat: "no-repeat",
       backgroundSize: "contain",
       backgroundPosition: "center",
@@ -746,94 +411,44 @@ export default function SuitPreview({ config }: Props) {
     } as React.CSSProperties;
   };
 
-  // Shading/specular overlays (auto-use if files exist on CDN)
-  const shadingOverlayStyle = (
-    src: string,
-    opacity = 0.22
-  ): React.CSSProperties => {
-    const u = shadingPair(src);
+  const shadingOverlayStyle = (src: string, opacity = 0.2): React.CSSProperties => {
+    const sprite = shadingPair(src);
     return {
-      backgroundImage: `url(${u.webp}), url(${u.png})`,
+      backgroundImage: `url(${sprite.webp}), url(${sprite.png})`,
       backgroundRepeat: "no-repeat",
       backgroundSize: "contain",
       backgroundPosition: "center",
       mixBlendMode: "multiply",
       opacity,
-      WebkitMaskImage: toTransparentSilhouette(src),
-      WebkitMaskRepeat: "no-repeat",
-      WebkitMaskSize: "contain",
-      WebkitMaskPosition: "center",
-      maskImage: toTransparentSilhouette(src),
-      maskRepeat: "no-repeat",
-      maskSize: "contain",
-      maskPosition: "center",
       pointerEvents: "none",
     } as React.CSSProperties;
   };
 
-  const specularOverlayStyle = (
-    src: string,
-    opacity = 0.16
-  ): React.CSSProperties => {
-    const u = specularPair(src);
+  const specularOverlayStyle = (src: string, opacity = 0.12): React.CSSProperties => {
+    const sprite = specularPair(src);
     return {
-      backgroundImage: `url(${u.webp}), url(${u.png})`,
+      backgroundImage: `url(${sprite.webp}), url(${sprite.png})`,
       backgroundRepeat: "no-repeat",
       backgroundSize: "contain",
       backgroundPosition: "center",
-      mixBlendMode: "overlay",
+      mixBlendMode: "screen",
       opacity,
-      WebkitMaskImage: toTransparentSilhouette(src),
-      WebkitMaskRepeat: "no-repeat",
-      WebkitMaskSize: "contain",
-      WebkitMaskPosition: "center",
-      maskImage: toTransparentSilhouette(src),
-      maskRepeat: "no-repeat",
-      maskSize: "contain",
-      maskPosition: "center",
       pointerEvents: "none",
-      filter: "saturate(1.02)",
-    } as React.CSSProperties;
-  };
-  const edgesOverlayStyle = (
-    src: string,
-    opacity = 0.38
-  ): React.CSSProperties => {
-    const u = edgesPair(src);
-    return {
-      backgroundImage: `url(${u.webp}), url(${u.png})`,
-      backgroundRepeat: "no-repeat",
-      backgroundSize: "contain",
-      backgroundPosition: "center",
-      mixBlendMode: "multiply",
-      opacity,
-      WebkitMaskImage: toTransparentSilhouette(src),
-      WebkitMaskRepeat: "no-repeat",
-      WebkitMaskSize: "contain",
-      WebkitMaskPosition: "center",
-      maskImage: toTransparentSilhouette(src),
-      maskRepeat: "no-repeat",
-      maskSize: "contain",
-      maskPosition: "center",
-      pointerEvents: "none",
-      filter: "contrast(1.1)",
     } as React.CSSProperties;
   };
 
-  // ?Fine detail? overlay koristi istu teksturu, ali sitniji scale i drugaciji blend
   const fineDetailStyle = (
     src: string,
-    opacity: number,
-    size: string,
-    canvas: { w: number; h: number }
+    opacity = 0.08,
+    detailScale = "25%",
+    canvas: { w: number; h: number } = JACKET_CANVAS
   ): React.CSSProperties => {
-    // FIX: weave scale � consistent pixel tile size
-    const weavePx = Math.round(canvas.h * 0.22);
+    const bgSize = `${Math.round(canvas.h * 0.22)}px ${Math.round(canvas.h * 0.22)}px`;
     return {
-      backgroundImage: `url(${fabricTexture})`,
+      backgroundImage: fabricTexture ? `url(${fabricTexture})` : undefined,
       backgroundRepeat: "repeat",
-      backgroundSize: `${weavePx}px ${weavePx}px`,
-      backgroundPosition: "center",
+      backgroundSize: bgSize,
+      backgroundPosition: `${Math.round(offset.x)}px ${Math.round(offset.y)}px`,
       opacity,
       mixBlendMode: "normal",
       filter: "contrast(1.04)",
@@ -886,35 +501,6 @@ export default function SuitPreview({ config }: Props) {
   // Global overlays uklonjeni sa canvas-a da ne prave pozadinski halo izvan maske.
   // Zadr?avamo per-part naglaske i generisane mape.
 
-  // Per-part naglasci (ramena/rukavi + rever)
-  const TorsoLapelEmphasis: React.FC = () => (
-    <div
-      className="absolute inset-0 pointer-events-none"
-      style={{
-        background:
-          // V senka ka dugmetu + blage dijagonalne svetle ivice revera
-          `radial-gradient(80% 80% at 50% 12%, rgba(0,0,0,0.06), rgba(0,0,0,0) 45%),` +
-          `linear-gradient(135deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 25%),` +
-          `linear-gradient(225deg, rgba(255,255,255,0.05), rgba(255,255,255,0) 25%)`,
-        mixBlendMode: "normal",
-      }}
-    />
-  );
-
-  const SleeveShoulderEmphasis: React.FC = () => (
-    <div
-      className="absolute inset-0 pointer-events-none"
-      style={{
-        background:
-          // Blagi highlight po ramenima + zasencenje ka laktu
-          `radial-gradient(60% 40% at 20% 5%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),` +
-          `radial-gradient(60% 40% at 80% 5%, rgba(255,255,255,0.06), rgba(255,255,255,0) 60%),` +
-          `linear-gradient(180deg, rgba(0,0,0,0.05), rgba(0,0,0,0) 30%, rgba(0,0,0,0.05) 60%, rgba(0,0,0,0) 85%)`,
-        mixBlendMode: "normal",
-      }}
-    />
-  );
-
   /* =====================================================================================
      RENDER
   ====================================================================================== */
@@ -944,7 +530,12 @@ export default function SuitPreview({ config }: Props) {
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
           />
         )}
-        <BaseLayer layers={allJacketLayers} resolve={(layer) => cdnPair(layer.src)} />
+        <BaseLayer
+          layers={allJacketLayers}
+          resolve={(layer) => cdnPair(layer.src)}
+          composite={compositeBase}
+          mask={jacketUnionMask}
+        />
         <FabricUnion
           layers={allJacketLayers}
           resolve={(layer) => cdnPair(layer.src)}
@@ -953,6 +544,7 @@ export default function SuitPreview({ config }: Props) {
           baseColor={toneBaseColor}
           fabricAvgColor={fabricAvgColor}
           panZoom={panZoom}
+          canvas={JACKET_CANVAS}
           mask={jacketUnionMask}
         />
         <ShadingLayer
@@ -961,13 +553,15 @@ export default function SuitPreview({ config }: Props) {
           opacity={0.2}
           blendMode="multiply"
           mask={jacketUnionMask}
+          composite={compositeShading}
         />
         <SpecularLayer
           layers={allJacketLayers}
           resolve={(layer) => specularPair(layer.src)}
-          opacity={0.12}
+          opacity={vis.specular}
           blendMode="overlay"
           mask={jacketUnionMask}
+          composite={compositeSpecular}
         />
         <GlobalOverlay noiseData={NOISE_DATA} settings={vis} />
         <BaseOutlines
@@ -975,6 +569,7 @@ export default function SuitPreview({ config }: Props) {
           resolve={(layer) => edgesPair(layer.src)}
           opacity={0.18}
           mask={jacketUnionMask}
+          composite={compositeEdges}
         />
       </div>
       {/* ======================== PANTS CANVAS ======================== */}
@@ -992,48 +587,5 @@ export default function SuitPreview({ config }: Props) {
     </div>
   );
 }
-
-
-  // Unified sprite overlay composer (base/shading/specular/edges)
-  const unifiedSpriteOverlayStyle = (
-    layers: SuitLayer[],
-    kind: 'base' | 'shading' | 'specular' | 'edges',
-    blend: 'multiply' | 'soft-light' | 'overlay',
-    opacity: number,
-    unionMask?: string | null
-  ): React.CSSProperties => {
-    const images: string[] = [];
-    const sizes: string[] = [];
-    const repeats: string[] = [];
-    const positions: string[] = [];
-    for (const L of layers) {
-      const pair = kind === 'base' ? cdnPair(L.src)
-        : kind === 'shading' ? shadingPair(L.src)
-        : kind === 'specular' ? specularPair(L.src)
-        : edgesPair(L.src);
-      images.push(`url(${pair.webp})`, `url(${pair.png})`);
-      sizes.push('contain', 'contain');
-      repeats.push('no-repeat', 'no-repeat');
-      positions.push('center', 'center');
-    }
-    const style: React.CSSProperties = {
-      backgroundImage: images.join(', '),
-      backgroundRepeat: repeats.join(', '),
-      backgroundSize: sizes.join(', '),
-      backgroundPosition: positions.join(', '),
-      mixBlendMode: blend,
-      opacity,
-      pointerEvents: 'none',
-    };
-    // Note: if needed we can pass a union mask in future; current callers use per-part masks
-    return style;
-  };
-
-
-
-
-
-
-
 
 
