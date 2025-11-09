@@ -25,17 +25,20 @@ const readFiles = async (dir) => {
 };
 
 const build = async () => {
-  const files = {};
+  const filesFlat = {};
   const counts = {};
   for (const [bucket, dir] of Object.entries(buckets)) {
     const list = await readFiles(dir);
-    files[bucket] = list;
     counts[bucket] = list.length;
+    const prefix = bucket === "base" ? "" : `${bucket}/`;
+    for (const name of list) {
+      filesFlat[`${prefix}${name}`] = true;
+    }
   }
   const payload = {
     generatedAt: new Date().toISOString(),
     counts,
-    files,
+    files: filesFlat,
   };
   await fs.writeFile(target, JSON.stringify(payload, null, 2));
   console.log(`asset manifest written to ${path.relative(process.cwd(), target)}`);

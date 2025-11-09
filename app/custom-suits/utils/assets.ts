@@ -34,25 +34,15 @@ const FALLBACK_SOURCES: Record<string, Partial<Record<LayerFolder, string | null
   },
 };
 
-type ManifestSets = {
-  base: Set<string>;
-  shading: Set<string>;
-  specular: Set<string>;
-  edges: Set<string>;
-};
+type ManifestData = { files: Set<string> };
 
-let manifestPromise: Promise<ManifestSets | null> | null = null;
-let manifestSnapshot: ManifestSets | null = null;
+let manifestPromise: Promise<ManifestData | null> | null = null;
+let manifestSnapshot: ManifestData | null = null;
 
-const buildManifestSets = (payload: any): ManifestSets => {
-  const files = payload?.files || {};
-  const toSet = (key: keyof ManifestSets) =>
-    new Set<string>(Array.isArray(files[key]) ? files[key] : []);
+const buildManifestData = (payload: any): ManifestData => {
+  const keys = Object.keys(payload?.files || {});
   return {
-    base: toSet("base"),
-    shading: toSet("shading"),
-    specular: toSet("specular"),
-    edges: toSet("edges"),
+    files: new Set(keys),
   };
 };
 
@@ -63,7 +53,7 @@ const loadManifest = async () => {
     const res = await fetch(url, { cache: "force-cache" });
     if (!res.ok) return null;
     const json = await res.json();
-    manifestSnapshot = buildManifestSets(json);
+    manifestSnapshot = buildManifestData(json);
     return manifestSnapshot;
   } catch {
     return null;
@@ -75,16 +65,19 @@ const getManifest = async () => {
   return manifestPromise;
 };
 
-const getManifestSync = () => manifestSnapshot;
+const getManifestSync = () => manifestSnapshot?.files ?? null;
 
 const pickLengthFallback = (folder: LayerFolder) => {
-  const manifest = getManifestSync();
+  const manifestFiles = getManifestSync();
   const candidates = LENGTH_FALLBACKS[folder];
   if (!candidates?.length) return null;
-  if (!manifest) return candidates[0];
-  const bucket = manifest[folder];
+  if (!manifestFiles) return candidates[0];
+  const prefix = `${folder}/`;
   for (const candidate of candidates) {
-    if (bucket.has(`${candidate}.png`) || bucket.has(`${candidate}.webp`)) {
+    if (
+      manifestFiles.has(`${prefix}${candidate}.png`) ||
+      manifestFiles.has(`${prefix}${candidate}.webp`)
+    ) {
       return candidate;
     }
   }
@@ -140,27 +133,8 @@ const manifestHit = async (url: string) => {
   if (!manifest) return null;
   const relative = relativeFromBase(url);
   if (!relative) return null;
-  const segments = relative.split("/").filter(Boolean);
-  if (segments.length === 0) return null;
-  const file = segments.pop();
-  if (!file) return null;
-  const parentFolder = segments.pop();
-  const group: keyof ManifestSets =
-    parentFolder === "shading"
-      ? "shading"
-      : parentFolder === "specular"
-      ? "specular"
-      : parentFolder === "edges"
-      ? "edges"
-      : "base";
-  const bucket = manifest[group];
-  if (!bucket || bucket.size === 0) return group === "base" ? null : false;
-  if (bucket.has(file)) return true;
-  if (file.toLowerCase().endsWith(".webp")) {
-    const pngName = file.replace(/\.webp$/i, ".png");
-    if (bucket.has(pngName)) return true;
-  }
-  return false;
+  const trimmed = relative.split("?")[0];
+  return manifest.files.has(trimmed) ? true : null;
 };
 
 const availabilityCache = new Map<string, boolean>();
