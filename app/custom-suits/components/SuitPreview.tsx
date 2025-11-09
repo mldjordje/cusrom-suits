@@ -261,8 +261,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
 
   // Build unified sprite composites (base/shading/specular/edges) for jacket parts
   useEffect(() => {
-    const structuralParts = [...suitLayers, ...styleOverlayLayers];
-    const parts = structuralParts.filter((x) => x.id === "torso" || x.id === "sleeves" || x.id === "bottom");
+    const parts = [...suitLayers, ...styleOverlayLayers].filter((x) => x.id !== "pants");
     if (!parts.length) return;
 
     let cancelled = false;
@@ -556,7 +555,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             resolve={(layer) => cdnPair(layer.src)}
             fabricTexture={fabricTexture}
             textureStyle={{
-              filter: tb.filter,
+              filter: `${tb.filter} brightness(1.03) contrast(1.08) saturate(0.92)`,
               mixBlendMode: toneVis.fabric.blend,
               opacity: toneVis.fabric.opacity,
             }}

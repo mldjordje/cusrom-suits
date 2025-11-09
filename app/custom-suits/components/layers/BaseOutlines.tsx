@@ -7,7 +7,7 @@ type Props = {
   mask?: string | null;
 };
 
-export const BaseOutlines: React.FC<Props> = ({ opacity = 0.15, composite, mask }) => {
+export const BaseOutlines: React.FC<Props> = ({ opacity = 0.3, composite, mask }) => {
   if (!composite) return null;
   const maskImage = mask ? `url(${mask})` : undefined;
   return (
