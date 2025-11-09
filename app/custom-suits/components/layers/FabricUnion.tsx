@@ -86,16 +86,21 @@ export const FabricUnion: React.FC<Props> = ({
   const renderTexture = () => {
     if (!fabricTexture) return null;
 
+    const mixBlendMode =
+      (textureStyle.mixBlendMode as React.CSSProperties["mixBlendMode"]) ?? "soft-light";
+    const opacity = Math.min(Number(textureStyle.opacity ?? 0.28), 0.3);
+    const filter = textureStyle.filter ?? "brightness(0.98) contrast(1.12) saturate(1.04)";
+
     const baseStyle: React.CSSProperties = {
       backgroundImage: `url(${fabricTexture})`,
       backgroundRepeat: "repeat",
       backgroundSize: bgSize,
       backgroundPosition: bgPos,
-      ...textureStyle,
-      mixBlendMode: "soft-light",
-      opacity: Math.min(Number(textureStyle.opacity ?? 0.28), 0.28),
-      filter: "brightness(0.98) contrast(1.12) saturate(1.04)",
       pointerEvents: "none",
+      ...textureStyle,
+      mixBlendMode,
+      opacity,
+      filter,
     };
 
     if (mask) {

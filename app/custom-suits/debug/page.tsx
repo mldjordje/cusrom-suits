@@ -13,13 +13,10 @@ const LEVELS = {
 } as const;
 
 const LAYER_OPTIONS = [
-  { key: "fabric", label: "Fabric" },
-  { key: "shading", label: "Shading" },
-  { key: "specular", label: "Specular" },
-  { key: "edges", label: "Edges" },
-  { key: "outlines", label: "Outlines" },
-  { key: "vignette", label: "Vignette / Noise" },
+  { key: "fabric", label: "Fabric Overlay" },
+  { key: "style", label: "Style overlays" },
   { key: "ao", label: "Ambient AO" },
+  { key: "vignette", label: "Vignette / Noise" },
 ] as const;
 
 type Level = keyof typeof LEVELS;
@@ -60,16 +57,13 @@ export default function CustomSuitDebugPage() {
   }, []);
 
   const missingByLayer = useMemo(() => {
-    const missing = assetStatus.missing || [];
-    const includes = (segment: string) => missing.some((url) => url.includes(segment));
+    const missingCount = assetStatus.missing?.length ?? 0;
+    const spriteMissing = missingCount > 0;
     return {
-      fabric: missing.length > 0 && !includes("/shading/") && !includes("/specular/") && !includes("/edges/"),
-      shading: includes("/shading/"),
-      specular: includes("/specular/"),
-      edges: includes("/edges/"),
-      outlines: includes("/edges/"),
-      vignette: false,
+      fabric: spriteMissing,
+      style: spriteMissing,
       ao: false,
+      vignette: false,
     } as Record<LayerKey, boolean>;
   }, [assetStatus]);
 
