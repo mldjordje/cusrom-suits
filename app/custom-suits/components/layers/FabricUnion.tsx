@@ -44,6 +44,8 @@ export const FabricUnion: React.FC<Props> = ({
           className="absolute inset-0"
           style={{
             backgroundColor: fabricAvgColor || baseColor,
+            mixBlendMode: "color",
+            opacity: 0.85,
             WebkitMaskImage: buildMask(mask),
             WebkitMaskRepeat: "no-repeat",
             WebkitMaskSize: "contain",
@@ -68,6 +70,8 @@ export const FabricUnion: React.FC<Props> = ({
           className="absolute inset-0"
           style={{
             backgroundColor: fabricAvgColor || baseColor,
+            mixBlendMode: "color",
+            opacity: 0.85,
             WebkitMaskImage: maskImage,
             WebkitMaskRepeat: "no-repeat",
             WebkitMaskSize: "contain",
