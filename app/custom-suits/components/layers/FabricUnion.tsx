@@ -92,6 +92,7 @@ export const FabricUnion: React.FC<Props> = ({
       backgroundSize: bgSize,
       backgroundPosition: bgPos,
       ...textureStyle,
+      opacity: Math.min(Number(textureStyle.opacity ?? 0.3), 0.3),
       pointerEvents: "none",
     };
 

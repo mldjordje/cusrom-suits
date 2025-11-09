@@ -14,6 +14,9 @@ export const ShadingLayer: React.FC<Props> = ({
   composite,
   mask,
 }) => {
+  if (process.env.NODE_ENV !== "production") {
+    console.debug("[ShadingLayer]", { opacity, blendMode });
+  }
   if (!composite) return null;
   const maskImage = mask ? `url(${mask})` : undefined;
   return (

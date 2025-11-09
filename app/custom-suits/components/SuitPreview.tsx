@@ -531,7 +531,7 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
           composite={compositeSpecular}
         />
         <GlobalOverlay noiseData={NOISE_DATA} settings={toneVis} />
-        <BaseOutlines opacity={toneVis.edgesOpacity} mask={jacketUnionMask} composite={compositeEdges} />
+        <BaseOutlines opacity={toneVis.outlinesOpacity} mask={jacketUnionMask} composite={compositeEdges} />
       </div>
       {/* ======================== PANTS CANVAS ======================== */}
       {pants &&

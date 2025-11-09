@@ -7,6 +7,7 @@ export type ToneVisual = {
   specular: { opacity: number; blend: BlendMode };
   fabric: { opacity: number; blend: BlendMode };
   edgesOpacity: number;
+  outlinesOpacity: number;
   noise: number;
   vignette: number;
   highlightTop: number;
@@ -33,19 +34,18 @@ const FABRIC_BLEND: Record<Tone, BlendMode> = {
 
 export const toneBlend = (tone?: string, level: ContrastLevel = "medium") => {
   const safeTone = (tone as Tone) || "medium";
-  const levelMul = LEVEL_MULTIPLIER[level];
-  const baseFilter = {
-    light: { brightness: 1.05, contrast: 1.04, saturate: 1.03 },
-    medium: { brightness: 1.04, contrast: 1.08, saturate: 1.06 },
-    dark: { brightness: 1.02, contrast: 1.12, saturate: 1.08 },
+  const profile = {
+    light: { brightness: 1.05, contrast: 1.05, saturate: 1.1 },
+    medium: { brightness: 1.05, contrast: 1.05, saturate: 1.1 },
+    dark: { brightness: 1.02, contrast: 1.08, saturate: 1.05 },
   }[safeTone];
-  const contrastBoost = level === "high" ? 0.08 : level === "low" ? -0.04 : 0;
-  const brightnessBoost = level === "high" ? 0.03 : level === "low" ? -0.02 : 0;
-  const saturateBoost = level === "high" ? 0.04 : level === "low" ? -0.03 : 0;
+  const contrastBoost = level === "high" ? 0.06 : level === "low" ? -0.03 : 0;
+  const brightnessBoost = level === "high" ? 0.02 : level === "low" ? -0.015 : 0;
+  const saturateBoost = level === "high" ? 0.05 : level === "low" ? -0.03 : 0;
   return {
-    filter: `brightness(${(baseFilter.brightness + brightnessBoost).toFixed(3)}) contrast(${(
-      baseFilter.contrast + contrastBoost
-    ).toFixed(3)}) saturate(${(baseFilter.saturate + saturateBoost).toFixed(3)})`,
+    filter: `brightness(${(profile.brightness + brightnessBoost).toFixed(3)}) contrast(${(
+      profile.contrast + contrastBoost
+    ).toFixed(3)}) saturate(${(profile.saturate + saturateBoost).toFixed(3)})`,
   } as const;
 };
 
@@ -53,13 +53,14 @@ export const getToneConfig = (tone?: string, level: ContrastLevel = "medium"): T
   const safeTone = (tone as Tone) || "medium";
   const levelMul = LEVEL_MULTIPLIER[level];
 
-  const shadingBase = { light: 0.4, medium: 0.36, dark: 0.3 }[safeTone];
-  const specularBase = { light: 0.12, medium: 0.1, dark: 0.08 }[safeTone];
-  const fabricBase = { light: 0.36, medium: 0.33, dark: 0.3 }[safeTone];
-  const edgesBase = { light: 0.08, medium: 0.075, dark: 0.07 }[safeTone];
-  const noiseBase = { light: 0.04, medium: 0.04, dark: 0.045 }[safeTone];
-  const vignetteBase = { light: 0.06, medium: 0.07, dark: 0.08 }[safeTone];
-  const detailOpacityBase = { light: 0.13, medium: 0.11, dark: 0.1 }[safeTone];
+  const fabricBase = { light: 0.26, medium: 0.24, dark: 0.22 }[safeTone];
+  const shadingBase = { light: 0.5, medium: 0.45, dark: 0.4 }[safeTone];
+  const specularBase = { light: 0.18, medium: 0.15, dark: 0.12 }[safeTone];
+  const edgesBase = 0.1;
+  const outlinesBase = { light: 0.3, medium: 0.28, dark: 0.25 }[safeTone];
+  const noiseBase = { light: 0.04, medium: 0.045, dark: 0.05 }[safeTone];
+  const vignetteBase = { light: 0.07, medium: 0.08, dark: 0.09 }[safeTone];
+  const detailOpacityBase = { light: 0.13, medium: 0.12, dark: 0.11 }[safeTone];
   const detailScaleBase = { light: 0.2, medium: 0.22, dark: 0.24 }[safeTone];
   const weaveSharpnessBase = { light: 1.05, medium: 1, dark: 0.95 }[safeTone];
 
@@ -69,18 +70,19 @@ export const getToneConfig = (tone?: string, level: ContrastLevel = "medium"): T
       blend: "multiply",
     },
     specular: {
-      opacity: Number((specularBase * (level === "high" ? 1.1 : level === "low" ? 0.9 : 1)).toFixed(3)),
+      opacity: Number((specularBase * (level === "high" ? 1.05 : level === "low" ? 0.9 : 1)).toFixed(3)),
       blend: "soft-light",
     },
     fabric: {
-      opacity: Number((fabricBase * (level === "high" ? 1.05 : level === "low" ? 0.92 : 1)).toFixed(3)),
+      opacity: Number(Math.min(fabricBase * (level === "high" ? 1.02 : level === "low" ? 0.95 : 1), 0.3).toFixed(3)),
       blend: FABRIC_BLEND[safeTone],
     },
     edgesOpacity: Number((edgesBase * (level === "high" ? 1.05 : 1)).toFixed(3)),
-    noise: Number(noiseBase.toFixed(3)),
-    vignette: Number((vignetteBase * (level === "high" ? 1.1 : level === "low" ? 0.88 : 1)).toFixed(3)),
-    highlightTop: safeTone === "light" ? 0.09 : safeTone === "dark" ? 0.07 : 0.08,
-    highlightBottom: safeTone === "light" ? 0.05 : safeTone === "dark" ? 0.04 : 0.045,
+    outlinesOpacity: Number((outlinesBase * (level === "high" ? 1.05 : 1)).toFixed(3)),
+    noise: Number((noiseBase * (level === "high" ? 1.05 : 1)).toFixed(3)),
+    vignette: Number((vignetteBase * (level === "high" ? 1.05 : level === "low" ? 0.9 : 1)).toFixed(3)),
+    highlightTop: safeTone === "light" ? 0.1 : safeTone === "dark" ? 0.06 : 0.08,
+    highlightBottom: safeTone === "light" ? 0.06 : safeTone === "dark" ? 0.04 : 0.05,
     detailOpacity: Number((detailOpacityBase * (levelMul >= 1 ? levelMul : 1)).toFixed(3)),
     detailScale: detailScaleBase,
     weaveSharpness: weaveSharpnessBase,

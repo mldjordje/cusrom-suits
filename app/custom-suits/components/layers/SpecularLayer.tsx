@@ -14,6 +14,9 @@ export const SpecularLayer: React.FC<Props> = ({
   composite,
   mask,
 }) => {
+  if (process.env.NODE_ENV !== "production") {
+    console.debug("[SpecularLayer]", { opacity, blendMode });
+  }
   if (!composite) return null;
   const maskImage = mask ? `url(${mask})` : undefined;
   return (
