@@ -556,7 +556,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             fabricTexture={fabricTexture}
             textureStyle={{
               filter: `${tb.filter} brightness(1.03) contrast(1.08) saturate(0.92)`,
-              mixBlendMode: toneVis.fabric.blend,
+              mixBlendMode: "soft-light",
               opacity: toneVis.fabric.opacity,
             }}
             baseColor={toneBaseColor}
@@ -581,7 +581,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               mixBlendMode: "multiply",
               opacity: toneVis.ambientOcclusion,
               background:
-                "radial-gradient(circle at 50% 25%, rgba(0,0,0,0.2), transparent 60%) , radial-gradient(circle at 50% 70%, rgba(0,0,0,0.25), transparent 80%)",
+                "radial-gradient(ellipse at center, rgba(0,0,0,0.25) 0%, transparent 85%)",
               WebkitMaskImage: `url(${jacketUnionMask})`,
               WebkitMaskRepeat: "no-repeat",
               WebkitMaskSize: "contain",

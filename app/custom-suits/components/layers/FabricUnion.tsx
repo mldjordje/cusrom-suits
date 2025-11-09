@@ -92,7 +92,9 @@ export const FabricUnion: React.FC<Props> = ({
       backgroundSize: bgSize,
       backgroundPosition: bgPos,
       ...textureStyle,
-      opacity: Math.min(Number(textureStyle.opacity ?? 0.3), 0.3),
+      mixBlendMode: "soft-light",
+      opacity: Math.min(Number(textureStyle.opacity ?? 0.28), 0.28),
+      filter: "brightness(0.98) contrast(1.12) saturate(1.04)",
       pointerEvents: "none",
     };
 

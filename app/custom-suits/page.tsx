@@ -35,7 +35,7 @@ export default function CustomSuitsPage() {
     </aside>
 
     {/* ===== PREVIEW ===== */}
-    <main className="order-2 flex-1 flex items-center justify-center bg-white p-4 md:p-10">
+    <main className="order-2 flex-1 flex items-center justify-center p-4 md:p-10">
       <div className="w-full max-w-[700px]">
         <SuitPreview config={config} />
       </div>

@@ -20,6 +20,7 @@ const maskStyles = (mask?: string | null): React.CSSProperties =>
         maskRepeat: "no-repeat",
         maskSize: "contain",
         maskPosition: "center",
+        maskMode: "alpha",
       }
     : {};
 
