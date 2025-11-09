@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
-import { NOISE_DATA, toneBlend, getToneConfig, getToneBaseColor, ContrastLevel } from "../utils/visual";
+import { NOISE_DATA, toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone } from "../utils/visual";
 import { cdnPair, ensureAssetAvailable } from "../utils/assets";
 import { useFabrics } from "../hooks/useFabrics";
 import { BaseLayer } from "./layers/BaseLayer";
@@ -16,8 +16,115 @@ import { GlobalOverlay } from "./layers/GlobalOverlay";
    CDN helpers (ostaju jer maske i strukturalni sprite-ovi su i dalje iz transparent/)
 ===================================================================================== */
 const cdnTransparent = getTransparentCdnBase();
+const SHIRT_PAIR = cdnPair("shirt_to_jacket_open.png");
 const JACKET_CANVAS = { w: 600, h: 733 } as const;
 const PANTS_CANVAS = { w: 600, h: 350 } as const;
+
+type RGB = { r: number; g: number; b: number };
+
+const HEX_COLOR = /^[0-9a-f]{6}$/i;
+
+const clampChannel = (value: number) => Math.max(0, Math.min(255, Math.round(value)));
+
+const normalizeHex = (value?: string | null) => {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+  const raw = trimmed.startsWith("#") ? trimmed.slice(1) : trimmed;
+  if (!HEX_COLOR.test(raw)) return null;
+  return `#${raw.toLowerCase()}`;
+};
+
+const hexToRgb = (value?: string | null): RGB | null => {
+  const normalized = normalizeHex(value);
+  if (!normalized) return null;
+  return {
+    r: parseInt(normalized.slice(1, 3), 16),
+    g: parseInt(normalized.slice(3, 5), 16),
+    b: parseInt(normalized.slice(5, 7), 16),
+  };
+};
+
+const rgbToHex = (rgb: RGB) =>
+  `#${clampChannel(rgb.r).toString(16).padStart(2, "0")}${clampChannel(rgb.g)
+    .toString(16)
+    .padStart(2, "0")}${clampChannel(rgb.b).toString(16).padStart(2, "0")}`;
+
+const linearChannel = (channel: number) => {
+  const normalized = channel / 255;
+  return normalized <= 0.03928
+    ? normalized / 12.92
+    : Math.pow((normalized + 0.055) / 1.055, 2.4);
+};
+
+const relativeLuminance = (rgb: RGB) =>
+  0.2126 * linearChannel(rgb.r) +
+  0.7152 * linearChannel(rgb.g) +
+  0.0722 * linearChannel(rgb.b);
+
+const isNeutralTone = (rgb: RGB, tolerance = 12) => {
+  const max = Math.max(rgb.r, rgb.g, rgb.b);
+  const min = Math.min(rgb.r, rgb.g, rgb.b);
+  return max - min <= tolerance;
+};
+
+const scaleRgb = (rgb: RGB, factor: number): RGB => ({
+  r: clampChannel(rgb.r * factor),
+  g: clampChannel(rgb.g * factor),
+  b: clampChannel(rgb.b * factor),
+});
+
+const extractFabricHex = (fabric: any): string | null => {
+  if (!fabric || typeof fabric !== "object") return null;
+  const keys = [
+    "colorHex",
+    "color_hex",
+    "color",
+    "hex",
+    "hexColor",
+    "hex_color",
+    "baseColor",
+    "base_color",
+    "dominantColor",
+    "dominant_color",
+  ];
+  for (const key of keys) {
+    const value = fabric[key];
+    if (typeof value !== "string") continue;
+    const normalized = normalizeHex(value);
+    if (normalized) return normalized;
+  }
+  return null;
+};
+
+const computeFabricBaseColor = (
+  avgColor: string | null,
+  fallbackColor: string,
+  tone?: Tone,
+  overrideColor?: string | null
+) => {
+  const fallbackHex = normalizeHex(fallbackColor) ?? "#8f8f8f";
+  const fallbackRgb = hexToRgb(fallbackHex);
+  const candidateHex = normalizeHex(overrideColor ?? avgColor);
+  if (!fallbackRgb) return fallbackHex;
+  if (!candidateHex) return fallbackHex;
+  const candidateRgb = hexToRgb(candidateHex);
+  if (!candidateRgb) return fallbackHex;
+
+  if (tone === "dark" && isNeutralTone(candidateRgb)) {
+    const fallbackLum = relativeLuminance(fallbackRgb);
+    const lum = relativeLuminance(candidateRgb);
+    const delta = lum - fallbackLum;
+    if (delta > 0.015) {
+      const targetLum = fallbackLum + delta * 0.4;
+      const factor = Math.max(0.25, Math.min(1, targetLum / lum));
+      const adjusted = scaleRgb(candidateRgb, factor);
+      return rgbToHex(adjusted);
+    }
+  }
+
+  return candidateHex;
+};
 
 /* =====================================================================================
    Komponenta
@@ -124,6 +231,17 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
 
   // Average color from fabric texture (to better match hue)
   const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
+  const explicitFabricColor = useMemo(() => extractFabricHex(selectedFabric), [selectedFabric]);
+  const fabricFillColor = useMemo(
+    () =>
+      computeFabricBaseColor(
+        fabricAvgColor,
+        toneBaseColor,
+        selectedFabric?.tone as Tone | undefined,
+        explicitFabricColor
+      ),
+    [fabricAvgColor, toneBaseColor, selectedFabric?.tone, explicitFabricColor]
+  );
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
   const panZoom = { scale, offset };
@@ -326,10 +444,11 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
         ))}
         {config.showShirt && (
           <img
-            src={`${cdnTransparent}shirt_to_jacket_open.png`}
+            src={SHIRT_PAIR.webp}
             onError={(e) => {
-              const local = '/assets/suits/transparent/shirt_to_jacket_open.png';
-              if (e.currentTarget.src !== local) e.currentTarget.src = local;
+              if (e.currentTarget.src !== SHIRT_PAIR.png) {
+                e.currentTarget.src = SHIRT_PAIR.png;
+              }
             }}
             alt="Shirt"
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
@@ -357,7 +476,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               opacity: toneVis.fabric.opacity,
             }}
             baseColor={toneBaseColor}
-            fabricAvgColor={fabricAvgColor}
+            fabricAvgColor={fabricFillColor}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
@@ -402,7 +521,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
                 opacity: toneVis.fabric.opacity,
               }}
               baseColor={toneBaseColor}
-              fabricAvgColor={fabricAvgColor}
+              fabricAvgColor={fabricFillColor}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
               textureScale={toneVis.weaveSharpness}
