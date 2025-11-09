@@ -81,7 +81,7 @@ export const suits: SuitModel[] = [
         name: "Sredina sakoa",
         src: "/assets/suits/blue/neck_single_breasted+buttons_1+lapel_medium+style_lapel_notch.png",
       },
-      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/sleeves.png" },
+      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/interior+sleeves.png" },
       {
         id: "bottom",
         name: "Donji deo sakoa",
@@ -248,7 +248,7 @@ export const suits: SuitModel[] = [
         // Transparent torso sprite za peak/notch zamene
         src: "/assets/suits/transparent/neck_double_breasted+buttons_6+lapel_medium+style_lapel_notch.png",
       },
-      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/sleeves.png" },
+      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/interior+sleeves.png" },
       {
         id: "bottom",
         name: "Donji deo sakoa",
@@ -336,7 +336,7 @@ export const suits: SuitModel[] = [
         name: "Sredina sakoa",
         src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_medium+style_lapel_notch.png",
       },
-      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/sleeves.png" },
+      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/interior+sleeves.png" },
       {
         id: "bottom",
         name: "Donji deo sakoa",
@@ -483,7 +483,7 @@ export const suits: SuitModel[] = [
         // Use transparent torso sprites so peak/notch swaps are available
         src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_medium+style_lapel_notch.png",
       },
-      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/sleeves.png" },
+      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/interior+sleeves.png" },
       {
         id: "bottom",
         name: "Donji deo sakoa",
