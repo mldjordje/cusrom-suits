@@ -26,9 +26,16 @@ const PANTS_CANVAS = { w: 600, h: 350 } as const;
    Komponenta
 ===================================================================================== */
 
-type Props = { config: SuitState; level?: ContrastLevel };
+type LayerVisibility = Partial<Record<"fabric" | "shading" | "specular" | "edges" | "outlines" | "vignette" | "ao", boolean>>;
 
-export default function SuitPreview({ config, level = "medium" }: Props) {
+type Props = {
+  config: SuitState;
+  level?: ContrastLevel;
+  layerVisibility?: LayerVisibility;
+  onAssetStatus?: (status: { missing: string[] }) => void;
+};
+
+export default function SuitPreview({ config, level = "medium", layerVisibility, onAssetStatus }: Props) {
   const { fabrics, loading: fabricsLoading } = useFabrics();
 
   // Pan/zoom samo na teksturu tkanine (ne menja maske)
@@ -66,6 +73,38 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
     );
   }, [currentSuit, selectedLapel?.id, selectedLapelWidth?.id]);
 
+  const styleOverlayLayers = useMemo(() => {
+    if (!currentSuit) return [];
+    const overlays: SuitLayer[] = [];
+    const addSingle = (src?: string, key?: string, name?: string) => {
+      if (!src) return;
+      overlays.push({
+        id: key ?? src,
+        name: name ?? key ?? "style-layer",
+        src,
+      });
+    };
+
+    const selectedPocket =
+        currentSuit.pockets?.find((p) => p.id === config.pocketId) ?? currentSuit.pockets?.[0];
+    addSingle(selectedPocket?.src, `pocket-${selectedPocket?.id}`, selectedPocket?.name);
+
+    const selectedBreast =
+        currentSuit.breastPocket?.find((b) => b.id === config.breastPocketId) ?? currentSuit.breastPocket?.[0];
+    if (selectedBreast?.layers?.length) {
+      selectedBreast.layers.forEach((layer, index) => {
+        overlays.push({
+          ...layer,
+          id: `${layer.id || "breast"}-${selectedBreast?.id ?? "default"}-${index}`,
+        });
+      });
+    } else {
+      addSingle(selectedBreast?.src, `breast-${selectedBreast?.id}`, selectedBreast?.name);
+    }
+
+    return overlays;
+  }, [currentSuit, config.pocketId, config.breastPocketId]);
+
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
 
@@ -83,6 +122,7 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
   const [compositeEdges, setCompositeEdges] = useState<string | null>(null);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
   const panZoom = { scale, offset };
+  const showLayer = (key: keyof LayerVisibility) => (layerVisibility?.[key] ?? true) !== false;
   useEffect(() => {
     if (!fabricTexture) {
       setFabricAvgColor(null);
@@ -122,6 +162,12 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
     img.onerror = () => setFabricAvgColor(null);
     img.src = fabricTexture;
   }, [fabricTexture]);
+
+  useEffect(() => {
+    if (onAssetStatus) {
+      onAssetStatus({ missing: assetWarnings });
+    }
+  }, [assetWarnings, onAssetStatus]);
 
   // Build a single union mask (PNG data URL) over torso+sleeves+bottom to eliminate any anti-alias seams
   useEffect(() => {
@@ -177,7 +223,7 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [suitLayers]);
+  }, [suitLayers, styleOverlayLayers]);
 
   useEffect(() => {
     if (!suitLayers.length) {
@@ -191,7 +237,8 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
       urls.add(pair.webp);
       urls.add(pair.png);
     };
-    suitLayers.forEach((layer) => {
+    const structuralLayers = [...suitLayers, ...styleOverlayLayers];
+    structuralLayers.forEach((layer) => {
       enqueue(cdnPair(layer.src));
       enqueue(shadingPair(layer.src));
       enqueue(specularPair(layer.src));
@@ -210,11 +257,12 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [suitLayers]);
+  }, [suitLayers, styleOverlayLayers]);
 
   // Build unified sprite composites (base/shading/specular/edges) for jacket parts
   useEffect(() => {
-    const parts = suitLayers.filter((x) => x.id === "torso" || x.id === "sleeves" || x.id === "bottom");
+    const structuralParts = [...suitLayers, ...styleOverlayLayers];
+    const parts = structuralParts.filter((x) => x.id === "torso" || x.id === "sleeves" || x.id === "bottom");
     if (!parts.length) return;
 
     let cancelled = false;
@@ -276,7 +324,7 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [suitLayers]);
+  }, [suitLayers, styleOverlayLayers]);
   const interiorLayers: SuitLayer[] | undefined = (() => {
     const def = currentSuit?.interiors?.[0];
     const active = config.interiorId ?? def?.id;
@@ -316,7 +364,7 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
       backgroundRepeat: "repeat",
       opacity: options?.opacity ?? toneVis.fabric.opacity,
       mixBlendMode: options?.blend ?? toneVis.fabric.blend,
-      filter: tb.filter,
+      filter: `${tb.filter} brightness(1.03) contrast(1.08) saturate(0.92)`,
       WebkitMaskImage: toTransparentSilhouette(src),
       WebkitMaskRepeat: "no-repeat",
       WebkitMaskSize: "contain",
@@ -502,36 +550,72 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
           composite={compositeBase}
           mask={jacketUnionMask}
         />
-        <FabricUnion
-          layers={allJacketLayers}
-          resolve={(layer) => cdnPair(layer.src)}
-          fabricTexture={fabricTexture}
-          textureStyle={{
-            filter: tb.filter,
-            mixBlendMode: toneVis.fabric.blend,
-            opacity: toneVis.fabric.opacity,
-          }}
-          baseColor={toneBaseColor}
-          fabricAvgColor={fabricAvgColor}
-          panZoom={panZoom}
-          canvas={JACKET_CANVAS}
-          mask={jacketUnionMask}
-          textureScale={toneVis.weaveSharpness}
-        />
-        <ShadingLayer
-          opacity={toneVis.shading.opacity}
-          blendMode={toneVis.shading.blend}
-          mask={jacketUnionMask}
-          composite={compositeShading}
-        />
-        <SpecularLayer
-          opacity={toneVis.specular.opacity}
-          blendMode={toneVis.specular.blend}
-          mask={jacketUnionMask}
-          composite={compositeSpecular}
-        />
-        <GlobalOverlay noiseData={NOISE_DATA} settings={toneVis} />
-        <BaseOutlines opacity={toneVis.outlinesOpacity} mask={jacketUnionMask} composite={compositeEdges} />
+        {showLayer("fabric") && (
+          <FabricUnion
+            layers={allJacketLayers}
+            resolve={(layer) => cdnPair(layer.src)}
+            fabricTexture={fabricTexture}
+            textureStyle={{
+              filter: tb.filter,
+              mixBlendMode: toneVis.fabric.blend,
+              opacity: toneVis.fabric.opacity,
+            }}
+            baseColor={toneBaseColor}
+            fabricAvgColor={fabricAvgColor}
+            panZoom={panZoom}
+            canvas={JACKET_CANVAS}
+            mask={jacketUnionMask}
+            textureScale={toneVis.weaveSharpness}
+          />
+        )}
+        {styleOverlayLayers.length > 0 && (
+          <BaseLayer
+            layers={styleOverlayLayers}
+            resolve={(layer) => cdnPair(layer.src)}
+            mask={jacketUnionMask}
+          />
+        )}
+        {jacketUnionMask && showLayer("ao") && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              mixBlendMode: "multiply",
+              opacity: toneVis.ambientOcclusion,
+              background:
+                "radial-gradient(circle at 50% 25%, rgba(0,0,0,0.2), transparent 60%) , radial-gradient(circle at 50% 70%, rgba(0,0,0,0.25), transparent 80%)",
+              WebkitMaskImage: `url(${jacketUnionMask})`,
+              WebkitMaskRepeat: "no-repeat",
+              WebkitMaskSize: "contain",
+              WebkitMaskPosition: "center",
+              maskImage: `url(${jacketUnionMask})`,
+              maskRepeat: "no-repeat",
+              maskSize: "contain",
+              maskPosition: "center",
+            }}
+          />
+        )}
+        {showLayer("shading") && (
+          <ShadingLayer
+            opacity={toneVis.shading.opacity}
+            blendMode={toneVis.shading.blend}
+            mask={jacketUnionMask}
+            composite={compositeShading}
+          />
+        )}
+        {showLayer("specular") && (
+          <SpecularLayer
+            opacity={toneVis.specular.opacity}
+            blendMode={toneVis.specular.blend}
+            mask={jacketUnionMask}
+            composite={compositeSpecular}
+          />
+        )}
+        {showLayer("vignette") && (
+          <GlobalOverlay noiseData={NOISE_DATA} settings={toneVis} mask={jacketUnionMask} />
+        )}
+        {showLayer("outlines") && (
+          <BaseOutlines opacity={toneVis.outlinesOpacity} mask={jacketUnionMask} composite={compositeEdges} />
+        )}
       </div>
       {/* ======================== PANTS CANVAS ======================== */}
       {pants &&
@@ -541,20 +625,22 @@ export default function SuitPreview({ config, level = "medium" }: Props) {
           return (
             <div className="relative mx-auto mt-2" style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720 }}>
               <div className="absolute inset-0" style={{ ...colorBaseMaskStyle(pants.src) }} />
-              <div
-                className="absolute inset-0"
-                style={{
-                  ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS, {
-                    opacity: toneVis.fabric.opacity,
-                    blend: toneVis.fabric.blend,
-                    scale: toneVis.weaveSharpness,
-                  }),
-                  filter: tb.filter,
-                }}
-              />
+              {showLayer("fabric") && (
+                <div
+                  className="absolute inset-0"
+                  style={{
+                    ...fabricWeaveOverlayStyle(pants.src, PANTS_CANVAS, {
+                      opacity: toneVis.fabric.opacity,
+                      blend: toneVis.fabric.blend,
+                      scale: toneVis.weaveSharpness,
+                    }),
+                    filter: `${tb.filter} brightness(1.03) contrast(1.08) saturate(0.92)`,
+                  }}
+                />
+              )}
               <div className="absolute inset-0" style={baseSpriteOverlayStyle(pants.src, "multiply", 0.45)} />
-              {shadingStyle && <div className="absolute inset-0" style={shadingStyle} />}
-              {specularStyle && <div className="absolute inset-0" style={specularStyle} />}
+              {showLayer("shading") && shadingStyle && <div className="absolute inset-0" style={shadingStyle} />}
+              {showLayer("specular") && specularStyle && <div className="absolute inset-0" style={specularStyle} />}
               <div
                 className="absolute inset-0"
                 style={{ ...fineDetailStyle(pants.src, toneVis.detailOpacity, toneVis.detailScale, PANTS_CANVAS) }}

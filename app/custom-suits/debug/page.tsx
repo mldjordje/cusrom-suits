@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import SuitPreview from "../components/SuitPreview";
 import { useSuitConfigurator } from "../hooks/useSuitConfigurator";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
@@ -12,10 +12,21 @@ const LEVELS = {
   high: { contrast: 1.12, saturate: 1.05 },
 } as const;
 
-const DEFAULT_STYLE = suits[0]?.id || "single_1btn";
-const DEFAULT_COLOR = suits[0]?.colorId || "blue";
+const LAYER_OPTIONS = [
+  { key: "fabric", label: "Fabric" },
+  { key: "shading", label: "Shading" },
+  { key: "specular", label: "Specular" },
+  { key: "edges", label: "Edges" },
+  { key: "outlines", label: "Outlines" },
+  { key: "vignette", label: "Vignette / Noise" },
+  { key: "ao", label: "Ambient AO" },
+] as const;
 
 type Level = keyof typeof LEVELS;
+type LayerKey = typeof LAYER_OPTIONS[number]["key"];
+
+const DEFAULT_STYLE = suits[0]?.id || "single_1btn";
+const DEFAULT_COLOR = suits[0]?.colorId || "blue";
 
 export default function CustomSuitDebugPage() {
   const [config, dispatch] = useSuitConfigurator({ styleId: DEFAULT_STYLE, colorId: DEFAULT_COLOR });
@@ -24,6 +35,14 @@ export default function CustomSuitDebugPage() {
   const { fabrics, loading: fabricsLoading } = useFabrics();
   const fabricList = fabrics.length ? fabrics : fallbackFabrics;
   const selectedFabric = fabricList.find((fabric) => String(fabric.id) === String(config.colorId));
+  const [layerVisibility, setLayerVisibility] = useState<Record<LayerKey, boolean>>(() => {
+    const defaults: Record<LayerKey, boolean> = {} as Record<LayerKey, boolean>;
+    LAYER_OPTIONS.forEach((layer) => {
+      defaults[layer.key] = true;
+    });
+    return defaults;
+  });
+  const [assetStatus, setAssetStatus] = useState<{ missing: string[] }>({ missing: [] });
 
   useEffect(() => {
     let frames = 0;
@@ -40,6 +59,24 @@ export default function CustomSuitDebugPage() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
+  const missingByLayer = useMemo(() => {
+    const missing = assetStatus.missing || [];
+    const includes = (segment: string) => missing.some((url) => url.includes(segment));
+    return {
+      fabric: missing.length > 0 && !includes("/shading/") && !includes("/specular/") && !includes("/edges/"),
+      shading: includes("/shading/"),
+      specular: includes("/specular/"),
+      edges: includes("/edges/"),
+      outlines: includes("/edges/"),
+      vignette: false,
+      ao: false,
+    } as Record<LayerKey, boolean>;
+  }, [assetStatus]);
+
+  const toggleLayer = (key: LayerKey) => {
+    setLayerVisibility((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
+  };
+
   return (
     <div className="min-h-screen bg-[#111] text-white">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-8 px-4 py-8 md:flex-row">
@@ -51,7 +88,12 @@ export default function CustomSuitDebugPage() {
               transition: "filter 150ms ease",
             }}
           >
-            <SuitPreview config={config} level={level} />
+            <SuitPreview
+              config={config}
+              level={level}
+              layerVisibility={layerVisibility}
+              onAssetStatus={setAssetStatus}
+            />
           </div>
         </div>
 
@@ -83,7 +125,9 @@ export default function CustomSuitDebugPage() {
                       key={fabric.id}
                       onClick={() => dispatch({ type: "SET_COLOR", payload: String(fabric.id) })}
                       className={`rounded-lg border p-2 text-left text-xs transition ${
-                        active ? "border-white bg-white/90 text-black" : "border-white/30 text-white/80 hover:border-white/60"
+                        active
+                          ? "border-white bg-white/90 text-black"
+                          : "border-white/30 text-white/80 hover:border-white/60"
                       }`}
                     >
                       <div className="font-semibold">{fabric.name || `#${fabric.id}`}</div>
@@ -132,6 +176,32 @@ export default function CustomSuitDebugPage() {
                   {model.name}
                 </button>
               ))}
+            </div>
+          </section>
+
+          <section>
+            <h2 className="mb-2 text-lg font-semibold text-white">Layer Visibility</h2>
+            <div className="space-y-2">
+              {LAYER_OPTIONS.map((layer) => {
+                const enabled = layerVisibility[layer.key] !== false;
+                const warning = missingByLayer[layer.key];
+                return (
+                  <label key={layer.key} className="flex items-center justify-between text-sm">
+                    <span>
+                      {layer.label}{" "}
+                      <span className={warning ? "text-amber-300" : "text-emerald-300"}>
+                        {warning ? "?? missing" : "? loaded"}
+                      </span>
+                    </span>
+                    <input
+                      type="checkbox"
+                      checked={enabled}
+                      onChange={() => toggleLayer(layer.key)}
+                      className="h-4 w-4 accent-white"
+                    />
+                  </label>
+                );
+              })}
             </div>
           </section>
 
