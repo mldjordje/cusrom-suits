@@ -228,6 +228,17 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const toneVis = getToneConfig(selectedFabric?.tone, level);
 
   const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
+  const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
+  const fabricTextureFilter = useMemo(() => {
+    if (fabricTone === "dark") {
+      return `${tb.filter} brightness(0.78) contrast(1.2) saturate(0.88)`;
+    }
+    if (fabricTone === "light") {
+      return `${tb.filter} brightness(1.05) contrast(1.02) saturate(0.95)`;
+    }
+    return `${tb.filter} brightness(1.02) contrast(1.08) saturate(0.92)`;
+  }, [fabricTone, tb.filter]);
+  const needsDarkBoost = fabricTone === "dark";
 
   // Average color from fabric texture (to better match hue)
   const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
@@ -422,6 +433,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
      RENDER
   ====================================================================================== */
   const allJacketLayers = structuralJacketLayers;
+  const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
   return (
     <div className="relative w-full select-none">
       {assetWarnings.length > 0 && (
@@ -471,7 +483,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             resolve={(layer) => cdnPair(layer.src)}
             fabricTexture={fabricTexture}
             textureStyle={{
-              filter: `${tb.filter} brightness(1.03) contrast(1.08) saturate(0.92)`,
+              filter: fabricTextureFilter,
               mixBlendMode: toneVis.fabric.blend,
               opacity: toneVis.fabric.opacity,
             }}
@@ -481,6 +493,24 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
             textureScale={toneVis.weaveSharpness}
+          />
+        )}
+        {needsDarkBoost && jacketUnionMask && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              mixBlendMode: "multiply",
+              opacity: 0.35,
+              backgroundColor: "#080808",
+              WebkitMaskImage: `url(${jacketUnionMask})`,
+              WebkitMaskRepeat: "no-repeat",
+              WebkitMaskSize: "contain",
+              WebkitMaskPosition: "center",
+              maskImage: `url(${jacketUnionMask})`,
+              maskRepeat: "no-repeat",
+              maskSize: "contain",
+              maskPosition: "center",
+            }}
           />
         )}
         {jacketUnionMask && showLayer("ao") && (
@@ -516,7 +546,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               resolve={(layer) => cdnPair(layer.src)}
               fabricTexture={fabricTexture}
               textureStyle={{
-                filter: `${tb.filter} brightness(1.03) contrast(1.08) saturate(0.92)`,
+                filter: fabricTextureFilter,
                 mixBlendMode: toneVis.fabric.blend,
                 opacity: toneVis.fabric.opacity,
               }}
@@ -525,6 +555,24 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
               textureScale={toneVis.weaveSharpness}
+            />
+          )}
+          {needsDarkBoost && pantsMaskPair && (
+            <div
+              className="absolute inset-0 pointer-events-none"
+              style={{
+                mixBlendMode: "multiply",
+                opacity: 0.3,
+                backgroundColor: "#080808",
+                WebkitMaskImage: `url(${pantsMaskPair.png})`,
+                WebkitMaskRepeat: "no-repeat",
+                WebkitMaskSize: "contain",
+                WebkitMaskPosition: "center",
+                maskImage: `url(${pantsMaskPair.png})`,
+                maskRepeat: "no-repeat",
+                maskSize: "contain",
+                maskPosition: "center",
+              }}
             />
           )}
           {showLayer("vignette") && (
