@@ -27,20 +27,20 @@ export default function CustomSuitsPage() {
     );
   }
 
- return (
-  <div className="flex flex-row md:flex-row min-h-screen bg-[#f7f7f7] text-[#111] overflow-x-auto">
-    {/* ===== SIDEBAR ===== */}
-    <aside className="order-1 w-[55%] min-w-[300px] md:w-[340px] bg-white border-r border-[#e6e6e6]">
-      <Sidebar config={config} dispatch={dispatch} />
-    </aside>
-
-    {/* ===== PREVIEW ===== */}
-    <main className="order-2 flex-1 flex items-center justify-center p-4 md:p-10">
-      <div className="w-full max-w-[700px]">
-        <SuitPreview config={config} />
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-[#f6f6f4] via-white to-[#ececec] text-[#111]">
+      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-8 px-4 py-6 lg:px-8 lg:py-10 xl:px-12">
+        <div className="grid w-full grid-cols-1 gap-8 lg:grid-cols-[360px_minmax(0,1fr)]">
+          <main className="order-1 flex min-h-[70vh] items-center justify-center rounded-[36px] bg-white/80 p-4 shadow-[0_35px_120px_rgba(15,23,42,0.1)] ring-1 ring-black/5 backdrop-blur-sm md:p-8 lg:order-2">
+            <div className="flex w-full max-w-3xl items-center justify-center">
+              <SuitPreview config={config} />
+            </div>
+          </main>
+          <aside className="order-2 lg:order-1">
+            <Sidebar config={config} dispatch={dispatch} />
+          </aside>
+        </div>
       </div>
-    </main>
-  </div>
-);
-
+    </div>
+  );
 }
