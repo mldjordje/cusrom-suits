@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 /* eslint-disable @next/next/no-img-element */
 import React, { useState } from "react";
 import Image from "next/image";
@@ -214,7 +214,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                         <div className={`px-3 py-3 text-[11px] ${isActive ? "text-gray-900" : "text-gray-600"}`}>
                           <p className="font-semibold">{fabric.name || "Bez naziva"}</p>
                           <p className="text-[10px] text-gray-500">
-                            {fabric.price ?? 0} EUR � Tone {fabric.tone || "medium"}
+                            {fabric.price ?? 0} EUR · Tone {fabric.tone || "medium"}
                           </p>
                           {(fabric.zoom1 || fabric.zoom2) && (
                             <div className="mt-1 flex gap-3 text-[10px] underline">
@@ -346,3 +346,4 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 };
 
 export default Sidebar;
+

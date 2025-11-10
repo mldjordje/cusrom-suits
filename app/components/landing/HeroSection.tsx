@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 type HeroSectionProps = {
   desktopVideoId: string;
@@ -59,3 +59,4 @@ const HeroSection = ({ desktopVideoId, mobileVideoId }: HeroSectionProps) => {
 };
 
 export default HeroSection;
+

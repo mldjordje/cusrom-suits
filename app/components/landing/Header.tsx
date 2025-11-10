@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 const navLinks = [
   { href: "#collections", label: "Collections" },
@@ -33,3 +33,4 @@ const Header = () => {
 };
 
 export default Header;
+

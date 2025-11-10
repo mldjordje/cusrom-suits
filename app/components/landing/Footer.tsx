@@ -1,4 +1,4 @@
-import Link from "next/link";
+﻿import Link from "next/link";
 
 const quickLinks = [
   { href: "#collections", label: "Collections" },
@@ -24,10 +24,11 @@ const Footer = () => {
             </Link>
           ))}
         </div>
-        <p className="text-[11px] text-gray-500">� {year} Santos & Santorini. Parallel shop experience remains live until integration is approved.</p>
+        <p className="text-[11px] text-gray-500">© {year} Santos & Santorini. Parallel shop experience remains live until integration is approved.</p>
       </div>
     </footer>
   );
 };
 
 export default Footer;
+
