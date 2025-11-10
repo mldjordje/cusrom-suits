@@ -46,7 +46,7 @@ export default function Home() {
     <div className="min-h-screen bg-[#040404] text-white">
       <Header />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-16 pt-12 sm:px-6 lg:px-8">
-        <HeroSection desktopVideoId="OZHIiph0j7Q" mobileVideoId="jv9L6R1KMRk" />
+        <HeroSection desktopVideoId="18WbTwdI0Vs" mobileVideoId="18WbTwdI0Vs" />
 
         <section id="collections" className="grid gap-6 rounded-[32px] border border-white/10 bg-white/5 p-8 backdrop-blur">
           <div className="space-y-3">
