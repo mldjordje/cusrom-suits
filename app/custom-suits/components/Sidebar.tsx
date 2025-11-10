@@ -100,8 +100,8 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   };
 
   return (
-    <div className="md:sticky md:top-8">
-      <div className="w-full rounded-[30px] bg-gray-50/95 px-5 py-6 shadow-[0_25px_70px_rgba(15,23,42,0.08)] ring-1 ring-black/5 md:max-h-[calc(100vh-4rem)] md:overflow-y-auto">
+    <div className="flex h-full flex-col md:sticky md:top-8 md:max-h-[calc(100vh-4rem)]">
+      <div className="flex-1 overflow-y-auto rounded-[30px] bg-gray-50/95 px-5 py-6 shadow-[0_25px_70px_rgba(15,23,42,0.08)] ring-1 ring-black/5 md:overflow-y-auto">
         <div className="space-y-8">
           <div className="flex items-center gap-4 rounded-2xl border border-white/60 bg-white/70 px-4 py-4 shadow-sm">
             <img src="/img/logo.png" alt="Brand logo" className="h-12 w-auto object-contain" />

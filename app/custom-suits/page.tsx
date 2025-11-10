@@ -28,17 +28,19 @@ export default function CustomSuitsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#f6f6f4] via-white to-[#ececec] text-[#111]">
-      <div className="mx-auto flex w-full max-w-[1600px] flex-col gap-8 px-4 py-6 lg:px-8 lg:py-10 xl:px-12">
-        <div className="grid w-full grid-cols-1 gap-8 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <main className="order-1 flex min-h-[70vh] items-center justify-center rounded-[36px] bg-white/80 p-4 shadow-[0_35px_120px_rgba(15,23,42,0.1)] ring-1 ring-black/5 backdrop-blur-sm md:p-8 lg:order-2">
+    <div className="bg-gradient-to-br from-[#f6f6f4] via-white to-[#ececec] text-[#111]">
+      <div className="mx-auto w-full max-w-[1600px] px-4 py-4 lg:px-8 lg:py-10 xl:px-12">
+        <div className="flex h-[100svh] flex-col gap-6 overflow-hidden lg:h-auto lg:min-h-[80vh] lg:grid lg:grid-cols-[360px_minmax(0,1fr)]">
+          <section className="order-1 flex shrink-0 items-center justify-center rounded-[36px] bg-white/85 p-4 shadow-[0_35px_120px_rgba(15,23,42,0.1)] ring-1 ring-black/5 backdrop-blur-sm sm:p-6 lg:order-2 lg:h-full">
             <div className="flex w-full max-w-3xl items-center justify-center">
               <SuitPreview config={config} />
             </div>
-          </main>
-          <aside className="order-2 lg:order-1">
-            <Sidebar config={config} dispatch={dispatch} />
-          </aside>
+          </section>
+          <section className="order-2 flex-1 overflow-hidden lg:order-1 lg:overflow-visible">
+            <div className="h-full overflow-y-auto lg:h-auto lg:overflow-visible">
+              <Sidebar config={config} dispatch={dispatch} />
+            </div>
+          </section>
         </div>
       </div>
     </div>

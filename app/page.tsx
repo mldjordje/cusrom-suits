@@ -45,9 +45,8 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#040404] text-white">
       <Header />
+      <HeroSection desktopVideoId="18WbTwdI0Vs" mobileVideoId="18WbTwdI0Vs" />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-16 pt-12 sm:px-6 lg:px-8">
-        <HeroSection desktopVideoId="18WbTwdI0Vs" mobileVideoId="18WbTwdI0Vs" />
-
         <section id="collections" className="grid gap-6 rounded-[32px] border border-white/10 bg-white/5 p-8 backdrop-blur">
           <div className="space-y-3">
             <p className="text-[11px] uppercase tracking-[0.4em] text-gray-300">Collections</p>
@@ -110,4 +109,3 @@ export default function Home() {
     </div>
   );
 }
-
