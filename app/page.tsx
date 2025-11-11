@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import Footer from "./components/landing/Footer";
@@ -38,38 +38,38 @@ const contactInfo = [
   { label: "Adresa", value: "Obrenovićeva 10, Niš" },
 ];
 
-const aboutVariants = {
+const aboutVariants: Variants = {
   hidden: { opacity: 0, x: -50, scale: 0.97 },
   visible: {
     opacity: 1,
     x: 0,
     scale: 1,
-    transition: { duration: 0.7, ease: "easeOut" },
+    transition: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
   },
 };
 
-const galleryContainer = {
+const galleryContainer: Variants = {
   hidden: {},
   visible: {
     transition: { staggerChildren: 0.15 },
   },
 };
 
-const galleryItem = {
+const galleryItem: Variants = {
   hidden: { opacity: 0, y: 50 },
   visible: {
     opacity: 1,
     y: 0,
-    transition: { duration: 0.7, ease: "easeOut" },
+    transition: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
   },
 };
 
-const contactVariants = {
+const contactVariants: Variants = {
   hidden: { opacity: 0, x: 50 },
   visible: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.7, ease: "easeOut" },
+    transition: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
   },
 };
 
