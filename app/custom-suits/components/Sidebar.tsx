@@ -11,6 +11,12 @@ import { useFabrics } from "../hooks/useFabrics";
 type Props = { config: SuitState; dispatch: React.Dispatch<any> };
 
 const tabs = ["FABRIC", "STYLE", "ACCENTS", "MEASURE"] as const;
+const tabLabels: Record<(typeof tabs)[number], string> = {
+  FABRIC: "Tkanine",
+  STYLE: "Stil",
+  ACCENTS: "Detalji",
+  MEASURE: "Mere",
+};
 
 const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("STYLE");
@@ -64,15 +70,15 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
     if (!options.length) return null;
     return (
       <div className="space-y-2">
-        <h3 className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gray-400">{title}</h3>
-        <div className="flex flex-wrap gap-2.5">
+        <h3 className="text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">{title}</h3>
+        <div className="flex flex-wrap gap-2">
           {options.map((option) => {
             const active = selectedId === option.id;
             return (
               <button
                 key={option.id}
                 onClick={() => onSelect(option.id)}
-                className={`rounded-full border px-3.5 py-1.5 text-[11px] font-medium tracking-wide transition ${
+                className={`rounded-full border px-3 py-1.5 text-[10px] font-medium tracking-wide transition sm:px-3.5 sm:text-[11px] ${
                   active
                     ? "border-gray-900 bg-gray-900 text-white shadow-sm"
                     : "border-transparent bg-white/60 text-gray-600 hover:border-gray-300 hover:bg-white"
@@ -106,34 +112,34 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
           <div className="flex items-center gap-4 rounded-2xl border border-white/60 bg-white/70 px-4 py-4 shadow-sm">
             <img src="/img/logo.png" alt="Brand logo" className="h-12 w-auto object-contain" />
             <div>
-              <p className="text-[11px] uppercase tracking-[0.5em] text-gray-400">atelier</p>
-              <p className="text-lg font-semibold text-gray-900">Santos & Santorini</p>
+              <p className="text-[11px] uppercase tracking-[0.35em] text-gray-500">Dizajniraj svoje odelo</p>
+              <p className="text-base font-semibold text-gray-900">Santos &amp; Santorini</p>
             </div>
           </div>
 
-          <nav className="grid gap-2">
+          <nav className="grid gap-1.5">
             {tabs.map((tab) => {
               const isActive = activeTab === tab;
               return (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex items-center justify-between rounded-2xl border px-4 py-3 text-left transition ${
+                  className={`flex items-center justify-between rounded-2xl border px-3 py-2.5 text-left text-[13px] transition sm:px-4 sm:py-3 ${
                     isActive
                       ? "border-gray-900 bg-white text-gray-900 shadow-inner"
                       : "border-transparent bg-white/40 text-gray-500 hover:border-gray-200 hover:bg-white/70"
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/60">
-                      <img src={iconMap[tab]} alt={tab} className="h-8 w-8 object-contain opacity-80" />
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/70">
+                      <img src={iconMap[tab]} alt={tab} className="h-6 w-6 object-contain opacity-80" />
                     </span>
                     <div>
-                      <p className="text-[10px] uppercase tracking-[0.5em] text-gray-400">{tab}</p>
-                      <p className="text-sm font-semibold text-gray-700">Configure</p>
+                      <p className="text-[10px] uppercase tracking-[0.35em] text-gray-400">{tabLabels[tab]}</p>
+                      <p className="text-xs font-semibold text-gray-700">Podesi</p>
                     </div>
                   </div>
-                  <span className="text-xs text-gray-400">{isActive ? "Active" : "Select"}</span>
+                  <span className="text-[11px] text-gray-400">{isActive ? "Aktivno" : "Izaberi"}</span>
                 </button>
               );
             })}
@@ -148,13 +154,13 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
               <div className="text-left">{price.total} EUR</div>
               <div>{fabricPrice} EUR</div>
             </div>
-            <p className="mt-2 text-[11px] text-gray-500">Indicative price, VAT included.</p>
+            <p className="mt-2 text-[11px] text-gray-500">Indikativna cena, PDV uključen.</p>
           </div>
 
           {activeTab === "FABRIC" && (
             <section className="space-y-5 rounded-3xl border border-dashed border-gray-200 bg-white/80 p-5 shadow-inner shadow-black/5">
               <div className="flex items-center justify-between gap-4">
-                <h3 className="text-sm font-semibold text-gray-800">Fabric Library</h3>
+                <h3 className="text-sm font-semibold text-gray-800">Biblioteka tkanina</h3>
                 <a
                   href={uploadUrl}
                   target="_blank"
@@ -170,29 +176,29 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                   value={toneFilter}
                   onChange={(e) => setToneFilter(e.target.value as any)}
                 >
-                  <option value="all">All tones</option>
-                  <option value="light">Light</option>
-                  <option value="medium">Medium</option>
-                  <option value="dark">Dark</option>
+                  <option value="all">Svi tonovi</option>
+                  <option value="light">Svetli</option>
+                  <option value="medium">Srednji</option>
+                  <option value="dark">Tamni</option>
                 </select>
                 <select
                   className="rounded-2xl border border-gray-200 bg-white/70 px-3 py-2 text-xs text-gray-600 focus:border-gray-400 focus:outline-none"
                   value={sort}
                   onChange={(e) => setSort(e.target.value as any)}
                 >
-                  <option value="date_desc">Newest first</option>
-                  <option value="date_asc">Oldest first</option>
+                  <option value="date_desc">Najnovije prvo</option>
+                  <option value="date_asc">Najstarije prvo</option>
                 </select>
               </div>
               <input
                 className="w-full rounded-2xl border border-gray-200 bg-white/60 px-4 py-2 text-xs text-gray-700 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none"
-                placeholder="Search by name or code"
+                placeholder="Pretraga po nazivu ili šifri"
                 value={fabricQuery}
                 onChange={(e) => setFabricQuery(e.target.value)}
               />
               {fabricsError && <p className="text-[11px] text-red-500">{fabricsError}</p>}
               {fabricsLoading ? (
-                <p className="text-xs text-gray-500">Ucitavanje tkanina...</p>
+                <p className="text-xs text-gray-500">Učitavanje tkanina...</p>
               ) : filteredFabrics.length === 0 ? (
                 <p className="text-xs text-gray-500">Nema tkanina za zadate filtere.</p>
               ) : (
@@ -214,7 +220,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                         <div className={`px-3 py-3 text-[11px] ${isActive ? "text-gray-900" : "text-gray-600"}`}>
                           <p className="font-semibold">{fabric.name || "Bez naziva"}</p>
                           <p className="text-[10px] text-gray-500">
-                            {fabric.price ?? 0} EUR · Tone {fabric.tone || "medium"}
+                            {fabric.price ?? 0} EUR • Ton {fabric.tone || "medium"}
                           </p>
                           {(fabric.zoom1 || fabric.zoom2) && (
                             <div className="mt-1 flex gap-3 text-[10px] underline">
@@ -242,18 +248,18 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
           {activeTab === "STYLE" && (
             <section className="space-y-6 rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm">
               {!currentSuit ? (
-                <p className="text-xs text-gray-500">Model nije pronadjen.</p>
+                <p className="text-xs text-gray-500">Model nije pronađen.</p>
               ) : (
                 <>
                   <ChipGroup
-                    title="Model"
+                    title="Model odela"
                     options={suits.map((suit) => ({ id: suit.id, label: suit.name }))}
                     selectedId={config.styleId}
                     onSelect={(id) => dispatch({ type: "SET_STYLE", payload: id })}
                   />
 
                   <ChipGroup
-                    title="Lapel Type"
+                    title="Tip revera"
                     options={lapels.map((lapel) => ({ id: lapel.id, label: lapel.name }))}
                     selectedId={selectedLapelId}
                     onSelect={(id) => dispatch({ type: "SET_LAPEL", payload: id })}
@@ -261,7 +267,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 
                   {activeLapel?.widths?.length ? (
                     <ChipGroup
-                      title="Lapel Width"
+                      title="Širina revera"
                       options={activeLapel.widths.map((width) => ({ id: width.id, label: width.name }))}
                       selectedId={selectedLapelWidthId}
                       onSelect={(id) => dispatch({ type: "SET_LAPEL_WIDTH", payload: id })}
@@ -269,28 +275,28 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                   ) : null}
 
                   <ChipGroup
-                    title="Jacket Pockets"
+                    title="Džepovi na sakou"
                     options={(currentSuit.pockets || []).map((pocket) => ({ id: pocket.id, label: pocket.name }))}
                     selectedId={config.pocketId}
                     onSelect={(id) => dispatch({ type: "SET_POCKET", payload: id })}
                   />
 
                   <ChipGroup
-                    title="Breast Pocket"
+                    title="Džep na grudima"
                     options={(currentSuit.breastPocket || []).map((option) => ({ id: option.id, label: option.name }))}
                     selectedId={config.breastPocketId}
                     onSelect={(id) => dispatch({ type: "SET_BREAST_POCKET", payload: id })}
                   />
 
                   <ChipGroup
-                    title="Interior"
+                    title="Postava"
                     options={(currentSuit.interiors || []).map((option) => ({ id: option.id, label: option.name }))}
                     selectedId={config.interiorId}
                     onSelect={(id) => dispatch({ type: "SET_INTERIOR", payload: id })}
                   />
 
                   <ChipGroup
-                    title="Pant Finish"
+                    title="Završnica pantalona"
                     options={(currentSuit.cuffs || []).map((option) => ({ id: option.id, label: option.name }))}
                     selectedId={config.cuffId}
                     onSelect={(id) => dispatch({ type: "SET_CUFF", payload: id })}
@@ -298,8 +304,8 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 
                   <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white/80 px-4 py-3">
                     <div>
-                      <p className="text-sm font-semibold text-gray-800">Show shirt layer</p>
-                      <p className="text-[11px] text-gray-500">Use white shirt for preview layering.</p>
+                      <p className="text-sm font-semibold text-gray-800">Prikaži sloj košulje</p>
+                      <p className="text-[11px] text-gray-500">Koristi belu košulju za jasniji prikaz slojeva.</p>
                     </div>
                     <button
                       onClick={() => dispatch({ type: "TOGGLE_SHIRT" })}
@@ -307,7 +313,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                         config.showShirt ? "bg-gray-900 text-white" : "border border-gray-300 text-gray-600"
                       }`}
                     >
-                      {config.showShirt ? "On" : "Off"}
+                      {config.showShirt ? "Uključeno" : "Isključeno"}
                     </button>
                   </div>
                 </>
@@ -317,14 +323,14 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 
           {activeTab === "ACCENTS" && (
             <section className="rounded-3xl border border-dashed border-gray-200 bg-white/70 p-5 text-sm text-gray-500">
-              <p>Accents customization coming soon.</p>
+              <p>Personalizacija detalja uskoro.</p>
             </section>
           )}
 
           {activeTab === "MEASURE" && (
             <section className="space-y-3 rounded-3xl border border-white/60 bg-white/80 p-5">
-              <h3 className="text-sm font-semibold text-gray-800">Measurements</h3>
-              <p className="text-xs text-gray-500">Za detaljnije merenje nastavite na sledeci korak.</p>
+              <h3 className="text-sm font-semibold text-gray-800">Mere</h3>
+              <p className="text-xs text-gray-500">Za detaljnije merenje nastavite na sledeći korak.</p>
             </section>
           )}
         </div>
@@ -346,4 +352,11 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 };
 
 export default Sidebar;
+
+
+
+
+
+
+
 

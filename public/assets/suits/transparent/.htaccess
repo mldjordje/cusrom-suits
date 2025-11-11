@@ -1,0 +1,14 @@
+# ✅ DOZVOLI CORS ZA SLIKE (CDN) SAMO JEDNOM
+<IfModule mod_headers.c>
+  Header always set Access-Control-Allow-Origin "https://custom-suits.vercel.app"
+  Header always set Access-Control-Allow-Methods "GET, OPTIONS"
+  Header always set Access-Control-Allow-Headers "Content-Type, Authorization, X-Requested-With"
+</IfModule>
+
+# ✅ MIME tipovi
+AddType image/webp .webp
+AddType image/png .png
+AddType image/jpeg .jpg
+AddType image/jpeg .jpeg
+AddType image/svg+xml .svg
+AddType application/json .json

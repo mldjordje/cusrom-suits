@@ -10,11 +10,15 @@ export const colors: { id: SuitColor; label: string }[] = [
   { id: "blue", label: "Plavo" },
 ];
 
+const TRANSPARENT_BASE = "https://customsuits.adspire.rs/uploads/transparent/";
+
+const sprite = (name: string) => `${TRANSPARENT_BASE}${name}`;
+
 export const previewMap: Record<SuitModel, Record<SuitColor, string>> = {
   single_2btn: {
-    blue: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_medium+style_lapel_notch.png",
+    blue: sprite("neck_single_breasted+buttons_2+lapel_medium+style_lapel_notch.png"),
   },
   double_6btn: {
-    blue: "/assets/suits/blue/neck_double_breasted+buttons_6+lapel_medium+style_lapel_notch.png",
+    blue: sprite("neck_double_breasted+buttons_6+lapel_medium+style_lapel_notch.png"),
   },
 };

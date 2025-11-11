@@ -424,7 +424,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   if (!selectedFabric) {
     return (
       <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
-        {fabricsLoading ? "Ucitavanje tkanina..." : "Odaberi tkaninu da vidis preview."}
+        {fabricsLoading ? "Učitavanje tkanina..." : "Odaberi tkaninu da vidiš prikaz."}
       </div>
     );
   }
@@ -436,21 +436,17 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
   return (
     <div className="relative w-full select-none">
-      {assetWarnings.length > 0 && (
-        <div className="absolute left-1/2 top-4 z-20 -translate-x-1/2 rounded-md bg-red-600/90 px-3 py-1 text-xs text-white shadow">
-          Nedostaju sprite fajlovi ({assetWarnings.length})
-        </div>
-      )}
-      <div
-        className="relative mx-auto"
-        data-testid="jacket-preview"
-        style={{ width: '100%', aspectRatio: '600 / 733', maxWidth: 720 }}
-        onWheel={onWheel}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        onMouseUp={onMouseUp}
-        onMouseLeave={onMouseUp}
-      >
+      <div className="relative mx-auto w-full max-w-[760px]">
+        <div
+          className="relative mx-auto w-full origin-top transform scale-[1.15] sm:scale-100"
+          data-testid="jacket-preview"
+          style={{ width: "100%", aspectRatio: "600 / 733", maxWidth: 720 }}
+          onWheel={onWheel}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUp}
+          onMouseLeave={onMouseUp}
+        >
         {interiorLayers?.map((l) => (
           <img key={`int-${l.id}`} src={l.src} alt={l.name} className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
         ))}
@@ -536,9 +532,13 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           <GlobalOverlay noiseData={NOISE_DATA} settings={toneVis} mask={jacketUnionMask} />
         )}
       </div>
-      {/* ======================== PANTS CANVAS ======================== */}
+    </div>
+    {/* ======================== PANTS CANVAS ======================== */}
       {pantsLayer && (
-        <div className="relative mx-auto mt-2" style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720 }}>
+        <div
+          className="relative mx-auto mt-2 w-full max-w-[760px] origin-top transform scale-[1.08] sm:scale-100"
+          style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720 }}
+        >
           <BaseLayer layers={[pantsLayer]} resolve={(layer) => cdnPair(layer.src)} />
           {showLayer("fabric") && (
             <FabricUnion

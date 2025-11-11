@@ -1,109 +1,196 @@
-﻿import Header from "./components/landing/Header";
-import HeroSection from "./components/landing/HeroSection";
+"use client";
+
+import { motion } from "framer-motion";
+import Image from "next/image";
+import Link from "next/link";
 import Footer from "./components/landing/Footer";
+import Header from "./components/landing/Header";
+import HeroSection from "./components/landing/HeroSection";
 
-const highlightCards = [
+const aboutText = [
+  "Vizijom osnivača da muškarci zaslužuju uživanje u svojoj garderobi, u Nišu 2007. godine nastaje Santos & Santorini.",
+  "Porodična radionica prerasta u preduzeće 2013. godine, registrovano u Zavodu za intelektualnu svojinu i tada dobija epitet renomiranog srpskog brenda.",
+  "Naše proizvode ističe autentičnost kroja, beskompromisni kvalitet i lepota detalja koja oslikava posvećenost svakog člana S&S porodice.",
+];
+
+const galleryItems = [
   {
-    title: "Suit Concierge",
-    description: "Personal stylists curate fabrics, linings, and finishing touches inspired by Hockerty-level clarity.",
-    meta: "1:1 guidance",
+    id: "odela",
+    title: "Nova kolekcija odela",
+    copy: "Ravnomerna geometrija krojeva, luksuzne teksture i digitalni konfigurator koji prikazuje svaki šav u realnom vremenu.",
+    image: "/img/odela.jpg",
+    alt: "Model u novoj kolekciji odela Santos & Santorini",
+    href: "/custom-suits",
   },
   {
-    title: "Precision Drafting",
-    description: "Digital patterns adapt in real time, mirroring the configurator experience clients expect online.",
-    meta: "72 measurements",
-  },
-  {
-    title: "Express Delivery",
-    description: "Global atelier network delivers bespoke suits within four weeks without compromising craftsmanship.",
-    meta: "Worldwide",
+    id: "obuca",
+    title: "Premium obuća",
+    copy: "Italijanska koža, ručno bojena u slojevima, usklađena sa odelom za harmoničnu siluetu od glave do pete.",
+    image: "/img/obuca.jpg",
+    alt: "Premium kožna obuća Santos & Santorini",
+    href: "/web-shop",
   },
 ];
 
-const atelierStats = [
-  { value: "350+", label: "Italian fabrics" },
-  { value: "72", label: "Body measurements" },
-  { value: "14", label: "Master tailors" },
+const contactInfo = [
+  { label: "Telefon", value: "+381 18 250 250" },
+  { label: "Email", value: "atelier@santos.rs" },
+  { label: "Adresa", value: "Obrenovićeva 10, Niš" },
 ];
 
-const serviceSteps = [
-  {
-    title: "Consult",
-    description: "Schedule a session online or in-store and preview silhouettes before you arrive.",
+const aboutVariants = {
+  hidden: { opacity: 0, x: -50, scale: 0.97 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    transition: { duration: 0.7, ease: "easeOut" },
   },
-  {
-    title: "Customize",
-    description: "Use the configurator to lock fabrics, lapels, and accents with photoreal clarity.",
+};
+
+const galleryContainer = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.15 },
   },
-  {
-    title: "Deliver",
-    description: "Receive fitting-ready garments with video guidance for final tweaks.",
+};
+
+const galleryItem = {
+  hidden: { opacity: 0, y: 50 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.7, ease: "easeOut" },
   },
-];
+};
+
+const contactVariants = {
+  hidden: { opacity: 0, x: 50 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.7, ease: "easeOut" },
+  },
+};
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#040404] text-white">
+    <div className="min-h-screen bg-[#050505] text-white">
       <Header />
-      <HeroSection desktopVideoId="18WbTwdI0Vs" mobileVideoId="18WbTwdI0Vs" />
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-12 px-4 pb-16 pt-12 sm:px-6 lg:px-8">
-        <section id="collections" className="grid gap-6 rounded-[32px] border border-white/10 bg-white/5 p-8 backdrop-blur">
-          <div className="space-y-3">
-            <p className="text-[11px] uppercase tracking-[0.4em] text-gray-300">Collections</p>
-            <h2 className="text-2xl font-semibold">Crafted like Hugo Boss, delivered like Hockerty.</h2>
-            <p className="text-sm text-gray-300">
-              Explore signature lines, from business essentials to ceremonial attire, all mirrored inside the configurator for a
-              seamless jump into customization.
-            </p>
+      <HeroSection />
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-20 px-4 pb-24 pt-16 sm:px-6 lg:px-8">
+        <motion.section
+          id="o-nama"
+          className="space-y-8 rounded-[48px] border border-white/10 bg-white/5 p-8 backdrop-blur"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={aboutVariants}
+        >
+          <div className="space-y-2">
+            <p className="text-[11px] uppercase tracking-[0.45em] text-gray-300">O nama</p>
+            <h2 className="text-3xl font-semibold tracking-wide">Brend nastao iz porodične radionice</h2>
           </div>
-          <div className="grid gap-6 md:grid-cols-3">
-            {highlightCards.map((card) => (
-              <div key={card.title} className="rounded-3xl border border-white/10 bg-black/40 p-6">
-                <p className="text-xs uppercase tracking-[0.4em] text-gray-400">{card.meta}</p>
-                <h3 className="mt-4 text-xl font-semibold">{card.title}</h3>
-                <p className="mt-3 text-sm text-gray-300">{card.description}</p>
-              </div>
+          <div className="grid gap-6 text-sm text-gray-100 sm:grid-cols-2 sm:text-base">
+            {aboutText.map((paragraph, index) => (
+              <p key={index} className="leading-relaxed text-gray-200">
+                {paragraph}
+              </p>
             ))}
           </div>
-        </section>
+          <div className="flex flex-wrap gap-4 pt-6">
+            <Link
+              href="/custom-suits"
+              className="rounded-full border border-white/40 px-6 py-2 text-[11px] uppercase tracking-[0.3em] text-white transition hover:border-white"
+            >
+              Otvori konfigurator
+            </Link>
+            <Link
+              href="/web-shop"
+              className="rounded-full border border-white/20 bg-white/10 px-6 py-2 text-[11px] uppercase tracking-[0.3em] text-white transition hover:bg-white/20"
+            >
+              Poseti web shop
+            </Link>
+          </div>
+        </motion.section>
 
-        <section id="atelier" className="grid gap-6 rounded-[32px] border border-white/10 bg-gradient-to-br from-white/10 via-transparent to-black p-8 lg:grid-cols-2">
+        <motion.section
+          className="grid gap-8 lg:grid-cols-2"
+          variants={galleryContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.25 }}
+        >
+          {galleryItems.map((item) => (
+            <motion.article
+              key={item.id}
+              variants={galleryItem}
+              className="relative overflow-hidden rounded-[44px] border border-white/10 bg-black/30 shadow-[0_25px_80px_rgba(0,0,0,0.35)]"
+            >
+              <div className="relative h-[420px] w-full">
+                <Image src={item.image} alt={item.alt} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
+                <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/60 to-black/90" aria-hidden="true" />
+              </div>
+              <div className="absolute inset-0 flex flex-col justify-end p-8 text-white">
+                <p className="text-[11px] uppercase tracking-[0.35em] text-gray-300">S&S kolekcija</p>
+                <h3 className="mt-3 text-3xl font-semibold">{item.title}</h3>
+                <p className="mt-3 max-w-xl text-sm text-gray-200">{item.copy}</p>
+                <Link
+                  href={item.href}
+                  className="mt-6 inline-flex items-center justify-center rounded-full bg-white px-6 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-black transition hover:bg-gray-200"
+                >
+                  Pogledaj više
+                </Link>
+              </div>
+            </motion.article>
+          ))}
+        </motion.section>
+
+        <motion.section
+          id="kontakt"
+          className="grid gap-8 rounded-[48px] border border-white/10 bg-gradient-to-br from-white/10 via-transparent to-black/40 p-8 lg:grid-cols-[1.2fr_0.8fr]"
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.3 }}
+          variants={contactVariants}
+        >
           <div className="space-y-4">
-            <p className="text-[11px] uppercase tracking-[0.4em] text-gray-300">Atelier</p>
-            <h2 className="text-2xl font-semibold">The Santos & Santorini craft promise.</h2>
-            <p className="text-sm text-gray-300">
-              Each garment is stitched by master artisans. The online experience simply mirrors the precision already happening in
-              the workroom, ensuring the legacy shop keeps running without disruption.
+            <p className="text-[11px] uppercase tracking-[0.45em] text-gray-300">Kontakt</p>
+            <h2 className="text-3xl font-semibold tracking-wide">Diskretna podrška i rezervacije termina</h2>
+            <p className="text-sm text-gray-200">
+              Naš tim vas vodi kroz izbor tkanina, stilova i aksesoara uživo ili preko Custom Suits konfiguratora. Zakažite termin za
+              meru ili pitajte bilo šta — odgovor stiže u roku od jednog radnog dana.
             </p>
+            <div className="grid gap-4 sm:grid-cols-3">
+              {contactInfo.map((item) => (
+                <div key={item.label} className="rounded-3xl border border-white/20 bg-white/5 p-4 text-sm text-gray-100">
+                  <p className="text-[10px] uppercase tracking-[0.35em] text-gray-400">{item.label}</p>
+                  <p className="mt-1 text-base font-medium text-white">{item.value}</p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="grid gap-4 sm:grid-cols-3">
-            {atelierStats.map((stat) => (
-              <div key={stat.label} className="rounded-3xl border border-white/10 bg-black/40 p-4 text-center">
-                <p className="text-3xl font-semibold">{stat.value}</p>
-                <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{stat.label}</p>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section id="services" className="rounded-[32px] border border-white/10 bg-white/5 p-8 backdrop-blur">
-          <div className="space-y-3">
-            <p className="text-[11px] uppercase tracking-[0.4em] text-gray-300">Services</p>
-            <h2 className="text-2xl font-semibold">From landing to configurator in one click.</h2>
-            <p className="text-sm text-gray-300">
-              Clients glide from this landing to /custom-suits without losing access to the legacy store routes.
+          <div className="flex flex-col rounded-[36px] border border-white/20 bg-black/30 p-6">
+            <p className="text-sm text-gray-200">
+              Preferirate digitalni pristup? Pređite direktno u konfigurator kako biste uživo videli svaki sloj odela dok paralelno
+              komunicirate sa stilistom.
             </p>
+            <div className="mt-6 flex flex-col gap-3">
+              <Link
+                href="/custom-suits"
+                className="w-full rounded-full bg-white px-6 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.35em] text-black transition hover:bg-gray-200"
+              >
+                Custom Suits
+              </Link>
+              <a
+                href="mailto:atelier@santos.rs"
+                className="w-full rounded-full border border-white/40 px-6 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.35em] text-white transition hover:border-white"
+              >
+                Piši atelieru
+              </a>
+            </div>
           </div>
-          <div className="mt-6 grid gap-4 md:grid-cols-3">
-            {serviceSteps.map((step, index) => (
-              <div key={step.title} className="rounded-3xl border border-white/15 bg-black/40 p-6">
-                <p className="text-xs uppercase tracking-[0.4em] text-gray-500">Step {index + 1}</p>
-                <h3 className="mt-3 text-xl font-semibold">{step.title}</h3>
-                <p className="mt-3 text-sm text-gray-300">{step.description}</p>
-              </div>
-            ))}
-          </div>
-        </section>
+        </motion.section>
       </main>
       <Footer />
     </div>
