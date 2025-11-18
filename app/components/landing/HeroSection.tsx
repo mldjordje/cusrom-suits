@@ -8,31 +8,6 @@ import { useEffect, useState } from "react";
 const buildEmbed = (id: string) =>
   `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&showinfo=0`;
 
-const useMediaQuery = (query: string) => {
-  const [matches, setMatches] = useState(() => {
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    return window.matchMedia(query).matches;
-  });
-
-  useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    const mediaQueryList = window.matchMedia(query);
-    const handleChange = (event: MediaQueryListEvent) => setMatches(event.matches);
-
-    setMatches(mediaQueryList.matches);
-    mediaQueryList.addEventListener("change", handleChange);
-    return () => mediaQueryList.removeEventListener("change", handleChange);
-  }, [query]);
-
-  return matches;
-};
-
 const heroImageSections = [
   {
     id: "atelier-core",
@@ -133,25 +108,34 @@ const HeroImageBlock = ({ image, kicker, title, subtitle, description, primary, 
 
 const VideoHero = () => {
   const desktopId = "18WbTwdI0Vs";
-  const mobileId = "gUQRpUIt5cU";
-  const isMobileViewport = useMediaQuery("(max-width: 767px)");
-  const activeId = isMobileViewport ? mobileId : desktopId;
-  const iframeSize = isMobileViewport ? "h-[180%] w-[120%]" : "h-[135%] w-[135%]";
-
+  const mobileId = "U8g-651j3yo";
   return (
     <section className="relative min-h-[100svh] w-full overflow-hidden bg-[#120c0c] text-white">
       <div className="absolute inset-0">
-        <iframe
-          key={activeId}
-          title={`Santos & Santorini video hero ${isMobileViewport ? "mobile" : "desktop"}`}
-          src={buildEmbed(activeId)}
-          className={`pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 scale-110 ${iframeSize}`}
-          allow="autoplay; fullscreen; picture-in-picture"
-          allowFullScreen
-          loading="lazy"
-          tabIndex={-1}
-          aria-hidden="true"
-        />
+        <div className="absolute inset-0 hidden md:block">
+          <iframe
+            title="Santos & Santorini video hero desktop"
+            src={buildEmbed(desktopId)}
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[135%] w-[135%] -translate-x-1/2 -translate-y-1/2 scale-110"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+            loading="lazy"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
+        </div>
+        <div className="absolute inset-0 md:hidden">
+          <iframe
+            title="Santos & Santorini video hero mobile"
+            src={buildEmbed(mobileId)}
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[190%] w-[130%] -translate-x-1/2 -translate-y-1/2 scale-110"
+            allow="autoplay; fullscreen; picture-in-picture"
+            allowFullScreen
+            loading="lazy"
+            tabIndex={-1}
+            aria-hidden="true"
+          />
+        </div>
       </div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/80 via-[#190808]/70 to-[#2b0e0e]/80" aria-hidden="true" />
       <div className="relative z-10 flex min-h-[100svh] items-center px-6 pb-16 pt-24 sm:px-12 lg:px-24">
