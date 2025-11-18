@@ -12,24 +12,24 @@ const heroImageSections = [
   {
     id: "atelier-core",
     image: "/img/hero.jpg",
-    kicker: "Niš · od 2007.",
-    title: "SANTOS & SANTORINI",
-    subtitle: "Kreiraj odelo po svojoj meri",
+    kicker: "Signature atelier",
+    title: "Santos & Santorini Bespoke",
+    subtitle: "Dizajniraj odelo koje prica tvoju pricu",
     description:
-      "Minimalistička estetika sa delikatnim crvenim akcentima naglašava prelaz iz video hero sekcije u atelier iskustvo koje bela pozadina sada čini još luksuznijim.",
-    primary: { label: "Custom Suits", href: "/custom-suits" },
-    secondary: { label: "Web Shop", href: "/web-shop" },
+      "Privatne probe, luksuzne tkanine i crveni detalji vode te od prve mere do finalnog peglanja kako bi svako odelo imalo prepoznatljiv potpis.",
+    primary: { label: "Zakazi kreiranje", href: "/custom-suits" },
+    secondary: { label: "Upoznaj stilistu", href: "#kontakt" },
   },
   {
     id: "atelier-capsule",
     image: "/img/hero2.jpg",
     kicker: "Crimson capsule",
-    title: "Crvene linije nove kolekcije",
-    subtitle: "Akcenti inspirisani bojom logoa",
+    title: "Crvene linije limited kolekcije",
+    subtitle: "Akcenti inspirisani logoom Santosa",
     description:
-      "Kombinujemo prirodne tkanine sa ručno bojenim detaljima u Bordeaux nijansi kako bi svaki model imao prepoznatljiv DNK Santosa.",
-    primary: { label: "Pogledaj kolekciju", href: "/web-shop" },
-    secondary: { label: "Kontaktiraj stilistu", href: "#kontakt" },
+      "Kombinujemo prirodne tkanine sa rucno bojenim detaljima u Bordeaux inspiraciji da bi svaki model ostao jedinstven i spreman za scenu.",
+    primary: { label: "Pogledaj limited drop", href: "/web-shop" },
+    secondary: { label: "Zatrazi konsultaciju", href: "#kontakt" },
   },
 ];
 
@@ -108,7 +108,7 @@ const HeroImageBlock = ({ image, kicker, title, subtitle, description, primary, 
 
 const VideoHero = () => {
   const desktopId = "18WbTwdI0Vs";
-  const mobileId = "18WbTwdI0Vs";
+  const mobileId = "gUQRpUIt5cU";
   return (
     <section className="relative min-h-[100svh] w-full overflow-hidden bg-[#120c0c] text-white">
       <div className="absolute inset-0">
@@ -141,22 +141,22 @@ const VideoHero = () => {
       <div className="relative z-10 flex min-h-[100svh] items-center px-6 pb-16 pt-24 sm:px-12 lg:px-24">
         <div className="max-w-3xl space-y-6">
           <p className="text-[11px] uppercase tracking-[0.55em] text-[#f7ddd5]">Video lookbook</p>
-          <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Custom Tailoring. Redefined.</h1>
+          <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Dizajniraj odelo. Mi vodimo svaki detalj.</h1>
           <p className="text-base text-white/85 sm:text-lg">
-            Povratak video hero sekcije donosi filmski uvod u experience dok novi crveni akcenti vode korisnika kroz sledeće korake.
+            Filmski uvod prikazuje emociju Santosa dok nasi majstori vode od prve skice do finalnog fittinga i cuvaju fokus na tvom stilu.
           </p>
           <div className="flex flex-wrap gap-4 pt-4">
             <Link
               href="/custom-suits"
               className="rounded-full bg-white px-8 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-[#1c1c1c] transition hover:bg-[#f5ece7]"
             >
-              Custom Suits
+              Zapocni dizajn
             </Link>
             <Link
               href="#o-nama"
               className="rounded-full border border-white/60 px-8 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-white transition hover:bg-white/10"
             >
-              Saznaj više
+              Poseti showroom
             </Link>
           </div>
         </div>
