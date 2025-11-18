@@ -106,9 +106,9 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   };
 
   return (
-    <div className="flex h-full flex-col md:sticky md:top-8 md:max-h-[calc(100vh-4rem)]">
-      <div className="flex-1 overflow-y-auto rounded-[30px] bg-gray-50/95 px-5 py-6 shadow-[0_25px_70px_rgba(15,23,42,0.08)] ring-1 ring-black/5 md:overflow-y-auto">
-        <div className="space-y-8">
+    <div className="flex h-full flex-col lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)]">
+      <div className="flex-1 rounded-[30px] bg-gray-50/95 px-4 py-5 shadow-[0_25px_70px_rgba(15,23,42,0.08)] ring-1 ring-black/5 sm:px-5 sm:py-6 lg:overflow-y-auto">
+        <div className="space-y-6 sm:space-y-8">
           <div className="flex items-center gap-4 rounded-2xl border border-white/60 bg-white/70 px-4 py-4 shadow-sm">
             <img src="/img/logo.png" alt="Brand logo" className="h-12 w-auto object-contain" />
             <div>
@@ -117,14 +117,14 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             </div>
           </div>
 
-          <nav className="grid gap-1.5">
+          <nav className="flex snap-x gap-2 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:gap-2 sm:overflow-visible sm:pb-0 lg:grid-cols-1">
             {tabs.map((tab) => {
               const isActive = activeTab === tab;
               return (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex items-center justify-between rounded-2xl border px-3 py-2.5 text-left text-[13px] transition sm:px-4 sm:py-3 ${
+                  className={`flex min-w-[220px] flex-shrink-0 snap-center items-center justify-between rounded-2xl border px-3 py-2.5 text-left text-[13px] transition sm:min-w-0 sm:px-4 sm:py-3 ${
                     isActive
                       ? "border-gray-900 bg-white text-gray-900 shadow-inner"
                       : "border-transparent bg-white/40 text-gray-500 hover:border-gray-200 hover:bg-white/70"
@@ -145,7 +145,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             })}
           </nav>
 
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm">
+          <div className="rounded-3xl border border-white/60 bg-white/80 p-4 shadow-sm sm:p-5">
             <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-400">
               <span>Model</span>
               <span>Fabric</span>
@@ -158,7 +158,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
           </div>
 
           {activeTab === "FABRIC" && (
-            <section className="space-y-5 rounded-3xl border border-dashed border-gray-200 bg-white/80 p-5 shadow-inner shadow-black/5">
+            <section className="space-y-5 rounded-3xl border border-dashed border-gray-200 bg-white/80 p-4 shadow-inner shadow-black/5 sm:p-5">
               <div className="flex items-center justify-between gap-4">
                 <h3 className="text-sm font-semibold text-gray-800">Biblioteka tkanina</h3>
                 <a
