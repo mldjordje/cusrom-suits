@@ -1,14 +1,16 @@
 ﻿"use client";
 /* eslint-disable @next/next/no-img-element */
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
-import { suits, fabrics as fallbackFabrics } from "../data/options";
+import { suits } from "../data/options";
 import { computePrice } from "../utils/price";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getBackendBase } from "../utils/backend";
 import { useFabrics } from "../hooks/useFabrics";
 
 type Props = { config: SuitState; dispatch: React.Dispatch<any> };
+
+type PriceLine = { label: string; price: number; type: "base" | "fabric" | "custom" };
 
 const tabs = ["FABRIC", "STYLE", "ACCENTS", "MEASURE"] as const;
 const tabLabels: Record<(typeof tabs)[number], string> = {
@@ -25,30 +27,65 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
   const [sort, setSort] = useState<"date_desc" | "date_asc">("date_desc");
   const [fabricQuery, setFabricQuery] = useState("");
+  const normalizedQuery = fabricQuery.trim();
   const { fabrics, loading: fabricsLoading, error: fabricsError } = useFabrics({
     tone: toneFilter === "all" ? undefined : toneFilter,
     sort: "created_at",
     order: sort === "date_desc" ? "desc" : "asc",
+    search: normalizedQuery || undefined,
   });
 
   const price = computePrice(config, suits);
-  const fabricsNormalized = fabrics.length
-    ? fabrics.map((x: any) => ({ ...x, id: String(x.id) }))
-    : fallbackFabrics.map((fabric) => ({
-        ...fabric,
-        id: String(fabric.id),
-        price: (fabric as any).price ?? 0,
-        tone: (fabric as any).tone ?? "medium",
-      }));
-  const normalizedQuery = fabricQuery.trim().toLowerCase();
+  const fabricsNormalized = (fabrics || []).map((fabric: any) => ({
+    ...fabric,
+    id: String(fabric.id),
+    price: (fabric as any).price ?? 0,
+    tone: (fabric as any).tone ?? "medium",
+  }));
   const filteredFabrics = normalizedQuery
     ? fabricsNormalized.filter((fabric: any) => {
         const name = String(fabric.name || "").toLowerCase();
         const code = String(fabric.code || "").toLowerCase();
-        return name.includes(normalizedQuery) || code.includes(normalizedQuery);
+        return name.includes(normalizedQuery.toLowerCase()) || code.includes(normalizedQuery.toLowerCase());
       })
     : fabricsNormalized;
   const fabricPrice = fabricsNormalized.find((f: any) => f.id === config.colorId)?.price ?? 0;
+
+  const [lineItems, setLineItems] = useState<PriceLine[]>([]);
+  const [newCustomLabel, setNewCustomLabel] = useState("");
+  const [newCustomPrice, setNewCustomPrice] = useState("");
+
+  const priceTotal = useMemo(
+    () => lineItems.reduce((sum, item) => sum + (Number.isFinite(item.price) ? item.price : 0), 0),
+    [lineItems]
+  );
+
+  useEffect(() => {
+    const baseItems: PriceLine[] = [
+      ...price.items.map((item) => ({ label: item.label, price: item.price, type: "base" as const })),
+      { label: "Tkanina", price: Number(fabricPrice) || 0, type: "fabric" as const },
+    ];
+
+    setLineItems((prev) => {
+      const customItems = prev.filter((item) => item.type === "custom");
+      const merged = baseItems.map((item) => {
+        const existing = prev.find((p) => p.label === item.label && p.type === item.type);
+        return existing ? { ...item, price: existing.price } : item;
+      });
+      return [...merged, ...customItems];
+    });
+  }, [price.items, fabricPrice]);
+
+  const handleAddCustomItem = () => {
+    if (!newCustomLabel.trim()) return;
+    const parsedPrice = Number(newCustomPrice);
+    setLineItems((prev) => [
+      ...prev,
+      { label: newCustomLabel.trim(), price: Number.isFinite(parsedPrice) ? parsedPrice : 0, type: "custom" },
+    ]);
+    setNewCustomLabel("");
+    setNewCustomPrice("");
+  };
 
   const uploadUrl = (() => {
     const base = getBackendBase();
@@ -76,9 +113,10 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             const active = selectedId === option.id;
             return (
               <button
+                type="button"
                 key={option.id}
                 onClick={() => onSelect(option.id)}
-                className={`rounded-full border px-3 py-1.5 text-[10px] font-medium tracking-wide transition sm:px-3.5 sm:text-[11px] ${
+                className={`touch-manipulation rounded-full border px-3 py-1.5 text-[10px] font-medium tracking-wide transition sm:px-3.5 sm:text-[11px] ${
                   active
                     ? "border-gray-900 bg-gray-900 text-white shadow-sm"
                     : "border-transparent bg-white/60 text-gray-600 hover:border-gray-300 hover:bg-white"
@@ -122,9 +160,10 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
               const isActive = activeTab === tab;
               return (
                 <button
+                  type="button"
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex min-w-[220px] flex-shrink-0 snap-center items-center justify-between rounded-2xl border px-3 py-2.5 text-left text-[13px] transition sm:min-w-0 sm:px-4 sm:py-3 ${
+                  className={`touch-manipulation flex min-w-[220px] flex-shrink-0 snap-center items-center justify-between rounded-2xl border px-3 py-2.5 text-left text-[13px] transition sm:min-w-0 sm:px-4 sm:py-3 ${
                     isActive
                       ? "border-gray-900 bg-white text-gray-900 shadow-inner"
                       : "border-transparent bg-white/40 text-gray-500 hover:border-gray-200 hover:bg-white/70"
@@ -155,6 +194,59 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
               <div>{fabricPrice} EUR</div>
             </div>
             <p className="mt-2 text-[11px] text-gray-500">Indikativna cena, PDV uključen.</p>
+          </div>
+
+          <div className="space-y-4 rounded-3xl border border-white/60 bg-white/80 p-4 shadow-sm sm:p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-800">Stavke i cene</h3>
+              <span className="text-xs text-gray-500">Ukupno: {priceTotal} EUR</span>
+            </div>
+            <div className="space-y-3">
+              {lineItems.map((item, idx) => (
+                <div key={`${item.type}-${item.label}-${idx}`} className="grid grid-cols-[1fr,110px] items-center gap-3">
+                  <div>
+                    <p className="text-[12px] font-medium text-gray-800">{item.label}</p>
+                    <p className="text-[11px] text-gray-500">{item.type === "custom" ? "Custom" : "Automatski"}</p>
+                  </div>
+                  <input
+                    type="number"
+                    value={item.price}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      setLineItems((prev) =>
+                        prev.map((p, pIdx) => (pIdx === idx ? { ...p, price: Number.isFinite(value) ? value : 0 } : p))
+                      );
+                    }}
+                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-right text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-[1fr,110px] items-center gap-3">
+              <input
+                type="text"
+                placeholder="Naziv custom stavke"
+                value={newCustomLabel}
+                onChange={(e) => setNewCustomLabel(e.target.value)}
+                className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  placeholder="Cena"
+                  value={newCustomPrice}
+                  onChange={(e) => setNewCustomPrice(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomItem}
+                  className="touch-manipulation rounded-xl bg-gray-900 px-3 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-gray-800"
+                >
+                  Dodaj
+                </button>
+              </div>
+            </div>
           </div>
 
           {activeTab === "FABRIC" && (
@@ -207,9 +299,10 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                     const isActive = config.colorId === fabric.id;
                     return (
                       <button
+                        type="button"
                         key={fabric.id}
                         onClick={() => dispatch({ type: "SET_COLOR", payload: fabric.id })}
-                        className={`group overflow-hidden rounded-2xl border text-left transition ${
+                        className={`touch-manipulation group overflow-hidden rounded-2xl border text-left transition ${
                           isActive ? "border-gray-900 shadow-lg" : "border-gray-200 hover:border-gray-400"
                         }`}
                       >
@@ -308,8 +401,9 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                       <p className="text-[11px] text-gray-500">Koristi belu košulju za jasniji prikaz slojeva.</p>
                     </div>
                     <button
+                      type="button"
                       onClick={() => dispatch({ type: "TOGGLE_SHIRT" })}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                      className={`touch-manipulation rounded-full px-3 py-1 text-xs font-semibold transition ${
                         config.showShirt ? "bg-gray-900 text-white" : "border border-gray-300 text-gray-600"
                       }`}
                     >
@@ -337,11 +431,17 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 
         <div className="mt-8">
           <button
+            type="button"
             onClick={() => {
+              const payload = { config, lineItems, total: priceTotal };
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("suitOrder", JSON.stringify(payload));
+              }
               const url = new URL(window.location.origin + "/custom-suits/measure");
+              url.searchParams.set("config", btoa(unescape(encodeURIComponent(JSON.stringify(config)))));
               window.location.href = url.toString();
             }}
-            className="w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-800"
+            className="touch-manipulation w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-800"
           >
             Nastavi na merenje
           </button>
