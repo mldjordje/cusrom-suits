@@ -8,16 +8,16 @@ import Header from "./components/landing/Header";
 import HeroSection from "./components/landing/HeroSection";
 
 const aboutText = [
-  "Santos & Santorini nastaje 2007. u Nišu iz želje da odelo bude lični ritual, a ne jednokratna kupovina.",
-  "Porodični atelier danas vodi ceo proces — od prve mere do poslednjeg šava — sa istim fokusom na preciznost i mirnu eleganciju.",
-  "Kroj, tkanina i završna obrada biraju se sporo, uz konsultacije sa timom koji čuva diskreciju i prepoznatljiv S&S potpis.",
+  "Santos & Santorini nastaje 2007. u Nišu iz želje da odelo bude lični ritual, ne jednokratna kupovina.",
+  "Porodični atelier vodi ceo proces — od prve mere do poslednjeg šava — sa istim fokusom na preciznost i mirnu eleganciju.",
+  "Kroj, tkanina i završna obrada biraju se sporo, uz diskreciju i prepoznatljiv S&S potpis.",
 ];
 
 const galleryItems = [
   {
     id: "odela",
-    title: "Nova kolekcija odela",
-    copy: "Precizni krojevi, ravne linije i konfigurator koji prikazuje svaki šav u realnom vremenu.",
+    title: "Nova linija odela",
+    copy: "Ravne linije, precizni šavovi i konfigurator koji pokazuje svaku promenu u realnom vremenu.",
     image: "/img/odela2.jpg",
     alt: "Model u novoj kolekciji odela Santos & Santorini",
     href: "/custom-suits",
@@ -25,7 +25,7 @@ const galleryItems = [
   {
     id: "obuca",
     title: "Premium obuća",
-    copy: "Italijanska koža ručno bojena u slojevima, usklađena sa odelom za ravnotežu linije i tona.",
+    copy: "Italijanska koža bojena ručno, sloj po sloj, za ravnotežu linije i tona uz odelo.",
     image: "/img/obuca.jpg",
     alt: "Premium kožna obuća Santos & Santorini",
     href: "/web-shop",
@@ -89,7 +89,7 @@ export default function Home() {
         >
           <div className="space-y-2">
             <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">O nama</p>
-            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretan atelier, jasna estetika</h2>
+            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretan atelier. Jasna estetika.</h2>
           </div>
           <div className="grid gap-6 text-sm text-[#4a403b] sm:grid-cols-2 sm:text-base">
             {aboutText.map((paragraph, index) => (
@@ -156,10 +156,9 @@ export default function Home() {
         >
           <div className="space-y-4">
             <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">Kontakt</p>
-            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretna podrška i rezervacije</h2>
+            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Podrška i rezervacije</h2>
             <p className="text-sm text-[#4a403b]">
-              Naš tim vas vodi kroz izbor tkanina, stilova i aksesoara uživo ili preko Custom Suits konfiguratora. Zakažite termin za
-              meru ili pitajte bilo šta — odgovor stiže u roku od jednog radnog dana.
+              Tim vas vodi kroz izbor tkanina, stilova i aksesoara uživo ili putem Custom Suits konfiguratora. Termini i odgovori stižu u roku od jednog radnog dana.
             </p>
             <div className="grid gap-4 sm:grid-cols-3">
               {contactInfo.map((item) => (
