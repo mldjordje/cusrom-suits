@@ -14,9 +14,9 @@ const heroImageSections = [
     image: "/img/hero.jpg",
     kicker: "Signature atelier",
     title: "Santos & Santorini Bespoke",
-    subtitle: "Dizajniraj odelo koje prica tvoju pricu",
+    subtitle: "Odelo koje ostavlja utisak bez viška reči",
     description:
-      "Privatne probe, luksuzne tkanine i crveni detalji vode te od prve mere do finalnog peglanja kako bi svako odelo imalo prepoznatljiv potpis.",
+      "Privatne probe, birane tkanine i crvena linija potpisuju svaki model. Ti vodiš izbor, mi držimo formu.",
     primary: { label: "Zakazi kreiranje", href: "/custom-suits" },
     secondary: { label: "Upoznaj stilistu", href: "#kontakt" },
   },
@@ -27,7 +27,7 @@ const heroImageSections = [
     title: "Crvene linije limited kolekcije",
     subtitle: "Akcenti inspirisani logoom Santosa",
     description:
-      "Kombinujemo prirodne tkanine sa rucno bojenim detaljima u Bordeaux inspiraciji da bi svaki model ostao jedinstven i spreman za scenu.",
+      "Prirodne tkanine i ručno bojeni detalji u Bordeaux tonu daju čist, snažan kontrast spreman za scenu.",
     primary: { label: "Pogledaj limited drop", href: "/web-shop" },
     secondary: { label: "Zatrazi konsultaciju", href: "#kontakt" },
   },
@@ -141,9 +141,9 @@ const VideoHero = () => {
       <div className="relative z-10 flex min-h-[100svh] items-center px-6 pb-16 pt-24 sm:px-12 lg:px-24">
         <div className="max-w-3xl space-y-6">
           <p className="text-[11px] uppercase tracking-[0.55em] text-[#f7ddd5]">Video lookbook</p>
-          <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Dizajniraj odelo. Mi vodimo svaki detalj.</h1>
+          <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Dizajniraj odelo. Mi čuvamo liniju.</h1>
           <p className="text-base text-white/85 sm:text-lg">
-            Filmski uvod prikazuje emociju Santosa dok nasi majstori vode od prve skice do finalnog fittinga i cuvaju fokus na tvom stilu.
+            Kratak film vodi kroz skicu, probu i završno peglanje. U fokusu su mirne siluete i precizan rad majstora.
           </p>
           <div className="flex flex-wrap gap-4 pt-4">
             <Link

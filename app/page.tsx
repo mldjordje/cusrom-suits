@@ -8,16 +8,16 @@ import Header from "./components/landing/Header";
 import HeroSection from "./components/landing/HeroSection";
 
 const aboutText = [
-  "Vizijom osnivača da muškarci zaslužuju da uživaju u garderobi koju nose, u Nišu 2007. nastaje Santos & Santorini.",
-  "Porodična radionica prerasta u preduzeće 2013. године, registrovano u Zavodu za intelektualnu svojину и препознато као реномирани српски бренд.",
-  "Naše proizvode ističu autentičan kroj, beskompromisan kvalitet i lepota detalja koja oslikava posvećenost svakog člana S&S porodice.",
+  "Santos & Santorini nastaje 2007. u Nišu iz želje da odelo bude lični ritual, a ne jednokratna kupovina.",
+  "Porodični atelier danas vodi ceo proces — od prve mere do poslednjeg šava — sa istim fokusom na preciznost i mirnu eleganciju.",
+  "Kroj, tkanina i završna obrada biraju se sporo, uz konsultacije sa timom koji čuva diskreciju i prepoznatljiv S&S potpis.",
 ];
 
 const galleryItems = [
   {
     id: "odela",
     title: "Nova kolekcija odela",
-    copy: "Ravnomerna geometrija krojeva, luksuzne teksture i digitalni konfigurator koji prikazuje svaki šav u realnom vremenu.",
+    copy: "Precizni krojevi, ravne linije i konfigurator koji prikazuje svaki šav u realnom vremenu.",
     image: "/img/odela2.jpg",
     alt: "Model u novoj kolekciji odela Santos & Santorini",
     href: "/custom-suits",
@@ -25,7 +25,7 @@ const galleryItems = [
   {
     id: "obuca",
     title: "Premium obuća",
-    copy: "Italijanska koža, ručno bojena u slojevima, usklađena sa odelom za harmoničnu siluetu od glave do pete.",
+    copy: "Italijanska koža ručno bojena u slojevima, usklađena sa odelom za ravnotežu linije i tona.",
     image: "/img/obuca.jpg",
     alt: "Premium kožna obuća Santos & Santorini",
     href: "/web-shop",
@@ -89,7 +89,7 @@ export default function Home() {
         >
           <div className="space-y-2">
             <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">O nama</p>
-            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Brend nastao iz porodične radionice</h2>
+            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretan atelier, jasna estetika</h2>
           </div>
           <div className="grid gap-6 text-sm text-[#4a403b] sm:grid-cols-2 sm:text-base">
             {aboutText.map((paragraph, index) => (
@@ -172,8 +172,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col rounded-[36px] border border-[#f4e6de] bg-[#fffdfb] p-6">
             <p className="text-sm text-[#4a403b]">
-              Preferirate digitalni pristup? Pređite direktno u konfigurator kako biste uživo videli svaki sloj odela dok paralelno
-              komunicirate sa stilistom.
+              Preferirate digitalni pristup? Otvorite konfigurator, pratite kako se odelo sklapa i javite nam se u istoj sesiji.
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <Link
