@@ -25,7 +25,7 @@ const heroImageSections = [
 
 type HeroImageBlockProps = (typeof heroImageSections)[number] & { priority?: boolean };
 
-const HeroImageBlock = ({ image, title, primary, secondary, priority }: HeroImageBlockProps) => {
+const HeroImageBlock = ({ image, title, primary, priority }: HeroImageBlockProps) => {
   const [loaded, setLoaded] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
 
@@ -77,14 +77,6 @@ const HeroImageBlock = ({ image, title, primary, secondary, priority }: HeroImag
           >
             {primary.label}
           </Link>
-          {secondary && (
-            <Link
-              href={secondary.href}
-              className="min-w-[180px] rounded-full border border-white/60 px-8 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-white transition hover:bg-white/10"
-            >
-              {secondary.label}
-            </Link>
-          )}
         </div>
       </div>
     </section>
