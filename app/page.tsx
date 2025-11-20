@@ -3,6 +3,7 @@
 import { motion, type Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import Footer from "./components/landing/Footer";
 import Header from "./components/landing/Header";
 import HeroSection from "./components/landing/HeroSection";
@@ -74,8 +75,31 @@ const contactVariants: Variants = {
 };
 
 export default function Home() {
+  const [showPreloader, setShowPreloader] = useState(true);
+
+  useEffect(() => {
+    const hideLoader = () => setShowPreloader(false);
+    const timer = window.setTimeout(hideLoader, 1800);
+    window.addEventListener("load", hideLoader);
+    return () => {
+      window.removeEventListener("load", hideLoader);
+      clearTimeout(timer);
+    };
+  }, []);
+
   return (
     <div className="min-h-screen bg-[#f8f6f2] text-[#1b1b1b]">
+      {showPreloader && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-[#0f0907]">
+          <div className="flex flex-col items-center gap-4 text-center text-white">
+            <Image src="/img/logo.png" alt="Santos & Santorini" width={96} height={96} className="h-20 w-20 object-contain" />
+            <div className="flex items-center gap-3 text-xs uppercase tracking-[0.35em] text-white/80">
+              <span className="h-5 w-5 animate-spin rounded-full border border-white/60 border-t-transparent" aria-hidden="true" />
+              <span>Učitavanje</span>
+            </div>
+          </div>
+        </div>
+      )}
       <Header />
       <HeroSection />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-24 px-4 pb-28 pt-16 sm:px-6 lg:px-8">
