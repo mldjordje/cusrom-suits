@@ -82,6 +82,38 @@ export default function Home() {
       <HeroSection />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-24 px-4 pb-28 pt-16 sm:px-6 lg:px-8">
         <motion.section
+          className="grid gap-8 lg:grid-cols-2"
+          variants={galleryContainer}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.25 }}
+        >
+          {galleryItems.map((item) => (
+            <motion.article
+              key={item.id}
+              variants={galleryItem}
+              className="relative overflow-hidden rounded-[48px] border border-[#f3e1d9] bg-white shadow-[0_35px_120px_rgba(0,0,0,0.12)]"
+            >
+              <div className="relative h-[560px] w-full sm:h-[620px]">
+                <Image src={item.image} alt={item.alt} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
+                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/80" aria-hidden="true" />
+              </div>
+              <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#080303]/70 via-transparent to-transparent p-10 text-white">
+                <p className="text-[11px] uppercase tracking-[0.35em] text-[#ffdcd2]">S&S kolekcija</p>
+                <h3 className="mt-3 text-3xl font-semibold">{item.title}</h3>
+                <p className="mt-3 max-w-xl text-sm text-white/85">{item.copy}</p>
+                <Link
+                  href={item.href}
+                  className="mt-6 inline-flex items-center justify-center rounded-full bg-white px-6 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#1c1c1c] transition hover:bg-[#f8f6f2]"
+                >
+                  {item.ctaLabel ?? "Pogledaj"}
+                </Link>
+              </div>
+            </motion.article>
+          ))}
+        </motion.section>
+
+        <motion.section
           id="o-nama"
           className="space-y-8 rounded-[48px] border border-[#f4e6de] bg-white/90 p-8 shadow-[0_25px_80px_rgba(15,23,42,0.07)]"
           initial="hidden"
@@ -114,38 +146,6 @@ export default function Home() {
               Poseti web shop
             </Link>
           </div>
-        </motion.section>
-
-        <motion.section
-          className="grid gap-8 lg:grid-cols-2"
-          variants={galleryContainer}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.25 }}
-        >
-          {galleryItems.map((item) => (
-            <motion.article
-              key={item.id}
-              variants={galleryItem}
-              className="relative overflow-hidden rounded-[48px] border border-[#f3e1d9] bg-white shadow-[0_35px_120px_rgba(0,0,0,0.12)]"
-            >
-              <div className="relative h-[560px] w-full sm:h-[620px]">
-                <Image src={item.image} alt={item.alt} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/80" aria-hidden="true" />
-              </div>
-              <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#080303]/70 via-transparent to-transparent p-10 text-white">
-                <p className="text-[11px] uppercase tracking-[0.35em] text-[#ffdcd2]">S&S kolekcija</p>
-                <h3 className="mt-3 text-3xl font-semibold">{item.title}</h3>
-                <p className="mt-3 max-w-xl text-sm text-white/85">{item.copy}</p>
-                <Link
-                  href={item.href}
-                  className="mt-6 inline-flex items-center justify-center rounded-full bg-white px-6 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#1c1c1c] transition hover:bg-[#f8f6f2]"
-                >
-                  {item.ctaLabel ?? "Pogledaj"}
-                </Link>
-              </div>
-            </motion.article>
-          ))}
         </motion.section>
 
         <motion.section
