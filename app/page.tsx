@@ -20,7 +20,7 @@ const galleryItems = [
     copy: "Ravnomerna geometrija krojeva, luksuzne teksture i digitalni konfigurator koji prikazuje svaki šav u realnom vremenu.",
     image: "/img/odela2.jpg",
     alt: "Model u novoj kolekciji odela Santos & Santorini",
-    href: "/custom-suits",
+    href: "https://santos.rs/Ode%C4%87a",
   },
   {
     id: "obuca",
@@ -28,7 +28,7 @@ const galleryItems = [
     copy: "Italijanska koža, ručno bojena u slojevima, usklađena sa odelom za harmoničnu siluetu od glave do pete.",
     image: "/img/obuca.jpg",
     alt: "Premium kožna obuća Santos & Santorini",
-    href: "/web-shop",
+    href: "https://santos.rs/Obu%C4%87a",
   },
 ];
 

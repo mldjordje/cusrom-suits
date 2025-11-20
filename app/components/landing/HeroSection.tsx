@@ -12,30 +12,22 @@ const heroImageSections = [
   {
     id: "atelier-core",
     image: "/img/hero.jpg",
-    kicker: "Signature atelier",
     title: "Santos & Santorini Bespoke",
-    subtitle: "Dizajniraj odelo koje prica tvoju pricu",
-    description:
-      "Privatne probe, luksuzne tkanine i crveni detalji vode te od prve mere do finalnog peglanja kako bi svako odelo imalo prepoznatljiv potpis.",
-    primary: { label: "Zakazi kreiranje", href: "/custom-suits" },
+    primary: { label: "Zakazi kreiranje", href: "https://santos.rs/Ode%C4%87a" },
     secondary: { label: "Upoznaj stilistu", href: "#kontakt" },
   },
   {
     id: "atelier-capsule",
     image: "/img/hero2.jpg",
-    kicker: "Crimson capsule",
     title: "Crvene linije limited kolekcije",
-    subtitle: "Akcenti inspirisani logoom Santosa",
-    description:
-      "Kombinujemo prirodne tkanine sa rucno bojenim detaljima u Bordeaux inspiraciji da bi svaki model ostao jedinstven i spreman za scenu.",
-    primary: { label: "Pogledaj limited drop", href: "/web-shop" },
+    primary: { label: "Pogledaj limited drop", href: "https://santos.rs/Ode%C4%87a" },
     secondary: { label: "Zatrazi konsultaciju", href: "#kontakt" },
   },
 ];
 
 type HeroImageBlockProps = (typeof heroImageSections)[number] & { priority?: boolean };
 
-const HeroImageBlock = ({ image, kicker, title, subtitle, description, primary, secondary, priority }: HeroImageBlockProps) => {
+const HeroImageBlock = ({ image, title, primary, secondary, priority }: HeroImageBlockProps) => {
   const [loaded, setLoaded] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
 
@@ -79,12 +71,7 @@ const HeroImageBlock = ({ image, kicker, title, subtitle, description, primary, 
       </AnimatePresence>
 
       <div className="relative z-10 mx-auto flex min-h-[90svh] w-full max-w-6xl flex-col justify-center gap-6 px-6 pb-16 pt-24 text-left text-white sm:px-10 lg:px-0">
-        <p className="text-[11px] uppercase tracking-[0.5em] text-[#f8e9e2]">{kicker}</p>
-        <div className="space-y-3">
-          <h2 className="text-4xl font-semibold tracking-[0.06em] sm:text-5xl lg:text-[56px]">{title}</h2>
-          <p className="text-lg text-white/85 sm:text-xl">{subtitle}</p>
-        </div>
-        <p className="max-w-3xl text-sm text-white/80 sm:text-base">{description}</p>
+        <h2 className="text-4xl font-semibold tracking-[0.06em] sm:text-5xl lg:text-[56px]">{title}</h2>
         <div className="flex flex-wrap gap-4 pt-2">
           <Link
             href={primary.href}
@@ -139,15 +126,11 @@ const VideoHero = () => {
       </div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/80 via-[#190808]/70 to-[#2b0e0e]/80" aria-hidden="true" />
       <div className="relative z-10 flex min-h-[100svh] items-center px-6 pb-16 pt-24 sm:px-12 lg:px-24">
-        <div className="max-w-3xl space-y-6">
-          <p className="text-[11px] uppercase tracking-[0.55em] text-[#f7ddd5]">Video lookbook</p>
+        <div className="max-w-3xl space-y-5">
           <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Dizajniraj odelo. Mi vodimo svaki detalj.</h1>
-          <p className="text-base text-white/85 sm:text-lg">
-            Filmski uvod prikazuje emociju Santosa dok nasi majstori vode od prve skice do finalnog fittinga i cuvaju fokus na tvom stilu.
-          </p>
-          <div className="flex flex-wrap gap-4 pt-4">
+          <div className="flex flex-wrap gap-4">
             <Link
-              href="/custom-suits"
+              href="https://santos.rs/Ode%C4%87a"
               className="rounded-full bg-white px-8 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-[#1c1c1c] transition hover:bg-[#f5ece7]"
             >
               Zapocni dizajn
