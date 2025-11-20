@@ -8,27 +8,29 @@ import Header from "./components/landing/Header";
 import HeroSection from "./components/landing/HeroSection";
 
 const aboutText = [
-  "Vizijom osnivača da muškarci zaslužuju da uživaju u garderobi koju nose, u Nišu 2007. nastaje Santos & Santorini.",
-  "Porodična radionica prerasta u preduzeće 2013. године, registrovano u Zavodu za intelektualnu svojину и препознато као реномирани српски бренд.",
-  "Naše proizvode ističu autentičan kroj, beskompromisan kvalitet i lepota detalja koja oslikava posvećenost svakog člana S&S porodice.",
+  "Sa idejom da muškarac treba da uživa u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nišu.",
+  "Od 2013. prerasta u brend prepoznat po modernim krojevima, biranim tkaninama i ručno negovanim detaljima.",
+  "Naši modeli spajaju tradiciju krojenja i savremeni dizajn — od prvog šava do finalne siluete.",
 ];
 
 const galleryItems = [
   {
     id: "odela",
-    title: "Nova kolekcija odela",
-    copy: "Ravnomerna geometrija krojeva, luksuzne teksture i digitalni konfigurator koji prikazuje svaki šav u realnom vremenu.",
+    title: "Kolekcija gotovih odela.",
+    copy: "Modeli iz naše kolekcije izrađeni su od luksuznih tkanina i spremni su za trenutnu kupovinu. Precizan kroj, udobnost i čista linija za svaku priliku.",
     image: "/img/odela2.jpg",
-    alt: "Model u novoj kolekciji odela Santos & Santorini",
-    href: "https://santos.rs/Ode%C4%87a",
+    alt: "Model u kolekciji gotovih odela Santos & Santorini",
+    href: "https://santos.rs/Odeća",
+    ctaLabel: "Pogledaj kolekciju",
   },
   {
     id: "obuca",
-    title: "Premium obuća",
-    copy: "Italijanska koža, ručno bojena u slojevima, usklađena sa odelom za harmoničnu siluetu od glave do pete.",
+    title: "Kožna obuća vrhunskog kvaliteta.",
+    copy: "Italijanska koža, ručno bojena u slojevima i oblikovana da prati liniju odela — za harmoničan, celokupan stil.",
     image: "/img/obuca.jpg",
     alt: "Premium kožna obuća Santos & Santorini",
-    href: "https://santos.rs/Obu%C4%87a",
+    href: "https://santos.rs/Obuća",
+    ctaLabel: "Pogledaj obuću",
   },
 ];
 
@@ -89,7 +91,7 @@ export default function Home() {
         >
           <div className="space-y-2">
             <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">O nama</p>
-            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Brend nastao iz porodične radionice</h2>
+            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Brend nastao iz porodične radionice.</h2>
           </div>
           <div className="grid gap-6 text-sm text-[#4a403b] sm:grid-cols-2 sm:text-base">
             {aboutText.map((paragraph, index) => (
@@ -139,7 +141,7 @@ export default function Home() {
                   href={item.href}
                   className="mt-6 inline-flex items-center justify-center rounded-full bg-white px-6 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#1c1c1c] transition hover:bg-[#f8f6f2]"
                 >
-                  Pogledaj više
+                  {item.ctaLabel ?? "Pogledaj"}
                 </Link>
               </div>
             </motion.article>
@@ -156,10 +158,9 @@ export default function Home() {
         >
           <div className="space-y-4">
             <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">Kontakt</p>
-            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretna podrška i rezervacije</h2>
+            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretna podrška i lične preporuke.</h2>
             <p className="text-sm text-[#4a403b]">
-              Naš tim vas vodi kroz izbor tkanina, stilova i aksesoara uživo ili preko Custom Suits konfiguratora. Zakažite termin za
-              meru ili pitajte bilo šta — odgovor stiže u roku od jednog radnog dana.
+              Naš tim vas vodi kroz izbor tkanina, krojeva i detalja — u showroomu ili online. Odgovaramo u roku od jednog radnog dana.
             </p>
             <div className="grid gap-4 sm:grid-cols-3">
               {contactInfo.map((item) => (
@@ -172,21 +173,20 @@ export default function Home() {
           </div>
           <div className="flex flex-col rounded-[36px] border border-[#f4e6de] bg-[#fffdfb] p-6">
             <p className="text-sm text-[#4a403b]">
-              Preferirate digitalni pristup? Pređite direktno u konfigurator kako biste uživo videli svaki sloj odela dok paralelno
-              komunicirate sa stilistom.
+              Preferirate digitalni pristup? Uđite u konfigurator i dizajnirajte svoje odelo dok komunicirate sa stilistom.
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <Link
                 href="/custom-suits"
                 className="w-full rounded-full bg-[#b3202a] px-6 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.35em] text-white transition hover:bg-[#8f0f1a]"
               >
-                Custom Suits
+                Otvori konfigurator
               </Link>
               <a
                 href="mailto:atelier@santos.rs"
                 className="w-full rounded-full border border-[#f4e6de] px-6 py-2 text-center text-[11px] font-semibold uppercase tracking-[0.35em] text-[#1b1b1b] transition hover:bg-[#fceeea]"
               >
-                Piši atelieru
+                Kontaktirajte nas
               </a>
             </div>
           </div>

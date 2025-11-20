@@ -12,16 +12,14 @@ const heroImageSections = [
   {
     id: "atelier-core",
     image: "/img/hero.jpg",
-    title: "Santos & Santorini Bespoke",
-    primary: { label: "Zakazi kreiranje", href: "https://santos.rs/Ode%C4%87a" },
-    secondary: { label: "Upoznaj stilistu", href: "#kontakt" },
+    title: "Odelo oblikovano samo za vas.",
+    primary: { label: "Zakaži termin", href: "/custom-suits" },
   },
   {
     id: "atelier-capsule",
     image: "/img/hero2.jpg",
-    title: "Crvene linije limited kolekcije",
-    primary: { label: "Pogledaj limited drop", href: "https://santos.rs/Ode%C4%87a" },
-    secondary: { label: "Zatrazi konsultaciju", href: "#kontakt" },
+    title: "Crvene linije — limitirana kolekcija.",
+    primary: { label: "Pogledaj kolekciju", href: "/web-shop" },
   },
 ];
 
@@ -127,19 +125,13 @@ const VideoHero = () => {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/80 via-[#190808]/70 to-[#2b0e0e]/80" aria-hidden="true" />
       <div className="relative z-10 flex min-h-[100svh] items-center px-6 pb-16 pt-24 sm:px-12 lg:px-24">
         <div className="max-w-3xl space-y-5">
-          <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Dizajniraj odelo. Mi vodimo svaki detalj.</h1>
+          <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Dizajniraj svoje odelo po meri.</h1>
           <div className="flex flex-wrap gap-4">
             <Link
-              href="https://santos.rs/Ode%C4%87a"
+              href="/custom-suits"
               className="rounded-full bg-white px-8 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-[#1c1c1c] transition hover:bg-[#f5ece7]"
             >
-              Zapocni dizajn
-            </Link>
-            <Link
-              href="#o-nama"
-              className="rounded-full border border-white/60 px-8 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-white transition hover:bg-white/10"
-            >
-              Poseti showroom
+              Započni dizajn
             </Link>
           </div>
         </div>
