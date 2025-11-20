@@ -1,6 +1,6 @@
 ﻿"use client";
 /* eslint-disable @next/next/no-img-element */
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Image from "next/image";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { computePrice } from "../utils/price";
@@ -9,6 +9,8 @@ import { getBackendBase } from "../utils/backend";
 import { useFabrics } from "../hooks/useFabrics";
 
 type Props = { config: SuitState; dispatch: React.Dispatch<any> };
+
+type PriceLine = { label: string; price: number; type: "base" | "fabric" | "custom" };
 
 const tabs = ["FABRIC", "STYLE", "ACCENTS", "MEASURE"] as const;
 const tabLabels: Record<(typeof tabs)[number], string> = {
@@ -49,6 +51,42 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
       })
     : fabricsNormalized;
   const fabricPrice = fabricsNormalized.find((f: any) => f.id === config.colorId)?.price ?? 0;
+
+  const [lineItems, setLineItems] = useState<PriceLine[]>([]);
+  const [newCustomLabel, setNewCustomLabel] = useState("");
+  const [newCustomPrice, setNewCustomPrice] = useState("");
+
+  const priceTotal = useMemo(
+    () => lineItems.reduce((sum, item) => sum + (Number.isFinite(item.price) ? item.price : 0), 0),
+    [lineItems]
+  );
+
+  useEffect(() => {
+    const baseItems: PriceLine[] = [
+      ...price.items.map((item) => ({ label: item.label, price: item.price, type: "base" as const })),
+      { label: "Tkanina", price: Number(fabricPrice) || 0, type: "fabric" as const },
+    ];
+
+    setLineItems((prev) => {
+      const customItems = prev.filter((item) => item.type === "custom");
+      const merged = baseItems.map((item) => {
+        const existing = prev.find((p) => p.label === item.label && p.type === item.type);
+        return existing ? { ...item, price: existing.price } : item;
+      });
+      return [...merged, ...customItems];
+    });
+  }, [price.items, fabricPrice]);
+
+  const handleAddCustomItem = () => {
+    if (!newCustomLabel.trim()) return;
+    const parsedPrice = Number(newCustomPrice);
+    setLineItems((prev) => [
+      ...prev,
+      { label: newCustomLabel.trim(), price: Number.isFinite(parsedPrice) ? parsedPrice : 0, type: "custom" },
+    ]);
+    setNewCustomLabel("");
+    setNewCustomPrice("");
+  };
 
   const uploadUrl = (() => {
     const base = getBackendBase();
@@ -155,6 +193,58 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
               <div>{fabricPrice} EUR</div>
             </div>
             <p className="mt-2 text-[11px] text-gray-500">Indikativna cena, PDV uključen.</p>
+          </div>
+
+          <div className="space-y-4 rounded-3xl border border-white/60 bg-white/80 p-4 shadow-sm sm:p-5">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-800">Stavke i cene</h3>
+              <span className="text-xs text-gray-500">Ukupno: {priceTotal} EUR</span>
+            </div>
+            <div className="space-y-3">
+              {lineItems.map((item, idx) => (
+                <div key={`${item.type}-${item.label}-${idx}`} className="grid grid-cols-[1fr,110px] items-center gap-3">
+                  <div>
+                    <p className="text-[12px] font-medium text-gray-800">{item.label}</p>
+                    <p className="text-[11px] text-gray-500">{item.type === "custom" ? "Custom" : "Automatski"}</p>
+                  </div>
+                  <input
+                    type="number"
+                    value={item.price}
+                    onChange={(e) => {
+                      const value = Number(e.target.value);
+                      setLineItems((prev) =>
+                        prev.map((p, pIdx) => (pIdx === idx ? { ...p, price: Number.isFinite(value) ? value : 0 } : p))
+                      );
+                    }}
+                    className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-right text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+                  />
+                </div>
+              ))}
+            </div>
+            <div className="grid grid-cols-[1fr,110px] items-center gap-3">
+              <input
+                type="text"
+                placeholder="Naziv custom stavke"
+                value={newCustomLabel}
+                onChange={(e) => setNewCustomLabel(e.target.value)}
+                className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+              />
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  placeholder="Cena"
+                  value={newCustomPrice}
+                  onChange={(e) => setNewCustomPrice(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 focus:border-gray-400 focus:outline-none"
+                />
+                <button
+                  onClick={handleAddCustomItem}
+                  className="rounded-xl bg-gray-900 px-3 py-2 text-xs font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-gray-800"
+                >
+                  Dodaj
+                </button>
+              </div>
+            </div>
           </div>
 
           {activeTab === "FABRIC" && (
@@ -338,7 +428,12 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
         <div className="mt-8">
           <button
             onClick={() => {
+              const payload = { config, lineItems, total: priceTotal };
+              if (typeof window !== "undefined") {
+                sessionStorage.setItem("suitOrder", JSON.stringify(payload));
+              }
               const url = new URL(window.location.origin + "/custom-suits/measure");
+              url.searchParams.set("config", btoa(unescape(encodeURIComponent(JSON.stringify(config)))));
               window.location.href = url.toString();
             }}
             className="w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-800"
