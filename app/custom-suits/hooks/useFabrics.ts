@@ -8,6 +8,7 @@ export type FabricQuery = {
   tone?: "light" | "medium" | "dark";
   sort?: string;
   order?: "asc" | "desc";
+  search?: string;
 };
 
 export type UseFabricsResult<T = any> = {
@@ -28,39 +29,49 @@ export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
     if (query?.tone) params.set("tone", query.tone);
     if (query?.sort) params.set("sort", query.sort);
     if (query?.order) params.set("order", query.order);
+    const normalizedSearch = query?.search?.trim();
+    if (normalizedSearch) params.set("search", normalizedSearch);
     return params.toString();
-  }, [query?.tone, query?.sort, query?.order]);
+  }, [query?.tone, query?.sort, query?.order, query?.search]);
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+
+    const controller = new AbortController();
     const base = getBackendBase();
     const url = `${base}fabrics.php${searchKey ? `?${searchKey}` : ""}`;
 
-    fetch(url, { cache: "no-store" })
-      .then((response) => response.json())
-      .then((payload) => {
-        if (cancelled) return;
+    const fetchData = async () => {
+      try {
+        const response = await fetch(url, { cache: "no-store", mode: "cors", signal: controller.signal });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+        const payload = await response.json();
+        if (cancelled || controller.signal.aborted) return;
         const list = Array.isArray(payload?.data) ? payload.data : [];
-        if (payload?.success && list.length) {
+        if (payload?.success) {
           setFabrics(list);
           setError(null);
         } else {
           setFabrics(fallbackList);
           setError(payload?.message || "Fallback na lokalne tkanine.");
         }
-      })
-      .catch((err) => {
-        if (cancelled) return;
+      } catch (err: any) {
+        if (cancelled || controller.signal.aborted) return;
         setFabrics(fallbackList);
         setError(err?.message || "Neuspelo učitavanje tkanina. Koristimo fallback.");
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false);
-      });
+      }
+    };
+
+    fetchData();
 
     return () => {
       cancelled = true;
+      controller.abort();
     };
   }, [fallbackList, searchKey]);
 
