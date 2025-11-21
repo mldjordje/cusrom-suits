@@ -8,10 +8,10 @@ export function useImagePreloader(urls: (string | undefined)[]) {
   useEffect(() => {
     let isMounted = true;
 
-    // 🔹 Filtriraj prazne vrednosti da izbegneš "undefined"
+    //  Filtriraj prazne vrednosti da izbegne "undefined"
     const validUrls = urls.filter((u): u is string => typeof u === "string" && u.trim().length > 0);
 
-    // Ako nema validnih URL-ova, odmah označi kao učitano
+    // Ako nema validnih URL-ova, odmah oznai kao uitano
     if (validUrls.length === 0) {
       setLoaded(true);
       return;
@@ -32,8 +32,8 @@ export function useImagePreloader(urls: (string | undefined)[]) {
         if (isMounted) setLoaded(true);
       })
       .catch((err) => {
-        console.error("⚠️ Error preloading images:", err);
-        if (isMounted) setLoaded(true); // i dalje prikaži UI
+        console.error(" Error preloading images:", err);
+        if (isMounted) setLoaded(true); // i dalje prikai UI
       });
 
     return () => {

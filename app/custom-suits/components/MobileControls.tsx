@@ -7,7 +7,7 @@ import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
 import { computePrice } from "../utils/price";
 
-type Panel = "FABRIC" | "STYLE" | "ACCENTS";
+type Panel = "FABRIC" | "STYLE" | "ACCENTS" | "MEASURE";
 
 type Props = {
   config: SuitState;
@@ -18,6 +18,7 @@ const NAV = [
   { id: "FABRIC" as const, label: "Fabric", icon: "/custom-suits/icons/iconfabric.png" },
   { id: "STYLE" as const, label: "Style", icon: "/custom-suits/icons/iconstyle.png" },
   { id: "ACCENTS" as const, label: "Accents", icon: "/custom-suits/icons/iconaccents.png" },
+  { id: "MEASURE" as const, label: "Measure", icon: "/custom-suits/icons/iconstyle.png" },
 ];
 
 const toneLabels: Record<"all" | "light" | "medium" | "dark", string> = {
@@ -120,7 +121,7 @@ const FabricCard = ({
         {active && <Badge label="Selected" />}
       </div>
       <p className="text-[11px] text-gray-500">
-        {fabric.price ?? 0} EUR • {fabric.tone || "medium"} tone
+        {fabric.price ?? 0} EUR - {fabric.tone || "medium"} tone
       </p>
       {fabric.code && <p className="text-[11px] text-gray-400">Code: {fabric.code}</p>}
     </div>
@@ -333,7 +334,7 @@ function MobileControls({ config, dispatch }: Props) {
         <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
           <div>
             <p className="text-sm font-semibold text-gray-800">Show shirt layer</p>
-            <p className="text-[11px] text-gray-500">Helpful for visualizing lapel + pocket lines.</p>
+            <p className="text-[11px] text-gray-500">Helpful for visualizing lapel and pocket lines.</p>
           </div>
           <button
             onClick={() => dispatch({ type: "TOGGLE_SHIRT" })}
@@ -346,8 +347,29 @@ function MobileControls({ config, dispatch }: Props) {
         </div>
 
         <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-3 text-[12px] text-gray-600">
-          Personal monogram & button accents are coming soon. Tell us what you need and we’ll prioritize it.
+          Personal monogram and button accents are coming soon. Tell us what you need and we'll prioritize it.
         </div>
+      </div>
+    </>
+  );
+
+  const renderMeasurePanel = () => (
+    <>
+      <DrawerHeader title="Measure" onClose={() => setActivePanel(null)} />
+      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-14">
+        <h3 className="text-lg font-semibold text-gray-900">Mere i prilagodjavanje</h3>
+        <p className="text-sm text-gray-600">
+          Za detaljno uklapanje nastavite ka merenju. Mozete uneti mere ili zakazati termin sa savetnikom.
+        </p>
+        <button
+          onClick={() => {
+            const url = new URL(window.location.origin + "/custom-suits/measure");
+            window.location.href = url.toString();
+          }}
+          className="w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-gray-800"
+        >
+          Nastavi na merenje
+        </button>
       </div>
     </>
   );
@@ -356,6 +378,7 @@ function MobileControls({ config, dispatch }: Props) {
     if (activePanel === "FABRIC") return renderFabricPanel();
     if (activePanel === "STYLE") return renderStylePanel();
     if (activePanel === "ACCENTS") return renderAccentsPanel();
+    if (activePanel === "MEASURE") return renderMeasurePanel();
     return null;
   })();
 
@@ -389,7 +412,7 @@ function MobileControls({ config, dispatch }: Props) {
                 <div>
                   <p className="text-sm font-semibold text-gray-900">Your Custom Suit</p>
                   <p className="text-[11px] text-gray-500">
-                    {price.total} EUR • Delivery in ~3 weeks
+                    {price.total} EUR - Delivery in ~3 weeks
                   </p>
                 </div>
                 <button className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00]">

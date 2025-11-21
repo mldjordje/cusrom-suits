@@ -36,10 +36,10 @@ export function useSuitConfigurator(
 ) {
   const reducer = (state: SuitState, action: Action): SuitState => {
     switch (action.type) {
-      // 🔹 Promena stila resetuje sve opcije povezane sa stilom
+      //  Promena stila resetuje sve opcije povezane sa stilom
       case "SET_STYLE":
         return {
-          ...state, // zadrži postojeću boju (tkaninu) kako bi ostala selektovana
+          ...state, // zadri postojeu boju (tkaninu) kako bi ostala selektovana
           styleId: action.payload,
           buttonId: undefined,
           materialId: undefined,
@@ -51,43 +51,43 @@ export function useSuitConfigurator(
           cuffId: undefined,
         };
 
-      // 🔹 Izbor boje/tkanine
+      //  Izbor boje/tkanine
       case "SET_COLOR":
         return { ...state, colorId: action.payload };
 
-      // 🔹 Izbor dugmadi (trenutno ne koristi se aktivno)
+      //  Izbor dugmadi (trenutno ne koristi se aktivno)
       case "SET_BUTTON":
         return { ...state, buttonId: action.payload };
 
-      // 🔹 Izbor materijala (nije aktivno odvojeno od tkanine za sada)
+      //  Izbor materijala (nije aktivno odvojeno od tkanine za sada)
       case "SET_MATERIAL":
         return { ...state, materialId: action.payload };
 
-      // 🔹 Izbor tipa revera
+      //  Izbor tipa revera
       case "SET_LAPEL":
         return {
           ...state,
           lapelId: action.payload,
-          lapelWidthId: undefined, // resetuj širinu revera kad se promeni tip
+          lapelWidthId: undefined, // resetuj irinu revera kad se promeni tip
         };
 
-      // 🔹 Izbor širine revera
+      //  Izbor irine revera
       case "SET_LAPEL_WIDTH":
         return { ...state, lapelWidthId: action.payload };
 
-      // 🔹 Izbor stila džepova
+      //  Izbor stila depova
       case "SET_POCKET":
         return { ...state, pocketId: action.payload };
 
-      // 🔹 Izbor unutrašnjosti sakoa
+      //  Izbor unutranjosti sakoa
       case "SET_INTERIOR":
         return { ...state, interiorId: action.payload };
 
-      // 🔹 Izbor opcije za grudni džep
+      //  Izbor opcije za grudni dep
       case "SET_BREAST_POCKET":
         return { ...state, breastPocketId: action.payload };
 
-      // 🔹 Izbor manžetni na pantalonama
+      //  Izbor manetni na pantalonama
       case "SET_CUFF":
         return { ...state, cuffId: action.payload };
 
@@ -97,7 +97,7 @@ export function useSuitConfigurator(
       case "SET_PANTS_PLEAT":
         return { ...state, pantsPleatId: action.payload };
 
-      // 🔹 Reset na početno stanje
+      //  Reset na poetno stanje
       case "RESET":
         return initial;
 

@@ -39,26 +39,26 @@ export default function MeasurePage() {
             <label className="text-sm">Visina (cm)
               <input className="mt-1 border rounded p-2 w-full" type="number" value={h as any} onChange={(e)=>setH(e.target.value?Number(e.target.value):"")} />
             </label>
-            <label className="text-sm">Težina (kg)
+            <label className="text-sm">Teina (kg)
               <input className="mt-1 border rounded p-2 w-full" type="number" value={w as any} onChange={(e)=>setW(e.target.value?Number(e.target.value):"")} />
             </label>
             <label className="text-sm">Godine
               <input className="mt-1 border rounded p-2 w-full" type="number" value={age as any} onChange={(e)=>setAge(e.target.value?Number(e.target.value):"")} />
             </label>
           </div>
-          <p className="text-xs text-[#666] mt-3">Preporuka se automatski računa i kasnije je možete izmeniti.</p>
+          <p className="text-xs text-[#666] mt-3">Preporuka se automatski rauna i kasnije je moete izmeniti.</p>
         </form>
         <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <h2 className="text-lg font-semibold mb-3">Preporučene mere</h2>
+          <h2 className="text-lg font-semibold mb-3">Preporuene mere</h2>
           {!reco ? (
-            <p className="text-sm text-[#777]">Unesite visinu i težinu.</p>
+            <p className="text-sm text-[#777]">Unesite visinu i teinu.</p>
           ) : (
             <ul className="text-sm space-y-2">
-              <li>Veličina: <b>{reco.size}</b></li>
+              <li>Veliina: <b>{reco.size}</b></li>
               <li>Grudi: <b>{reco.chest}</b> cm</li>
               <li>Struk: <b>{reco.waist}</b> cm</li>
               <li>Rukav: <b>{reco.sleeve}</b> cm</li>
-              <li>Dužina nogavice (inseam): <b>{reco.inseam}</b> cm</li>
+              <li>Duina nogavice (inseam): <b>{reco.inseam}</b> cm</li>
             </ul>
           )}
         </div>

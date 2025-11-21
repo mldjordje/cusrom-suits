@@ -1,56 +1,56 @@
-// 🔹 Osnovni sloj odela (deo slike)
+//  Osnovni sloj odela (deo slike)
 export type SuitLayer = {
   id: string;
   name: string;
   src: string;
 };
 
-// 🔹 Širina revera
+//  irina revera
 export type LapelWidth = {
   id: string;
   name: string;
   src: string;
 };
 
-// 🔹 Rever (lapel) – tip + širine
+//  Rever (lapel)  tip + irine
 export type LapelOption = {
   id: string;
   name: string;
   widths: LapelWidth[];
 };
 
-// 🔹 Tip za džepove
+//  Tip za depove
 export type PocketOption = {
   id: string;
   name: string;
   src: string;
 };
 
-// 🔹 Sloj za unutrašnjost (interior)
+//  Sloj za unutranjost (interior)
 export type InteriorOption = {
   id: string;
   name: string;
    src?: string; 
-  layers: SuitLayer[]; // svaki interior se sastoji od više slojeva
+  layers: SuitLayer[]; // svaki interior se sastoji od vie slojeva
   
 };
 
-// 🔹 Grudni džep
+//  Grudni dep
 export type BreastPocketOption = {
   id: string;
   name: string;
   src?: string;    
-  layers: SuitLayer[]; // podrška za više varijanti u budućnosti
+  layers: SuitLayer[]; // podrka za vie varijanti u budunosti
 };
 
-// 🔹 Krajevi nogavica (cuffs na pantalonama)
+//  Krajevi nogavica (cuffs na pantalonama)
 export type CuffOption = {
   id: string;
   name: string;
   src: string;
 };
 
-// 🔹 Glavni tip modela odela
+//  Glavni tip modela odela
 export type SuitModel = {
   id: string;
   name: string;
@@ -65,7 +65,7 @@ export type SuitModel = {
 };
 
 // ======================================================
-// 🔸 MODELI ODELA (Suit Models)
+//  MODELI ODELA (Suit Models)
 // ======================================================
 
 export const suits: SuitModel[] = [
@@ -615,7 +615,7 @@ export const suits: SuitModel[] = [
 ];
 
 // ======================================================
-// 🔸 FABRICS (teksture tkanina)
+//  FABRICS (teksture tkanina)
 // ======================================================
 
 export const fabrics = [

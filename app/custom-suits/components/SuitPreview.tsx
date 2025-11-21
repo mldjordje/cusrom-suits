@@ -424,7 +424,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   if (!selectedFabric) {
     return (
       <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
-        {fabricsLoading ? "Učitavanje tkanina..." : "Odaberi tkaninu da vidiš prikaz."}
+        {fabricsLoading ? "Uitavanje tkanina..." : "Odaberi tkaninu da vidi prikaz."}
       </div>
     );
   }

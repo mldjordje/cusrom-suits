@@ -33,11 +33,9 @@ export default function CustomSuitsPage() {
       <div className="mx-auto w-full max-w-5xl px-4 pb-6 pt-8 sm:px-6 lg:px-8">
         <div className="rounded-[26px] border border-white/60 bg-white/85 px-5 py-6 text-center shadow-[0_22px_70px_rgba(15,23,42,0.09)] ring-1 ring-black/5 backdrop-blur-sm sm:px-8">
           <p className="text-[10px] uppercase tracking-[0.35em] text-[#b3202a]">Santos & Santorini</p>
-          <h1 className="mt-2 text-2xl font-semibold leading-tight text-[#1c1c1c] sm:text-3xl">
-            Mobilni konfigurator odela
-          </h1>
+          <h1 className="mt-2 text-2xl font-semibold leading-tight text-[#1c1c1c] sm:text-3xl">Mobilni konfigurator odela</h1>
           <p className="mt-2 text-sm text-[#4a403b] sm:text-base">
-            Ostani u prikazu odela dok bira�� tkaninu, stil i detalje. Dizajn je optimizovan za telefon.
+            Ostani u prikazu odela dok biras tkaninu, stil i detalje. Dizajn je optimizovan za telefon.
           </p>
         </div>
       </div>
