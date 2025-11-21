@@ -347,7 +347,7 @@ function MobileControls({ config, dispatch }: Props) {
         </div>
 
         <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-3 text-[12px] text-gray-600">
-          Personal monogram and button accents are coming soon. Tell us what you need and we'll prioritize it.
+          Personal monogram and button accents are coming soon. Tell us what you need and we&apos;ll prioritize it.
         </div>
       </div>
     </>
