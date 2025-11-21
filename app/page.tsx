@@ -8,9 +8,9 @@ import Header from "./components/landing/Header";
 import HeroSection from "./components/landing/HeroSection";
 
 const aboutText = [
-  "Sa idejom da mu��karac treba da u�_iva u garderobi koju nosi, Santos & Santorini nastaje 2007. u Ni��u.",
-  "Od 2013. prerasta u brend prepoznat po modernim krojevima, biranim tkaninama i ru�?no negovanim detaljima.",
-  "Na��i modeli spajaju tradiciju krojenja i savremeni dizajn �?" od prvog ��ava do finalne siluete.",
+  "Sa idejom da muskarac treba da uziva u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nisu.",
+  "Od 2013. prerasta u brend prepoznat po modernim krojevima, biranim tkaninama i rucno negovanim detaljima.",
+  "Nasi modeli spajaju tradiciju krojenja i savremeni dizajn – od prvog sava do finalne siluete.",
 ];
 
 const campaignBlocks = [
@@ -18,18 +18,18 @@ const campaignBlocks = [
     id: "black-friday",
     label: "Black Friday Event",
     title: "Do 30% popusta",
-    copy: "Osve�_i svoju zimsku garderobu uz limitirane ponude.",
+    copy: "Osvezi zimsku garderobu uz limitirane ponude.",
     image: "/img/hero.jpg",
     ctas: [
-      { label: "Mu�_karci", href: "/web-shop" },
-      { label: "�?ene", href: "/web-shop" },
+      { label: "Muskarci", href: "/web-shop" },
+      { label: "Zene", href: "/web-shop" },
     ],
   },
   {
     id: "holiday-capsule",
     label: "Holiday Capsule",
-    title: "Kreiraj prazni�?ni set",
-    copy: "Blazeri, ko�_e i tregeri koji se uklapaju u sve sve�?ane prilike.",
+    title: "Kreiraj praznicni set",
+    copy: "Blazeri, koze i tregeri koji se uklapaju u sve svecane prilike.",
     image: "/img/hero2.jpg",
     ctas: [
       { label: "Lookbook", href: "/custom-suits" },
@@ -40,7 +40,7 @@ const campaignBlocks = [
     id: "gift-edit",
     label: "Gift Edit",
     title: "Pokloni za njega",
-    copy: "Kravate, maramice i ko�_ni kai�_evi koji zaokru�_uju stil.",
+    copy: "Kravate, maramice i kozni kaiševi koji zaokruzuju stil.",
     image: "/img/obuca.jpg",
     ctas: [
       { label: "Pokloni", href: "/web-shop" },
@@ -51,7 +51,7 @@ const campaignBlocks = [
     id: "outerwear",
     label: "Outerwear Staples",
     title: "Kaputi i sakoi",
-    copy: "Topline siluete, mnogo slojeva i precizan kroj za hladne dane.",
+    copy: "Topline siluete i precizan kroj za hladne dane.",
     image: "/img/odela2.jpg",
     ctas: [
       { label: "Jackets", href: "/web-shop" },
@@ -62,7 +62,7 @@ const campaignBlocks = [
     id: "new-arrivals",
     label: "New Arrivals",
     title: "Nova tura odela",
-    copy: "Najnoviji krojevi, sve�_e tkanine, spremno za probu.",
+    copy: "Najnoviji krojevi, sveže tkanine, spremno za probu.",
     image: "/img/odela.jpg",
     ctas: [
       { label: "Men", href: "/web-shop" },
@@ -74,7 +74,7 @@ const campaignBlocks = [
 const contactInfo = [
   { label: "Telefon", value: "+381 18 250 250" },
   { label: "Email", value: "atelier@santos.rs" },
-  { label: "Adresa", value: "Obrenovi��eva 10, Ni��" },
+  { label: "Adresa", value: "Obrenoviceva 10, Nis" },
 ];
 
 const stackVariants: Variants = {
@@ -166,7 +166,7 @@ export default function Home() {
         >
           <div className="space-y-2">
             <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">O nama</p>
-            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Brend nastao iz porodi�?ne radionice.</h2>
+            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Brend nastao iz porodicne radionice.</h2>
           </div>
           <div className="grid gap-6 text-sm text-[#4a403b] sm:grid-cols-2 sm:text-base">
             {aboutText.map((paragraph, index) => (
@@ -201,9 +201,9 @@ export default function Home() {
         >
           <div className="space-y-4">
             <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">Kontakt</p>
-            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretna podr��ka i li�?ne preporuke.</h2>
+            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretna podrska i licne preporuke.</h2>
             <p className="text-sm text-[#4a403b]">
-              Na�� tim vas vodi kroz izbor tkanina, krojeva i detalja �?" u showroomu ili online. Odgovaramo u roku od jednog radnog dana.
+              Nas tim vas vodi kroz izbor tkanina, krojeva i detalja – u showroomu ili online. Odgovaramo u roku od jednog radnog dana.
             </p>
             <div className="grid gap-4 sm:grid-cols-3">
               {contactInfo.map((item) => (
@@ -216,7 +216,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col rounded-[36px] border border-[#f4e6de] bg-[#fffdfb] p-6">
             <p className="text-sm text-[#4a403b]">
-              Preferirate digitalni pristup? U�`ite u konfigurator i dizajnirajte svoje odelo dok komunicirate sa stilistom.
+              Preferirate digitalni pristup? Udjite u konfigurator i dizajnirajte svoje odelo dok komunicirate sa stilistom.
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <Link
