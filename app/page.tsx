@@ -8,37 +8,91 @@ import Header from "./components/landing/Header";
 import HeroSection from "./components/landing/HeroSection";
 
 const aboutText = [
-  "Sa idejom da muškarac treba da uživa u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nišu.",
-  "Od 2013. prerasta u brend prepoznat po modernim krojevima, biranim tkaninama i ručno negovanim detaljima.",
-  "Naši modeli spajaju tradiciju krojenja i savremeni dizajn — od prvog šava do finalne siluete.",
+  "Sa idejom da mu��karac treba da u�_iva u garderobi koju nosi, Santos & Santorini nastaje 2007. u Ni��u.",
+  "Od 2013. prerasta u brend prepoznat po modernim krojevima, biranim tkaninama i ru�?no negovanim detaljima.",
+  "Na��i modeli spajaju tradiciju krojenja i savremeni dizajn �?" od prvog ��ava do finalne siluete.",
 ];
 
-const galleryItems = [
+const campaignBlocks = [
   {
-    id: "odela",
-    title: "Kolekcija gotovih odela.",
-    copy: "Modeli iz naše kolekcije izrađeni su od luksuznih tkanina i spremni su za trenutnu kupovinu. Precizan kroj, udobnost i čista linija za svaku priliku.",
-    image: "/img/odela2.jpg",
-    alt: "Model u kolekciji gotovih odela Santos & Santorini",
-    href: "https://santos.rs/Odeća",
-    ctaLabel: "Pogledaj kolekciju",
+    id: "black-friday",
+    label: "Black Friday Event",
+    title: "Do 30% popusta",
+    copy: "Osve�_i svoju zimsku garderobu uz limitirane ponude.",
+    image: "/img/hero.jpg",
+    ctas: [
+      { label: "Mu�_karci", href: "/web-shop" },
+      { label: "�?ene", href: "/web-shop" },
+    ],
   },
   {
-    id: "obuca",
-    title: "Kožna obuća vrhunskog kvaliteta.",
-    copy: "Italijanska koža, ručno bojena u slojevima i oblikovana da prati liniju odela — za harmoničan, celokupan stil.",
+    id: "holiday-capsule",
+    label: "Holiday Capsule",
+    title: "Kreiraj prazni�?ni set",
+    copy: "Blazeri, ko�_e i tregeri koji se uklapaju u sve sve�?ane prilike.",
+    image: "/img/hero2.jpg",
+    ctas: [
+      { label: "Lookbook", href: "/custom-suits" },
+      { label: "Shop sada", href: "/web-shop" },
+    ],
+  },
+  {
+    id: "gift-edit",
+    label: "Gift Edit",
+    title: "Pokloni za njega",
+    copy: "Kravate, maramice i ko�_ni kai�_evi koji zaokru�_uju stil.",
     image: "/img/obuca.jpg",
-    alt: "Premium kožna obuća Santos & Santorini",
-    href: "https://santos.rs/Obuća",
-    ctaLabel: "Pogledaj obuću",
+    ctas: [
+      { label: "Pokloni", href: "/web-shop" },
+      { label: "Detalji", href: "/custom-suits" },
+    ],
+  },
+  {
+    id: "outerwear",
+    label: "Outerwear Staples",
+    title: "Kaputi i sakoi",
+    copy: "Topline siluete, mnogo slojeva i precizan kroj za hladne dane.",
+    image: "/img/odela2.jpg",
+    ctas: [
+      { label: "Jackets", href: "/web-shop" },
+      { label: "Coats", href: "/web-shop" },
+    ],
+  },
+  {
+    id: "new-arrivals",
+    label: "New Arrivals",
+    title: "Nova tura odela",
+    copy: "Najnoviji krojevi, sve�_e tkanine, spremno za probu.",
+    image: "/img/odela.jpg",
+    ctas: [
+      { label: "Men", href: "/web-shop" },
+      { label: "Women", href: "/web-shop" },
+    ],
   },
 ];
 
 const contactInfo = [
   { label: "Telefon", value: "+381 18 250 250" },
   { label: "Email", value: "atelier@santos.rs" },
-  { label: "Adresa", value: "Obrenovićeva 10, Niš" },
+  { label: "Adresa", value: "Obrenovi��eva 10, Ni��" },
 ];
+
+const stackVariants: Variants = {
+  hidden: {},
+  visible: {
+    transition: { staggerChildren: 0.15 },
+  },
+};
+
+const cardVariant: Variants = {
+  hidden: { opacity: 0, y: 60, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.8, ease: [0.4, 0, 0.2, 1] },
+  },
+};
 
 const aboutVariants: Variants = {
   hidden: { opacity: 0, x: -50, scale: 0.97 },
@@ -46,22 +100,6 @@ const aboutVariants: Variants = {
     opacity: 1,
     x: 0,
     scale: 1,
-    transition: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
-  },
-};
-
-const galleryContainer: Variants = {
-  hidden: {},
-  visible: {
-    transition: { staggerChildren: 0.15 },
-  },
-};
-
-const galleryItem: Variants = {
-  hidden: { opacity: 0, y: 50 },
-  visible: {
-    opacity: 1,
-    y: 0,
     transition: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
   },
 };
@@ -80,34 +118,39 @@ export default function Home() {
     <div className="min-h-screen bg-[#f8f6f2] text-[#1b1b1b]">
       <Header />
       <HeroSection />
-      <main className="mx-auto flex w-full max-w-6xl flex-col gap-24 px-4 pb-28 pt-16 sm:px-6 lg:px-8">
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-20 px-4 pb-28 pt-16 sm:px-6 lg:px-8">
         <motion.section
-          className="grid gap-8 lg:grid-cols-2"
-          variants={galleryContainer}
+          className="flex flex-col gap-10"
+          variants={stackVariants}
           initial="hidden"
           whileInView="visible"
-          viewport={{ once: true, amount: 0.25 }}
+          viewport={{ once: true, amount: 0.2 }}
         >
-          {galleryItems.map((item) => (
+          {campaignBlocks.map((item) => (
             <motion.article
               key={item.id}
-              variants={galleryItem}
-              className="relative overflow-hidden rounded-[48px] border border-[#f3e1d9] bg-white shadow-[0_35px_120px_rgba(0,0,0,0.12)]"
+              variants={cardVariant}
+              className="relative min-h-[420px] overflow-hidden rounded-[36px] border border-[#f3e1d9] bg-[#0f0b0b] shadow-[0_30px_100px_rgba(0,0,0,0.14)]"
             >
-              <div className="relative h-[560px] w-full sm:h-[620px]">
-                <Image src={item.image} alt={item.alt} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
-                <div className="absolute inset-0 bg-gradient-to-b from-transparent via-black/40 to-black/80" aria-hidden="true" />
+              <div className="absolute inset-0">
+                <Image src={item.image} alt={item.title} fill sizes="100vw" className="object-cover object-center" priority />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" aria-hidden="true" />
               </div>
-              <div className="absolute inset-0 flex flex-col justify-end bg-gradient-to-t from-[#080303]/70 via-transparent to-transparent p-10 text-white">
-                <p className="text-[11px] uppercase tracking-[0.35em] text-[#ffdcd2]">S&S kolekcija</p>
-                <h3 className="mt-3 text-3xl font-semibold">{item.title}</h3>
-                <p className="mt-3 max-w-xl text-sm text-white/85">{item.copy}</p>
-                <Link
-                  href={item.href}
-                  className="mt-6 inline-flex items-center justify-center rounded-full bg-white px-6 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#1c1c1c] transition hover:bg-[#f8f6f2]"
-                >
-                  {item.ctaLabel ?? "Pogledaj"}
-                </Link>
+              <div className="relative z-10 flex h-full flex-col justify-end gap-3 px-8 pb-10 pt-12 text-white sm:px-12">
+                <p className="text-[10px] uppercase tracking-[0.4em] text-[#ffd9cf]">{item.label}</p>
+                <h3 className="text-3xl font-semibold leading-tight sm:text-4xl">{item.title}</h3>
+                {item.copy ? <p className="max-w-xl text-sm text-white/85">{item.copy}</p> : null}
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {item.ctas.map((cta) => (
+                    <Link
+                      key={cta.label}
+                      href={cta.href}
+                      className="rounded-full border border-white/70 bg-white/10 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-white hover:text-[#0f0f0f]"
+                    >
+                      {cta.label}
+                    </Link>
+                  ))}
+                </div>
               </div>
             </motion.article>
           ))}
@@ -123,7 +166,7 @@ export default function Home() {
         >
           <div className="space-y-2">
             <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">O nama</p>
-            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Brend nastao iz porodične radionice.</h2>
+            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Brend nastao iz porodi�?ne radionice.</h2>
           </div>
           <div className="grid gap-6 text-sm text-[#4a403b] sm:grid-cols-2 sm:text-base">
             {aboutText.map((paragraph, index) => (
@@ -158,9 +201,9 @@ export default function Home() {
         >
           <div className="space-y-4">
             <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">Kontakt</p>
-            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretna podrška i lične preporuke.</h2>
+            <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretna podr��ka i li�?ne preporuke.</h2>
             <p className="text-sm text-[#4a403b]">
-              Naš tim vas vodi kroz izbor tkanina, krojeva i detalja — u showroomu ili online. Odgovaramo u roku od jednog radnog dana.
+              Na�� tim vas vodi kroz izbor tkanina, krojeva i detalja �?" u showroomu ili online. Odgovaramo u roku od jednog radnog dana.
             </p>
             <div className="grid gap-4 sm:grid-cols-3">
               {contactInfo.map((item) => (
@@ -173,7 +216,7 @@ export default function Home() {
           </div>
           <div className="flex flex-col rounded-[36px] border border-[#f4e6de] bg-[#fffdfb] p-6">
             <p className="text-sm text-[#4a403b]">
-              Preferirate digitalni pristup? Uđite u konfigurator i dizajnirajte svoje odelo dok komunicirate sa stilistom.
+              Preferirate digitalni pristup? U�`ite u konfigurator i dizajnirajte svoje odelo dok komunicirate sa stilistom.
             </p>
             <div className="mt-6 flex flex-col gap-3">
               <Link

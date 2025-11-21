@@ -132,10 +132,41 @@ const VideoHero = () => {
   );
 };
 
+const BridgePromo = () => {
+  return (
+    <section className="bg-gradient-to-b from-[#f3f0eb] via-[#f7f4ef] to-[#f3f0eb] px-4 py-10 sm:px-8">
+      <div className="mx-auto flex w-full max-w-4xl justify-center">
+        <div className="relative w-full max-w-xl overflow-hidden rounded-[34px] border border-white/70 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.12)]">
+          <div className="relative h-[480px] w-full">
+            <Image src="/img/odela2.jpg" alt="Kolekcija gotovih odela" fill priority sizes="100vw" className="object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" aria-hidden="true" />
+          </div>
+          <div className="absolute inset-0 flex flex-col justify-end p-8 text-white">
+            <p className="text-[10px] uppercase tracking-[0.4em] text-[#fbd7cc]">S&S kolekcija</p>
+            <h3 className="mt-2 text-3xl font-semibold leading-tight">Kolekcija gotovih odela.</h3>
+            <p className="mt-2 max-w-md text-sm text-white/85">
+              Modeli su izra�?eni od luksuznih tkanina i spremni za kupovinu. Precizan kroj, udobnost i �?ista linija za svaku priliku.
+            </p>
+            <div className="mt-6">
+              <Link
+                href="https://santos.rs/Ode��a"
+                className="inline-flex items-center justify-center rounded-full bg-white px-6 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#1c1c1c] transition hover:bg-[#f5eee9]"
+              >
+                Pogledaj kolekciju
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const HeroSection = () => {
   return (
     <>
       <VideoHero />
+      <BridgePromo />
       {heroImageSections.map((section, index) => (
         <HeroImageBlock key={section.id} {...section} priority={index === 0} />
       ))}
