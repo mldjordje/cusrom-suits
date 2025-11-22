@@ -7,6 +7,8 @@ import Footer from "./components/landing/Footer";
 import Header from "./components/landing/Header";
 import HeroSection from "./components/landing/HeroSection";
 
+const webShopUrl = "https://santos.rs/Ode%C4%87a";
+
 const aboutText = [
   "Sa idejom da muskarac treba da uziva u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nisu.",
   "Od 2013. prerasta u brend prepoznat po modernim krojevima, biranim tkaninama i rucno negovanim detaljima.",
@@ -21,8 +23,8 @@ const campaignBlocks = [
     copy: "Osvezi zimsku garderobu uz limitirane ponude.",
     image: "/img/hero.jpg",
     ctas: [
-      { label: "Muskarci", href: "/web-shop" },
-      { label: "Zene", href: "/web-shop" },
+      { label: "Muskarci", href: webShopUrl },
+      { label: "Zene", href: webShopUrl },
     ],
   },
   {
@@ -33,7 +35,7 @@ const campaignBlocks = [
     image: "/img/hero2.jpg",
     ctas: [
       { label: "Lookbook", href: "/custom-suits" },
-      { label: "Shop sada", href: "/web-shop" },
+      { label: "Shop sada", href: webShopUrl },
     ],
   },
   {
@@ -43,7 +45,7 @@ const campaignBlocks = [
     copy: "Kravate, maramice i kozni kaiševi koji zaokruzuju stil.",
     image: "/img/obuca.jpg",
     ctas: [
-      { label: "Pokloni", href: "/web-shop" },
+      { label: "Pokloni", href: webShopUrl },
       { label: "Detalji", href: "/custom-suits" },
     ],
   },
@@ -54,8 +56,8 @@ const campaignBlocks = [
     copy: "Topline siluete i precizan kroj za hladne dane.",
     image: "/img/odela2.jpg",
     ctas: [
-      { label: "Jackets", href: "/web-shop" },
-      { label: "Coats", href: "/web-shop" },
+      { label: "Jackets", href: webShopUrl },
+      { label: "Coats", href: webShopUrl },
     ],
   },
   {
@@ -65,8 +67,8 @@ const campaignBlocks = [
     copy: "Najnoviji krojevi, sveže tkanine, spremno za probu.",
     image: "/img/odela.jpg",
     ctas: [
-      { label: "Men", href: "/web-shop" },
-      { label: "Women", href: "/web-shop" },
+      { label: "Men", href: webShopUrl },
+      { label: "Women", href: webShopUrl },
     ],
   },
 ];
@@ -183,7 +185,7 @@ export default function Home() {
               Otvori konfigurator
             </Link>
             <Link
-              href="/web-shop"
+              href={webShopUrl}
               className="rounded-full border border-[#f4e6de] bg-white px-6 py-2 text-[11px] uppercase tracking-[0.3em] text-[#1b1b1b] transition hover:bg-[#fceeea]"
             >
               Poseti web shop
