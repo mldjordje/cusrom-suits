@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
@@ -162,6 +163,7 @@ const Drawer = ({
 };
 
 function MobileControls({ config, dispatch }: Props) {
+  const router = useRouter();
   const [activePanel, setActivePanel] = useState<Panel | null>(null);
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
   const [fabricQuery, setFabricQuery] = useState("");
@@ -202,6 +204,20 @@ function MobileControls({ config, dispatch }: Props) {
   const selectedLapelId = config.lapelId || lapels[0]?.id;
   const activeLapel = lapels.find((lapel) => lapel.id === selectedLapelId) || lapels[0];
   const selectedLapelWidthId = config.lapelWidthId || activeLapel?.widths?.[0]?.id;
+
+  const handleMeasure = () => {
+    router.push("/custom-suits/measure");
+    setActivePanel(null);
+  };
+
+  const handleAddToCart = () => {
+    const url = new URL("https://santos.rs/Ode%C4%87a");
+    url.searchParams.set("style", config.styleId);
+    if (config.colorId) url.searchParams.set("fabric", config.colorId);
+    if (config.lapelId) url.searchParams.set("lapel", config.lapelId);
+    if (selectedLapelWidthId) url.searchParams.set("lapelWidth", selectedLapelWidthId);
+    window.location.href = url.toString();
+  };
 
   const renderFabricPanel = () => (
     <>
@@ -362,10 +378,8 @@ function MobileControls({ config, dispatch }: Props) {
           Za detaljno uklapanje nastavite ka merenju. Mozete uneti mere ili zakazati termin sa savetnikom.
         </p>
         <button
-          onClick={() => {
-            const url = new URL(window.location.origin + "/custom-suits/measure");
-            window.location.href = url.toString();
-          }}
+          type="button"
+          onClick={handleMeasure}
           className="w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-gray-800"
         >
           Nastavi na merenje
@@ -415,7 +429,11 @@ function MobileControls({ config, dispatch }: Props) {
                     {price.total} EUR - Delivery in ~3 weeks
                   </p>
                 </div>
-                <button className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00]">
+                <button
+                  type="button"
+                  onClick={handleAddToCart}
+                  className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00]"
+                >
                   Add to Cart
                 </button>
               </div>

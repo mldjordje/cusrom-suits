@@ -4,7 +4,7 @@ const quickLinks = [
   { href: "/", label: "Početna" },
   { href: "#o-nama", label: "O nama" },
   { href: "#kontakt", label: "Kontakt" },
-  { href: "/web-shop", label: "Web Shop" },
+  { href: "https://santos.rs/Ode%C4%87a", label: "Web Shop" },
   { href: "/custom-suits", label: "Custom Suits" },
 ];
 

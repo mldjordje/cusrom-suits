@@ -19,7 +19,7 @@ const heroImageSections = [
     id: "atelier-capsule",
     image: "/img/hero2.jpg",
     title: "Crvene linije – limitirana kolekcija.",
-    primary: { label: "Pogledaj kolekciju", href: "/web-shop" },
+    primary: { label: "Pogledaj kolekciju", href: "https://santos.rs/Ode%C4%87a" },
   },
 ];
 
@@ -86,6 +86,17 @@ const HeroImageBlock = ({ image, title, primary, priority }: HeroImageBlockProps
 const VideoHero = () => {
   const desktopId = "18WbTwdI0Vs";
   const mobileId = "U8g-651j3yo";
+  const [isVideoReady, setIsVideoReady] = useState(false);
+  const [preloaderExpired, setPreloaderExpired] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setPreloaderExpired(true), 2500);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const showLoader = !isVideoReady && !preloaderExpired;
+  const handleReady = () => setIsVideoReady(true);
+
   return (
     <section className="relative min-h-[100svh] w-full overflow-hidden bg-[#120c0c] text-white">
       <div className="absolute inset-0">
@@ -94,9 +105,9 @@ const VideoHero = () => {
             title="Santos & Santorini video hero desktop"
             src={buildEmbed(desktopId)}
             className="pointer-events-none absolute left-1/2 top-1/2 h-[135%] w-[135%] -translate-x-1/2 -translate-y-1/2 scale-110"
-            allow="autoplay; fullscreen; picture-in-picture"
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
             allowFullScreen
-            loading="lazy"
+            onLoad={handleReady}
             tabIndex={-1}
             aria-hidden="true"
           />
@@ -106,14 +117,34 @@ const VideoHero = () => {
             title="Santos & Santorini video hero mobile"
             src={buildEmbed(mobileId)}
             className="pointer-events-none absolute left-1/2 top-1/2 h-[190%] w-[130%] -translate-x-1/2 -translate-y-1/2 scale-110"
-            allow="autoplay; fullscreen; picture-in-picture"
+            allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
             allowFullScreen
-            loading="lazy"
+            onLoad={handleReady}
             tabIndex={-1}
             aria-hidden="true"
           />
         </div>
       </div>
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.06),transparent_45%),radial-gradient(circle_at_80%_10%,rgba(179,32,42,0.12),transparent_40%),radial-gradient(circle_at_50%_85%,rgba(24,39,75,0.08),transparent_40%)]" aria-hidden="true" />
+      <AnimatePresence>
+        {showLoader && (
+          <motion.div
+            className="absolute inset-0 z-20 flex items-center justify-center bg-black/80"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <div className="flex flex-col items-center gap-4 text-center">
+              <Image src="/img/logo.png" alt="Santos & Santorini logo" width={88} height={88} className="h-16 w-16 object-contain" />
+              <div className="flex items-center gap-3 text-xs uppercase tracking-[0.3em] text-gray-100">
+                <span className="h-5 w-5 animate-spin rounded-full border border-white/60 border-t-transparent" aria-hidden="true" />
+                <span>Pripremamo video...</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/80 via-[#190808]/70 to-[#2b0e0e]/80" aria-hidden="true" />
       <div className="relative z-10 flex min-h-[100svh] items-center px-6 pb-16 pt-24 sm:px-12 lg:px-24">
         <div className="max-w-3xl space-y-5">
