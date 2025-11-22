@@ -18,7 +18,7 @@ const heroImageSections = [
   {
     id: "atelier-capsule",
     image: "/img/hero2.jpg",
-    title: "Crvene linije \u2013 limitirana kolekcija.",
+    title: "Crvene linije – limitirana kolekcija.",
     primary: { label: "Pogledaj kolekciju", href: "/web-shop" },
   },
 ];
@@ -84,8 +84,8 @@ const HeroImageBlock = ({ image, title, primary, priority }: HeroImageBlockProps
 };
 
 const VideoHero = () => {
-  const desktopId = "M0Mau4Q756g";
-  const mobileId = "M0Mau4Q756g";
+  const desktopId = "18WbTwdI0Vs";
+  const mobileId = "U8g-651j3yo";
   return (
     <section className="relative min-h-[100svh] w-full overflow-hidden bg-[#120c0c] text-white">
       <div className="absolute inset-0">
@@ -93,7 +93,7 @@ const VideoHero = () => {
           <iframe
             title="Santos & Santorini video hero desktop"
             src={buildEmbed(desktopId)}
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[160%] w-[160%] -translate-x-1/2 -translate-y-1/2 scale-110"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[135%] w-[135%] -translate-x-1/2 -translate-y-1/2 scale-110"
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen
             loading="lazy"
@@ -105,7 +105,7 @@ const VideoHero = () => {
           <iframe
             title="Santos & Santorini video hero mobile"
             src={buildEmbed(mobileId)}
-            className="pointer-events-none absolute left-1/2 top-1/2 h-[170%] w-[140%] -translate-x-1/2 -translate-y-1/2 scale-110"
+            className="pointer-events-none absolute left-1/2 top-1/2 h-[190%] w-[130%] -translate-x-1/2 -translate-y-1/2 scale-110"
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen
             loading="lazy"
@@ -117,17 +117,13 @@ const VideoHero = () => {
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/80 via-[#190808]/70 to-[#2b0e0e]/80" aria-hidden="true" />
       <div className="relative z-10 flex min-h-[100svh] items-center px-6 pb-16 pt-24 sm:px-12 lg:px-24">
         <div className="max-w-3xl space-y-5">
-          <p className="text-[11px] uppercase tracking-[0.45em] text-[#f5d5cd]">Ready-to-wear</p>
-          <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Crvene linije \u2013 limitirana kolekcija.</h1>
-          <p className="max-w-2xl text-lg text-white/85">
-            Ekskluzivna linija gotovih odela sa rucno naglasenim crvenim detaljima, krojena za one koji zele premium formu odmah.
-          </p>
+          <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Dizajniraj svoje odelo po meri.</h1>
           <div className="flex flex-wrap gap-4">
             <Link
-              href="https://santos.rs/Odela"
+              href="/custom-suits"
               className="rounded-full bg-white px-8 py-3 text-xs font-semibold uppercase tracking-[0.35em] text-[#1c1c1c] transition hover:bg-[#f5ece7]"
             >
-              Pogledaj gotova odela
+              Zapocni dizajn
             </Link>
           </div>
         </div>
@@ -203,4 +199,3 @@ const HeroSection = () => {
 };
 
 export default HeroSection;
-

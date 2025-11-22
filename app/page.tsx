@@ -1,9 +1,8 @@
 "use client";
 
-import { AnimatePresence, motion, type Variants } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import Footer from "./components/landing/Footer";
 import Header from "./components/landing/Header";
 import HeroSection from "./components/landing/HeroSection";
@@ -11,7 +10,7 @@ import HeroSection from "./components/landing/HeroSection";
 const aboutText = [
   "Sa idejom da muskarac treba da uziva u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nisu.",
   "Od 2013. prerasta u brend prepoznat po modernim krojevima, biranim tkaninama i rucno negovanim detaljima.",
-  "Nasi modeli spajaju tradiciju krojenja i savremeni dizajn - od prvog sava do finalne siluete.",
+  "Nasi modeli spajaju tradiciju krojenja i savremeni dizajn – od prvog sava do finalne siluete.",
 ];
 
 const campaignBlocks = [
@@ -41,7 +40,7 @@ const campaignBlocks = [
     id: "gift-edit",
     label: "Gift Edit",
     title: "Pokloni za njega",
-    copy: "Kravate, maramice i kozni kaisevi koji zaokruzuju stil.",
+    copy: "Kravate, maramice i kozni kaiševi koji zaokruzuju stil.",
     image: "/img/obuca.jpg",
     ctas: [
       { label: "Pokloni", href: "/web-shop" },
@@ -63,7 +62,7 @@ const campaignBlocks = [
     id: "new-arrivals",
     label: "New Arrivals",
     title: "Nova tura odela",
-    copy: "Najnoviji krojevi, sveze tkanine, spremno za probu.",
+    copy: "Najnoviji krojevi, sveže tkanine, spremno za probu.",
     image: "/img/odela.jpg",
     ctas: [
       { label: "Men", href: "/web-shop" },
@@ -115,90 +114,47 @@ const contactVariants: Variants = {
 };
 
 export default function Home() {
-  const [isPreloading, setIsPreloading] = useState(true);
-
-  useEffect(() => {
-    let timeout: number;
-    const finish = () => setIsPreloading(false);
-    const alreadyComplete = document.readyState === "complete";
-
-    if (alreadyComplete) {
-      timeout = window.setTimeout(finish, 300);
-    } else {
-      window.addEventListener("load", finish);
-      timeout = window.setTimeout(finish, 2500);
-    }
-
-    return () => {
-      if (!alreadyComplete) {
-        window.removeEventListener("load", finish);
-      }
-      window.clearTimeout(timeout);
-    };
-  }, []);
-
   return (
-    <div className="relative min-h-screen bg-[#f8f6f2] text-[#1b1b1b]">
-      <AnimatePresence>
-        {isPreloading && (
-          <motion.div
-            className="fixed inset-0 z-[999] flex items-center justify-center bg-[#0b0505]"
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.45 }}
-          >
-            <div className="flex flex-col items-center gap-4 text-center">
-              <Image src="/img/logo.png" alt="Santos & Santorini logo" width={92} height={92} className="h-20 w-20 object-contain" priority />
-              <div className="flex items-center gap-3 text-sm uppercase tracking-[0.35em] text-gray-100">
-                <span className="h-5 w-5 animate-spin rounded-full border border-white/70 border-t-transparent" aria-hidden="true" />
-                <span>Ucitavanje...</span>
+    <div className="min-h-screen bg-[#f8f6f2] text-[#1b1b1b]">
+      <Header />
+      <HeroSection />
+      <main className="mx-auto flex w-full max-w-6xl flex-col gap-20 px-4 pb-28 pt-16 sm:px-6 lg:px-8">
+        <motion.section
+          className="flex flex-col gap-10"
+          variants={stackVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
+          {campaignBlocks.map((item) => (
+            <motion.article
+              key={item.id}
+              variants={cardVariant}
+              className="relative min-h-[420px] overflow-hidden rounded-[36px] border border-[#f3e1d9] bg-[#0f0b0b] shadow-[0_30px_100px_rgba(0,0,0,0.14)]"
+            >
+              <div className="absolute inset-0">
+                <Image src={item.image} alt={item.title} fill sizes="100vw" className="object-cover object-center" priority />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" aria-hidden="true" />
               </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className={`transition-opacity duration-500 ${isPreloading ? "pointer-events-none opacity-0" : "opacity-100"}`}>
-        <Header />
-        <HeroSection />
-        <main className="mx-auto flex w-full max-w-6xl flex-col gap-20 px-4 pb-28 pt-16 sm:px-6 lg:px-8">
-          <motion.section
-            className="flex flex-col gap-10"
-            variants={stackVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, amount: 0.2 }}
-          >
-            {campaignBlocks.map((item) => (
-              <motion.article
-                key={item.id}
-                variants={cardVariant}
-                className="relative min-h-[420px] overflow-hidden rounded-[36px] border border-[#f3e1d9] bg-[#0f0b0b] shadow-[0_30px_100px_rgba(0,0,0,0.14)]"
-              >
-                <div className="absolute inset-0">
-                  <Image src={item.image} alt={item.title} fill sizes="100vw" className="object-cover object-center" priority />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" aria-hidden="true" />
+              <div className="relative z-10 flex h-full flex-col justify-end gap-3 px-8 pb-10 pt-12 text-white sm:px-12">
+                <p className="text-[10px] uppercase tracking-[0.4em] text-[#ffd9cf]">{item.label}</p>
+                <h3 className="text-3xl font-semibold leading-tight sm:text-4xl">{item.title}</h3>
+                {item.copy ? <p className="max-w-xl text-sm text-white/85">{item.copy}</p> : null}
+                <div className="mt-3 flex flex-wrap gap-3">
+                  {item.ctas.map((cta) => (
+                    <Link
+                      key={cta.label}
+                      href={cta.href}
+                      className="rounded-full border border-white/70 bg-white/10 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-white hover:text-[#0f0f0f]"
+                    >
+                      {cta.label}
+                    </Link>
+                  ))}
                 </div>
-                <div className="relative z-10 flex h-full flex-col justify-end gap-3 px-8 pb-10 pt-12 text-white sm:px-12">
-                  <p className="text-[10px] uppercase tracking-[0.4em] text-[#ffd9cf]">{item.label}</p>
-                  <h3 className="text-3xl font-semibold leading-tight sm:text-4xl">{item.title}</h3>
-                  {item.copy ? <p className="max-w-xl text-sm text-white/85">{item.copy}</p> : null}
-                  <div className="mt-3 flex flex-wrap gap-3">
-                    {item.ctas.map((cta) => (
-                      <Link
-                        key={cta.label}
-                        href={cta.href}
-                        className="rounded-full border border-white/70 bg-white/10 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-white hover:text-[#0f0f0f]"
-                      >
-                        {cta.label}
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </motion.article>
-            ))}
-          </motion.section>
+              </div>
+            </motion.article>
+          ))}
+        </motion.section>
 
         <motion.section
           id="o-nama"
@@ -247,7 +203,7 @@ export default function Home() {
             <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">Kontakt</p>
             <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretna podrska i licne preporuke.</h2>
             <p className="text-sm text-[#4a403b]">
-              Nas tim vas vodi kroz izbor tkanina, krojeva i detalja - u showroomu ili online. Odgovaramo u roku od jednog radnog dana.
+              Nas tim vas vodi kroz izbor tkanina, krojeva i detalja – u showroomu ili online. Odgovaramo u roku od jednog radnog dana.
             </p>
             <div className="grid gap-4 sm:grid-cols-3">
               {contactInfo.map((item) => (
@@ -280,8 +236,6 @@ export default function Home() {
         </motion.section>
       </main>
       <Footer />
-      </div>
     </div>
   );
 }
-
