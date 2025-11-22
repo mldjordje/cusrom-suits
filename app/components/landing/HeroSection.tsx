@@ -18,36 +18,68 @@ const heroImageSections = [
   {
     id: "atelier-capsule",
     image: "/img/hero2.jpg",
-    title: "Crvene linije – limitirana kolekcija.",
+    title: "Santos & Santorini - ekskluzivna kolekcija.",
     primary: { label: "Pogledaj kolekciju", href: "/web-shop" },
+    mobileVideoId: "M0Mau4Q756g",
   },
 ];
 
-type HeroImageBlockProps = (typeof heroImageSections)[number] & { priority?: boolean };
+type HeroImageBlockProps = (typeof heroImageSections)[number] & { priority?: boolean; mobileVideoId?: string };
 
-const HeroImageBlock = ({ image, title, primary, priority }: HeroImageBlockProps) => {
+const HeroImageBlock = ({ image, title, primary, priority, mobileVideoId }: HeroImageBlockProps) => {
   const [loaded, setLoaded] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
+  const hasMobileVideo = Boolean(mobileVideoId);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setTimeoutReached(true), 1500);
     return () => clearTimeout(timer);
   }, []);
 
-  const showLoader = !(loaded || timeoutReached);
+  const showLoader = !hasMobileVideo && !(loaded || timeoutReached);
 
   return (
     <section className="relative min-h-[90svh] w-full overflow-hidden bg-[#120c0c] text-white">
-      <Image
-        src={image}
-        alt={title}
-        fill
-        priority={priority}
-        sizes="100vw"
-        className="object-cover object-center"
-        onLoadingComplete={() => setLoaded(true)}
-      />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/70 via-[#1c0d0d]/70 to-[#0f0907]/30" aria-hidden="true" />
+      <div className="absolute inset-0">
+        <div className={`absolute inset-0 ${hasMobileVideo ? "hidden md:block" : ""}`}>
+          <Image
+            src={image}
+            alt={title}
+            fill
+            priority={priority}
+            sizes="100vw"
+            className="object-cover object-center"
+            onLoadingComplete={() => setLoaded(true)}
+          />
+        </div>
+        {hasMobileVideo ? (
+          <div className="absolute inset-0 md:hidden">
+            <iframe
+              title={`${title} mobile video`}
+              src={buildEmbed(mobileVideoId!)}
+              className="pointer-events-none absolute left-1/2 top-1/2 h-[190%] w-[140%] -translate-x-1/2 -translate-y-1/2 scale-110"
+              allow="autoplay; fullscreen; picture-in-picture"
+              allowFullScreen
+              loading="lazy"
+              tabIndex={-1}
+              aria-hidden="true"
+            />
+          </div>
+        ) : (
+          <div className="absolute inset-0 md:hidden">
+            <Image
+              src={image}
+              alt={title}
+              fill
+              priority={priority}
+              sizes="100vw"
+              className="object-cover object-center"
+              onLoadingComplete={() => setLoaded(true)}
+            />
+          </div>
+        )}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-black/70 via-[#1c0d0d]/70 to-[#0f0907]/30" aria-hidden="true" />
+      </div>
       <AnimatePresence>
         {showLoader && (
           <motion.div

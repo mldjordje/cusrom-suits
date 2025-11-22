@@ -163,6 +163,7 @@ const Drawer = ({
 
 function MobileControls({ config, dispatch }: Props) {
   const [activePanel, setActivePanel] = useState<Panel | null>(null);
+  const [savingCart, setSavingCart] = useState(false);
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
   const [fabricQuery, setFabricQuery] = useState("");
   const [sort, setSort] = useState<"date_desc" | "date_asc">("date_desc");
@@ -202,6 +203,36 @@ function MobileControls({ config, dispatch }: Props) {
   const selectedLapelId = config.lapelId || lapels[0]?.id;
   const activeLapel = lapels.find((lapel) => lapel.id === selectedLapelId) || lapels[0];
   const selectedLapelWidthId = config.lapelWidthId || activeLapel?.widths?.[0]?.id;
+  const measurementUrl = useMemo(() => {
+    const json = JSON.stringify(config);
+    const url = new URL(typeof window !== "undefined" ? window.location.origin : "http://localhost");
+    url.pathname = "/custom-suits/measure";
+    url.searchParams.set("config", json);
+    return url.toString();
+  }, [config]);
+
+  const handleAddToCart = () => {
+    if (savingCart) return;
+    try {
+      setSavingCart(true);
+      const existingRaw = localStorage.getItem("suitCart");
+      const parsed = existingRaw ? JSON.parse(existingRaw) : [];
+      const entry = {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        config,
+        price,
+        addedAt: new Date().toISOString(),
+      };
+      parsed.unshift(entry);
+      localStorage.setItem("suitCart", JSON.stringify(parsed));
+      alert("Dodato u korpu. Zavrsite porudzbinu u narednom koraku.");
+    } catch (err) {
+      console.error("Add to cart failed", err);
+      alert("Nije moguce dodati u korpu trenutno. Pokusajte ponovo.");
+    } finally {
+      setSavingCart(false);
+    }
+  };
 
   const renderFabricPanel = () => (
     <>
@@ -363,8 +394,7 @@ function MobileControls({ config, dispatch }: Props) {
         </p>
         <button
           onClick={() => {
-            const url = new URL(window.location.origin + "/custom-suits/measure");
-            window.location.href = url.toString();
+            window.location.href = measurementUrl;
           }}
           className="w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-gray-800"
         >
@@ -415,7 +445,11 @@ function MobileControls({ config, dispatch }: Props) {
                     {price.total} EUR - Delivery in ~3 weeks
                   </p>
                 </div>
-                <button className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00]">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={savingCart}
+                  className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
+                >
                   Add to Cart
                 </button>
               </div>
