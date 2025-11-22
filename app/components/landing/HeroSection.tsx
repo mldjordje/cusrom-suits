@@ -39,7 +39,7 @@ const HeroImageBlock = ({ image, title, primary, priority, mobileVideoId }: Hero
   const showLoader = !hasMobileVideo && !(loaded || timeoutReached);
 
   return (
-    <section className="relative min-h-[90svh] w-full overflow-hidden bg-[#120c0c] text-white">
+    <section className="relative -mb-px min-h-[90svh] w-full overflow-hidden bg-[#120c0c] text-white">
       <div className="absolute inset-0">
         <div className={`absolute inset-0 ${hasMobileVideo ? "hidden md:block" : ""}`}>
           <Image
