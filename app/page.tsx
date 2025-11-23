@@ -13,21 +13,6 @@ const aboutText = [
   "Nasi modeli spajaju tradiciju krojenja i savremeni dizajn - od prvog sava do finalne siluete.",
 ];
 
-const promoRibbon = {
-  title: "Black Friday event - do 30% popusta",
-  copy: "Ubrzani izbor za muskarce i zene. Novi komadi pristigli u atelje.",
-  ctas: [
-    { label: "Men", href: "/web-shop" },
-    { label: "Women", href: "/web-shop" },
-  ],
-};
-
-const bossTabs = [
-  { label: "S&S Atelier", href: "/custom-suits" },
-  { label: "Muskarci", href: "/web-shop" },
-  { label: "Zene", href: "/web-shop" },
-];
-
 const bossInspiredSections = [
   {
     id: "boss-black-friday",
@@ -190,48 +175,6 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f8f6f2] text-[#1b1b1b]">
       <Header />
-      <section className="border-b border-black/15 bg-[#0f0b0b] text-white">
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
-          <div className="space-y-1">
-            <p className="text-[11px] uppercase tracking-[0.35em] text-[#f6d7c9]">{promoRibbon.title}</p>
-            <p className="text-xs text-white/80">{promoRibbon.copy}</p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {promoRibbon.ctas.map((cta) => (
-              <Link
-                key={cta.label}
-                href={cta.href}
-                className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-white hover:text-[#0f0f0f]"
-              >
-                {cta.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="border-b border-[#e8dcd4] bg-white/85 backdrop-blur-md">
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-3">
-            <span className="rounded-full bg-[#0f0b0b] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.35em] text-white">SS</span>
-            <p className="text-[11px] uppercase tracking-[0.25em] text-[#6f625b]">Izbor kolekcija</p>
-          </div>
-          <div className="flex flex-1 justify-end gap-2">
-            {bossTabs.map((tab, idx) => (
-              <Link
-                key={tab.label}
-                href={tab.href}
-                className={`rounded-full px-3 py-2 text-[11px] uppercase tracking-[0.3em] transition ${
-                  idx === 0 ? "bg-[#0f0b0b] text-white" : "border border-[#e8dcd4] bg-white text-[#2a2320] hover:bg-[#f6ece6]"
-                }`}
-              >
-                {tab.label}
-              </Link>
-            ))}
-          </div>
-        </div>
-      </section>
-
       <HeroSection />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-20 px-4 pb-28 pt-16 sm:px-6 lg:px-8">
         <motion.section
@@ -245,9 +188,9 @@ export default function Home() {
           <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-end sm:justify-between">
             <div className="space-y-1">
               <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">Boss reference</p>
-              <h2 className="text-3xl font-semibold tracking-wide text-[#201a18] sm:text-4xl">Vertikalni blokovi za scroll.</h2>
+              <h2 className="text-3xl font-semibold tracking-wide text-[#201a18] sm:text-4xl">Brend story kroz blokove.</h2>
               <p className="max-w-2xl text-sm text-[#4a403b]">
-                Preuzeli smo ritam sa BOSS mobilnog landing ekrana: gomila blokova koji vode na muski i zenski shop kroz jasne CTA dugmice.
+                Sekvence prikazuju SantoS & Santorini pricu: custom odela, gotova kolekcija i novi komadi u ritmu spremnom za scroll.
               </p>
             </div>
             <div className="rounded-full border border-[#eadfd8] px-4 py-2 text-[11px] uppercase tracking-[0.35em] text-[#6f625b]">
