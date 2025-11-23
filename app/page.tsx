@@ -10,7 +10,80 @@ import HeroSection from "./components/landing/HeroSection";
 const aboutText = [
   "Sa idejom da muskarac treba da uziva u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nisu.",
   "Od 2013. prerasta u brend prepoznat po modernim krojevima, biranim tkaninama i rucno negovanim detaljima.",
-  "Nasi modeli spajaju tradiciju krojenja i savremeni dizajn – od prvog sava do finalne siluete.",
+  "Nasi modeli spajaju tradiciju krojenja i savremeni dizajn - od prvog sava do finalne siluete.",
+];
+
+const promoRibbon = {
+  title: "Black Friday event - do 30% popusta",
+  copy: "Ubrzani izbor za muskarce i zene. Novi komadi pristigli u atelje.",
+  ctas: [
+    { label: "Men", href: "/web-shop" },
+    { label: "Women", href: "/web-shop" },
+  ],
+};
+
+const bossTabs = [
+  { label: "S&S Atelier", href: "/custom-suits" },
+  { label: "Muskarci", href: "/web-shop" },
+  { label: "Zene", href: "/web-shop" },
+];
+
+const bossInspiredSections = [
+  {
+    id: "boss-black-friday",
+    badge: "Black Friday Event",
+    title: "Do 30% popusta",
+    copy: "Vertikalni hero blokovi inspirisani BOSS landing stranicom - uz jasne CTA dugmice.",
+    image: "/img/hero.jpg",
+    ctas: [
+      { label: "Muskarci", href: "/web-shop" },
+      { label: "Zene", href: "/web-shop" },
+    ],
+  },
+  {
+    id: "boss-holiday",
+    badge: "Holiday Capsule",
+    title: "Praznicni setovi",
+    copy: "Blazeri, svila i koza za vecernje prilike. Prepustite stil frakciji svetla i senke.",
+    image: "/img/hero2.jpg",
+    ctas: [
+      { label: "Lookbook", href: "/custom-suits" },
+      { label: "Shop sada", href: "/web-shop" },
+    ],
+  },
+  {
+    id: "boss-gift",
+    badge: "Gift Edit",
+    title: "Pokloni za njega",
+    copy: "Kravate, maramice i kozni kaisevi koji zaokruzuju stil.",
+    image: "/img/obuca.jpg",
+    ctas: [
+      { label: "Pokloni", href: "/web-shop" },
+      { label: "Detalji", href: "/custom-suits" },
+    ],
+  },
+  {
+    id: "boss-outerwear",
+    badge: "Outerwear Staples",
+    title: "Kaputi i sakoi",
+    copy: "Slojevito presvuci jesen: izduzeni krojevi, vuna i kasmir, taktilne teksture.",
+    image: "/img/odela2.jpg",
+    ctas: [
+      { label: "Jackets", href: "/web-shop" },
+      { label: "Coats", href: "/web-shop" },
+    ],
+  },
+  {
+    id: "boss-new-arrivals",
+    badge: "New Arrivals",
+    title: "Nova tura odela",
+    copy: "Sveze siluete i nijanse peska inspirisane BOSS mobilnim layoutom.",
+    image: "/img/odela.jpg",
+    ctas: [
+      { label: "Men", href: "/web-shop" },
+      { label: "Women", href: "/web-shop" },
+    ],
+  },
 ];
 
 const campaignBlocks = [
@@ -40,7 +113,7 @@ const campaignBlocks = [
     id: "gift-edit",
     label: "Gift Edit",
     title: "Pokloni za njega",
-    copy: "Kravate, maramice i kozni kaiševi koji zaokruzuju stil.",
+    copy: "Kravate, maramice i kozni kaisevi koji zaokruzuju stil.",
     image: "/img/obuca.jpg",
     ctas: [
       { label: "Pokloni", href: "/web-shop" },
@@ -62,7 +135,7 @@ const campaignBlocks = [
     id: "new-arrivals",
     label: "New Arrivals",
     title: "Nova tura odela",
-    copy: "Najnoviji krojevi, sveže tkanine, spremno za probu.",
+    copy: "Najnoviji krojevi, sveze tkanine, spremno za probu.",
     image: "/img/odela.jpg",
     ctas: [
       { label: "Men", href: "/web-shop" },
@@ -117,8 +190,108 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f8f6f2] text-[#1b1b1b]">
       <Header />
+      <section className="border-b border-black/15 bg-[#0f0b0b] text-white">
+        <div className="mx-auto flex w-full max-w-6xl flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <div className="space-y-1">
+            <p className="text-[11px] uppercase tracking-[0.35em] text-[#f6d7c9]">{promoRibbon.title}</p>
+            <p className="text-xs text-white/80">{promoRibbon.copy}</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {promoRibbon.ctas.map((cta) => (
+              <Link
+                key={cta.label}
+                href={cta.href}
+                className="rounded-full border border-white/30 bg-white/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-white hover:text-[#0f0f0f]"
+              >
+                {cta.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="border-b border-[#e8dcd4] bg-white/85 backdrop-blur-md">
+        <div className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-3">
+            <span className="rounded-full bg-[#0f0b0b] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.35em] text-white">SS</span>
+            <p className="text-[11px] uppercase tracking-[0.25em] text-[#6f625b]">Izbor kolekcija</p>
+          </div>
+          <div className="flex flex-1 justify-end gap-2">
+            {bossTabs.map((tab, idx) => (
+              <Link
+                key={tab.label}
+                href={tab.href}
+                className={`rounded-full px-3 py-2 text-[11px] uppercase tracking-[0.3em] transition ${
+                  idx === 0 ? "bg-[#0f0b0b] text-white" : "border border-[#e8dcd4] bg-white text-[#2a2320] hover:bg-[#f6ece6]"
+                }`}
+              >
+                {tab.label}
+              </Link>
+            ))}
+          </div>
+        </div>
+      </section>
+
       <HeroSection />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-20 px-4 pb-28 pt-16 sm:px-6 lg:px-8">
+        <motion.section
+          id="boss-stack"
+          className="flex flex-col gap-6 rounded-[36px] border border-[#e8dcd4] bg-white/90 p-4 shadow-[0_30px_100px_rgba(15,23,42,0.08)]"
+          variants={stackVariants}
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+        >
+          <div className="flex flex-col gap-2 px-1 sm:flex-row sm:items-end sm:justify-between">
+            <div className="space-y-1">
+              <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">Boss reference</p>
+              <h2 className="text-3xl font-semibold tracking-wide text-[#201a18] sm:text-4xl">Vertikalni blokovi za scroll.</h2>
+              <p className="max-w-2xl text-sm text-[#4a403b]">
+                Preuzeli smo ritam sa BOSS mobilnog landing ekrana: gomila blokova koji vode na muski i zenski shop kroz jasne CTA dugmice.
+              </p>
+            </div>
+            <div className="rounded-full border border-[#eadfd8] px-4 py-2 text-[11px] uppercase tracking-[0.35em] text-[#6f625b]">
+              Men / Women
+            </div>
+          </div>
+          <div className="flex flex-col gap-5">
+            {bossInspiredSections.map((section) => (
+              <motion.article
+                key={section.id}
+                variants={cardVariant}
+                className="overflow-hidden rounded-[28px] border border-[#e8dcd4] bg-[#0c0707] shadow-[0_30px_90px_rgba(0,0,0,0.28)]"
+                id={section.id}
+              >
+                <div className="relative h-[420px] w-full sm:h-[500px]">
+                  <Image src={section.image} alt={section.title} fill sizes="100vw" className="object-cover object-center" priority />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10" aria-hidden="true" />
+                  <div className="absolute inset-0 flex flex-col justify-between p-6 text-white sm:p-8">
+                    <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-white/75">
+                      <span className="rounded-full border border-white/30 bg-white/10 px-3 py-1">{section.badge}</span>
+                      <span className="rounded-full border border-white/20 bg-black/30 px-3 py-1">Novo</span>
+                    </div>
+                    <div className="space-y-3 pb-1">
+                      <h3 className="text-3xl font-bold leading-tight sm:text-4xl">{section.title}</h3>
+                      <p className="max-w-xl text-sm text-white/80">{section.copy}</p>
+                      <div className="flex flex-wrap gap-2 pt-1">
+                        {section.ctas.map((cta) => (
+                          <Link
+                            key={cta.label}
+                            href={cta.href}
+                            className="rounded-full border border-white/70 bg-white/10 px-5 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-white hover:text-[#0f0f0f]"
+                          >
+                            {cta.label}
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </motion.article>
+            ))}
+          </div>
+        </motion.section>
+
         <motion.section
           className="flex flex-col gap-10"
           variants={stackVariants}
@@ -203,7 +376,7 @@ export default function Home() {
             <p className="text-[11px] uppercase tracking-[0.45em] text-[#b3202a]">Kontakt</p>
             <h2 className="text-3xl font-semibold tracking-wide text-[#201a18]">Diskretna podrska i licne preporuke.</h2>
             <p className="text-sm text-[#4a403b]">
-              Nas tim vas vodi kroz izbor tkanina, krojeva i detalja – u showroomu ili online. Odgovaramo u roku od jednog radnog dana.
+              Nas tim vas vodi kroz izbor tkanina, krojeva i detalja - u showroomu ili online. Odgovaramo u roku od jednog radnog dana.
             </p>
             <div className="grid gap-4 sm:grid-cols-3">
               {contactInfo.map((item) => (
