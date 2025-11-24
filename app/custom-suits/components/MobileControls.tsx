@@ -15,17 +15,17 @@ type Props = {
 };
 
 const NAV = [
-  { id: "FABRIC" as const, label: "Fabric", icon: "/custom-suits/icons/iconfabric.png" },
-  { id: "STYLE" as const, label: "Style", icon: "/custom-suits/icons/iconstyle.png" },
-  { id: "ACCENTS" as const, label: "Accents", icon: "/custom-suits/icons/iconaccents.png" },
-  { id: "MEASURE" as const, label: "Measure", icon: "/custom-suits/icons/iconstyle.png" },
+  { id: "FABRIC" as const, label: "Tkanine", icon: "/custom-suits/icons/iconfabric.png" },
+  { id: "STYLE" as const, label: "Stil", icon: "/custom-suits/icons/iconstyle.png" },
+  { id: "ACCENTS" as const, label: "Detalji", icon: "/custom-suits/icons/iconaccents.png" },
+  { id: "MEASURE" as const, label: "Mere", icon: "/custom-suits/icons/iconstyle.png" },
 ];
 
 const toneLabels: Record<"all" | "light" | "medium" | "dark", string> = {
-  all: "All tones",
-  light: "Light",
-  medium: "Medium",
-  dark: "Dark",
+  all: "Svi tonovi",
+  light: "Svetli",
+  medium: "Srednji",
+  dark: "Tamni",
 };
 
 const Badge = ({ label }: { label: string }) => (
@@ -83,7 +83,7 @@ const DrawerHeader = ({
 }) => (
   <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
     <div>
-      <p className="text-[10px] uppercase tracking-[0.25em] text-gray-400">Customize</p>
+      <p className="text-[10px] uppercase tracking-[0.25em] text-gray-400">Prilagodi</p>
       <p className="text-lg font-semibold text-gray-900">{title}</p>
     </div>
     <button
@@ -117,13 +117,13 @@ const FabricCard = ({
     </div>
     <div className="flex-1">
       <div className="flex items-center gap-2">
-        <p className="text-sm font-semibold text-gray-900">{fabric.name || "Fabric"}</p>
-        {active && <Badge label="Selected" />}
+        <p className="text-sm font-semibold text-gray-900">{fabric.name || "Tkanina"}</p>
+        {active && <Badge label="Izabrano" />}
       </div>
       <p className="text-[11px] text-gray-500">
-        {fabric.price ?? 0} EUR - {fabric.tone || "medium"} tone
+        {fabric.price ?? 0} EUR - ton {fabric.tone || "medium"}
       </p>
-      {fabric.code && <p className="text-[11px] text-gray-400">Code: {fabric.code}</p>}
+      {fabric.code && <p className="text-[11px] text-gray-400">ifra: {fabric.code}</p>}
     </div>
   </button>
 );
@@ -236,7 +236,7 @@ function MobileControls({ config, dispatch }: Props) {
 
   const renderFabricPanel = () => (
     <>
-      <DrawerHeader title="Fabric Library" onClose={() => setActivePanel(null)} />
+      <DrawerHeader title="Biblioteka tkanina" onClose={() => setActivePanel(null)} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="space-y-3 border-b border-gray-100 bg-white px-4 py-3">
           <div className="flex gap-2">
@@ -244,7 +244,7 @@ function MobileControls({ config, dispatch }: Props) {
               value={fabricQuery}
               onChange={(e) => setFabricQuery(e.target.value)}
               className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none"
-              placeholder="Search fabric or code"
+              placeholder="Pretrazi tkaninu ili ifru"
             />
             <select
               className="rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-700 focus:border-gray-400 focus:outline-none"
@@ -262,17 +262,17 @@ function MobileControls({ config, dispatch }: Props) {
               value={sort}
               onChange={(e) => setSort(e.target.value as any)}
             >
-              <option value="date_desc">Newest</option>
-              <option value="date_asc">Oldest</option>
+              <option value="date_desc">Najnovije</option>
+              <option value="date_asc">Najstarije</option>
             </select>
           </div>
           {fabricsError && <p className="text-[11px] text-orange-600">{fabricsError}</p>}
         </div>
         <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 pb-28">
           {fabricsLoading ? (
-            <p className="text-sm text-gray-500">Loading fabrics...</p>
+            <p className="text-sm text-gray-500">Ucitavanje tkanina...</p>
           ) : filteredFabrics.length === 0 ? (
-            <p className="text-sm text-gray-500">No fabrics found for current filters.</p>
+            <p className="text-sm text-gray-500">Nema tkanina za zadate filtere.</p>
           ) : (
             filteredFabrics.map((fabric: any) => (
               <FabricCard
@@ -289,7 +289,7 @@ function MobileControls({ config, dispatch }: Props) {
             onClick={() => setActivePanel(null)}
             className="w-full rounded-full bg-gray-900 px-4 py-3 text-center text-sm font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-gray-800"
           >
-            Apply fabric
+            Primeni tkaninu
           </button>
         </div>
       </div>
@@ -298,23 +298,23 @@ function MobileControls({ config, dispatch }: Props) {
 
   const renderStylePanel = () => (
     <>
-      <DrawerHeader title="Style" onClose={() => setActivePanel(null)} />
+      <DrawerHeader title="Stil" onClose={() => setActivePanel(null)} />
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-14">
         <ChoiceGroup
-          title="Suit model"
+          title="Model odela"
           options={suits.map((suit) => ({ id: suit.id, label: suit.name }))}
           selectedId={config.styleId}
           onSelect={(id) => dispatch({ type: "SET_STYLE", payload: id })}
         />
         <ChoiceGroup
-          title="Lapel type"
+          title="Tip revera"
           options={lapels.map((lapel) => ({ id: lapel.id, label: lapel.name }))}
           selectedId={selectedLapelId}
           onSelect={(id) => dispatch({ type: "SET_LAPEL", payload: id })}
         />
         {activeLapel?.widths?.length ? (
           <ChoiceGroup
-            title="Lapel width"
+            title="irina revera"
             options={activeLapel.widths.map((width) => ({ id: width.id, label: width.name }))}
             selectedId={selectedLapelWidthId}
             onSelect={(id) => dispatch({ type: "SET_LAPEL_WIDTH", payload: id })}
@@ -323,7 +323,7 @@ function MobileControls({ config, dispatch }: Props) {
         ) : null}
         {currentSuit?.cuffs?.length ? (
           <ChoiceGroup
-            title="Pant hem"
+            title="Zavrnica pantalona"
             options={(currentSuit.cuffs || []).map((option) => ({ id: option.id, label: option.name }))}
             selectedId={config.cuffId}
             onSelect={(id) => dispatch({ type: "SET_CUFF", payload: id })}
@@ -335,11 +335,11 @@ function MobileControls({ config, dispatch }: Props) {
 
   const renderAccentsPanel = () => (
     <>
-      <DrawerHeader title="Accents" onClose={() => setActivePanel(null)} />
+      <DrawerHeader title="Detalji" onClose={() => setActivePanel(null)} />
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-14">
         {currentSuit?.pockets?.length ? (
           <ChoiceGroup
-            title="Jacket pockets"
+            title="Depovi na sakou"
             options={(currentSuit.pockets || []).map((pocket) => ({ id: pocket.id, label: pocket.name }))}
             selectedId={config.pocketId}
             onSelect={(id) => dispatch({ type: "SET_POCKET", payload: id })}
@@ -347,7 +347,7 @@ function MobileControls({ config, dispatch }: Props) {
         ) : null}
         {currentSuit?.breastPocket?.length ? (
           <ChoiceGroup
-            title="Breast pocket"
+            title="Dep na grudima"
             options={(currentSuit.breastPocket || []).map((option) => ({ id: option.id, label: option.name }))}
             selectedId={config.breastPocketId}
             onSelect={(id) => dispatch({ type: "SET_BREAST_POCKET", payload: id })}
@@ -355,7 +355,7 @@ function MobileControls({ config, dispatch }: Props) {
         ) : null}
         {currentSuit?.interiors?.length ? (
           <ChoiceGroup
-            title="Internal lining"
+            title="Postava"
             options={(currentSuit.interiors || []).map((option) => ({ id: option.id, label: option.name }))}
             selectedId={config.interiorId}
             onSelect={(id) => dispatch({ type: "SET_INTERIOR", payload: id })}
@@ -364,8 +364,8 @@ function MobileControls({ config, dispatch }: Props) {
 
         <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
           <div>
-            <p className="text-sm font-semibold text-gray-800">Show shirt layer</p>
-            <p className="text-[11px] text-gray-500">Helpful for visualizing lapel and pocket lines.</p>
+            <p className="text-sm font-semibold text-gray-800">Prikai sloj koulje</p>
+            <p className="text-[11px] text-gray-500">Pomae pri vizualizaciji revera i linija depova.</p>
           </div>
           <button
             onClick={() => dispatch({ type: "TOGGLE_SHIRT" })}
@@ -373,12 +373,12 @@ function MobileControls({ config, dispatch }: Props) {
               config.showShirt ? "bg-gray-900 text-white" : "border border-gray-300 text-gray-600"
             }`}
           >
-            {config.showShirt ? "On" : "Off"}
+            {config.showShirt ? "Ukljueno" : "Iskljueno"}
           </button>
         </div>
 
         <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-3 text-[12px] text-gray-600">
-          Personal monogram and button accents are coming soon. Tell us what you need and we&apos;ll prioritize it.
+          Personalni monogram i dugmad stižu uskoro. Javite nam šta vam treba i stavićemo ga u prioritet.
         </div>
       </div>
     </>
@@ -386,7 +386,7 @@ function MobileControls({ config, dispatch }: Props) {
 
   const renderMeasurePanel = () => (
     <>
-      <DrawerHeader title="Measure" onClose={() => setActivePanel(null)} />
+      <DrawerHeader title="Mere" onClose={() => setActivePanel(null)} />
       <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-14">
         <h3 className="text-lg font-semibold text-gray-900">Mere i prilagodjavanje</h3>
         <p className="text-sm text-gray-600">
@@ -440,9 +440,9 @@ function MobileControls({ config, dispatch }: Props) {
             <div className="border-t border-gray-100 px-4 py-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-gray-900">Your Custom Suit</p>
+                  <p className="text-sm font-semibold text-gray-900">Tvoje custom odelo</p>
                   <p className="text-[11px] text-gray-500">
-                    {price.total} EUR - Delivery in ~3 weeks
+                    {price.total} EUR - Isporuka za ~3 nedelje
                   </p>
                 </div>
                 <button
@@ -450,7 +450,7 @@ function MobileControls({ config, dispatch }: Props) {
                   disabled={savingCart}
                   className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Add to Cart
+                  Dodaj u korpu
                 </button>
               </div>
             </div>

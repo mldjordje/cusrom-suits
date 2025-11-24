@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Image from "next/image";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { computePrice } from "../utils/price";
@@ -21,6 +21,7 @@ const tabLabels: Record<(typeof tabs)[number], string> = {
 const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("STYLE");
   const currentSuit = suits.find((s) => s.id === config.styleId);
+  const [savingCart, setSavingCart] = useState(false);
 
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
   const [sort, setSort] = useState<"date_desc" | "date_asc">("date_desc");
@@ -97,6 +98,36 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const selectedLapelId = config.lapelId || lapels[0]?.id;
   const activeLapel = lapels.find((lapel) => lapel.id === selectedLapelId) || lapels[0];
   const selectedLapelWidthId = config.lapelWidthId || activeLapel?.widths[0]?.id;
+  const measurementUrl = useMemo(() => {
+    const json = JSON.stringify(config);
+    const url = new URL(typeof window !== "undefined" ? window.location.origin : "http://localhost");
+    url.pathname = "/custom-suits/measure";
+    url.searchParams.set("config", json);
+    return url.toString();
+  }, [config]);
+
+  const handleAddToCart = () => {
+    if (savingCart) return;
+    try {
+      setSavingCart(true);
+      const existingRaw = localStorage.getItem("suitCart");
+      const parsed = existingRaw ? JSON.parse(existingRaw) : [];
+      const entry = {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        config,
+        price,
+        addedAt: new Date().toISOString(),
+      };
+      parsed.unshift(entry);
+      localStorage.setItem("suitCart", JSON.stringify(parsed));
+      alert("Dizajn je sacuvan u korpu. Zavrsite porudzbinu u sledecem koraku.");
+    } catch (err) {
+      console.error("Add to cart failed", err);
+      alert("Nije moguce sacuvati dizajn trenutno. Pokusajte ponovo.");
+    } finally {
+      setSavingCart(false);
+    }
+  };
 
   const iconMap: Record<(typeof tabs)[number], string> = {
     FABRIC: "/custom-suits/icons/iconfabric.png",
@@ -145,15 +176,15 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             })}
           </nav>
 
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-4 shadow-sm sm:p-5">
-            <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-400">
-              <span>Model</span>
-              <span>Fabric</span>
-            </div>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-right text-2xl font-semibold text-gray-900">
-              <div className="text-left">{price.total} EUR</div>
-              <div>{fabricPrice} EUR</div>
-            </div>
+            <div className="rounded-3xl border border-white/60 bg-white/80 p-4 shadow-sm sm:p-5">
+              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-400">
+                <span>Model</span>
+              <span>Tkanina</span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-3 text-right text-2xl font-semibold text-gray-900">
+                <div className="text-left">{price.total} EUR</div>
+                <div>{fabricPrice} EUR</div>
+              </div>
             <p className="mt-2 text-[11px] text-gray-500">Indikativna cena, PDV ukljuen.</p>
           </div>
 
@@ -336,15 +367,26 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
         </div>
 
         <div className="mt-8">
-          <button
-            onClick={() => {
-              const url = new URL(window.location.origin + "/custom-suits/measure");
-              window.location.href = url.toString();
-            }}
-            className="w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-800"
-          >
-            Nastavi na merenje
-          </button>
+          <div className="space-y-3">
+            <button
+              onClick={handleAddToCart}
+              disabled={savingCart}
+              className="w-full rounded-full bg-[#ff7a00] px-5 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
+            >
+              Sačuvaj dizajn u korpu
+            </button>
+            <button
+              onClick={() => {
+                window.location.href = measurementUrl;
+              }}
+              className="w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-800"
+            >
+              Nastavi na merenje
+            </button>
+            <p className="text-[11px] text-gray-500">
+              Nakon merenja, završite porudžbinu unosom kontakta. Korpa čuva poslednji dizajn i cenu.
+            </p>
+          </div>
         </div>
       </div>
     </div>
