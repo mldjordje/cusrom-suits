@@ -146,7 +146,7 @@ const Drawer = ({
       aria-hidden={!active}
     >
       <div
-        className={`pointer-events-auto h-full w-[78vw] max-w-[420px] transform bg-white shadow-2xl transition duration-200 ease-out ${
+        className={`pointer-events-auto h-full w-[68vw] max-w-[360px] sm:max-w-[420px] transform bg-white shadow-2xl transition duration-200 ease-out ${
           active ? "translate-x-0" : "-translate-x-full"
         }`}
       >
