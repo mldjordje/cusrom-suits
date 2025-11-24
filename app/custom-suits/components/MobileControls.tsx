@@ -146,7 +146,7 @@ const Drawer = ({
       aria-hidden={!active}
     >
       <div
-        className={`pointer-events-auto h-full w-[78vw] max-w-[420px] transform bg-white shadow-2xl transition duration-200 ease-out ${
+        className={`pointer-events-auto flex h-full w-[68vw] max-w-[360px] flex-col sm:max-w-[420px] transform bg-white shadow-2xl transition duration-200 ease-out ${
           active ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -237,7 +237,7 @@ function MobileControls({ config, dispatch }: Props) {
   const renderFabricPanel = () => (
     <>
       <DrawerHeader title="Biblioteka tkanina" onClose={() => setActivePanel(null)} />
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div className="flex flex-1 flex-col overflow-hidden min-h-0">
         <div className="space-y-3 border-b border-gray-100 bg-white px-4 py-3">
           <div className="flex gap-2">
             <input
@@ -268,7 +268,7 @@ function MobileControls({ config, dispatch }: Props) {
           </div>
           {fabricsError && <p className="text-[11px] text-orange-600">{fabricsError}</p>}
         </div>
-        <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 pb-28">
+        <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 pb-28 min-h-0">
           {fabricsLoading ? (
             <p className="text-sm text-gray-500">Ucitavanje tkanina...</p>
           ) : filteredFabrics.length === 0 ? (
