@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
@@ -12,7 +12,7 @@ type Reco = {
   inseam: number;
 };
 
-export default function MeasurePage() {
+function MeasurePageContent() {
   const [h, setH] = useState<number | "">(180);
   const [w, setW] = useState<number | "">(80);
   const [age, setAge] = useState<number | "">(30);
@@ -265,3 +265,17 @@ export default function MeasurePage() {
   );
 }
 
+export default function MeasurePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#f7f7f7] p-6 md:p-10">
+          <h1 className="mb-6 text-2xl font-semibold">Mere i porudzbina</h1>
+          <p className="text-sm text-gray-600">Ucitavanje konfiguracije...</p>
+        </div>
+      }
+    >
+      <MeasurePageContent />
+    </Suspense>
+  );
+}
