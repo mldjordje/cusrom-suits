@@ -29,7 +29,7 @@ const toneLabels: Record<"all" | "light" | "medium" | "dark", string> = {
 };
 
 const Badge = ({ label }: { label: string }) => (
-  <span className="rounded-full bg-emerald-500 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+  <span className="rounded-full bg-emerald-500 px-2 py-[6px] text-[9px] font-semibold uppercase tracking-wide text-white">
     {label}
   </span>
 );
@@ -50,7 +50,7 @@ const ChoiceGroup = ({
   if (!options.length) return null;
   return (
     <div className="space-y-2">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">{title}</p>
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500">{title}</p>
       <div className={`grid gap-2 ${columns === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
         {options.map((option) => {
           const active = selectedId === option.id;
@@ -58,14 +58,14 @@ const ChoiceGroup = ({
             <button
               key={option.id}
               onClick={() => onSelect(option.id)}
-              className={`rounded-2xl border px-3 py-3 text-left transition ${
+              className={`rounded-xl border px-3 py-2.5 text-left transition ${
                 active
                   ? "border-gray-900 bg-gray-900 text-white shadow-sm"
                   : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
               }`}
             >
-              <p className="text-sm font-semibold leading-tight">{option.label}</p>
-              {option.hint && <p className={`text-[11px] ${active ? "text-white/80" : "text-gray-500"}`}>{option.hint}</p>}
+              <p className="text-[13px] font-semibold leading-tight">{option.label}</p>
+              {option.hint && <p className={`text-[10px] ${active ? "text-white/80" : "text-gray-500"}`}>{option.hint}</p>}
             </button>
           );
         })}
@@ -81,10 +81,10 @@ const DrawerHeader = ({
   title: string;
   onClose: () => void;
 }) => (
-  <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+  <div className="flex items-center justify-between border-b border-gray-100 px-3 py-3">
     <div>
-      <p className="text-[10px] uppercase tracking-[0.25em] text-gray-400">Prilagodi</p>
-      <p className="text-lg font-semibold text-gray-900">{title}</p>
+      <p className="text-[10px] uppercase tracking-[0.22em] text-gray-400">Prilagodi</p>
+      <p className="text-[15px] font-semibold text-gray-900">{title}</p>
     </div>
     <button
       onClick={onClose}
@@ -146,7 +146,7 @@ const Drawer = ({
       aria-hidden={!active}
     >
       <div
-        className={`pointer-events-auto h-full w-[78vw] max-w-[420px] transform bg-white shadow-2xl transition duration-200 ease-out ${
+        className={`pointer-events-auto h-full w-[70vw] max-w-[360px] transform bg-white shadow-2xl transition duration-200 ease-out ${
           active ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -418,21 +418,21 @@ function MobileControls({ config, dispatch }: Props) {
         <div className="mt-6 h-[1px] w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
         <div className="fixed bottom-3 left-0 right-0 z-30 px-3">
           <div className="mx-auto max-w-lg rounded-[26px] bg-white shadow-[0_25px_80px_rgba(15,23,42,0.18)] ring-1 ring-black/5">
-            <div className="flex items-center justify-between px-4 pt-3 pb-2">
+            <div className="flex items-center justify-between px-3 pt-2.5 pb-2">
               {NAV.map((item) => {
                 const active = activePanel === item.id;
                 return (
                   <button
                     key={item.id}
                     onClick={() => setActivePanel(active ? null : item.id)}
-                    className={`flex flex-col items-center gap-1 rounded-2xl px-3 py-2 transition ${
+                    className={`flex flex-col items-center gap-1 rounded-2xl px-2.5 py-2 transition ${
                       active ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:bg-gray-50"
                     }`}
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50">
-                      <img src={item.icon} alt={item.label} className="h-5 w-5 object-contain opacity-80" />
+                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-gray-50">
+                      <img src={item.icon} alt={item.label} className="h-4 w-4 object-contain opacity-80" />
                     </span>
-                    <span className="text-[11px] font-semibold tracking-[0.2em] uppercase">{item.label}</span>
+                    <span className="text-[10px] font-semibold tracking-[0.18em] uppercase">{item.label}</span>
                   </button>
                 );
               })}
