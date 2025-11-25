@@ -146,7 +146,7 @@ const Drawer = ({
       aria-hidden={!active}
     >
       <div
-        className={`pointer-events-auto h-full w-[78vw] max-w-[420px] transform bg-white shadow-2xl transition duration-200 ease-out ${
+        className={`pointer-events-auto h-full w-[68vw] max-w-[360px] sm:max-w-[420px] transform bg-white shadow-2xl transition duration-200 ease-out ${
           active ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -164,6 +164,7 @@ const Drawer = ({
 function MobileControls({ config, dispatch }: Props) {
   const [activePanel, setActivePanel] = useState<Panel | null>(null);
   const [savingCart, setSavingCart] = useState(false);
+  const [feedback, setFeedback] = useState<string | null>(null);
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
   const [fabricQuery, setFabricQuery] = useState("");
   const [sort, setSort] = useState<"date_desc" | "date_asc">("date_desc");
@@ -213,6 +214,7 @@ function MobileControls({ config, dispatch }: Props) {
 
   const handleAddToCart = () => {
     if (savingCart) return;
+    setFeedback(null);
     try {
       setSavingCart(true);
       const existingRaw = localStorage.getItem("suitCart");
@@ -225,7 +227,7 @@ function MobileControls({ config, dispatch }: Props) {
       };
       parsed.unshift(entry);
       localStorage.setItem("suitCart", JSON.stringify(parsed));
-      alert("Dodato u korpu. Zavrsite porudzbinu u narednom koraku.");
+      setFeedback("Dizajn je sacuvan. Nastavite na mere i naplatu.");
     } catch (err) {
       console.error("Add to cart failed", err);
       alert("Nije moguce dodati u korpu trenutno. Pokusajte ponovo.");
@@ -437,22 +439,32 @@ function MobileControls({ config, dispatch }: Props) {
                 );
               })}
             </div>
-            <div className="border-t border-gray-100 px-4 py-3">
+            <div className="space-y-3 border-t border-gray-100 px-4 py-3">
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">Tvoje custom odelo</p>
                   <p className="text-[11px] text-gray-500">
                     {price.total} EUR - Isporuka za ~3 nedelje
                   </p>
+                  <p className="text-[11px] text-gray-500">1) Dizajn 2) Mere 3) Korpa i placanje</p>
                 </div>
                 <button
                   onClick={handleAddToCart}
                   disabled={savingCart}
                   className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
                 >
-                  Dodaj u korpu
+                  {savingCart ? "Upisujem..." : "Sacuvaj dizajn"}
                 </button>
               </div>
+              <button
+                onClick={() => {
+                  window.location.href = measurementUrl;
+                }}
+                className="w-full rounded-full border border-gray-900 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 transition hover:bg-gray-900 hover:text-white"
+              >
+                Nastavi na mere i korpu
+              </button>
+              {feedback && <p className="text-[11px] font-semibold text-emerald-600">{feedback}</p>}
             </div>
           </div>
         </div>
