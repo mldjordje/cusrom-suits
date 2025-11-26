@@ -21,6 +21,6 @@ export function getTransparentCdnBase() {
       : null;
   if (localDev) return ensureTrailingSlash(localDev);
 
-  // Default to bundled static assets to avoid remote 404s
-  return ensureTrailingSlash(explicit || CDN_TRANSPARENT || LEGACY_REMOTE);
+  // Default to bundled static assets to avoid remote 404s; legacy remote as last resort
+  return ensureTrailingSlash(CDN_TRANSPARENT || explicit || LEGACY_REMOTE);
 }

@@ -142,7 +142,6 @@ const Drawer = ({
       className={`fixed inset-0 z-40 flex transition lg:hidden ${
         active ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
       }`}
-      aria-hidden={!active}
     >
       <div
         className={`pointer-events-auto flex h-full w-[68vw] max-w-[360px] flex-col overflow-hidden sm:max-w-[420px] transform bg-white shadow-2xl transition duration-200 ease-out ${

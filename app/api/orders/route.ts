@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getServiceSupabase } from "@/lib/supabase/server";
+import { getServiceSupabase, getAnonSupabase } from "@/lib/supabase/server";
 
 export async function POST(req: NextRequest) {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabase() || getAnonSupabase();
   if (!supabase) {
-    return NextResponse.json({ success: false, message: "Supabase service key missing" }, { status: 503 });
+    return NextResponse.json({ success: false, message: "Supabase not configured" }, { status: 503 });
   }
 
   const payload = await req.json().catch(() => null);
@@ -34,9 +34,9 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET() {
-  const supabase = getServiceSupabase();
+  const supabase = getServiceSupabase() || getAnonSupabase();
   if (!supabase) {
-    return NextResponse.json({ success: false, message: "Supabase service key missing" }, { status: 503 });
+    return NextResponse.json({ success: false, message: "Supabase not configured" }, { status: 503 });
   }
 
   const { data, error } = await supabase
