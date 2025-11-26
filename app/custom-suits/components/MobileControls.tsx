@@ -211,7 +211,7 @@ function MobileControls({ config, dispatch }: Props) {
     return url.toString();
   }, [config]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (savingCart) return;
     setFeedback(null);
     try {
@@ -226,6 +226,18 @@ function MobileControls({ config, dispatch }: Props) {
       };
       parsed.unshift(entry);
       localStorage.setItem("suitCart", JSON.stringify(parsed));
+
+      fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          config,
+          price: price.total,
+          fabricId: config.colorId,
+          contact: null,
+        }),
+      }).catch((err) => console.error("Order sync failed", err));
+
       setFeedback("Dizajn je sacuvan. Nastavite na mere i naplatu.");
     } catch (err) {
       console.error("Add to cart failed", err);

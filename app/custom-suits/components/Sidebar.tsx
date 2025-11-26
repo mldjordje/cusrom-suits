@@ -102,20 +102,34 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
     return url.toString();
   }, [config]);
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (savingCart) return;
     try {
       setSavingCart(true);
-      const existingRaw = localStorage.getItem("suitCart");
-      const parsed = existingRaw ? JSON.parse(existingRaw) : [];
+
       const entry = {
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
         config,
         price,
         addedAt: new Date().toISOString(),
       };
+      const existingRaw = localStorage.getItem("suitCart");
+      const parsed = existingRaw ? JSON.parse(existingRaw) : [];
       parsed.unshift(entry);
       localStorage.setItem("suitCart", JSON.stringify(parsed));
+
+      // Send to Supabase orders via API route
+      fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          config,
+          price: price.total,
+          fabricId: config.colorId,
+          contact: null,
+        }),
+      }).catch((err) => console.error("Order sync failed", err));
+
       alert("Dizajn je sacuvan u korpu. Zavrsite porudzbinu u sledecem koraku.");
     } catch (err) {
       console.error("Add to cart failed", err);
@@ -390,7 +404,6 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 };
 
 export default Sidebar;
-
 
 
 
