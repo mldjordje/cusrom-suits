@@ -424,12 +424,12 @@ function MobileControls({ config, dispatch }: Props) {
                   <button
                     key={item.id}
                     onClick={() => setActivePanel(active ? null : item.id)}
-                    className={`flex flex-col items-center gap-1 rounded-2xl px-3 py-2 transition ${
+                    className={`flex flex-col items-center gap-1 rounded-2xl px-3.5 py-2.5 transition ${
                       active ? "bg-gray-100 text-gray-900" : "text-gray-500 hover:bg-gray-50"
                     }`}
                   >
-                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50">
-                      <img src={item.icon} alt={item.label} className="h-5 w-5 object-contain opacity-80" />
+                    <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-gray-50">
+                      <img src={item.icon} alt={item.label} className="h-6 w-6 object-contain opacity-80" />
                     </span>
                     <span className="text-[11px] font-semibold tracking-[0.2em] uppercase">{item.label}</span>
                   </button>
