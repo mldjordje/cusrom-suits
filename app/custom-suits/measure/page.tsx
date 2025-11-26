@@ -2,6 +2,7 @@
 import React, { Suspense, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
+import { computePrice } from "../utils/price";
 import { SuitState } from "../hooks/useSuitConfigurator";
 
 type Reco = {
@@ -71,11 +72,12 @@ function MeasurePageContent() {
     };
   }, [parsedConfig]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const existingRaw = localStorage.getItem("suitOrders");
       const parsed = existingRaw ? JSON.parse(existingRaw) : [];
+      const price = parsedConfig ? computePrice(parsedConfig, suits).total : null;
       const payload = {
         id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
         config: parsedConfig,
@@ -85,6 +87,34 @@ function MeasurePageContent() {
       };
       parsed.unshift(payload);
       localStorage.setItem("suitOrders", JSON.stringify(parsed));
+
+      if (parsedConfig) {
+        try {
+          const res = await fetch("/api/orders", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              config: parsedConfig,
+              price,
+              fabricId: parsedConfig.colorId,
+              contact: {
+                ime,
+                email,
+                telefon,
+                napomena,
+                measurements: { height: h, weight: w, age, reco },
+              },
+            }),
+          });
+          const json = await res.json();
+          if (!json?.success) {
+            console.error("Order sync failed", json?.message);
+          }
+        } catch (err) {
+          console.error("Order sync failed", err);
+        }
+      }
+
       setStatus("saved");
       alert("Porudzbina je sacuvana. Kontaktiracemo vas u najkracem roku.");
     } catch (err) {
