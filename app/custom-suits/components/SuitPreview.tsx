@@ -436,11 +436,11 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
   return (
     <div className="relative w-full select-none">
-      <div className="relative mx-auto w-full max-w-[760px]">
+      <div className="relative mx-auto w-full max-w-[700px] sm:max-w-[640px]">
         <div
-          className="relative mx-auto w-full origin-top transform scale-[1.15] sm:scale-100"
+          className="relative mx-auto w-full origin-top transform scale-[1.05] sm:scale-95 lg:scale-90"
           data-testid="jacket-preview"
-          style={{ width: "100%", aspectRatio: "600 / 733", maxWidth: 720 }}
+          style={{ width: "100%", aspectRatio: "600 / 733", maxWidth: 660 }}
           onWheel={onWheel}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
@@ -488,7 +488,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
-            textureScale={toneVis.weaveSharpness}
+            textureScale={toneVis.weaveSharpness * 1.05}
           />
         )}
         {needsDarkBoost && jacketUnionMask && (
@@ -536,8 +536,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     {/* ======================== PANTS CANVAS ======================== */}
       {pantsLayer && (
         <div
-          className="relative mx-auto mt-2 w-full max-w-[760px] origin-top transform scale-[1.08] sm:scale-100"
-          style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 720 }}
+          className="relative mx-auto -mt-6 w-full max-w-[680px] origin-top transform scale-[1.02] sm:-mt-8 sm:scale-95 lg:scale-90"
+          style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 640 }}
         >
           <BaseLayer layers={[pantsLayer]} resolve={(layer) => cdnPair(layer.src)} />
           {showLayer("fabric") && (
@@ -554,7 +554,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               fabricAvgColor={fabricFillColor}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
-              textureScale={toneVis.weaveSharpness}
+              textureScale={toneVis.weaveSharpness * 0.95}
             />
           )}
           {needsDarkBoost && pantsMaskPair && (
@@ -591,6 +591,3 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     </div>
   );
 }
-
-
-
