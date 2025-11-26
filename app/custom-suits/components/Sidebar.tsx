@@ -10,12 +10,11 @@ import { useFabrics } from "../hooks/useFabrics";
 
 type Props = { config: SuitState; dispatch: React.Dispatch<any> };
 
-const tabs = ["FABRIC", "STYLE", "ACCENTS", "MEASURE"] as const;
+const tabs = ["FABRIC", "STYLE", "ACCENTS"] as const;
 const tabLabels: Record<(typeof tabs)[number], string> = {
   FABRIC: "Tkanine",
   STYLE: "Stil",
   ACCENTS: "Detalji",
-  MEASURE: "Mere",
 };
 
 const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
@@ -151,7 +150,6 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
     FABRIC: "/custom-suits/icons/iconfabric.png",
     STYLE: "/custom-suits/icons/iconstyle.png",
     ACCENTS: "/custom-suits/icons/iconaccents.png",
-    MEASURE: "/custom-suits/icons/iconstyle.png",
   };
 
   return (
@@ -316,63 +314,63 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 
                   {activeLapel?.widths?.length ? (
                     <ChipGroup
-                    title="Širina revera"
+                      title="Širina revera"
                       options={activeLapel.widths.map((width) => ({ id: width.id, label: width.name }))}
                       selectedId={selectedLapelWidthId}
                       onSelect={(id) => dispatch({ type: "SET_LAPEL_WIDTH", payload: id })}
                     />
                   ) : null}
-
-                  <ChipGroup
-                    title="Depovi na sakou"
-                    options={(currentSuit.pockets || []).map((pocket) => ({ id: pocket.id, label: pocket.name }))}
-                    selectedId={config.pocketId}
-                    onSelect={(id) => dispatch({ type: "SET_POCKET", payload: id })}
-                  />
-
-                  <ChipGroup
-                    title="Dep na grudima"
-                    options={(currentSuit.breastPocket || []).map((option) => ({ id: option.id, label: option.name }))}
-                    selectedId={config.breastPocketId}
-                    onSelect={(id) => dispatch({ type: "SET_BREAST_POCKET", payload: id })}
-                  />
-
-                  <ChipGroup
-                    title="Postava"
-                    options={(currentSuit.interiors || []).map((option) => ({ id: option.id, label: option.name }))}
-                    selectedId={config.interiorId}
-                    onSelect={(id) => dispatch({ type: "SET_INTERIOR", payload: id })}
-                  />
-
-                  <ChipGroup
-                    title="Zavrnica pantalona"
-                    options={(currentSuit.cuffs || []).map((option) => ({ id: option.id, label: option.name }))}
-                    selectedId={config.cuffId}
-                    onSelect={(id) => dispatch({ type: "SET_CUFF", payload: id })}
-                  />
-
-                  <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white/80 px-4 py-3">
-                    <div>
-                      <p className="text-sm font-semibold text-gray-800">Prikai sloj koulje</p>
-                      <p className="text-[11px] text-gray-500">Koristi belu koulju za jasniji prikaz slojeva.</p>
-                    </div>
-                    <button
-                      onClick={() => dispatch({ type: "TOGGLE_SHIRT" })}
-                      className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
-                        config.showShirt ? "bg-gray-900 text-white" : "border border-gray-300 text-gray-600"
-                      }`}
-                    >
-                      {config.showShirt ? "Ukljueno" : "Iskljueno"}
-                    </button>
-                  </div>
                 </>
               )}
             </section>
           )}
 
           {activeTab === "ACCENTS" && (
-            <section className="rounded-3xl border border-dashed border-gray-200 bg-white/70 p-5 text-sm text-gray-500">
-              <p>Personalizacija detalja uskoro.</p>
+            <section className="space-y-6 rounded-3xl border border-dashed border-gray-200 bg-white/70 p-5 text-sm text-gray-500">
+              <ChipGroup
+                title="Depovi na sakou"
+                options={(currentSuit?.pockets || []).map((pocket) => ({ id: pocket.id, label: pocket.name }))}
+                selectedId={config.pocketId}
+                onSelect={(id) => dispatch({ type: "SET_POCKET", payload: id })}
+              />
+
+              <ChipGroup
+                title="Dep na grudima"
+                options={(currentSuit?.breastPocket || []).map((option) => ({ id: option.id, label: option.name }))}
+                selectedId={config.breastPocketId}
+                onSelect={(id) => dispatch({ type: "SET_BREAST_POCKET", payload: id })}
+              />
+
+              <ChipGroup
+                title="Postava"
+                options={(currentSuit?.interiors || []).map((option) => ({ id: option.id, label: option.name }))}
+                selectedId={config.interiorId}
+                onSelect={(id) => dispatch({ type: "SET_INTERIOR", payload: id })}
+              />
+
+              {currentSuit?.cuffs?.length ? (
+                <ChipGroup
+                  title="Zavrnica pantalona"
+                  options={(currentSuit.cuffs || []).map((option) => ({ id: option.id, label: option.name }))}
+                  selectedId={config.cuffId}
+                  onSelect={(id) => dispatch({ type: "SET_CUFF", payload: id })}
+                />
+              ) : null}
+
+              <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white/80 px-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-gray-800">Prikai sloj koulje</p>
+                  <p className="text-[11px] text-gray-500">Koristi belu koulju za jasniji prikaz slojeva.</p>
+                </div>
+                <button
+                  onClick={() => dispatch({ type: "TOGGLE_SHIRT" })}
+                  className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
+                    config.showShirt ? "bg-gray-900 text-white" : "border border-gray-300 text-gray-600"
+                  }`}
+                >
+                  {config.showShirt ? "Ukljueno" : "Iskljueno"}
+                </button>
+              </div>
             </section>
           )}
 
@@ -412,7 +410,4 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 };
 
 export default Sidebar;
-
-
-
 
