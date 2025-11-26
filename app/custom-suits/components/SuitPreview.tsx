@@ -150,14 +150,23 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     );
   };
 
+  const selectedCuff = useMemo(
+    () => currentSuit?.cuffs?.find((c) => c.id === config.cuffId) ?? currentSuit?.cuffs?.[0],
+    [currentSuit, config.cuffId]
+  );
+
   const suitLayers = useMemo(() => {
     if (!currentSuit?.layers) return [];
-    return currentSuit.layers.map((layer) =>
-      layer.id === "torso"
-        ? { ...layer, src: swapLapelInPath(layer.src, selectedLapel?.id, selectedLapelWidth?.id) }
-        : layer
-    );
-  }, [currentSuit, selectedLapel?.id, selectedLapelWidth?.id]);
+    return currentSuit.layers.map((layer) => {
+      if (layer.id === "torso") {
+        return { ...layer, src: swapLapelInPath(layer.src, selectedLapel?.id, selectedLapelWidth?.id) };
+      }
+      if (layer.id === "pants" && selectedCuff?.src) {
+        return { ...layer, src: selectedCuff.src };
+      }
+      return layer;
+    });
+  }, [currentSuit, selectedLapel?.id, selectedLapelWidth?.id, selectedCuff?.src]);
 
   const styleOverlayLayers = useMemo(() => {
     if (!currentSuit) return [];
