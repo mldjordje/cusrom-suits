@@ -139,7 +139,7 @@ const Drawer = ({
   const active = Boolean(panel);
   return (
     <div
-      className={`fixed inset-0 z-40 flex transition lg:hidden ${
+      className={`fixed inset-0 z-[60] flex transition lg:hidden ${
         active ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
       }`}
     >
