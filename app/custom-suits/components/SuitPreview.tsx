@@ -104,26 +104,8 @@ const computeFabricBaseColor = (
   overrideColor?: string | null
 ) => {
   const fallbackHex = normalizeHex(fallbackColor) ?? "#8f8f8f";
-  const fallbackRgb = hexToRgb(fallbackHex);
   const candidateHex = normalizeHex(overrideColor ?? avgColor);
-  if (!fallbackRgb) return fallbackHex;
-  if (!candidateHex) return fallbackHex;
-  const candidateRgb = hexToRgb(candidateHex);
-  if (!candidateRgb) return fallbackHex;
-
-  if (tone === "dark" && isNeutralTone(candidateRgb)) {
-    const fallbackLum = relativeLuminance(fallbackRgb);
-    const lum = relativeLuminance(candidateRgb);
-    const delta = lum - fallbackLum;
-    if (delta > 0.015) {
-      const targetLum = fallbackLum + delta * 0.4;
-      const factor = Math.max(0.25, Math.min(1, targetLum / lum));
-      const adjusted = scaleRgb(candidateRgb, factor);
-      return rgbToHex(adjusted);
-    }
-  }
-
-  return candidateHex;
+  return candidateHex ?? fallbackHex;
 };
 
 /* =====================================================================================
@@ -231,12 +213,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
   const fabricTextureFilter = useMemo(() => {
     if (fabricTone === "dark") {
-      return `${tb.filter} brightness(0.85) contrast(1.28) saturate(1.08)`;
+      return `${tb.filter} brightness(0.9) contrast(1.32) saturate(1.2)`;
     }
     if (fabricTone === "light") {
       return `${tb.filter} brightness(1.05) contrast(1.02) saturate(0.95)`;
     }
-    return `${tb.filter} brightness(0.98) contrast(1.18) saturate(1.04)`;
+    return `${tb.filter} brightness(1.02) contrast(1.12) saturate(1.05)`;
   }, [fabricTone, tb.filter]);
   const needsDarkBoost = fabricTone === "dark";
 
@@ -480,15 +462,15 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             fabricTexture={fabricTexture}
             textureStyle={{
               filter: fabricTextureFilter,
-              mixBlendMode: toneVis.fabric.blend,
-              opacity: toneVis.fabric.opacity * 0.9,
+              mixBlendMode: fabricTone === "dark" ? "overlay" : toneVis.fabric.blend,
+              opacity: toneVis.fabric.opacity * (fabricTone === "dark" ? 1.0 : 0.9),
             }}
             baseColor={toneBaseColor}
             fabricAvgColor={fabricFillColor}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
-            textureScale={toneVis.weaveSharpness * 1.0}
+            textureScale={toneVis.weaveSharpness * (fabricTone === "dark" ? 1.05 : 1)}
           />
         )}
         {needsDarkBoost && jacketUnionMask && (
@@ -547,14 +529,14 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               fabricTexture={fabricTexture}
               textureStyle={{
                 filter: fabricTextureFilter,
-                mixBlendMode: toneVis.fabric.blend,
-                opacity: toneVis.fabric.opacity * 0.9,
+                mixBlendMode: fabricTone === "dark" ? "overlay" : toneVis.fabric.blend,
+                opacity: toneVis.fabric.opacity * (fabricTone === "dark" ? 1.0 : 0.9),
               }}
               baseColor={toneBaseColor}
               fabricAvgColor={fabricFillColor}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
-              textureScale={toneVis.weaveSharpness * 1.0}
+              textureScale={toneVis.weaveSharpness * (fabricTone === "dark" ? 1.05 : 1)}
             />
           )}
           {needsDarkBoost && pantsMaskPair && (

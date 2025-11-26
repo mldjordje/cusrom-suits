@@ -93,7 +93,7 @@ export const FabricUnion: React.FC<Props> = ({
 
     const mixBlendMode =
       (textureStyle.mixBlendMode as React.CSSProperties["mixBlendMode"]) ?? "soft-light";
-    const opacity = Math.min(Number(textureStyle.opacity ?? 0.26), 0.32);
+    const opacity = Math.min(Number(textureStyle.opacity ?? 0.26), 0.35);
     const filter = textureStyle.filter ?? "brightness(0.98) contrast(1.12) saturate(1.04)";
 
     const baseStyle: React.CSSProperties = {
