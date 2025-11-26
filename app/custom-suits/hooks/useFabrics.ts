@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fabrics as fallbackFabrics } from "../data/options";
-import { getBackendBase } from "../utils/backend";
 
 export type FabricQuery = {
   tone?: "light" | "medium" | "dark";
@@ -34,8 +33,7 @@ export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    const base = getBackendBase();
-    const url = `${base}fabrics.php${searchKey ? `?${searchKey}` : ""}`;
+    const url = `/api/fabrics${searchKey ? `?${searchKey}` : ""}`;
 
     fetch(url, { cache: "no-store" })
       .then((response) => response.json())

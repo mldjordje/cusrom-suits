@@ -1,132 +1,203 @@
 "use client";
-import React, { useCallback, useEffect, useState } from "react";
-import { getBackendBase } from "../../custom-suits/utils/backend";
 
-type PhpFabric = {
-  id: number | string;
+import { useEffect, useMemo, useState } from "react";
+
+type Fabric = {
+  id: string;
   name: string;
   texture: string;
-  tone?: "light" | "medium" | "dark";
-  created_at?: string;
+  tone?: string;
+  price?: number | null;
+  code?: string | null;
 };
 
+type Status = { type: "idle" | "loading" | "error" | "success"; message?: string };
+
+const toneOptions = ["light", "medium", "dark"];
+
 export default function FabricsAdminPage() {
-  const BACKEND_BASE = getBackendBase();
-  const [list, setList] = useState<PhpFabric[]>([]);
-  const [name, setName] = useState("");
+  const [fabrics, setFabrics] = useState<Fabric[]>([]);
+  const [status, setStatus] = useState<Status>({ type: "idle" });
+  const [form, setForm] = useState({
+    id: "",
+    name: "",
+    tone: "medium",
+    price: "",
+    code: "",
+    texture: "",
+  });
   const [file, setFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [lastTone, setLastTone] = useState<string | null>(null);
 
-  const usingPhpApi = Boolean(BACKEND_BASE);
+  const loadFabrics = useMemo(
+    () => async () => {
+      const res = await fetch("/api/fabrics");
+      const json = await res.json();
+      if (json?.data) setFabrics(json.data);
+    },
+    []
+  );
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      if (usingPhpApi) {
-        const res = await fetch(`${BACKEND_BASE}fabrics.php`, { cache: "no-store" });
-        const json = await res.json();
-        if (json.success) setList(json.data);
-        else setError(json.error || "Greška pri čitanju tkanina");
-      } else {
-        // Fallback na lokalni Next API (dev okruženje)
-        const res = await fetch("/api/fabrics", { cache: "no-store" });
-        const json = await res.json();
-        if (json.success) setList(json.data);
-        else setError(json.error || "Greška pri čitanju tkanina");
-      }
-    } catch (e: any) {
-      setError(e?.message || "Greška pri pozivu API-ja");
-    } finally {
-      setLoading(false);
+  useEffect(() => {
+    loadFabrics();
+  }, [loadFabrics]);
+
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!form.name.trim()) {
+      setStatus({ type: "error", message: "Naziv je obavezan" });
+      return;
     }
-  }, [BACKEND_BASE, usingPhpApi]);
-
-  useEffect(() => { load(); }, [load]);
-
-  const submit = async (ev: React.FormEvent) => {
-    ev.preventDefault();
-    setError(null);
-    setLastTone(null);
-    try {
-      if (usingPhpApi) {
-        if (!file) throw new Error("Izaberite fajl tkanine");
-        const fd = new FormData();
-        fd.append("name", name || "Bez naziva");
-        fd.append("texture", file);
-        const res = await fetch(`${BACKEND_BASE}upload_fabric.php`, { method: "POST", body: fd });
-        const json = await res.json();
-        if (!json.success) throw new Error(json.message || json.error || "Neuspešno čuvanje");
-        setName("");
-        setFile(null);
-        setLastTone(json.tone || null);
-        await load();
-      } else {
-        throw new Error("NEXT_PUBLIC_BACKEND_BASE nije podešen — uključite PHP API");
-      }
-    } catch (e: any) {
-      setError(e?.message || "Greška pri snimanju");
+    if (!file && !form.texture.trim()) {
+      setStatus({ type: "error", message: "Dodaj teksturu ili uploaduj fajl" });
+      return;
     }
-  };
+    setStatus({ type: "loading", message: "Upload..." });
+    const fd = new FormData();
+    if (form.id.trim()) fd.set("id", form.id.trim());
+    fd.set("name", form.name.trim());
+    fd.set("tone", form.tone);
+    if (form.price.trim()) fd.set("price", form.price.trim());
+    if (form.code.trim()) fd.set("code", form.code.trim());
+    if (form.texture.trim()) fd.set("texture", form.texture.trim());
+    if (file) fd.set("file", file);
 
-  const onDelete = async (id: number | string) => {
-    if (!usingPhpApi) return;
-    if (!confirm(`Obrisati tkaninu #${id}?`)) return;
-    try {
-      const res = await fetch(`${BACKEND_BASE}delete_fabric.php`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      const j = await res.json();
-      if (!j.success) throw new Error(j.error || "Greška pri brisanju");
-      await load();
-    } catch (e: any) {
-      alert(e?.message || "Greška pri brisanju");
+    const res = await fetch("/api/fabrics/upload", { method: "POST", body: fd });
+    const json = await res.json();
+    if (!res.ok || !json?.success) {
+      setStatus({ type: "error", message: json?.message || "Upload failed" });
+      return;
     }
+    setStatus({ type: "success", message: "Sačuvano" });
+    setForm({ id: "", name: "", tone: "medium", price: "", code: "", texture: "" });
+    setFile(null);
+    await loadFabrics();
   };
 
   return (
-    <div className="min-h-screen p-6 md:p-10 bg-[#f7f7f7]">
-      <h1 className="text-2xl font-semibold mb-6">CMS: Tkanine</h1>
-      <div className="grid md:grid-cols-2 gap-8">
-        <form onSubmit={submit} className="bg-white p-4 rounded-lg shadow-sm border">
-          <h2 className="text-lg font-semibold mb-4">Dodaj tkaninu (upload)</h2>
-          <div className="grid grid-cols-1 gap-3">
-            <input className="border rounded p-2" placeholder="Naziv" value={name} onChange={(e)=>setName(e.target.value)} />
-            <input className="border rounded p-2" type="file" accept="image/*" onChange={(e)=>setFile(e.target.files?.[0] || null)} />
-          </div>
-          <button className="mt-4 px-4 py-2 bg-black text-white rounded">Sačuvaj</button>
-          {lastTone && <p className="text-xs text-green-700 mt-2">Detected tone: {lastTone}</p>}
-          {error && <p className="text-red-600 text-sm mt-2">{error}</p>}
-          {!usingPhpApi && (
-            <p className="text-xs text-amber-700 mt-2">Napomena: Postavite NEXT_PUBLIC_BACKEND_BASE da biste koristili PHP API.</p>
-          )}
-        </form>
+    <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-8">
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Fabrics CMS</h1>
+        <p className="text-sm text-gray-600">Dodaj novu tkaninu uploadom ili unosom URL-a.</p>
+      </div>
 
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <h2 className="text-lg font-semibold mb-4">Postojeće tkanine</h2>
-          {loading ? (
-            <p className="text-gray-500 text-sm">Učitavanje…</p>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {list.map((f) => (
-                <div key={String(f.id)} className="border rounded overflow-hidden">
-                  <div className="h-24 bg-cover bg-center" style={{ backgroundImage: `url(${f.texture})` }} />
-                  <div className="p-3">
-                    <div className="font-semibold">{f.name}</div>
-                    <div className="text-xs text-gray-600">ID: {String(f.id)}</div>
-                    <div className="text-xs text-gray-600">Tone: {f.tone || "-"}</div>
-                    {usingPhpApi && (
-                      <button onClick={()=>onDelete(f.id)} className="mt-2 px-3 py-1 border rounded">Obriši</button>
-                    )}
-                  </div>
-                </div>
+      <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-gray-700">Naziv *</label>
+            <input
+              value={form.name}
+              onChange={(e) => setForm((s) => ({ ...s, name: e.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+              placeholder="Npr. Dark Herringbone"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-gray-700">ID (opciono)</label>
+            <input
+              value={form.id}
+              onChange={(e) => setForm((s) => ({ ...s, id: e.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+              placeholder="Slug/šifra"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-gray-700">Ton</label>
+            <select
+              value={form.tone}
+              onChange={(e) => setForm((s) => ({ ...s, tone: e.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+            >
+              {toneOptions.map((t) => (
+                <option key={t} value={t}>
+                  {t}
+                </option>
               ))}
-            </div>
+            </select>
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-gray-700">Cena (opciono)</label>
+            <input
+              value={form.price}
+              onChange={(e) => setForm((s) => ({ ...s, price: e.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+              placeholder="300"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-gray-700">Šifra / code (opciono)</label>
+            <input
+              value={form.code}
+              onChange={(e) => setForm((s) => ({ ...s, code: e.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+              placeholder="CODE-123"
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-gray-700">Texture URL (opciono)</label>
+            <input
+              value={form.texture}
+              onChange={(e) => setForm((s) => ({ ...s, texture: e.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+              placeholder="https://..."
+            />
+          </div>
+        </div>
+        <div className="space-y-1">
+          <label className="text-xs font-semibold text-gray-700">Upload fajl (image)</label>
+          <input
+            type="file"
+            accept="image/*"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            className="text-sm"
+          />
+        </div>
+        <div className="flex items-center gap-3">
+          <button
+            type="submit"
+            disabled={status.type === "loading"}
+            className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
+          >
+            {status.type === "loading" ? "Čuvam..." : "Sačuvaj tkaninu"}
+          </button>
+          {status.type !== "idle" && (
+            <span
+              className={`text-sm ${
+                status.type === "error" ? "text-red-600" : status.type === "success" ? "text-emerald-600" : "text-gray-600"
+              }`}
+            >
+              {status.message}
+            </span>
           )}
+        </div>
+      </form>
+
+      <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-gray-900">Tkanine ({fabrics.length})</h2>
+          <button
+            onClick={loadFabrics}
+            className="rounded-full border border-gray-200 px-3 py-1 text-xs font-semibold text-gray-700 transition hover:border-gray-300"
+          >
+            Refresh
+          </button>
+        </div>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          {fabrics.map((f) => (
+            <div key={f.id} className="flex gap-3 rounded-xl border border-gray-200 p-3">
+              <div className="h-16 w-20 overflow-hidden rounded-lg bg-gray-100">
+                {f.texture ? <img src={f.texture} alt={f.name} className="h-full w-full object-cover" /> : null}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-gray-900">{f.name}</p>
+                <p className="text-xs text-gray-500">{f.id}</p>
+                <p className="text-xs text-gray-500">
+                  Ton: {f.tone || "medium"} {typeof f.price === "number" ? `• ${f.price} EUR` : ""}
+                </p>
+                {f.code && <p className="text-[11px] text-gray-400">Code: {f.code}</p>}
+              </div>
+            </div>
+          ))}
+          {!fabrics.length && <p className="text-sm text-gray-500">Nema tkanina.</p>}
         </div>
       </div>
     </div>
