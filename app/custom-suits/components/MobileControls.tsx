@@ -334,7 +334,7 @@ function MobileControls({ config, dispatch }: Props) {
         />
         {activeLapel?.widths?.length ? (
           <ChoiceGroup
-            title="irina revera"
+                    title="Širina revera"
             options={activeLapel.widths.map((width) => ({ id: width.id, label: width.name }))}
             selectedId={selectedLapelWidthId}
             onSelect={(id) => dispatch({ type: "SET_LAPEL_WIDTH", payload: id })}
