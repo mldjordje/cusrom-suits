@@ -119,16 +119,24 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
       localStorage.setItem("suitCart", JSON.stringify(parsed));
 
       // Send to Supabase orders via API route
-      fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          config,
-          price: price.total,
-          fabricId: config.colorId,
-          contact: null,
-        }),
-      }).catch((err) => console.error("Order sync failed", err));
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            config,
+            price: price.total,
+            fabricId: config.colorId,
+            contact: null,
+          }),
+        });
+        const json = await res.json();
+        if (!json?.success) {
+          console.error("Order sync failed", json?.message);
+        }
+      } catch (err) {
+        console.error("Order sync failed", err);
+      }
 
       alert("Dizajn je sacuvan u korpu. Zavrsite porudzbinu u sledecem koraku.");
     } catch (err) {
@@ -404,7 +412,6 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 };
 
 export default Sidebar;
-
 
 
 

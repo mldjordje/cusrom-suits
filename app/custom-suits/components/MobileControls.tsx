@@ -227,16 +227,24 @@ function MobileControls({ config, dispatch }: Props) {
       parsed.unshift(entry);
       localStorage.setItem("suitCart", JSON.stringify(parsed));
 
-      fetch("/api/orders", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          config,
-          price: price.total,
-          fabricId: config.colorId,
-          contact: null,
-        }),
-      }).catch((err) => console.error("Order sync failed", err));
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            config,
+            price: price.total,
+            fabricId: config.colorId,
+            contact: null,
+          }),
+        });
+        const json = await res.json();
+        if (!json?.success) {
+          console.error("Order sync failed", json?.message);
+        }
+      } catch (err) {
+        console.error("Order sync failed", err);
+      }
 
       setFeedback("Dizajn je sacuvan. Nastavite na mere i naplatu.");
     } catch (err) {
