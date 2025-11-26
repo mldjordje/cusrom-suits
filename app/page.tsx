@@ -17,8 +17,8 @@ const bossInspiredSections = [
   {
     id: "boss-black-friday",
     badge: "Black Friday Event",
-    title: "Do 30% popusta",
-    copy: "Vertikalni hero blokovi inspirisani BOSS landing stranicom - uz jasne CTA dugmice.",
+    title: "Do 30% popusta na bespoke",
+    copy: "Limitirane cene na premium vunu i lan. Izaberi fit, tkaninu i akcent – mi isporučujemo kroj po meri.",
     image: "/img/hero.jpg",
     ctas: [
       { label: "Muskarci", href: "/web-shop" },
@@ -28,8 +28,8 @@ const bossInspiredSections = [
   {
     id: "boss-holiday",
     badge: "Holiday Capsule",
-    title: "Praznicni setovi",
-    copy: "Blazeri, svila i koza za vecernje prilike. Prepustite stil frakciji svetla i senke.",
+    title: "Praznični tailor-made",
+    copy: "Jednoredni, dvoredni ili tux – precizan kroj, ručno birani reveri i postava. Dizajniraj i poruči online.",
     image: "/img/hero2.jpg",
     ctas: [
       { label: "Lookbook", href: "/custom-suits" },
@@ -39,8 +39,8 @@ const bossInspiredSections = [
   {
     id: "boss-gift",
     badge: "Gift Edit",
-    title: "Pokloni za njega",
-    copy: "Kravate, maramice i kozni kaisevi koji zaokruzuju stil.",
+    title: "Poklon koji traje",
+    copy: "Kravate od svile, kožne galanterije i poklon-vaučer za odelo po meri.",
     image: "/img/obuca.jpg",
     ctas: [
       { label: "Pokloni", href: "/web-shop" },
@@ -50,8 +50,8 @@ const bossInspiredSections = [
   {
     id: "boss-outerwear",
     badge: "Outerwear Staples",
-    title: "Kaputi i sakoi",
-    copy: "Slojevito presvuci jesen: izduzeni krojevi, vuna i kasmir, taktilne teksture.",
+    title: "Kaputi i sakoi po meri",
+    copy: "Vuna i kašmir, produženi krojevi i precizna ramena. Sastavi kombinaciju i poruči sa merenjem.",
     image: "/img/odela2.jpg",
     ctas: [
       { label: "Jackets", href: "/web-shop" },
@@ -62,7 +62,7 @@ const bossInspiredSections = [
     id: "boss-new-arrivals",
     badge: "New Arrivals",
     title: "Nova tura odela",
-    copy: "Sveze siluete i nijanse peska inspirisane BOSS mobilnim layoutom.",
+    copy: "Sveže siluete, nijanse uglja i petroleja. Kroji online, finalizuj merenje uživo ili remote.",
     image: "/img/odela.jpg",
     ctas: [
       { label: "Men", href: "/web-shop" },
@@ -75,8 +75,8 @@ const campaignBlocks = [
   {
     id: "black-friday",
     label: "Black Friday Event",
-    title: "Do 30% popusta",
-    copy: "Osvezi zimsku garderobu uz limitirane ponude.",
+    title: "Do 30% na premium odela",
+    copy: "Bespoke kroj, premium tkanine i jasna cena. Zakazivanje merenja uključeno.",
     image: "/img/hero.jpg",
     ctas: [
       { label: "Muskarci", href: "/web-shop" },
@@ -86,8 +86,8 @@ const campaignBlocks = [
   {
     id: "holiday-capsule",
     label: "Holiday Capsule",
-    title: "Kreiraj praznicni set",
-    copy: "Blazeri, koze i tregeri koji se uklapaju u sve svecane prilike.",
+    title: "Svečana kapsula",
+    copy: "Tux, smokingski rever i svilena postava – dizajniraj pa poruči.",
     image: "/img/hero2.jpg",
     ctas: [
       { label: "Lookbook", href: "/custom-suits" },
@@ -97,8 +97,8 @@ const campaignBlocks = [
   {
     id: "gift-edit",
     label: "Gift Edit",
-    title: "Pokloni za njega",
-    copy: "Kravate, maramice i kozni kaisevi koji zaokruzuju stil.",
+    title: "Poklon za stil",
+    copy: "Setovi svile, kožne cipele i poklon kartica za odelo po meri.",
     image: "/img/obuca.jpg",
     ctas: [
       { label: "Pokloni", href: "/web-shop" },
@@ -108,8 +108,8 @@ const campaignBlocks = [
   {
     id: "outerwear",
     label: "Outerwear Staples",
-    title: "Kaputi i sakoi",
-    copy: "Topline siluete i precizan kroj za hladne dane.",
+    title: "Kaputi po meri",
+    copy: "Vuna/kasmir, precizan kroj i ručno šiveni detalji. Dizajniraj i naruči.",
     image: "/img/odela2.jpg",
     ctas: [
       { label: "Jackets", href: "/web-shop" },
@@ -120,7 +120,7 @@ const campaignBlocks = [
     id: "new-arrivals",
     label: "New Arrivals",
     title: "Nova tura odela",
-    copy: "Najnoviji krojevi, sveze tkanine, spremno za probu.",
+    copy: "Savremeni krojevi, duboke nijanse i brza isporuka. Kroji online, meri na lokaciji.",
     image: "/img/odela.jpg",
     ctas: [
       { label: "Men", href: "/web-shop" },
