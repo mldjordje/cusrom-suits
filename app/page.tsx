@@ -170,7 +170,7 @@ const contactVariants: Variants = {
     transition: { duration: 0.7, ease: [0.4, 0, 0.2, 1] },
   },
 };
- w
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#f8f6f2] text-[#1b1b1b]">
