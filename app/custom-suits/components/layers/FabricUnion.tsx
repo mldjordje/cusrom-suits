@@ -32,10 +32,11 @@ export const FabricUnion: React.FC<Props> = ({
   mask,
   textureScale = 1,
 }) => {
-  const bgSize = `${Math.round(canvas.w * panZoom.scale * textureScale)}px ${Math.round(
-    canvas.h * panZoom.scale * textureScale
-  )}px`;
-  const bgPos = `${Math.round(panZoom.offset.x)}px ${Math.round(panZoom.offset.y)}px`;
+  const baseScale = panZoom.scale * textureScale;
+  const bgSize = `${(baseScale * 100).toFixed(2)}% ${((baseScale * 100 * canvas.h) / canvas.w).toFixed(2)}%`;
+  const bgPos = `calc(50% + ${Math.round(panZoom.offset.x)}px) calc(50% + ${Math.round(
+    panZoom.offset.y
+  )}px)`;
 
   const renderBaseFill = () => {
     if (mask) {
@@ -45,7 +46,7 @@ export const FabricUnion: React.FC<Props> = ({
           style={{
             backgroundColor: fabricAvgColor || baseColor,
             mixBlendMode: "color",
-            opacity: 0.85,
+            opacity: 0.92,
             WebkitMaskImage: buildMask(mask),
             WebkitMaskRepeat: "no-repeat",
             WebkitMaskSize: "contain",
@@ -71,7 +72,7 @@ export const FabricUnion: React.FC<Props> = ({
           style={{
             backgroundColor: fabricAvgColor || baseColor,
             mixBlendMode: "color",
-            opacity: 0.85,
+            opacity: 0.92,
             WebkitMaskImage: maskImage,
             WebkitMaskRepeat: "no-repeat",
             WebkitMaskSize: "contain",
@@ -92,7 +93,7 @@ export const FabricUnion: React.FC<Props> = ({
 
     const mixBlendMode =
       (textureStyle.mixBlendMode as React.CSSProperties["mixBlendMode"]) ?? "soft-light";
-    const opacity = Math.min(Number(textureStyle.opacity ?? 0.28), 0.3);
+    const opacity = Math.min(Number(textureStyle.opacity ?? 0.26), 0.26);
     const filter = textureStyle.filter ?? "brightness(0.98) contrast(1.12) saturate(1.04)";
 
     const baseStyle: React.CSSProperties = {
