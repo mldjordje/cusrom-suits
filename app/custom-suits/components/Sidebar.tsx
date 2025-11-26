@@ -359,8 +359,8 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 
               <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white/80 px-4 py-3">
                 <div>
-                  <p className="text-sm font-semibold text-gray-800">Prikai sloj koulje</p>
-                  <p className="text-[11px] text-gray-500">Koristi belu koulju za jasniji prikaz slojeva.</p>
+                  <p className="text-sm font-semibold text-gray-800">Prikazi sloj kosulje</p>
+                  <p className="text-[11px] text-gray-500">Koristi belu kosulju za jasniji prikaz slojeva.</p>
                 </div>
                 <button
                   onClick={() => dispatch({ type: "TOGGLE_SHIRT" })}
@@ -368,18 +368,12 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                     config.showShirt ? "bg-gray-900 text-white" : "border border-gray-300 text-gray-600"
                   }`}
                 >
-                  {config.showShirt ? "Ukljueno" : "Iskljueno"}
+                  {config.showShirt ? "Ukljuceno" : "Iskljuceno"}
                 </button>
               </div>
             </section>
           )}
 
-          {activeTab === "MEASURE" && (
-            <section className="space-y-3 rounded-3xl border border-white/60 bg-white/80 p-5">
-              <h3 className="text-sm font-semibold text-gray-800">Mere</h3>
-              <p className="text-xs text-gray-500">Za detaljnije merenje nastavite na sledei korak.</p>
-            </section>
-          )}
         </div>
 
         <div className="mt-8">
@@ -410,4 +404,16 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 };
 
 export default Sidebar;
+
+
+
+
+
+
+
+
+
+
+
+
 
