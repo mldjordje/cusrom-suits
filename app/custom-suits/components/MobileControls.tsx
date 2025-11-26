@@ -146,7 +146,7 @@ const Drawer = ({
       aria-hidden={!active}
     >
       <div
-        className={`pointer-events-auto h-full w-[68vw] max-w-[360px] sm:max-w-[420px] transform bg-white shadow-2xl transition duration-200 ease-out ${
+        className={`pointer-events-auto flex h-full w-[68vw] max-w-[360px] flex-col overflow-hidden sm:max-w-[420px] transform bg-white shadow-2xl transition duration-200 ease-out ${
           active ? "translate-x-0" : "-translate-x-full"
         }`}
       >
@@ -270,7 +270,7 @@ function MobileControls({ config, dispatch }: Props) {
           </div>
           {fabricsError && <p className="text-[11px] text-orange-600">{fabricsError}</p>}
         </div>
-        <div className="flex-1 space-y-3 overflow-y-auto px-4 py-4 pb-28">
+        <div className="flex-1 space-y-3 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-28">
           {fabricsLoading ? (
             <p className="text-sm text-gray-500">Ucitavanje tkanina...</p>
           ) : filteredFabrics.length === 0 ? (
@@ -301,7 +301,7 @@ function MobileControls({ config, dispatch }: Props) {
   const renderStylePanel = () => (
     <>
       <DrawerHeader title="Stil" onClose={() => setActivePanel(null)} />
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-14">
+      <div className="flex-1 space-y-4 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-14">
         <ChoiceGroup
           title="Model odela"
           options={suits.map((suit) => ({ id: suit.id, label: suit.name }))}
@@ -338,7 +338,7 @@ function MobileControls({ config, dispatch }: Props) {
   const renderAccentsPanel = () => (
     <>
       <DrawerHeader title="Detalji" onClose={() => setActivePanel(null)} />
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-14">
+      <div className="flex-1 space-y-4 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-14">
         {currentSuit?.pockets?.length ? (
           <ChoiceGroup
             title="Depovi na sakou"
@@ -389,7 +389,7 @@ function MobileControls({ config, dispatch }: Props) {
   const renderMeasurePanel = () => (
     <>
       <DrawerHeader title="Mere" onClose={() => setActivePanel(null)} />
-      <div className="flex-1 space-y-4 overflow-y-auto px-4 py-4 pb-14">
+      <div className="flex-1 space-y-4 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-14">
         <h3 className="text-lg font-semibold text-gray-900">Mere i prilagodjavanje</h3>
         <p className="text-sm text-gray-600">
           Za detaljno uklapanje nastavite ka merenju. Mozete uneti mere ili zakazati termin sa savetnikom.

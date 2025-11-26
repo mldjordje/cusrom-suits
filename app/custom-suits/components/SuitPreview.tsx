@@ -231,12 +231,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
   const fabricTextureFilter = useMemo(() => {
     if (fabricTone === "dark") {
-      return `${tb.filter} brightness(0.78) contrast(1.2) saturate(0.88)`;
+      return `${tb.filter} brightness(0.85) contrast(1.28) saturate(1.08)`;
     }
     if (fabricTone === "light") {
       return `${tb.filter} brightness(1.05) contrast(1.02) saturate(0.95)`;
     }
-    return `${tb.filter} brightness(1.02) contrast(1.08) saturate(0.92)`;
+    return `${tb.filter} brightness(0.98) contrast(1.18) saturate(1.04)`;
   }, [fabricTone, tb.filter]);
   const needsDarkBoost = fabricTone === "dark";
 
@@ -481,14 +481,14 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             textureStyle={{
               filter: fabricTextureFilter,
               mixBlendMode: toneVis.fabric.blend,
-              opacity: toneVis.fabric.opacity * 0.7,
+              opacity: toneVis.fabric.opacity * 0.9,
             }}
             baseColor={toneBaseColor}
             fabricAvgColor={fabricFillColor}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
-            textureScale={toneVis.weaveSharpness * 0.9}
+            textureScale={toneVis.weaveSharpness * 1.0}
           />
         )}
         {needsDarkBoost && jacketUnionMask && (
@@ -548,13 +548,13 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               textureStyle={{
                 filter: fabricTextureFilter,
                 mixBlendMode: toneVis.fabric.blend,
-                opacity: toneVis.fabric.opacity,
+                opacity: toneVis.fabric.opacity * 0.9,
               }}
               baseColor={toneBaseColor}
               fabricAvgColor={fabricFillColor}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
-              textureScale={toneVis.weaveSharpness * 0.95}
+              textureScale={toneVis.weaveSharpness * 1.0}
             />
           )}
           {needsDarkBoost && pantsMaskPair && (
