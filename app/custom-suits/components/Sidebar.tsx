@@ -51,11 +51,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
     : fabricsNormalized;
   const fabricPrice = fabricsNormalized.find((f: any) => f.id === config.colorId)?.price ?? 0;
 
-  const uploadUrl = (() => {
-    const base = getBackendBase();
-    const root = base.replace(/\/api\/?$/i, "/");
-    return root + "upload_test.html";
-  })();
+  const uploadUrl = "/admin/fabrics";
 
   const ChipGroup = ({
     title,
@@ -394,7 +390,6 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 };
 
 export default Sidebar;
-
 
 
 
