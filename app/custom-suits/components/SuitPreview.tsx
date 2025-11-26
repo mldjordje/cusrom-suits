@@ -488,7 +488,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
-            textureScale={toneVis.weaveSharpness * 1.05}
+            textureScale={toneVis.weaveSharpness * 0.95}
           />
         )}
         {needsDarkBoost && jacketUnionMask && (
