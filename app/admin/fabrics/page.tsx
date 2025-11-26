@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Image from "next/image";
+import NextImage from "next/image";
 
 type Fabric = {
   id: string;
@@ -45,7 +45,7 @@ export default function FabricsAdminPage() {
       const bytes = new Uint8Array(arrayBuffer);
       const blobUrl = URL.createObjectURL(new Blob([bytes]));
       const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-        const i = new Image();
+        const i = new window.Image();
         i.onload = () => resolve(i);
         i.onerror = reject;
         i.src = blobUrl;
@@ -277,7 +277,7 @@ export default function FabricsAdminPage() {
             <div key={f.id} className="flex gap-3 rounded-xl border border-gray-200 p-3">
               <div className="relative h-16 w-20 overflow-hidden rounded-lg bg-gray-100">
                 {f.texture ? (
-                  <Image src={f.texture} alt={f.name} fill sizes="120px" className="object-cover" />
+                  <NextImage src={f.texture} alt={f.name} fill sizes="120px" className="object-cover" />
                 ) : null}
               </div>
               <div className="flex-1">
