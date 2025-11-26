@@ -251,6 +251,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     [fabricAvgColor, toneBaseColor, selectedFabric?.tone, explicitFabricColor]
   );
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
+  const [maskBuilding, setMaskBuilding] = useState(false);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
   const panZoom = { scale, offset };
   const showLayer = (key: keyof LayerVisibility) => (layerVisibility?.[key] ?? true) !== false;
@@ -308,6 +309,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     }
 
     let cancelled = false;
+    setMaskBuilding(true);
     (async () => {
       try {
         const c = document.createElement("canvas");
@@ -348,10 +350,13 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
         if (!cancelled) setJacketUnionMask(c.toDataURL("image/png"));
       } catch {
         if (!cancelled) setJacketUnionMask(null);
+      } finally {
+        if (!cancelled) setMaskBuilding(false);
       }
     })();
     return () => {
       cancelled = true;
+      setMaskBuilding(false);
     };
   }, [fabricLayers]);
 
@@ -444,6 +449,11 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseUp}
         >
+        {maskBuilding && (
+          <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[32px] bg-white/60 backdrop-blur-sm">
+            <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900" />
+          </div>
+        )}
         {interiorLayers?.map((l) => (
           <img key={`int-${l.id}`} src={l.src} alt={l.name} className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
         ))}

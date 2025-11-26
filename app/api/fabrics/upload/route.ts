@@ -74,3 +74,20 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, data });
 }
+
+export async function DELETE(req: NextRequest) {
+  const supabase = getServiceSupabase();
+  if (!supabase) {
+    return NextResponse.json({ success: false, message: "Supabase service key missing" }, { status: 503 });
+  }
+  const payload = await req.json().catch(() => null);
+  const id = payload?.id;
+  if (!id) {
+    return NextResponse.json({ success: false, message: "Missing fabric id" }, { status: 400 });
+  }
+  const { error } = await supabase.from("fabrics").delete().eq("id", id);
+  if (error) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  }
+  return NextResponse.json({ success: true });
+}

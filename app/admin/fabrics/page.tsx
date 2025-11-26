@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 
 type Fabric = {
   id: string;
@@ -131,6 +132,37 @@ export default function FabricsAdminPage() {
     await loadFabrics();
   };
 
+  const onDelete = async (id: string) => {
+    if (!confirm("Obrisati tkaninu?")) return;
+    setStatus({ type: "loading", message: "Brisanje..." });
+    const res = await fetch("/api/fabrics/upload", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id }),
+    });
+    const json = await res.json();
+    if (!res.ok || !json?.success) {
+      setStatus({ type: "error", message: json?.message || "Brisanje neuspešno" });
+    } else {
+      setStatus({ type: "success", message: "Obrisano" });
+      setFabrics((prev) => prev.filter((f) => f.id !== id));
+    }
+  };
+
+  const onEdit = (fab: Fabric) => {
+    setForm({
+      id: fab.id || "",
+      name: fab.name || "",
+      tone: fab.tone || "medium",
+      price: fab.price ? String(fab.price) : "",
+      code: fab.code || "",
+      texture: fab.texture || "",
+    });
+    setAutoTone(null);
+    setFile(null);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-8">
       <div>
@@ -243,8 +275,10 @@ export default function FabricsAdminPage() {
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {fabrics.map((f) => (
             <div key={f.id} className="flex gap-3 rounded-xl border border-gray-200 p-3">
-              <div className="h-16 w-20 overflow-hidden rounded-lg bg-gray-100">
-                {f.texture ? <img src={f.texture} alt={f.name} className="h-full w-full object-cover" /> : null}
+              <div className="relative h-16 w-20 overflow-hidden rounded-lg bg-gray-100">
+                {f.texture ? (
+                  <Image src={f.texture} alt={f.name} fill sizes="120px" className="object-cover" />
+                ) : null}
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900">{f.name}</p>
@@ -253,6 +287,20 @@ export default function FabricsAdminPage() {
                   Ton: {f.tone || "medium"} {typeof f.price === "number" ? `• ${f.price} EUR` : ""}
                 </p>
                 {f.code && <p className="text-[11px] text-gray-400">Code: {f.code}</p>}
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={() => onEdit(f)}
+                    className="rounded-full border border-gray-200 px-2 py-1 text-[11px] font-semibold text-gray-700 hover:border-gray-300"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => onDelete(f.id)}
+                    className="rounded-full border border-red-200 px-2 py-1 text-[11px] font-semibold text-red-600 hover:border-red-300"
+                  >
+                    Delete
+                  </button>
+                </div>
               </div>
             </div>
           ))}

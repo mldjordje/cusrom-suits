@@ -11,10 +11,13 @@ type Order = {
   contact?: any;
 };
 
+const STATUS_OPTIONS = ["draft", "pending", "confirmed", "completed", "cancelled"];
+
 export default function OrdersAdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savingId, setSavingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -31,6 +34,27 @@ export default function OrdersAdminPage() {
       setError(e?.message || "Greška");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const updateStatus = async (id: string, status: string) => {
+    setSavingId(id);
+    try {
+      const res = await fetch("/api/orders", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, status }),
+      });
+      const json = await res.json();
+      if (!json?.success) {
+        setError(json?.message || "Greška pri ažuriranju");
+      } else {
+        setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+      }
+    } catch (e: any) {
+      setError(e?.message || "Greška");
+    } finally {
+      setSavingId(null);
     }
   };
 
@@ -58,7 +82,21 @@ export default function OrdersAdminPage() {
         {orders.map((o) => (
           <div key={o.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
             <p className="text-sm font-semibold text-gray-900">{o.id}</p>
-            <p className="text-xs text-gray-500">Status: {o.status || "n/a"}</p>
+            <div className="mt-1 flex items-center gap-2 text-xs text-gray-500">
+              <span>Status:</span>
+              <select
+                value={o.status || "draft"}
+                onChange={(e) => updateStatus(o.id, e.target.value)}
+                disabled={savingId === o.id}
+                className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700"
+              >
+                {STATUS_OPTIONS.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </select>
+            </div>
             <p className="text-xs text-gray-500">
               Fabric: {o.fabric_id || "n/a"} {typeof o.price === "number" ? `• ${o.price} EUR` : ""}
             </p>
