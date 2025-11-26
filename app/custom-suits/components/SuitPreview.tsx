@@ -157,16 +157,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
 
   const suitLayers = useMemo(() => {
     if (!currentSuit?.layers) return [];
-    return currentSuit.layers.map((layer) => {
-      if (layer.id === "torso") {
-        return { ...layer, src: swapLapelInPath(layer.src, selectedLapel?.id, selectedLapelWidth?.id) };
-      }
-      if (layer.id === "pants" && selectedCuff?.src) {
-        return { ...layer, src: selectedCuff.src };
-      }
-      return layer;
-    });
-  }, [currentSuit, selectedLapel?.id, selectedLapelWidth?.id, selectedCuff?.src]);
+    return currentSuit.layers.map((layer) =>
+      layer.id === "torso"
+        ? { ...layer, src: swapLapelInPath(layer.src, selectedLapel?.id, selectedLapelWidth?.id) }
+        : layer
+    );
+  }, [currentSuit, selectedLapel?.id, selectedLapelWidth?.id]);
 
   const styleOverlayLayers = useMemo(() => {
     if (!currentSuit) return [];
@@ -211,6 +207,16 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   );
 
   const pantsLayer = useMemo(() => suitLayers.find((l) => l.id === "pants") ?? null, [suitLayers]);
+  const cuffsLayer = useMemo(() => {
+    if (!selectedCuff?.src) return null;
+    return { id: selectedCuff.id || "cuff-overlay", name: selectedCuff.name, src: selectedCuff.src } as SuitLayer;
+  }, [selectedCuff]);
+  const pantsFabricLayers = useMemo(() => {
+    const layers: SuitLayer[] = [];
+    if (pantsLayer) layers.push(pantsLayer);
+    if (cuffsLayer && cuffsLayer.src !== pantsLayer?.src) layers.push(cuffsLayer);
+    return layers;
+  }, [pantsLayer, cuffsLayer]);
 
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
@@ -531,9 +537,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 600 }}
         >
           <BaseLayer layers={[pantsLayer]} resolve={(layer) => cdnPair(layer.src)} />
+          {cuffsLayer && cuffsLayer.src !== pantsLayer.src && (
+            <BaseLayer layers={[cuffsLayer]} resolve={(layer) => cdnPair(layer.src)} />
+          )}
           {showLayer("fabric") && (
             <FabricUnion
-              layers={[pantsLayer]}
+              layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
               resolve={(layer) => cdnPair(layer.src)}
               fabricTexture={fabricTexture}
               textureStyle={{
