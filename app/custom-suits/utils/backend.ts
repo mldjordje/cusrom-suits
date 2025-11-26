@@ -5,11 +5,15 @@ export function getBackendBase() {
 }
 
 const ensureTrailingSlash = (value: string) => (value && value.endsWith("/") ? value : `${value}/`);
-const CDN_TRANSPARENT = "https://customsuits.adspire.rs/uploads/transparent/";
+const CDN_TRANSPARENT = "/assets/suits/transparent/";
+const LEGACY_REMOTE = "https://customsuits.adspire.rs/uploads/transparent/";
 
 export function getTransparentCdnBase() {
   const explicit = process.env.NEXT_PUBLIC_TRANSPARENT_CDN_BASE?.trim();
-  if (explicit) return ensureTrailingSlash(explicit);
+  // If a remote CDN is provided and is not the legacy adspire path, honor it.
+  if (explicit && explicit.indexOf("customsuits.adspire.rs/uploads/transparent") === -1) {
+    return ensureTrailingSlash(explicit);
+  }
 
   const localDev =
     process.env.NODE_ENV === "development"
@@ -17,5 +21,6 @@ export function getTransparentCdnBase() {
       : null;
   if (localDev) return ensureTrailingSlash(localDev);
 
-  return ensureTrailingSlash(CDN_TRANSPARENT);
+  // Default to bundled static assets to avoid remote 404s
+  return ensureTrailingSlash(explicit || CDN_TRANSPARENT || LEGACY_REMOTE);
 }
