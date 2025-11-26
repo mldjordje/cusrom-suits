@@ -467,9 +467,11 @@ function MobileControls({ config, dispatch }: Props) {
         </div>
       </div>
 
-      <Drawer panel={activePanel} onClose={() => setActivePanel(null)}>
-        {drawerBody}
-      </Drawer>
+      {activePanel && (
+        <Drawer panel={activePanel} onClose={() => setActivePanel(null)}>
+          {drawerBody}
+        </Drawer>
+      )}
     </>
   );
 }
