@@ -18,7 +18,6 @@ const NAV = [
   { id: "FABRIC" as const, label: "Tkanine", icon: "/custom-suits/icons/iconfabric.png" },
   { id: "STYLE" as const, label: "Stil", icon: "/custom-suits/icons/iconstyle.png" },
   { id: "ACCENTS" as const, label: "Detalji", icon: "/custom-suits/icons/iconaccents.png" },
-  { id: "MEASURE" as const, label: "Mere", icon: "/custom-suits/icons/iconstyle.png" },
 ];
 
 const toneLabels: Record<"all" | "light" | "medium" | "dark", string> = {
@@ -386,31 +385,10 @@ function MobileControls({ config, dispatch }: Props) {
     </>
   );
 
-  const renderMeasurePanel = () => (
-    <>
-      <DrawerHeader title="Mere" onClose={() => setActivePanel(null)} />
-      <div className="flex-1 space-y-4 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-14">
-        <h3 className="text-lg font-semibold text-gray-900">Mere i prilagodjavanje</h3>
-        <p className="text-sm text-gray-600">
-          Za detaljno uklapanje nastavite ka merenju. Mozete uneti mere ili zakazati termin sa savetnikom.
-        </p>
-        <button
-          onClick={() => {
-            window.location.href = measurementUrl;
-          }}
-          className="w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-gray-800"
-        >
-          Nastavi na merenje
-        </button>
-      </div>
-    </>
-  );
-
   const drawerBody = (() => {
     if (activePanel === "FABRIC") return renderFabricPanel();
     if (activePanel === "STYLE") return renderStylePanel();
     if (activePanel === "ACCENTS") return renderAccentsPanel();
-    if (activePanel === "MEASURE") return renderMeasurePanel();
     return null;
   })();
 
