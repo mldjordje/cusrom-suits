@@ -27,6 +27,7 @@ export default function FabricsAdminPage() {
     texture: "",
   });
   const [file, setFile] = useState<File | null>(null);
+  const [autoTone, setAutoTone] = useState<string | null>(null);
 
   const loadFabrics = useMemo(
     () => async () => {
@@ -37,9 +38,65 @@ export default function FabricsAdminPage() {
     []
   );
 
+  const detectTone = async (blob: File): Promise<"light" | "medium" | "dark" | null> => {
+    try {
+      const arrayBuffer = await blob.arrayBuffer();
+      const bytes = new Uint8Array(arrayBuffer);
+      const blobUrl = URL.createObjectURL(new Blob([bytes]));
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new Image();
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = blobUrl;
+      });
+      const canvas = document.createElement("canvas");
+      const size = 200;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.drawImage(img, 0, 0, size, size);
+      const data = ctx.getImageData(0, 0, size, size).data;
+      let sum = 0;
+      let count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3] / 255;
+        if (alpha < 0.05) continue;
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        sum += (r + g + b) / (3 * 255);
+        count++;
+      }
+      URL.revokeObjectURL(blobUrl);
+      if (!count) return null;
+      const avg = sum / count;
+      if (avg < 0.28) return "dark";
+      if (avg < 0.55) return "medium";
+      return "light";
+    } catch {
+      return null;
+    }
+  };
+
   useEffect(() => {
     loadFabrics();
   }, [loadFabrics]);
+
+  const onFileChange = async (f: File | null) => {
+    setFile(f);
+    if (!f) {
+      setAutoTone(null);
+      return;
+    }
+    const tone = await detectTone(f);
+    if (tone) {
+      setAutoTone(tone);
+      setForm((s) => ({ ...s, tone }));
+    } else {
+      setAutoTone(null);
+    }
+  };
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -70,6 +127,7 @@ export default function FabricsAdminPage() {
     setStatus({ type: "success", message: "Sačuvano" });
     setForm({ id: "", name: "", tone: "medium", price: "", code: "", texture: "" });
     setFile(null);
+    setAutoTone(null);
     await loadFabrics();
   };
 
@@ -147,9 +205,10 @@ export default function FabricsAdminPage() {
           <input
             type="file"
             accept="image/*"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
+            onChange={(e) => onFileChange(e.target.files?.[0] || null)}
             className="text-sm"
           />
+          {autoTone && <p className="text-xs text-gray-500">Auto ton: {autoTone}</p>}
         </div>
         <div className="flex items-center gap-3">
           <button

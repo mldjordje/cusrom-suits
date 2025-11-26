@@ -32,3 +32,22 @@ export async function POST(req: NextRequest) {
 
   return NextResponse.json({ success: true, orderId: data?.id });
 }
+
+export async function GET() {
+  const supabase = getServiceSupabase();
+  if (!supabase) {
+    return NextResponse.json({ success: false, message: "Supabase service key missing" }, { status: 503 });
+  }
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true, data: data ?? [] });
+}
