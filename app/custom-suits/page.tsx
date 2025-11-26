@@ -17,6 +17,7 @@ export default function CustomSuitsPage() {
     sort: "created_at",
     order: "desc",
   });
+  const defaultColorSet = React.useRef(false);
 
   const currentSuit = suits.find((s) => s.id === config.styleId);
   const layers = currentSuit?.layers || [];
@@ -28,8 +29,9 @@ export default function CustomSuitsPage() {
   const firstFabricId = initialFabrics?.[0]?.id ? String(initialFabrics[0].id) : null;
   React.useEffect(() => {
     if (!firstFabricId) return;
-    if (config.colorId === firstFabricId) return;
+    if (defaultColorSet.current) return;
     dispatch({ type: "SET_COLOR", payload: firstFabricId });
+    defaultColorSet.current = true;
   }, [config.colorId, dispatch, firstFabricId]);
 
   if (!imagesLoaded) {

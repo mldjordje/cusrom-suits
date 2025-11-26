@@ -481,14 +481,14 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             textureStyle={{
               filter: fabricTextureFilter,
               mixBlendMode: toneVis.fabric.blend,
-              opacity: toneVis.fabric.opacity * 0.82,
+              opacity: toneVis.fabric.opacity * 0.7,
             }}
             baseColor={toneBaseColor}
             fabricAvgColor={fabricFillColor}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
-            textureScale={toneVis.weaveSharpness * 1.1}
+            textureScale={toneVis.weaveSharpness * 0.9}
           />
         )}
         {needsDarkBoost && jacketUnionMask && (
