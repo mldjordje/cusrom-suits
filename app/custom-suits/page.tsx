@@ -4,6 +4,7 @@ import React from "react";
 import { suits } from "./data/options";
 import { useSuitConfigurator } from "./hooks/useSuitConfigurator";
 import { useImagePreloader } from "./hooks/useImagePreloader";
+import { useFabrics } from "./hooks/useFabrics";
 import SuitPreview from "./components/SuitPreview";
 import Sidebar from "./components/Sidebar";
 import MobileControls from "./components/MobileControls";
@@ -11,7 +12,10 @@ import MobileControls from "./components/MobileControls";
 export default function CustomSuitsPage() {
   const [config, dispatch] = useSuitConfigurator({
     styleId: "single_2btn",
-    colorId: "blue",
+  });
+  const { fabrics: initialFabrics } = useFabrics({
+    sort: "created_at",
+    order: "desc",
   });
 
   const currentSuit = suits.find((s) => s.id === config.styleId);
@@ -19,6 +23,14 @@ export default function CustomSuitsPage() {
 
   const preloadUrls = layers.map((l) => l.src).filter(Boolean);
   const imagesLoaded = useImagePreloader(preloadUrls);
+
+  // Preselect first available fabric so preview is ready without a manual choice
+  const firstFabricId = initialFabrics?.[0]?.id ? String(initialFabrics[0].id) : null;
+  React.useEffect(() => {
+    if (!firstFabricId) return;
+    if (config.colorId === firstFabricId) return;
+    dispatch({ type: "SET_COLOR", payload: firstFabricId });
+  }, [config.colorId, dispatch, firstFabricId]);
 
   if (!imagesLoaded) {
     return (
