@@ -18,7 +18,7 @@ const tabLabels: Record<(typeof tabs)[number], string> = {
 };
 
 const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
-  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("STYLE");
+  const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("FABRIC");
   const currentSuit = suits.find((s) => s.id === config.styleId);
   const [savingCart, setSavingCart] = useState(false);
 
@@ -155,13 +155,25 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   return (
     <div className="flex h-full flex-col lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)]">
       <div className="flex-1 rounded-[30px] bg-gray-50/95 px-4 py-5 shadow-[0_25px_70px_rgba(15,23,42,0.08)] ring-1 ring-black/5 sm:px-5 sm:py-6 lg:overflow-y-auto">
-        <div className="space-y-6 sm:space-y-8">
+        <div className="space-y-6 sm:space-y-7">
           <div className="flex items-center gap-4 rounded-2xl border border-white/60 bg-white/70 px-4 py-4 shadow-sm">
             <img src="/img/logo.png" alt="Brand logo" className="h-12 w-auto object-contain" />
             <div>
               <p className="text-[11px] uppercase tracking-[0.35em] text-gray-500">Dizajniraj svoje odelo</p>
               <p className="text-base font-semibold text-gray-900">Santos &amp; Santorini</p>
             </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/60 bg-white/80 p-4 shadow-sm sm:p-5">
+            <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-400">
+              <span>Model</span>
+              <span>Tkanina</span>
+            </div>
+            <div className="mt-3 grid grid-cols-2 gap-3 text-right text-2xl font-semibold text-gray-900">
+              <div className="text-left">{price.total} EUR</div>
+              <div>{fabricPrice} EUR</div>
+            </div>
+            <p className="mt-2 text-[11px] text-gray-500">Indikativna cena, PDV ukljuen.</p>
           </div>
 
           <nav className="flex snap-x gap-2 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:gap-2 sm:overflow-visible sm:pb-0 lg:grid-cols-1">
@@ -191,18 +203,6 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
               );
             })}
           </nav>
-
-            <div className="rounded-3xl border border-white/60 bg-white/80 p-4 shadow-sm sm:p-5">
-              <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-400">
-                <span>Model</span>
-              <span>Tkanina</span>
-              </div>
-              <div className="mt-3 grid grid-cols-2 gap-3 text-right text-2xl font-semibold text-gray-900">
-                <div className="text-left">{price.total} EUR</div>
-                <div>{fabricPrice} EUR</div>
-              </div>
-            <p className="mt-2 text-[11px] text-gray-500">Indikativna cena, PDV ukljuen.</p>
-          </div>
 
           {activeTab === "FABRIC" && (
             <section className="space-y-5 rounded-3xl border border-dashed border-gray-200 bg-white/80 p-4 shadow-inner shadow-black/5 sm:p-5">
