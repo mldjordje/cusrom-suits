@@ -1,1 +1,1 @@
-export { GET, POST, PUT } from "../fabrics/route";
+export { GET } from "../fabrics/route";
