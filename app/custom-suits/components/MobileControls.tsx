@@ -7,7 +7,7 @@ import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
 import { computePrice } from "../utils/price";
 
-type Panel = "FABRIC" | "STYLE" | "ACCENTS" | "MEASURE";
+type Panel = "FABRIC" | "STYLE" | "ACCENTS";
 
 type Props = {
   config: SuitState;
@@ -334,19 +334,11 @@ function MobileControls({ config, dispatch }: Props) {
         />
         {activeLapel?.widths?.length ? (
           <ChoiceGroup
-                    title="Širina revera"
+            title="Širina revera"
             options={activeLapel.widths.map((width) => ({ id: width.id, label: width.name }))}
             selectedId={selectedLapelWidthId}
             onSelect={(id) => dispatch({ type: "SET_LAPEL_WIDTH", payload: id })}
             columns={3}
-          />
-        ) : null}
-        {currentSuit?.cuffs?.length ? (
-          <ChoiceGroup
-            title="Zavrnica pantalona"
-            options={(currentSuit.cuffs || []).map((option) => ({ id: option.id, label: option.name }))}
-            selectedId={config.cuffId}
-            onSelect={(id) => dispatch({ type: "SET_CUFF", payload: id })}
           />
         ) : null}
       </div>
@@ -379,6 +371,14 @@ function MobileControls({ config, dispatch }: Props) {
             options={(currentSuit.interiors || []).map((option) => ({ id: option.id, label: option.name }))}
             selectedId={config.interiorId}
             onSelect={(id) => dispatch({ type: "SET_INTERIOR", payload: id })}
+          />
+        ) : null}
+        {currentSuit?.cuffs?.length ? (
+          <ChoiceGroup
+            title="Zavrnica pantalona"
+            options={(currentSuit.cuffs || []).map((option) => ({ id: option.id, label: option.name }))}
+            selectedId={config.cuffId}
+            onSelect={(id) => dispatch({ type: "SET_CUFF", payload: id })}
           />
         ) : null}
 
