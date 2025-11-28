@@ -551,7 +551,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     {/* ======================== PANTS CANVAS ======================== */}
       {pantsLayer && (
         <div
-          className="relative mx-auto -mt-20 w-full max-w-[640px] origin-top transform scale-[0.98] sm:-mt-14 sm:scale-[0.94] lg:-mt-20 lg:scale-[0.92]"
+          className="relative mx-auto -mt-14 w-full max-w-[640px] origin-top transform scale-[0.96] sm:-mt-12 sm:scale-[0.92] lg:-mt-16 lg:scale-[0.9]"
           style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 600 }}
         >
           <BaseLayer layers={[pantsLayer]} resolve={(layer) => cdnPair(layer.src)} />
