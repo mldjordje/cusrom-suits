@@ -2,6 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 import React, { useMemo, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { computePrice } from "../utils/price";
 import { SuitState } from "../hooks/useSuitConfigurator";
@@ -156,13 +157,17 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
     <div className="flex h-full flex-col lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)]">
       <div className="flex-1 rounded-[30px] bg-gray-50/95 px-4 py-5 shadow-[0_25px_70px_rgba(15,23,42,0.08)] ring-1 ring-black/5 sm:px-5 sm:py-6 lg:overflow-y-auto">
         <div className="space-y-6 sm:space-y-7">
-          <div className="flex items-center gap-4 rounded-2xl border border-white/60 bg-white/70 px-4 py-4 shadow-sm">
+          <Link
+            href="/"
+            className="flex items-center gap-4 rounded-2xl border border-white/60 bg-white/70 px-4 py-4 shadow-sm transition hover:border-gray-900 hover:bg-white/80"
+            aria-label="Na pocetnu stranicu"
+          >
             <img src="/img/logo.png" alt="Brand logo" className="h-12 w-auto object-contain" />
             <div>
               <p className="text-[11px] uppercase tracking-[0.35em] text-gray-500">Dizajniraj svoje odelo</p>
               <p className="text-base font-semibold text-gray-900">Santos &amp; Santorini</p>
             </div>
-          </div>
+          </Link>
 
           <div className="rounded-3xl border border-white/60 bg-white/80 p-4 shadow-sm sm:p-5">
             <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-400">
