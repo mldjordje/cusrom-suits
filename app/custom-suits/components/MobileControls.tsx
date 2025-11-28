@@ -144,7 +144,7 @@ const Drawer = ({
       }`}
     >
       <div
-        className={`pointer-events-auto flex h-full w-[62vw] min-w-[240px] max-w-[320px] flex-col overflow-hidden sm:max-w-[360px] transform bg-white shadow-2xl transition duration-200 ease-out ${
+        className={`pointer-events-auto flex h-full w-[56vw] min-w-[220px] max-w-[300px] flex-col overflow-hidden sm:max-w-[340px] transform bg-white shadow-2xl transition duration-200 ease-out ${
           active ? "translate-x-0" : "-translate-x-full"
         }`}
       >

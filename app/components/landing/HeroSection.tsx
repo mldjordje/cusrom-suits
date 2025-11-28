@@ -253,7 +253,6 @@ const HeroSection = () => {
               <Image src="/img/logo.png" alt="Santos & Santorini logo" width={120} height={120} className="h-24 w-24 object-contain" />
               <div className="flex items-center gap-3 text-xs uppercase tracking-[0.35em] text-gray-100">
                 <span className="h-5 w-5 animate-spin rounded-full border border-white/60 border-t-transparent" aria-hidden="true" />
-                <span>Ucitavanje videa...</span>
               </div>
             </div>
           </motion.div>
