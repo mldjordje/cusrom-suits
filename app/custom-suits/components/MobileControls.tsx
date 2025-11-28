@@ -47,17 +47,18 @@ const ChoiceGroup = ({
   columns?: 2 | 3;
 }) => {
   if (!options.length) return null;
+  const gridCols = columns === 3 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2";
   return (
     <div className="space-y-2">
       <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">{title}</p>
-      <div className={`grid gap-2 ${columns === 3 ? "grid-cols-3" : "grid-cols-2"}`}>
+      <div className={`grid gap-2 ${gridCols}`}>
         {options.map((option) => {
           const active = selectedId === option.id;
           return (
             <button
               key={option.id}
               onClick={() => onSelect(option.id)}
-              className={`rounded-2xl border px-3 py-3 text-left transition ${
+              className={`rounded-2xl border px-3 py-2.5 text-left transition ${
                 active
                   ? "border-gray-900 bg-gray-900 text-white shadow-sm"
                   : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
@@ -144,7 +145,7 @@ const Drawer = ({
       }`}
     >
       <div
-        className={`pointer-events-auto flex h-full w-[56vw] min-w-[220px] max-w-[300px] flex-col overflow-hidden sm:max-w-[340px] transform bg-white shadow-2xl transition duration-200 ease-out ${
+        className={`pointer-events-auto flex h-full w-[52vw] min-w-[210px] max-w-[280px] flex-col overflow-hidden sm:max-w-[320px] transform bg-white shadow-2xl transition duration-200 ease-out ${
           active ? "translate-x-0" : "-translate-x-full"
         }`}
       >
