@@ -235,6 +235,18 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     }
     return `${tb.filter} brightness(1.02) contrast(1.12) saturate(1.05)`;
   }, [fabricTone, tb.filter]);
+  const fabricTextureStyle = useMemo(
+    () => ({
+      filter: fabricTextureFilter,
+      mixBlendMode: fabricTone === "dark" ? "overlay" : toneVis.fabric.blend,
+      opacity: toneVis.fabric.opacity * (fabricTone === "dark" ? 0.72 : 0.7),
+    }),
+    [fabricTextureFilter, fabricTone, toneVis.fabric.blend, toneVis.fabric.opacity]
+  );
+  const fabricTextureScale = useMemo(
+    () => toneVis.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88),
+    [fabricTone, toneVis.weaveSharpness]
+  );
   const needsDarkBoost = fabricTone === "dark";
 
   // Average color from fabric texture (to better match hue)
@@ -485,17 +497,13 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             layers={showLayer("style") ? fabricLayers : allJacketLayers}
             resolve={(layer) => cdnPair(layer.src)}
             fabricTexture={fabricTexture}
-            textureStyle={{
-              filter: fabricTextureFilter,
-              mixBlendMode: fabricTone === "dark" ? "overlay" : toneVis.fabric.blend,
-              opacity: toneVis.fabric.opacity * (fabricTone === "dark" ? 0.72 : 0.7),
-            }}
+            textureStyle={fabricTextureStyle}
             baseColor={toneBaseColor}
             fabricAvgColor={fabricFillColor}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
-            textureScale={toneVis.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88)}
+            textureScale={fabricTextureScale}
           />
         )}
         {needsDarkBoost && jacketUnionMask && (
@@ -555,16 +563,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
               resolve={(layer) => cdnPair(layer.src)}
               fabricTexture={fabricTexture}
-              textureStyle={{
-                filter: fabricTextureFilter,
-                mixBlendMode: fabricTone === "dark" ? "overlay" : toneVis.fabric.blend,
-                opacity: toneVis.fabric.opacity * (fabricTone === "dark" ? 1.0 : 0.9),
-              }}
+              textureStyle={fabricTextureStyle}
               baseColor={toneBaseColor}
               fabricAvgColor={fabricFillColor}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
-              textureScale={toneVis.weaveSharpness * (fabricTone === "dark" ? 1.0 : 0.98)}
+              textureScale={fabricTextureScale}
             />
           )}
           {needsDarkBoost && pantsMaskPair && (
@@ -572,7 +576,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               className="absolute inset-0 pointer-events-none"
               style={{
                 mixBlendMode: "multiply",
-                opacity: 0.3,
+                opacity: 0.35,
                 backgroundColor: "#080808",
                 WebkitMaskImage: `url(${pantsMaskPair.png})`,
                 WebkitMaskRepeat: "no-repeat",
