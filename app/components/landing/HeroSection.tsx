@@ -3,7 +3,7 @@
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 const buildEmbed = (id: string) =>
   `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&showinfo=0`;
@@ -20,7 +20,7 @@ const heroImageSections = [
     image: "/img/hero2.jpg",
     title: "Santos & Santorini - ekskluzivna kolekcija.",
     primary: { label: "Pogledaj kolekciju", href: "/web-shop" },
-    mobileVideoId: "M0Mau4Q756g",
+    mobileVideoId: "gUQRpUIt5cU",
   },
 ];
 
@@ -115,9 +115,16 @@ const HeroImageBlock = ({ image, title, primary, priority, mobileVideoId }: Hero
   );
 };
 
-const VideoHero = () => {
+const VideoHero = ({ onReady }: { onReady?: () => void }) => {
   const desktopId = "18WbTwdI0Vs";
   const mobileId = "U8g-651j3yo";
+  const readyRef = useRef(false);
+  const handleReady = () => {
+    if (readyRef.current) return;
+    readyRef.current = true;
+    onReady?.();
+  };
+
   return (
     <section className="relative min-h-[100svh] w-full overflow-hidden bg-[#120c0c] text-white">
       <div className="absolute inset-0">
@@ -131,6 +138,7 @@ const VideoHero = () => {
             loading="lazy"
             tabIndex={-1}
             aria-hidden="true"
+            onLoad={handleReady}
           />
         </div>
         <div className="absolute inset-0 md:hidden">
@@ -143,6 +151,7 @@ const VideoHero = () => {
             loading="lazy"
             tabIndex={-1}
             aria-hidden="true"
+            onLoad={handleReady}
           />
         </div>
       </div>
@@ -219,9 +228,39 @@ const BridgePromo = () => {
 };
 
 const HeroSection = () => {
+  const [firstHeroReady, setFirstHeroReady] = useState(false);
+  const [preloaderReleased, setPreloaderReleased] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setPreloaderReleased(true), 5500);
+    return () => window.clearTimeout(timer);
+  }, []);
+
+  const showPreloader = !(firstHeroReady || preloaderReleased);
+
   return (
     <>
-      <VideoHero />
+      <AnimatePresence>
+        {showPreloader && (
+          <motion.div
+            className="fixed inset-0 z-[120] flex items-center justify-center bg-[#0d0b0b]"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35 }}
+          >
+            <div className="flex flex-col items-center gap-4 text-center text-white">
+              <Image src="/img/logo.png" alt="Santos & Santorini logo" width={120} height={120} className="h-24 w-24 object-contain" />
+              <div className="flex items-center gap-3 text-xs uppercase tracking-[0.35em] text-gray-100">
+                <span className="h-5 w-5 animate-spin rounded-full border border-white/60 border-t-transparent" aria-hidden="true" />
+                <span>Ucitavanje videa...</span>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <VideoHero onReady={() => setFirstHeroReady(true)} />
       <BridgePromo />
       {heroImageSections.map((section, index) => (
         <HeroImageBlock key={section.id} {...section} priority={index === 0} />
