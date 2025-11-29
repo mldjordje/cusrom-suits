@@ -24,9 +24,13 @@ const sidebarVariants = {
   visible: {
     opacity: 1,
     x: 0,
-    transition: { duration: 0.75, ease: "easeOut" },
+    transition: { duration: 0.75 },
   },
-  exit: { opacity: 0, x: -32, transition: { duration: 0.35, ease: "easeIn" } },
+  exit: {
+    opacity: 0,
+    x: -32,
+    transition: { duration: 0.35 },
+  },
 };
 
 const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
