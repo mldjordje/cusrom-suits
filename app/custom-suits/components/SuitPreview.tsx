@@ -556,7 +556,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
         >
           <BaseLayer layers={[pantsLayer]} resolve={(layer) => cdnPair(layer.src)} />
           {cuffsLayer && cuffsLayer.src !== pantsLayer.src && (
-            <BaseLayer layers={[cuffsLayer]} resolve={(layer) => cdnPair(layer.src)} />
+            <BaseLayer
+              layers={[cuffsLayer]}
+              resolve={(layer) => cdnPair(layer.src)}
+              blendMode="soft-light"
+              opacity={0.8}
+            />
           )}
           {showLayer("fabric") && (
             <FabricUnion

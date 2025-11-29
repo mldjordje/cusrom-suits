@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
 import { suits } from "./data/options";
 import { useSuitConfigurator } from "./hooks/useSuitConfigurator";
@@ -89,6 +90,12 @@ export default function CustomSuitsPage() {
         viewport={{ once: true, amount: 0.6 }}
       >
         <div className="rounded-[20px] border border-white/60 bg-white/85 px-5 py-4 text-center shadow-[0_16px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur-sm sm:px-7">
+          <div className="flex items-center justify-center gap-3 pb-1 text-[10px] uppercase tracking-[0.4em] text-gray-500">
+            <span className="relative h-10 w-10">
+              <Image src="/img/logo.png" alt="Santos & Santorini" fill className="object-contain" sizes="40px" />
+            </span>
+            <span className="text-[11px] tracking-[0.35em] text-gray-600">Atelier</span>
+          </div>
           <h1 className="text-2xl font-semibold leading-tight text-[#1c1c1c] sm:text-3xl">Dizajniraj svoje odelo</h1>
         </div>
       </motion.div>
