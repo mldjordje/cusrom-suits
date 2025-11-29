@@ -44,10 +44,7 @@ const Header = () => {
           <span className="relative h-12 w-12">
             <Image src="/img/logo.png" alt="Santos & Santorini logo" fill className="object-contain drop-shadow-sm" priority />
           </span>
-          <div className="flex flex-col leading-tight">
-            <span className="text-sm font-semibold uppercase tracking-[0.2em]">Santos & Santorini</span>
-            <span className="text-[10px] uppercase tracking-[0.35em] text-[#b3202a]">Atelier</span>
-          </div>
+          <span className="text-sm font-semibold uppercase tracking-[0.2em]">Santos & Santorini</span>
         </Link>
 
         <nav className="hidden items-center gap-5 text-[11px] uppercase tracking-[0.25em] text-[#8b7d76] lg:flex">

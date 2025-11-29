@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
+import { AnimatePresence, motion } from "framer-motion";
 import React, { useMemo, useState } from "react";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
@@ -27,6 +28,25 @@ const toneLabels: Record<"all" | "light" | "medium" | "dark", string> = {
   dark: "Tamni",
 };
 
+const drawerPanelVariants = {
+  hidden: { x: "-35%", opacity: 0 },
+  visible: {
+    x: 0,
+    opacity: 1,
+    transition: { type: "spring", stiffness: 170, damping: 26 },
+  },
+  exit: { x: "-35%", opacity: 0, transition: { duration: 0.2 } },
+};
+
+const drawerOverlayVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: { duration: 0.25 },
+  },
+  exit: { opacity: 0, transition: { duration: 0.25 } },
+};
+
 const Badge = ({ label }: { label: string }) => (
   <span className="rounded-full bg-emerald-500 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
     {label}
@@ -46,26 +66,28 @@ const ChoiceGroup = ({
   onSelect: (id: string) => void;
   columns?: 2 | 3;
 }) => {
-    if (!options.length) return null;
-    const gridCols = columns === 3 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2";
-    return (
-      <div className="space-y-2">
-        <p className="text-[12px] font-semibold uppercase tracking-[0.3em] text-gray-500">{title}</p>
-        <div className={`grid gap-2 ${gridCols}`}>
+  if (!options.length) return null;
+  const gridCols = columns === 3 ? "grid-cols-2 sm:grid-cols-3" : "grid-cols-2";
+  return (
+    <div className="space-y-2">
+      <p className="text-[12px] font-semibold uppercase tracking-[0.3em] text-gray-500">{title}</p>
+      <div className={`grid gap-2 ${gridCols}`}>
         {options.map((option) => {
           const active = selectedId === option.id;
           return (
             <button
               key={option.id}
               onClick={() => onSelect(option.id)}
-                className={`rounded-2xl border px-3 py-2.5 text-left transition ${
-                  active
-                    ? "border-gray-900 bg-gray-900 text-white shadow-sm"
-                    : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
-                }`}
-              >
-                <p className="text-sm font-semibold leading-tight">{option.label}</p>
-              {option.hint && <p className={`text-[12px] ${active ? "text-white/80" : "text-gray-500"}`}>{option.hint}</p>}
+              className={`rounded-2xl border px-3 py-2.5 text-left transition ${
+                active
+                  ? "border-gray-900 bg-gray-900 text-white shadow-sm"
+                  : "border-gray-200 bg-white text-gray-700 hover:border-gray-400"
+              }`}
+            >
+              <p className="text-sm font-semibold leading-tight">{option.label}</p>
+              {option.hint && (
+                <p className={`text-[12px] ${active ? "text-white/80" : "text-gray-500"}`}>{option.hint}</p>
+              )}
             </button>
           );
         })}
@@ -137,24 +159,25 @@ const Drawer = ({
   children: React.ReactNode;
   onClose: () => void;
 }) => {
-  const active = Boolean(panel);
   return (
-    <div
-      className={`fixed inset-0 z-[60] flex transition lg:hidden ${
-        active ? "pointer-events-auto opacity-100" : "pointer-events-none opacity-0"
-      }`}
-    >
-      <div
-        className={`pointer-events-auto flex h-full w-[52vw] min-w-[210px] max-w-[280px] flex-col overflow-hidden sm:max-w-[320px] transform bg-white shadow-2xl transition duration-200 ease-out ${
-          active ? "translate-x-0" : "-translate-x-full"
-        }`}
+    <div className="fixed inset-0 z-[60] flex lg:hidden">
+      <motion.div
+        className="pointer-events-auto flex h-full w-[52vw] min-w-[210px] max-w-[280px] flex-col overflow-hidden sm:max-w-[320px] transform bg-white shadow-2xl"
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        variants={drawerPanelVariants}
       >
         {children}
-      </div>
-      <button
+      </motion.div>
+      <motion.button
         aria-label="Close"
         onClick={onClose}
-        className={`pointer-events-auto h-full flex-1 bg-black/25 transition ${active ? "opacity-100" : "opacity-0"}`}
+        className="pointer-events-auto h-full flex-1 bg-black/25"
+        initial="hidden"
+        animate="visible"
+        exit="exit"
+        variants={drawerOverlayVariants}
       />
     </div>
   );
@@ -468,11 +491,13 @@ function MobileControls({ config, dispatch }: Props) {
         </div>
       </div>
 
-      {activePanel && (
-        <Drawer panel={activePanel} onClose={() => setActivePanel(null)}>
-          {drawerBody}
-        </Drawer>
-      )}
+      <AnimatePresence initial={false} mode="wait">
+        {activePanel && (
+          <Drawer panel={activePanel} onClose={() => setActivePanel(null)}>
+            {drawerBody}
+          </Drawer>
+        )}
+      </AnimatePresence>
     </>
   );
 }

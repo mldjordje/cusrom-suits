@@ -1,6 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 import React, { useMemo, useState } from "react";
+import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
@@ -16,6 +17,16 @@ const tabLabels: Record<(typeof tabs)[number], string> = {
   FABRIC: "Tkanine",
   STYLE: "Stil",
   ACCENTS: "Detalji",
+};
+
+const sidebarVariants = {
+  hidden: { opacity: 0, x: -32 },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: { duration: 0.75, ease: [0.4, 0, 0.2, 1] },
+  },
+  exit: { opacity: 0, x: -32, transition: { duration: 0.35 } },
 };
 
 const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
@@ -154,7 +165,12 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   };
 
   return (
-    <div className="flex h-full flex-col lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)]">
+    <motion.div
+      className="flex h-full flex-col lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)]"
+      variants={sidebarVariants}
+      initial="hidden"
+      animate="visible"
+    >
       <div className="flex-1 rounded-[30px] bg-gray-50/95 px-4 py-5 shadow-[0_25px_70px_rgba(15,23,42,0.08)] ring-1 ring-black/5 sm:px-5 sm:py-6 lg:overflow-y-auto">
         <div className="space-y-6 sm:space-y-7">
           <Link
@@ -404,7 +420,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 };
 
