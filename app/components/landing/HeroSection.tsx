@@ -1,6 +1,6 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -23,6 +23,25 @@ const heroImageSections = [
     mobileVideoId: "gUQRpUIt5cU",
   },
 ];
+
+const heroContentVariants: Variants = {
+  hidden: { opacity: 0, y: 40, scale: 0.98 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: { duration: 0.8, ease: [0.4, 0, 0.2, 1] },
+  },
+};
+
+const promoCardVariants: Variants = {
+  hidden: { opacity: 0, y: 35 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: { duration: 0.75, ease: [0.4, 0, 0.2, 1] },
+  },
+};
 
 type HeroImageBlockProps = (typeof heroImageSections)[number] & { priority?: boolean; mobileVideoId?: string };
 
@@ -100,7 +119,13 @@ const HeroImageBlock = ({ image, title, primary, priority, mobileVideoId }: Hero
         )}
       </AnimatePresence>
 
-      <div className="relative z-10 mx-auto flex min-h-[90svh] w-full max-w-6xl flex-col justify-center gap-6 px-6 pb-16 pt-24 text-left text-white sm:px-10 lg:px-0">
+      <motion.div
+        className="relative z-10 mx-auto flex min-h-[90svh] w-full max-w-6xl flex-col justify-center gap-6 px-6 pb-16 pt-24 text-left text-white sm:px-10 lg:px-0"
+        variants={heroContentVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.4 }}
+      >
         <h2 className="text-4xl font-semibold tracking-[0.06em] sm:text-5xl lg:text-[56px]">{title}</h2>
         <div className="flex flex-wrap gap-4 pt-2">
           <Link
@@ -110,7 +135,7 @@ const HeroImageBlock = ({ image, title, primary, priority, mobileVideoId }: Hero
             {primary.label}
           </Link>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 };
@@ -156,7 +181,13 @@ const VideoHero = ({ onReady }: { onReady?: () => void }) => {
         </div>
       </div>
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/80 via-[#190808]/70 to-[#2b0e0e]/80" aria-hidden="true" />
-      <div className="relative z-10 flex min-h-[100svh] items-center px-6 pb-16 pt-24 sm:px-12 lg:px-24">
+      <motion.div
+        className="relative z-10 flex min-h-[100svh] items-center px-6 pb-16 pt-24 sm:px-12 lg:px-24"
+        variants={heroContentVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.4 }}
+      >
         <div className="max-w-3xl space-y-5">
           <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Dizajniraj svoje odelo po meri.</h1>
           <div className="flex flex-wrap gap-4">
@@ -168,7 +199,7 @@ const VideoHero = ({ onReady }: { onReady?: () => void }) => {
             </Link>
           </div>
         </div>
-      </div>
+      </motion.div>
     </section>
   );
 };
@@ -199,9 +230,13 @@ const BridgePromo = () => {
     <section className="bg-gradient-to-b from-[#f3f0eb] via-[#f7f4ef] to-[#f3f0eb] px-4 py-10 sm:px-8">
       <div className="mx-auto grid w-full max-w-5xl gap-6 md:grid-cols-2">
         {promos.map((item) => (
-          <div
+          <motion.article
             key={item.id}
             className="relative w-full overflow-hidden rounded-[34px] border border-white/70 bg-white shadow-[0_25px_80px_rgba(15,23,42,0.12)]"
+            variants={promoCardVariants}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.35 }}
           >
             <div className="relative h-[420px] w-full sm:h-[480px]">
               <Image src={item.image} alt={item.title} fill priority sizes="(max-width: 900px) 100vw, 50vw" className="object-cover" />
@@ -220,7 +255,7 @@ const BridgePromo = () => {
                 </Link>
               </div>
             </div>
-          </div>
+          </motion.article>
         ))}
       </div>
     </section>
