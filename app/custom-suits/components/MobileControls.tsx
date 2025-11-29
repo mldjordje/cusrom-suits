@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, type Variants } from "framer-motion";
 import React, { useMemo, useState } from "react";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
@@ -28,17 +28,17 @@ const toneLabels: Record<"all" | "light" | "medium" | "dark", string> = {
   dark: "Tamni",
 };
 
-const drawerPanelVariants = {
+const drawerPanelVariants: Variants = {
   hidden: { x: "-35%", opacity: 0 },
   visible: {
     x: 0,
     opacity: 1,
-    transition: { type: "spring", stiffness: 170, damping: 26 },
+    transition: { type: "spring" as const, stiffness: 170, damping: 26 },
   },
   exit: { x: "-35%", opacity: 0, transition: { duration: 0.2 } },
 };
 
-const drawerOverlayVariants = {
+const drawerOverlayVariants: Variants = {
   hidden: { opacity: 0 },
   visible: {
     opacity: 1,
