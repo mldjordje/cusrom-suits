@@ -1,10 +1,12 @@
 /* --- TAILWIND CORE --- */
 @import "tailwindcss";
+@import url("https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&display=swap");
 
 /* --- VARIJABLE TEME --- */
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  --font-display: "Playfair Display", "Times New Roman", serif;
 }
 
 @theme inline {
@@ -29,6 +31,11 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+.hero-display {
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
 }
 
 /* --- OPCIONO: SKRIVANJE SCROLLBARA ZA HORIZ SCROLL --- */

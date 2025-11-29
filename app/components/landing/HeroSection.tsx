@@ -126,7 +126,7 @@ const HeroImageBlock = ({ image, title, primary, priority, mobileVideoId }: Hero
         whileInView="visible"
         viewport={{ once: true, amount: 0.4 }}
       >
-        <h2 className="text-4xl font-semibold tracking-[0.06em] sm:text-5xl lg:text-[56px]">{title}</h2>
+        <h2 className="hero-display text-4xl font-semibold tracking-[0.06em] sm:text-5xl lg:text-[56px]">{title}</h2>
         <div className="flex flex-wrap gap-4 pt-2">
           <Link
             href={primary.href}
@@ -189,7 +189,7 @@ const VideoHero = ({ onReady }: { onReady?: () => void }) => {
         viewport={{ once: true, amount: 0.4 }}
       >
         <div className="max-w-3xl space-y-5">
-          <h1 className="text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Dizajniraj svoje odelo po meri.</h1>
+          <h1 className="hero-display text-4xl font-semibold leading-tight sm:text-5xl lg:text-[64px]">Dizajniraj svoje odelo po meri.</h1>
           <div className="flex flex-wrap gap-4">
             <Link
               href="/custom-suits"
