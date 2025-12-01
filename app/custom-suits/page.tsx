@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import Image from "next/image";
 import { motion, type Variants } from "framer-motion";
 import { suits } from "./data/options";
 import { useSuitConfigurator } from "./hooks/useSuitConfigurator";
@@ -44,15 +43,6 @@ export default function CustomSuitsPage() {
     );
   }
 
-  const heroCardVariants: Variants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: { duration: 0.8, ease: [0.4, 0, 0.2, 1] },
-    },
-  };
-
   const configuratorVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
@@ -83,25 +73,8 @@ export default function CustomSuitsPage() {
   return (
     <div className="bg-gradient-to-br from-[#f6f6f4] via-white to-[#ececec] text-[#111]">
       <motion.div
-        className="mx-auto w-full max-w-5xl px-4 pb-4 pt-6 sm:px-6 lg:px-8"
-        variants={heroCardVariants}
-        initial="hidden"
-        whileInView="visible"
-        viewport={{ once: true, amount: 0.6 }}
-      >
-        <div className="rounded-[20px] border border-white/60 bg-white/85 px-5 py-4 text-center shadow-[0_16px_60px_rgba(15,23,42,0.08)] ring-1 ring-black/5 backdrop-blur-sm sm:px-7">
-          <div className="flex items-center justify-center pb-1">
-            <span className="relative h-10 w-10">
-              <Image src="/img/logo.png" alt="Santos & Santorini" fill className="object-contain" sizes="40px" />
-            </span>
-          </div>
-          <h1 className="text-2xl font-semibold leading-tight text-[#1c1c1c] sm:text-3xl">Dizajniraj svoje odelo</h1>
-        </div>
-      </motion.div>
-
-      <motion.div
         id="konfigurator"
-        className="mx-auto w-full max-w-[1380px] px-3 pb-24 sm:px-6 lg:px-2 lg:pb-16"
+        className="mx-auto w-full max-w-[1380px] px-3 pb-24 pt-6 sm:px-6 sm:pt-8 lg:px-2 lg:pb-16"
         variants={configuratorVariants}
         initial="hidden"
         animate="visible"

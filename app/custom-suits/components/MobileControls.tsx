@@ -162,7 +162,7 @@ const Drawer = ({
   return (
     <div className="fixed inset-0 z-[60] flex lg:hidden">
       <motion.div
-        className="pointer-events-auto flex h-full w-[52vw] min-w-[210px] max-w-[280px] flex-col overflow-hidden sm:max-w-[320px] transform bg-white shadow-2xl"
+        className="pointer-events-auto flex h-full w-[46vw] min-w-[200px] max-w-[260px] flex-col overflow-hidden sm:max-w-[300px] transform bg-white shadow-2xl"
         initial="hidden"
         animate="visible"
         exit="exit"
