@@ -158,11 +158,12 @@ const enhanceFabricColor = (hex: string, tone: Tone) => {
   const rgb = hexToRgb(hex);
   if (!rgb) return hex;
   const { h, s, l } = rgbToHsl(rgb);
-  const saturationBoost = tone === "dark" ? 0.18 : tone === "light" ? 0.08 : 0.14;
-  const lightnessBoost = tone === "dark" ? 0.08 : tone === "light" ? 0.04 : 0.06;
+  const isNeutral = isNeutralTone(rgb, 8);
+  const saturationBoost = isNeutral ? 0 : tone === "dark" ? 0.18 : tone === "light" ? 0.08 : 0.14;
+  const lightnessBoost = tone === "dark" ? 0.05 : tone === "light" ? 0.04 : 0.06;
   const vivid = hslToRgb({
     h,
-    s: Math.min(1, s + saturationBoost),
+    s: isNeutral ? 0 : Math.min(1, s + saturationBoost),
     l: Math.min(0.82, l + lightnessBoost),
   });
   return rgbToHex(vivid);
