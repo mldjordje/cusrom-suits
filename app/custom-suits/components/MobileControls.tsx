@@ -2,17 +2,19 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
 import { computePrice } from "../utils/price";
 
-type Panel = "FABRIC" | "STYLE" | "ACCENTS";
+export type Panel = "FABRIC" | "STYLE" | "ACCENTS";
 
 type Props = {
   config: SuitState;
   dispatch: React.Dispatch<any>;
+  activePanel?: Panel | null;
+  onPanelChange?: (panel: Panel | null) => void;
 };
 
 const NAV = [
@@ -183,8 +185,18 @@ const Drawer = ({
   );
 };
 
-function MobileControls({ config, dispatch }: Props) {
-  const [activePanel, setActivePanel] = useState<Panel | null>(null);
+function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props) {
+  const [internalPanel, setInternalPanel] = useState<Panel | null>(null);
+  const currentPanel = activePanel !== undefined ? activePanel : internalPanel;
+  const setPanel = (panel: Panel | null) => {
+    setInternalPanel(panel);
+    onPanelChange?.(panel);
+  };
+  useEffect(() => {
+    if (activePanel !== undefined) {
+      setInternalPanel(activePanel);
+    }
+  }, [activePanel]);
   const [savingCart, setSavingCart] = useState(false);
   const [feedback, setFeedback] = useState<string | null>(null);
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
@@ -280,7 +292,7 @@ function MobileControls({ config, dispatch }: Props) {
 
   const renderFabricPanel = () => (
     <>
-      <DrawerHeader title="Biblioteka tkanina" onClose={() => setActivePanel(null)} />
+      <DrawerHeader title="Biblioteka tkanina" onClose={() => setPanel(null)} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="space-y-3 border-b border-gray-100 bg-white px-4 py-3">
           <div className="flex gap-2">
@@ -330,7 +342,7 @@ function MobileControls({ config, dispatch }: Props) {
         </div>
         <div className="sticky bottom-0 border-t border-gray-100 bg-white px-4 py-3">
           <button
-            onClick={() => setActivePanel(null)}
+            onClick={() => setPanel(null)}
             className="w-full rounded-full bg-gray-900 px-4 py-3 text-center text-sm font-semibold uppercase tracking-[0.25em] text-white transition hover:bg-gray-800"
           >
             Primeni tkaninu
@@ -342,7 +354,7 @@ function MobileControls({ config, dispatch }: Props) {
 
   const renderStylePanel = () => (
     <>
-      <DrawerHeader title="Stil" onClose={() => setActivePanel(null)} />
+      <DrawerHeader title="Stil" onClose={() => setPanel(null)} />
       <div className="flex-1 space-y-4 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-14">
         <ChoiceGroup
           title="Model odela"
@@ -371,7 +383,7 @@ function MobileControls({ config, dispatch }: Props) {
 
   const renderAccentsPanel = () => (
     <>
-      <DrawerHeader title="Detalji" onClose={() => setActivePanel(null)} />
+      <DrawerHeader title="Detalji" onClose={() => setPanel(null)} />
       <div className="flex-1 space-y-4 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-14">
         {currentSuit?.pockets?.length ? (
           <ChoiceGroup
@@ -429,9 +441,9 @@ function MobileControls({ config, dispatch }: Props) {
   );
 
   const drawerBody = (() => {
-    if (activePanel === "FABRIC") return renderFabricPanel();
-    if (activePanel === "STYLE") return renderStylePanel();
-    if (activePanel === "ACCENTS") return renderAccentsPanel();
+    if (currentPanel === "FABRIC") return renderFabricPanel();
+    if (currentPanel === "STYLE") return renderStylePanel();
+    if (currentPanel === "ACCENTS") return renderAccentsPanel();
     return null;
   })();
 
@@ -443,11 +455,11 @@ function MobileControls({ config, dispatch }: Props) {
           <div className="mx-auto max-w-lg rounded-[26px] bg-white shadow-[0_25px_80px_rgba(15,23,42,0.18)] ring-1 ring-black/5">
             <div className="flex items-center justify-between px-4 pt-3 pb-2">
               {NAV.map((item) => {
-                const active = activePanel === item.id;
+                const active = currentPanel === item.id;
                 return (
                     <button
                       key={item.id}
-                      onClick={() => setActivePanel(item.id)}
+                      onClick={() => setPanel(item.id)}
                       className={`flex flex-col items-center gap-1 rounded-2xl px-4 py-3 transition ${
                         active ? "bg-gray-100 text-gray-900 shadow-sm" : "text-gray-500 hover:bg-gray-50"
                       }`}
@@ -492,8 +504,8 @@ function MobileControls({ config, dispatch }: Props) {
       </div>
 
       <AnimatePresence initial={false} mode="wait">
-        {activePanel && (
-          <Drawer panel={activePanel} onClose={() => setActivePanel(null)}>
+        {currentPanel && (
+          <Drawer panel={currentPanel} onClose={() => setPanel(null)}>
             {drawerBody}
           </Drawer>
         )}

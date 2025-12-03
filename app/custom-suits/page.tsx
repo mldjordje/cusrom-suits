@@ -8,7 +8,7 @@ import { useImagePreloader } from "./hooks/useImagePreloader";
 import { useFabrics } from "./hooks/useFabrics";
 import SuitPreview from "./components/SuitPreview";
 import Sidebar from "./components/Sidebar";
-import MobileControls from "./components/MobileControls";
+import MobileControls, { Panel as MobilePanel } from "./components/MobileControls";
 
 export default function CustomSuitsPage() {
   const [config, dispatch] = useSuitConfigurator({
@@ -19,6 +19,7 @@ export default function CustomSuitsPage() {
     order: "desc",
   });
   const defaultColorSet = React.useRef(false);
+  const [activeMobilePanel, setActiveMobilePanel] = React.useState<MobilePanel | null>(null);
 
   const currentSuit = suits.find((s) => s.id === config.styleId);
   const layers = currentSuit?.layers || [];
@@ -79,7 +80,7 @@ export default function CustomSuitsPage() {
         initial="hidden"
         animate="visible"
       >
-        <div className="relative isolate flex min-h-[100svh] flex-col gap-4 sm:gap-5 lg:min-h-[78vh] lg:grid lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-6">
+        <div className="relative isolate flex min-h-[100svh] flex-col gap-4 sm:gap-5 lg:min-h-[78vh] lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-6">
           <motion.section
             className="order-1 hidden w-full lg:order-1 lg:block"
             variants={columnVariants}
@@ -93,7 +94,9 @@ export default function CustomSuitsPage() {
             </div>
           </motion.section>
           <motion.section
-            className="order-2 relative flex w-full items-center justify-center overflow-hidden rounded-[30px] bg-white/90 p-3 shadow-[0_28px_100px_rgba(15,23,42,0.12)] ring-1 ring-black/5 backdrop-blur-sm sm:p-4 lg:order-2 lg:h-full lg:p-5"
+            className={`order-2 relative flex w-full items-center justify-center overflow-hidden rounded-[30px] bg-white/90 p-3 shadow-[0_28px_100px_rgba(15,23,42,0.12)] ring-1 ring-black/5 backdrop-blur-sm sm:p-4 lg:order-2 lg:h-full lg:p-5 transition-transform duration-300 ease-out ${
+              activeMobilePanel ? "translate-x-6 scale-[0.97] sm:translate-x-8" : "translate-x-0"
+            } lg:translate-x-0 lg:scale-100`}
             variants={columnVariants}
             initial="hidden"
             animate="visible"
@@ -105,7 +108,12 @@ export default function CustomSuitsPage() {
           </motion.section>
         </div>
         <motion.div variants={controlsVariants} initial="hidden" animate="visible">
-          <MobileControls config={config} dispatch={dispatch} />
+          <MobileControls
+            config={config}
+            dispatch={dispatch}
+            activePanel={activeMobilePanel}
+            onPanelChange={setActiveMobilePanel}
+          />
         </motion.div>
       </motion.div>
     </div>

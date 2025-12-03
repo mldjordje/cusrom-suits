@@ -50,6 +50,52 @@ const rgbToHex = (rgb: RGB) =>
     .toString(16)
     .padStart(2, "0")}${clampChannel(rgb.b).toString(16).padStart(2, "0")}`;
 
+const rgbToHsl = ({ r, g, b }: RGB) => {
+  const rn = r / 255;
+  const gn = g / 255;
+  const bn = b / 255;
+  const max = Math.max(rn, gn, bn);
+  const min = Math.min(rn, gn, bn);
+  const delta = max - min;
+
+  let h = 0;
+  if (delta !== 0) {
+    if (max === rn) {
+      h = ((gn - bn) / delta) % 6;
+    } else if (max === gn) {
+      h = (bn - rn) / delta + 2;
+    } else {
+      h = (rn - gn) / delta + 4;
+    }
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+
+  const l = (max + min) / 2;
+  const s = delta === 0 ? 0 : delta / (1 - Math.abs(2 * l - 1));
+
+  return { h, s, l };
+};
+
+const hslToRgb = ({ h, s, l }: { h: number; s: number; l: number }): RGB => {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+  const m = l - c / 2;
+
+  const map = (r1: number, g1: number, b1: number): RGB => ({
+    r: clampChannel((r1 + m) * 255),
+    g: clampChannel((g1 + m) * 255),
+    b: clampChannel((b1 + m) * 255),
+  });
+
+  if (h < 60) return map(c, x, 0);
+  if (h < 120) return map(x, c, 0);
+  if (h < 180) return map(0, c, x);
+  if (h < 240) return map(0, x, c);
+  if (h < 300) return map(x, 0, c);
+  return map(c, 0, x);
+};
+
 const linearChannel = (channel: number) => {
   const normalized = channel / 255;
   return normalized <= 0.03928
@@ -106,6 +152,20 @@ const computeFabricBaseColor = (
   const fallbackHex = normalizeHex(fallbackColor) ?? "#8f8f8f";
   const candidateHex = normalizeHex(overrideColor ?? avgColor);
   return candidateHex ?? fallbackHex;
+};
+
+const enhanceFabricColor = (hex: string, tone: Tone) => {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  const { h, s, l } = rgbToHsl(rgb);
+  const saturationBoost = tone === "dark" ? 0.18 : tone === "light" ? 0.08 : 0.14;
+  const lightnessBoost = tone === "dark" ? 0.08 : tone === "light" ? 0.04 : 0.06;
+  const vivid = hslToRgb({
+    h,
+    s: Math.min(1, s + saturationBoost),
+    l: Math.min(0.82, l + lightnessBoost),
+  });
+  return rgbToHex(vivid);
 };
 
 /* =====================================================================================
@@ -228,20 +288,24 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
   const fabricTextureFilter = useMemo(() => {
     if (fabricTone === "dark") {
-      return `${tb.filter} brightness(0.9) contrast(1.32) saturate(1.2)`;
+      return `${tb.filter} brightness(1.02) contrast(1.32) saturate(1.25)`;
     }
     if (fabricTone === "light") {
-      return `${tb.filter} brightness(1.05) contrast(1.02) saturate(0.95)`;
+      return `${tb.filter} brightness(1.07) contrast(1.08) saturate(1.05)`;
     }
-    return `${tb.filter} brightness(1.02) contrast(1.12) saturate(1.05)`;
+    return `${tb.filter} brightness(1.08) contrast(1.2) saturate(1.24)`;
   }, [fabricTone, tb.filter]);
+  const fabricTextureOpacity = useMemo(
+    () => Math.min(0.85, toneVis.fabric.opacity * (fabricTone === "dark" ? 0.9 : 0.82)),
+    [fabricTone, toneVis.fabric.opacity]
+  );
   const fabricTextureStyle = useMemo(
     () => ({
       filter: fabricTextureFilter,
       mixBlendMode: fabricTone === "dark" ? "overlay" : toneVis.fabric.blend,
-      opacity: toneVis.fabric.opacity * (fabricTone === "dark" ? 0.72 : 0.7),
+      opacity: fabricTextureOpacity,
     }),
-    [fabricTextureFilter, fabricTone, toneVis.fabric.blend, toneVis.fabric.opacity]
+    [fabricTextureFilter, fabricTone, fabricTextureOpacity, toneVis.fabric.blend]
   );
   const fabricTextureScale = useMemo(
     () => toneVis.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88),
@@ -252,15 +316,14 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   // Average color from fabric texture (to better match hue)
   const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
   const explicitFabricColor = useMemo(() => extractFabricHex(selectedFabric), [selectedFabric]);
-  const fabricFillColor = useMemo(
+  const fabricFillColorBase = useMemo(
     () =>
-      computeFabricBaseColor(
-        fabricAvgColor,
-        toneBaseColor,
-        selectedFabric?.tone as Tone | undefined,
-        explicitFabricColor
-      ),
+      computeFabricBaseColor(fabricAvgColor, toneBaseColor, selectedFabric?.tone as Tone | undefined, explicitFabricColor),
     [fabricAvgColor, toneBaseColor, selectedFabric?.tone, explicitFabricColor]
+  );
+  const fabricFillColor = useMemo(
+    () => enhanceFabricColor(fabricFillColorBase, fabricTone),
+    [fabricFillColorBase, fabricTone]
   );
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
@@ -498,7 +561,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             resolve={(layer) => cdnPair(layer.src)}
             fabricTexture={fabricTexture}
             textureStyle={fabricTextureStyle}
-            baseColor={toneBaseColor}
+            baseColor={fabricFillColor || toneBaseColor}
             fabricAvgColor={fabricFillColor}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
@@ -566,16 +629,16 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           {showLayer("fabric") && (
             <FabricUnion
               layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
-              resolve={(layer) => cdnPair(layer.src)}
-              fabricTexture={fabricTexture}
-              textureStyle={fabricTextureStyle}
-              baseColor={toneBaseColor}
-              fabricAvgColor={fabricFillColor}
-              panZoom={panZoom}
-              canvas={PANTS_CANVAS}
-              textureScale={fabricTextureScale}
-            />
-          )}
+            resolve={(layer) => cdnPair(layer.src)}
+            fabricTexture={fabricTexture}
+            textureStyle={fabricTextureStyle}
+            baseColor={fabricFillColor || toneBaseColor}
+            fabricAvgColor={fabricFillColor}
+            panZoom={panZoom}
+            canvas={PANTS_CANVAS}
+            textureScale={fabricTextureScale}
+          />
+        )}
           {needsDarkBoost && pantsMaskPair && (
             <div
               className="absolute inset-0 pointer-events-none"

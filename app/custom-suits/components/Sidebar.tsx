@@ -175,30 +175,33 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
       initial="hidden"
       animate="visible"
     >
-      <div className="flex-1 rounded-[30px] bg-gray-50/95 px-4 py-5 shadow-[0_25px_70px_rgba(15,23,42,0.08)] ring-1 ring-black/5 sm:px-5 sm:py-6 lg:overflow-y-auto">
-        <div className="space-y-6 sm:space-y-7">
+      <div className="flex-1 rounded-[22px] border border-gray-100 bg-white/90 px-4 py-4 shadow-[0_16px_50px_rgba(15,23,42,0.08)] sm:px-4 sm:py-5 lg:overflow-y-auto">
+        <div className="space-y-5 sm:space-y-6">
           <Link
             href="/"
-            className="flex items-center gap-4 rounded-2xl border border-white/60 bg-white/70 px-4 py-4 shadow-sm transition hover:border-gray-900 hover:bg-white/80"
+            className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-3.5 py-3 shadow-sm transition hover:border-gray-300 hover:bg-white"
             aria-label="Na pocetnu stranicu"
           >
-            <img src="/img/logo.png" alt="Brand logo" className="h-12 w-auto object-contain" />
+            <img src="/img/logo.png" alt="Brand logo" className="h-9 w-auto object-contain" />
             <div>
-              <p className="text-[11px] uppercase tracking-[0.35em] text-gray-500">Dizajniraj svoje odelo</p>
-              <p className="text-base font-semibold text-gray-900">Santos &amp; Santorini</p>
+              <p className="text-[11px] uppercase tracking-[0.25em] text-gray-500">Custom suits</p>
+              <p className="text-sm font-semibold text-gray-900">Santos &amp; Santorini</p>
             </div>
           </Link>
 
-          <div className="rounded-3xl border border-white/60 bg-white/80 p-4 shadow-sm sm:p-5">
-            <div className="flex items-center justify-between text-xs uppercase tracking-[0.3em] text-gray-400">
+          <div className="rounded-2xl border border-gray-100 bg-white/95 p-3.5 shadow-sm">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-semibold text-gray-900">Cena dizajna</p>
+              <span className="text-[11px] text-gray-500">PDV ukljucen</span>
+            </div>
+            <div className="mt-2 flex items-center justify-between text-lg font-semibold text-gray-900">
               <span>Model</span>
+              <span>{price.total} EUR</span>
+            </div>
+            <div className="flex items-center justify-between text-[12px] text-gray-600">
               <span>Tkanina</span>
+              <span>{fabricPrice} EUR</span>
             </div>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-right text-2xl font-semibold text-gray-900">
-              <div className="text-left">{price.total} EUR</div>
-              <div>{fabricPrice} EUR</div>
-            </div>
-            <p className="mt-2 text-[11px] text-gray-500">Indikativna cena, PDV ukljuen.</p>
           </div>
 
           <nav className="flex snap-x gap-2 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:gap-2 sm:overflow-visible sm:pb-0 lg:grid-cols-1">
@@ -208,43 +211,44 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
-                  className={`flex min-w-[220px] flex-shrink-0 snap-center items-center justify-between rounded-2xl border px-3 py-2.5 text-left text-[13px] transition sm:min-w-0 sm:px-4 sm:py-3 ${
-                    isActive
-                      ? "border-gray-900 bg-white text-gray-900 shadow-inner"
-                      : "border-transparent bg-white/40 text-gray-500 hover:border-gray-200 hover:bg-white/70"
+                  className={`flex min-w-[180px] flex-shrink-0 snap-center items-center gap-3 rounded-xl border px-3 py-2 text-sm transition sm:min-w-0 sm:px-3.5 sm:py-2.5 ${
+                    isActive ? "border-gray-900 bg-gray-900 text-white shadow-sm" : "border-gray-200 bg-white text-gray-700 hover:border-gray-300"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white/70">
-                      <img src={iconMap[tab]} alt={tab} className="h-6 w-6 object-contain opacity-80" />
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-gray-50">
+                      <img src={iconMap[tab]} alt={tab} className="h-5 w-5 object-contain opacity-80" />
                     </span>
-                    <div>
-                      <p className="text-[10px] uppercase tracking-[0.35em] text-gray-400">{tabLabels[tab]}</p>
-                      <p className="text-xs font-semibold text-gray-700">Podesi</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.15em]">{tabLabels[tab]}</p>
+                      {isActive ? (
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" />
+                      ) : (
+                        <span className="text-[11px] text-gray-500">Otvori</span>
+                      )}
                     </div>
                   </div>
-                  <span className="text-[11px] text-gray-400">{isActive ? "Aktivno" : "Izaberi"}</span>
                 </button>
               );
             })}
           </nav>
 
           {activeTab === "FABRIC" && (
-            <section className="space-y-5 rounded-3xl border border-dashed border-gray-200 bg-white/80 p-4 shadow-inner shadow-black/5 sm:p-5">
-              <div className="flex items-center justify-between gap-4">
-                <h3 className="text-sm font-semibold text-gray-800">Biblioteka tkanina</h3>
+            <section className="space-y-4 rounded-2xl border border-gray-100 bg-white/95 p-4 shadow-sm">
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-gray-900">Tkanine</h3>
                 <a
                   href={uploadUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-[11px] font-medium uppercase tracking-[0.3em] text-gray-500 underline-offset-4 hover:text-gray-900"
+                  className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
                 >
                   CMS
                 </a>
               </div>
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-2 sm:grid-cols-2">
                 <select
-                  className="rounded-2xl border border-gray-200 bg-white/70 px-3 py-2 text-xs text-gray-600 focus:border-gray-400 focus:outline-none"
+                  className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 focus:border-gray-400 focus:outline-none"
                   value={toneFilter}
                   onChange={(e) => setToneFilter(e.target.value as any)}
                 >
@@ -254,48 +258,48 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                   <option value="dark">Tamni</option>
                 </select>
                 <select
-                  className="rounded-2xl border border-gray-200 bg-white/70 px-3 py-2 text-xs text-gray-600 focus:border-gray-400 focus:outline-none"
+                  className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 focus:border-gray-400 focus:outline-none"
                   value={sort}
                   onChange={(e) => setSort(e.target.value as any)}
                 >
-                  <option value="date_desc">Najnovije prvo</option>
-                  <option value="date_asc">Najstarije prvo</option>
+                  <option value="date_desc">Najnovije</option>
+                  <option value="date_asc">Najstarije</option>
                 </select>
               </div>
               <input
-                className="w-full rounded-2xl border border-gray-200 bg-white/60 px-4 py-2 text-xs text-gray-700 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none"
-                placeholder="Pretraga po nazivu ili ifri"
+                className="w-full rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none"
+                placeholder="Pretraga po nazivu ili sifri"
                 value={fabricQuery}
                 onChange={(e) => setFabricQuery(e.target.value)}
               />
               {fabricsError && <p className="text-[11px] text-red-500">{fabricsError}</p>}
               {fabricsLoading ? (
-                <p className="text-xs text-gray-500">Uitavanje tkanina...</p>
+                <p className="text-xs text-gray-500">Ucitavanje tkanina...</p>
               ) : filteredFabrics.length === 0 ? (
-                <p className="text-xs text-gray-500">Nema tkanina za zadate filtere.</p>
+                <p className="text-xs text-gray-500">Nema tkanina za filter.</p>
               ) : (
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {filteredFabrics.map((fabric) => {
                     const isActive = config.colorId === fabric.id;
                     return (
                       <button
                         key={fabric.id}
                         onClick={() => dispatch({ type: "SET_COLOR", payload: fabric.id })}
-                        className={`group overflow-hidden rounded-2xl border text-left transition ${
-                          isActive ? "border-gray-900 shadow-lg" : "border-gray-200 hover:border-gray-400"
+                        className={`group overflow-hidden rounded-xl border text-left transition ${
+                          isActive ? "border-gray-900 shadow-md" : "border-gray-200 hover:border-gray-400"
                         }`}
                       >
-                        <div className="relative h-24 w-full overflow-hidden">
+                        <div className="relative h-20 w-full overflow-hidden">
                           <Image src={fabric.texture} alt={fabric.name} fill style={{ objectFit: "cover" }} />
-                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 transition group-hover:opacity-100" />
+                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 to-transparent opacity-0 transition group-hover:opacity-100" />
                         </div>
-                        <div className={`px-3 py-3 text-[11px] ${isActive ? "text-gray-900" : "text-gray-600"}`}>
-                          <p className="font-semibold">{fabric.name || "Bez naziva"}</p>
+                        <div className={`px-2.5 py-2.5 text-[11px] ${isActive ? "text-gray-900" : "text-gray-600"}`}>
+                          <p className="font-semibold leading-tight">{fabric.name || "Bez naziva"}</p>
                           <p className="text-[10px] text-gray-500">
-                          {fabric.price ?? 0} EUR - Ton {fabric.tone || "medium"}
+                            {fabric.price ?? 0} EUR · ton {fabric.tone || "medium"}
                           </p>
                           {(fabric.zoom1 || fabric.zoom2) && (
-                            <div className="mt-1 flex gap-3 text-[10px] underline">
+                            <div className="mt-1 flex gap-2 text-[10px] underline">
                               {fabric.zoom1 && (
                                 <a href={fabric.zoom1} target="_blank" rel="noreferrer">
                                   Zoom 1
@@ -318,7 +322,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
           )}
 
           {activeTab === "STYLE" && (
-            <section className="space-y-6 rounded-3xl border border-white/60 bg-white/80 p-5 shadow-sm">
+            <section className="space-y-4 rounded-2xl border border-gray-100 bg-white/95 p-4 shadow-sm">
               {!currentSuit ? (
                 <p className="text-xs text-gray-500">Model nije pronaen.</p>
               ) : (
@@ -351,7 +355,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
           )}
 
           {activeTab === "ACCENTS" && (
-            <section className="space-y-6 rounded-3xl border border-dashed border-gray-200 bg-white/70 p-5 text-sm text-gray-500">
+            <section className="space-y-4 rounded-2xl border border-gray-100 bg-white/90 p-4 text-sm text-gray-600 shadow-sm">
               <ChipGroup
                 title="Depovi na sakou"
                 options={(currentSuit?.pockets || []).map((pocket) => ({ id: pocket.id, label: pocket.name }))}
@@ -382,7 +386,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                 />
               ) : null}
 
-              <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-white/80 px-4 py-3">
+              <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-3.5 py-3">
                 <div>
                   <p className="text-sm font-semibold text-gray-800">Prikazi sloj kosulje</p>
                   <p className="text-[11px] text-gray-500">Koristi belu kosulju za jasniji prikaz slojeva.</p>
@@ -401,25 +405,25 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 
         </div>
 
-        <div className="mt-8">
-          <div className="space-y-3">
+        <div className="mt-6">
+          <div className="space-y-2.5">
             <button
               onClick={handleAddToCart}
               disabled={savingCart}
-              className="w-full rounded-full bg-[#ff7a00] px-5 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
+              className="w-full rounded-xl bg-[#ff7a00] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
             >
-              Sačuvaj dizajn u korpu
+              Sacuvaj dizajn
             </button>
             <button
               onClick={() => {
                 window.location.href = measurementUrl;
               }}
-              className="w-full rounded-full bg-gray-900 px-5 py-3 text-sm font-semibold uppercase tracking-[0.3em] text-white transition hover:bg-gray-800"
+              className="w-full rounded-xl border border-gray-900 bg-white px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-900 hover:text-white"
             >
               Nastavi na merenje
             </button>
-            <p className="text-[11px] text-gray-500">
-              Nakon merenja, završite porudžbinu unosom kontakta. Korpa čuva poslednji dizajn i cenu.
+            <p className="text-[11px] text-gray-500 leading-snug">
+              Nakon merenja mozete zavrsiti porudzbinu unosom kontakta. Korpa cuva poslednji dizajn i cenu.
             </p>
           </div>
         </div>
@@ -429,6 +433,9 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 };
 
 export default Sidebar;
+
+
+
 
 
 
