@@ -176,7 +176,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
       animate="visible"
     >
       <div className="flex-1 rounded-[22px] border border-gray-100 bg-white/90 px-4 py-4 shadow-[0_16px_50px_rgba(15,23,42,0.08)] sm:px-4 sm:py-5 lg:overflow-y-auto">
-        <div className="space-y-5 sm:space-y-6">
+        <div className="space-y-4 sm:space-y-5">
           <Link
             href="/"
             className="flex items-center gap-3 rounded-xl border border-gray-100 bg-white px-3.5 py-3 shadow-sm transition hover:border-gray-300 hover:bg-white"
@@ -190,10 +190,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
           </Link>
 
           <div className="rounded-2xl border border-gray-100 bg-white/95 p-3.5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-gray-900">Cena dizajna</p>
-              <span className="text-[11px] text-gray-500">PDV ukljucen</span>
-            </div>
+            <p className="text-sm font-semibold text-gray-900">Cena dizajna</p>
             <div className="mt-2 flex items-center justify-between text-lg font-semibold text-gray-900">
               <span>Model</span>
               <span>{price.total} EUR</span>
@@ -387,10 +384,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
               ) : null}
 
               <div className="flex items-center justify-between rounded-xl border border-gray-100 bg-white px-3.5 py-3">
-                <div>
-                  <p className="text-sm font-semibold text-gray-800">Prikazi sloj kosulje</p>
-                  <p className="text-[11px] text-gray-500">Koristi belu kosulju za jasniji prikaz slojeva.</p>
-                </div>
+                <p className="text-sm font-semibold text-gray-800">Prikazi sloj kosulje</p>
                 <button
                   onClick={() => dispatch({ type: "TOGGLE_SHIRT" })}
                   className={`rounded-full px-3 py-1 text-xs font-semibold transition ${
@@ -422,9 +416,6 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             >
               Nastavi na merenje
             </button>
-            <p className="text-[11px] text-gray-500 leading-snug">
-              Nakon merenja mozete zavrsiti porudzbinu unosom kontakta. Korpa cuva poslednji dizajn i cenu.
-            </p>
           </div>
         </div>
       </div>
