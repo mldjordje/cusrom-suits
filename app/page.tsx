@@ -6,6 +6,7 @@ import Link from "next/link";
 import Footer from "./components/landing/Footer";
 import Header from "./components/landing/Header";
 import HeroSection from "./components/landing/HeroSection";
+import StickyMiniNav from "./components/landing/StickyMiniNav";
 
 const aboutText = [
   "Sa idejom da muskarac treba da uziva u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nisu.",
@@ -175,6 +176,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-[#f8f6f2] text-[#1b1b1b]">
       <Header />
+      <StickyMiniNav />
       <HeroSection />
       <main className="mx-auto flex w-full max-w-6xl flex-col gap-20 px-4 pb-28 pt-16 sm:px-6 lg:px-8">
         <motion.section
