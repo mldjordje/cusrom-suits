@@ -302,6 +302,23 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
 
   const tb = toneBlend(selectedFabric?.tone, level);
   const toneVis = getToneConfig(selectedFabric?.tone, level);
+  const softenedTone = useMemo(
+    () => ({
+      ...toneVis,
+      fabric: { ...toneVis.fabric, opacity: toneVis.fabric.opacity * 0.65 },
+      weaveSharpness: toneVis.weaveSharpness * 0.85,
+      ambientOcclusion: toneVis.ambientOcclusion * 0.7,
+      noise: toneVis.noise * 0.4,
+      vignette: toneVis.vignette * 0.6,
+      highlightTop: toneVis.highlightTop * 0.6,
+      highlightBottom: toneVis.highlightBottom * 0.6,
+      detailOpacity: toneVis.detailOpacity * 0.5,
+      detailScale: toneVis.detailScale * 0.85,
+      edgesOpacity: toneVis.edgesOpacity * 0.7,
+      outlinesOpacity: toneVis.outlinesOpacity * 0.7,
+    }),
+    [toneVis]
+  );
 
   const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
@@ -316,20 +333,22 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   }, [fabricTone, tb.filter]);
   const fabricTextureOpacity = useMemo(
     () =>
-      useTexture ? Math.min(0.85, toneVis.fabric.opacity * (fabricTone === "dark" ? 0.9 : 0.82)) * textureStrength : 0,
-    [fabricTone, toneVis.fabric.opacity, textureStrength, useTexture]
+      useTexture
+        ? Math.min(0.85, softenedTone.fabric.opacity * (fabricTone === "dark" ? 0.9 : 0.82)) * textureStrength
+        : 0,
+    [fabricTone, softenedTone.fabric.opacity, textureStrength, useTexture]
   );
   const fabricTextureStyle = useMemo(
     () => ({
       filter: fabricTextureFilter,
-      mixBlendMode: fabricTone === "dark" ? "overlay" : toneVis.fabric.blend,
+      mixBlendMode: fabricTone === "dark" ? "overlay" : softenedTone.fabric.blend,
       opacity: fabricTextureOpacity,
     }),
-    [fabricTextureFilter, fabricTone, fabricTextureOpacity, toneVis.fabric.blend]
+    [fabricTextureFilter, fabricTone, fabricTextureOpacity, softenedTone.fabric.blend]
   );
   const fabricTextureScale = useMemo(
-    () => toneVis.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88) * textureScaleBoost,
-    [fabricTone, textureScaleBoost, toneVis.weaveSharpness]
+    () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88) * textureScaleBoost,
+    [fabricTone, softenedTone.weaveSharpness, textureScaleBoost]
   );
   const needsDarkBoost = fabricTone === "dark";
 
@@ -533,9 +552,9 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
   return (
     <div className="relative w-full select-none">
-      <div className="relative mx-auto w-full max-w-[660px] sm:max-w-[600px]">
+      <div className="relative mx-auto w-full max-w-[620px] sm:max-w-[560px]">
         <div
-          className="relative mx-auto w-full origin-top transform scale-95 sm:scale-90 lg:scale-[0.88]"
+          className="relative mx-auto w-full origin-top transform scale-[0.9] sm:scale-[0.88] lg:scale-[0.86]"
           data-testid="jacket-preview"
           style={{ width: "100%", aspectRatio: "600 / 733", maxWidth: 620 }}
           onWheel={onWheel}
@@ -612,7 +631,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             className="absolute inset-0 pointer-events-none"
             style={{
               mixBlendMode: "multiply",
-              opacity: toneVis.ambientOcclusion,
+              opacity: softenedTone.ambientOcclusion,
               background:
                 "radial-gradient(ellipse at center, rgba(0,0,0,0.25) 0%, transparent 85%)",
               WebkitMaskImage: `url(${jacketUnionMask})`,
@@ -627,15 +646,15 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           />
         )}
         {showLayer("vignette") && (
-          <GlobalOverlay noiseData={NOISE_DATA} settings={toneVis} mask={jacketUnionMask} />
+          <GlobalOverlay noiseData={NOISE_DATA} settings={softenedTone} mask={jacketUnionMask} />
         )}
       </div>
     </div>
     {/* ======================== PANTS CANVAS ======================== */}
       {pantsLayer && (
         <div
-          className="relative mx-auto -mt-14 w-full max-w-[640px] origin-top transform scale-[0.96] sm:-mt-12 sm:scale-[0.92] lg:-mt-16 lg:scale-[0.9]"
-          style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 600 }}
+          className="relative mx-auto -mt-10 w-full max-w-[600px] origin-top transform scale-[0.9] sm:-mt-8 sm:scale-[0.88] lg:-mt-12 lg:scale-[0.88]"
+          style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 560 }}
         >
           <BaseLayer layers={[pantsLayer]} resolve={(layer) => cdnPair(layer.src)} />
           {cuffsLayer && cuffsLayer.src !== pantsLayer.src && (
@@ -682,7 +701,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               className="absolute inset-0 pointer-events-none"
               style={{
                 mixBlendMode: "multiply",
-                opacity: toneVis.vignette * 0.8,
+                opacity: softenedTone.vignette * 0.8,
                 background:
                   "radial-gradient(ellipse at center, rgba(0,0,0,0.18) 10%, transparent 60%)",
               }}

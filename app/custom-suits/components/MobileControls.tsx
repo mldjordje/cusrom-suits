@@ -164,7 +164,7 @@ const Drawer = ({
   return (
     <div className="fixed inset-0 z-[60] flex lg:hidden">
       <motion.div
-        className="pointer-events-auto flex h-full w-[46vw] min-w-[200px] max-w-[260px] flex-col overflow-hidden sm:max-w-[300px] transform bg-white shadow-2xl"
+        className="pointer-events-auto flex h-full w-[86vw] min-w-[260px] max-w-[360px] flex-col overflow-hidden transform bg-white shadow-2xl"
         initial="hidden"
         animate="visible"
         exit="exit"
@@ -249,7 +249,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
       <DrawerHeader title="Biblioteka tkanina" onClose={() => setPanel(null)} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="space-y-3 border-b border-gray-100 bg-white px-4 py-3">
-          <div className="flex gap-2">
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
             <input
               value={fabricQuery}
               onChange={(e) => setFabricQuery(e.target.value)}
@@ -257,7 +257,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
               placeholder="Pretrazi tkaninu ili ifru"
             />
             <select
-              className="rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-700 focus:border-gray-400 focus:outline-none"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-700 focus:border-gray-400 focus:outline-none"
               value={toneFilter}
               onChange={(e) => setToneFilter(e.target.value as any)}
             >
@@ -268,7 +268,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
               ))}
             </select>
             <select
-              className="rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-700 focus:border-gray-400 focus:outline-none"
+              className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-700 focus:border-gray-400 focus:outline-none"
               value={sort}
               onChange={(e) => setSort(e.target.value as any)}
             >

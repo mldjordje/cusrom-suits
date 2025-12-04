@@ -9,6 +9,8 @@ import { useFabrics } from "./hooks/useFabrics";
 import SuitPreview from "./components/SuitPreview";
 import Sidebar from "./components/Sidebar";
 import MobileControls, { Panel as MobilePanel } from "./components/MobileControls";
+import StickyMiniNav from "../components/landing/StickyMiniNav";
+import Image from "next/image";
 
 export default function CustomSuitsPage() {
   const [config, dispatch] = useSuitConfigurator({
@@ -73,9 +75,14 @@ export default function CustomSuitsPage() {
 
   return (
     <div className="bg-gradient-to-br from-[#f6f6f4] via-white to-[#ececec] text-[#111]">
+      <div className="fixed left-3 top-3 z-40 flex items-center gap-2 rounded-full bg-white/80 px-3 py-2 shadow-md backdrop-blur">
+        <Image src="/img/logo.png" alt="Santos & Santorini" width={28} height={28} className="h-7 w-7 object-contain" />
+        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1d1b1b]">Custom suits</span>
+      </div>
+      <StickyMiniNav />
       <motion.div
         id="konfigurator"
-        className="mx-auto w-full max-w-[1380px] px-3 pb-24 pt-6 sm:px-6 sm:pt-8 lg:px-2 lg:pb-16"
+        className="mx-auto w-full max-w-[1380px] px-3 pb-24 pt-6 sm:px-4 sm:pt-8 lg:px-2 lg:pb-16"
         variants={configuratorVariants}
         initial="hidden"
         animate="visible"
