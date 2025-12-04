@@ -75,19 +75,21 @@ export default function CustomSuitsPage() {
 
   return (
     <div className="bg-gradient-to-br from-[#f6f6f4] via-white to-[#ececec] text-[#111]">
-      <div className="fixed left-3 top-3 z-40 flex items-center gap-2 rounded-full bg-white/80 px-3 py-2 shadow-md backdrop-blur">
-        <Image src="/img/logo.png" alt="Santos & Santorini" width={28} height={28} className="h-7 w-7 object-contain" />
-        <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#1d1b1b]">Custom suits</span>
+      <div className="fixed left-3 top-3 z-30 flex items-center gap-2 rounded-full bg-white/85 px-2.5 py-1.5 shadow-md backdrop-blur">
+        <Image src="/img/logo.png" alt="Santos & Santorini" width={22} height={22} className="h-6 w-6 object-contain" />
+        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1d1b1b]">Custom suits</span>
       </div>
-      <StickyMiniNav />
+      <div className="relative z-20">
+        <StickyMiniNav />
+      </div>
       <motion.div
         id="konfigurator"
-        className="mx-auto w-full max-w-[1380px] px-3 pb-24 pt-6 sm:px-4 sm:pt-8 lg:px-2 lg:pb-16"
+        className="mx-auto w-full max-w-[1380px] px-3 pb-24 pt-20 sm:px-4 sm:pt-24 lg:px-2 lg:pb-16"
         variants={configuratorVariants}
         initial="hidden"
         animate="visible"
       >
-        <div className="relative isolate flex min-h-[100svh] flex-col gap-4 sm:gap-5 lg:min-h-[78vh] lg:grid lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-6">
+        <div className="relative isolate flex min-h-[100svh] flex-col gap-3 sm:gap-4 lg:min-h-[78vh] lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
           <motion.section
             className="order-1 hidden w-full lg:order-1 lg:block"
             variants={columnVariants}
@@ -95,19 +97,19 @@ export default function CustomSuitsPage() {
             animate="visible"
           >
             <div className="lg:sticky lg:top-2">
-              <div className="rounded-[28px] border border-white/60 bg-white/80 p-1 shadow-[0_25px_70px_rgba(15,23,42,0.1)] backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-lg lg:max-h-[calc(100svh-1.5rem)] lg:overflow-y-auto lg:border-none lg:bg-transparent lg:p-0 lg:shadow-none">
+              <div className="rounded-[24px] border border-white/60 bg-white/80 p-1 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm supports-[backdrop-filter]:backdrop-blur-lg lg:max-h-[calc(100svh-2rem)] lg:overflow-y-auto lg:border-none lg:bg-transparent lg:p-0 lg:shadow-none">
                 <Sidebar config={config} dispatch={dispatch} />
               </div>
             </div>
           </motion.section>
           <motion.section
-            className={`order-2 relative flex w-full items-center justify-center overflow-hidden rounded-[30px] bg-white/90 p-3 shadow-[0_28px_100px_rgba(15,23,42,0.12)] ring-1 ring-black/5 backdrop-blur-sm sm:p-4 lg:order-2 lg:h-full lg:p-5 transition-transform duration-300 ease-out ${
-              activeMobilePanel ? "translate-x-6 scale-[0.97] sm:translate-x-8" : "translate-x-0"
+          className={`order-2 relative flex w-full items-center justify-center overflow-hidden rounded-[28px] bg-white/90 p-3 shadow-[0_20px_70px_rgba(15,23,42,0.12)] ring-1 ring-black/5 backdrop-blur-sm sm:p-4 lg:order-2 lg:h-full lg:p-5 transition-transform duration-300 ease-out ${
+              activeMobilePanel ? "translate-x-4 scale-[0.96] sm:translate-x-6" : "translate-x-0"
             } lg:translate-x-0 lg:scale-100`}
-            variants={columnVariants}
-            initial="hidden"
-            animate="visible"
-          >
+          variants={columnVariants}
+          initial="hidden"
+          animate="visible"
+        >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_45%),radial-gradient(circle_at_80%_10%,rgba(179,32,42,0.08),transparent_40%),radial-gradient(circle_at_50%_85%,rgba(24,39,75,0.06),transparent_40%)]" />
             <div className="relative z-10 flex w-full max-w-4xl items-center justify-center px-2">
               <SuitPreview config={config} />
