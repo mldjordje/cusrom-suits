@@ -280,6 +280,13 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
 
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
+  const textureStrength = useMemo(() => {
+    const raw = (selectedFabric as any)?.textureStrength;
+    if (typeof raw !== "number") return 1;
+    return Math.max(0, Math.min(1, raw));
+  }, [selectedFabric]);
+  const textureScaleBoost = (selectedFabric as any)?.textureScale ?? 1;
+  const useTexture = Boolean(fabricTexture && textureStrength > 0);
 
   const tb = toneBlend(selectedFabric?.tone, level);
   const toneVis = getToneConfig(selectedFabric?.tone, level);
@@ -296,8 +303,9 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     return `${tb.filter} brightness(1.08) contrast(1.2) saturate(1.24)`;
   }, [fabricTone, tb.filter]);
   const fabricTextureOpacity = useMemo(
-    () => Math.min(0.85, toneVis.fabric.opacity * (fabricTone === "dark" ? 0.9 : 0.82)),
-    [fabricTone, toneVis.fabric.opacity]
+    () =>
+      useTexture ? Math.min(0.85, toneVis.fabric.opacity * (fabricTone === "dark" ? 0.9 : 0.82)) * textureStrength : 0,
+    [fabricTone, toneVis.fabric.opacity, textureStrength, useTexture]
   );
   const fabricTextureStyle = useMemo(
     () => ({
@@ -308,8 +316,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     [fabricTextureFilter, fabricTone, fabricTextureOpacity, toneVis.fabric.blend]
   );
   const fabricTextureScale = useMemo(
-    () => toneVis.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88),
-    [fabricTone, toneVis.weaveSharpness]
+    () => toneVis.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88) * textureScaleBoost,
+    [fabricTone, textureScaleBoost, toneVis.weaveSharpness]
   );
   const needsDarkBoost = fabricTone === "dark";
 
@@ -559,7 +567,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           <FabricUnion
             layers={showLayer("style") ? fabricLayers : allJacketLayers}
             resolve={(layer) => cdnPair(layer.src)}
-            fabricTexture={fabricTexture}
+            fabricTexture={useTexture ? fabricTexture : undefined}
             textureStyle={fabricTextureStyle}
             baseColor={fabricFillColor || toneBaseColor}
             fabricAvgColor={fabricFillColor}
@@ -630,7 +638,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             <FabricUnion
               layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
             resolve={(layer) => cdnPair(layer.src)}
-            fabricTexture={fabricTexture}
+            fabricTexture={useTexture ? fabricTexture : undefined}
             textureStyle={fabricTextureStyle}
             baseColor={fabricFillColor || toneBaseColor}
             fabricAvgColor={fabricFillColor}

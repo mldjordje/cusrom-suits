@@ -232,14 +232,27 @@ export default function FabricsAdminPage() {
             />
           </div>
         </div>
-        <div className="space-y-1">
+        <div className="space-y-2">
           <label className="text-xs font-semibold text-gray-700">Upload fajl (image)</label>
           <input
+            id="fabric-file"
             type="file"
             accept="image/*"
             onChange={(e) => onFileChange(e.target.files?.[0] || null)}
-            className="text-sm"
+            className="sr-only"
           />
+          <label
+            htmlFor="fabric-file"
+            className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3 transition hover:border-gray-400"
+          >
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold text-gray-800">Dodaj ili zameni teksturu</p>
+              <p className="text-xs text-gray-500">
+                PNG/JPG, preporuka 800x800+. Trenutno: {file?.name ?? "nije izabran fajl"}
+              </p>
+            </div>
+            <span className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white shadow-sm">Izaberi fajl</span>
+          </label>
           {autoTone && <p className="text-xs text-gray-500">Auto ton: {autoTone}</p>}
         </div>
         <div className="flex items-center gap-3">

@@ -141,6 +141,11 @@ export const suits: SuitModel[] = [
 
     pockets: [
       {
+        id: "flap",
+        name: "Flap",
+        src: "/assets/suits/blue/hip_pockets_with_flap+fit_slim.png",
+      },
+      {
         id: "double-welted",
         name: "Double-Welted",
         src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png",
@@ -149,11 +154,6 @@ export const suits: SuitModel[] = [
         id: "patched",
         name: "Patched",
         src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png",
-      },
-      {
-        id: "flap",
-        name: "Flap",
-        src: "/assets/suits/blue/hip_pockets_with_flap+fit_slim.png",
       },
     ],
 
@@ -658,6 +658,9 @@ export const fabrics = [
     id: "blue",
     name: "Plava vunena tkanina",
     texture: "/custom-suits/fabrics/3.png",
+    tone: "medium",
+    colorHex: "#1f335c",
+    textureStrength: 0.12,
   },
   {
     id: "4",
