@@ -197,8 +197,6 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
       setInternalPanel(activePanel);
     }
   }, [activePanel]);
-  const [savingCart, setSavingCart] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
   const [fabricQuery, setFabricQuery] = useState("");
   const [sort, setSort] = useState<"date_desc" | "date_asc">("date_desc");
@@ -245,50 +243,6 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
     url.searchParams.set("config", json);
     return url.toString();
   }, [config]);
-
-  const handleAddToCart = async () => {
-    if (savingCart) return;
-    setFeedback(null);
-    try {
-      setSavingCart(true);
-      const existingRaw = localStorage.getItem("suitCart");
-      const parsed = existingRaw ? JSON.parse(existingRaw) : [];
-      const entry = {
-        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-        config,
-        price,
-        addedAt: new Date().toISOString(),
-      };
-      parsed.unshift(entry);
-      localStorage.setItem("suitCart", JSON.stringify(parsed));
-
-      try {
-        const res = await fetch("/api/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            config,
-            price: price.total,
-            fabricId: config.colorId,
-            contact: null,
-          }),
-        });
-        const json = await res.json();
-        if (!json?.success) {
-          console.error("Order sync failed", json?.message);
-        }
-      } catch (err) {
-        console.error("Order sync failed", err);
-      }
-
-      setFeedback("Dizajn je sacuvan. Nastavite na mere i naplatu.");
-    } catch (err) {
-      console.error("Add to cart failed", err);
-      alert("Nije moguce dodati u korpu trenutno. Pokusajte ponovo.");
-    } finally {
-      setSavingCart(false);
-    }
-  };
 
   const renderFabricPanel = () => (
     <>
@@ -476,18 +430,9 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
               <div className="flex items-center justify-between gap-3">
                 <div>
                   <p className="text-lg font-semibold text-gray-900">Tvoje custom odelo</p>
-                  <p className="text-sm text-gray-500">
-                    {price.total} EUR · Isporuka ~3 nedelje
-                  </p>
+                  <p className="text-sm text-gray-500">{price.total} EUR</p>
                   <p className="text-sm text-gray-500">1) Dizajn · 2) Mere · 3) Korpa i placanje</p>
                 </div>
-                <button
-                  onClick={handleAddToCart}
-                  disabled={savingCart}
-                  className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
-                >
-                  {savingCart ? "Upisujem..." : "Sacuvaj dizajn"}
-                </button>
               </div>
               <button
                 onClick={() => {
@@ -497,7 +442,6 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
               >
                 Nastavi na mere i korpu
               </button>
-              {feedback && <p className="text-[11px] font-semibold text-emerald-600">{feedback}</p>}
             </div>
           </div>
         </div>

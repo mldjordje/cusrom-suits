@@ -37,8 +37,8 @@ const StickyMiniNav = () => {
   const pathname = usePathname() ?? "/";
 
   return (
-    <div className="fixed inset-x-0 top-20 z-30 flex justify-center px-4 sm:top-[92px] sm:px-6">
-      <nav className="flex w-full max-w-xl items-center gap-2 rounded-[18px] border border-white/70 bg-white/90 p-2 shadow-[0_20px_55px_rgba(0,0,0,0.14)] backdrop-blur-lg">
+    <div className="fixed top-20 z-30 w-full px-3 sm:top-[92px] sm:px-5 lg:px-8">
+      <nav className="inline-flex w-full max-w-[640px] flex-wrap items-center gap-2 rounded-[18px] border border-white/70 bg-white/90 p-2 shadow-[0_20px_55px_rgba(0,0,0,0.14)] backdrop-blur-lg sm:max-w-[660px] lg:max-w-[700px]">
         {navItems.map((item) => {
           const active = item.isActive(pathname);
           const baseClasses =
