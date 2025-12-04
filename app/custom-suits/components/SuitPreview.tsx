@@ -158,6 +158,18 @@ const enhanceFabricColor = (hex: string, tone: Tone) => {
   const rgb = hexToRgb(hex);
   if (!rgb) return hex;
   const { h, s, l } = rgbToHsl(rgb);
+  // Ako je tkanina gotovo neutralna (crna/siva), ne dodaj saturaciju da ne povuce braon nijansu
+  const neutral = isNeutralTone(rgb, 10);
+  if (neutral) {
+    const lightnessBoost = tone === "dark" ? 0.02 : tone === "light" ? 0.04 : 0.03;
+    const neutralized = hslToRgb({
+      h,
+      s: 0,
+      l: Math.min(1, l + lightnessBoost),
+    });
+    return rgbToHex(neutralized);
+  }
+
   const saturationBoost = tone === "dark" ? 0.18 : tone === "light" ? 0.08 : 0.14;
   const lightnessBoost = tone === "dark" ? 0.08 : tone === "light" ? 0.04 : 0.06;
   const vivid = hslToRgb({
@@ -295,7 +307,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
   const fabricTextureFilter = useMemo(() => {
     if (fabricTone === "dark") {
-      return `${tb.filter} brightness(1.02) contrast(1.32) saturate(1.25)`;
+      return `${tb.filter} brightness(1.0) contrast(1.08) saturate(1.05)`;
     }
     if (fabricTone === "light") {
       return `${tb.filter} brightness(1.07) contrast(1.08) saturate(1.05)`;
