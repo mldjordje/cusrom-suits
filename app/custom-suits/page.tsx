@@ -89,7 +89,7 @@ export default function CustomSuitsPage() {
         initial="hidden"
         animate="visible"
       >
-        <div className="relative isolate flex min-h-[100svh] flex-col gap-3 sm:gap-4 lg:min-h-[78vh] lg:grid lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-6">
+        <div className="relative isolate flex min-h-[100svh] flex-col gap-2 sm:gap-3 lg:min-h-[78vh] lg:grid lg:grid-cols-[240px_minmax(0,1fr)] lg:gap-6">
           <motion.section
             className="order-1 hidden w-full lg:order-1 lg:block"
             variants={columnVariants}
