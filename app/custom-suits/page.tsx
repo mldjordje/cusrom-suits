@@ -75,16 +75,16 @@ export default function CustomSuitsPage() {
 
   return (
     <div className="bg-gradient-to-br from-[#f6f6f4] via-white to-[#ececec] text-[#111]">
-      <div className="fixed left-3 top-3 z-30 flex items-center gap-2 rounded-full bg-white/85 px-2.5 py-1.5 shadow-md backdrop-blur">
-        <Image src="/img/logo.png" alt="Santos & Santorini" width={22} height={22} className="h-6 w-6 object-contain" />
-        <span className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#1d1b1b]">Custom suits</span>
+      <div className="fixed left-3 top-3 z-30 flex items-center gap-1.5 rounded-full bg-white/85 px-2 py-1.5 shadow-md backdrop-blur">
+        <Image src="/img/logo.png" alt="Santos & Santorini" width={18} height={18} className="h-5 w-5 object-contain" />
+        <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#1d1b1b]">Custom suits</span>
       </div>
       <div className="relative z-20">
-        <StickyMiniNav />
+        <StickyMiniNav variant="compact" />
       </div>
       <motion.div
         id="konfigurator"
-        className="mx-auto w-full max-w-[1380px] px-3 pb-24 pt-20 sm:px-4 sm:pt-24 lg:px-2 lg:pb-16"
+        className="mx-auto w-full max-w-[1380px] px-3 pb-24 pt-24 sm:px-4 sm:pt-24 lg:px-2 lg:pb-16"
         variants={configuratorVariants}
         initial="hidden"
         animate="visible"
