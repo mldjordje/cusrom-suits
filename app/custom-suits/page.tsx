@@ -103,8 +103,8 @@ export default function CustomSuitsPage() {
             </div>
           </motion.section>
           <motion.section
-          className={`order-2 relative flex w-full items-center justify-center overflow-hidden rounded-[28px] bg-white/90 p-3 shadow-[0_20px_70px_rgba(15,23,42,0.12)] ring-1 ring-black/5 backdrop-blur-sm sm:p-4 lg:order-2 lg:h-full lg:p-5 transition-transform duration-300 ease-out ${
-              activeMobilePanel ? "translate-x-4 scale-[0.96] sm:translate-x-6" : "translate-x-0"
+          className={`order-2 relative flex w-full items-center justify-center overflow-hidden rounded-[28px] bg-white/90 p-3 shadow-[0_20px_70px_rgba(15,23,42,0.12)] ring-1 ring-black/5 backdrop-blur-sm sm:p-4 lg:order-2 lg:h-full lg:p-5 transition-transform duration-300 ease-out origin-left ${
+              activeMobilePanel ? "translate-x-20 scale-[0.84] sm:translate-x-24 sm:scale-[0.86]" : "translate-x-0"
             } lg:translate-x-0 lg:scale-100`}
           variants={columnVariants}
           initial="hidden"

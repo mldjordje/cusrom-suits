@@ -552,11 +552,11 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
   return (
     <div className="relative w-full select-none">
-      <div className="relative mx-auto w-full max-w-[560px] sm:max-w-[520px]">
+      <div className="relative mx-auto w-full max-w-[580px] sm:max-w-[540px]">
         <div
-          className="relative mx-auto w-full origin-top transform scale-[0.82] sm:scale-[0.84] lg:scale-[0.84]"
+          className="relative mx-auto w-full origin-top transform scale-[0.86] sm:scale-[0.86] lg:scale-[0.86]"
           data-testid="jacket-preview"
-          style={{ width: "100%", aspectRatio: "600 / 733", maxWidth: 540 }}
+          style={{ width: "100%", aspectRatio: "600 / 733", maxWidth: 560 }}
           onWheel={onWheel}
           onMouseDown={onMouseDown}
           onMouseMove={onMouseMove}
@@ -653,8 +653,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     {/* ======================== PANTS CANVAS ======================== */}
       {pantsLayer && (
         <div
-          className="relative mx-auto -mt-12 w-full max-w-[540px] origin-top transform scale-[0.92] sm:-mt-10 sm:scale-[0.92] lg:-mt-10 lg:scale-[0.92]"
-          style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 500 }}
+          className="relative mx-auto -mt-20 w-full max-w-[560px] origin-top transform scale-[0.92] sm:-mt-16 sm:scale-[0.92] lg:-mt-12 lg:scale-[0.92]"
+          style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 520 }}
         >
           <BaseLayer layers={[pantsLayer]} resolve={(layer) => cdnPair(layer.src)} />
           {cuffsLayer && cuffsLayer.src !== pantsLayer.src && (
