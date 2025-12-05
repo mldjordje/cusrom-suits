@@ -19,6 +19,7 @@ export async function GET(req: NextRequest) {
         base: row.base_url || row.base,
         left: row.left_url || row.left,
         right: row.right_url || row.right,
+        texture: row.texture_url || row.texture || null,
         price: row.price ?? null,
       }))
     : [];

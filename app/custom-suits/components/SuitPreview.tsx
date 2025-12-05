@@ -532,6 +532,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
       linings?.map((l) => ({
         id: l.id,
         name: l.name,
+        texture: (l as any)?.texture,
         layers: [
           l.base ? ({ id: "interior_base", name: "Base", src: l.base } as SuitLayer) : null,
           l.left ? ({ id: "interior_left", name: "Left", src: l.left } as SuitLayer) : null,
@@ -542,12 +543,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     return currentSuit?.interiors || [];
   }, [linings, currentSuit?.interiors]);
 
-  const interiorLayers: SuitLayer[] | undefined = (() => {
+  const activeInterior = (() => {
     const def = interiorOptions?.[0];
     const active = config.interiorId ?? def?.id;
-    const found = interiorOptions?.find((i) => i.id === active);
-    return Array.isArray(found?.layers) ? found.layers : undefined;
+    return interiorOptions?.find((i) => i.id === active) || def;
   })();
+  const interiorLayers: SuitLayer[] | undefined = Array.isArray(activeInterior?.layers) ? activeInterior?.layers : undefined;
   /* -----------------------------------------------------------------------------
      Pan/zoom handlers
   ----------------------------------------------------------------------------- */
@@ -617,9 +618,35 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900" />
           </div>
         )}
-        {interiorLayers?.map((l) => (
-          <img key={`int-${l.id}`} src={l.src} alt={l.name} className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-        ))}
+        {activeInterior?.texture && interiorLayers?.length
+          ? interiorLayers.map((l) => {
+              const pair = cdnPair(l.src);
+              const maskUrl = pair?.png || l.src;
+              return (
+                <div
+                  key={`int-${l.id}`}
+                  className="absolute inset-0 pointer-events-none"
+                  style={{
+                    backgroundImage: `url(${activeInterior.texture})`,
+                    backgroundSize: "140% auto",
+                    backgroundRepeat: "repeat",
+                    mixBlendMode: "multiply",
+                    opacity: 0.95,
+                    WebkitMaskImage: `url(${maskUrl})`,
+                    WebkitMaskRepeat: "no-repeat",
+                    WebkitMaskSize: "contain",
+                    WebkitMaskPosition: "center",
+                    maskImage: `url(${maskUrl})`,
+                    maskRepeat: "no-repeat",
+                    maskSize: "contain",
+                    maskPosition: "center",
+                  }}
+                />
+              );
+            })
+          : interiorLayers?.map((l) => (
+              <img key={`int-${l.id}`} src={l.src} alt={l.name} className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
+            ))}
         {config.showShirt && (
           <img
             src={SHIRT_PAIR.webp}

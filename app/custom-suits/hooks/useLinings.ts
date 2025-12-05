@@ -9,6 +9,7 @@ export type Lining = {
   base?: string;
   left?: string;
   right?: string;
+  texture?: string | null;
   price?: number | null;
 };
 
@@ -26,6 +27,7 @@ export function useLinings(styleId?: string) {
       base: int.layers?.find((l) => l.id.includes("base"))?.src,
       left: int.layers?.find((l) => l.id.includes("left"))?.src,
       right: int.layers?.find((l) => l.id.includes("right"))?.src,
+      texture: null,
     }));
   }, [styleId]);
 
@@ -38,7 +40,12 @@ export function useLinings(styleId?: string) {
         if (cancelled) return;
         const list = Array.isArray(json?.data) ? json.data : [];
         if (json?.success && list.length) {
-          setLinings(list);
+          setLinings(
+            list.map((l: any) => ({
+              ...l,
+              texture: l.texture || l.texture_url || null,
+            }))
+          );
           setError(null);
         } else {
           setLinings(fallback);
