@@ -549,6 +549,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     return interiorOptions?.find((i) => i.id === active) || def;
   })();
   const interiorLayers: SuitLayer[] | undefined = Array.isArray(activeInterior?.layers) ? activeInterior?.layers : undefined;
+  const activeInteriorTexture = (activeInterior as any)?.texture as string | undefined;
   /* -----------------------------------------------------------------------------
      Pan/zoom handlers
   ----------------------------------------------------------------------------- */
@@ -618,16 +619,16 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900" />
           </div>
         )}
-        {activeInterior?.texture && interiorLayers?.length
+        {activeInteriorTexture && interiorLayers?.length
           ? interiorLayers.map((l) => {
-              const pair = cdnPair(l.src);
-              const maskUrl = pair?.png || l.src;
-              return (
-                <div
-                  key={`int-${l.id}`}
-                  className="absolute inset-0 pointer-events-none"
-                  style={{
-                    backgroundImage: `url(${activeInterior.texture})`,
+            const pair = cdnPair(l.src);
+            const maskUrl = pair?.png || l.src;
+            return (
+              <div
+                key={`int-${l.id}`}
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                    backgroundImage: `url(${activeInteriorTexture})`,
                     backgroundSize: "140% auto",
                     backgroundRepeat: "repeat",
                     mixBlendMode: "multiply",
