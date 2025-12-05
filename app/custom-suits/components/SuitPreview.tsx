@@ -548,7 +548,10 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     const active = config.interiorId ?? def?.id;
     return interiorOptions?.find((i) => i.id === active) || def;
   })();
-  const interiorLayers: SuitLayer[] | undefined = Array.isArray(activeInterior?.layers) ? activeInterior?.layers : undefined;
+  const interiorLayers: SuitLayer[] | undefined =
+    Array.isArray(activeInterior?.layers) && activeInterior.layers.length
+      ? activeInterior.layers
+      : currentSuit?.interiors?.[0]?.layers;
   const activeInteriorTexture = (activeInterior as any)?.texture as string | undefined;
   /* -----------------------------------------------------------------------------
      Pan/zoom handlers
