@@ -7,7 +7,7 @@ export type ButtonPosition = {
 export type ButtonLayout = {
   styleId: string;
   layout: "1" | "2" | "3" | "4" | "6" | "8";
-  area?: "front" | "sleeve" | "back_pocket";
+  area?: "front" | "sleeve" | "back_pocket" | "pants";
   positions: ButtonPosition[];
 };
 
@@ -56,8 +56,13 @@ export const fallbackButtonLayouts: ButtonLayout[] = [
   {
     styleId: "single_2btn",
     layout: "2",
-    area: "back_pocket",
-    positions: [{ x: 0.749, y: 0.574, size: 0.03 }],
+    area: "pants",
+    positions: [
+      // back pocket button
+      { x: 0.82, y: 0.565, size: 0.02 },
+      // waistband button (optional)
+      { x: 0.86, y: 0.205, size: 0.02 },
+    ],
   },
 ];
 

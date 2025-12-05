@@ -594,7 +594,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const jacketButtons: ButtonPosition[] = frontLayout?.positions || [];
   const pantsLayout =
     buttonLayouts.find((l) => l.styleId === currentSuit.id && (l.area === "pants" || l.area === "back_pocket")) ||
-    getFallbackPositions(currentSuit.id).find((l) => l.area === "back_pocket");
+    getFallbackPositions(currentSuit.id).find((l) => l.area === "pants" || l.area === "back_pocket");
   const pantsButtons: ButtonPosition[] = pantsLayout?.positions || [];
 
   const allJacketLayers = structuralJacketLayers;
