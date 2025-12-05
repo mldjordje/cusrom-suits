@@ -25,8 +25,8 @@ export const fallbackButtonLayouts: ButtonLayout[] = [
     layout: "2",
     area: "front",
     positions: [
-      { x: 0.524, y: 0.48, size: 0.035 },
-      { x: 0.524, y: 0.59, size: 0.035 },
+      { x: 0.515, y: 0.46, size: 0.028 },
+      { x: 0.515, y: 0.57, size: 0.028 },
     ],
   },
   {
@@ -34,10 +34,10 @@ export const fallbackButtonLayouts: ButtonLayout[] = [
     layout: "4",
     area: "front",
     positions: [
-      { x: 0.44, y: 0.38, size: 0.033 },
-      { x: 0.58, y: 0.40, size: 0.033 },
-      { x: 0.44, y: 0.52, size: 0.033 },
-      { x: 0.58, y: 0.54, size: 0.033 },
+      { x: 0.44, y: 0.38, size: 0.028 },
+      { x: 0.58, y: 0.40, size: 0.028 },
+      { x: 0.44, y: 0.52, size: 0.028 },
+      { x: 0.58, y: 0.54, size: 0.028 },
     ],
   },
   {
@@ -45,12 +45,12 @@ export const fallbackButtonLayouts: ButtonLayout[] = [
     layout: "6",
     area: "front",
     positions: [
-      { x: 0.44, y: 0.37, size: 0.033 },
-      { x: 0.58, y: 0.39, size: 0.033 },
-      { x: 0.44, y: 0.50, size: 0.033 },
-      { x: 0.58, y: 0.52, size: 0.033 },
-      { x: 0.44, y: 0.63, size: 0.033 },
-      { x: 0.58, y: 0.65, size: 0.033 },
+      { x: 0.44, y: 0.37, size: 0.028 },
+      { x: 0.58, y: 0.39, size: 0.028 },
+      { x: 0.44, y: 0.50, size: 0.028 },
+      { x: 0.58, y: 0.52, size: 0.028 },
+      { x: 0.44, y: 0.63, size: 0.028 },
+      { x: 0.58, y: 0.65, size: 0.028 },
     ],
   },
   {

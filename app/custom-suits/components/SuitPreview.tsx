@@ -592,6 +592,10 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     buttonLayouts.find((l) => l.styleId === currentSuit.id && (l.area === "front" || !l.area)) ||
     getFallbackPositions(currentSuit.id).find((l) => l.area === "front");
   const jacketButtons: ButtonPosition[] = frontLayout?.positions || [];
+  const pantsLayout =
+    buttonLayouts.find((l) => l.styleId === currentSuit.id && (l.area === "pants" || l.area === "back_pocket")) ||
+    getFallbackPositions(currentSuit.id).find((l) => l.area === "back_pocket");
+  const pantsButtons: ButtonPosition[] = pantsLayout?.positions || [];
 
   const allJacketLayers = structuralJacketLayers;
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
@@ -663,8 +667,13 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               style={{
                 left: `${pos.x * 100}%`,
                 top: `${pos.y * 100}%`,
-                width: `${((pos.size ?? 0.035) * 100).toFixed(2)}%`,
+                width: `${((pos.size ?? 0.028) * 100).toFixed(2)}%`,
                 transform: "translate(-50%, -50%)",
+                mixBlendMode: "multiply",
+                opacity: 0.9,
+                filter: "saturate(0.9) contrast(1.05)",
+                borderRadius: "50%",
+                objectFit: "contain",
               }}
             />
           ))}
@@ -738,6 +747,26 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             textureScale={fabricTextureScale}
           />
         )}
+          {activeButton?.image_url &&
+            pantsButtons.map((pos, idx) => (
+              <img
+                key={`pant-btn-${idx}`}
+                src={activeButton.image_url}
+                alt={activeButton.name || "Button"}
+                className="absolute pointer-events-none select-none"
+                style={{
+                  left: `${pos.x * 100}%`,
+                  top: `${pos.y * 100}%`,
+                  width: `${((pos.size ?? 0.022) * 100).toFixed(2)}%`,
+                  transform: "translate(-50%, -50%)",
+                  mixBlendMode: "multiply",
+                  opacity: 0.9,
+                  filter: "saturate(0.9) contrast(1.05)",
+                  borderRadius: "50%",
+                  objectFit: "contain",
+                }}
+              />
+            ))}
           {needsDarkBoost && pantsMaskPair && (
             <div
               className="absolute inset-0 pointer-events-none"
