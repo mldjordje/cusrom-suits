@@ -18,15 +18,15 @@ export const fallbackButtonLayouts: ButtonLayout[] = [
     styleId: "single_1btn",
     layout: "1",
     area: "front",
-    positions: [{ x: 0.524, y: 0.535, size: 0.035 }],
+    positions: [{ x: 0.52, y: 0.53, size: 0.022 }],
   },
   {
     styleId: "single_2btn",
     layout: "2",
     area: "front",
     positions: [
-      { x: 0.515, y: 0.46, size: 0.028 },
-      { x: 0.515, y: 0.57, size: 0.028 },
+      { x: 0.513, y: 0.445, size: 0.022 },
+      { x: 0.513, y: 0.565, size: 0.022 },
     ],
   },
   {
@@ -34,10 +34,10 @@ export const fallbackButtonLayouts: ButtonLayout[] = [
     layout: "4",
     area: "front",
     positions: [
-      { x: 0.44, y: 0.38, size: 0.028 },
-      { x: 0.58, y: 0.40, size: 0.028 },
-      { x: 0.44, y: 0.52, size: 0.028 },
-      { x: 0.58, y: 0.54, size: 0.028 },
+      { x: 0.455, y: 0.40, size: 0.022 },
+      { x: 0.585, y: 0.42, size: 0.022 },
+      { x: 0.455, y: 0.525, size: 0.022 },
+      { x: 0.585, y: 0.545, size: 0.022 },
     ],
   },
   {
@@ -45,12 +45,12 @@ export const fallbackButtonLayouts: ButtonLayout[] = [
     layout: "6",
     area: "front",
     positions: [
-      { x: 0.44, y: 0.37, size: 0.028 },
-      { x: 0.58, y: 0.39, size: 0.028 },
-      { x: 0.44, y: 0.50, size: 0.028 },
-      { x: 0.58, y: 0.52, size: 0.028 },
-      { x: 0.44, y: 0.63, size: 0.028 },
-      { x: 0.58, y: 0.65, size: 0.028 },
+      { x: 0.455, y: 0.385, size: 0.022 },
+      { x: 0.585, y: 0.405, size: 0.022 },
+      { x: 0.455, y: 0.50, size: 0.022 },
+      { x: 0.585, y: 0.52, size: 0.022 },
+      { x: 0.455, y: 0.615, size: 0.022 },
+      { x: 0.585, y: 0.635, size: 0.022 },
     ],
   },
   {
@@ -58,10 +58,8 @@ export const fallbackButtonLayouts: ButtonLayout[] = [
     layout: "2",
     area: "pants",
     positions: [
-      // back pocket button
-      { x: 0.82, y: 0.565, size: 0.02 },
-      // waistband button (optional)
-      { x: 0.86, y: 0.205, size: 0.02 },
+      { x: 0.82, y: 0.565, size: 0.018 },
+      { x: 0.86, y: 0.205, size: 0.018 },
     ],
   },
 ];
