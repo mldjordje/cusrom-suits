@@ -9,6 +9,7 @@ type Lining = {
   base?: string;
   left?: string;
   right?: string;
+  texture?: string | null;
   price?: number | null;
 };
 
@@ -17,12 +18,13 @@ type Status = { type: "idle" | "loading" | "error" | "success"; message?: string
 export default function LiningsAdminPage() {
   const [linings, setLinings] = useState<Lining[]>([]);
   const [status, setStatus] = useState<Status>({ type: "idle" });
-  const [files, setFiles] = useState<{ base: File | null; left: File | null; right: File | null }>({
+  const [files, setFiles] = useState<{ base: File | null; left: File | null; right: File | null; texture: File | null }>({
     base: null,
     left: null,
     right: null,
+    texture: null,
   });
-  const [form, setForm] = useState({ id: "", name: "", base: "", left: "", right: "", price: "" });
+  const [form, setForm] = useState({ id: "", name: "", base: "", left: "", right: "", texture: "", price: "" });
 
   const loadLinings = useMemo(
     () => async () => {
@@ -43,8 +45,17 @@ export default function LiningsAdminPage() {
       setStatus({ type: "error", message: "Naziv je obavezan" });
       return;
     }
-    if (!files.base && !files.left && !files.right && !form.base.trim() && !form.left.trim() && !form.right.trim()) {
-      setStatus({ type: "error", message: "Dodaj barem jednu sliku (base/left/right)" });
+    if (
+      !files.base &&
+      !files.left &&
+      !files.right &&
+      !files.texture &&
+      !form.base.trim() &&
+      !form.left.trim() &&
+      !form.right.trim() &&
+      !form.texture.trim()
+    ) {
+      setStatus({ type: "error", message: "Dodaj barem jedan fajl (texture ili base/left/right)" });
       return;
     }
     setStatus({ type: "loading", message: "Upload..." });
@@ -55,9 +66,11 @@ export default function LiningsAdminPage() {
     if (form.left.trim()) fd.set("left", form.left.trim());
     if (form.right.trim()) fd.set("right", form.right.trim());
     if (form.price.trim()) fd.set("price", form.price.trim());
+    if (form.texture.trim()) fd.set("texture", form.texture.trim());
     if (files.base) fd.set("base_file", files.base);
     if (files.left) fd.set("left_file", files.left);
     if (files.right) fd.set("right_file", files.right);
+    if (files.texture) fd.set("texture_file", files.texture);
 
     const res = await fetch("/api/linings/upload", { method: "POST", body: fd });
     const json = await res.json();
@@ -66,8 +79,8 @@ export default function LiningsAdminPage() {
       return;
     }
     setStatus({ type: "success", message: "Sačuvano" });
-    setForm({ id: "", name: "", base: "", left: "", right: "", price: "" });
-    setFiles({ base: null, left: null, right: null });
+    setForm({ id: "", name: "", base: "", left: "", right: "", texture: "", price: "" });
+    setFiles({ base: null, left: null, right: null, texture: null });
     await loadLinings();
   };
 
@@ -95,9 +108,10 @@ export default function LiningsAdminPage() {
       base: item.base || "",
       left: item.left || "",
       right: item.right || "",
+      texture: item.texture || "",
       price: item.price ? String(item.price) : "",
     });
-    setFiles({ base: null, left: null, right: null });
+    setFiles({ base: null, left: null, right: null, texture: null });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -167,9 +181,11 @@ export default function LiningsAdminPage() {
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
-          {(["base", "left", "right"] as const).map((key) => (
+          {(["texture", "base", "left", "right"] as const).map((key) => (
             <div key={key} className="space-y-2">
-              <label className="text-xs font-semibold text-gray-700">{key.toUpperCase()} upload</label>
+              <label className="text-xs font-semibold text-gray-700">
+                {key === "texture" ? "Texture upload (jedna slika postave)" : `${key.toUpperCase()} upload`}
+              </label>
               <input
                 id={`lining-${key}`}
                 type="file"
@@ -182,7 +198,9 @@ export default function LiningsAdminPage() {
                 className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3 transition hover:border-gray-400"
               >
                 <div className="space-y-0.5">
-                  <p className="text-sm font-semibold text-gray-800">Dodaj {key}</p>
+                  <p className="text-sm font-semibold text-gray-800">
+                    {key === "texture" ? "Dodaj texture" : `Dodaj ${key}`}
+                  </p>
                   <p className="text-xs text-gray-500">Trenutno: {files[key]?.name ?? "nije izabran fajl"}</p>
                 </div>
                 <span className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white shadow-sm">Izaberi</span>
@@ -225,7 +243,11 @@ export default function LiningsAdminPage() {
           {linings.map((l) => (
             <div key={l.id} className="flex gap-3 rounded-xl border border-gray-200 p-3">
               <div className="relative h-16 w-20 overflow-hidden rounded-lg bg-gray-100">
-                {l.base ? <NextImage src={l.base} alt={l.name} fill sizes="120px" className="object-cover" /> : null}
+                {l.texture ? (
+                  <NextImage src={l.texture} alt={l.name} fill sizes="120px" className="object-cover" />
+                ) : l.base ? (
+                  <NextImage src={l.base} alt={l.name} fill sizes="120px" className="object-cover" />
+                ) : null}
               </div>
               <div className="flex-1">
                 <p className="text-sm font-semibold text-gray-900">{l.name}</p>
