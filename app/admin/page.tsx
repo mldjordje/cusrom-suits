@@ -4,7 +4,9 @@ import Link from "next/link";
 
 const cards = [
   { href: "/admin/fabrics", title: "Fabrics", desc: "Upravljanje tkaninama, upload i lista." },
-  { href: "/admin/orders", title: "Porudžbine", desc: "Pregled poslednjih narudžbina." },
+  { href: "/admin/buttons", title: "Buttons", desc: "Upload dugmadi za prikaz u konfiguratoru." },
+  { href: "/admin/linings", title: "Linings", desc: "Postave (base/left/right) za CMS." },
+  { href: "/admin/orders", title: "Porudzbine", desc: "Pregled poslednjih narudzbina." },
 ];
 
 export default function AdminHome() {

@@ -9,6 +9,8 @@ import { computePrice } from "../utils/price";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getBackendBase } from "../utils/backend";
 import { useFabrics } from "../hooks/useFabrics";
+import { useButtons } from "../hooks/useButtons";
+import { useLinings } from "../hooks/useLinings";
 
 type Props = { config: SuitState; dispatch: React.Dispatch<any> };
 
@@ -46,6 +48,8 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
     sort: "created_at",
     order: sort === "date_desc" ? "desc" : "asc",
   });
+  const { buttons, loading: buttonsLoading, error: buttonsError } = useButtons();
+  const { linings, loading: liningsLoading, error: liningsError } = useLinings(config.styleId);
 
   const price = computePrice(config, suits);
   const fabricsNormalized = fabrics.length
@@ -67,6 +71,8 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const fabricPrice = fabricsNormalized.find((f: any) => f.id === config.colorId)?.price ?? 0;
 
   const uploadUrl = "/admin/fabrics";
+  const buttonCmsUrl = "/admin/buttons";
+  const liningCmsUrl = "/admin/linings";
 
   const ChipGroup = ({
     title,
@@ -109,6 +115,18 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
   const selectedLapelId = config.lapelId || lapels[0]?.id;
   const activeLapel = lapels.find((lapel) => lapel.id === selectedLapelId) || lapels[0];
   const selectedLapelWidthId = config.lapelWidthId || activeLapel?.widths[0]?.id;
+  const liningOptions =
+    linings.length > 0
+      ? linings.map((l) => ({
+          id: l.id,
+          name: l.name,
+          layers: [
+            l.base ? { id: "interior_base", name: "Base", src: l.base } : null,
+            l.left ? { id: "interior_left", name: "Left", src: l.left } : null,
+            l.right ? { id: "interior_right", name: "Right", src: l.right } : null,
+          ].filter(Boolean),
+        }))
+      : currentSuit?.interiors || [];
   const measurementUrl = useMemo(() => {
     const json = JSON.stringify(config);
     const url = new URL(typeof window !== "undefined" ? window.location.origin : "http://localhost");
@@ -356,6 +374,69 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 
           {activeTab === "ACCENTS" && (
             <section className="space-y-4 rounded-2xl border border-gray-100 bg-white/90 p-4 text-sm text-gray-600 shadow-sm">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-gray-900">Dugmad</h3>
+                <a
+                  href={buttonCmsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
+                >
+                  CMS
+                </a>
+              </div>
+              {buttonsError && <p className="text-[11px] text-red-500">{buttonsError}</p>}
+              {buttonsLoading ? (
+                <p className="text-xs text-gray-500">Ucitavanje dugmadi...</p>
+              ) : (
+                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+                  {buttons.map((btn) => {
+                    const active = config.buttonId === btn.id;
+                    return (
+                      <button
+                        key={btn.id}
+                        onClick={() => dispatch({ type: "SET_BUTTON", payload: btn.id })}
+                        className={`flex flex-col items-center gap-1 rounded-xl border bg-white px-2 py-2 text-center transition ${
+                          active ? "border-gray-900 shadow-sm" : "border-gray-200 hover:border-gray-400"
+                        }`}
+                      >
+                        <div className="relative h-12 w-full">
+                          {btn.image_url ? (
+                            <Image src={btn.image_url} alt={btn.name} fill className="object-contain" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-[10px] text-gray-400">N/A</div>
+                          )}
+                        </div>
+                        <p className="text-[10px] font-semibold leading-tight text-gray-800">{btn.name}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-1">
+                <h3 className="text-sm font-semibold text-gray-900">Postava</h3>
+                <a
+                  href={liningCmsUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
+                >
+                  CMS
+                </a>
+              </div>
+              {liningsError && <p className="text-[11px] text-red-500">{liningsError}</p>}
+              {liningsLoading ? (
+                <p className="text-xs text-gray-500">Ucitavanje postava...</p>
+              ) : (
+                <ChipGroup
+                  title="Postava"
+                  options={(liningOptions || []).map((option) => ({ id: option.id, label: option.name }))}
+                  selectedId={config.interiorId}
+                  onSelect={(id) => dispatch({ type: "SET_INTERIOR", payload: id })}
+                />
+              )}
+
               <ChipGroup
                 title="Depovi na sakou"
                 options={(currentSuit?.pockets || []).map((pocket) => ({ id: pocket.id, label: pocket.name }))}
@@ -368,13 +449,6 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
                 options={(currentSuit?.breastPocket || []).map((option) => ({ id: option.id, label: option.name }))}
                 selectedId={config.breastPocketId}
                 onSelect={(id) => dispatch({ type: "SET_BREAST_POCKET", payload: id })}
-              />
-
-              <ChipGroup
-                title="Postava"
-                options={(currentSuit?.interiors || []).map((option) => ({ id: option.id, label: option.name }))}
-                selectedId={config.interiorId}
-                onSelect={(id) => dispatch({ type: "SET_INTERIOR", payload: id })}
               />
 
               {currentSuit?.cuffs?.length ? (

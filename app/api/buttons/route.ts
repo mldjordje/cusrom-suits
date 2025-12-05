@@ -7,7 +7,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, message: "Supabase not configured" }, { status: 200 });
   }
 
-  const { data, error } = await supabase.from("linings").select("*").order("created_at", { ascending: false });
+  const { data, error } = await supabase.from("buttons").select("*").order("created_at", { ascending: false });
   if (error) {
     return NextResponse.json({ success: false, message: error.message }, { status: 200 });
   }
@@ -15,11 +15,10 @@ export async function GET(req: NextRequest) {
   const normalized = Array.isArray(data)
     ? data.map((row: any) => ({
         id: String(row.id || row.uuid || row.name),
-        name: row.name || "Lining",
-        base: row.base_url || row.base,
-        left: row.left_url || row.left,
-        right: row.right_url || row.right,
-        price: row.price ?? null,
+        name: row.name || "Button",
+        image_url: row.image_url || row.imageUrl || row.url,
+        color_hex: row.color_hex || row.colorHex || null,
+        diameter: row.diameter || null,
       }))
     : [];
 

@@ -8,6 +8,9 @@ import { getTransparentCdnBase } from "../utils/backend";
 import { NOISE_DATA, toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone } from "../utils/visual";
 import { cdnPair, ensureAssetAvailable } from "../utils/assets";
 import { useFabrics } from "../hooks/useFabrics";
+import { useButtons } from "../hooks/useButtons";
+import { useLinings } from "../hooks/useLinings";
+import { ButtonLayout, ButtonPosition, getFallbackPositions } from "../data/buttonPositions";
 import { BaseLayer } from "./layers/BaseLayer";
 import { FabricUnion } from "./layers/FabricUnion";
 import { GlobalOverlay } from "./layers/GlobalOverlay";
@@ -195,6 +198,9 @@ type Props = {
 
 export default function SuitPreview({ config, level = "medium", layerVisibility, onAssetStatus }: Props) {
   const { fabrics, loading: fabricsLoading } = useFabrics();
+  const { buttons } = useButtons();
+  const { linings } = useLinings(config.styleId);
+  const [buttonLayouts, setButtonLayouts] = useState<ButtonLayout[]>([]);
 
   // Pan/zoom samo na teksturu tkanine (ne menja maske)
   const [scale, setScale] = useState(1);
@@ -370,6 +376,23 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const panZoom = { scale, offset };
   const showLayer = (key: keyof LayerVisibility) => (layerVisibility?.[key] ?? true) !== false;
   useEffect(() => {
+    let cancelled = false;
+    fetch("/api/button-positions", { cache: "no-store" })
+      .then((res) => res.json())
+      .then((json) => {
+        if (cancelled) return;
+        const list = Array.isArray(json?.data) ? json.data : [];
+        setButtonLayouts(list.length ? list : getFallbackPositions(config.styleId));
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setButtonLayouts(getFallbackPositions(config.styleId));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [config.styleId]);
+  useEffect(() => {
     if (!fabricTexture) {
       setFabricAvgColor(null);
       return;
@@ -504,10 +527,25 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     };
   }, [fabricLayers, pantsLayer]);
 
+  const interiorOptions = useMemo(() => {
+    const fromRemote =
+      linings?.map((l) => ({
+        id: l.id,
+        name: l.name,
+        layers: [
+          l.base ? ({ id: "interior_base", name: "Base", src: l.base } as SuitLayer) : null,
+          l.left ? ({ id: "interior_left", name: "Left", src: l.left } as SuitLayer) : null,
+          l.right ? ({ id: "interior_right", name: "Right", src: l.right } as SuitLayer) : null,
+        ].filter(Boolean) as SuitLayer[],
+      })) || [];
+    if (fromRemote.length) return fromRemote;
+    return currentSuit?.interiors || [];
+  }, [linings, currentSuit?.interiors]);
+
   const interiorLayers: SuitLayer[] | undefined = (() => {
-    const def = currentSuit?.interiors?.[0];
+    const def = interiorOptions?.[0];
     const active = config.interiorId ?? def?.id;
-    const found = currentSuit?.interiors?.find((i) => i.id === active);
+    const found = interiorOptions?.find((i) => i.id === active);
     return Array.isArray(found?.layers) ? found.layers : undefined;
   })();
   /* -----------------------------------------------------------------------------
@@ -548,6 +586,13 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   /* =====================================================================================
      RENDER
   ====================================================================================== */
+  const activeButton =
+    buttons.find((b: any) => String(b.id) === String(config.buttonId)) || buttons[0] || null;
+  const frontLayout =
+    buttonLayouts.find((l) => l.styleId === currentSuit.id && (l.area === "front" || !l.area)) ||
+    getFallbackPositions(currentSuit.id).find((l) => l.area === "front");
+  const jacketButtons: ButtonPosition[] = frontLayout?.positions || [];
+
   const allJacketLayers = structuralJacketLayers;
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
   return (
@@ -608,6 +653,21 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             textureScale={fabricTextureScale}
           />
         )}
+        {activeButton?.image_url &&
+          jacketButtons.map((pos, idx) => (
+            <img
+              key={`btn-${idx}`}
+              src={activeButton.image_url}
+              alt={activeButton.name || "Button"}
+              className="absolute pointer-events-none select-none"
+              style={{
+                left: `${pos.x * 100}%`,
+                top: `${pos.y * 100}%`,
+                width: `${((pos.size ?? 0.035) * 100).toFixed(2)}%`,
+                transform: "translate(-50%, -50%)",
+              }}
+            />
+          ))}
         {needsDarkBoost && jacketUnionMask && (
           <div
             className="absolute inset-0 pointer-events-none"
