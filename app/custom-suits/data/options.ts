@@ -210,7 +210,7 @@ export const suits: SuitModel[] = [
           {
             id: "breast",
             name: "Breast Pocket",
-            src: "/assets/suits/blue/breast_pocket_classic.png",
+            src: "/assets/suits/transparent/breast_pocket_classic.png",
           },
         ],
       },
@@ -310,7 +310,7 @@ export const suits: SuitModel[] = [
     ],
 
     breastPocket: [
-      { id: "standard", name: "Standard Pocket", layers: [ { id: "breast", name: "Breast Pocket", src: "/assets/suits/blue/breast_pocket_classic.png" } ] },
+      { id: "standard", name: "Standard Pocket", layers: [ { id: "breast", name: "Breast Pocket", src: "/assets/suits/transparent/breast_pocket_classic.png" } ] },
       { id: "none", name: "No Pocket", layers: [] },
     ],
 
@@ -465,7 +465,7 @@ export const suits: SuitModel[] = [
           {
             id: "breast",
             name: "Breast Pocket",
-            src: "/assets/suits/blue/breast_pocket_classic.png",
+            src: "/assets/suits/transparent/breast_pocket_classic.png",
           },
         ],
       },
@@ -608,7 +608,7 @@ export const suits: SuitModel[] = [
           {
             id: "breast",
             name: "Breast Pocket",
-            src: "/assets/suits/blue/breast_pocket_classic.png",
+            src: "/assets/suits/transparent/breast_pocket_classic.png",
           },
         ],
       },
