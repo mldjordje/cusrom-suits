@@ -357,12 +357,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
       ...fabricTextureStyle,
       // Jacket tekstura je slabija da izgleda mekse poput pantalona
       opacity: Math.min(
-        0.32,
+        0.26,
         typeof fabricTextureStyle.opacity === "number"
-          ? fabricTextureStyle.opacity * 0.65
-          : fabricTextureOpacity * 0.65
+          ? fabricTextureStyle.opacity * 0.5
+          : fabricTextureOpacity * 0.5
       ),
-      filter: `${fabricTextureFilter} contrast(0.96) saturate(0.98)`,
+      filter: `${fabricTextureFilter} brightness(0.96) contrast(0.92) saturate(0.95)`,
       mixBlendMode: (fabricTone === "dark" ? "overlay" : "soft-light") as React.CSSProperties["mixBlendMode"],
     }),
     [fabricTextureStyle, fabricTextureOpacity, fabricTextureFilter, fabricTone]
@@ -618,7 +618,9 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const pantsButtons: ButtonPosition[] = pantsLayout?.positions || [];
 
   const allJacketLayers = structuralJacketLayers;
+  const jacketBaseOpacity = 0.82;
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
+  const jacketToneOverlayOpacity = needsDarkBoost ? 0.22 : 0.12;
   return (
     <div className="relative w-full select-none">
       <div className="relative mx-auto w-full max-w-[580px] sm:max-w-[540px]">
@@ -681,7 +683,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
         <BaseLayer
           layers={allJacketLayers}
           resolve={(layer) => cdnPair(layer.src)}
-          opacity={0.9}
+          opacity={jacketBaseOpacity}
         />
         {showLayer("style") && styleOverlayLayers.length > 0 && (
           <BaseLayer
@@ -729,7 +731,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             className="absolute inset-0 pointer-events-none"
             style={{
               mixBlendMode: "multiply",
-              opacity: 0.22,
+              opacity: jacketToneOverlayOpacity,
               backgroundColor: "#080808",
               WebkitMaskImage: `url(${jacketUnionMask})`,
               WebkitMaskRepeat: "no-repeat",
@@ -747,7 +749,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             className="absolute inset-0 pointer-events-none"
             style={{
               mixBlendMode: "multiply",
-              opacity: softenedTone.ambientOcclusion * 0.55,
+              opacity: softenedTone.ambientOcclusion * 0.45,
               background:
                 "radial-gradient(ellipse at center, rgba(0,0,0,0.25) 0%, transparent 85%)",
               WebkitMaskImage: `url(${jacketUnionMask})`,
@@ -766,10 +768,10 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             noiseData={NOISE_DATA}
             settings={{
               ...softenedTone,
-              noise: softenedTone.noise * 0.35,
-              highlightTop: softenedTone.highlightTop * 0.45,
-              highlightBottom: softenedTone.highlightBottom * 0.45,
-              vignette: softenedTone.vignette * 0.55,
+              noise: softenedTone.noise * 0.3,
+              highlightTop: softenedTone.highlightTop * 0.4,
+              highlightBottom: softenedTone.highlightBottom * 0.4,
+              vignette: softenedTone.vignette * 0.5,
             }}
             mask={jacketUnionMask}
           />
