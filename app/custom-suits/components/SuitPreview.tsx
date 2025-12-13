@@ -347,7 +347,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const fabricTextureStyle = useMemo(
     () => ({
       filter: fabricTextureFilter,
-      mixBlendMode: fabricTone === "dark" ? "overlay" : softenedTone.fabric.blend,
+      mixBlendMode: (fabricTone === "dark" ? "overlay" : softenedTone.fabric.blend) as React.CSSProperties["mixBlendMode"],
       opacity: fabricTextureOpacity,
     }),
     [fabricTextureFilter, fabricTone, fabricTextureOpacity, softenedTone.fabric.blend]
@@ -363,7 +363,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           : fabricTextureOpacity * 0.65
       ),
       filter: `${fabricTextureFilter} contrast(0.96) saturate(0.98)`,
-      mixBlendMode: fabricTone === "dark" ? "overlay" : "soft-light",
+      mixBlendMode: (fabricTone === "dark" ? "overlay" : "soft-light") as React.CSSProperties["mixBlendMode"],
     }),
     [fabricTextureStyle, fabricTextureOpacity, fabricTextureFilter, fabricTone]
   );
