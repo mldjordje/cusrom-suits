@@ -542,10 +542,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const pantsButtons: ButtonPosition[] = pantsLayout?.positions || [];
 
   const allJacketLayers = structuralJacketLayers;
-  const jacketMaskPairs = useMemo(
-    () => allJacketLayers.map((layer) => ({ id: layer.id || layer.src, pair: cdnPair(layer.src) })),
-    [allJacketLayers]
-  );
+  const jacketMaskPairs = allJacketLayers.map((layer) => ({ id: layer.id || layer.src, pair: cdnPair(layer.src) }));
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
   return (
     <div className="relative w-full select-none">
