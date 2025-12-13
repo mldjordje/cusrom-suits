@@ -436,7 +436,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
 
   // Build a union mask for jacket layers to avoid seams in overlays
   useEffect(() => {
-    if (!fabricLayers.length) {
+    if (!jacketMaskLayers.length) {
       setJacketUnionMask(null);
       return;
     }
@@ -450,7 +450,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
         if (!ctx) return;
         ctx.clearRect(0, 0, c.width, c.height);
         ctx.globalCompositeOperation = "source-over";
-        for (const layer of fabricLayers) {
+        for (const layer of jacketMaskLayers) {
           const pair = cdnPair(layer.src);
           const tryLoad = (url: string) =>
             new Promise<HTMLImageElement>((resolve, reject) => {
@@ -569,8 +569,9 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     [allJacketLayers]
   );
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
+  const jacketMaskLayers = structuralJacketLayers;
   const jacketDarkOverlay = () => {
-    const opacity = fabricTone === "dark" ? 0.32 : 0.2;
+    const opacity = fabricTone === "dark" ? 0.18 : 0.12;
     if (jacketUnionMask) {
       return (
         <div
