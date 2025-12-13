@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -539,7 +539,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const pantsButtons: ButtonPosition[] = pantsLayout?.positions || [];
 
   const allJacketLayers = structuralJacketLayers;
-  const jacketMaskPairs = allJacketLayers.map((layer) => ({ id: layer.id || layer.src, pair: cdnPair(layer.src) }));
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
   return (
     <div className="relative w-full select-none">
@@ -637,35 +636,15 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
                   opacity: 0.9,
                   filter: "saturate(0.9) contrast(1.05)",
                   borderRadius: "50%",
-                objectFit: "contain",
-              }}
-            />
-          ))}
-        {needsDarkBoost &&
-          jacketMaskPairs.map(({ id, pair }) => (
+                  objectFit: "contain",
+                }}
+              />
+            ))}
+          {showLayer("vignette") && (
             <div
-              key={`j-dark-${id}`}
               className="absolute inset-0 pointer-events-none"
               style={{
                 mixBlendMode: "multiply",
-                opacity: 0.35,
-                backgroundColor: "#080808",
-                WebkitMaskImage: `url(${pair.png})`,
-                WebkitMaskRepeat: "no-repeat",
-                WebkitMaskSize: "contain",
-                WebkitMaskPosition: "center",
-                maskImage: `url(${pair.png})`,
-                maskRepeat: "no-repeat",
-                maskSize: "contain",
-                maskPosition: "center",
-              }}
-            />
-          ))}
-        {showLayer("vignette") && (
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              mixBlendMode: "multiply",
                 opacity: softenedTone.vignette * 0.8,
                 background:
                   "radial-gradient(ellipse at center, rgba(0,0,0,0.18) 10%, transparent 60%)",
