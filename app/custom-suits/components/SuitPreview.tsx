@@ -4,8 +4,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
-import { getTransparentCdnBase } from "../utils/backend";
-import { NOISE_DATA, toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone } from "../utils/visual";
+import { toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone } from "../utils/visual";
 import { cdnPair, ensureAssetAvailable } from "../utils/assets";
 import { useFabrics } from "../hooks/useFabrics";
 import { useButtons } from "../hooks/useButtons";
@@ -13,12 +12,10 @@ import { useLinings } from "../hooks/useLinings";
 import { ButtonLayout, ButtonPosition, getFallbackPositions } from "../data/buttonPositions";
 import { BaseLayer } from "./layers/BaseLayer";
 import { FabricUnion } from "./layers/FabricUnion";
-import { GlobalOverlay } from "./layers/GlobalOverlay";
 
 /* =====================================================================================
    CDN helpers (ostaju jer maske i strukturalni sprite-ovi su i dalje iz transparent/)
 ===================================================================================== */
-const cdnTransparent = getTransparentCdnBase();
 const SHIRT_PAIR = cdnPair("shirt_to_jacket_open.png");
 const JACKET_CANVAS = { w: 600, h: 733 } as const;
 const PANTS_CANVAS = { w: 600, h: 350 } as const;
@@ -352,21 +349,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     }),
     [fabricTextureFilter, fabricTone, fabricTextureOpacity, softenedTone.fabric.blend]
   );
-  const jacketTextureStyle = useMemo(
-    () => ({
-      ...fabricTextureStyle,
-      // Jacket tekstura je slabija da izgleda mekse poput pantalona
-      opacity: Math.min(
-        0.26,
-        typeof fabricTextureStyle.opacity === "number"
-          ? fabricTextureStyle.opacity * 0.5
-          : fabricTextureOpacity * 0.5
-      ),
-      filter: `${fabricTextureFilter} brightness(0.96) contrast(0.92) saturate(0.95)`,
-      mixBlendMode: (fabricTone === "dark" ? "overlay" : "soft-light") as React.CSSProperties["mixBlendMode"],
-    }),
-    [fabricTextureStyle, fabricTextureOpacity, fabricTextureFilter, fabricTone]
-  );
   const fabricTextureScale = useMemo(
     () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88) * textureScaleBoost,
     [fabricTone, softenedTone.weaveSharpness, textureScaleBoost]
@@ -385,8 +367,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     () => enhanceFabricColor(fabricFillColorBase, fabricTone),
     [fabricFillColorBase, fabricTone]
   );
-  const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
-  const [maskBuilding, setMaskBuilding] = useState(false);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
   const panZoom = { scale, offset };
   const showLayer = (key: keyof LayerVisibility) => (layerVisibility?.[key] ?? true) !== false;
@@ -452,65 +432,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
       onAssetStatus({ missing: assetWarnings });
     }
   }, [assetWarnings, onAssetStatus]);
-
-  // Build a single union mask (PNG data URL) over all jacket + style layers to eliminate any anti-alias seams
-  useEffect(() => {
-    if (!fabricLayers.length) {
-      setJacketUnionMask(null);
-      return;
-    }
-
-    let cancelled = false;
-    setMaskBuilding(true);
-    (async () => {
-      try {
-        const c = document.createElement("canvas");
-        c.width = JACKET_CANVAS.w;
-        c.height = JACKET_CANVAS.h;
-        const ctx = c.getContext("2d");
-        if (!ctx) return;
-        ctx.clearRect(0, 0, c.width, c.height);
-        ctx.globalCompositeOperation = "source-over";
-        for (const layer of fabricLayers) {
-          const pair = cdnPair(layer.src);
-          const tryLoad = (url: string) =>
-            new Promise<HTMLImageElement>((resolve, reject) => {
-              const img = new Image();
-              img.crossOrigin = "anonymous";
-              img.onload = () => resolve(img);
-              img.onerror = reject;
-              img.src = url;
-            });
-          let img: HTMLImageElement | null = null;
-          try {
-            img = await tryLoad(pair.webp);
-          } catch {
-            try {
-              img = await tryLoad(pair.png);
-            } catch {
-              img = null;
-            }
-          }
-          if (!img) continue;
-          const scale = Math.min(c.width / img.width, c.height / img.height);
-          const w = Math.round(img.width * scale);
-          const h = Math.round(img.height * scale);
-          const dx = Math.round((c.width - w) / 2);
-          const dy = Math.round((c.height - h) / 2);
-          ctx.drawImage(img, dx, dy, w, h);
-        }
-        if (!cancelled) setJacketUnionMask(c.toDataURL("image/png"));
-      } catch {
-        if (!cancelled) setJacketUnionMask(null);
-      } finally {
-        if (!cancelled) setMaskBuilding(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-      setMaskBuilding(false);
-    };
-  }, [fabricLayers]);
 
   useEffect(() => {
     if (!fabricLayers.length && !pantsLayer) {
@@ -618,9 +539,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const pantsButtons: ButtonPosition[] = pantsLayout?.positions || [];
 
   const allJacketLayers = structuralJacketLayers;
-  const jacketBaseOpacity = 0.82;
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
-  const jacketToneOverlayOpacity = needsDarkBoost ? 0.22 : 0.12;
   return (
     <div className="relative w-full select-none">
       <div className="relative mx-auto w-full max-w-[580px] sm:max-w-[540px]">
@@ -639,143 +558,104 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900" />
           </div>
         )}
-        {activeInteriorTexture && interiorLayers?.length
-          ? interiorLayers.map((l) => {
-            const pair = cdnPair(l.src);
-            const maskUrl = pair?.png || l.src;
-            return (
-              <div
-                key={`int-${l.id}`}
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                    backgroundImage: `url(${activeInteriorTexture})`,
-                    backgroundSize: "140% auto",
-                    backgroundRepeat: "repeat",
-                    mixBlendMode: "multiply",
-                    opacity: 0.95,
-                    WebkitMaskImage: `url(${maskUrl})`,
-                    WebkitMaskRepeat: "no-repeat",
-                    WebkitMaskSize: "contain",
-                    WebkitMaskPosition: "center",
-                    maskImage: `url(${maskUrl})`,
-                    maskRepeat: "no-repeat",
-                    maskSize: "contain",
-                    maskPosition: "center",
-                  }}
+          {activeInteriorTexture && interiorLayers?.length
+            ? interiorLayers.map((l) => {
+                const pair = cdnPair(l.src);
+                const maskUrl = pair?.png || l.src;
+                return (
+                  <div
+                    key={`int-${l.id}`}
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      backgroundImage: `url(${activeInteriorTexture})`,
+                      backgroundSize: "140% auto",
+                      backgroundRepeat: "repeat",
+                      mixBlendMode: "multiply",
+                      opacity: 0.95,
+                      WebkitMaskImage: `url(${maskUrl})`,
+                      WebkitMaskRepeat: "no-repeat",
+                      WebkitMaskSize: "contain",
+                      WebkitMaskPosition: "center",
+                      maskImage: `url(${maskUrl})`,
+                      maskRepeat: "no-repeat",
+                      maskSize: "contain",
+                      maskPosition: "center",
+                    }}
+                  />
+                );
+              })
+            : interiorLayers?.map((l) => (
+                <img
+                  key={`int-${l.id}`}
+                  src={l.src}
+                  alt={l.name}
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                 />
-              );
-            })
-          : interiorLayers?.map((l) => (
-              <img key={`int-${l.id}`} src={l.src} alt={l.name} className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-            ))}
-        {config.showShirt && (
-          <img
-            src={SHIRT_PAIR.webp}
-            onError={(e) => {
-              if (e.currentTarget.src !== SHIRT_PAIR.png) {
-                e.currentTarget.src = SHIRT_PAIR.png;
-              }
-            }}
-            alt="Shirt"
-            className="absolute inset-0 w-full h-full object-contain pointer-events-none"
-          />
-        )}
-        <BaseLayer
-          layers={allJacketLayers}
-          resolve={(layer) => cdnPair(layer.src)}
-          opacity={jacketBaseOpacity}
-        />
-        {showLayer("style") && styleOverlayLayers.length > 0 && (
-          <BaseLayer
-            layers={styleOverlayLayers}
-            resolve={(layer) => cdnPair(layer.src)}
-            blendMode="normal"
-          />
-        )}
-        {showLayer("fabric") && (
-          <FabricUnion
-            layers={showLayer("style") ? fabricLayers : allJacketLayers}
-            resolve={(layer) => cdnPair(layer.src)}
-            fabricTexture={useTexture ? fabricTexture : undefined}
-            textureStyle={jacketTextureStyle}
-            baseColor={fabricFillColor || toneBaseColor}
-            fabricAvgColor={fabricFillColor}
-            panZoom={panZoom}
-            canvas={JACKET_CANVAS}
-            mask={jacketUnionMask}
-            textureScale={fabricTextureScale}
-          />
-        )}
-        {activeButton?.image_url &&
-          jacketButtons.map((pos, idx) => (
+              ))}
+          {config.showShirt && (
             <img
-              key={`btn-${idx}`}
-              src={activeButton.image_url}
-              alt={activeButton.name || "Button"}
-              className="absolute pointer-events-none select-none"
+              src={SHIRT_PAIR.webp}
+              onError={(e) => {
+                if (e.currentTarget.src !== SHIRT_PAIR.png) {
+                  e.currentTarget.src = SHIRT_PAIR.png;
+                }
+              }}
+              alt="Shirt"
+              className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+            />
+          )}
+          <BaseLayer layers={allJacketLayers} resolve={(layer) => cdnPair(layer.src)} />
+          {showLayer("style") && styleOverlayLayers.length > 0 && (
+            <BaseLayer
+              layers={styleOverlayLayers}
+              resolve={(layer) => cdnPair(layer.src)}
+              blendMode="normal"
+            />
+          )}
+          {showLayer("fabric") && (
+            <FabricUnion
+              layers={showLayer("style") ? fabricLayers : allJacketLayers}
+              resolve={(layer) => cdnPair(layer.src)}
+              fabricTexture={useTexture ? fabricTexture : undefined}
+              textureStyle={fabricTextureStyle}
+              baseColor={fabricFillColor || toneBaseColor}
+              fabricAvgColor={fabricFillColor}
+              panZoom={panZoom}
+              canvas={JACKET_CANVAS}
+              textureScale={fabricTextureScale}
+            />
+          )}
+          {activeButton?.image_url &&
+            jacketButtons.map((pos, idx) => (
+              <img
+                key={`btn-${idx}`}
+                src={activeButton.image_url}
+                alt={activeButton.name || "Button"}
+                className="absolute pointer-events-none select-none"
+                style={{
+                  left: `${pos.x * 100}%`,
+                  top: `${pos.y * 100}%`,
+                  width: `${((pos.size ?? 0.022) * 100).toFixed(2)}%`,
+                  transform: "translate(-50%, -50%)",
+                  mixBlendMode: "multiply",
+                  opacity: 0.9,
+                  filter: "saturate(0.9) contrast(1.05)",
+                  borderRadius: "50%",
+                  objectFit: "contain",
+                }}
+              />
+            ))}
+          {showLayer("vignette") && (
+            <div
+              className="absolute inset-0 pointer-events-none"
               style={{
-                left: `${pos.x * 100}%`,
-                top: `${pos.y * 100}%`,
-                width: `${((pos.size ?? 0.022) * 100).toFixed(2)}%`,
-                transform: "translate(-50%, -50%)",
                 mixBlendMode: "multiply",
-                opacity: 0.9,
-                filter: "saturate(0.9) contrast(1.05)",
-                borderRadius: "50%",
-                objectFit: "contain",
+                opacity: softenedTone.vignette * 0.8,
+                background:
+                  "radial-gradient(ellipse at center, rgba(0,0,0,0.18) 10%, transparent 60%)",
               }}
             />
-          ))}
-        {needsDarkBoost && jacketUnionMask && (
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              mixBlendMode: "multiply",
-              opacity: jacketToneOverlayOpacity,
-              backgroundColor: "#080808",
-              WebkitMaskImage: `url(${jacketUnionMask})`,
-              WebkitMaskRepeat: "no-repeat",
-              WebkitMaskSize: "contain",
-              WebkitMaskPosition: "center",
-              maskImage: `url(${jacketUnionMask})`,
-              maskRepeat: "no-repeat",
-              maskSize: "contain",
-              maskPosition: "center",
-            }}
-          />
-        )}
-        {jacketUnionMask && showLayer("ao") && (
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              mixBlendMode: "multiply",
-              opacity: softenedTone.ambientOcclusion * 0.45,
-              background:
-                "radial-gradient(ellipse at center, rgba(0,0,0,0.25) 0%, transparent 85%)",
-              WebkitMaskImage: `url(${jacketUnionMask})`,
-              WebkitMaskRepeat: "no-repeat",
-              WebkitMaskSize: "contain",
-              WebkitMaskPosition: "center",
-              maskImage: `url(${jacketUnionMask})`,
-              maskRepeat: "no-repeat",
-              maskSize: "contain",
-              maskPosition: "center",
-            }}
-          />
-        )}
-        {showLayer("vignette") && (
-          <GlobalOverlay
-            noiseData={NOISE_DATA}
-            settings={{
-              ...softenedTone,
-              noise: softenedTone.noise * 0.3,
-              highlightTop: softenedTone.highlightTop * 0.4,
-              highlightBottom: softenedTone.highlightBottom * 0.4,
-              vignette: softenedTone.vignette * 0.5,
-            }}
-            mask={jacketUnionMask}
-          />
-        )}
+          )}
       </div>
     </div>
     {/* ======================== PANTS CANVAS ======================== */}
