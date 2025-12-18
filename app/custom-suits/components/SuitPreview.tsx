@@ -14,6 +14,7 @@ import { ButtonLayout, ButtonPosition, getFallbackPositions } from "../data/butt
 import { BaseLayer } from "./layers/BaseLayer";
 import { FabricUnion } from "./layers/FabricUnion";
 import { GlobalOverlay } from "./layers/GlobalOverlay";
+import { LightingPasses } from "./layers/LightingPasses";
 
 /* =====================================================================================
    CDN helpers (ostaju jer maske i strukturalni sprite-ovi su i dalje iz transparent/)
@@ -328,35 +329,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
 
   const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
-  const fabricTextureFilter = useMemo(() => {
-    if (fabricTone === "dark") {
-      return `${tb.filter} brightness(1.0) contrast(1.08) saturate(1.05)`;
-    }
-    if (fabricTone === "light") {
-      return `${tb.filter} brightness(1.07) contrast(1.08) saturate(1.05)`;
-    }
-    return `${tb.filter} brightness(1.08) contrast(1.2) saturate(1.24)`;
-  }, [fabricTone, tb.filter]);
-  const fabricTextureOpacity = useMemo(
-    () =>
-      useTexture
-        ? Math.min(0.85, softenedTone.fabric.opacity * (fabricTone === "dark" ? 0.9 : 0.82)) * textureStrength
-        : 0,
-    [fabricTone, softenedTone.fabric.opacity, textureStrength, useTexture]
-  );
-  const fabricTextureStyle = useMemo(
-    () => ({
-      filter: fabricTextureFilter,
-      mixBlendMode: fabricTone === "dark" ? "overlay" : softenedTone.fabric.blend,
-      opacity: fabricTextureOpacity,
-    }),
-    [fabricTextureFilter, fabricTone, fabricTextureOpacity, softenedTone.fabric.blend]
-  );
-  const fabricTextureScale = useMemo(
-    () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88) * textureScaleBoost,
-    [fabricTone, softenedTone.weaveSharpness, textureScaleBoost]
-  );
-  const needsDarkBoost = fabricTone === "dark";
 
   // Average color from fabric texture (to better match hue)
   const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
@@ -366,10 +338,54 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
       computeFabricBaseColor(fabricAvgColor, toneBaseColor, selectedFabric?.tone as Tone | undefined, explicitFabricColor),
     [fabricAvgColor, toneBaseColor, selectedFabric?.tone, explicitFabricColor]
   );
+  const fabricLuminance = useMemo(() => {
+    const rgb = hexToRgb(fabricFillColorBase);
+    return rgb ? relativeLuminance(rgb) : 0.2;
+  }, [fabricFillColorBase]);
+  const isBlackFabric = fabricLuminance < 0.12;
   const fabricFillColor = useMemo(
-    () => enhanceFabricColor(fabricFillColorBase, fabricTone),
-    [fabricFillColorBase, fabricTone]
+    () => (isBlackFabric ? fabricFillColorBase : enhanceFabricColor(fabricFillColorBase, fabricTone)),
+    [fabricFillColorBase, fabricTone, isBlackFabric]
   );
+
+  const lightingBoost = isBlackFabric ? 1.35 : 1;
+  const shadowBoost = isBlackFabric ? 0.8 : 1;
+  const specularRolloff = isBlackFabric ? 0.055 : 0;
+  const fabricBaseOpacity = isBlackFabric ? 0.88 : 0.92;
+  const fabricBaseBlendMode = isBlackFabric ? "normal" : "color";
+
+  const fabricTextureFilter = useMemo(() => {
+    if (isBlackFabric) {
+      return `${tb.filter} brightness(1.03) contrast(0.92) saturate(1.02)`;
+    }
+    if (fabricTone === "dark") {
+      return `${tb.filter} brightness(1.01) contrast(1.05) saturate(1.05)`;
+    }
+    if (fabricTone === "light") {
+      return `${tb.filter} brightness(1.07) contrast(1.08) saturate(1.05)`;
+    }
+    return `${tb.filter} brightness(1.08) contrast(1.2) saturate(1.24)`;
+  }, [fabricTone, tb.filter, isBlackFabric]);
+  const fabricTextureOpacity = useMemo(() => {
+    if (!useTexture) return 0;
+    const base = Math.min(0.85, softenedTone.fabric.opacity * (fabricTone === "dark" ? 0.9 : 0.82));
+    const blackAdjust = isBlackFabric ? 0.8 : 1;
+    return base * textureStrength * blackAdjust;
+  }, [fabricTone, softenedTone.fabric.opacity, textureStrength, useTexture, isBlackFabric]);
+  const fabricTextureStyle = useMemo(
+    () => ({
+      filter: fabricTextureFilter,
+      mixBlendMode: isBlackFabric ? "soft-light" : fabricTone === "dark" ? "overlay" : softenedTone.fabric.blend,
+      opacity: fabricTextureOpacity,
+    }),
+    [fabricTextureFilter, fabricTone, fabricTextureOpacity, softenedTone.fabric.blend, isBlackFabric]
+  );
+  const fabricTextureScale = useMemo(
+    () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88) * textureScaleBoost,
+    [fabricTone, softenedTone.weaveSharpness, textureScaleBoost]
+  );
+  const pantsDarkBoost = fabricTone === "dark" && !isBlackFabric;
+  const ambientOcclusionOpacity = isBlackFabric ? softenedTone.ambientOcclusion * 0.6 : softenedTone.ambientOcclusion;
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
@@ -682,10 +698,21 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             textureStyle={fabricTextureStyle}
             baseColor={fabricFillColor || toneBaseColor}
             fabricAvgColor={fabricFillColor}
+            baseBlendMode={fabricBaseBlendMode}
+            baseOpacity={fabricBaseOpacity}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
             textureScale={fabricTextureScale}
+          />
+        )}
+        {showLayer("fabric") && jacketUnionMask && (
+          <LightingPasses
+            mask={jacketUnionMask}
+            canvas={JACKET_CANVAS}
+            intensity={lightingBoost}
+            shadow={shadowBoost}
+            specular={specularRolloff}
           />
         )}
         {activeButton?.image_url &&
@@ -704,34 +731,16 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
                 opacity: 0.9,
                 filter: "saturate(0.9) contrast(1.05)",
                 borderRadius: "50%",
-                objectFit: "contain",
-              }}
-            />
-          ))}
-        {needsDarkBoost && jacketUnionMask && (
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{
-              mixBlendMode: "multiply",
-              opacity: 0.35,
-              backgroundColor: "#080808",
-              WebkitMaskImage: `url(${jacketUnionMask})`,
-              WebkitMaskRepeat: "no-repeat",
-              WebkitMaskSize: "contain",
-              WebkitMaskPosition: "center",
-              maskImage: `url(${jacketUnionMask})`,
-              maskRepeat: "no-repeat",
-              maskSize: "contain",
-              maskPosition: "center",
+              objectFit: "contain",
             }}
           />
-        )}
+        ))}
         {jacketUnionMask && showLayer("ao") && (
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               mixBlendMode: "multiply",
-              opacity: softenedTone.ambientOcclusion,
+              opacity: ambientOcclusionOpacity,
               background:
                 "radial-gradient(ellipse at center, rgba(0,0,0,0.25) 0%, transparent 85%)",
               WebkitMaskImage: `url(${jacketUnionMask})`,
@@ -773,6 +782,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             textureStyle={fabricTextureStyle}
             baseColor={fabricFillColor || toneBaseColor}
             fabricAvgColor={fabricFillColor}
+            baseBlendMode={fabricBaseBlendMode}
+            baseOpacity={fabricBaseOpacity}
             panZoom={panZoom}
             canvas={PANTS_CANVAS}
             textureScale={fabricTextureScale}
@@ -798,7 +809,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
                 }}
               />
             ))}
-          {needsDarkBoost && pantsMaskPair && (
+          {pantsDarkBoost && pantsMaskPair && (
             <div
               className="absolute inset-0 pointer-events-none"
               style={{

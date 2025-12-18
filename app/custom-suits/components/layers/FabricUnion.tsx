@@ -11,6 +11,8 @@ type Props = {
   textureStyle: React.CSSProperties;
   baseColor: string;
   fabricAvgColor?: string | null;
+  baseBlendMode?: React.CSSProperties["mixBlendMode"];
+  baseOpacity?: number;
   panZoom: PanZoomState;
   canvas: { w: number; h: number };
   mask?: string | null;
@@ -27,6 +29,8 @@ export const FabricUnion: React.FC<Props> = ({
   textureStyle,
   baseColor,
   fabricAvgColor,
+  baseBlendMode = "color",
+  baseOpacity = 0.92,
   panZoom,
   canvas,
   mask,
@@ -45,8 +49,8 @@ export const FabricUnion: React.FC<Props> = ({
           className="absolute inset-0"
           style={{
             backgroundColor: fabricAvgColor || baseColor,
-            mixBlendMode: "color",
-            opacity: 0.92,
+            mixBlendMode: baseBlendMode,
+            opacity: baseOpacity,
             WebkitMaskImage: buildMask(mask),
             WebkitMaskRepeat: "no-repeat",
             WebkitMaskSize: "contain",
@@ -68,14 +72,14 @@ export const FabricUnion: React.FC<Props> = ({
       return (
         <div
           key={`fabric-base-${layer.id}`}
-          className="absolute inset-0"
-          style={{
-            backgroundColor: fabricAvgColor || baseColor,
-            mixBlendMode: "color",
-            opacity: 0.92,
-            WebkitMaskImage: maskImage,
-            WebkitMaskRepeat: "no-repeat",
-            WebkitMaskSize: "contain",
+        className="absolute inset-0"
+        style={{
+          backgroundColor: fabricAvgColor || baseColor,
+          mixBlendMode: baseBlendMode,
+          opacity: baseOpacity,
+          WebkitMaskImage: maskImage,
+          WebkitMaskRepeat: "no-repeat",
+          WebkitMaskSize: "contain",
             WebkitMaskPosition: "center",
             maskImage,
             maskRepeat: "no-repeat",
