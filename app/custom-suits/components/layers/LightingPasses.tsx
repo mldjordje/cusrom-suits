@@ -8,6 +8,7 @@ type Props = {
   intensity?: number;
   shadow?: number;
   specular?: number;
+  opacity?: number;
 };
 
 const degToRad = (deg: number) => (deg * Math.PI) / 180;
@@ -18,6 +19,7 @@ export const LightingPasses: React.FC<Props> = ({
   intensity = 1,
   shadow = 1,
   specular = 0,
+  opacity = 0.45,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -63,15 +65,15 @@ export const LightingPasses: React.FC<Props> = ({
 
       // Directional light (top-left to bottom-right).
       const dirLight = ctx.createLinearGradient(0, 0, w, h);
-      dirLight.addColorStop(0, `rgba(255,255,255,${0.12 * intensity})`);
-      dirLight.addColorStop(0.45, `rgba(255,255,255,${0.04 * intensity})`);
+      dirLight.addColorStop(0, `rgba(255,255,255,${0.05 * intensity})`);
+      dirLight.addColorStop(0.45, `rgba(255,255,255,${0.02 * intensity})`);
       dirLight.addColorStop(1, "rgba(255,255,255,0)");
       drawFull("screen", dirLight);
 
       const dirShadow = ctx.createLinearGradient(0, 0, w, h);
       dirShadow.addColorStop(0, "rgba(0,0,0,0)");
-      dirShadow.addColorStop(0.65, `rgba(0,0,0,${0.05 * shadow})`);
-      dirShadow.addColorStop(1, `rgba(0,0,0,${0.1 * shadow})`);
+      dirShadow.addColorStop(0.65, `rgba(0,0,0,${0.03 * shadow})`);
+      dirShadow.addColorStop(1, `rgba(0,0,0,${0.06 * shadow})`);
       drawFull("multiply", dirShadow);
 
       // Chest depth.
@@ -79,8 +81,8 @@ export const LightingPasses: React.FC<Props> = ({
       const chestY = h * 0.48;
       const chestRadius = Math.min(w * 0.42, h * 0.42);
       const chest = ctx.createRadialGradient(chestX, chestY, w * 0.05, chestX, chestY, chestRadius);
-      chest.addColorStop(0, `rgba(255,255,255,${0.1 * intensity})`);
-      chest.addColorStop(0.55, `rgba(255,255,255,${0.035 * intensity})`);
+      chest.addColorStop(0, `rgba(255,255,255,${0.045 * intensity})`);
+      chest.addColorStop(0.55, `rgba(255,255,255,${0.02 * intensity})`);
       chest.addColorStop(1, "rgba(255,255,255,0)");
       drawFull("screen", chest);
 
@@ -103,8 +105,8 @@ export const LightingPasses: React.FC<Props> = ({
         ctx.fillRect(-lapelWidth / 2, -lapelHeight / 2, lapelWidth, lapelHeight);
         ctx.restore();
       };
-      drawLapel(w * 0.5 - lapelOffset, -lapelAngle, 0.09 * intensity);
-      drawLapel(w * 0.5 + lapelOffset, lapelAngle, 0.07 * intensity);
+      drawLapel(w * 0.5 - lapelOffset, -lapelAngle, 0.035 * intensity);
+      drawLapel(w * 0.5 + lapelOffset, lapelAngle, 0.03 * intensity);
 
       // Sleeve cylindrical shading.
       const sleeveWidth = w * 0.26;
@@ -121,7 +123,7 @@ export const LightingPasses: React.FC<Props> = ({
           h: sleeveHeight,
         };
         const highlight = ctx.createLinearGradient(rect.x, 0, rect.x + rect.w, 0);
-        const highlightAlpha = 0.1 * intensity;
+        const highlightAlpha = 0.04 * intensity;
         if (flip) {
           highlight.addColorStop(0, "rgba(255,255,255,0)");
           highlight.addColorStop(0.55, `rgba(255,255,255,${highlightAlpha * 0.4})`);
@@ -134,7 +136,7 @@ export const LightingPasses: React.FC<Props> = ({
         drawRect("screen", highlight, rect);
 
         const shadowGrad = ctx.createLinearGradient(rect.x, 0, rect.x + rect.w, 0);
-        const shadowAlpha = 0.07 * shadow;
+        const shadowAlpha = 0.04 * shadow;
         if (flip) {
           shadowGrad.addColorStop(0, `rgba(0,0,0,${shadowAlpha})`);
           shadowGrad.addColorStop(0.6, `rgba(0,0,0,${shadowAlpha * 0.5})`);
@@ -180,7 +182,7 @@ export const LightingPasses: React.FC<Props> = ({
       width={canvas.w}
       height={canvas.h}
       className="absolute inset-0 pointer-events-none"
-      style={{ width: "100%", height: "100%", mixBlendMode: "soft-light" }}
+      style={{ width: "100%", height: "100%", mixBlendMode: "soft-light", opacity }}
     />
   );
 };
