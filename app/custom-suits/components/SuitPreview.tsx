@@ -5,7 +5,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
-import { NOISE_DATA, toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone } from "../utils/visual";
+import { toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone } from "../utils/visual";
 import { cdnPair, ensureAssetAvailable } from "../utils/assets";
 import { useFabrics } from "../hooks/useFabrics";
 import { useButtons } from "../hooks/useButtons";
@@ -13,7 +13,6 @@ import { useLinings } from "../hooks/useLinings";
 import { ButtonLayout, ButtonPosition, getFallbackPositions } from "../data/buttonPositions";
 import { BaseLayer } from "./layers/BaseLayer";
 import { FabricUnion } from "./layers/FabricUnion";
-import { GlobalOverlay } from "./layers/GlobalOverlay";
 
 /* =====================================================================================
    CDN helpers (ostaju jer maske i strukturalni sprite-ovi su i dalje iz transparent/)
@@ -604,6 +603,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
 
   const allJacketLayers = structuralJacketLayers;
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
+  const jacketVignetteOpacity = softenedTone.vignette * 0.8;
   return (
     <div className="relative w-full select-none">
       <div className="relative mx-auto w-full max-w-[580px] sm:max-w-[540px]">
@@ -726,27 +726,24 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             }}
           />
         )}
-        {jacketUnionMask && showLayer("ao") && (
+        {showLayer("vignette") && (
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               mixBlendMode: "multiply",
-              opacity: softenedTone.ambientOcclusion,
+              opacity: jacketVignetteOpacity,
               background:
-                "radial-gradient(ellipse at center, rgba(0,0,0,0.25) 0%, transparent 85%)",
-              WebkitMaskImage: `url(${jacketUnionMask})`,
-              WebkitMaskRepeat: "no-repeat",
-              WebkitMaskSize: "contain",
-              WebkitMaskPosition: "center",
-              maskImage: `url(${jacketUnionMask})`,
-              maskRepeat: "no-repeat",
-              maskSize: "contain",
-              maskPosition: "center",
+                "radial-gradient(ellipse at center, rgba(0,0,0,0.18) 10%, transparent 60%)",
+              WebkitMaskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+              WebkitMaskRepeat: jacketUnionMask ? "no-repeat" : undefined,
+              WebkitMaskSize: jacketUnionMask ? "contain" : undefined,
+              WebkitMaskPosition: jacketUnionMask ? "center" : undefined,
+              maskImage: jacketUnionMask ? `url(${jacketUnionMask})` : undefined,
+              maskRepeat: jacketUnionMask ? "no-repeat" : undefined,
+              maskSize: jacketUnionMask ? "contain" : undefined,
+              maskPosition: jacketUnionMask ? "center" : undefined,
             }}
           />
-        )}
-        {showLayer("vignette") && (
-          <GlobalOverlay noiseData={NOISE_DATA} settings={softenedTone} mask={jacketUnionMask} />
         )}
       </div>
     </div>
