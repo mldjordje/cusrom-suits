@@ -328,6 +328,28 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
 
   const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
+  // Average color from fabric texture (to better match hue)
+  const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
+  const explicitFabricColor = useMemo(() => extractFabricHex(selectedFabric), [selectedFabric]);
+  const fabricFillColorBase = useMemo(
+    () =>
+      computeFabricBaseColor(fabricAvgColor, toneBaseColor, selectedFabric?.tone as Tone | undefined, explicitFabricColor),
+    [fabricAvgColor, toneBaseColor, selectedFabric?.tone, explicitFabricColor]
+  );
+  const fabricLuminance = useMemo(() => {
+    const rgb = hexToRgb(fabricFillColorBase);
+    return rgb ? relativeLuminance(rgb) : 0.2;
+  }, [fabricFillColorBase]);
+  const isBlackFabric = fabricLuminance < 0.12;
+  const fabricFillColor = useMemo(() => {
+    const boosted = enhanceFabricColor(fabricFillColorBase, fabricTone);
+    if (!isBlackFabric) return boosted;
+    const rgb = hexToRgb(boosted);
+    if (!rgb) return boosted;
+    const { h, s, l } = rgbToHsl(rgb);
+    const clamped = Math.min(l, 0.14);
+    return rgbToHex(hslToRgb({ h, s, l: clamped }));
+  }, [fabricFillColorBase, fabricTone, isBlackFabric]);
   const fabricTextureFilter = useMemo(() => {
     if (isBlackFabric) {
       return `${tb.filter} brightness(1.0) contrast(1.02) saturate(1.02)`;
@@ -363,28 +385,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   );
   const needsDarkBoost = fabricTone === "dark" && !isBlackFabric;
 
-  // Average color from fabric texture (to better match hue)
-  const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
-  const explicitFabricColor = useMemo(() => extractFabricHex(selectedFabric), [selectedFabric]);
-  const fabricFillColorBase = useMemo(
-    () =>
-      computeFabricBaseColor(fabricAvgColor, toneBaseColor, selectedFabric?.tone as Tone | undefined, explicitFabricColor),
-    [fabricAvgColor, toneBaseColor, selectedFabric?.tone, explicitFabricColor]
-  );
-  const fabricLuminance = useMemo(() => {
-    const rgb = hexToRgb(fabricFillColorBase);
-    return rgb ? relativeLuminance(rgb) : 0.2;
-  }, [fabricFillColorBase]);
-  const isBlackFabric = fabricLuminance < 0.12;
-  const fabricFillColor = useMemo(() => {
-    const boosted = enhanceFabricColor(fabricFillColorBase, fabricTone);
-    if (!isBlackFabric) return boosted;
-    const rgb = hexToRgb(boosted);
-    if (!rgb) return boosted;
-    const { h, s, l } = rgbToHsl(rgb);
-    const clamped = Math.min(l, 0.14);
-    return rgbToHex(hslToRgb({ h, s, l: clamped }));
-  }, [fabricFillColorBase, fabricTone, isBlackFabric]);
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
