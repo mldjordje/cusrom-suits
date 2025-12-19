@@ -6,7 +6,7 @@ import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
 import { NOISE_DATA, toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone } from "../utils/visual";
-import { cdnPair, ensureAssetAvailable } from "../utils/assets";
+import { cdnPair, ensureAssetAvailable, edgesPair, shadingPair, specularPair } from "../utils/assets";
 import { useFabrics } from "../hooks/useFabrics";
 import { useButtons } from "../hooks/useButtons";
 import { useLinings } from "../hooks/useLinings";
@@ -165,7 +165,7 @@ const enhanceFabricColor = (hex: string, tone: Tone) => {
   // Ako je tkanina gotovo neutralna (crna/siva), ne dodaj saturaciju da ne povuce braon nijansu
   const neutral = isNeutralTone(rgb, 10);
   if (neutral) {
-    const lightnessBoost = tone === "dark" ? 0.02 : tone === "light" ? 0.04 : 0.03;
+    const lightnessBoost = tone === "dark" ? 0.01 : tone === "light" ? 0.03 : 0.02;
     const neutralized = hslToRgb({
       h,
       s: 0,
@@ -174,8 +174,8 @@ const enhanceFabricColor = (hex: string, tone: Tone) => {
     return rgbToHex(neutralized);
   }
 
-  const saturationBoost = tone === "dark" ? 0.18 : tone === "light" ? 0.08 : 0.14;
-  const lightnessBoost = tone === "dark" ? 0.08 : tone === "light" ? 0.04 : 0.06;
+  const saturationBoost = tone === "dark" ? 0.12 : tone === "light" ? 0.06 : 0.1;
+  const lightnessBoost = tone === "dark" ? 0.05 : tone === "light" ? 0.03 : 0.04;
   const vivid = hslToRgb({
     h,
     s: Math.min(1, s + saturationBoost),
@@ -312,17 +312,19 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const softenedTone = useMemo(
     () => ({
       ...toneVis,
-      fabric: { ...toneVis.fabric, opacity: toneVis.fabric.opacity * 0.65 },
-      weaveSharpness: toneVis.weaveSharpness * 0.85,
-      ambientOcclusion: toneVis.ambientOcclusion * 0.7,
-      noise: toneVis.noise * 0.4,
-      vignette: toneVis.vignette * 0.6,
-      highlightTop: toneVis.highlightTop * 0.6,
-      highlightBottom: toneVis.highlightBottom * 0.6,
-      detailOpacity: toneVis.detailOpacity * 0.5,
-      detailScale: toneVis.detailScale * 0.85,
-      edgesOpacity: toneVis.edgesOpacity * 0.7,
-      outlinesOpacity: toneVis.outlinesOpacity * 0.7,
+      shading: { ...toneVis.shading, opacity: toneVis.shading.opacity * 0.55 },
+      specular: { ...toneVis.specular, opacity: toneVis.specular.opacity * 0.45 },
+      fabric: { ...toneVis.fabric, opacity: toneVis.fabric.opacity * 0.6 },
+      weaveSharpness: toneVis.weaveSharpness * 0.8,
+      ambientOcclusion: toneVis.ambientOcclusion * 0.6,
+      noise: toneVis.noise * 0.25,
+      vignette: toneVis.vignette * 0.45,
+      highlightTop: toneVis.highlightTop * 0.4,
+      highlightBottom: toneVis.highlightBottom * 0.4,
+      detailOpacity: toneVis.detailOpacity * 0.4,
+      detailScale: toneVis.detailScale * 0.8,
+      edgesOpacity: toneVis.edgesOpacity * 0.55,
+      outlinesOpacity: toneVis.outlinesOpacity * 0.55,
     }),
     [toneVis]
   );
@@ -343,48 +345,57 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     return rgb ? relativeLuminance(rgb) : 0.2;
   }, [fabricFillColorBase]);
   const isBlackFabric = fabricLuminance < 0.12;
-  const fabricFillColor = useMemo(
-    () => (isBlackFabric ? fabricFillColorBase : enhanceFabricColor(fabricFillColorBase, fabricTone)),
-    [fabricFillColorBase, fabricTone, isBlackFabric]
-  );
+  const fabricFillColor = useMemo(() => {
+    const candidate = isBlackFabric ? fabricFillColorBase : enhanceFabricColor(fabricFillColorBase, fabricTone);
+    if (fabricTone !== "dark") return candidate;
+    const rgb = hexToRgb(candidate);
+    if (!rgb) return candidate;
+    const { h, s, l } = rgbToHsl(rgb);
+    const maxL = isBlackFabric ? 0.14 : 0.22;
+    if (l <= maxL) return candidate;
+    return rgbToHex(hslToRgb({ h, s, l: maxL }));
+  }, [fabricFillColorBase, fabricTone, isBlackFabric]);
 
-  const lightingBoost = isBlackFabric ? 0.8 : 0.65;
-  const shadowBoost = 0.75;
-  const specularRolloff = isBlackFabric ? 0.025 : 0;
-  const lightingOpacity = isBlackFabric ? 0.5 : 0.42;
-  const fabricBaseOpacity = 0.9;
+  const lightingBoost = isBlackFabric ? 0.55 : 0.4;
+  const shadowBoost = 0.6;
+  const specularRolloff = isBlackFabric ? 0.02 : 0;
+  const lightingOpacity = isBlackFabric ? 0.28 : 0.2;
+  const fabricBaseOpacity = 0.88;
 
   const fabricTextureFilter = useMemo(() => {
     if (isBlackFabric) {
-      return `${tb.filter} brightness(1.02) contrast(1.02) saturate(1.02)`;
+      return `${tb.filter} brightness(1.01) contrast(1.01) saturate(1.01)`;
     }
     if (fabricTone === "dark") {
-      return `${tb.filter} brightness(1.01) contrast(1.05) saturate(1.05)`;
+      return `${tb.filter} brightness(1.02) contrast(1.03) saturate(1.03)`;
     }
     if (fabricTone === "light") {
-      return `${tb.filter} brightness(1.07) contrast(1.08) saturate(1.05)`;
+      return `${tb.filter} brightness(1.05) contrast(1.05) saturate(1.04)`;
     }
-    return `${tb.filter} brightness(1.08) contrast(1.2) saturate(1.24)`;
+    return `${tb.filter} brightness(1.04) contrast(1.08) saturate(1.08)`;
   }, [fabricTone, tb.filter, isBlackFabric]);
   const fabricTextureOpacity = useMemo(() => {
     if (!useTexture) return 0;
-    const base = Math.min(0.85, softenedTone.fabric.opacity * (fabricTone === "dark" ? 0.9 : 0.82));
+    const base = Math.min(0.85, softenedTone.fabric.opacity * (fabricTone === "dark" ? 0.75 : 0.7));
     return base * textureStrength;
   }, [fabricTone, softenedTone.fabric.opacity, textureStrength, useTexture]);
   const fabricTextureStyle = useMemo(
     () => ({
       filter: fabricTextureFilter,
-      mixBlendMode: isBlackFabric ? "soft-light" : fabricTone === "dark" ? "overlay" : softenedTone.fabric.blend,
+      mixBlendMode: "soft-light",
       opacity: fabricTextureOpacity,
     }),
-    [fabricTextureFilter, fabricTone, fabricTextureOpacity, softenedTone.fabric.blend, isBlackFabric]
+    [fabricTextureFilter, fabricTextureOpacity]
   );
   const fabricTextureScale = useMemo(
     () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88) * textureScaleBoost,
     [fabricTone, softenedTone.weaveSharpness, textureScaleBoost]
   );
   const pantsDarkBoost = fabricTone === "dark" && !isBlackFabric;
-  const ambientOcclusionOpacity = softenedTone.ambientOcclusion * 0.75;
+  const ambientOcclusionOpacity = softenedTone.ambientOcclusion * 0.6;
+  const shadingOpacity = softenedTone.shading.opacity;
+  const specularOpacity = Math.min(1, softenedTone.specular.opacity * (isBlackFabric ? 1.1 : 1));
+  const edgesOpacity = softenedTone.edgesOpacity * 0.35;
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
@@ -618,6 +629,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const pantsButtons: ButtonPosition[] = pantsLayout?.positions || [];
 
   const allJacketLayers = structuralJacketLayers;
+  const jacketLightingLayers = showLayer("style") ? fabricLayers : allJacketLayers;
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
   return (
     <div className="relative w-full select-none">
@@ -704,6 +716,28 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             textureScale={fabricTextureScale}
           />
         )}
+        {showLayer("fabric") && (
+          <>
+            <BaseLayer
+              layers={jacketLightingLayers}
+              resolve={(layer) => shadingPair(layer.src)}
+              blendMode="multiply"
+              opacity={shadingOpacity}
+            />
+            <BaseLayer
+              layers={jacketLightingLayers}
+              resolve={(layer) => specularPair(layer.src)}
+              blendMode="soft-light"
+              opacity={specularOpacity}
+            />
+            <BaseLayer
+              layers={jacketLightingLayers}
+              resolve={(layer) => edgesPair(layer.src)}
+              blendMode="multiply"
+              opacity={edgesOpacity}
+            />
+          </>
+        )}
         {showLayer("fabric") && jacketUnionMask && (
           <LightingPasses
             mask={jacketUnionMask}
@@ -787,6 +821,28 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             textureScale={fabricTextureScale}
           />
         )}
+          {showLayer("fabric") && (
+            <>
+              <BaseLayer
+                layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
+                resolve={(layer) => shadingPair(layer.src)}
+                blendMode="multiply"
+                opacity={shadingOpacity}
+              />
+              <BaseLayer
+                layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
+                resolve={(layer) => specularPair(layer.src)}
+                blendMode="soft-light"
+                opacity={specularOpacity}
+              />
+              <BaseLayer
+                layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
+                resolve={(layer) => edgesPair(layer.src)}
+                blendMode="multiply"
+                opacity={edgesOpacity}
+              />
+            </>
+          )}
           {activeButton?.image_url &&
             pantsButtons.map((pos, idx) => (
               <img
