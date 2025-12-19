@@ -381,6 +381,16 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     () => enhanceFabricColor(fabricFillColorBase, fabricTone),
     [fabricFillColorBase, fabricTone]
   );
+  const fabricBaseRgb = useMemo(() => hexToRgb(fabricFillColorBase), [fabricFillColorBase]);
+  const fabricLuminance = useMemo(
+    () => (fabricBaseRgb ? relativeLuminance(fabricBaseRgb) : 1),
+    [fabricBaseRgb]
+  );
+  const isBlackFabric = fabricTone === "dark" && fabricLuminance < 0.12;
+  const jacketAvgColor = useMemo(() => {
+    if (!isBlackFabric || !fabricBaseRgb) return fabricFillColor;
+    return rgbToHex(scaleRgb(fabricBaseRgb, 0.72));
+  }, [fabricBaseRgb, fabricFillColor, isBlackFabric]);
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
@@ -693,7 +703,9 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             fabricTexture={useTexture ? fabricTexture : undefined}
             textureStyle={jacketTextureStyle}
             baseColor={fabricFillColor || toneBaseColor}
-            fabricAvgColor={fabricFillColor}
+            fabricAvgColor={jacketAvgColor}
+            baseBlendMode={isBlackFabric ? "multiply" : "color"}
+            baseOpacity={isBlackFabric ? 1 : 0.92}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
@@ -720,7 +732,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               }}
             />
           ))}
-        {needsDarkBoost && jacketUnionMask && (
+        {needsDarkBoost && !isBlackFabric && jacketUnionMask && (
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
