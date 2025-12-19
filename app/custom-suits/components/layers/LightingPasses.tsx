@@ -22,6 +22,7 @@ export const LightingPasses: React.FC<Props> = ({
   opacity = 0.45,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const { w, h } = canvas;
 
   useEffect(() => {
     const el = canvasRef.current;
@@ -29,7 +30,6 @@ export const LightingPasses: React.FC<Props> = ({
     const ctx = el.getContext("2d");
     if (!ctx) return;
 
-    const { w, h } = canvas;
     if (el.width !== w) el.width = w;
     if (el.height !== h) el.height = h;
     ctx.clearRect(0, 0, w, h);
@@ -172,15 +172,15 @@ export const LightingPasses: React.FC<Props> = ({
     return () => {
       cancelled = true;
     };
-  }, [mask, canvas.h, canvas.w, intensity, shadow, specular]);
+  }, [mask, w, h, intensity, shadow, specular]);
 
   if (!mask) return null;
 
   return (
     <canvas
       ref={canvasRef}
-      width={canvas.w}
-      height={canvas.h}
+      width={w}
+      height={h}
       className="absolute inset-0 pointer-events-none"
       style={{ width: "100%", height: "100%", mixBlendMode: "soft-light", opacity }}
     />

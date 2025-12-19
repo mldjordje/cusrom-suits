@@ -380,7 +380,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     return base * textureStrength;
   }, [fabricTone, softenedTone.fabric.opacity, textureStrength, useTexture]);
   const fabricTextureStyle = useMemo(
-    () => ({
+    (): React.CSSProperties => ({
       filter: fabricTextureFilter,
       mixBlendMode: "soft-light",
       opacity: fabricTextureOpacity,
