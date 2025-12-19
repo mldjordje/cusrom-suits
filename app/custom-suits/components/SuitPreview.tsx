@@ -355,6 +355,15 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88) * textureScaleBoost,
     [fabricTone, softenedTone.weaveSharpness, textureScaleBoost]
   );
+  const jacketTextureStyle = useMemo(
+    (): React.CSSProperties => ({
+      ...fabricTextureStyle,
+      mixBlendMode: "soft-light",
+      opacity: Math.min(1, Number(fabricTextureStyle.opacity ?? 0) * 0.85),
+    }),
+    [fabricTextureStyle]
+  );
+  const jacketTextureScale = useMemo(() => fabricTextureScale * 0.92, [fabricTextureScale]);
   const needsDarkBoost = fabricTone === "dark";
 
   // Average color from fabric texture (to better match hue)
@@ -679,13 +688,13 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             layers={showLayer("style") ? fabricLayers : allJacketLayers}
             resolve={(layer) => cdnPair(layer.src)}
             fabricTexture={useTexture ? fabricTexture : undefined}
-            textureStyle={fabricTextureStyle}
+            textureStyle={jacketTextureStyle}
             baseColor={fabricFillColor || toneBaseColor}
             fabricAvgColor={fabricFillColor}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
-            textureScale={fabricTextureScale}
+            textureScale={jacketTextureScale}
           />
         )}
         {activeButton?.image_url &&
