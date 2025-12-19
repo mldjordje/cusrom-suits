@@ -358,15 +358,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const jacketTextureStyle = useMemo(
     (): React.CSSProperties => ({
       ...fabricTextureStyle,
-      mixBlendMode: fabricTone === "dark" ? "overlay" : "soft-light",
-      opacity: Math.min(1, Number(fabricTextureStyle.opacity ?? 0) * (fabricTone === "dark" ? 0.6 : 0.55)),
-      filter: `${fabricTextureFilter} brightness(${fabricTone === "dark" ? "0.98" : "1.01"}) contrast(${
-        fabricTone === "dark" ? "0.94" : "0.9"
-      }) saturate(${fabricTone === "dark" ? "0.98" : "0.95"})`,
+      mixBlendMode: "soft-light",
+      opacity: Math.min(1, Number(fabricTextureStyle.opacity ?? 0) * 0.85),
     }),
-    [fabricTextureFilter, fabricTextureStyle, fabricTone]
+    [fabricTextureStyle]
   );
-  const jacketTextureScale = useMemo(() => fabricTextureScale * 1.04, [fabricTextureScale]);
+  const jacketTextureScale = useMemo(() => fabricTextureScale * 0.92, [fabricTextureScale]);
   const needsDarkBoost = fabricTone === "dark";
 
   // Average color from fabric texture (to better match hue)
@@ -381,16 +378,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     () => enhanceFabricColor(fabricFillColorBase, fabricTone),
     [fabricFillColorBase, fabricTone]
   );
-  const fabricBaseRgb = useMemo(() => hexToRgb(fabricFillColorBase), [fabricFillColorBase]);
-  const fabricLuminance = useMemo(
-    () => (fabricBaseRgb ? relativeLuminance(fabricBaseRgb) : 1),
-    [fabricBaseRgb]
-  );
-  const isBlackFabric = fabricTone === "dark" && fabricLuminance < 0.12;
-  const jacketAvgColor = useMemo(() => {
-    if (!isBlackFabric || !fabricBaseRgb) return fabricFillColor;
-    return rgbToHex(scaleRgb(fabricBaseRgb, 0.72));
-  }, [fabricBaseRgb, fabricFillColor, isBlackFabric]);
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
@@ -703,9 +690,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             fabricTexture={useTexture ? fabricTexture : undefined}
             textureStyle={jacketTextureStyle}
             baseColor={fabricFillColor || toneBaseColor}
-            fabricAvgColor={jacketAvgColor}
-            baseBlendMode={isBlackFabric ? "multiply" : "color"}
-            baseOpacity={isBlackFabric ? 1 : 0.92}
+            fabricAvgColor={fabricFillColor}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
@@ -732,7 +717,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               }}
             />
           ))}
-        {needsDarkBoost && !isBlackFabric && jacketUnionMask && (
+        {needsDarkBoost && jacketUnionMask && (
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
