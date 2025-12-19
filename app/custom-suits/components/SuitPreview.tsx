@@ -358,12 +358,15 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const jacketTextureStyle = useMemo(
     (): React.CSSProperties => ({
       ...fabricTextureStyle,
-      mixBlendMode: "soft-light",
-      opacity: Math.min(1, Number(fabricTextureStyle.opacity ?? 0) * 0.85),
+      mixBlendMode: fabricTone === "dark" ? "overlay" : "soft-light",
+      opacity: Math.min(1, Number(fabricTextureStyle.opacity ?? 0) * (fabricTone === "dark" ? 0.6 : 0.55)),
+      filter: `${fabricTextureFilter} brightness(${fabricTone === "dark" ? "0.98" : "1.01"}) contrast(${
+        fabricTone === "dark" ? "0.94" : "0.9"
+      }) saturate(${fabricTone === "dark" ? "0.98" : "0.95"})`,
     }),
-    [fabricTextureStyle]
+    [fabricTextureFilter, fabricTextureStyle, fabricTone]
   );
-  const jacketTextureScale = useMemo(() => fabricTextureScale * 0.92, [fabricTextureScale]);
+  const jacketTextureScale = useMemo(() => fabricTextureScale * 1.04, [fabricTextureScale]);
   const needsDarkBoost = fabricTone === "dark";
 
   // Average color from fabric texture (to better match hue)

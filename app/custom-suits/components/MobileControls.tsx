@@ -6,6 +6,8 @@ import React, { useEffect, useMemo, useState } from "react";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
+import { useButtons } from "../hooks/useButtons";
+import { useLinings } from "../hooks/useLinings";
 import { computePrice } from "../utils/price";
 
 export type Panel = "FABRIC" | "STYLE" | "ACCENTS";
@@ -192,6 +194,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
     setInternalPanel(panel);
     onPanelChange?.(panel);
   };
+  const [savingCart, setSavingCart] = useState(false);
   useEffect(() => {
     if (activePanel !== undefined) {
       setInternalPanel(activePanel);
@@ -206,6 +209,8 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
     sort: "created_at",
     order: sort === "date_desc" ? "desc" : "asc",
   });
+  const { buttons, loading: buttonsLoading, error: buttonsError } = useButtons();
+  const { linings, loading: liningsLoading, error: liningsError } = useLinings(config.styleId);
 
   const fabricsNormalized = useMemo(
     () =>
@@ -231,11 +236,31 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   }, [fabricQuery, fabricsNormalized]);
 
   const price = computePrice(config, suits);
+  const fabricPrice = useMemo(
+    () => fabricsNormalized.find((fabric: any) => fabric.id === config.colorId)?.price ?? 0,
+    [config.colorId, fabricsNormalized]
+  );
   const currentSuit = suits.find((s) => s.id === config.styleId);
   const lapels = currentSuit?.lapels ?? [];
   const selectedLapelId = config.lapelId || lapels[0]?.id;
   const activeLapel = lapels.find((lapel) => lapel.id === selectedLapelId) || lapels[0];
   const selectedLapelWidthId = config.lapelWidthId || activeLapel?.widths?.[0]?.id;
+  const liningOptions = useMemo(() => {
+    const fromRemote =
+      linings.length > 0
+        ? linings.map((l) => ({
+            id: l.id,
+            name: l.name,
+            layers: [
+              l.base ? { id: "interior_base", name: "Base", src: l.base } : null,
+              l.left ? { id: "interior_left", name: "Left", src: l.left } : null,
+              l.right ? { id: "interior_right", name: "Right", src: l.right } : null,
+            ].filter(Boolean),
+          }))
+        : [];
+    if (fromRemote.length) return fromRemote;
+    return currentSuit?.interiors || [];
+  }, [currentSuit?.interiors, linings]);
   const measurementUrl = useMemo(() => {
     const json = JSON.stringify(config);
     const url = new URL(typeof window !== "undefined" ? window.location.origin : "http://localhost");
@@ -244,11 +269,70 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
     return url.toString();
   }, [config]);
 
+  const uploadUrl = "/admin/fabrics";
+  const buttonCmsUrl = "/admin/buttons";
+  const liningCmsUrl = "/admin/linings";
+
+  const handleAddToCart = async () => {
+    if (savingCart) return;
+    try {
+      setSavingCart(true);
+
+      const entry = {
+        id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        config,
+        price,
+        addedAt: new Date().toISOString(),
+      };
+      const existingRaw = localStorage.getItem("suitCart");
+      const parsed = existingRaw ? JSON.parse(existingRaw) : [];
+      parsed.unshift(entry);
+      localStorage.setItem("suitCart", JSON.stringify(parsed));
+
+      try {
+        const res = await fetch("/api/orders", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            config,
+            price: price.total,
+            fabricId: config.colorId,
+            contact: null,
+          }),
+        });
+        const json = await res.json();
+        if (!json?.success) {
+          console.error("Order sync failed", json?.message);
+        }
+      } catch (err) {
+        console.error("Order sync failed", err);
+      }
+
+      alert("Dizajn je sacuvan u korpu. Zavrsite porudzbinu u sledecem koraku.");
+    } catch (err) {
+      console.error("Add to cart failed", err);
+      alert("Nije moguce sacuvati dizajn trenutno. Pokusajte ponovo.");
+    } finally {
+      setSavingCart(false);
+    }
+  };
+
   const renderFabricPanel = () => (
     <>
       <DrawerHeader title="Biblioteka tkanina" onClose={() => setPanel(null)} />
       <div className="flex flex-1 flex-col overflow-hidden">
         <div className="space-y-3 border-b border-gray-100 bg-white px-4 py-3">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+            <span>Tkanine</span>
+            <a
+              href={uploadUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline-offset-4 hover:text-gray-900"
+            >
+              CMS
+            </a>
+          </div>
           <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
             <input
               value={fabricQuery}
@@ -339,6 +423,69 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
     <>
       <DrawerHeader title="Detalji" onClose={() => setPanel(null)} />
       <div className="flex-1 space-y-4 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-14">
+        <div className="flex items-center justify-between">
+          <p className="text-sm font-semibold text-gray-900">Dugmad</p>
+          <a
+            href={buttonCmsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
+          >
+            CMS
+          </a>
+        </div>
+        {buttonsError && <p className="text-[11px] text-orange-600">{buttonsError}</p>}
+        {buttonsLoading ? (
+          <p className="text-xs text-gray-500">Ucitavanje dugmadi...</p>
+        ) : (
+          <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
+            {buttons.map((btn) => {
+              const active = config.buttonId === btn.id;
+              return (
+                <button
+                  key={btn.id}
+                  onClick={() => dispatch({ type: "SET_BUTTON", payload: btn.id })}
+                  className={`flex flex-col items-center gap-1 rounded-xl border bg-white px-2 py-2 text-center transition ${
+                    active ? "border-gray-900 shadow-sm" : "border-gray-200 hover:border-gray-400"
+                  }`}
+                >
+                  <div className="relative h-12 w-full">
+                    {btn.image_url ? (
+                      <img src={btn.image_url} alt={btn.name} className="h-full w-full object-contain" />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-[10px] text-gray-400">N/A</div>
+                    )}
+                  </div>
+                  <p className="text-[10px] font-semibold leading-tight text-gray-800">{btn.name}</p>
+                </button>
+              );
+            })}
+          </div>
+        )}
+
+        <div className="flex items-center justify-between pt-1">
+          <p className="text-sm font-semibold text-gray-900">Postava</p>
+          <a
+            href={liningCmsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
+          >
+            CMS
+          </a>
+        </div>
+        {liningsError && <p className="text-[11px] text-orange-600">{liningsError}</p>}
+        {liningsLoading ? (
+          <p className="text-xs text-gray-500">Ucitavanje postava...</p>
+        ) : (
+          <ChoiceGroup
+            title="Izbor postave"
+            options={(liningOptions || []).map((option: any) => ({ id: option.id, label: option.name }))}
+            selectedId={config.interiorId}
+            onSelect={(id) => dispatch({ type: "SET_INTERIOR", payload: id })}
+          />
+        )}
+
         {currentSuit?.pockets?.length ? (
           <ChoiceGroup
             title="Depovi na sakou"
@@ -355,14 +502,6 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
             onSelect={(id) => dispatch({ type: "SET_BREAST_POCKET", payload: id })}
           />
         ) : null}
-        {currentSuit?.interiors?.length ? (
-          <ChoiceGroup
-            title="Postava"
-            options={(currentSuit.interiors || []).map((option) => ({ id: option.id, label: option.name }))}
-            selectedId={config.interiorId}
-            onSelect={(id) => dispatch({ type: "SET_INTERIOR", payload: id })}
-          />
-        ) : null}
         {currentSuit?.cuffs?.length ? (
           <ChoiceGroup
             title="Zavrnica pantalona"
@@ -374,8 +513,8 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
 
         <div className="flex items-center justify-between rounded-2xl border border-gray-200 bg-gray-50 px-4 py-3">
           <div>
-            <p className="text-sm font-semibold text-gray-800">Prikai sloj koulje</p>
-            <p className="text-[11px] text-gray-500">Pomae pri vizualizaciji revera i linija depova.</p>
+            <p className="text-sm font-semibold text-gray-800">Prikazi sloj kosulje</p>
+            <p className="text-[11px] text-gray-500">Pomaze pri vizualizaciji revera i linija depova.</p>
           </div>
           <button
             onClick={() => dispatch({ type: "TOGGLE_SHIRT" })}
@@ -383,17 +522,16 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
               config.showShirt ? "bg-gray-900 text-white" : "border border-gray-300 text-gray-600"
             }`}
           >
-            {config.showShirt ? "Ukljueno" : "Iskljueno"}
+            {config.showShirt ? "Ukljuceno" : "Iskljuceno"}
           </button>
         </div>
 
         <div className="rounded-2xl border border-dashed border-gray-200 bg-white px-4 py-3 text-[12px] text-gray-600">
-          Personalni monogram i dugmad stižu uskoro. Javite nam šta vam treba i stavićemo ga u prioritet.
+          Personalni monogram stize uskoro. Javite nam sta vam treba i stavicemo ga u prioritet.
         </div>
       </div>
     </>
   );
-
   const drawerBody = (() => {
     if (currentPanel === "FABRIC") return renderFabricPanel();
     if (currentPanel === "STYLE") return renderStylePanel();
@@ -427,21 +565,38 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
                 })}
               </div>
             <div className="space-y-3 border-t border-gray-100 px-4 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-lg font-semibold text-gray-900">Tvoje custom odelo</p>
-                  <p className="text-sm text-gray-500">{price.total} EUR</p>
-                  <p className="text-sm text-gray-500">1) Dizajn · 2) Mere · 3) Korpa i placanje</p>
+              <div className="rounded-2xl border border-gray-100 bg-white/95 p-3 shadow-sm">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-semibold text-gray-900">Cena dizajna</p>
+                  <span className="text-[11px] text-gray-500">PDV ukljucen</span>
+                </div>
+                <div className="mt-2 flex items-center justify-between text-lg font-semibold text-gray-900">
+                  <span>Model</span>
+                  <span>{price.total} EUR</span>
+                </div>
+                <div className="flex items-center justify-between text-[12px] text-gray-600">
+                  <span>Tkanina</span>
+                  <span>{fabricPrice} EUR</span>
                 </div>
               </div>
+              <button
+                onClick={handleAddToCart}
+                disabled={savingCart}
+                className="w-full rounded-full bg-[#ff7a00] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                Sacuvaj dizajn
+              </button>
               <button
                 onClick={() => {
                   window.location.href = measurementUrl;
                 }}
                 className="w-full rounded-full border border-gray-900 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 transition hover:bg-gray-900 hover:text-white"
               >
-                Nastavi na mere i korpu
+                Nastavi na merenje
               </button>
+              <p className="text-[11px] text-gray-500 leading-snug">
+                Nakon merenja mozete zavrsiti porudzbinu unosom kontakta. Korpa cuva poslednji dizajn i cenu.
+              </p>
             </div>
           </div>
         </div>
@@ -459,3 +614,5 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
 }
 
 export default MobileControls;
+
+
