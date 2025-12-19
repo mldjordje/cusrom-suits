@@ -164,7 +164,7 @@ const enhanceFabricColor = (hex: string, tone: Tone) => {
   // Ako je tkanina gotovo neutralna (crna/siva), ne dodaj saturaciju da ne povuce braon nijansu
   const neutral = isNeutralTone(rgb, 10);
   if (neutral) {
-    const lightnessBoost = tone === "dark" ? 0.01 : tone === "light" ? 0.03 : 0.02;
+    const lightnessBoost = tone === "dark" ? 0.02 : tone === "light" ? 0.04 : 0.03;
     const neutralized = hslToRgb({
       h,
       s: 0,
@@ -173,8 +173,8 @@ const enhanceFabricColor = (hex: string, tone: Tone) => {
     return rgbToHex(neutralized);
   }
 
-  const saturationBoost = tone === "dark" ? 0.12 : tone === "light" ? 0.06 : 0.1;
-  const lightnessBoost = tone === "dark" ? 0.05 : tone === "light" ? 0.03 : 0.04;
+  const saturationBoost = tone === "dark" ? 0.18 : tone === "light" ? 0.08 : 0.14;
+  const lightnessBoost = tone === "dark" ? 0.08 : tone === "light" ? 0.04 : 0.06;
   const vivid = hslToRgb({
     h,
     s: Math.min(1, s + saturationBoost),
@@ -328,6 +328,36 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
 
   const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
+  const fabricTextureFilter = useMemo(() => {
+    if (fabricTone === "dark") {
+      return `${tb.filter} brightness(1.0) contrast(1.08) saturate(1.05)`;
+    }
+    if (fabricTone === "light") {
+      return `${tb.filter} brightness(1.07) contrast(1.08) saturate(1.05)`;
+    }
+    return `${tb.filter} brightness(1.08) contrast(1.2) saturate(1.24)`;
+  }, [fabricTone, tb.filter]);
+  const fabricTextureOpacity = useMemo(
+    () =>
+      useTexture
+        ? Math.min(0.85, softenedTone.fabric.opacity * (fabricTone === "dark" ? 0.9 : 0.82)) * textureStrength
+        : 0,
+    [fabricTone, softenedTone.fabric.opacity, textureStrength, useTexture]
+  );
+  const fabricTextureStyle = useMemo(
+    () => ({
+      filter: fabricTextureFilter,
+      mixBlendMode: fabricTone === "dark" ? "overlay" : softenedTone.fabric.blend,
+      opacity: fabricTextureOpacity,
+    }),
+    [fabricTextureFilter, fabricTone, fabricTextureOpacity, softenedTone.fabric.blend]
+  );
+  const fabricTextureScale = useMemo(
+    () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88) * textureScaleBoost,
+    [fabricTone, softenedTone.weaveSharpness, textureScaleBoost]
+  );
+  const needsDarkBoost = fabricTone === "dark";
+
   // Average color from fabric texture (to better match hue)
   const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
   const explicitFabricColor = useMemo(() => extractFabricHex(selectedFabric), [selectedFabric]);
@@ -336,55 +366,10 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
       computeFabricBaseColor(fabricAvgColor, toneBaseColor, selectedFabric?.tone as Tone | undefined, explicitFabricColor),
     [fabricAvgColor, toneBaseColor, selectedFabric?.tone, explicitFabricColor]
   );
-  const fabricLuminance = useMemo(() => {
-    const rgb = hexToRgb(fabricFillColorBase);
-    return rgb ? relativeLuminance(rgb) : 0.2;
-  }, [fabricFillColorBase]);
-  const isBlackFabric = fabricLuminance < 0.12;
-  const fabricFillColor = useMemo(() => {
-    const boosted = enhanceFabricColor(fabricFillColorBase, fabricTone);
-    if (!isBlackFabric) return boosted;
-    const rgb = hexToRgb(boosted);
-    if (!rgb) return boosted;
-    const { h, s, l } = rgbToHsl(rgb);
-    const clamped = Math.min(l, 0.14);
-    return rgbToHex(hslToRgb({ h, s, l: clamped }));
-  }, [fabricFillColorBase, fabricTone, isBlackFabric]);
-  const fabricTextureFilter = useMemo(() => {
-    if (isBlackFabric) {
-      return `${tb.filter} brightness(1.0) contrast(1.02) saturate(1.02)`;
-    }
-    if (fabricTone === "dark") {
-      return `${tb.filter} brightness(1.01) contrast(1.05) saturate(1.04)`;
-    }
-    if (fabricTone === "light") {
-      return `${tb.filter} brightness(1.05) contrast(1.05) saturate(1.04)`;
-    }
-    return `${tb.filter} brightness(1.04) contrast(1.1) saturate(1.12)`;
-  }, [fabricTone, tb.filter, isBlackFabric]);
-  const fabricTextureOpacity = useMemo(
-    () =>
-      useTexture
-        ? Math.min(0.85, softenedTone.fabric.opacity * (fabricTone === "dark" ? 0.75 : 0.7)) *
-          textureStrength *
-          (isBlackFabric ? 0.8 : 1)
-        : 0,
-    [fabricTone, softenedTone.fabric.opacity, textureStrength, useTexture, isBlackFabric]
+  const fabricFillColor = useMemo(
+    () => enhanceFabricColor(fabricFillColorBase, fabricTone),
+    [fabricFillColorBase, fabricTone]
   );
-  const fabricTextureStyle = useMemo(
-    (): React.CSSProperties => ({
-      filter: fabricTextureFilter,
-      mixBlendMode: "soft-light",
-      opacity: fabricTextureOpacity,
-    }),
-    [fabricTextureFilter, fabricTextureOpacity]
-  );
-  const fabricTextureScale = useMemo(
-    () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.8 : 0.78) * textureScaleBoost,
-    [fabricTone, softenedTone.weaveSharpness, textureScaleBoost]
-  );
-  const needsDarkBoost = fabricTone === "dark" && !isBlackFabric;
-
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
@@ -728,8 +713,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             className="absolute inset-0 pointer-events-none"
             style={{
               mixBlendMode: "multiply",
-              opacity: 0.18,
-              backgroundColor: "#0b0b0b",
+              opacity: 0.35,
+              backgroundColor: "#080808",
               WebkitMaskImage: `url(${jacketUnionMask})`,
               WebkitMaskRepeat: "no-repeat",
               WebkitMaskSize: "contain",
@@ -818,8 +803,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               className="absolute inset-0 pointer-events-none"
               style={{
                 mixBlendMode: "multiply",
-                opacity: 0.18,
-                backgroundColor: "#0b0b0b",
+                opacity: 0.35,
+                backgroundColor: "#080808",
                 WebkitMaskImage: `url(${pantsMaskPair.png})`,
                 WebkitMaskRepeat: "no-repeat",
                 WebkitMaskSize: "contain",
