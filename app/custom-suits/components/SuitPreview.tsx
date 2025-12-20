@@ -163,11 +163,19 @@ const enhanceFabricColor = (hex: string, tone: Tone) => {
   // Ako je tkanina gotovo neutralna (crna/siva), ne dodaj saturaciju da ne povuce braon nijansu
   const neutral = isNeutralTone(rgb, 10);
   if (neutral) {
-    const lightnessBoost = tone === "dark" ? 0.02 : tone === "light" ? 0.04 : 0.03;
+    const lum = relativeLuminance(rgb);
+    const lightnessBoost =
+      tone === "dark"
+        ? lum < 0.12
+          ? -0.02
+          : 0
+        : tone === "light"
+          ? 0.04
+          : 0.03;
     const neutralized = hslToRgb({
       h,
       s: 0,
-      l: Math.min(1, l + lightnessBoost),
+      l: Math.min(1, Math.max(0, l + lightnessBoost)),
     });
     return rgbToHex(neutralized);
   }
