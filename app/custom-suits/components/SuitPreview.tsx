@@ -167,7 +167,7 @@ const enhanceFabricColor = (hex: string, tone: Tone) => {
     const lightnessBoost =
       tone === "dark"
         ? lum < 0.12
-          ? -0.02
+          ? -0.05
           : 0
         : tone === "light"
           ? 0.04
@@ -386,6 +386,14 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     () => enhanceFabricColor(fabricFillColorBase, fabricTone),
     [fabricFillColorBase, fabricTone]
   );
+  const fabricBaseRgb = useMemo(() => hexToRgb(fabricFillColorBase), [fabricFillColorBase]);
+  const fabricLuminance = useMemo(
+    () => (fabricBaseRgb ? relativeLuminance(fabricBaseRgb) : 1),
+    [fabricBaseRgb]
+  );
+  const isBlackFabric = fabricTone === "dark" && fabricLuminance < 0.12;
+  const darkBoostOpacity = isBlackFabric ? 0.55 : 0.35;
+  const darkBoostColor = isBlackFabric ? "#020202" : "#080808";
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
@@ -730,8 +738,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             className="absolute inset-0 pointer-events-none"
             style={{
               mixBlendMode: "multiply",
-              opacity: 0.35,
-              backgroundColor: "#080808",
+              opacity: darkBoostOpacity,
+              backgroundColor: darkBoostColor,
               WebkitMaskImage: `url(${jacketUnionMask})`,
               WebkitMaskRepeat: "no-repeat",
               WebkitMaskSize: "contain",
@@ -817,8 +825,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               className="absolute inset-0 pointer-events-none"
               style={{
                 mixBlendMode: "multiply",
-                opacity: 0.35,
-                backgroundColor: "#080808",
+                opacity: darkBoostOpacity,
+                backgroundColor: darkBoostColor,
                 WebkitMaskImage: `url(${pantsMaskPair.png})`,
                 WebkitMaskRepeat: "no-repeat",
                 WebkitMaskSize: "contain",
