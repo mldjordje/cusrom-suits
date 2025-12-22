@@ -33,13 +33,13 @@ const toneLabels: Record<"all" | "light" | "medium" | "dark", string> = {
 };
 
 const drawerPanelVariants: Variants = {
-  hidden: { x: "-35%", opacity: 0 },
+  hidden: { x: "-45%", opacity: 0 },
   visible: {
     x: 0,
     opacity: 1,
     transition: { type: "spring" as const, stiffness: 170, damping: 26 },
   },
-  exit: { x: "-35%", opacity: 0, transition: { duration: 0.2 } },
+  exit: { x: "-45%", opacity: 0, transition: { duration: 0.2 } },
 };
 
 const drawerOverlayVariants: Variants = {
@@ -166,7 +166,7 @@ const Drawer = ({
   return (
     <div className="fixed inset-0 z-[60] flex lg:hidden">
       <motion.div
-        className="pointer-events-auto flex h-full w-[68vw] min-w-[240px] max-w-[320px] flex-col overflow-hidden transform bg-white shadow-2xl"
+        className="pointer-events-auto flex h-full w-[58vw] min-w-[220px] max-w-[280px] flex-col overflow-hidden transform bg-white shadow-2xl"
         initial="hidden"
         animate="visible"
         exit="exit"
