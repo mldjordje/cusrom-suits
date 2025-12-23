@@ -9,6 +9,7 @@ type Props = {
   resolve: LayerResolver;
   blendMode?: React.CSSProperties["mixBlendMode"];
   opacity?: number;
+  filter?: React.CSSProperties["filter"];
   composite?: string | null;
   mask?: string | null;
 };
@@ -18,6 +19,7 @@ export const BaseLayer: React.FC<Props> = ({
   resolve,
   blendMode = "normal",
   opacity = 1,
+  filter,
   composite,
   mask,
 }) => {
@@ -33,6 +35,7 @@ export const BaseLayer: React.FC<Props> = ({
           backgroundPosition: "center",
           mixBlendMode: blendMode,
           opacity,
+          filter,
           WebkitMaskImage: maskImage,
           WebkitMaskRepeat: maskImage ? "no-repeat" : undefined,
           WebkitMaskSize: maskImage ? "contain" : undefined,
@@ -63,6 +66,7 @@ export const BaseLayer: React.FC<Props> = ({
               backgroundPosition: "center",
               mixBlendMode: blendMode,
               opacity,
+              filter,
               pointerEvents: "none",
             }}
           />
