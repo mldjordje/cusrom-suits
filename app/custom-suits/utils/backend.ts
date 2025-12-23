@@ -21,3 +21,19 @@ export function getTransparentCdnBase() {
   // Default to bundled static assets to avoid remote 404s; legacy remote as last resort
   return ensureTrailingSlash(CDN_TRANSPARENT || explicit || LEGACY_REMOTE);
 }
+
+const PHOTO_BASES: Record<"blue" | "black", string> = {
+  blue: "/assets/suits/blue/",
+  black: "/assets/suits/black/",
+};
+
+export function getPhotoCdnBase(variant: "blue" | "black" = "blue") {
+  const explicit = process.env.NEXT_PUBLIC_PHOTO_CDN_BASE?.trim();
+  if (explicit) {
+    const withVariant = explicit.includes("{variant}")
+      ? explicit.replace("{variant}", variant)
+      : explicit;
+    return ensureTrailingSlash(withVariant);
+  }
+  return ensureTrailingSlash(PHOTO_BASES[variant]);
+}

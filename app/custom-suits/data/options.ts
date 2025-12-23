@@ -79,18 +79,18 @@ export const suits: SuitModel[] = [
       {
         id: "torso",
         name: "Sredina sakoa",
-        src: "/assets/suits/blue/neck_single_breasted+buttons_1+lapel_medium+style_lapel_notch.png",
+        src: "/assets/suits/transparent/neck_single_breasted+buttons_1+lapel_medium+style_lapel_notch.png",
       },
-      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/interior+sleeves.png" },
+      { id: "sleeves", name: "Rukavi", src: "/assets/suits/transparent/interior+sleeves.png" },
       {
         id: "bottom",
         name: "Donji deo sakoa",
-        src: "/assets/suits/blue/bottom_single_breasted+length_long+hemline_open.png",
+        src: "/assets/suits/transparent/bottom_single_breasted+length_long+hemline_open.png",
       },
       {
         id: "pants",
         name: "Pantalone",
-        src: "/assets/suits/blue/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim.png",
       },
     ],
 
@@ -102,17 +102,17 @@ export const suits: SuitModel[] = [
           {
             id: "narrow",
             name: "Narrow",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_1+lapel_narrow+style_lapel_notch.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_1+lapel_narrow+style_lapel_notch.png",
           },
           {
             id: "medium",
             name: "Medium",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_1+lapel_medium+style_lapel_notch.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_1+lapel_medium+style_lapel_notch.png",
           },
           {
             id: "wide",
             name: "Wide",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_1+lapel_wide+style_lapel_notch.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_1+lapel_wide+style_lapel_notch.png",
           },
         ],
       },
@@ -123,17 +123,17 @@ export const suits: SuitModel[] = [
           {
             id: "narrow",
             name: "Narrow",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_1+lapel_narrow+style_lapel_peak.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_1+lapel_narrow+style_lapel_peak.png",
           },
           {
             id: "medium",
             name: "Medium",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_1+lapel_medium+style_lapel_peak.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_1+lapel_medium+style_lapel_peak.png",
           },
           {
             id: "wide",
             name: "Wide",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_1+lapel_wide+style_lapel_peak.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_1+lapel_wide+style_lapel_peak.png",
           },
         ],
       },
@@ -143,17 +143,17 @@ export const suits: SuitModel[] = [
       {
         id: "flap",
         name: "Flap",
-        src: "/assets/suits/blue/hip_pockets_with_flap+fit_slim.png",
+        src: "/assets/suits/transparent/hip_pockets_with_flap+fit_slim.png",
       },
       {
         id: "double-welted",
         name: "Double-Welted",
-        src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png",
+        src: "/assets/suits/transparent/hip_pockets_double_welt+fit_slim.png",
       },
       {
         id: "patched",
         name: "Patched",
-        src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png",
+        src: "/assets/suits/transparent/hip_pockets_patched+fit_slim.png",
       },
     ],
 
@@ -225,12 +225,12 @@ export const suits: SuitModel[] = [
       {
         id: "plain",
         name: "Without Cuffs",
-        src: "/assets/suits/blue/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim.png",
       },
       {
         id: "cuffed",
         name: "With Cuffs",
-        src: "/assets/suits/blue/cuffs+length_long+cut_slim.png",
+        src: "/assets/suits/transparent/cuffs+length_long+cut_slim.png",
       },
     ],
   },
@@ -248,16 +248,16 @@ export const suits: SuitModel[] = [
         // Transparent torso sprite za peak/notch zamene
         src: "/assets/suits/transparent/neck_double_breasted+buttons_6+lapel_medium+style_lapel_notch.png",
       },
-      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/interior+sleeves.png" },
+      { id: "sleeves", name: "Rukavi", src: "/assets/suits/transparent/interior+sleeves.png" },
       {
         id: "bottom",
         name: "Donji deo sakoa",
-        src: "/assets/suits/blue/bottom_double_breasted+length_long.png",
+        src: "/assets/suits/transparent/bottom_double_breasted+length_long.png",
       },
       {
         id: "pants",
         name: "Pantalone",
-        src: "/assets/suits/blue/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim.png",
       },
     ],
 
@@ -283,9 +283,9 @@ export const suits: SuitModel[] = [
     ],
 
     pockets: [
-      { id: "double-welted", name: "Double-Welted", src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png" },
-      { id: "patched", name: "Patched", src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png" },
-      { id: "flap", name: "Flap", src: "/assets/suits/blue/hip_pockets_with_flap+fit_slim.png" },
+      { id: "double-welted", name: "Double-Welted", src: "/assets/suits/transparent/hip_pockets_double_welt+fit_slim.png" },
+      { id: "patched", name: "Patched", src: "/assets/suits/transparent/hip_pockets_patched+fit_slim.png" },
+      { id: "flap", name: "Flap", src: "/assets/suits/transparent/hip_pockets_with_flap+fit_slim.png" },
     ],
 
     interiors: [
@@ -315,8 +315,8 @@ export const suits: SuitModel[] = [
     ],
 
     cuffs: [
-      { id: "plain", name: "Without Cuffs", src: "/assets/suits/blue/length_long+cut_slim.png" },
-      { id: "cuffed", name: "With Cuffs", src: "/assets/suits/blue/cuffs+length_long+cut_slim.png" },
+      { id: "plain", name: "Without Cuffs", src: "/assets/suits/transparent/length_long+cut_slim.png" },
+      { id: "cuffed", name: "With Cuffs", src: "/assets/suits/transparent/cuffs+length_long+cut_slim.png" },
     ],
   },
 
@@ -334,18 +334,18 @@ export const suits: SuitModel[] = [
       {
         id: "torso",
         name: "Sredina sakoa",
-        src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_medium+style_lapel_notch.png",
+        src: "/assets/suits/transparent/neck_single_breasted+buttons_2+lapel_medium+style_lapel_notch.png",
       },
-      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/interior+sleeves.png" },
+      { id: "sleeves", name: "Rukavi", src: "/assets/suits/transparent/interior+sleeves.png" },
       {
         id: "bottom",
         name: "Donji deo sakoa",
-        src: "/assets/suits/blue/bottom_single_breasted+length_long+hemline_open.png",
+        src: "/assets/suits/transparent/bottom_single_breasted+length_long+hemline_open.png",
       },
       {
         id: "pants",
         name: "Pantalone",
-        src: "/assets/suits/blue/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim.png",
       },
     ],
 
@@ -357,17 +357,17 @@ export const suits: SuitModel[] = [
           {
             id: "narrow",
             name: "Narrow",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_narrow+style_lapel_notch.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_2+lapel_narrow+style_lapel_notch.png",
           },
           {
             id: "medium",
             name: "Medium",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_medium+style_lapel_notch.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_2+lapel_medium+style_lapel_notch.png",
           },
           {
             id: "wide",
             name: "Wide",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_wide+style_lapel_notch.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_2+lapel_wide+style_lapel_notch.png",
           },
         ],
       },
@@ -378,17 +378,17 @@ export const suits: SuitModel[] = [
           {
             id: "narrow",
             name: "Narrow",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_narrow+style_lapel_peak.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_2+lapel_narrow+style_lapel_peak.png",
           },
           {
             id: "medium",
             name: "Medium",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_medium+style_lapel_peak.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_2+lapel_medium+style_lapel_peak.png",
           },
           {
             id: "wide",
             name: "Wide",
-            src: "/assets/suits/blue/neck_single_breasted+buttons_2+lapel_wide+style_lapel_peak.png",
+            src: "/assets/suits/transparent/neck_single_breasted+buttons_2+lapel_wide+style_lapel_peak.png",
           },
         ],
       },
@@ -398,17 +398,17 @@ export const suits: SuitModel[] = [
       {
         id: "double-welted",
         name: "Double-Welted",
-        src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png",
+        src: "/assets/suits/transparent/hip_pockets_double_welt+fit_slim.png",
       },
       {
         id: "patched",
         name: "Patched",
-        src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png",
+        src: "/assets/suits/transparent/hip_pockets_patched+fit_slim.png",
       },
       {
         id: "flap",
         name: "Flap",
-        src: "/assets/suits/blue/hip_pockets_with_flap+fit_slim.png",
+        src: "/assets/suits/transparent/hip_pockets_with_flap+fit_slim.png",
       },
     ],
 
@@ -480,12 +480,12 @@ export const suits: SuitModel[] = [
       {
         id: "plain",
         name: "Without Cuffs",
-        src: "/assets/suits/blue/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim.png",
       },
       {
         id: "cuffed",
         name: "With Cuffs",
-        src: "/assets/suits/blue/cuffs+length_long+cut_slim.png",
+        src: "/assets/suits/transparent/cuffs+length_long+cut_slim.png",
       },
     ],
   },
@@ -503,16 +503,16 @@ export const suits: SuitModel[] = [
         // Use transparent torso sprites so peak/notch swaps are available
         src: "/assets/suits/transparent/neck_double_breasted+buttons_4+lapel_medium+style_lapel_notch.png",
       },
-      { id: "sleeves", name: "Rukavi", src: "/assets/suits/blue/interior+sleeves.png" },
+      { id: "sleeves", name: "Rukavi", src: "/assets/suits/transparent/interior+sleeves.png" },
       {
         id: "bottom",
         name: "Donji deo sakoa",
-        src: "/assets/suits/blue/bottom_double_breasted+length_long.png",
+        src: "/assets/suits/transparent/bottom_double_breasted+length_long.png",
       },
       {
         id: "pants",
         name: "Pantalone",
-        src: "/assets/suits/blue/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim.png",
       },
     ],
 
@@ -541,17 +541,17 @@ export const suits: SuitModel[] = [
       {
         id: "double-welted",
         name: "Double-Welted",
-        src: "/assets/suits/blue/hip_pockets_double_welt+fit_slim.png",
+        src: "/assets/suits/transparent/hip_pockets_double_welt+fit_slim.png",
       },
       {
         id: "patched",
         name: "Patched",
-        src: "/assets/suits/blue/hip_pockets_patched+fit_slim.png",
+        src: "/assets/suits/transparent/hip_pockets_patched+fit_slim.png",
       },
       {
         id: "flap",
         name: "Flap",
-        src: "/assets/suits/blue/hip_pockets_with_flap+fit_slim.png",
+        src: "/assets/suits/transparent/hip_pockets_with_flap+fit_slim.png",
       },
     ],
 
@@ -623,12 +623,12 @@ export const suits: SuitModel[] = [
       {
         id: "plain",
         name: "Without Cuffs",
-        src: "/assets/suits/blue/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim.png",
       },
       {
         id: "cuffed",
         name: "With Cuffs",
-        src: "/assets/suits/blue/cuffs+length_long+cut_slim.png",
+        src: "/assets/suits/transparent/cuffs+length_long+cut_slim.png",
       },
     ],
   },
@@ -668,3 +668,4 @@ export const fabrics = [
     texture: "/custom-suits/fabrics/4.png",
   },
 ];
+

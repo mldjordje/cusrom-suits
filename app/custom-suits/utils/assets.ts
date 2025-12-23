@@ -1,4 +1,4 @@
-import { getTransparentCdnBase } from "./backend";
+import { getPhotoCdnBase, getTransparentCdnBase } from "./backend";
 
 export type SpritePair = { webp: string; png: string };
 type LayerFolder = "shading" | "specular" | "edges";
@@ -83,6 +83,15 @@ export const cdnPair = (src: string) => buildPair(src) as SpritePair;
 export const shadingPair = (src: string): SpritePair | null => buildPair(src, "shading");
 export const specularPair = (src: string): SpritePair | null => buildPair(src, "specular");
 export const edgesPair = (src: string): SpritePair | null => buildPair(src, "edges");
+
+export const photoPair = (src: string, variant: "blue" | "black" = "blue") => {
+  const baseName = spriteFileBase(src);
+  const prefix = getPhotoCdnBase(variant);
+  return {
+    webp: appendVersion(`${prefix}${baseName}.webp`),
+    png: appendVersion(`${prefix}${baseName}.png`),
+  } as SpritePair;
+};
 
 export const toTransparentSilhouette = (src: string) => {
   const pair = cdnPair(src);

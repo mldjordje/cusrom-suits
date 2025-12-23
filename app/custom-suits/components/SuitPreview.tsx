@@ -6,7 +6,7 @@ import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
 import { toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone, NOISE_DATA } from "../utils/visual";
-import { cdnPair, ensureAssetAvailable, edgesPair, shadingPair, specularPair } from "../utils/assets";
+import { cdnPair, ensureAssetAvailable, edgesPair, photoPair, shadingPair, specularPair } from "../utils/assets";
 import { useFabrics } from "../hooks/useFabrics";
 import { useButtons } from "../hooks/useButtons";
 import { useLinings } from "../hooks/useLinings";
@@ -23,6 +23,7 @@ const cdnTransparent = getTransparentCdnBase();
 const SHIRT_PAIR = cdnPair("shirt_to_jacket_open.png");
 const JACKET_CANVAS = { w: 600, h: 733 } as const;
 const PANTS_CANVAS = { w: 600, h: 350 } as const;
+const MASK_BLEED_PX = 1.1;
 
 type RGB = { r: number; g: number; b: number };
 
@@ -323,99 +324,130 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const fabricTexture = selectedFabric?.texture || "";
   const textureStrength = useMemo(() => {
     const raw = (selectedFabric as any)?.textureStrength;
-    const normalized = typeof raw === "number" ? raw : 0.18;
-    return Math.max(0, Math.min(0.35, normalized * 0.75));
+    const normalized = typeof raw === "number" ? raw : 0.24;
+    return Math.max(0.18, Math.min(0.45, normalized * 1.1));
   }, [selectedFabric]);
-  const textureScaleBoost = (selectedFabric as any)?.textureScale ?? 0.85;
+  const textureScaleBoost = (selectedFabric as any)?.textureScale ?? 0.95;
   const useTexture = Boolean(fabricTexture && textureStrength > 0);
+  const usePhotoBase = Boolean(process.env.NEXT_PUBLIC_PHOTO_CDN_BASE);
 
   const tb = toneBlend(selectedFabric?.tone, level);
   const toneVis = getToneConfig(selectedFabric?.tone, level);
   const softenedTone = useMemo(
     () => ({
       ...toneVis,
-      fabric: { ...toneVis.fabric, opacity: toneVis.fabric.opacity * 0.65 },
-      weaveSharpness: toneVis.weaveSharpness * 0.85,
-      ambientOcclusion: toneVis.ambientOcclusion * 0.7,
-      noise: toneVis.noise * 0.4,
-      vignette: toneVis.vignette * 0.6,
-      highlightTop: toneVis.highlightTop * 0.6,
-      highlightBottom: toneVis.highlightBottom * 0.6,
-      detailOpacity: toneVis.detailOpacity * 0.5,
-      detailScale: toneVis.detailScale * 0.85,
-      edgesOpacity: toneVis.edgesOpacity * 0.7,
-      outlinesOpacity: toneVis.outlinesOpacity * 0.7,
+      fabric: { ...toneVis.fabric, opacity: toneVis.fabric.opacity * (usePhotoBase ? 0.8 : 0.65) },
+      weaveSharpness: toneVis.weaveSharpness * (usePhotoBase ? 1.05 : 0.85),
+      ambientOcclusion: toneVis.ambientOcclusion * (usePhotoBase ? 0.8 : 0.7),
+      noise: toneVis.noise * (usePhotoBase ? 0.6 : 0.4),
+      vignette: toneVis.vignette * (usePhotoBase ? 0.7 : 0.6),
+      highlightTop: toneVis.highlightTop * (usePhotoBase ? 0.7 : 0.6),
+      highlightBottom: toneVis.highlightBottom * (usePhotoBase ? 0.7 : 0.6),
+      detailOpacity: toneVis.detailOpacity * (usePhotoBase ? 0.7 : 0.5),
+      detailScale: toneVis.detailScale * (usePhotoBase ? 0.95 : 0.85),
+      edgesOpacity: toneVis.edgesOpacity * (usePhotoBase ? 0.8 : 0.7),
+      outlinesOpacity: toneVis.outlinesOpacity * (usePhotoBase ? 0.8 : 0.7),
     }),
-    [toneVis]
+    [toneVis, usePhotoBase]
   );
   const detailTone = useMemo(
     () => ({
       ...toneVis,
-      shading: { ...toneVis.shading, opacity: toneVis.shading.opacity * 0.9 },
-      specular: { ...toneVis.specular, opacity: toneVis.specular.opacity * 0.85 },
-      edgesOpacity: toneVis.edgesOpacity * 0.85,
-      outlinesOpacity: toneVis.outlinesOpacity * 0.85,
-      noise: toneVis.noise * 0.6,
-      vignette: toneVis.vignette * 0.7,
-      highlightTop: toneVis.highlightTop * 0.75,
-      highlightBottom: toneVis.highlightBottom * 0.75,
+      shading: { ...toneVis.shading, opacity: toneVis.shading.opacity * (usePhotoBase ? 0.6 : 0.9) },
+      specular: { ...toneVis.specular, opacity: toneVis.specular.opacity * (usePhotoBase ? 0.75 : 0.85) },
+      edgesOpacity: toneVis.edgesOpacity * (usePhotoBase ? 1.15 : 0.85),
+      outlinesOpacity: toneVis.outlinesOpacity * (usePhotoBase ? 1.15 : 0.85),
+      noise: toneVis.noise * (usePhotoBase ? 0.8 : 0.6),
+      vignette: toneVis.vignette * (usePhotoBase ? 0.85 : 0.7),
+      highlightTop: toneVis.highlightTop * (usePhotoBase ? 0.85 : 0.75),
+      highlightBottom: toneVis.highlightBottom * (usePhotoBase ? 0.85 : 0.75),
     }),
-    [toneVis]
+    [toneVis, usePhotoBase]
   );
   const structuralShadingOpacity = useMemo(
-    () => Math.min(0.55, detailTone.shading.opacity * 1.05),
-    [detailTone.shading.opacity]
+    () =>
+      usePhotoBase
+        ? Math.min(0.35, detailTone.shading.opacity * 0.9)
+        : Math.min(0.55, detailTone.shading.opacity * 1.05),
+    [detailTone.shading.opacity, usePhotoBase]
   );
   const structuralSpecularOpacity = useMemo(
-    () => Math.min(0.25, detailTone.specular.opacity * 1.2),
-    [detailTone.specular.opacity]
+    () =>
+      usePhotoBase
+        ? Math.min(0.28, detailTone.specular.opacity * 1.3)
+        : Math.min(0.25, detailTone.specular.opacity * 1.2),
+    [detailTone.specular.opacity, usePhotoBase]
   );
-  const structuralEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.6, [detailTone.edgesOpacity]);
+  const structuralEdgesOpacity = useMemo(
+    () => (usePhotoBase ? detailTone.edgesOpacity * 0.8 : detailTone.edgesOpacity * 0.6),
+    [detailTone.edgesOpacity, usePhotoBase]
+  );
   const styleShadingOpacity = useMemo(
-    () => Math.min(0.5, detailTone.shading.opacity * 0.9),
-    [detailTone.shading.opacity]
+    () =>
+      usePhotoBase
+        ? Math.min(0.55, detailTone.shading.opacity * 1.1)
+        : Math.min(0.9, detailTone.shading.opacity * 1.8),
+    [detailTone.shading.opacity, usePhotoBase]
   );
   const styleSpecularOpacity = useMemo(
-    () => Math.min(0.22, detailTone.specular.opacity * 0.95),
-    [detailTone.specular.opacity]
+    () =>
+      usePhotoBase
+        ? Math.min(0.28, detailTone.specular.opacity * 1.1)
+        : Math.min(0.35, detailTone.specular.opacity * 1.35),
+    [detailTone.specular.opacity, usePhotoBase]
   );
-  const styleEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.7, [detailTone.edgesOpacity]);
+  const styleEdgesOpacity = useMemo(
+    () =>
+      usePhotoBase
+        ? Math.min(0.7, detailTone.edgesOpacity * 1.4)
+        : Math.min(0.6, detailTone.edgesOpacity * 1.8),
+    [detailTone.edgesOpacity, usePhotoBase]
+  );
   const styleBaseOverlayOpacity = useMemo(
-    () => Math.min(0.18, detailTone.shading.opacity * 0.25),
-    [detailTone.shading.opacity]
+    () =>
+      usePhotoBase
+        ? Math.min(0.32, detailTone.shading.opacity * 0.5)
+        : Math.min(0.28, detailTone.shading.opacity * 0.4),
+    [detailTone.shading.opacity, usePhotoBase]
   );
 
   const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
   const fabricTextureFilter = useMemo(() => {
     if (fabricTone === "dark") {
-      return `${tb.filter} brightness(0.99) contrast(1.02) saturate(1.02)`;
+      return `${tb.filter} brightness(1.02) contrast(1.12) saturate(1.05)`;
     }
     if (fabricTone === "light") {
-      return `${tb.filter} brightness(1.02) contrast(1.03) saturate(1.04)`;
+      return `${tb.filter} brightness(1.05) contrast(1.08) saturate(1.08)`;
     }
-    return `${tb.filter} brightness(1.01) contrast(1.04) saturate(1.03)`;
+    return `${tb.filter} brightness(1.03) contrast(1.12) saturate(1.07)`;
   }, [fabricTone, tb.filter]);
-  const fabricTextureOpacity = useMemo(
-    () =>
-      useTexture
-        ? Math.min(0.7, softenedTone.fabric.opacity * (fabricTone === "dark" ? 0.8 : 0.72)) * textureStrength
-        : 0,
-    [fabricTone, softenedTone.fabric.opacity, textureStrength, useTexture]
-  );
+  const fabricTextureOpacity = useMemo(() => {
+    if (!useTexture) return 0;
+    const base = fabricTone === "dark" ? 0.42 : fabricTone === "light" ? 0.34 : 0.38;
+    const strength = Math.max(0.2, textureStrength);
+    return Math.min(0.7, base + strength * 0.35);
+  }, [fabricTone, textureStrength, useTexture]);
   const fabricTextureStyle = useMemo(
     () => ({
       filter: fabricTextureFilter,
-      mixBlendMode: fabricTone === "dark" ? "overlay" : softenedTone.fabric.blend,
+      mixBlendMode: fabricTone === "dark" ? "soft-light" : "overlay",
       opacity: fabricTextureOpacity,
     }),
-    [fabricTextureFilter, fabricTone, fabricTextureOpacity, softenedTone.fabric.blend]
+    [fabricTextureFilter, fabricTone, fabricTextureOpacity]
   );
   const fabricTextureScale = useMemo(
-    () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.8 : 0.7) * textureScaleBoost,
+    () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.85) * textureScaleBoost,
     [fabricTone, softenedTone.weaveSharpness, textureScaleBoost]
   );
   const needsDarkBoost = fabricTone === "dark";
+  const photoVariant = fabricTone === "dark" ? "black" : "blue";
+  const photoFilter = useMemo(() => {
+    if (fabricTone === "dark") return "grayscale(1) contrast(1.2) brightness(0.92)";
+    if (fabricTone === "light") return "grayscale(1) contrast(1.12) brightness(1.08)";
+    return "grayscale(1) contrast(1.18) brightness(1.02)";
+  }, [fabricTone]);
+  const photoOpacity = useMemo(() => (fabricTone === "dark" ? 0.95 : 0.9), [fabricTone]);
   const photoOverlayTone = useMemo(
     () => ({
       ...detailTone,
@@ -577,6 +609,20 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           const dy = Math.round((c.height - h) / 2);
           ctx.drawImage(img, dx, dy, w, h);
         }
+        if (MASK_BLEED_PX > 0) {
+          const temp = document.createElement("canvas");
+          temp.width = c.width;
+          temp.height = c.height;
+          const tctx = temp.getContext("2d");
+          if (tctx) {
+            tctx.drawImage(c, 0, 0);
+            ctx.clearRect(0, 0, c.width, c.height);
+            ctx.drawImage(temp, 0, 0);
+            ctx.filter = `blur(${MASK_BLEED_PX}px)`;
+            ctx.drawImage(temp, 0, 0);
+            ctx.filter = "none";
+          }
+        }
         if (!cancelled) setJacketUnionMask(c.toDataURL("image/png"));
       } catch {
         if (!cancelled) setJacketUnionMask(null);
@@ -635,6 +681,20 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           const dx = Math.round((c.width - w) / 2);
           const dy = Math.round((c.height - h) / 2);
           ctx.drawImage(img, dx, dy, w, h);
+        }
+        if (MASK_BLEED_PX > 0) {
+          const temp = document.createElement("canvas");
+          temp.width = c.width;
+          temp.height = c.height;
+          const tctx = temp.getContext("2d");
+          if (tctx) {
+            tctx.drawImage(c, 0, 0);
+            ctx.clearRect(0, 0, c.width, c.height);
+            ctx.drawImage(temp, 0, 0);
+            ctx.filter = `blur(${MASK_BLEED_PX}px)`;
+            ctx.drawImage(temp, 0, 0);
+            ctx.filter = "none";
+          }
         }
         if (!cancelled) setPantsUnionMask(c.toDataURL("image/png"));
       } catch {
@@ -769,10 +829,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     pantsFabricLayers.length ? pantsFabricLayers : pantsLayer ? [pantsLayer] : [];
   const pantsDetailLayers = pantsBaseLayers;
   const pantsStyleLayers = includeStyle ? pantsOverlayLayers : [];
+  const jacketPhotoLayers = usePhotoBase ? detailLayers : [];
+  const pantsPhotoLayers = usePhotoBase ? pantsBaseLayers : [];
   const jacketMask = jacketUnionMask;
   const pantsMask = pantsUnionMask ?? pantsMaskPair?.png ?? null;
-  const jacketShadowClass = "drop-shadow-[0_32px_50px_rgba(15,23,42,0.18)]";
-  const pantsShadowClass = "drop-shadow-[0_18px_30px_rgba(15,23,42,0.16)]";
+  const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
+  const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
   return (
     <div className="relative w-full select-none">
       <div className="relative mx-auto w-full max-w-[580px] sm:max-w-[540px]">
@@ -832,7 +894,17 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             className="absolute inset-0 w-full h-full object-contain pointer-events-none"
           />
         )}
-        {showLayer("fabric") && (
+        {showLayer("fabric") && usePhotoBase && jacketPhotoLayers.length > 0 && (
+          <BaseLayer
+            layers={jacketPhotoLayers}
+            resolve={(layer) => photoPair(layer.src, photoVariant)}
+            blendMode="normal"
+            opacity={photoOpacity}
+            filter={photoFilter}
+            mask={jacketMask}
+          />
+        )}
+        {showLayer("fabric") && (!usePhotoBase || jacketPhotoLayers.length === 0) && (
           <BaseLayer
             layers={jacketBaseLayers}
             resolve={(layer) => cdnPair(layer.src)}
@@ -850,7 +922,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             baseColor={fabricFillColor || toneBaseColor}
             fabricAvgColor={fabricFillColor}
             baseBlendMode="color"
-            baseOpacity={0.95}
+            baseOpacity={usePhotoBase ? 0.9 : 0.95}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketMask}
@@ -983,7 +1055,17 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               opacity={0.8}
             />
           )}
-          {showLayer("fabric") && (
+          {showLayer("fabric") && usePhotoBase && pantsPhotoLayers.length > 0 && (
+            <BaseLayer
+              layers={pantsPhotoLayers}
+              resolve={(layer) => photoPair(layer.src, photoVariant)}
+              blendMode="normal"
+              opacity={photoOpacity}
+              filter={photoFilter}
+              mask={pantsMask}
+            />
+          )}
+          {showLayer("fabric") && (!usePhotoBase || pantsPhotoLayers.length === 0) && (
             <BaseLayer
               layers={[pantsLayer]}
               resolve={(layer) => cdnPair(layer.src)}
@@ -1001,7 +1083,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               baseColor={fabricFillColor || toneBaseColor}
               fabricAvgColor={fabricFillColor}
               baseBlendMode="color"
-              baseOpacity={0.95}
+              baseOpacity={usePhotoBase ? 0.9 : 0.95}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
               mask={pantsMask}
