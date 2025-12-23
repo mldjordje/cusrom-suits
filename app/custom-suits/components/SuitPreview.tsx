@@ -323,10 +323,10 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const fabricTexture = selectedFabric?.texture || "";
   const textureStrength = useMemo(() => {
     const raw = (selectedFabric as any)?.textureStrength;
-    if (typeof raw !== "number") return 1;
-    return Math.max(0, Math.min(1, raw));
+    if (typeof raw !== "number") return 0.25;
+    return Math.max(0, Math.min(0.6, raw));
   }, [selectedFabric]);
-  const textureScaleBoost = (selectedFabric as any)?.textureScale ?? 1;
+  const textureScaleBoost = (selectedFabric as any)?.textureScale ?? 0.9;
   const useTexture = Boolean(fabricTexture && textureStrength > 0);
 
   const tb = toneBlend(selectedFabric?.tone, level);
@@ -367,12 +367,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
   const fabricTextureFilter = useMemo(() => {
     if (fabricTone === "dark") {
-      return `${tb.filter} brightness(1.0) contrast(1.08) saturate(1.05)`;
+      return `${tb.filter} brightness(0.99) contrast(1.03) saturate(1.02)`;
     }
     if (fabricTone === "light") {
-      return `${tb.filter} brightness(1.07) contrast(1.08) saturate(1.05)`;
+      return `${tb.filter} brightness(1.02) contrast(1.04) saturate(1.04)`;
     }
-    return `${tb.filter} brightness(1.08) contrast(1.2) saturate(1.24)`;
+    return `${tb.filter} brightness(1.02) contrast(1.06) saturate(1.08)`;
   }, [fabricTone, tb.filter]);
   const fabricTextureOpacity = useMemo(
     () =>
@@ -390,14 +390,14 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     [fabricTextureFilter, fabricTone, fabricTextureOpacity, softenedTone.fabric.blend]
   );
   const fabricTextureScale = useMemo(
-    () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.88) * textureScaleBoost,
+    () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.85 : 0.75) * textureScaleBoost,
     [fabricTone, softenedTone.weaveSharpness, textureScaleBoost]
   );
   const jacketTextureStyle = useMemo(
     (): React.CSSProperties => ({
       ...fabricTextureStyle,
       mixBlendMode: "soft-light",
-      opacity: Math.min(1, Number(fabricTextureStyle.opacity ?? 0) * 0.85),
+      opacity: Math.min(1, Number(fabricTextureStyle.opacity ?? 0) * 0.7),
     }),
     [fabricTextureStyle]
   );
@@ -766,7 +766,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             layers={styleOverlayLayers}
             resolve={(layer) => cdnPair(layer.src)}
             blendMode="multiply"
-            opacity={0.45}
+            opacity={0.25}
           />
         )}
         {showLayer("fabric") && jacketDetailLayers.length > 0 && (
@@ -781,7 +781,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               layers={jacketDetailLayers}
               resolve={(layer) => specularPair(layer.src)}
               blendMode={detailTone.specular.blend}
-              opacity={detailTone.specular.opacity}
+              opacity={detailTone.specular.opacity * 0.65}
             />
             <BaseLayer
               layers={jacketDetailLayers}
@@ -878,7 +878,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               layers={pantsOverlayLayers}
               resolve={(layer) => cdnPair(layer.src)}
               blendMode="multiply"
-              opacity={0.55}
+              opacity={0.25}
             />
           )}
           {showLayer("fabric") && pantsDetailLayers.length > 0 && (
@@ -893,7 +893,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
                 layers={pantsDetailLayers}
                 resolve={(layer) => specularPair(layer.src)}
                 blendMode={detailTone.specular.blend}
-                opacity={detailTone.specular.opacity * 0.7}
+                opacity={detailTone.specular.opacity * 0.5}
               />
               <BaseLayer
                 layers={pantsDetailLayers}
