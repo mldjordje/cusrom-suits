@@ -39,14 +39,6 @@ export default function CustomSuitsPage() {
     defaultColorSet.current = true;
   }, [config.colorId, dispatch, firstFabricId]);
 
-  if (!imagesLoaded) {
-    return (
-      <div className="flex h-screen items-center justify-center text-gray-500">
-        Loading suit images...
-      </div>
-    );
-  }
-
   const configuratorVariants: Variants = {
     hidden: { opacity: 0, y: 30 },
     visible: {
@@ -85,6 +77,14 @@ export default function CustomSuitsPage() {
     return url.toString();
   }, [config]);
   const [savingCart, setSavingCart] = React.useState(false);
+
+  if (!imagesLoaded) {
+    return (
+      <div className="flex h-screen items-center justify-center text-gray-500">
+        Loading suit images...
+      </div>
+    );
+  }
 
   const handleAddToCart = async () => {
     if (savingCart) return;
