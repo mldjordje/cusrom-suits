@@ -50,6 +50,8 @@ export const BaseLayer: React.FC<Props> = ({
     );
   }
 
+  const maskImage = mask ? `url(${mask})` : undefined;
+
   return (
     <>
       {layers.map((layer) => {
@@ -67,6 +69,14 @@ export const BaseLayer: React.FC<Props> = ({
               mixBlendMode: blendMode,
               opacity,
               filter,
+              WebkitMaskImage: maskImage,
+              WebkitMaskRepeat: maskImage ? "no-repeat" : undefined,
+              WebkitMaskSize: maskImage ? "contain" : undefined,
+              WebkitMaskPosition: maskImage ? "center" : undefined,
+              maskImage,
+              maskRepeat: maskImage ? "no-repeat" : undefined,
+              maskSize: maskImage ? "contain" : undefined,
+              maskPosition: maskImage ? "center" : undefined,
               pointerEvents: "none",
             }}
           />

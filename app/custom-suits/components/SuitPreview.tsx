@@ -363,23 +363,27 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     [toneVis]
   );
   const structuralShadingOpacity = useMemo(
-    () => Math.min(0.45, detailTone.shading.opacity * 0.9),
+    () => Math.min(0.55, detailTone.shading.opacity * 1.05),
     [detailTone.shading.opacity]
   );
   const structuralSpecularOpacity = useMemo(
-    () => Math.min(0.22, detailTone.specular.opacity * 1.1),
+    () => Math.min(0.25, detailTone.specular.opacity * 1.2),
     [detailTone.specular.opacity]
   );
-  const structuralEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.45, [detailTone.edgesOpacity]);
+  const structuralEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.6, [detailTone.edgesOpacity]);
   const styleShadingOpacity = useMemo(
-    () => Math.min(0.32, detailTone.shading.opacity * 0.6),
+    () => Math.min(0.5, detailTone.shading.opacity * 0.9),
     [detailTone.shading.opacity]
   );
   const styleSpecularOpacity = useMemo(
-    () => Math.min(0.2, detailTone.specular.opacity * 0.8),
+    () => Math.min(0.22, detailTone.specular.opacity * 0.95),
     [detailTone.specular.opacity]
   );
-  const styleEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.55, [detailTone.edgesOpacity]);
+  const styleEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.7, [detailTone.edgesOpacity]);
+  const styleBaseOverlayOpacity = useMemo(
+    () => Math.min(0.18, detailTone.shading.opacity * 0.25),
+    [detailTone.shading.opacity]
+  );
 
   const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
@@ -459,6 +463,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const darkBoostColor = isBlackFabric ? "#020202" : "#080808";
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
+  const [pantsUnionMask, setPantsUnionMask] = useState<string | null>(null);
+  const [pantsMaskBuilding, setPantsMaskBuilding] = useState(false);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
   const panZoom = { scale, offset };
   const showLayer = (key: keyof LayerVisibility) => (layerVisibility?.[key] ?? true) !== false;
@@ -584,6 +590,66 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     };
   }, [fabricMaskLayers]);
 
+  // Build a union mask over the pants silhouette to avoid halo/background bleed
+  useEffect(() => {
+    if (!pantsFabricLayers.length) {
+      setPantsUnionMask(null);
+      return;
+    }
+
+    let cancelled = false;
+    setPantsMaskBuilding(true);
+    (async () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = PANTS_CANVAS.w;
+        c.height = PANTS_CANVAS.h;
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.globalCompositeOperation = "source-over";
+        for (const layer of pantsFabricLayers) {
+          const pair = cdnPair(layer.src);
+          const tryLoad = (url: string) =>
+            new Promise<HTMLImageElement>((resolve, reject) => {
+              const img = new Image();
+              img.crossOrigin = "anonymous";
+              img.onload = () => resolve(img);
+              img.onerror = reject;
+              img.src = url;
+            });
+          let img: HTMLImageElement | null = null;
+          try {
+            img = await tryLoad(pair.webp);
+          } catch {
+            try {
+              img = await tryLoad(pair.png);
+            } catch {
+              img = null;
+            }
+          }
+          if (!img) continue;
+          const scale = Math.min(c.width / img.width, c.height / img.height);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const dx = Math.round((c.width - w) / 2);
+          const dy = Math.round((c.height - h) / 2);
+          ctx.drawImage(img, dx, dy, w, h);
+        }
+        if (!cancelled) setPantsUnionMask(c.toDataURL("image/png"));
+      } catch {
+        if (!cancelled) setPantsUnionMask(null);
+      } finally {
+        if (!cancelled) setPantsMaskBuilding(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+      setPantsMaskBuilding(false);
+    };
+  }, [pantsFabricLayers]);
+
   useEffect(() => {
     if (!detailLayers.length && !pantsLayer) {
       setAssetWarnings([]);
@@ -703,6 +769,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     pantsFabricLayers.length ? pantsFabricLayers : pantsLayer ? [pantsLayer] : [];
   const pantsDetailLayers = pantsBaseLayers;
   const pantsStyleLayers = includeStyle ? pantsOverlayLayers : [];
+  const jacketMask = jacketUnionMask;
+  const pantsMask = pantsUnionMask ?? pantsMaskPair?.png ?? null;
   const jacketShadowClass = "drop-shadow-[0_32px_50px_rgba(15,23,42,0.18)]";
   const pantsShadowClass = "drop-shadow-[0_18px_30px_rgba(15,23,42,0.16)]";
   return (
@@ -718,7 +786,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseUp}
         >
-        {maskBuilding && (
+        {(maskBuilding || pantsMaskBuilding) && (
           <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[32px] bg-white/60 backdrop-blur-sm">
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900" />
           </div>
@@ -770,6 +838,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             resolve={(layer) => cdnPair(layer.src)}
             blendMode="normal"
             opacity={0.95}
+            mask={jacketMask}
           />
         )}
         {showLayer("fabric") && (
@@ -784,26 +853,35 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             baseOpacity={0.95}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
-            mask={jacketUnionMask}
+            mask={jacketMask}
             textureScale={fabricTextureScale}
           />
         )}
-        {needsDarkBoost && jacketUnionMask && (
+        {needsDarkBoost && jacketMask && (
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
               mixBlendMode: "multiply",
               opacity: darkBoostOpacity,
               backgroundColor: darkBoostColor,
-              WebkitMaskImage: `url(${jacketUnionMask})`,
+              WebkitMaskImage: `url(${jacketMask})`,
               WebkitMaskRepeat: "no-repeat",
               WebkitMaskSize: "contain",
               WebkitMaskPosition: "center",
-              maskImage: `url(${jacketUnionMask})`,
+              maskImage: `url(${jacketMask})`,
               maskRepeat: "no-repeat",
               maskSize: "contain",
               maskPosition: "center",
             }}
+          />
+        )}
+        {includeStyle && styleOverlayLayers.length > 0 && (
+          <BaseLayer
+            layers={styleOverlayLayers}
+            resolve={(layer) => cdnPair(layer.src)}
+            blendMode="soft-light"
+            opacity={styleBaseOverlayOpacity}
+            mask={jacketMask}
           />
         )}
         {showLayer("fabric") && jacketDetailStructureLayers.length > 0 && (
@@ -813,18 +891,21 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               resolve={(layer) => shadingPair(layer.src)}
               blendMode={detailTone.shading.blend}
               opacity={structuralShadingOpacity}
+              mask={jacketMask}
             />
             <BaseLayer
               layers={jacketDetailStructureLayers}
               resolve={(layer) => specularPair(layer.src)}
               blendMode={detailTone.specular.blend}
               opacity={structuralSpecularOpacity * 0.7}
+              mask={jacketMask}
             />
             <BaseLayer
               layers={jacketDetailStructureLayers}
               resolve={(layer) => edgesPair(layer.src)}
               blendMode="multiply"
               opacity={structuralEdgesOpacity}
+              mask={jacketMask}
             />
           </>
         )}
@@ -835,24 +916,27 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               resolve={(layer) => shadingPair(layer.src)}
               blendMode={detailTone.shading.blend}
               opacity={styleShadingOpacity}
+              mask={jacketMask}
             />
             <BaseLayer
               layers={jacketDetailStyleLayers}
               resolve={(layer) => specularPair(layer.src)}
               blendMode={detailTone.specular.blend}
               opacity={styleSpecularOpacity * 0.7}
+              mask={jacketMask}
             />
             <BaseLayer
               layers={jacketDetailStyleLayers}
               resolve={(layer) => edgesPair(layer.src)}
               blendMode="multiply"
               opacity={styleEdgesOpacity}
+              mask={jacketMask}
             />
           </>
         )}
-        {jacketUnionMask && showLayer("ao") && (
+        {jacketMask && showLayer("ao") && (
           <LightingPasses
-            mask={jacketUnionMask}
+            mask={jacketMask}
             canvas={JACKET_CANVAS}
             intensity={jacketLighting.intensity}
             shadow={jacketLighting.shadow}
@@ -860,8 +944,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             opacity={jacketLighting.opacity}
           />
         )}
-        {jacketUnionMask && showLayer("vignette") && (
-          <GlobalOverlay noiseData={NOISE_DATA} settings={photoOverlayTone} mask={jacketUnionMask} />
+        {jacketMask && showLayer("vignette") && (
+          <GlobalOverlay noiseData={NOISE_DATA} settings={photoOverlayTone} mask={jacketMask} />
         )}
         {activeButton?.image_url &&
           jacketButtons.map((pos, idx) => (
@@ -905,6 +989,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               resolve={(layer) => cdnPair(layer.src)}
               blendMode="normal"
               opacity={0.95}
+              mask={pantsMask}
             />
           )}
           {showLayer("fabric") && (
@@ -919,22 +1004,31 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               baseOpacity={0.95}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
-              mask={pantsMaskPair?.png}
+              mask={pantsMask}
               textureScale={fabricTextureScale}
             />
           )}
-          {needsDarkBoost && pantsMaskPair && (
+          {includeStyle && pantsOverlayLayers.length > 0 && (
+            <BaseLayer
+              layers={pantsOverlayLayers}
+              resolve={(layer) => cdnPair(layer.src)}
+              blendMode="soft-light"
+              opacity={styleBaseOverlayOpacity * 0.8}
+              mask={pantsMask}
+            />
+          )}
+          {needsDarkBoost && pantsMask && (
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 mixBlendMode: "multiply",
                 opacity: darkBoostOpacity,
                 backgroundColor: darkBoostColor,
-                WebkitMaskImage: `url(${pantsMaskPair.png})`,
+                WebkitMaskImage: `url(${pantsMask})`,
                 WebkitMaskRepeat: "no-repeat",
                 WebkitMaskSize: "contain",
                 WebkitMaskPosition: "center",
-                maskImage: `url(${pantsMaskPair.png})`,
+                maskImage: `url(${pantsMask})`,
                 maskRepeat: "no-repeat",
                 maskSize: "contain",
                 maskPosition: "center",
@@ -948,18 +1042,21 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
                 resolve={(layer) => shadingPair(layer.src)}
                 blendMode={detailTone.shading.blend}
                 opacity={structuralShadingOpacity * 0.9}
+                mask={pantsMask}
               />
               <BaseLayer
                 layers={pantsDetailLayers}
                 resolve={(layer) => specularPair(layer.src)}
                 blendMode={detailTone.specular.blend}
                 opacity={structuralSpecularOpacity * 0.6}
+                mask={pantsMask}
               />
               <BaseLayer
                 layers={pantsDetailLayers}
                 resolve={(layer) => edgesPair(layer.src)}
                 blendMode="multiply"
                 opacity={structuralEdgesOpacity}
+                mask={pantsMask}
               />
             </>
           )}
@@ -970,24 +1067,27 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
                 resolve={(layer) => shadingPair(layer.src)}
                 blendMode={detailTone.shading.blend}
                 opacity={styleShadingOpacity * 0.85}
+                mask={pantsMask}
               />
               <BaseLayer
                 layers={pantsStyleLayers}
                 resolve={(layer) => specularPair(layer.src)}
                 blendMode={detailTone.specular.blend}
                 opacity={styleSpecularOpacity * 0.6}
+                mask={pantsMask}
               />
               <BaseLayer
                 layers={pantsStyleLayers}
                 resolve={(layer) => edgesPair(layer.src)}
                 blendMode="multiply"
                 opacity={styleEdgesOpacity * 0.9}
+                mask={pantsMask}
               />
             </>
           )}
-          {pantsMaskPair && showLayer("ao") && (
+          {pantsMask && showLayer("ao") && (
             <LightingPasses
-              mask={pantsMaskPair.png}
+              mask={pantsMask}
               canvas={PANTS_CANVAS}
               intensity={pantsLighting.intensity}
               shadow={pantsLighting.shadow}
@@ -995,8 +1095,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               opacity={pantsLighting.opacity}
             />
           )}
-          {pantsMaskPair && showLayer("vignette") && (
-            <GlobalOverlay noiseData={NOISE_DATA} settings={photoOverlayTone} mask={pantsMaskPair.png} />
+          {pantsMask && showLayer("vignette") && (
+            <GlobalOverlay noiseData={NOISE_DATA} settings={photoOverlayTone} mask={pantsMask} />
           )}
           {activeButton?.image_url &&
             pantsButtons.map((pos, idx) => (
