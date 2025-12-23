@@ -9,6 +9,17 @@ const transparentBase = () => {
   return cachedBase;
 };
 
+const transparentVersion =
+  (process.env.NEXT_PUBLIC_TRANSPARENT_VERSION &&
+    process.env.NEXT_PUBLIC_TRANSPARENT_VERSION.trim()) ||
+  "ultra-1";
+
+const appendVersion = (url: string) => {
+  if (!transparentVersion) return url;
+  const joiner = url.includes("?") ? "&" : "?";
+  return `${url}${joiner}v=${encodeURIComponent(transparentVersion)}`;
+};
+
 export const spriteFileBase = (src: string) => {
   const i = src.lastIndexOf("/");
   const clean = i >= 0 ? src.slice(i + 1) : src;
@@ -63,8 +74,8 @@ const buildPair = (src: string, folder?: LayerFolder) => {
   if (!baseName) return null;
   const prefix = folder ? `${transparentBase()}${folder}/` : transparentBase();
   return {
-    webp: `${prefix}${baseName}.webp`,
-    png: `${prefix}${baseName}.png`,
+    webp: appendVersion(`${prefix}${baseName}.webp`),
+    png: appendVersion(`${prefix}${baseName}.png`),
   } as SpritePair;
 };
 
