@@ -2,9 +2,9 @@
   "generatedAt": "2025-11-09T16:46:21.246Z",
   "counts": {
     "base": 90,
-    "shading": 62,
-    "specular": 62,
-    "edges": 62
+    "shading": 64,
+    "specular": 64,
+    "edges": 64
   },
   "files": {
     "bottom_double_breasted+length_long.png": true,
@@ -282,6 +282,12 @@
     "edges/neck_single_breasted+buttons_2+lapel_wide+style_lapel_notch.png": true,
     "edges/neck_single_breasted+buttons_2+lapel_wide+style_lapel_notch.webp": true,
     "edges/neck_single_breasted+buttons_2+lapel_wide+style_lapel_peak.png": true,
-    "edges/neck_single_breasted+buttons_2+lapel_wide+style_lapel_peak.webp": true
+    "edges/neck_single_breasted+buttons_2+lapel_wide+style_lapel_peak.webp": true,
+    "edges/front_pocket+diagonal.png": true,
+    "edges/front_pocket+diagonal.webp": true,
+    "shading/front_pocket+diagonal.png": true,
+    "shading/front_pocket+diagonal.webp": true,
+    "specular/front_pocket+diagonal.png": true,
+    "specular/front_pocket+diagonal.webp": true
   }
 }

@@ -372,22 +372,14 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   );
   const structuralEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.55, [detailTone.edgesOpacity]);
   const styleShadingOpacity = useMemo(
-    () => Math.min(0.8, detailTone.shading.opacity * 1.55),
+    () => Math.min(0.55, detailTone.shading.opacity * 1.1),
     [detailTone.shading.opacity]
   );
   const styleSpecularOpacity = useMemo(
-    () => Math.min(0.34, detailTone.specular.opacity * 1.45),
+    () => Math.min(0.22, detailTone.specular.opacity * 1.05),
     [detailTone.specular.opacity]
   );
-  const styleEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.5, [detailTone.edgesOpacity]);
-  const styleOverlayOpacity = useMemo(
-    () => Math.min(0.65, Math.max(0.4, detailTone.shading.opacity * 0.9)),
-    [detailTone.shading.opacity]
-  );
-  const pantsOverlayOpacity = useMemo(
-    () => Math.min(0.7, Math.max(0.42, detailTone.shading.opacity * 0.95)),
-    [detailTone.shading.opacity]
-  );
+  const styleEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.35, [detailTone.edgesOpacity]);
 
   const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
@@ -463,7 +455,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     [fabricBaseRgb]
   );
   const isBlackFabric = fabricTone === "dark" && fabricLuminance < 0.12;
-  const darkBoostOpacity = isBlackFabric ? 0.45 : 0.3;
+  const darkBoostOpacity = isBlackFabric ? 0.4 : 0.26;
   const darkBoostColor = isBlackFabric ? "#020202" : "#080808";
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
@@ -710,6 +702,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const pantsBaseLayers =
     pantsFabricLayers.length ? pantsFabricLayers : pantsLayer ? [pantsLayer] : [];
   const pantsDetailLayers = pantsBaseLayers;
+  const pantsStyleLayers = includeStyle ? pantsOverlayLayers : [];
   const jacketShadowClass = "drop-shadow-[0_32px_50px_rgba(15,23,42,0.18)]";
   const pantsShadowClass = "drop-shadow-[0_18px_30px_rgba(15,23,42,0.16)]";
   return (
@@ -772,15 +765,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           />
         )}
         {showLayer("fabric") && (
-          <BaseLayer
-            layers={jacketBaseLayers}
-            resolve={(layer) => cdnPair(layer.src)}
-            blendMode="normal"
-            opacity={0.82}
-            filter="contrast(1.05) brightness(1.02)"
-          />
-        )}
-        {showLayer("fabric") && (
           <FabricUnion
             layers={fabricMaskLayers}
             resolve={(layer) => cdnPair(layer.src)}
@@ -788,8 +772,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             textureStyle={fabricTextureStyle}
             baseColor={fabricFillColor || toneBaseColor}
             fabricAvgColor={fabricFillColor}
-            baseBlendMode="color"
-            baseOpacity={0.98}
+            baseBlendMode="normal"
+            baseOpacity={1}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
@@ -812,24 +796,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               maskSize: "contain",
               maskPosition: "center",
             }}
-          />
-        )}
-        {showLayer("fabric") && (
-          <BaseLayer
-            layers={jacketBaseLayers}
-            resolve={(layer) => cdnPair(layer.src)}
-            blendMode="soft-light"
-            opacity={0.28}
-            filter="saturate(0) contrast(1.1)"
-          />
-        )}
-        {includeStyle && styleOverlayLayers.length > 0 && (
-          <BaseLayer
-            layers={styleOverlayLayers}
-            resolve={(layer) => cdnPair(layer.src)}
-            blendMode="multiply"
-            opacity={styleOverlayOpacity}
-            filter="brightness(0.92) contrast(1.12)"
           />
         )}
         {showLayer("fabric") && jacketDetailStructureLayers.length > 0 && (
@@ -917,15 +883,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           className={`relative mx-auto -mt-20 w-full max-w-[560px] origin-top transform scale-[0.92] sm:-mt-16 sm:scale-[0.92] lg:-mt-12 lg:scale-[0.92] ${pantsShadowClass}`}
           style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 520 }}
         >
-          {showLayer("fabric") && (
-            <BaseLayer
-              layers={[pantsLayer]}
-              resolve={(layer) => cdnPair(layer.src)}
-              blendMode="normal"
-              opacity={0.82}
-              filter="contrast(1.04) brightness(1.02)"
-            />
-          )}
           {cuffsLayer && cuffsLayer.src !== pantsLayer.src && (
             <BaseLayer
               layers={[cuffsLayer]}
@@ -942,21 +899,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               textureStyle={fabricTextureStyle}
               baseColor={fabricFillColor || toneBaseColor}
               fabricAvgColor={fabricFillColor}
-              baseBlendMode="color"
-              baseOpacity={0.98}
+              baseBlendMode="normal"
+              baseOpacity={1}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
               mask={pantsMaskPair?.png}
               textureScale={fabricTextureScale}
-            />
-          )}
-          {showLayer("fabric") && (
-            <BaseLayer
-              layers={[pantsLayer]}
-              resolve={(layer) => cdnPair(layer.src)}
-              blendMode="soft-light"
-              opacity={0.26}
-              filter="saturate(0) contrast(1.08)"
             />
           )}
           {needsDarkBoost && pantsMaskPair && (
@@ -975,15 +923,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
                 maskSize: "contain",
                 maskPosition: "center",
               }}
-            />
-          )}
-          {includeStyle && pantsOverlayLayers.length > 0 && (
-            <BaseLayer
-              layers={pantsOverlayLayers}
-              resolve={(layer) => cdnPair(layer.src)}
-              blendMode="multiply"
-              opacity={pantsOverlayOpacity}
-              filter="brightness(0.9) contrast(1.18)"
             />
           )}
           {showLayer("fabric") && pantsDetailLayers.length > 0 && (
@@ -1005,6 +944,28 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
                 resolve={(layer) => edgesPair(layer.src)}
                 blendMode="multiply"
                 opacity={structuralEdgesOpacity}
+              />
+            </>
+          )}
+          {showLayer("fabric") && pantsStyleLayers.length > 0 && (
+            <>
+              <BaseLayer
+                layers={pantsStyleLayers}
+                resolve={(layer) => shadingPair(layer.src)}
+                blendMode={detailTone.shading.blend}
+                opacity={styleShadingOpacity * 0.85}
+              />
+              <BaseLayer
+                layers={pantsStyleLayers}
+                resolve={(layer) => specularPair(layer.src)}
+                blendMode={detailTone.specular.blend}
+                opacity={styleSpecularOpacity * 0.6}
+              />
+              <BaseLayer
+                layers={pantsStyleLayers}
+                resolve={(layer) => edgesPair(layer.src)}
+                blendMode="multiply"
+                opacity={styleEdgesOpacity * 0.9}
               />
             </>
           )}
