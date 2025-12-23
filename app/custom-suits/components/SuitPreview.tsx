@@ -457,8 +457,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     [fabricAvgColor, toneBaseColor, selectedFabric?.tone, explicitFabricColor]
   );
   const fabricFillColor = useMemo(
-    () => enhanceFabricColor(fabricFillColorBase, fabricTone),
-    [fabricFillColorBase, fabricTone]
+    () => (usePhotoBase ? fabricFillColorBase : enhanceFabricColor(fabricFillColorBase, fabricTone)),
+    [fabricFillColorBase, fabricTone, usePhotoBase]
   );
   const fabricMetrics = useMemo(() => {
     const rgb = hexToRgb(fabricFillColor) ?? hexToRgb(fabricFillColorBase);
@@ -473,8 +473,11 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     };
   }, [fabricFillColor, fabricFillColorBase]);
   const tunedFabricFill = useMemo(
-    () => tuneFabricColor(fabricFillColor, fabricMetrics.luminance, fabricMetrics.saturation),
-    [fabricFillColor, fabricMetrics.luminance, fabricMetrics.saturation]
+    () =>
+      usePhotoBase
+        ? fabricFillColor
+        : tuneFabricColor(fabricFillColor, fabricMetrics.luminance, fabricMetrics.saturation),
+    [fabricFillColor, fabricMetrics.luminance, fabricMetrics.saturation, usePhotoBase]
   );
   const fabricBaseRgb = useMemo(() => hexToRgb(tunedFabricFill), [tunedFabricFill]);
   const fabricLuminance = useMemo(
@@ -484,26 +487,26 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const autoTuning = useMemo(() => {
     const lum = fabricMetrics.luminance;
     const sat = fabricMetrics.saturation;
-    const isDark = lum < 0.12;
-    const isLight = lum > 0.6;
-    const satBoost = sat > 0.55 ? -0.08 : sat < 0.18 ? 0.05 : 0.02;
-    const brightness = isDark ? 0.08 : isLight ? -0.03 : 0.03;
-    const contrast = isDark ? 1.32 : isLight ? 1.08 : 1.2;
-    const textureMul = isDark ? 0.85 : isLight ? 0.75 : 0.9;
-    const satTextureMul = sat > 0.5 ? 0.85 : sat < 0.2 ? 1.05 : 0.95;
+    const isDark = lum < 0.14;
+    const isLight = lum > 0.58;
+    const satBoost = sat > 0.55 ? -0.06 : sat < 0.18 ? 0.03 : 0;
+    const brightness = isDark ? 0.12 : isLight ? 0.02 : 0.06;
+    const contrast = isDark ? 1.12 : isLight ? 1.06 : 1.1;
+    const textureMul = isDark ? 0.78 : isLight ? 0.7 : 0.85;
+    const satTextureMul = sat > 0.5 ? 0.8 : sat < 0.2 ? 1.0 : 0.9;
     return {
       photo: {
         brightness,
         contrast,
         saturate: 1 + satBoost,
-        opacity: isDark ? 0.96 : isLight ? 0.88 : 0.92,
+        opacity: isDark ? 0.94 : isLight ? 0.9 : 0.92,
       },
       texture: {
-        opacity: clamp(textureMul * satTextureMul, 0.6, 1.1),
+        opacity: clamp(textureMul * satTextureMul, 0.55, 1.0),
       },
-      shading: isDark ? 0.85 : isLight ? 1.08 : 1.0,
-      specular: isDark ? 1.35 : isLight ? 0.9 : 1.05,
-      edges: isDark ? 0.9 : isLight ? 1.05 : 1.0,
+      shading: isDark ? 0.95 : isLight ? 1.02 : 1.0,
+      specular: isDark ? 1.2 : isLight ? 0.95 : 1.05,
+      edges: isDark ? 0.85 : isLight ? 0.98 : 0.95,
     };
   }, [fabricMetrics.luminance, fabricMetrics.saturation]);
   const tunedTextureOpacity = useMemo(
@@ -522,7 +525,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     }),
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
   );
-  const photoVariant = fabricTone === "dark" ? "black" : "blue";
+  const photoVariant = fabricMetrics.luminance < 0.12 ? "black" : "blue";
   const photoFilter = useMemo(() => {
     const brightness = (1 + autoTuning.photo.brightness).toFixed(2);
     const contrast = autoTuning.photo.contrast.toFixed(2);
