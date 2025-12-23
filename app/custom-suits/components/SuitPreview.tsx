@@ -363,23 +363,23 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     [toneVis]
   );
   const structuralShadingOpacity = useMemo(
-    () => Math.min(0.72, detailTone.shading.opacity * 1.25),
+    () => Math.min(0.45, detailTone.shading.opacity * 0.9),
     [detailTone.shading.opacity]
   );
   const structuralSpecularOpacity = useMemo(
-    () => Math.min(0.3, detailTone.specular.opacity * 1.35),
+    () => Math.min(0.22, detailTone.specular.opacity * 1.1),
     [detailTone.specular.opacity]
   );
-  const structuralEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.55, [detailTone.edgesOpacity]);
+  const structuralEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.45, [detailTone.edgesOpacity]);
   const styleShadingOpacity = useMemo(
-    () => Math.min(0.55, detailTone.shading.opacity * 1.1),
+    () => Math.min(0.32, detailTone.shading.opacity * 0.6),
     [detailTone.shading.opacity]
   );
   const styleSpecularOpacity = useMemo(
-    () => Math.min(0.22, detailTone.specular.opacity * 1.05),
+    () => Math.min(0.2, detailTone.specular.opacity * 0.8),
     [detailTone.specular.opacity]
   );
-  const styleEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.35, [detailTone.edgesOpacity]);
+  const styleEdgesOpacity = useMemo(() => detailTone.edgesOpacity * 0.55, [detailTone.edgesOpacity]);
 
   const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
@@ -417,23 +417,23 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
       ...detailTone,
       noise: detailTone.noise * 0.2,
       vignette: detailTone.vignette * 0.7,
-      highlightTop: detailTone.highlightTop * 1.1,
-      highlightBottom: detailTone.highlightBottom * 0.85,
+      highlightTop: detailTone.highlightTop * 0.8,
+      highlightBottom: detailTone.highlightBottom * 0.7,
     }),
     [detailTone]
   );
   const jacketLighting = useMemo(() => {
-    const intensity = fabricTone === "light" ? 0.98 : fabricTone === "dark" ? 1.12 : 1.08;
-    const shadow = fabricTone === "dark" ? 1.12 : 0.98;
-    const specular = Math.min(0.2, structuralSpecularOpacity * 0.85);
-    const opacity = fabricTone === "dark" ? 0.42 : 0.38;
+    const intensity = fabricTone === "light" ? 0.92 : fabricTone === "dark" ? 1.02 : 0.98;
+    const shadow = fabricTone === "dark" ? 1.0 : 0.9;
+    const specular = Math.min(0.16, structuralSpecularOpacity * 0.7);
+    const opacity = fabricTone === "dark" ? 0.34 : 0.3;
     return { intensity, shadow, specular, opacity };
   }, [fabricTone, structuralSpecularOpacity]);
   const pantsLighting = useMemo(() => {
-    const intensity = fabricTone === "light" ? 0.78 : fabricTone === "dark" ? 0.92 : 0.88;
-    const shadow = fabricTone === "dark" ? 0.95 : 0.85;
-    const specular = Math.min(0.16, structuralSpecularOpacity * 0.7);
-    const opacity = fabricTone === "dark" ? 0.34 : 0.32;
+    const intensity = fabricTone === "light" ? 0.7 : fabricTone === "dark" ? 0.82 : 0.78;
+    const shadow = fabricTone === "dark" ? 0.88 : 0.78;
+    const specular = Math.min(0.12, structuralSpecularOpacity * 0.6);
+    const opacity = fabricTone === "dark" ? 0.28 : 0.26;
     return { intensity, shadow, specular, opacity };
   }, [fabricTone, structuralSpecularOpacity]);
 
@@ -765,6 +765,14 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           />
         )}
         {showLayer("fabric") && (
+          <BaseLayer
+            layers={jacketBaseLayers}
+            resolve={(layer) => cdnPair(layer.src)}
+            blendMode="normal"
+            opacity={0.95}
+          />
+        )}
+        {showLayer("fabric") && (
           <FabricUnion
             layers={fabricMaskLayers}
             resolve={(layer) => cdnPair(layer.src)}
@@ -772,8 +780,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             textureStyle={fabricTextureStyle}
             baseColor={fabricFillColor || toneBaseColor}
             fabricAvgColor={fabricFillColor}
-            baseBlendMode="normal"
-            baseOpacity={1}
+            baseBlendMode="color"
+            baseOpacity={0.95}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketUnionMask}
@@ -892,6 +900,14 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             />
           )}
           {showLayer("fabric") && (
+            <BaseLayer
+              layers={[pantsLayer]}
+              resolve={(layer) => cdnPair(layer.src)}
+              blendMode="normal"
+              opacity={0.95}
+            />
+          )}
+          {showLayer("fabric") && (
             <FabricUnion
               layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
               resolve={(layer) => cdnPair(layer.src)}
@@ -899,8 +915,8 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               textureStyle={fabricTextureStyle}
               baseColor={fabricFillColor || toneBaseColor}
               fabricAvgColor={fabricFillColor}
-              baseBlendMode="normal"
-              baseOpacity={1}
+              baseBlendMode="color"
+              baseOpacity={0.95}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
               mask={pantsMaskPair?.png}
