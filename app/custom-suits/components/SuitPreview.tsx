@@ -428,7 +428,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     const strength = Math.max(0.2, textureStrength);
     return Math.min(0.7, base + strength * 0.35);
   }, [fabricTone, textureStrength, useTexture]);
-  const fabricTextureStyle = useMemo(
+  const fabricTextureStyle = useMemo<React.CSSProperties>(
     () => ({
       filter: fabricTextureFilter,
       mixBlendMode: fabricTone === "dark" ? "soft-light" : "overlay",
