@@ -544,8 +544,8 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
       <div className="lg:hidden">
         <div className="mt-6 h-[1px] w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
         <div className="fixed bottom-3 left-0 right-0 z-30 px-3">
-          <div className="mx-auto max-w-lg rounded-[26px] bg-white shadow-[0_25px_80px_rgba(15,23,42,0.18)] ring-1 ring-black/5">
-            <div className="flex items-center justify-between px-4 pt-3 pb-2">
+          <div className="mx-auto max-w-lg rounded-[24px] bg-white/95 shadow-[0_22px_70px_rgba(15,23,42,0.16)] ring-1 ring-black/5">
+            <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">
               {NAV.map((item) => {
                 const active = currentPanel === item.id;
                 return (
@@ -564,28 +564,21 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
                   );
                 })}
               </div>
-            <div className="space-y-3 border-t border-gray-100 px-4 py-3">
-              <div className="rounded-2xl border border-gray-100 bg-white/95 p-3 shadow-sm">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-semibold text-gray-900">Cena dizajna</p>
-                  <span className="text-[11px] text-gray-500">PDV ukljucen</span>
-                </div>
-                <div className="mt-2 flex items-center justify-between text-lg font-semibold text-gray-900">
-                  <span>Model</span>
-                  <span>{price.total} EUR</span>
-                </div>
-                <div className="flex items-center justify-between text-[12px] text-gray-600">
-                  <span>Tkanina</span>
-                  <span>{fabricPrice} EUR</span>
-                </div>
+            <div className="flex items-center justify-between gap-3 px-4 py-3">
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gray-500">Vase odelo</p>
+                <p className="text-lg font-semibold text-gray-900">{price.total} EUR</p>
+                <p className="text-[11px] text-gray-500">Tkanina {fabricPrice} EUR</p>
               </div>
               <button
                 onClick={handleAddToCart}
                 disabled={savingCart}
-                className="w-full rounded-full bg-[#ff7a00] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
+                className="rounded-full bg-[#ff7a00] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 Sacuvaj dizajn
               </button>
+            </div>
+            <div className="px-4 pb-4">
               <button
                 onClick={() => {
                   window.location.href = measurementUrl;
@@ -594,9 +587,6 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
               >
                 Nastavi na merenje
               </button>
-              <p className="text-[11px] text-gray-500 leading-snug">
-                Nakon merenja mozete zavrsiti porudzbinu unosom kontakta. Korpa cuva poslednji dizajn i cenu.
-              </p>
             </div>
           </div>
         </div>

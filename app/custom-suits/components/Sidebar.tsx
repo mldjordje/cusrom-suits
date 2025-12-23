@@ -12,7 +12,12 @@ import { useFabrics } from "../hooks/useFabrics";
 import { useButtons } from "../hooks/useButtons";
 import { useLinings } from "../hooks/useLinings";
 
-type Props = { config: SuitState; dispatch: React.Dispatch<any> };
+type Props = {
+  config: SuitState;
+  dispatch: React.Dispatch<any>;
+  showSummary?: boolean;
+  showFooter?: boolean;
+};
 
 const tabs = ["FABRIC", "STYLE", "ACCENTS"] as const;
 const tabLabels: Record<(typeof tabs)[number], string> = {
@@ -35,7 +40,7 @@ const sidebarVariants = {
   },
 };
 
-const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
+const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFooter = true }) => {
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("FABRIC");
   const currentSuit = suits.find((s) => s.id === config.styleId);
   const [savingCart, setSavingCart] = useState(false);
@@ -207,20 +212,22 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
             </div>
           </Link>
 
-          <div className="rounded-2xl border border-gray-100 bg-white/95 p-3.5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-semibold text-gray-900">Cena dizajna</p>
-              <span className="text-[11px] text-gray-500">PDV ukljucen</span>
+          {showSummary && (
+            <div className="rounded-2xl border border-gray-100 bg-white/95 p-3.5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-gray-900">Cena dizajna</p>
+                <span className="text-[11px] text-gray-500">PDV ukljucen</span>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-lg font-semibold text-gray-900">
+                <span>Model</span>
+                <span>{price.total} EUR</span>
+              </div>
+              <div className="flex items-center justify-between text-[12px] text-gray-600">
+                <span>Tkanina</span>
+                <span>{fabricPrice} EUR</span>
+              </div>
             </div>
-            <div className="mt-2 flex items-center justify-between text-lg font-semibold text-gray-900">
-              <span>Model</span>
-              <span>{price.total} EUR</span>
-            </div>
-            <div className="flex items-center justify-between text-[12px] text-gray-600">
-              <span>Tkanina</span>
-              <span>{fabricPrice} EUR</span>
-            </div>
-          </div>
+          )}
 
           <nav className="flex snap-x gap-2 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:gap-2 sm:overflow-visible sm:pb-0 lg:grid-cols-1">
             {tabs.map((tab) => {
@@ -479,28 +486,30 @@ const Sidebar: React.FC<Props> = ({ config, dispatch }) => {
 
         </div>
 
-        <div className="mt-6">
-          <div className="space-y-2.5">
-            <button
-              onClick={handleAddToCart}
-              disabled={savingCart}
-              className="w-full rounded-xl bg-[#ff7a00] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              Sacuvaj dizajn
-            </button>
-            <button
-              onClick={() => {
-                window.location.href = measurementUrl;
-              }}
-              className="w-full rounded-xl border border-gray-900 bg-white px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-900 hover:text-white"
-            >
-              Nastavi na merenje
-            </button>
-            <p className="text-[11px] text-gray-500 leading-snug">
-              Nakon merenja mozete zavrsiti porudzbinu unosom kontakta. Korpa cuva poslednji dizajn i cenu.
-            </p>
+        {showFooter && (
+          <div className="mt-6">
+            <div className="space-y-2.5">
+              <button
+                onClick={handleAddToCart}
+                disabled={savingCart}
+                className="w-full rounded-xl bg-[#ff7a00] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
+              >
+                Sacuvaj dizajn
+              </button>
+              <button
+                onClick={() => {
+                  window.location.href = measurementUrl;
+                }}
+                className="w-full rounded-xl border border-gray-900 bg-white px-4 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-900 hover:text-white"
+              >
+                Nastavi na merenje
+              </button>
+              <p className="text-[11px] text-gray-500 leading-snug">
+                Nakon merenja mozete zavrsiti porudzbinu unosom kontakta. Korpa cuva poslednji dizajn i cenu.
+              </p>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </motion.div>
   );

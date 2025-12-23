@@ -15,30 +15,17 @@ export const spriteFileBase = (src: string) => {
   return clean.replace(/\.(png|jpg|jpeg|webp)$/i, "");
 };
 
-const LENGTH_FALLBACKS: Record<LayerFolder, string[]> = {
-  shading: ["bottom_single_breasted+length_long+hemline_open", "bottom_double_breasted+length_long"],
-  specular: ["bottom_single_breasted+length_long+hemline_open", "bottom_double_breasted+length_long"],
-  edges: ["bottom_single_breasted+length_long+hemline_open", "bottom_double_breasted+length_long"],
-};
-
 const FALLBACK_SOURCES: Record<string, Partial<Record<LayerFolder, string | null>>> = {
   sleeves: {
     shading: "interior+sleeves",
     specular: "interior+sleeves",
     edges: "interior+sleeves",
   },
-  "length_long+cut_slim": {
-    shading: undefined,
-    specular: undefined,
-    edges: undefined,
-  },
 };
 
 type ManifestData = { files: Set<string> };
 
 let manifestPromise: Promise<ManifestData | null> | null = null;
-let manifestSnapshot: ManifestData | null = null;
-
 const buildManifestData = (payload: any): ManifestData => {
   const keys = Object.keys(payload?.files || {});
   return {
@@ -53,8 +40,7 @@ const loadManifest = async () => {
     const res = await fetch(url, { cache: "force-cache" });
     if (!res.ok) return null;
     const json = await res.json();
-    manifestSnapshot = buildManifestData(json);
-    return manifestSnapshot;
+    return buildManifestData(json);
   } catch {
     return null;
   }
@@ -65,30 +51,8 @@ const getManifest = async () => {
   return manifestPromise;
 };
 
-const getManifestSync = () => manifestSnapshot?.files ?? null;
-
-const pickLengthFallback = (folder: LayerFolder) => {
-  const manifestFiles = getManifestSync();
-  const candidates = LENGTH_FALLBACKS[folder];
-  if (!candidates?.length) return null;
-  if (!manifestFiles) return candidates[0];
-  const prefix = `${folder}/`;
-  for (const candidate of candidates) {
-    if (
-      manifestFiles.has(`${prefix}${candidate}.png`) ||
-      manifestFiles.has(`${prefix}${candidate}.webp`)
-    ) {
-      return candidate;
-    }
-  }
-  return candidates[0];
-};
-
 const remapBaseName = (name: string, folder?: LayerFolder) => {
   if (!folder) return name;
-  if (name === "length_long+cut_slim") {
-    return pickLengthFallback(folder);
-  }
   const fallback = FALLBACK_SOURCES[name]?.[folder];
   if (fallback === null) return null;
   return fallback ?? name;
