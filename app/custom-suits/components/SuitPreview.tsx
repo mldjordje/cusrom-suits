@@ -429,6 +429,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const toneBaseColor = getToneBaseColor(selectedFabric?.tone);
   const fabricTone = (selectedFabric?.tone as Tone | undefined) ?? "medium";
   const fabricTextureFilter = useMemo(() => {
+    if (usePhotoBase) return "none";
     if (fabricTone === "dark") {
       return `${tb.filter} brightness(1.02) contrast(1.12) saturate(1.05)`;
     }
@@ -509,14 +510,15 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
       edges: isDark ? 0.85 : isLight ? 0.98 : 0.95,
     };
   }, [fabricMetrics.luminance, fabricMetrics.saturation]);
-  const tunedTextureOpacity = useMemo(
-    () => clamp(baseTextureOpacity * autoTuning.texture.opacity, 0.12, 0.65),
-    [autoTuning.texture.opacity, baseTextureOpacity]
-  );
+  const tunedTextureOpacity = useMemo(() => {
+    if (usePhotoBase) return clamp(baseTextureOpacity * 0.55, 0.08, 0.22);
+    return clamp(baseTextureOpacity * autoTuning.texture.opacity, 0.12, 0.65);
+  }, [autoTuning.texture.opacity, baseTextureOpacity, usePhotoBase]);
   const textureBlendMode = useMemo<React.CSSProperties["mixBlendMode"]>(() => {
+    if (usePhotoBase) return "soft-light";
     if (fabricTone === "dark") return "soft-light";
     return fabricMetrics.saturation > 0.5 ? "soft-light" : "overlay";
-  }, [fabricTone, fabricMetrics.saturation]);
+  }, [fabricMetrics.saturation, fabricTone, usePhotoBase]);
   const fabricTextureStyle = useMemo<React.CSSProperties>(
     () => ({
       filter: fabricTextureFilter,
@@ -527,12 +529,13 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   );
   const photoVariant = fabricMetrics.luminance < 0.12 ? "black" : "blue";
   const photoFilter = useMemo(() => {
+    if (usePhotoBase) return "grayscale(1)";
     const brightness = (1 + autoTuning.photo.brightness).toFixed(2);
     const contrast = autoTuning.photo.contrast.toFixed(2);
     const saturate = clamp(autoTuning.photo.saturate, 0.85, 1.15).toFixed(2);
     return `grayscale(1) brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
-  }, [autoTuning.photo.brightness, autoTuning.photo.contrast, autoTuning.photo.saturate]);
-  const photoOpacity = useMemo(() => autoTuning.photo.opacity, [autoTuning.photo.opacity]);
+  }, [autoTuning.photo.brightness, autoTuning.photo.contrast, autoTuning.photo.saturate, usePhotoBase]);
+  const photoOpacity = useMemo(() => (usePhotoBase ? 1 : autoTuning.photo.opacity), [autoTuning.photo.opacity, usePhotoBase]);
   const structuralShadingOpacityTuned = useMemo(
     () => clamp(structuralShadingOpacity * autoTuning.shading, 0.12, 0.6),
     [autoTuning.shading, structuralShadingOpacity]
@@ -1017,14 +1020,14 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             baseColor={tunedFabricFill || toneBaseColor}
             fabricAvgColor={tunedFabricFill}
             baseBlendMode="color"
-            baseOpacity={usePhotoBase ? 0.9 : 0.95}
+            baseOpacity={usePhotoBase ? 0.6 : 0.95}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketMask}
             textureScale={fabricTextureScale}
           />
         )}
-        {needsDarkBoost && jacketMask && (
+        {!usePhotoBase && needsDarkBoost && jacketMask && (
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
@@ -1042,7 +1045,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             }}
           />
         )}
-        {includeStyle && styleOverlayLayers.length > 0 && (
+        {!usePhotoBase && includeStyle && styleOverlayLayers.length > 0 && (
           <BaseLayer
             layers={styleOverlayLayers}
             resolve={(layer) => cdnPair(layer.src)}
@@ -1051,7 +1054,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             mask={jacketMask}
           />
         )}
-        {showLayer("fabric") && jacketDetailStructureLayers.length > 0 && (
+        {!usePhotoBase && showLayer("fabric") && jacketDetailStructureLayers.length > 0 && (
           <>
             <BaseLayer
               layers={jacketDetailStructureLayers}
@@ -1076,7 +1079,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             />
           </>
         )}
-        {showLayer("fabric") && jacketDetailStyleLayers.length > 0 && (
+        {!usePhotoBase && showLayer("fabric") && jacketDetailStyleLayers.length > 0 && (
           <>
             <BaseLayer
               layers={jacketDetailStyleLayers}
@@ -1101,7 +1104,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             />
           </>
         )}
-        {jacketMask && showLayer("ao") && (
+        {!usePhotoBase && jacketMask && showLayer("ao") && (
           <LightingPasses
             mask={jacketMask}
             canvas={JACKET_CANVAS}
@@ -1111,7 +1114,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             opacity={jacketLighting.opacity}
           />
         )}
-        {jacketMask && showLayer("vignette") && (
+        {!usePhotoBase && jacketMask && showLayer("vignette") && (
           <GlobalOverlay noiseData={NOISE_DATA} settings={photoOverlayTone} mask={jacketMask} />
         )}
         {activeButton?.image_url &&
@@ -1178,14 +1181,14 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             baseColor={tunedFabricFill || toneBaseColor}
             fabricAvgColor={tunedFabricFill}
             baseBlendMode="color"
-            baseOpacity={usePhotoBase ? 0.9 : 0.95}
+              baseOpacity={usePhotoBase ? 0.6 : 0.95}
             panZoom={panZoom}
             canvas={PANTS_CANVAS}
               mask={pantsMask}
               textureScale={fabricTextureScale}
             />
           )}
-          {includeStyle && pantsOverlayLayers.length > 0 && (
+          {!usePhotoBase && includeStyle && pantsOverlayLayers.length > 0 && (
             <BaseLayer
               layers={pantsOverlayLayers}
               resolve={(layer) => cdnPair(layer.src)}
@@ -1194,7 +1197,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               mask={pantsMask}
             />
           )}
-          {needsDarkBoost && pantsMask && (
+          {!usePhotoBase && needsDarkBoost && pantsMask && (
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
@@ -1212,7 +1215,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               }}
             />
           )}
-          {showLayer("fabric") && pantsDetailLayers.length > 0 && (
+          {!usePhotoBase && showLayer("fabric") && pantsDetailLayers.length > 0 && (
             <>
               <BaseLayer
                 layers={pantsDetailLayers}
@@ -1237,7 +1240,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               />
             </>
           )}
-          {showLayer("fabric") && pantsStyleLayers.length > 0 && (
+          {!usePhotoBase && showLayer("fabric") && pantsStyleLayers.length > 0 && (
             <>
               <BaseLayer
                 layers={pantsStyleLayers}
@@ -1262,7 +1265,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               />
             </>
           )}
-          {pantsMask && showLayer("ao") && (
+          {!usePhotoBase && pantsMask && showLayer("ao") && (
             <LightingPasses
               mask={pantsMask}
               canvas={PANTS_CANVAS}
@@ -1272,7 +1275,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
               opacity={pantsLighting.opacity}
             />
           )}
-          {pantsMask && showLayer("vignette") && (
+          {!usePhotoBase && pantsMask && showLayer("vignette") && (
             <GlobalOverlay noiseData={NOISE_DATA} settings={photoOverlayTone} mask={pantsMask} />
           )}
           {activeButton?.image_url &&
