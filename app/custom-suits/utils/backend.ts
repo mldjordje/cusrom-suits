@@ -10,10 +10,7 @@ const LEGACY_REMOTE = "https://customsuits.adspire.rs/uploads/transparent/";
 
 export function getTransparentCdnBase() {
   const explicit = process.env.NEXT_PUBLIC_TRANSPARENT_CDN_BASE?.trim();
-  // If a remote CDN is provided and is not the legacy adspire path, honor it.
-  if (explicit && explicit.indexOf("customsuits.adspire.rs/uploads/transparent") === -1) {
-    return ensureTrailingSlash(explicit);
-  }
+  if (explicit) return ensureTrailingSlash(explicit);
 
   const localDev =
     process.env.NODE_ENV === "development"
