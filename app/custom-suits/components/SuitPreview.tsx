@@ -455,7 +455,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
       return `${tb.filter} brightness(1.05) contrast(1.08) saturate(1.08)`;
     }
     return `${tb.filter} brightness(1.03) contrast(1.12) saturate(1.07)`;
-  }, [fabricTone, tb.filter]);
+  }, [fabricTone, tb.filter, usePhotoBase]);
   const baseTextureOpacity = useMemo(() => {
     if (!useTexture) return 0;
     const base = fabricTone === "dark" ? 0.42 : fabricTone === "light" ? 0.34 : 0.38;

@@ -588,7 +588,7 @@ function MeasurePageContent() {
                 ) : (
                   <div className="mt-5 rounded-2xl border border-dashed border-[#eadfd8] bg-[#fffdfb] p-4 text-sm text-[#7c716a]">
                     Dizajn nije poslat iz konfiguratora. Vratite se na dizajn i ponovo kliknite
-                    "Nastavi na merenje".
+                    &quot;Nastavi na merenje&quot;.
                   </div>
                 )}
 
