@@ -552,11 +552,15 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
   );
   const photoVariant =
-    fabricMetrics.luminance < 0.12
-      ? "black"
-      : fabricMetrics.luminance > 0.65
-        ? "light"
-        : "blue";
+    fabricTone === "light"
+      ? "light"
+      : fabricTone === "dark"
+        ? "black"
+        : fabricMetrics.luminance < 0.12
+          ? "black"
+          : fabricMetrics.luminance > 0.65
+            ? "light"
+            : "blue";
   const photoExposure = useMemo(() => {
     if (!usePhotoBase) return 1;
     const lum = fabricMetrics.lightness;
