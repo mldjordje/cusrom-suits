@@ -69,6 +69,15 @@ export default function CustomSuitsPage() {
   const fabricsFallback = initialFabrics?.length ? initialFabrics : fallbackFabrics;
   const fabricPrice =
     fabricsFallback.find((fabric: any) => String(fabric.id) === String(config.colorId))?.price ?? 0;
+  const flowSteps = [
+    { label: "Dizajn", state: "current" },
+    { label: "Mere", state: "upcoming" },
+    { label: "Porudzbina", state: "upcoming" },
+  ] as const;
+  const stepPillClasses = (state: "current" | "upcoming") =>
+    state === "current"
+      ? "border-[#1c1917] bg-[#1c1917] text-white"
+      : "border-[#eadfd8] bg-white text-[#6f625b]";
   const measurementUrl = React.useMemo(() => {
     const json = JSON.stringify(config);
     const url = new URL(typeof window !== "undefined" ? window.location.origin : "http://localhost");
@@ -179,7 +188,24 @@ export default function CustomSuitsPage() {
           >
             <div className="lg:sticky lg:top-8">
               <div className="rounded-[26px] border border-black/5 bg-white/85 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-gray-500">Vase odelo</p>
+                <div className="rounded-2xl border border-[#eadfd8] bg-white/95 px-4 py-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#6f625b]">
+                    Korak 1/3 · Dizajn
+                  </p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {flowSteps.map((step) => (
+                      <span
+                        key={step.label}
+                        className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${stepPillClasses(
+                          step.state
+                        )}`}
+                      >
+                        {step.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+                <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.35em] text-gray-500">Vase odelo</p>
                 <div className="mt-4">
                   <p className="text-3xl font-semibold text-gray-900">{price.total} EUR</p>
                   <p className="mt-1 text-[12px] text-gray-500">Tkanina {fabricPrice} EUR - PDV ukljucen</p>

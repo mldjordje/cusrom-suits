@@ -51,6 +51,12 @@ const drawerOverlayVariants: Variants = {
   exit: { opacity: 0, transition: { duration: 0.25 } },
 };
 
+const flowSteps = [
+  { label: "Dizajn", state: "current" },
+  { label: "Mere", state: "upcoming" },
+  { label: "Porudzbina", state: "upcoming" },
+] as const;
+
 const Badge = ({ label }: { label: string }) => (
   <span className="rounded-full bg-emerald-500 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
     {label}
@@ -564,6 +570,19 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
                   );
                 })}
               </div>
+            <div className="flex items-center justify-between px-4 pt-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500">
+              <span>Korak 1/3 · Dizajn</span>
+              <div className="flex items-center gap-1.5">
+                {flowSteps.map((step) => (
+                  <span
+                    key={step.label}
+                    className={`h-2 w-2 rounded-full ${
+                      step.state === "current" ? "bg-gray-900" : "bg-gray-300"
+                    }`}
+                  />
+                ))}
+              </div>
+            </div>
             <div className="flex items-center justify-between gap-3 px-4 py-3">
               <div>
                 <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gray-500">Vase odelo</p>
