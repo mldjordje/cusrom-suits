@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 /* eslint-disable @next/next/no-img-element */
 
 import React, { useEffect, useMemo, useRef, useState } from "react";
@@ -551,7 +551,12 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     }),
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
   );
-  const photoVariant = fabricMetrics.luminance < 0.12 ? "black" : "blue";
+  const photoVariant =
+    fabricMetrics.luminance < 0.12
+      ? "black"
+      : fabricMetrics.luminance > 0.65
+        ? "light"
+        : "blue";
   const photoExposure = useMemo(() => {
     if (!usePhotoBase) return 1;
     const lum = fabricMetrics.lightness;

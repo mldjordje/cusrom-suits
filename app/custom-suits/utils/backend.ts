@@ -4,7 +4,9 @@ export function getBackendBase() {
   return base.endsWith("/") ? base : `${base}/`;
 }
 
-const ensureTrailingSlash = (value: string) => (value && value.endsWith("/") ? value : `${value}/`);
+const ensureTrailingSlash = (value: string) =>
+  value && value.endsWith("/") ? value : `${value}/`;
+
 const CDN_TRANSPARENT = "/assets/suits/transparent/";
 const LEGACY_REMOTE = "https://customsuits.adspire.rs/uploads/transparent/";
 
@@ -18,16 +20,23 @@ export function getTransparentCdnBase() {
       : null;
   if (localDev) return ensureTrailingSlash(localDev);
 
-  // Default to bundled static assets to avoid remote 404s; legacy remote as last resort
+  // Default to bundled static assets; legacy remote as last resort
   return ensureTrailingSlash(CDN_TRANSPARENT || explicit || LEGACY_REMOTE);
 }
 
-const PHOTO_BASES: Record<"blue" | "black", string> = {
+/* =========================================================
+   PHOTO BASES – DODAT "light"
+========================================================= */
+
+type PhotoVariant = "blue" | "black" | "light";
+
+const PHOTO_BASES: Record<PhotoVariant, string> = {
   blue: "/assets/suits/blue/",
   black: "/assets/suits/black/",
+  light: "/assets/suits/light/",
 };
 
-export function getPhotoCdnBase(variant: "blue" | "black" = "blue") {
+export function getPhotoCdnBase(variant: PhotoVariant = "blue") {
   const explicit = process.env.NEXT_PUBLIC_PHOTO_CDN_BASE?.trim();
   if (explicit) {
     const withVariant = explicit.includes("{variant}")
@@ -35,5 +44,6 @@ export function getPhotoCdnBase(variant: "blue" | "black" = "blue") {
       : explicit;
     return ensureTrailingSlash(withVariant);
   }
+
   return ensureTrailingSlash(PHOTO_BASES[variant]);
 }

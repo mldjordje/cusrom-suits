@@ -84,7 +84,10 @@ export const shadingPair = (src: string): SpritePair | null => buildPair(src, "s
 export const specularPair = (src: string): SpritePair | null => buildPair(src, "specular");
 export const edgesPair = (src: string): SpritePair | null => buildPair(src, "edges");
 
-export const photoPair = (src: string, variant: "blue" | "black" = "blue") => {
+export const photoPair = (
+  src: string,
+  variant: "blue" | "black" | "light" = "blue"
+) => {
   const baseName = spriteFileBase(src);
   const prefix = getPhotoCdnBase(variant);
   return {
@@ -92,6 +95,7 @@ export const photoPair = (src: string, variant: "blue" | "black" = "blue") => {
     png: appendVersion(`${prefix}${baseName}.png`),
   } as SpritePair;
 };
+
 
 export const toTransparentSilhouette = (src: string) => {
   const pair = cdnPair(src);
