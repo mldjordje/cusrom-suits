@@ -334,6 +334,24 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
         : [],
     [pantsLayer]
   );
+  const pantsPhotoDetailLayers = useMemo(
+    () =>
+      pantsLayer
+        ? [
+            {
+              id: "pants-front-pocket",
+              name: "Front Pocket",
+              src: "/assets/suits/transparent/front_pocket+diagonal.png",
+            },
+            {
+              id: "pants-back-pocket",
+              name: "Back Pocket",
+              src: "/assets/suits/transparent/back_pocket+with_button.png",
+            },
+          ]
+        : [],
+    [pantsLayer]
+  );
 
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
@@ -511,9 +529,15 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     };
   }, [fabricMetrics.luminance, fabricMetrics.saturation]);
   const tunedTextureOpacity = useMemo(() => {
-    if (usePhotoBase) return clamp(baseTextureOpacity * 0.55, 0.08, 0.22);
+    if (usePhotoBase) {
+      const sat = fabricMetrics.saturation;
+      const lum = fabricMetrics.lightness;
+      const satBoost = sat > 0.55 ? 0.22 : sat < 0.2 ? 0.1 : 0.16;
+      const lumBoost = lum > 0.6 ? 0.12 : lum < 0.25 ? 0.08 : 0.1;
+      return clamp(baseTextureOpacity * (0.55 + satBoost + lumBoost), 0.16, 0.42);
+    }
     return clamp(baseTextureOpacity * autoTuning.texture.opacity, 0.12, 0.65);
-  }, [autoTuning.texture.opacity, baseTextureOpacity, usePhotoBase]);
+  }, [autoTuning.texture.opacity, baseTextureOpacity, fabricMetrics.lightness, fabricMetrics.saturation, usePhotoBase]);
   const textureBlendMode = useMemo<React.CSSProperties["mixBlendMode"]>(() => {
     if (usePhotoBase) return "soft-light";
     if (fabricTone === "dark") return "soft-light";
@@ -528,14 +552,34 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
   );
   const photoVariant = fabricMetrics.luminance < 0.12 ? "black" : "blue";
+  const photoExposure = useMemo(() => {
+    if (!usePhotoBase) return 1;
+    const lum = fabricMetrics.lightness;
+    const exposure = 0.9 + (lum - 0.45) * 0.55;
+    return clamp(exposure, 0.82, 1.12);
+  }, [fabricMetrics.lightness, usePhotoBase]);
   const photoFilter = useMemo(() => {
-    if (usePhotoBase) return "grayscale(1)";
+    if (usePhotoBase) return `grayscale(1) brightness(${photoExposure.toFixed(2)})`;
     const brightness = (1 + autoTuning.photo.brightness).toFixed(2);
     const contrast = autoTuning.photo.contrast.toFixed(2);
     const saturate = clamp(autoTuning.photo.saturate, 0.85, 1.15).toFixed(2);
     return `grayscale(1) brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
-  }, [autoTuning.photo.brightness, autoTuning.photo.contrast, autoTuning.photo.saturate, usePhotoBase]);
+  }, [
+    autoTuning.photo.brightness,
+    autoTuning.photo.contrast,
+    autoTuning.photo.saturate,
+    photoExposure,
+    usePhotoBase,
+  ]);
   const photoOpacity = useMemo(() => (usePhotoBase ? 1 : autoTuning.photo.opacity), [autoTuning.photo.opacity, usePhotoBase]);
+  const photoBaseOpacity = useMemo(() => {
+    if (!usePhotoBase) return 0.95;
+    const lum = fabricMetrics.lightness;
+    const sat = fabricMetrics.saturation;
+    const lumShift = lum > 0.62 ? -0.06 : lum < 0.24 ? 0.08 : 0.02;
+    const satShift = sat < 0.2 ? 0.06 : sat > 0.55 ? 0.02 : 0.04;
+    return clamp(0.68 + lumShift + satShift, 0.62, 0.82);
+  }, [fabricMetrics.lightness, fabricMetrics.saturation, usePhotoBase]);
   const structuralShadingOpacityTuned = useMemo(
     () => clamp(structuralShadingOpacity * autoTuning.shading, 0.12, 0.6),
     [autoTuning.shading, structuralShadingOpacity]
@@ -928,7 +972,9 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const pantsDetailLayers = pantsBaseLayers;
   const pantsStyleLayers = includeStyle ? pantsOverlayLayers : [];
   const jacketPhotoLayers = usePhotoBase ? detailLayers : [];
-  const pantsPhotoLayers = usePhotoBase ? pantsBaseLayers : [];
+  const pantsPhotoLayers = usePhotoBase
+    ? [...pantsBaseLayers, ...pantsPhotoDetailLayers]
+    : [];
   const jacketMask = jacketUnionMask;
   const pantsMask = pantsUnionMask ?? pantsMaskPair?.png ?? null;
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
@@ -1020,7 +1066,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             baseColor={tunedFabricFill || toneBaseColor}
             fabricAvgColor={tunedFabricFill}
             baseBlendMode="color"
-            baseOpacity={usePhotoBase ? 0.6 : 0.95}
+            baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketMask}
@@ -1181,7 +1227,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             baseColor={tunedFabricFill || toneBaseColor}
             fabricAvgColor={tunedFabricFill}
             baseBlendMode="color"
-              baseOpacity={usePhotoBase ? 0.6 : 0.95}
+              baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
             panZoom={panZoom}
             canvas={PANTS_CANVAS}
               mask={pantsMask}
