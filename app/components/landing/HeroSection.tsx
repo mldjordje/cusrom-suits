@@ -43,9 +43,9 @@ const promoCardVariants: Variants = {
   },
 };
 
-type HeroImageBlockProps = (typeof heroImageSections)[number] & { priority?: boolean; mobileVideoId?: string };
+type HeroImageBlockProps = (typeof heroImageSections)[number] & { mobileVideoId?: string };
 
-const HeroImageBlock = ({ image, title, primary, priority, mobileVideoId }: HeroImageBlockProps) => {
+const HeroImageBlock = ({ image, title, primary, mobileVideoId }: HeroImageBlockProps) => {
   const [loaded, setLoaded] = useState(false);
   const [timeoutReached, setTimeoutReached] = useState(false);
   const hasMobileVideo = Boolean(mobileVideoId);
@@ -65,7 +65,6 @@ const HeroImageBlock = ({ image, title, primary, priority, mobileVideoId }: Hero
             src={image}
             alt={title}
             fill
-            priority={priority}
             sizes="100vw"
             className="object-cover object-center"
             onLoadingComplete={() => setLoaded(true)}
@@ -90,7 +89,6 @@ const HeroImageBlock = ({ image, title, primary, priority, mobileVideoId }: Hero
               src={image}
               alt={title}
               fill
-              priority={priority}
               sizes="100vw"
               className="object-cover object-center"
               onLoadingComplete={() => setLoaded(true)}
@@ -239,7 +237,13 @@ const BridgePromo = () => {
             viewport={{ once: true, amount: 0.35 }}
           >
             <div className="relative h-[420px] w-full sm:h-[480px]">
-              <Image src={item.image} alt={item.title} fill priority sizes="(max-width: 900px) 100vw, 50vw" className="object-cover" />
+              <Image
+                src={item.image}
+                alt={item.title}
+                fill
+                sizes="(max-width: 900px) 100vw, 50vw"
+                className="object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/30 to-transparent" aria-hidden="true" />
             </div>
             <div className="absolute inset-0 flex flex-col justify-end p-8 text-white">
@@ -296,8 +300,8 @@ const HeroSection = () => {
 
       <VideoHero onReady={() => setFirstHeroReady(true)} />
       <BridgePromo />
-      {heroImageSections.map((section, index) => (
-        <HeroImageBlock key={section.id} {...section} priority={index === 0} />
+      {heroImageSections.map((section) => (
+        <HeroImageBlock key={section.id} {...section} />
       ))}
     </>
   );

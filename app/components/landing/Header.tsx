@@ -42,7 +42,14 @@ const Header = () => {
       <div className="relative mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
         <Link href="/" className="flex items-center gap-3">
           <span className="relative h-12 w-12">
-            <Image src="/img/logo.png" alt="Santos & Santorini logo" fill className="object-contain drop-shadow-sm" priority />
+            <Image
+              src="/img/logo.png"
+              alt="Santos & Santorini logo"
+              fill
+              sizes="48px"
+              className="object-contain drop-shadow-sm"
+              priority
+            />
           </span>
           <span className="text-sm font-semibold uppercase tracking-[0.2em]">Santos & Santorini</span>
         </Link>

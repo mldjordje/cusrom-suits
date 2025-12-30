@@ -87,6 +87,8 @@ export default function CustomSuitDebugPage() {
               level={level}
               layerVisibility={layerVisibility}
               onAssetStatus={setAssetStatus}
+              fabrics={fabrics}
+              fabricsLoading={fabricsLoading}
             />
           </div>
         </div>

@@ -208,7 +208,13 @@ export default function Home() {
                 id={section.id}
               >
                 <div className="relative h-[420px] w-full sm:h-[500px]">
-                  <Image src={section.image} alt={section.title} fill sizes="100vw" className="object-cover object-center" priority />
+                  <Image
+                    src={section.image}
+                    alt={section.title}
+                    fill
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 92vw, 1100px"
+                    className="object-cover object-center"
+                  />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/45 to-black/10" aria-hidden="true" />
                   <div className="absolute inset-0 flex flex-col justify-between p-6 text-white sm:p-8">
                     <div className="flex items-center justify-between text-[10px] uppercase tracking-[0.35em] text-white/75">
@@ -251,7 +257,13 @@ export default function Home() {
               className="relative min-h-[420px] overflow-hidden rounded-[36px] border border-[#f3e1d9] bg-[#0f0b0b] shadow-[0_30px_100px_rgba(0,0,0,0.14)]"
             >
               <div className="absolute inset-0">
-                <Image src={item.image} alt={item.title} fill sizes="100vw" className="object-cover object-center" priority />
+                <Image
+                  src={item.image}
+                  alt={item.title}
+                  fill
+                  sizes="(max-width: 640px) 100vw, (max-width: 1024px) 92vw, 1100px"
+                  className="object-cover object-center"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent" aria-hidden="true" />
               </div>
               <div className="relative z-10 flex h-full flex-col justify-end gap-3 px-8 pb-10 pt-12 text-white sm:px-12">

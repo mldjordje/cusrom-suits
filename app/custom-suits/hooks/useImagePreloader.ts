@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 
+const preloadedUrls = new Set<string>();
+
 export function useImagePreloader(urls: (string | undefined)[]) {
   const [loaded, setLoaded] = useState(false);
 
@@ -10,19 +12,30 @@ export function useImagePreloader(urls: (string | undefined)[]) {
 
     //  Filtriraj prazne vrednosti da izbegne "undefined"
     const validUrls = urls.filter((u): u is string => typeof u === "string" && u.trim().length > 0);
+    const pendingUrls = validUrls.filter((url) => !preloadedUrls.has(url));
 
     // Ako nema validnih URL-ova, odmah oznai kao uitano
-    if (validUrls.length === 0) {
+    if (pendingUrls.length === 0) {
       setLoaded(true);
       return;
     }
 
-    const promises = validUrls.map(
+    const promises = pendingUrls.map(
       (url) =>
         new Promise<void>((resolve, reject) => {
           const img = new Image();
-          img.src = url.startsWith("/") ? url : `/${url}`; // sigurnost ako nema '/'
-          img.onload = () => resolve();
+          img.decoding = "async";
+          const normalized =
+            url.startsWith("http") || url.startsWith("data:")
+              ? url
+              : url.startsWith("/")
+                ? url
+                : `/${url}`;
+          img.src = normalized; // sigurnost ako nema '/'
+          img.onload = () => {
+            preloadedUrls.add(url);
+            resolve();
+          };
           img.onerror = (err) => reject(err);
         })
     );

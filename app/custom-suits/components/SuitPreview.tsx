@@ -7,7 +7,6 @@ import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
 import { toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone, NOISE_DATA } from "../utils/visual";
 import { cdnPair, ensureAssetAvailable, edgesPair, photoPair, shadingPair, specularPair } from "../utils/assets";
-import { useFabrics } from "../hooks/useFabrics";
 import { useButtons } from "../hooks/useButtons";
 import { useLinings } from "../hooks/useLinings";
 import { ButtonLayout, ButtonPosition, getFallbackPositions } from "../data/buttonPositions";
@@ -219,10 +218,11 @@ type Props = {
   level?: ContrastLevel;
   layerVisibility?: LayerVisibility;
   onAssetStatus?: (status: { missing: string[] }) => void;
+  fabrics: any[];
+  fabricsLoading: boolean;
 };
 
-export default function SuitPreview({ config, level = "medium", layerVisibility, onAssetStatus }: Props) {
-  const { fabrics, loading: fabricsLoading } = useFabrics();
+const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus, fabrics, fabricsLoading }: Props) => {
   const { buttons } = useButtons();
   const { linings } = useLinings(config.styleId);
   const [buttonLayouts, setButtonLayouts] = useState<ButtonLayout[]>([]);
@@ -1357,4 +1357,6 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
       )}
     </div>
   );
-}
+};
+
+export default React.memo(SuitPreview);

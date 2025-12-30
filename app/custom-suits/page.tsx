@@ -17,7 +17,7 @@ export default function CustomSuitsPage() {
   const [config, dispatch] = useSuitConfigurator({
     styleId: "single_2btn",
   });
-  const { fabrics: initialFabrics } = useFabrics({
+  const { fabrics: initialFabrics, loading: fabricsLoading } = useFabrics({
     sort: "created_at",
     order: "desc",
   });
@@ -27,7 +27,7 @@ export default function CustomSuitsPage() {
   const currentSuit = suits.find((s) => s.id === config.styleId);
   const layers = currentSuit?.layers || [];
 
-  const preloadUrls = layers.map((l) => l.src).filter(Boolean);
+  const preloadUrls = React.useMemo(() => layers.map((l) => l.src).filter(Boolean), [layers]);
   const imagesLoaded = useImagePreloader(preloadUrls);
 
   // Preselect first available fabric so preview is ready without a manual choice
@@ -177,7 +177,7 @@ export default function CustomSuitsPage() {
         >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_45%),radial-gradient(circle_at_80%_10%,rgba(179,32,42,0.08),transparent_40%),radial-gradient(circle_at_50%_85%,rgba(24,39,75,0.06),transparent_40%)] lg:opacity-0" />
             <div className="relative z-10 flex w-full max-w-4xl items-center justify-center px-2">
-              <SuitPreview config={config} />
+              <SuitPreview config={config} fabrics={initialFabrics} fabricsLoading={fabricsLoading} />
             </div>
           </motion.section>
           <motion.aside
