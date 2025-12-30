@@ -22,7 +22,7 @@ type Props = {
 const buildMask = (mask?: string | null, fallback?: SpritePair | null) =>
   mask ? `url(${mask})` : fallback ? spriteBackground(fallback) : undefined;
 
-export const FabricUnion: React.FC<Props> = ({
+const FabricUnionComponent: React.FC<Props> = ({
   layers,
   resolve,
   fabricTexture,
@@ -163,3 +163,5 @@ export const FabricUnion: React.FC<Props> = ({
     </>
   );
 };
+
+export const FabricUnion = React.memo(FabricUnionComponent);

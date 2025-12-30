@@ -1,7 +1,7 @@
 ﻿"use client";
 /* eslint-disable @next/next/no-img-element */
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
@@ -226,6 +226,10 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
   const { buttons } = useButtons();
   const { linings } = useLinings(config.styleId);
   const [buttonLayouts, setButtonLayouts] = useState<ButtonLayout[]>([]);
+  const resolveCdn = useCallback((layer: SuitLayer) => cdnPair(layer.src), []);
+  const resolveShading = useCallback((layer: SuitLayer) => shadingPair(layer.src), []);
+  const resolveSpecular = useCallback((layer: SuitLayer) => specularPair(layer.src), []);
+  const resolveEdges = useCallback((layer: SuitLayer) => edgesPair(layer.src), []);
 
   // Pan/zoom samo na teksturu tkanine (ne menja maske)
   const [scale, setScale] = useState(1);
@@ -649,7 +653,7 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
   const [pantsUnionMask, setPantsUnionMask] = useState<string | null>(null);
   const [pantsMaskBuilding, setPantsMaskBuilding] = useState(false);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
-  const panZoom = { scale, offset };
+  const panZoom = useMemo(() => ({ scale, offset }), [scale, offset]);
   const showLayer = (key: keyof LayerVisibility) => (layerVisibility?.[key] ?? true) !== false;
   useEffect(() => {
     let cancelled = false;
@@ -974,16 +978,34 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
   const includeStyle = showLayer("style");
   const jacketBaseLayers = structuralJacketLayers;
   const jacketDetailStructureLayers = structuralJacketLayers;
-  const jacketDetailStyleLayers = includeStyle ? styleOverlayLayers : [];
+  const jacketDetailStyleLayers = useMemo(
+    () => (includeStyle ? styleOverlayLayers : []),
+    [includeStyle, styleOverlayLayers]
+  );
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
-  const pantsBaseLayers =
-    pantsFabricLayers.length ? pantsFabricLayers : pantsLayer ? [pantsLayer] : [];
+  const pantsBaseLayers = useMemo(
+    () => (pantsFabricLayers.length ? pantsFabricLayers : pantsLayer ? [pantsLayer] : []),
+    [pantsFabricLayers, pantsLayer]
+  );
+  const pantsLayerOnly = useMemo(() => (pantsLayer ? [pantsLayer] : []), [pantsLayer]);
+  const pantsFabricLayersResolved = useMemo(
+    () => (pantsFabricLayers.length ? pantsFabricLayers : pantsLayerOnly),
+    [pantsFabricLayers, pantsLayerOnly]
+  );
   const pantsDetailLayers = pantsBaseLayers;
-  const pantsStyleLayers = includeStyle ? pantsOverlayLayers : [];
-  const jacketPhotoLayers = usePhotoBase ? detailLayers : [];
-  const pantsPhotoLayers = usePhotoBase
-    ? [...pantsBaseLayers, ...pantsPhotoDetailLayers]
-    : [];
+  const pantsStyleLayers = useMemo(
+    () => (includeStyle ? pantsOverlayLayers : []),
+    [includeStyle, pantsOverlayLayers]
+  );
+  const jacketPhotoLayers = useMemo(() => (usePhotoBase ? detailLayers : []), [detailLayers, usePhotoBase]);
+  const pantsPhotoLayers = useMemo(
+    () => (usePhotoBase ? [...pantsBaseLayers, ...pantsPhotoDetailLayers] : []),
+    [pantsBaseLayers, pantsPhotoDetailLayers, usePhotoBase]
+  );
+  const resolvePhoto = useCallback(
+    (layer: SuitLayer) => photoPair(layer.src, photoVariant),
+    [photoVariant]
+  );
   const jacketMask = jacketUnionMask;
   const pantsMask = pantsUnionMask ?? pantsMaskPair?.png ?? null;
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
@@ -1050,7 +1072,7 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
         {showLayer("fabric") && usePhotoBase && jacketPhotoLayers.length > 0 && (
           <BaseLayer
             layers={jacketPhotoLayers}
-            resolve={(layer) => photoPair(layer.src, photoVariant)}
+            resolve={resolvePhoto}
             blendMode="normal"
             opacity={photoOpacity}
             filter={photoFilter}
@@ -1060,7 +1082,7 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
         {showLayer("fabric") && (!usePhotoBase || jacketPhotoLayers.length === 0) && (
           <BaseLayer
             layers={jacketBaseLayers}
-            resolve={(layer) => cdnPair(layer.src)}
+            resolve={resolveCdn}
             blendMode="normal"
             opacity={0.95}
             mask={jacketMask}
@@ -1069,7 +1091,7 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
         {showLayer("fabric") && (
           <FabricUnion
             layers={fabricMaskLayers}
-            resolve={(layer) => cdnPair(layer.src)}
+            resolve={resolveCdn}
             fabricTexture={useTexture ? fabricTexture : undefined}
             textureStyle={fabricTextureStyle}
             baseColor={tunedFabricFill || toneBaseColor}
@@ -1103,7 +1125,7 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
         {!usePhotoBase && includeStyle && styleOverlayLayers.length > 0 && (
           <BaseLayer
             layers={styleOverlayLayers}
-            resolve={(layer) => cdnPair(layer.src)}
+            resolve={resolveCdn}
             blendMode="soft-light"
             opacity={styleBaseOverlayOpacityTuned}
             mask={jacketMask}
@@ -1113,21 +1135,21 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
           <>
             <BaseLayer
               layers={jacketDetailStructureLayers}
-              resolve={(layer) => shadingPair(layer.src)}
+              resolve={resolveShading}
               blendMode={detailTone.shading.blend}
               opacity={structuralShadingOpacityTuned}
               mask={jacketMask}
             />
             <BaseLayer
               layers={jacketDetailStructureLayers}
-              resolve={(layer) => specularPair(layer.src)}
+              resolve={resolveSpecular}
               blendMode={detailTone.specular.blend}
               opacity={structuralSpecularOpacityTuned * 0.7}
               mask={jacketMask}
             />
             <BaseLayer
               layers={jacketDetailStructureLayers}
-              resolve={(layer) => edgesPair(layer.src)}
+              resolve={resolveEdges}
               blendMode="multiply"
               opacity={structuralEdgesOpacityTuned}
               mask={jacketMask}
@@ -1138,21 +1160,21 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
           <>
             <BaseLayer
               layers={jacketDetailStyleLayers}
-              resolve={(layer) => shadingPair(layer.src)}
+              resolve={resolveShading}
               blendMode={detailTone.shading.blend}
               opacity={styleShadingOpacityTuned}
               mask={jacketMask}
             />
             <BaseLayer
               layers={jacketDetailStyleLayers}
-              resolve={(layer) => specularPair(layer.src)}
+              resolve={resolveSpecular}
               blendMode={detailTone.specular.blend}
               opacity={styleSpecularOpacityTuned * 0.7}
               mask={jacketMask}
             />
             <BaseLayer
               layers={jacketDetailStyleLayers}
-              resolve={(layer) => edgesPair(layer.src)}
+              resolve={resolveEdges}
               blendMode="multiply"
               opacity={styleEdgesOpacityTuned}
               mask={jacketMask}
@@ -1208,29 +1230,29 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
               opacity={0.8}
             />
           )}
-          {showLayer("fabric") && usePhotoBase && pantsPhotoLayers.length > 0 && (
-            <BaseLayer
-              layers={pantsPhotoLayers}
-              resolve={(layer) => photoPair(layer.src, photoVariant)}
-              blendMode="normal"
-              opacity={photoOpacity}
-              filter={photoFilter}
-              mask={pantsMask}
-            />
-          )}
-          {showLayer("fabric") && (!usePhotoBase || pantsPhotoLayers.length === 0) && (
-            <BaseLayer
-              layers={[pantsLayer]}
-              resolve={(layer) => cdnPair(layer.src)}
-              blendMode="normal"
-              opacity={0.95}
-              mask={pantsMask}
-            />
-          )}
-          {showLayer("fabric") && (
-            <FabricUnion
-              layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
-              resolve={(layer) => cdnPair(layer.src)}
+        {showLayer("fabric") && usePhotoBase && pantsPhotoLayers.length > 0 && (
+          <BaseLayer
+            layers={pantsPhotoLayers}
+            resolve={resolvePhoto}
+            blendMode="normal"
+            opacity={photoOpacity}
+            filter={photoFilter}
+            mask={pantsMask}
+          />
+        )}
+        {showLayer("fabric") && (!usePhotoBase || pantsPhotoLayers.length === 0) && (
+          <BaseLayer
+            layers={pantsLayerOnly}
+            resolve={resolveCdn}
+            blendMode="normal"
+            opacity={0.95}
+            mask={pantsMask}
+          />
+        )}
+        {showLayer("fabric") && (
+          <FabricUnion
+            layers={pantsFabricLayersResolved}
+            resolve={resolveCdn}
             fabricTexture={useTexture ? fabricTexture : undefined}
             textureStyle={fabricTextureStyle}
             baseColor={tunedFabricFill || toneBaseColor}
@@ -1246,7 +1268,7 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
           {!usePhotoBase && includeStyle && pantsOverlayLayers.length > 0 && (
             <BaseLayer
               layers={pantsOverlayLayers}
-              resolve={(layer) => cdnPair(layer.src)}
+              resolve={resolveCdn}
               blendMode="soft-light"
               opacity={styleBaseOverlayOpacityTuned * 0.8}
               mask={pantsMask}
@@ -1274,21 +1296,21 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
             <>
               <BaseLayer
                 layers={pantsDetailLayers}
-                resolve={(layer) => shadingPair(layer.src)}
+                resolve={resolveShading}
                 blendMode={detailTone.shading.blend}
                 opacity={structuralShadingOpacityTuned * 0.9}
                 mask={pantsMask}
               />
               <BaseLayer
                 layers={pantsDetailLayers}
-                resolve={(layer) => specularPair(layer.src)}
+                resolve={resolveSpecular}
                 blendMode={detailTone.specular.blend}
                 opacity={structuralSpecularOpacityTuned * 0.6}
                 mask={pantsMask}
               />
               <BaseLayer
                 layers={pantsDetailLayers}
-                resolve={(layer) => edgesPair(layer.src)}
+                resolve={resolveEdges}
                 blendMode="multiply"
                 opacity={structuralEdgesOpacityTuned}
                 mask={pantsMask}
@@ -1299,21 +1321,21 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
             <>
               <BaseLayer
                 layers={pantsStyleLayers}
-                resolve={(layer) => shadingPair(layer.src)}
+                resolve={resolveShading}
                 blendMode={detailTone.shading.blend}
                 opacity={styleShadingOpacityTuned * 0.85}
                 mask={pantsMask}
               />
               <BaseLayer
                 layers={pantsStyleLayers}
-                resolve={(layer) => specularPair(layer.src)}
+                resolve={resolveSpecular}
                 blendMode={detailTone.specular.blend}
                 opacity={styleSpecularOpacityTuned * 0.6}
                 mask={pantsMask}
               />
               <BaseLayer
                 layers={pantsStyleLayers}
-                resolve={(layer) => edgesPair(layer.src)}
+                resolve={resolveEdges}
                 blendMode="multiply"
                 opacity={styleEdgesOpacityTuned * 0.9}
                 mask={pantsMask}

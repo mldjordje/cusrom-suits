@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import { SuitLayer } from "../../data/options";
 import { LayerResolver, spriteBackground } from "./types";
 
@@ -14,7 +14,7 @@ type Props = {
   mask?: string | null;
 };
 
-export const BaseLayer: React.FC<Props> = ({
+const BaseLayerComponent: React.FC<Props> = ({
   layers,
   resolve,
   blendMode = "normal",
@@ -51,37 +51,41 @@ export const BaseLayer: React.FC<Props> = ({
   }
 
   const maskImage = mask ? `url(${mask})` : undefined;
+  const backgroundImage = useMemo(() => {
+    if (!layers.length) return undefined;
+    const resolved = layers
+      .map((layer) => resolve(layer))
+      .filter((pair): pair is NonNullable<ReturnType<LayerResolver>> => Boolean(pair));
+    if (!resolved.length) return undefined;
+    const ordered = resolved.slice().reverse();
+    return ordered.map((pair) => spriteBackground(pair)).filter(Boolean).join(", ");
+  }, [layers, resolve]);
+
+  if (!backgroundImage) return null;
 
   return (
-    <>
-      {layers.map((layer) => {
-        const image = resolve(layer);
-        if (!image) return null;
-        return (
-          <div
-            key={`base-${layer.id}`}
-            className="absolute inset-0"
-            style={{
-              backgroundImage: spriteBackground(image),
-              backgroundRepeat: "no-repeat",
-              backgroundSize: "contain",
-              backgroundPosition: "center",
-              mixBlendMode: blendMode,
-              opacity,
-              filter,
-              WebkitMaskImage: maskImage,
-              WebkitMaskRepeat: maskImage ? "no-repeat" : undefined,
-              WebkitMaskSize: maskImage ? "contain" : undefined,
-              WebkitMaskPosition: maskImage ? "center" : undefined,
-              maskImage,
-              maskRepeat: maskImage ? "no-repeat" : undefined,
-              maskSize: maskImage ? "contain" : undefined,
-              maskPosition: maskImage ? "center" : undefined,
-              pointerEvents: "none",
-            }}
-          />
-        );
-      })}
-    </>
+    <div
+      className="absolute inset-0"
+      style={{
+        backgroundImage,
+        backgroundRepeat: "no-repeat",
+        backgroundSize: "contain",
+        backgroundPosition: "center",
+        mixBlendMode: blendMode,
+        opacity,
+        filter,
+        WebkitMaskImage: maskImage,
+        WebkitMaskRepeat: maskImage ? "no-repeat" : undefined,
+        WebkitMaskSize: maskImage ? "contain" : undefined,
+        WebkitMaskPosition: maskImage ? "center" : undefined,
+        maskImage,
+        maskRepeat: maskImage ? "no-repeat" : undefined,
+        maskSize: maskImage ? "contain" : undefined,
+        maskPosition: maskImage ? "center" : undefined,
+        pointerEvents: "none",
+      }}
+    />
   );
 };
+
+export const BaseLayer = React.memo(BaseLayerComponent);
