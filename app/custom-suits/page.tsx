@@ -24,8 +24,8 @@ export default function CustomSuitsPage() {
   const defaultColorSet = React.useRef(false);
   const [activeMobilePanel, setActiveMobilePanel] = React.useState<MobilePanel | null>(null);
 
-  const currentSuit = suits.find((s) => s.id === config.styleId);
-  const layers = currentSuit?.layers || [];
+  const currentSuit = React.useMemo(() => suits.find((s) => s.id === config.styleId), [config.styleId]);
+  const layers = React.useMemo(() => currentSuit?.layers || [], [currentSuit]);
 
   const preloadUrls = React.useMemo(() => layers.map((l) => l.src).filter(Boolean), [layers]);
   const imagesLoaded = useImagePreloader(preloadUrls);

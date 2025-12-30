@@ -945,36 +945,6 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
     if (dragRef.current.active) dragRef.current.active = false;
   };
 
-  if (!currentSuit) {
-    return (
-      <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
-        Stil nije dostupan za prikaz.
-      </div>
-    );
-  }
-
-  if (!selectedFabric) {
-    return (
-      <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
-        {fabricsLoading ? "Uitavanje tkanina..." : "Odaberi tkaninu da vidi prikaz."}
-      </div>
-    );
-  }
-
-  /* =====================================================================================
-     RENDER
-  ====================================================================================== */
-  const activeButton =
-    buttons.find((b: any) => String(b.id) === String(config.buttonId)) || buttons[0] || null;
-  const frontLayout =
-    buttonLayouts.find((l) => l.styleId === currentSuit.id && (l.area === "front" || !l.area)) ||
-    getFallbackPositions(currentSuit.id).find((l) => l.area === "front");
-  const jacketButtons: ButtonPosition[] = frontLayout?.positions || [];
-  const pantsLayout =
-    buttonLayouts.find((l) => l.styleId === currentSuit.id && (l.area === "pants" || l.area === "back_pocket")) ||
-    getFallbackPositions(currentSuit.id).find((l) => l.area === "pants" || l.area === "back_pocket");
-  const pantsButtons: ButtonPosition[] = pantsLayout?.positions || [];
-
   const includeStyle = showLayer("style");
   const jacketBaseLayers = structuralJacketLayers;
   const jacketDetailStructureLayers = structuralJacketLayers;
@@ -1010,6 +980,36 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
   const pantsMask = pantsUnionMask ?? pantsMaskPair?.png ?? null;
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
+
+  if (!currentSuit) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+        Stil nije dostupan za prikaz.
+      </div>
+    );
+  }
+
+  if (!selectedFabric) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+        {fabricsLoading ? "Uitavanje tkanina..." : "Odaberi tkaninu da vidi prikaz."}
+      </div>
+    );
+  }
+
+  /* =====================================================================================
+     RENDER
+  ====================================================================================== */
+  const activeButton =
+    buttons.find((b: any) => String(b.id) === String(config.buttonId)) || buttons[0] || null;
+  const frontLayout =
+    buttonLayouts.find((l) => l.styleId === currentSuit.id && (l.area === "front" || !l.area)) ||
+    getFallbackPositions(currentSuit.id).find((l) => l.area === "front");
+  const jacketButtons: ButtonPosition[] = frontLayout?.positions || [];
+  const pantsLayout =
+    buttonLayouts.find((l) => l.styleId === currentSuit.id && (l.area === "pants" || l.area === "back_pocket")) ||
+    getFallbackPositions(currentSuit.id).find((l) => l.area === "pants" || l.area === "back_pocket");
+  const pantsButtons: ButtonPosition[] = pantsLayout?.positions || [];
   return (
     <div className="relative w-full select-none">
       <div className="relative mx-auto w-full max-w-[580px] sm:max-w-[540px]">

@@ -23,8 +23,25 @@ const BaseLayerComponent: React.FC<Props> = ({
   composite,
   mask,
 }) => {
+  const maskImage = mask ? `url(${mask})` : undefined;
+  const resolvedLayers = useMemo(
+    () =>
+      layers
+        .map((layer) => ({ id: layer.id, image: resolve(layer) }))
+        .filter((entry): entry is { id: string; image: NonNullable<ReturnType<LayerResolver>> } => Boolean(entry.image)),
+    [layers, resolve]
+  );
+  const backgroundImage = useMemo(() => {
+    if (blendMode !== "normal") return undefined;
+    if (!resolvedLayers.length) return undefined;
+    const ordered = resolvedLayers.slice().reverse();
+    return ordered
+      .map((entry) => spriteBackground(entry.image))
+      .filter(Boolean)
+      .join(", ");
+  }, [blendMode, resolvedLayers]);
+
   if (composite) {
-    const maskImage = mask ? `url(${mask})` : undefined;
     return (
       <div
         className="absolute inset-0"
@@ -50,41 +67,60 @@ const BaseLayerComponent: React.FC<Props> = ({
     );
   }
 
-  const maskImage = mask ? `url(${mask})` : undefined;
-  const backgroundImage = useMemo(() => {
-    if (!layers.length) return undefined;
-    const resolved = layers
-      .map((layer) => resolve(layer))
-      .filter((pair): pair is NonNullable<ReturnType<LayerResolver>> => Boolean(pair));
-    if (!resolved.length) return undefined;
-    const ordered = resolved.slice().reverse();
-    return ordered.map((pair) => spriteBackground(pair)).filter(Boolean).join(", ");
-  }, [layers, resolve]);
-
-  if (!backgroundImage) return null;
+  if (!resolvedLayers.length) return null;
+  if (blendMode === "normal" && backgroundImage) {
+    return (
+      <div
+        className="absolute inset-0"
+        style={{
+          backgroundImage,
+          backgroundRepeat: "no-repeat",
+          backgroundSize: "contain",
+          backgroundPosition: "center",
+          mixBlendMode: blendMode,
+          opacity,
+          filter,
+          WebkitMaskImage: maskImage,
+          WebkitMaskRepeat: maskImage ? "no-repeat" : undefined,
+          WebkitMaskSize: maskImage ? "contain" : undefined,
+          WebkitMaskPosition: maskImage ? "center" : undefined,
+          maskImage,
+          maskRepeat: maskImage ? "no-repeat" : undefined,
+          maskSize: maskImage ? "contain" : undefined,
+          maskPosition: maskImage ? "center" : undefined,
+          pointerEvents: "none",
+        }}
+      />
+    );
+  }
 
   return (
-    <div
-      className="absolute inset-0"
-      style={{
-        backgroundImage,
-        backgroundRepeat: "no-repeat",
-        backgroundSize: "contain",
-        backgroundPosition: "center",
-        mixBlendMode: blendMode,
-        opacity,
-        filter,
-        WebkitMaskImage: maskImage,
-        WebkitMaskRepeat: maskImage ? "no-repeat" : undefined,
-        WebkitMaskSize: maskImage ? "contain" : undefined,
-        WebkitMaskPosition: maskImage ? "center" : undefined,
-        maskImage,
-        maskRepeat: maskImage ? "no-repeat" : undefined,
-        maskSize: maskImage ? "contain" : undefined,
-        maskPosition: maskImage ? "center" : undefined,
-        pointerEvents: "none",
-      }}
-    />
+    <>
+      {resolvedLayers.map((entry) => (
+        <div
+          key={`base-${entry.id}`}
+          className="absolute inset-0"
+          style={{
+            backgroundImage: spriteBackground(entry.image),
+            backgroundRepeat: "no-repeat",
+            backgroundSize: "contain",
+            backgroundPosition: "center",
+            mixBlendMode: blendMode,
+            opacity,
+            filter,
+            WebkitMaskImage: maskImage,
+            WebkitMaskRepeat: maskImage ? "no-repeat" : undefined,
+            WebkitMaskSize: maskImage ? "contain" : undefined,
+            WebkitMaskPosition: maskImage ? "center" : undefined,
+            maskImage,
+            maskRepeat: maskImage ? "no-repeat" : undefined,
+            maskSize: maskImage ? "contain" : undefined,
+            maskPosition: maskImage ? "center" : undefined,
+            pointerEvents: "none",
+          }}
+        />
+      ))}
+    </>
   );
 };
 
