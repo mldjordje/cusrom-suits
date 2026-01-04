@@ -1,4 +1,4 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+﻿This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
 
@@ -39,6 +39,12 @@ Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/bui
 
 - Fabrics CMS: visit `/admin/fabrics` to add fabrics with price, description, tone and two zoom images. API: `GET/POST/PUT /api/fabrics` (file-backed at `data/fabrics.json`).
 - Linings CMS: visit `/admin/linings` to manage lining names and prices. API: `GET/POST/PUT /api/linings` (file-backed at `data/linings.json`).
-- Configurator: `/custom-suits` uses the local fabrics API; Sidebar shows “CMS za tkanine” link.
+- Configurator: `/custom-suits` uses the local fabrics API; Sidebar shows CMS za tkanine link.
 - Preview: pinch/scroll (wheel) to zoom, drag to pan. Shirt overlay toggle and pants pleats option added under Style.
 - Measurements: continue to `/custom-suits/measure` to input height/weight/age and see auto recommendations.
+
+## Environment
+
+- Copy `.env.example` to `.env.local` and set Supabase keys for live CMS/orders.
+- Optional: set `ADMIN_ACCESS_TOKEN` to protect `/admin` (open `/admin?token=...` once to set the cookie).
+- If Supabase keys are missing, fabrics/linings read from `data/*.json` and orders go to `data/orders.json`.

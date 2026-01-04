@@ -216,13 +216,22 @@ type LayerVisibility = Partial<Record<"fabric" | "style" | "vignette" | "ao", bo
 type Props = {
   config: SuitState;
   level?: ContrastLevel;
+  view?: "both" | "jacket" | "pants";
   layerVisibility?: LayerVisibility;
   onAssetStatus?: (status: { missing: string[] }) => void;
   fabrics: any[];
   fabricsLoading: boolean;
 };
 
-const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus, fabrics, fabricsLoading }: Props) => {
+const SuitPreview = ({
+  config,
+  level = "medium",
+  view = "both",
+  layerVisibility,
+  onAssetStatus,
+  fabrics,
+  fabricsLoading,
+}: Props) => {
   const { buttons } = useButtons();
   const { linings } = useLinings(config.styleId);
   const [buttonLayouts, setButtonLayouts] = useState<ButtonLayout[]>([]);
@@ -946,6 +955,8 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
   };
 
   const includeStyle = showLayer("style");
+  const showJacket = view !== "pants";
+  const showPants = view !== "jacket";
   const jacketBaseLayers = structuralJacketLayers;
   const jacketDetailStructureLayers = structuralJacketLayers;
   const jacketDetailStyleLayers = useMemo(
@@ -992,7 +1003,7 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
   if (!selectedFabric) {
     return (
       <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
-        {fabricsLoading ? "Uitavanje tkanina..." : "Odaberi tkaninu da vidi prikaz."}
+        {fabricsLoading ? "Ucitavanje tkanina..." : "Odaberi tkaninu da vidi prikaz."}
       </div>
     );
   }
@@ -1012,7 +1023,8 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
   const pantsButtons: ButtonPosition[] = pantsLayout?.positions || [];
   return (
     <div className="relative w-full select-none">
-      <div className="relative mx-auto w-full max-w-[580px] sm:max-w-[540px]">
+      {showJacket && (
+        <div className="relative mx-auto w-full max-w-[580px] sm:max-w-[540px]">
         <div
           className={`relative mx-auto w-full origin-top transform scale-[0.86] sm:scale-[0.86] lg:scale-[0.86] ${jacketShadowClass}`}
           data-testid="jacket-preview"
@@ -1216,10 +1228,13 @@ const SuitPreview = ({ config, level = "medium", layerVisibility, onAssetStatus,
           ))}
       </div>
     </div>
+      )}
     {/* ======================== PANTS CANVAS ======================== */}
-      {pantsLayer && (
+      {showPants && pantsLayer && (
         <div
-          className={`relative mx-auto -mt-20 w-full max-w-[560px] origin-top transform scale-[0.92] sm:-mt-16 sm:scale-[0.92] lg:-mt-12 lg:scale-[0.92] ${pantsShadowClass}`}
+          className={`relative mx-auto w-full max-w-[560px] origin-top transform scale-[0.92] sm:scale-[0.92] lg:scale-[0.92] ${pantsShadowClass} ${
+            showJacket ? "-mt-20 sm:-mt-16 lg:-mt-12" : "mt-0"
+          }`}
           style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 520 }}
         >
           {cuffsLayer && cuffsLayer.src !== pantsLayer.src && (

@@ -1,16 +1,19 @@
-# Custom Suits Configurator MVP (Blue Suit)
+﻿# Custom Suits Configurator MVP (Blue Suit)
 
 ## Quick setup
-1. Open terminal in this folder
+1. Copy `.env.example` to `.env.local` and fill Supabase keys if you want live CMS/orders.
 2. Run:
    npm install
    npm run dev
 
-## Features
-- Model selection (Jednoredno / Dvoredno)
-- Blue color preview
-- Layout inspired by Hockerty
-- Assets: public/assets/suits/blue/
+## Admin access
+- If `ADMIN_ACCESS_TOKEN` is set, open `/admin?token=YOUR_TOKEN` once to set the cookie.
+
+## Assets
+- Static sprites live in `public/assets/suits/transparent/`.
+- Check for missing sprites:
+  npm run check:sprites
 
 ## Notes
-Images are torso-only (no sleeves or bottom). Add new layers (sleeves, buttons...) later as separate overlays.
+- If Supabase keys are missing, fabrics/linings load from `data/*.json` and orders are stored in `data/orders.json`.
+- Images are torso-only (no sleeves or bottom). Add new layers later as separate overlays.

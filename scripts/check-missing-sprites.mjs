@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+﻿#!/usr/bin/env node
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
@@ -55,7 +55,7 @@ const scanTransparentDir = async () => {
 const gatherExisting = async () => {
   const manifest = await loadManifestSet();
   if (manifest) return manifest;
-  console.warn("[check-missing-sprites] asset-manifest.json missing or invalid – scanning directory instead.");
+  console.warn("[check-missing-sprites] asset-manifest.json missing or invalid; scanning directory instead.");
   return await scanTransparentDir();
 };
 
@@ -104,4 +104,3 @@ main().catch((err) => {
   console.error("[check-missing-sprites] Failed:", err);
   process.exitCode = 1;
 });
-

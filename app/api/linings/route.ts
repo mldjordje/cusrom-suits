@@ -1,10 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAnonSupabase } from "@/lib/supabase/server";
+import { readJsonFile } from "@/lib/storage/jsonStore";
+
+const FALLBACK_PATH = "data/linings.json";
 
 export async function GET(req: NextRequest) {
   const supabase = getAnonSupabase();
   if (!supabase) {
-    return NextResponse.json({ success: false, message: "Supabase not configured" }, { status: 200 });
+    const fileData = await readJsonFile<any[]>(FALLBACK_PATH, []);
+    const normalized = fileData.map((row: any) => ({
+      id: String(row.id || row.uuid || row.name),
+      name: row.name || "Lining",
+      base: row.base_url || row.base,
+      left: row.left_url || row.left,
+      right: row.right_url || row.right,
+      texture: row.texture_url || row.texture || null,
+      price: row.price ?? null,
+    }));
+    return NextResponse.json({ success: true, data: normalized, source: "file" }, { status: 200 });
   }
 
   const { data, error } = await supabase.from("linings").select("*").order("created_at", { ascending: false });

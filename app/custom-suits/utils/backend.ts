@@ -1,4 +1,4 @@
-export function getBackendBase() {
+﻿export function getBackendBase() {
   const env = process.env.NEXT_PUBLIC_BACKEND_BASE?.trim();
   const base = env && env.length > 0 ? env : "https://customsuits.adspire.rs/api/";
   return base.endsWith("/") ? base : `${base}/`;
@@ -25,7 +25,7 @@ export function getTransparentCdnBase() {
 }
 
 /* =========================================================
-   PHOTO BASES – DODAT "light"
+   PHOTO BASES - added "light"
 ========================================================= */
 
 type PhotoVariant = "blue" | "black" | "light";

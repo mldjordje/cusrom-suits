@@ -170,7 +170,7 @@ function MeasurePageContent() {
   const [email, setEmail] = useState("");
   const [telefon, setTelefon] = useState("");
   const [napomena, setNapomena] = useState("");
-  const [status, setStatus] = useState<"idle" | "saved">("idle");
+  const [status, setStatus] = useState<"idle" | "saved" | "draft">("idle");
   const searchParams = useSearchParams();
   const configParam = searchParams.get("config");
   const parsedConfig: SuitState | null = useMemo(() => {
@@ -184,6 +184,7 @@ function MeasurePageContent() {
   }, [configParam]);
 
   const { fabrics } = useFabrics();
+  const fabricList = fabrics.length ? fabrics : fallbackFabrics;
 
   const reco: Reco | null = useMemo(() => {
     const height = clampNumber(h, 150, 210);
@@ -223,10 +224,29 @@ function MeasurePageContent() {
     });
   }, [autoFill, reco]);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem("suitMeasureDraft");
+      if (!raw) return;
+      const draft = JSON.parse(raw);
+      if (typeof draft.h === "number") setH(draft.h);
+      if (typeof draft.w === "number") setW(draft.w);
+      if (typeof draft.age === "number") setAge(draft.age);
+      if (typeof draft.autoFill === "boolean") setAutoFill(draft.autoFill);
+      if (draft.values) setValues(draft.values);
+      if (typeof draft.ime === "string") setIme(draft.ime);
+      if (typeof draft.email === "string") setEmail(draft.email);
+      if (typeof draft.telefon === "string") setTelefon(draft.telefon);
+      if (typeof draft.napomena === "string") setNapomena(draft.napomena);
+      setStatus("draft");
+    } catch (err) {
+      console.warn("Draft load failed", err);
+    }
+  }, []);
+
   const summary = useMemo(() => {
     if (!parsedConfig) return null;
     const suit = suits.find((s) => s.id === parsedConfig.styleId);
-    const fabricList = fabrics.length ? fabrics : fallbackFabrics;
     const fabric = fabricList.find((f: any) => String(f.id) === String(parsedConfig.colorId));
     const lapel = suit?.lapels?.find((l) => l.id === parsedConfig.lapelId) || suit?.lapels?.[0];
     const lapelWidth = lapel?.widths?.find((w) => w.id === parsedConfig.lapelWidthId) || lapel?.widths?.[0];
@@ -244,15 +264,55 @@ function MeasurePageContent() {
       interior: interior?.name,
       cuff: cuff?.name,
     };
-  }, [fabrics, parsedConfig]);
+  }, [fabricList, parsedConfig]);
 
   const price = useMemo(() => {
     if (!parsedConfig) return null;
     return computePrice(parsedConfig, suits).total;
   }, [parsedConfig]);
 
+  const emailValid =
+    email.trim().length === 0 || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
+  const phoneDigits = telefon.replace(/\D/g, "");
+  const phoneValid = telefon.trim().length === 0 || phoneDigits.length >= 8;
+
+  const saveDraft = () => {
+    try {
+      const payload = {
+        h,
+        w,
+        age,
+        autoFill,
+        values,
+        ime,
+        email,
+        telefon,
+        napomena,
+        updatedAt: new Date().toISOString(),
+      };
+      localStorage.setItem("suitMeasureDraft", JSON.stringify(payload));
+      setStatus("draft");
+    } catch (err) {
+      console.error("Draft save failed", err);
+      alert("Nije moguce sacuvati nacrt trenutno.");
+    }
+  };
+  const priceItems = useMemo(() => {
+    if (!parsedConfig) return [];
+    return computePrice(parsedConfig, suits).items;
+  }, [parsedConfig]);
+  const fabricPrice = useMemo(() => {
+    if (!parsedConfig) return 0;
+    const fabric = fabricList.find((f: any) => String(f.id) === String(parsedConfig.colorId));
+    return fabric?.price ?? 0;
+  }, [fabricList, parsedConfig]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!emailValid || !phoneValid) {
+      alert("Proverite email i telefon pre slanja.");
+      return;
+    }
     try {
       const existingRaw = localStorage.getItem("suitOrders");
       const parsed = existingRaw ? JSON.parse(existingRaw) : [];
@@ -275,26 +335,44 @@ function MeasurePageContent() {
       localStorage.setItem("suitOrders", JSON.stringify(parsed));
 
       if (parsedConfig) {
+        const contactPayload = {
+          ime,
+          email,
+          telefon,
+          napomena,
+          measurements: measurementPayload,
+        };
+        const apiPayload = {
+          config: parsedConfig,
+          price,
+          fabricId: parsedConfig.colorId,
+          contact: contactPayload,
+          status: "pending",
+        };
+        const lastOrderId = localStorage.getItem("lastOrderId");
+
         try {
-          const res = await fetch("/api/orders", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              config: parsedConfig,
-              price,
-              fabricId: parsedConfig.colorId,
-              contact: {
-                ime,
-                email,
-                telefon,
-                napomena,
-                measurements: measurementPayload,
-              },
-            }),
-          });
+          let res: Response | null = null;
+          if (lastOrderId) {
+            res = await fetch("/api/orders", {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: lastOrderId, ...apiPayload }),
+            });
+          }
+          if (!res || !res.ok) {
+            res = await fetch("/api/orders", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify(apiPayload),
+            });
+          }
           const json = await res.json();
           if (!json?.success) {
             console.error("Order sync failed", json?.message);
+          }
+          if (json?.success) {
+            localStorage.removeItem("lastOrderId");
           }
         } catch (err) {
           console.error("Order sync failed", err);
@@ -302,6 +380,7 @@ function MeasurePageContent() {
       }
 
       setStatus("saved");
+      localStorage.removeItem("suitMeasureDraft");
       alert("Porudzbina je sacuvana. Kontaktiracemo vas u najkracem roku.");
     } catch (err) {
       console.error("Saving order failed", err);
@@ -502,6 +581,8 @@ function MeasurePageContent() {
                       onChange={(event) => setEmail(event.target.value)}
                       required
                       fullWidth
+                      error={!emailValid}
+                      helperText={!emailValid ? "Neispravan email." : ""}
                       sx={textFieldSx}
                     />
                     <TextField
@@ -512,6 +593,8 @@ function MeasurePageContent() {
                       placeholder="+381..."
                       required
                       fullWidth
+                      error={!phoneValid}
+                      helperText={!phoneValid ? "Unesite validan broj telefona." : ""}
                       sx={textFieldSx}
                     />
                     <TextField
@@ -527,6 +610,13 @@ function MeasurePageContent() {
 
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <button
+                      type="button"
+                      onClick={saveDraft}
+                      className="w-full rounded-full border border-[#c7b8b0] bg-white px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#6f625b] transition hover:border-[#1c1917] hover:text-[#1c1917] md:w-auto"
+                    >
+                      Sacuvaj nacrt
+                    </button>
+                    <button
                       type="submit"
                       className="w-full rounded-full bg-[#1c1917] px-6 py-3 text-[11px] font-semibold uppercase tracking-[0.35em] text-white transition hover:bg-[#0f0d0c] md:w-auto"
                     >
@@ -534,6 +624,9 @@ function MeasurePageContent() {
                     </button>
                     {status === "saved" && (
                       <span className="text-sm font-semibold text-emerald-600">Sacuvano u lokalnu korpu.</span>
+                    )}
+                    {status === "draft" && (
+                      <span className="text-sm font-semibold text-amber-600">Nacrt sacuvan lokalno.</span>
                     )}
                   </div>
                 </form>
@@ -592,6 +685,32 @@ function MeasurePageContent() {
                   </div>
                 )}
 
+                {priceItems.length > 0 && (
+                  <div className="mt-5 rounded-2xl border border-[#eadfd8] bg-white/95 px-4 py-3 text-sm text-[#5b514b]">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#6f625b]">
+                      Pregled cene
+                    </p>
+                    <div className="mt-3 space-y-1">
+                      {priceItems.map((item) => (
+                        <div key={item.label} className="flex items-center justify-between text-sm">
+                          <span>{item.label}</span>
+                          <span className="font-semibold text-[#1c1917]">{item.price} EUR</span>
+                        </div>
+                      ))}
+                      <div className="mt-2 flex items-center justify-between border-t border-[#eadfd8] pt-2 text-[12px] text-[#7c6f66]">
+                        <span>Tkanina</span>
+                        <span>{fabricPrice} EUR</span>
+                      </div>
+                      {price !== null && (
+                        <div className="flex items-center justify-between text-base font-semibold text-[#1c1917]">
+                          <span>Ukupno</span>
+                          <span>{price} EUR</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-6 flex flex-col gap-2">
                   <button
                     type="button"
@@ -603,6 +722,27 @@ function MeasurePageContent() {
                     Povratak na dizajn
                   </button>
                 </div>
+              </div>
+            </motion.section>
+
+            <motion.section {...fadeUp} transition={{ duration: 0.6, delay: 0.14 }}>
+              <div className="rounded-[32px] border border-[#eadfd8] bg-white/95 p-6 shadow-[0_20px_60px_rgba(20,15,12,0.08)]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#6f625b]">Fit vodič</p>
+                <h3 className="mt-3 text-xl font-semibold text-[#1c1917]">Brze smernice</h3>
+                <ul className="mt-4 space-y-3 text-sm text-[#5b514b]">
+                  <li className="flex items-start gap-3">
+                    <span className="mt-2 h-2 w-2 rounded-full bg-[#1c1917]" />
+                    Zategnite kroj do 1-2 cm manje od stvarne mere ako volite slim fit.
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="mt-2 h-2 w-2 rounded-full bg-[#1c1917]" />
+                    Preporucujemo klasicnu duzinu rukava do baze palca.
+                  </li>
+                  <li className="flex items-start gap-3">
+                    <span className="mt-2 h-2 w-2 rounded-full bg-[#1c1917]" />
+                    Ako niste sigurni, ostavite auto sync ukljucen pa korigujte 1-2 cm.
+                  </li>
+                </ul>
               </div>
             </motion.section>
 

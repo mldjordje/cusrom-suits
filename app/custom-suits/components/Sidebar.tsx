@@ -44,6 +44,16 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("FABRIC");
   const currentSuit = suits.find((s) => s.id === config.styleId);
   const [savingCart, setSavingCart] = useState(false);
+  const storeOrderId = (orderId: string) => {
+    localStorage.setItem("lastOrderId", orderId);
+    const existingRaw = localStorage.getItem("suitCart");
+    if (!existingRaw) return;
+    const parsed = JSON.parse(existingRaw);
+    if (Array.isArray(parsed) && parsed.length) {
+      parsed[0] = { ...parsed[0], orderId };
+      localStorage.setItem("suitCart", JSON.stringify(parsed));
+    }
+  };
 
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
   const [sort, setSort] = useState<"date_desc" | "date_asc">("date_desc");
@@ -132,6 +142,31 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
           ].filter(Boolean),
         }))
       : currentSuit?.interiors || [];
+  const resetFabricFilters = () => {
+    setToneFilter("all");
+    setSort("date_desc");
+    setFabricQuery("");
+  };
+  const resetStyleOptions = () => {
+    if (!currentSuit) return;
+    const lapel = currentSuit.lapels?.[0];
+    const width = lapel?.widths?.[0];
+    if (lapel?.id) dispatch({ type: "SET_LAPEL", payload: lapel.id });
+    if (width?.id) dispatch({ type: "SET_LAPEL_WIDTH", payload: width.id });
+    const pocket = currentSuit.pockets?.[0];
+    if (pocket?.id) dispatch({ type: "SET_POCKET", payload: pocket.id });
+    const breast = currentSuit.breastPocket?.[0];
+    if (breast?.id) dispatch({ type: "SET_BREAST_POCKET", payload: breast.id });
+    const cuff = currentSuit.cuffs?.[0];
+    if (cuff?.id) dispatch({ type: "SET_CUFF", payload: cuff.id });
+  };
+  const resetAccents = () => {
+    const defaultButton = buttons?.[0];
+    if (defaultButton?.id) dispatch({ type: "SET_BUTTON", payload: defaultButton.id });
+    const defaultInterior = (liningOptions || [])[0];
+    if (defaultInterior?.id) dispatch({ type: "SET_INTERIOR", payload: defaultInterior.id });
+    if (config.showShirt) dispatch({ type: "TOGGLE_SHIRT" });
+  };
   const measurementUrl = useMemo(() => {
     const json = JSON.stringify(config);
     const url = new URL(typeof window !== "undefined" ? window.location.origin : "http://localhost");
@@ -158,20 +193,23 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
 
       // Send to Supabase orders via API route
       try {
-        const res = await fetch("/api/orders", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            config,
-            price: price.total,
-            fabricId: config.colorId,
-            contact: null,
-          }),
-        });
-        const json = await res.json();
-        if (!json?.success) {
-          console.error("Order sync failed", json?.message);
-        }
+      const res = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          config,
+          price: price.total,
+          fabricId: config.colorId,
+          contact: null,
+          status: "draft",
+        }),
+      });
+      const json = await res.json();
+      if (json?.success && json?.orderId) {
+        storeOrderId(json.orderId);
+      } else if (!json?.success) {
+        console.error("Order sync failed", json?.message);
+      }
       } catch (err) {
         console.error("Order sync failed", err);
       }
@@ -262,14 +300,23 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
             <section className="space-y-4 rounded-2xl border border-gray-100 bg-white/95 p-4 shadow-sm">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold text-gray-900">Tkanine</h3>
-                <a
-                  href={uploadUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
-                >
-                  CMS
-                </a>
+                <div className="flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500">
+                  <button
+                    onClick={resetFabricFilters}
+                    className="underline-offset-4 hover:text-gray-900"
+                    type="button"
+                  >
+                    Resetuj
+                  </button>
+                  <a
+                    href={uploadUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="underline-offset-4 hover:text-gray-900"
+                  >
+                    CMS
+                  </a>
+                </div>
               </div>
               <div className="grid gap-2 sm:grid-cols-2">
                 <select
@@ -349,9 +396,19 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
           {activeTab === "STYLE" && (
             <section className="space-y-4 rounded-2xl border border-gray-100 bg-white/95 p-4 shadow-sm">
               {!currentSuit ? (
-                <p className="text-xs text-gray-500">Model nije pronaen.</p>
+                <p className="text-xs text-gray-500">Model nije pronadjen.</p>
               ) : (
                 <>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-semibold text-gray-900">Opcije stila</p>
+                    <button
+                      onClick={resetStyleOptions}
+                      className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
+                      type="button"
+                    >
+                      Resetuj
+                    </button>
+                  </div>
                   <ChipGroup
                     title="Model odela"
                     options={suits.map((suit) => ({ id: suit.id, label: suit.name }))}
@@ -381,6 +438,16 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
 
           {activeTab === "ACCENTS" && (
             <section className="space-y-4 rounded-2xl border border-gray-100 bg-white/90 p-4 text-sm text-gray-600 shadow-sm">
+              <div className="flex items-center justify-between">
+                <p className="text-sm font-semibold text-gray-900">Detalji</p>
+                <button
+                  onClick={resetAccents}
+                  className="text-[11px] font-medium uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
+                  type="button"
+                >
+                  Resetuj
+                </button>
+              </div>
               <div className="flex items-center justify-between">
                 <h3 className="text-sm font-semibold text-gray-900">Dugmad</h3>
                 <a

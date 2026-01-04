@@ -51,7 +51,7 @@ export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
       .catch((err) => {
         if (cancelled) return;
         setFabrics(fallbackList);
-        setError(err?.message || "Neuspelo uitavanje tkanina. Koristimo fallback.");
+        setError(err?.message || "Neuspelo ucitavanje tkanina. Koristimo fallback.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);

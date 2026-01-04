@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 /* eslint-disable @next/next/no-img-element */
 
 import { AnimatePresence, motion, type Variants } from "framer-motion";
@@ -278,6 +278,41 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   const uploadUrl = "/admin/fabrics";
   const buttonCmsUrl = "/admin/buttons";
   const liningCmsUrl = "/admin/linings";
+  const resetFabricFilters = () => {
+    setToneFilter("all");
+    setSort("date_desc");
+    setFabricQuery("");
+  };
+  const resetStyleOptions = () => {
+    if (!currentSuit) return;
+    const lapel = currentSuit.lapels?.[0];
+    const width = lapel?.widths?.[0];
+    if (lapel?.id) dispatch({ type: "SET_LAPEL", payload: lapel.id });
+    if (width?.id) dispatch({ type: "SET_LAPEL_WIDTH", payload: width.id });
+    const pocket = currentSuit.pockets?.[0];
+    if (pocket?.id) dispatch({ type: "SET_POCKET", payload: pocket.id });
+    const breast = currentSuit.breastPocket?.[0];
+    if (breast?.id) dispatch({ type: "SET_BREAST_POCKET", payload: breast.id });
+    const cuff = currentSuit.cuffs?.[0];
+    if (cuff?.id) dispatch({ type: "SET_CUFF", payload: cuff.id });
+  };
+  const resetAccents = () => {
+    const defaultButton = buttons?.[0];
+    if (defaultButton?.id) dispatch({ type: "SET_BUTTON", payload: defaultButton.id });
+    const defaultInterior = (liningOptions || [])[0];
+    if (defaultInterior?.id) dispatch({ type: "SET_INTERIOR", payload: defaultInterior.id });
+    if (config.showShirt) dispatch({ type: "TOGGLE_SHIRT" });
+  };
+  const storeOrderId = (orderId: string) => {
+    localStorage.setItem("lastOrderId", orderId);
+    const existingRaw = localStorage.getItem("suitCart");
+    if (!existingRaw) return;
+    const parsed = JSON.parse(existingRaw);
+    if (Array.isArray(parsed) && parsed.length) {
+      parsed[0] = { ...parsed[0], orderId };
+      localStorage.setItem("suitCart", JSON.stringify(parsed));
+    }
+  };
 
   const handleAddToCart = async () => {
     if (savingCart) return;
@@ -304,10 +339,13 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
             price: price.total,
             fabricId: config.colorId,
             contact: null,
+            status: "draft",
           }),
         });
         const json = await res.json();
-        if (!json?.success) {
+        if (json?.success && json?.orderId) {
+          storeOrderId(json.orderId);
+        } else if (!json?.success) {
           console.error("Order sync failed", json?.message);
         }
       } catch (err) {
@@ -330,21 +368,26 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
         <div className="space-y-3 border-b border-gray-100 bg-white px-4 py-3">
           <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">
             <span>Tkanine</span>
-            <a
-              href={uploadUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline-offset-4 hover:text-gray-900"
-            >
-              CMS
-            </a>
+            <div className="flex items-center gap-3">
+              <button onClick={resetFabricFilters} className="underline-offset-4 hover:text-gray-900" type="button">
+                Resetuj
+              </button>
+              <a
+                href={uploadUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline-offset-4 hover:text-gray-900"
+              >
+                CMS
+              </a>
+            </div>
           </div>
           <div className="grid gap-2 sm:grid-cols-[1fr_auto_auto]">
             <input
               value={fabricQuery}
               onChange={(e) => setFabricQuery(e.target.value)}
               className="flex-1 rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700 placeholder:text-gray-400 focus:border-gray-400 focus:outline-none"
-              placeholder="Pretrazi tkaninu ili ifru"
+              placeholder="Pretrazi tkaninu ili sifru"
             />
             <select
               className="w-full rounded-xl border border-gray-200 bg-gray-50 px-2 py-2 text-xs text-gray-700 focus:border-gray-400 focus:outline-none"
@@ -400,6 +443,12 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
     <>
       <DrawerHeader title="Stil" onClose={() => setPanel(null)} />
       <div className="flex-1 space-y-4 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-14">
+        <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+          <span>Reset opcija</span>
+          <button onClick={resetStyleOptions} className="underline-offset-4 hover:text-gray-900" type="button">
+            Resetuj
+          </button>
+        </div>
         <ChoiceGroup
           title="Model odela"
           options={suits.map((suit) => ({ id: suit.id, label: suit.name }))}
@@ -414,7 +463,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
         />
         {activeLapel?.widths?.length ? (
           <ChoiceGroup
-            title="Širina revera"
+            title="Å irina revera"
             options={activeLapel.widths.map((width) => ({ id: width.id, label: width.name }))}
             selectedId={selectedLapelWidthId}
             onSelect={(id) => dispatch({ type: "SET_LAPEL_WIDTH", payload: id })}
@@ -429,6 +478,12 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
     <>
       <DrawerHeader title="Detalji" onClose={() => setPanel(null)} />
       <div className="flex-1 space-y-4 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-14">
+        <div className="flex items-center justify-between rounded-2xl border border-gray-100 bg-white px-4 py-3 text-[11px] font-semibold uppercase tracking-[0.2em] text-gray-500">
+          <span>Reset detalja</span>
+          <button onClick={resetAccents} className="underline-offset-4 hover:text-gray-900" type="button">
+            Resetuj
+          </button>
+        </div>
         <div className="flex items-center justify-between">
           <p className="text-sm font-semibold text-gray-900">Dugmad</p>
           <a
@@ -571,7 +626,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
                 })}
               </div>
             <div className="flex items-center justify-between px-4 pt-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500">
-              <span>Korak 1/3 · Dizajn</span>
+              <span>Korak 1/3 Â· Dizajn</span>
               <div className="flex items-center gap-1.5">
                 {flowSteps.map((step) => (
                   <span
@@ -623,5 +678,6 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
 }
 
 export default MobileControls;
+
 
 
