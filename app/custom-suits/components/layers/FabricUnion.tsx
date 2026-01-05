@@ -37,7 +37,7 @@ const FabricUnionComponent: React.FC<Props> = ({
   textureScale = 1,
 }) => {
   const baseScale = panZoom.scale * textureScale;
-  const bgSize = `${(baseScale * 100).toFixed(2)}% ${((baseScale * 100 * canvas.h) / canvas.w).toFixed(2)}%`;
+  const bgSize = `${(baseScale * 100).toFixed(2)}% ${(baseScale * 100).toFixed(2)}%`;
   const bgPos = `calc(50% + ${Math.round(panZoom.offset.x)}px) calc(50% + ${Math.round(
     panZoom.offset.y
   )}px)`;
