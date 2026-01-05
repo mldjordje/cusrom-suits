@@ -1026,7 +1026,7 @@ const SuitPreview = ({
       {showJacket && (
         <div className="relative mx-auto w-full max-w-[580px] sm:max-w-[540px]">
         <div
-          className={`relative mx-auto w-full origin-top transform scale-[0.86] sm:scale-[0.86] lg:scale-[0.86] ${jacketShadowClass}`}
+          className={`relative mx-auto w-full origin-top transform scale-[0.8] sm:scale-[0.86] lg:scale-[0.86] ${jacketShadowClass}`}
           data-testid="jacket-preview"
           style={{ width: "100%", aspectRatio: "600 / 733", maxWidth: 560 }}
           onWheel={onWheel}
@@ -1232,7 +1232,7 @@ const SuitPreview = ({
     {/* ======================== PANTS CANVAS ======================== */}
       {showPants && pantsLayer && (
         <div
-          className={`relative mx-auto w-full max-w-[560px] origin-top transform scale-[0.92] sm:scale-[0.92] lg:scale-[0.92] ${pantsShadowClass} ${
+          className={`relative mx-auto w-full max-w-[560px] origin-top transform scale-[0.86] sm:scale-[0.92] lg:scale-[0.92] ${pantsShadowClass} ${
             showJacket ? "-mt-20 sm:-mt-16 lg:-mt-12" : "mt-0"
           }`}
           style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 520 }}

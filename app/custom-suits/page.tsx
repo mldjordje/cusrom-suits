@@ -183,7 +183,7 @@ export default function CustomSuitsPage() {
       </div>
       <motion.div
         id="konfigurator"
-        className="mx-auto w-full max-w-[1480px] px-3 pb-24 pt-24 sm:px-4 sm:pt-24 lg:px-2 lg:pb-16"
+        className="mx-auto w-full max-w-[1480px] px-3 pb-20 pt-16 sm:px-4 sm:pb-24 sm:pt-24 lg:px-2 lg:pb-16"
         variants={configuratorVariants}
         initial="hidden"
         animate="visible"
@@ -355,7 +355,7 @@ export default function CustomSuitsPage() {
           </motion.aside>
         </div>
         <motion.div variants={controlsVariants} initial="hidden" animate="visible">
-          <div className="mt-5 flex flex-col gap-3 lg:hidden">
+          <div className="mt-4 flex flex-col gap-3 sm:mt-5 lg:hidden">
             <div className="flex flex-wrap items-center justify-center gap-2">
               {([
                 { id: "both", label: "Sve" },

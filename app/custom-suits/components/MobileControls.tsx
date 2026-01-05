@@ -51,12 +51,6 @@ const drawerOverlayVariants: Variants = {
   exit: { opacity: 0, transition: { duration: 0.25 } },
 };
 
-const flowSteps = [
-  { label: "Dizajn", state: "current" },
-  { label: "Mere", state: "upcoming" },
-  { label: "Porudzbina", state: "upcoming" },
-] as const;
-
 const Badge = ({ label }: { label: string }) => (
   <span className="rounded-full bg-emerald-500 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
     {label}
@@ -603,63 +597,49 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   return (
     <>
       <div className="lg:hidden">
-        <div className="mt-6 h-[1px] w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-        <div className="fixed bottom-3 left-0 right-0 z-30 px-3">
-          <div className="mx-auto max-w-lg rounded-[24px] bg-white/95 shadow-[0_22px_70px_rgba(15,23,42,0.16)] ring-1 ring-black/5">
-            <div className="flex items-center justify-between gap-2 border-b border-gray-100 px-4 py-3">
+        <div className="mt-4 h-[1px] w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
+        <div className="fixed bottom-2 left-0 right-0 z-30 px-3">
+          <div className="mx-auto max-w-md rounded-[22px] bg-white/96 shadow-[0_18px_50px_rgba(15,23,42,0.14)] ring-1 ring-black/5">
+            <div className="flex items-center justify-between gap-1 px-3 py-2">
               {NAV.map((item) => {
                 const active = currentPanel === item.id;
                 return (
-                    <button
-                      key={item.id}
-                      onClick={() => setPanel(item.id)}
-                      className={`flex flex-col items-center gap-1 rounded-2xl px-4 py-3 transition ${
-                        active ? "bg-gray-100 text-gray-900 shadow-sm" : "text-gray-500 hover:bg-gray-50"
-                      }`}
-                    >
-                      <span className="flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50">
-                        <img src={item.icon} alt={item.label} className="h-7 w-7 object-contain opacity-80" />
-                      </span>
-                      <span className="text-sm font-semibold tracking-[0.2em] uppercase">{item.label}</span>
-                    </button>
-                  );
-                })}
-              </div>
-            <div className="flex items-center justify-between px-4 pt-3 text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500">
-              <span>Korak 1/3 Â· Dizajn</span>
-              <div className="flex items-center gap-1.5">
-                {flowSteps.map((step) => (
-                  <span
-                    key={step.label}
-                    className={`h-2 w-2 rounded-full ${
-                      step.state === "current" ? "bg-gray-900" : "bg-gray-300"
+                  <button
+                    key={item.id}
+                    onClick={() => setPanel(item.id)}
+                    className={`flex flex-1 flex-col items-center gap-1 rounded-2xl px-2 py-2 transition ${
+                      active ? "bg-gray-100 text-gray-900 shadow-sm" : "text-gray-500 hover:bg-gray-50"
                     }`}
-                  />
-                ))}
-              </div>
+                  >
+                    <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-gray-50">
+                      <img src={item.icon} alt={item.label} className="h-6 w-6 object-contain opacity-80" />
+                    </span>
+                    <span className="text-[10px] font-semibold tracking-[0.18em] uppercase">{item.label}</span>
+                  </button>
+                );
+              })}
             </div>
-            <div className="flex items-center justify-between gap-3 px-4 py-3">
+            <div className="flex items-center justify-between gap-3 border-t border-gray-100 px-3 py-2.5">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.25em] text-gray-500">Vase odelo</p>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gray-500">Vase odelo</p>
                 <p className="text-lg font-semibold text-gray-900">{price.total} EUR</p>
-                <p className="text-[11px] text-gray-500">Tkanina {fabricPrice} EUR</p>
+                <p className="text-[10px] text-gray-500">Tkanina {fabricPrice} EUR</p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = measurementUrl;
+                  }}
+                  className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
+                >
+                  Nastavi na merenje
+                </button>
               </div>
               <button
                 onClick={handleAddToCart}
                 disabled={savingCart}
-                className="rounded-full bg-[#ff7a00] px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
+                className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 Sacuvaj dizajn
-              </button>
-            </div>
-            <div className="px-4 pb-4">
-              <button
-                onClick={() => {
-                  window.location.href = measurementUrl;
-                }}
-                className="w-full rounded-full border border-gray-900 bg-white px-4 py-2.5 text-sm font-semibold text-gray-900 transition hover:bg-gray-900 hover:text-white"
-              >
-                Nastavi na merenje
               </button>
             </div>
           </div>
