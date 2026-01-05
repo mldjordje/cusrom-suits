@@ -243,7 +243,7 @@ const SuitPreview = ({
   // Pan/zoom samo na teksturu tkanine (ne menja maske)
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [textureResolutionScale, setTextureResolutionScale] = useState(0.95);
+  const [textureResolutionScale, setTextureResolutionScale] = useState(0.65);
   const dragRef = useRef<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false });
 
   const currentSuit = useMemo(
@@ -689,7 +689,7 @@ const SuitPreview = ({
   useEffect(() => {
     if (!fabricTexture) {
       setFabricAvgColor(null);
-      setTextureResolutionScale(0.95);
+      setTextureResolutionScale(0.65);
       return;
     }
     const img = new Image();
@@ -698,8 +698,8 @@ const SuitPreview = ({
       try {
         const natural = Math.max(img.naturalWidth || 0, img.naturalHeight || 0, img.width || 0, img.height || 0);
         if (natural > 0) {
-          const reference = 480;
-          const inferred = clamp(reference / natural, 0.35, 1.35);
+          const reference = 360;
+          const inferred = clamp(reference / natural, 0.2, 1.35);
           setTextureResolutionScale(inferred);
         }
         const c = document.createElement("canvas");
@@ -731,7 +731,7 @@ const SuitPreview = ({
     };
     img.onerror = () => {
       setFabricAvgColor(null);
-      setTextureResolutionScale(0.95);
+      setTextureResolutionScale(0.65);
     };
     img.src = fabricTexture;
   }, [fabricTexture]);
