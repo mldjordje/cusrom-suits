@@ -202,7 +202,7 @@ export default function CustomSuitsPage() {
             animate="visible"
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_45%),radial-gradient(circle_at_80%_10%,rgba(179,32,42,0.08),transparent_40%),radial-gradient(circle_at_50%_85%,rgba(24,39,75,0.06),transparent_40%)] opacity-0 sm:opacity-100 lg:opacity-0" />
-            <div className="relative z-10 flex w-full max-w-4xl items-center justify-center px-2 pb-16 sm:pb-0">
+            <div className="relative z-10 flex w-full max-w-4xl items-center justify-center px-2 pb-32 sm:pb-0">
               <SuitPreview
                 config={config}
                 view={previewView}
