@@ -1250,8 +1250,8 @@ const SuitPreview = ({
     {/* ======================== PANTS CANVAS ======================== */}
       {showPants && pantsLayer && (
         <div
-          className={`relative mx-auto w-full max-w-[560px] origin-top transform scale-[0.82] sm:scale-[0.9] lg:scale-[0.92] ${pantsShadowClass} ${
-            showJacket ? "-mt-24 sm:-mt-16 lg:-mt-12" : "mt-0"
+          className={`relative mx-auto w-full max-w-[560px] origin-top transform scale-[0.8] sm:scale-[0.88] lg:scale-[0.92] ${pantsShadowClass} ${
+            showJacket ? "-mt-28 sm:-mt-18 lg:-mt-12" : "mt-0"
           }`}
           style={{ width: "100%", aspectRatio: "600 / 350", maxWidth: 520 }}
         >

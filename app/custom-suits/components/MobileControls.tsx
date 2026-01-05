@@ -660,5 +660,4 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   );
 }
 
-export default MobileControls;
-
+export default React.memo(MobileControls);
