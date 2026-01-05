@@ -92,20 +92,12 @@ export default function CustomSuitsPage() {
     return url.toString();
   }, [config]);
   const [savingCart, setSavingCart] = React.useState(false);
-  const [previewView, setPreviewView] = React.useState<PreviewView>("both");
-  const [layerVisibility, setLayerVisibility] = React.useState<Record<PreviewLayer, boolean>>({
+  const previewView: PreviewView = "both";
+  const layerVisibility: Record<PreviewLayer, boolean> = {
     fabric: true,
     style: true,
     ao: true,
     vignette: true,
-  });
-  const toggleLayer = (key: PreviewLayer) => {
-    setLayerVisibility((prev) => ({ ...prev, [key]: !(prev[key] ?? true) }));
-  };
-  const lightingEnabled = (layerVisibility.ao ?? true) && (layerVisibility.vignette ?? true);
-  const toggleLighting = () => {
-    const next = !lightingEnabled;
-    setLayerVisibility((prev) => ({ ...prev, ao: next, vignette: next }));
   };
   const storeOrderId = (orderId: string) => {
     localStorage.setItem("lastOrderId", orderId);
@@ -210,7 +202,7 @@ export default function CustomSuitsPage() {
             animate="visible"
           >
             <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_45%),radial-gradient(circle_at_80%_10%,rgba(179,32,42,0.08),transparent_40%),radial-gradient(circle_at_50%_85%,rgba(24,39,75,0.06),transparent_40%)] opacity-0 sm:opacity-100 lg:opacity-0" />
-            <div className="relative z-10 flex w-full max-w-4xl items-center justify-center px-2">
+            <div className="relative z-10 flex w-full max-w-4xl items-center justify-center px-2 pb-16 sm:pb-0">
               <SuitPreview
                 config={config}
                 view={previewView}
@@ -273,65 +265,6 @@ export default function CustomSuitsPage() {
                     </div>
                   </div>
                 </div>
-                <div className="mt-4 rounded-2xl border border-[#eadfd8] bg-white/95 px-4 py-3">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#6f625b]">
-                    Pregled prikaza
-                  </p>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    {([
-                      { id: "both", label: "Sve" },
-                      { id: "jacket", label: "Sako" },
-                      { id: "pants", label: "Pantalone" },
-                    ] as const).map((viewOption) => (
-                      <button
-                        key={viewOption.id}
-                        onClick={() => setPreviewView(viewOption.id)}
-                        className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] transition ${
-                          previewView === viewOption.id
-                            ? "border-gray-900 bg-gray-900 text-white"
-                            : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
-                        }`}
-                      >
-                        {viewOption.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="mt-4 space-y-2 text-[12px] text-gray-600">
-                    <div className="flex items-center justify-between">
-                      <span>Tekstura</span>
-                      <button
-                        onClick={() => toggleLayer("fabric")}
-                        className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
-                          layerVisibility.fabric ? "bg-gray-900 text-white" : "border border-gray-300 text-gray-600"
-                        }`}
-                      >
-                        {layerVisibility.fabric ? "Ukljuceno" : "Iskljuceno"}
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Detalji</span>
-                      <button
-                        onClick={() => toggleLayer("style")}
-                        className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
-                          layerVisibility.style ? "bg-gray-900 text-white" : "border border-gray-300 text-gray-600"
-                        }`}
-                      >
-                        {layerVisibility.style ? "Ukljuceno" : "Iskljuceno"}
-                      </button>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span>Svetlo</span>
-                      <button
-                        onClick={toggleLighting}
-                        className={`rounded-full px-3 py-1 text-[11px] font-semibold transition ${
-                          lightingEnabled ? "bg-gray-900 text-white" : "border border-gray-300 text-gray-600"
-                        }`}
-                      >
-                        {lightingEnabled ? "Ukljuceno" : "Iskljuceno"}
-                      </button>
-                    </div>
-                  </div>
-                </div>
                 <div className="mt-6 space-y-3">
                   <button
                     onClick={handleAddToCart}
@@ -355,59 +288,6 @@ export default function CustomSuitsPage() {
           </motion.aside>
         </div>
         <motion.div variants={controlsVariants} initial="hidden" animate="visible">
-          <div className="mt-3 flex flex-col gap-3 sm:mt-5 lg:hidden">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              {([
-                { id: "both", label: "Sve" },
-                { id: "jacket", label: "Sako" },
-                { id: "pants", label: "Pantalone" },
-              ] as const).map((viewOption) => (
-                <button
-                  key={viewOption.id}
-                  onClick={() => setPreviewView(viewOption.id)}
-                  className={`rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] transition ${
-                    previewView === viewOption.id
-                      ? "border-gray-900 bg-gray-900 text-white"
-                      : "border-gray-200 bg-white text-gray-600"
-                  }`}
-                >
-                  {viewOption.label}
-                </button>
-              ))}
-            </div>
-            <div className="flex flex-wrap items-center justify-center gap-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500">
-              <button
-                onClick={() => toggleLayer("fabric")}
-                className={`rounded-full border px-3 py-1 transition ${
-                  layerVisibility.fabric
-                    ? "border-gray-900 bg-gray-900 text-white"
-                    : "border-gray-200 bg-white text-gray-600"
-                }`}
-              >
-                Tekstura
-              </button>
-              <button
-                onClick={() => toggleLayer("style")}
-                className={`rounded-full border px-3 py-1 transition ${
-                  layerVisibility.style
-                    ? "border-gray-900 bg-gray-900 text-white"
-                    : "border-gray-200 bg-white text-gray-600"
-                }`}
-              >
-                Detalji
-              </button>
-              <button
-                onClick={toggleLighting}
-                className={`rounded-full border px-3 py-1 transition ${
-                  lightingEnabled
-                    ? "border-gray-900 bg-gray-900 text-white"
-                    : "border-gray-200 bg-white text-gray-600"
-                }`}
-              >
-                Svetlo
-              </button>
-            </div>
-          </div>
           <MobileControls
             config={config}
             dispatch={dispatch}

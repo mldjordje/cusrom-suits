@@ -597,49 +597,50 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   return (
     <>
       <div className="lg:hidden">
-        <div className="mt-4 h-[1px] w-full bg-gradient-to-r from-transparent via-gray-200 to-transparent" />
-        <div className="mx-auto w-full max-w-md px-2 pb-3 pt-4">
-          <div className="flex items-center justify-between gap-2">
-            {NAV.map((item) => {
-              const active = currentPanel === item.id;
-              return (
+        <div className="fixed bottom-0 left-0 right-0 z-30">
+          <div className="mx-auto w-full max-w-md border-t border-black/5 bg-white/95 px-3 pb-3 pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur-sm">
+            <div className="flex items-center justify-between gap-2">
+              {NAV.map((item) => {
+                const active = currentPanel === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setPanel(item.id)}
+                    className={`flex flex-1 flex-col items-center gap-1 py-1 transition ${
+                      active ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+                    }`}
+                  >
+                    <span className="flex h-8 w-8 items-center justify-center">
+                      <img src={item.icon} alt={item.label} className="h-5 w-5 object-contain opacity-80" />
+                    </span>
+                    <span className="text-[9px] font-semibold tracking-[0.2em] uppercase">{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mt-2 flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-semibold text-gray-900">Vase odelo</p>
+                <p className="text-xl font-semibold text-gray-900">{price.total} EUR</p>
+                <p className="text-[10px] text-gray-500">Tkanina {fabricPrice} EUR</p>
                 <button
-                  key={item.id}
-                  onClick={() => setPanel(item.id)}
-                  className={`flex flex-1 flex-col items-center gap-1 py-1 transition ${
-                    active ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
-                  }`}
+                  type="button"
+                  onClick={() => {
+                    window.location.href = measurementUrl;
+                  }}
+                  className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
                 >
-                  <span className="flex h-9 w-9 items-center justify-center">
-                    <img src={item.icon} alt={item.label} className="h-6 w-6 object-contain opacity-80" />
-                  </span>
-                  <span className="text-[10px] font-semibold tracking-[0.2em] uppercase">{item.label}</span>
+                  Nastavi na merenje
                 </button>
-              );
-            })}
-          </div>
-          <div className="mt-4 flex items-center justify-between gap-4">
-            <div>
-              <p className="text-[11px] font-semibold text-gray-900">Vase odelo</p>
-              <p className="text-2xl font-semibold text-gray-900">{price.total} EUR</p>
-              <p className="text-[11px] text-gray-500">Tkanina {fabricPrice} EUR</p>
+              </div>
               <button
-                type="button"
-                onClick={() => {
-                  window.location.href = measurementUrl;
-                }}
-                className="mt-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
+                onClick={handleAddToCart}
+                disabled={savingCart}
+                className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
               >
-                Nastavi na merenje
+                Sacuvaj dizajn
               </button>
             </div>
-            <button
-              onClick={handleAddToCart}
-              disabled={savingCart}
-              className="rounded-full bg-[#ff7a00] px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
-            >
-              Sacuvaj dizajn
-            </button>
           </div>
         </div>
       </div>
