@@ -170,13 +170,13 @@ export default function FabricsAdminPage() {
         <p className="text-sm text-gray-600">Dodaj novu tkaninu uploadom ili unosom URL-a.</p>
       </div>
       <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900 shadow-sm">
-        <p className="font-semibold">Kratak tutorial za upload tkanine</p>
+        <p className="font-semibold">Kratak tutorial za fotografisanje i upload tkanine</p>
         <ul className="mt-2 list-disc pl-5 text-xs text-amber-900">
-          <li>Unesi jasan naziv; sifra/code je opcionalna, ali olaksava pretragu.</li>
-          <li>Uploaduj PNG/JPG, idealno kvadrat 800x800+ bez rama i backgrounda.</li>
+          <li>Fotografisi samo tkaninu: popuni kadar, bez stola, ruku ili drugih predmeta.</li>
+          <li>Svetlo treba da bude ravnomerno i difuzno (bez senki, odsjaja i fleka).</li>
+          <li>Tkanina neka bude ravna, bez nabora i preklapanja.</li>
+          <li>PNG/JPG, preporuka 800x800+; nemoj menjati velicinu ili background.</li>
           <li>Koristi ili upload fajla ili Texture URL (ne oba istovremeno).</li>
-          <li>Proveri Ton (auto tone) i ispravi ako deluje pogresno.</li>
-          <li>Cena je broj bez valute (npr. 300).</li>
         </ul>
       </div>
 
