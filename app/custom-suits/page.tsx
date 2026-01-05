@@ -183,7 +183,7 @@ export default function CustomSuitsPage() {
       </div>
       <motion.div
         id="konfigurator"
-        className="mx-auto w-full max-w-[1480px] px-3 pb-20 pt-16 sm:px-4 sm:pb-24 sm:pt-24 lg:px-2 lg:pb-16"
+        className="mx-auto w-full max-w-[1480px] px-3 pb-10 pt-12 sm:px-4 sm:pb-24 sm:pt-24 lg:px-2 lg:pb-16"
         variants={configuratorVariants}
         initial="hidden"
         animate="visible"
@@ -202,14 +202,14 @@ export default function CustomSuitsPage() {
             </div>
           </motion.section>
           <motion.section
-          className={`order-2 relative flex w-full items-center justify-center overflow-visible rounded-[28px] bg-white/90 p-3 shadow-[0_20px_70px_rgba(15,23,42,0.12)] ring-1 ring-black/5 backdrop-blur-sm sm:p-4 lg:order-2 lg:h-full lg:bg-transparent lg:p-0 lg:shadow-none lg:ring-0 lg:backdrop-blur-0 lg:rounded-none transition-transform duration-300 ease-out origin-left ${
+            className={`order-2 relative flex w-full items-center justify-center overflow-visible p-0 sm:rounded-[28px] sm:bg-white/90 sm:p-3 sm:shadow-[0_20px_70px_rgba(15,23,42,0.12)] sm:ring-1 sm:ring-black/5 sm:backdrop-blur-sm lg:order-2 lg:h-full lg:bg-transparent lg:p-0 lg:shadow-none lg:ring-0 lg:backdrop-blur-0 lg:rounded-none transition-transform duration-300 ease-out origin-left ${
               activeMobilePanel ? "translate-x-28 scale-[0.82] sm:translate-x-32 sm:scale-[0.84]" : "translate-x-0"
             } lg:translate-x-0 lg:scale-100`}
-          variants={columnVariants}
-          initial="hidden"
-          animate="visible"
-        >
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_45%),radial-gradient(circle_at_80%_10%,rgba(179,32,42,0.08),transparent_40%),radial-gradient(circle_at_50%_85%,rgba(24,39,75,0.06),transparent_40%)] lg:opacity-0" />
+            variants={columnVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.4),transparent_45%),radial-gradient(circle_at_80%_10%,rgba(179,32,42,0.08),transparent_40%),radial-gradient(circle_at_50%_85%,rgba(24,39,75,0.06),transparent_40%)] opacity-0 sm:opacity-100 lg:opacity-0" />
             <div className="relative z-10 flex w-full max-w-4xl items-center justify-center px-2">
               <SuitPreview
                 config={config}
@@ -355,7 +355,7 @@ export default function CustomSuitsPage() {
           </motion.aside>
         </div>
         <motion.div variants={controlsVariants} initial="hidden" animate="visible">
-          <div className="mt-4 flex flex-col gap-3 sm:mt-5 lg:hidden">
+          <div className="mt-3 flex flex-col gap-3 sm:mt-5 lg:hidden">
             <div className="flex flex-wrap items-center justify-center gap-2">
               {([
                 { id: "both", label: "Sve" },

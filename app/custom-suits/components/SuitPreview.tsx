@@ -23,6 +23,10 @@ const SHIRT_PAIR = cdnPair("shirt_to_jacket_open.png");
 const JACKET_CANVAS = { w: 600, h: 733 } as const;
 const PANTS_CANVAS = { w: 600, h: 350 } as const;
 const MASK_BLEED_PX = 1.1;
+const DEFAULT_TEXTURE_SCALE = 0.55;
+const TEXTURE_SCALE_REFERENCE = 260;
+const TEXTURE_SCALE_MIN = 0.12;
+const TEXTURE_SCALE_MAX = 1.1;
 
 type RGB = { r: number; g: number; b: number };
 
@@ -243,6 +247,7 @@ const SuitPreview = ({
   // Pan/zoom samo na teksturu tkanine (ne menja maske)
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const [textureResolutionScale, setTextureResolutionScale] = useState(DEFAULT_TEXTURE_SCALE);
   const dragRef = useRef<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false });
 
   const currentSuit = useMemo(
@@ -373,7 +378,11 @@ const SuitPreview = ({
     const normalized = typeof raw === "number" ? raw : 0.24;
     return Math.max(0.18, Math.min(0.45, normalized * 1.1));
   }, [selectedFabric]);
-  const textureScaleBoost = (selectedFabric as any)?.textureScale ?? 0.95;
+  const explicitTextureScale = useMemo(() => {
+    const raw = (selectedFabric as any)?.textureScale ?? (selectedFabric as any)?.texture_scale;
+    return typeof raw === "number" && Number.isFinite(raw) ? raw : null;
+  }, [selectedFabric]);
+  const textureScaleBoost = explicitTextureScale ?? textureResolutionScale;
   const useTexture = Boolean(fabricTexture && textureStrength > 0);
   const usePhotoBase = Boolean(process.env.NEXT_PUBLIC_PHOTO_CDN_BASE);
 
@@ -684,12 +693,18 @@ const SuitPreview = ({
   useEffect(() => {
     if (!fabricTexture) {
       setFabricAvgColor(null);
+      setTextureResolutionScale(DEFAULT_TEXTURE_SCALE);
       return;
     }
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => {
       try {
+        const natural = Math.max(img.naturalWidth || 0, img.naturalHeight || 0, img.width || 0, img.height || 0);
+        if (natural > 0) {
+          const inferred = clamp(TEXTURE_SCALE_REFERENCE / natural, TEXTURE_SCALE_MIN, TEXTURE_SCALE_MAX);
+          setTextureResolutionScale(inferred);
+        }
         const c = document.createElement("canvas");
         const ctx = c.getContext("2d");
         if (!ctx) return;
@@ -717,7 +732,10 @@ const SuitPreview = ({
         } else setFabricAvgColor(null);
       } catch {}
     };
-    img.onerror = () => setFabricAvgColor(null);
+    img.onerror = () => {
+      setFabricAvgColor(null);
+      setTextureResolutionScale(DEFAULT_TEXTURE_SCALE);
+    };
     img.src = fabricTexture;
   }, [fabricTexture]);
 
@@ -941,7 +959,7 @@ const SuitPreview = ({
   const onWheel: React.WheelEventHandler<HTMLDivElement> = (e) => {
     e.preventDefault();
     const delta = -e.deltaY;
-    setScale((s) => Math.min(3, Math.max(1, s + delta * 0.0015)));
+    setScale((s) => Math.min(3, Math.max(0.35, s + delta * 0.0015)));
   };
   const onMouseDown: React.MouseEventHandler<HTMLDivElement> = (e) => {
     dragRef.current = { x: e.clientX - offset.x, y: e.clientY - offset.y, active: true };
