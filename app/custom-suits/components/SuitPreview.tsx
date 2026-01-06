@@ -25,8 +25,8 @@ const PANTS_CANVAS = { w: 600, h: 350 } as const;
 const MASK_BLEED_PX = 1.1;
 const DEFAULT_TEXTURE_SCALE = 0.55;
 const TEXTURE_SCALE_REFERENCE = 260;
-const TEXTURE_SCALE_GLOBAL = 0.7;
-const TEXTURE_SCALE_MIN = 0.12;
+const TEXTURE_SCALE_GLOBAL = 0.6;
+const TEXTURE_SCALE_MIN = 0.08;
 const TEXTURE_SCALE_MAX = 1.1;
 
 type RGB = { r: number; g: number; b: number };
@@ -476,7 +476,7 @@ const SuitPreview = ({
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
     if (fabricTone === "dark") {
-      return `${tb.filter} brightness(1.03) contrast(1.18) saturate(1.06)`;
+      return `${tb.filter} brightness(1.03) contrast(1.25) saturate(1.06)`;
     }
     if (fabricTone === "light") {
       return `${tb.filter} brightness(1.05) contrast(1.08) saturate(1.08)`;
@@ -485,7 +485,7 @@ const SuitPreview = ({
   }, [fabricTone, tb.filter, usePhotoBase]);
   const baseTextureOpacity = useMemo(() => {
     if (!useTexture) return 0;
-    const base = fabricTone === "dark" ? 0.42 : fabricTone === "light" ? 0.34 : 0.38;
+    const base = fabricTone === "dark" ? 0.48 : fabricTone === "light" ? 0.34 : 0.4;
     const strength = Math.max(0.2, textureStrength);
     return Math.min(0.7, base + strength * 0.35);
   }, [fabricTone, textureStrength, useTexture]);
@@ -538,7 +538,7 @@ const SuitPreview = ({
     const satBoost = sat > 0.55 ? -0.06 : sat < 0.18 ? 0.03 : 0;
     const brightness = isDark ? 0.12 : isLight ? 0.02 : 0.06;
     const contrast = isDark ? 1.12 : isLight ? 1.06 : 1.1;
-    const textureMul = isDark ? 0.78 : isLight ? 0.7 : 0.85;
+    const textureMul = isDark ? 0.9 : isLight ? 0.7 : 0.88;
     const satTextureMul = sat > 0.5 ? 0.8 : sat < 0.2 ? 1.0 : 0.9;
     return {
       photo: {
@@ -563,11 +563,11 @@ const SuitPreview = ({
       const lumBoost = lum > 0.6 ? 0.12 : lum < 0.25 ? 0.08 : 0.1;
       return clamp(baseTextureOpacity * (0.55 + satBoost + lumBoost), 0.16, 0.42);
     }
-    return clamp(baseTextureOpacity * autoTuning.texture.opacity, 0.12, 0.65);
+    return clamp(baseTextureOpacity * autoTuning.texture.opacity, 0.12, 0.72);
   }, [autoTuning.texture.opacity, baseTextureOpacity, fabricMetrics.lightness, fabricMetrics.saturation, usePhotoBase]);
   const textureBlendMode = useMemo<React.CSSProperties["mixBlendMode"]>(() => {
     if (usePhotoBase) return "soft-light";
-    if (fabricTone === "dark") return "soft-light";
+    if (fabricTone === "dark") return "overlay";
     return fabricMetrics.saturation > 0.5 ? "soft-light" : "overlay";
   }, [fabricMetrics.saturation, fabricTone, usePhotoBase]);
   const fabricTextureStyle = useMemo<React.CSSProperties>(
