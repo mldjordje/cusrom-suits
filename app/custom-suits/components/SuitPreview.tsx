@@ -372,6 +372,8 @@ const SuitPreview = ({
 
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
+  const [fabricTileTexture, setFabricTileTexture] = useState<string | null>(null);
+  const fabricTextureSource = fabricTileTexture || fabricTexture;
   const textureStrength = useMemo(() => {
     const raw = (selectedFabric as any)?.textureStrength;
     const normalized = typeof raw === "number" ? raw : 0.24;
@@ -386,7 +388,7 @@ const SuitPreview = ({
     TEXTURE_SCALE_MIN,
     TEXTURE_SCALE_MAX
   );
-  const useTexture = Boolean(fabricTexture && textureStrength > 0);
+  const useTexture = Boolean(fabricTextureSource && textureStrength > 0);
   const usePhotoBase = Boolean(process.env.NEXT_PUBLIC_PHOTO_CDN_BASE);
 
   const tb = toneBlend(selectedFabric?.tone, level);
@@ -676,6 +678,7 @@ const SuitPreview = ({
   useEffect(() => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
+    setFabricTileTexture(null);
     if (!fabricTexture) {
       setFabricAvgColor(null);
       return;
@@ -710,10 +713,30 @@ const SuitPreview = ({
           const toHex = (x: number) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0");
           setFabricAvgColor(`#${toHex(r / n)}${toHex(g / n)}${toHex(b / n)}`);
         } else setFabricAvgColor(null);
+
+        const tile = document.createElement("canvas");
+        const tctx = tile.getContext("2d");
+        if (!tctx) return;
+        tile.width = TEXTURE_TILE_PX;
+        tile.height = TEXTURE_TILE_PX;
+        tctx.imageSmoothingEnabled = true;
+        tctx.imageSmoothingQuality = "high";
+        const naturalW = img.naturalWidth || img.width || TEXTURE_TILE_PX;
+        const naturalH = img.naturalHeight || img.height || TEXTURE_TILE_PX;
+        const crop = Math.min(naturalW, naturalH);
+        const sx = Math.max(0, Math.round((naturalW - crop) / 2));
+        const sy = Math.max(0, Math.round((naturalH - crop) / 2));
+        tctx.drawImage(img, sx, sy, crop, crop, 0, 0, TEXTURE_TILE_PX, TEXTURE_TILE_PX);
+        try {
+          setFabricTileTexture(tile.toDataURL("image/png"));
+        } catch {
+          setFabricTileTexture(null);
+        }
       } catch {}
     };
     img.onerror = () => {
       setFabricAvgColor(null);
+      setFabricTileTexture(null);
     };
     img.src = fabricTexture;
   }, [fabricTexture]);
@@ -1101,7 +1124,7 @@ const SuitPreview = ({
           <FabricUnion
             layers={fabricMaskLayers}
             resolve={resolveCdn}
-            fabricTexture={useTexture ? fabricTexture : undefined}
+            fabricTexture={useTexture ? fabricTextureSource : undefined}
             textureStyle={fabricTextureStyle}
             baseColor={tunedFabricFill || toneBaseColor}
             fabricAvgColor={tunedFabricFill}
@@ -1266,7 +1289,7 @@ const SuitPreview = ({
           <FabricUnion
             layers={pantsFabricLayersResolved}
             resolve={resolveCdn}
-            fabricTexture={useTexture ? fabricTexture : undefined}
+            fabricTexture={useTexture ? fabricTextureSource : undefined}
             textureStyle={fabricTextureStyle}
             baseColor={tunedFabricFill || toneBaseColor}
             fabricAvgColor={tunedFabricFill}
