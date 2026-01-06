@@ -23,13 +23,14 @@ const SHIRT_PAIR = cdnPair("shirt_to_jacket_open.png");
 const JACKET_CANVAS = { w: 600, h: 733 } as const;
 const PANTS_CANVAS = { w: 600, h: 350 } as const;
 const MASK_BLEED_PX = 1.1;
-const TEXTURE_TILE_PX = 110;
+const TEXTURE_TILE_PX = 90;
 const TEXTURE_SCALE_GLOBAL = 1;
 const TEXTURE_SCALE_MIN = 0.08;
 const TEXTURE_SCALE_MAX = 1.1;
 
 const FABRIC_AVG_CACHE = new Map<string, string | null>();
 const FABRIC_TILE_CACHE = new Map<string, string>();
+const FABRIC_TILE_ROT_CACHE = new Map<string, string>();
 
 type RGB = { r: number; g: number; b: number };
 
@@ -376,7 +377,9 @@ const SuitPreview = ({
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
   const [fabricTileTexture, setFabricTileTexture] = useState<string | null>(null);
+  const [fabricTileTextureRotated, setFabricTileTextureRotated] = useState<string | null>(null);
   const fabricTextureSource = fabricTileTexture || fabricTexture;
+  const fabricTextureSourcePants = fabricTileTextureRotated || fabricTextureSource;
   const textureStrength = useMemo(() => {
     const raw = (selectedFabric as any)?.textureStrength;
     const normalized = typeof raw === "number" ? raw : 0.24;
@@ -682,15 +685,18 @@ const SuitPreview = ({
     setScale(1);
     setOffset({ x: 0, y: 0 });
     setFabricTileTexture(null);
+    setFabricTileTextureRotated(null);
     if (!fabricTexture) {
       setFabricAvgColor(null);
       return;
     }
     const cachedAvg = FABRIC_AVG_CACHE.get(fabricTexture);
     const cachedTile = FABRIC_TILE_CACHE.get(fabricTexture);
+    const cachedTileRot = FABRIC_TILE_ROT_CACHE.get(fabricTexture);
     if (cachedAvg !== undefined) setFabricAvgColor(cachedAvg);
     if (cachedTile) setFabricTileTexture(cachedTile);
-    if (cachedAvg !== undefined && cachedTile) return;
+    if (cachedTileRot) setFabricTileTextureRotated(cachedTileRot);
+    if (cachedAvg !== undefined && cachedTile && cachedTileRot) return;
     const img = new Image();
     img.crossOrigin = "anonymous";
     let cancelled = false;
@@ -757,6 +763,24 @@ const SuitPreview = ({
           } catch {
             setFabricTileTexture(null);
           }
+
+          const rot = document.createElement("canvas");
+          const rctx = rot.getContext("2d");
+          if (!rctx) return;
+          rot.width = TEXTURE_TILE_PX;
+          rot.height = TEXTURE_TILE_PX;
+          rctx.imageSmoothingEnabled = true;
+          rctx.imageSmoothingQuality = "high";
+          rctx.translate(TEXTURE_TILE_PX / 2, TEXTURE_TILE_PX / 2);
+          rctx.rotate(Math.PI / 2);
+          rctx.drawImage(img, sx, sy, crop, crop, -TEXTURE_TILE_PX / 2, -TEXTURE_TILE_PX / 2, TEXTURE_TILE_PX, TEXTURE_TILE_PX);
+          try {
+            const urlRot = rot.toDataURL("image/png");
+            setFabricTileTextureRotated(urlRot);
+            FABRIC_TILE_ROT_CACHE.set(fabricTexture, urlRot);
+          } catch {
+            setFabricTileTextureRotated(null);
+          }
         } catch {}
       };
       if (requestIdle) {
@@ -768,6 +792,7 @@ const SuitPreview = ({
     img.onerror = () => {
       setFabricAvgColor(null);
       setFabricTileTexture(null);
+      setFabricTileTextureRotated(null);
     };
     img.src = fabricTexture;
     return () => {
@@ -1325,7 +1350,7 @@ const SuitPreview = ({
           <FabricUnion
             layers={pantsFabricLayersResolved}
             resolve={resolveCdn}
-            fabricTexture={useTexture ? fabricTextureSource : undefined}
+            fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
             textureStyle={fabricTextureStyle}
             baseColor={tunedFabricFill || toneBaseColor}
             fabricAvgColor={tunedFabricFill}
@@ -1336,7 +1361,6 @@ const SuitPreview = ({
             mask={pantsMask}
             textureScale={fabricTextureScale}
             textureTileSizePx={TEXTURE_TILE_PX}
-            textureRotationDeg={90}
           />
         )}
         {!usePhotoBase && includeStyle && pantsOverlayLayers.length > 0 && (
