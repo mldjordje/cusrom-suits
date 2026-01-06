@@ -138,7 +138,13 @@ const FabricCard = ({
     }`}
   >
     <div className="relative h-20 w-24 overflow-hidden rounded-xl bg-gray-100">
-      <img src={fabric.texture} alt={fabric.name} className="h-full w-full object-cover" />
+      <img
+        src={fabric.texture}
+        alt={fabric.name}
+        className="h-full w-full object-cover"
+        loading="lazy"
+        decoding="async"
+      />
       {active && <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />}
     </div>
     <div className="flex-1">

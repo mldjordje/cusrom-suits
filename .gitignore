@@ -20,3 +20,7 @@ tsconfig.tsbuildinfo
 Thumbs.db
 
 # backend (jer je već na cPanelu)
+
+# backend assets (local only)
+custom-suits-backend/
+transparent-upload/
