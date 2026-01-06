@@ -25,6 +25,7 @@ const PANTS_CANVAS = { w: 600, h: 350 } as const;
 const MASK_BLEED_PX = 1.1;
 const DEFAULT_TEXTURE_SCALE = 0.55;
 const TEXTURE_SCALE_REFERENCE = 260;
+const TEXTURE_SCALE_GLOBAL = 0.7;
 const TEXTURE_SCALE_MIN = 0.12;
 const TEXTURE_SCALE_MAX = 1.1;
 
@@ -382,7 +383,11 @@ const SuitPreview = ({
     const raw = (selectedFabric as any)?.textureScale ?? (selectedFabric as any)?.texture_scale;
     return typeof raw === "number" && Number.isFinite(raw) ? raw : null;
   }, [selectedFabric]);
-  const textureScaleBoost = explicitTextureScale ?? textureResolutionScale;
+  const textureScaleBoost = clamp(
+    (explicitTextureScale ?? textureResolutionScale) * TEXTURE_SCALE_GLOBAL,
+    TEXTURE_SCALE_MIN,
+    TEXTURE_SCALE_MAX
+  );
   const useTexture = Boolean(fabricTexture && textureStrength > 0);
   const usePhotoBase = Boolean(process.env.NEXT_PUBLIC_PHOTO_CDN_BASE);
 
@@ -471,7 +476,7 @@ const SuitPreview = ({
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
     if (fabricTone === "dark") {
-      return `${tb.filter} brightness(1.02) contrast(1.12) saturate(1.05)`;
+      return `${tb.filter} brightness(1.03) contrast(1.18) saturate(1.06)`;
     }
     if (fabricTone === "light") {
       return `${tb.filter} brightness(1.05) contrast(1.08) saturate(1.08)`;
@@ -691,6 +696,8 @@ const SuitPreview = ({
     };
   }, [config.styleId]);
   useEffect(() => {
+    setScale(1);
+    setOffset({ x: 0, y: 0 });
     if (!fabricTexture) {
       setFabricAvgColor(null);
       setTextureResolutionScale(DEFAULT_TEXTURE_SCALE);
