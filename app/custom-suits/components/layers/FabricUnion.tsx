@@ -18,6 +18,7 @@ type Props = {
   mask?: string | null;
   textureScale?: number;
   textureTileSizePx?: number;
+  textureRotationDeg?: number;
 };
 
 const buildMask = (mask?: string | null, fallback?: SpritePair | null) =>
@@ -37,6 +38,7 @@ const FabricUnionComponent: React.FC<Props> = ({
   mask,
   textureScale = 1,
   textureTileSizePx,
+  textureRotationDeg = 0,
 }) => {
   const baseScale = panZoom.scale * textureScale;
   const bgSize =
@@ -119,6 +121,32 @@ const FabricUnionComponent: React.FC<Props> = ({
 
     if (mask) {
       const maskImage = buildMask(mask);
+      if (textureRotationDeg) {
+        return (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              WebkitMaskImage: maskImage,
+              WebkitMaskRepeat: "no-repeat",
+              WebkitMaskSize: "contain",
+              WebkitMaskPosition: "center",
+              maskImage,
+              maskRepeat: "no-repeat",
+              maskSize: "contain",
+              maskPosition: "center",
+            }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                ...baseStyle,
+                transform: `rotate(${textureRotationDeg}deg)`,
+                transformOrigin: "center",
+              }}
+            />
+          </div>
+        );
+      }
       return (
         <div
           className="absolute inset-0"
@@ -141,6 +169,33 @@ const FabricUnionComponent: React.FC<Props> = ({
       const sprite = resolve(layer);
       if (!sprite) return null;
       const maskImage = buildMask(undefined, sprite);
+      if (textureRotationDeg) {
+        return (
+          <div
+            key={`fabric-weave-${layer.id}`}
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              WebkitMaskImage: maskImage,
+              WebkitMaskRepeat: "no-repeat",
+              WebkitMaskSize: "contain",
+              WebkitMaskPosition: "center",
+              maskImage,
+              maskRepeat: "no-repeat",
+              maskSize: "contain",
+              maskPosition: "center",
+            }}
+          >
+            <div
+              className="absolute inset-0"
+              style={{
+                ...baseStyle,
+                transform: `rotate(${textureRotationDeg}deg)`,
+                transformOrigin: "center",
+              }}
+            />
+          </div>
+        );
+      }
       return (
         <div
           key={`fabric-weave-${layer.id}`}

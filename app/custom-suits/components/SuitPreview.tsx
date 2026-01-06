@@ -23,7 +23,7 @@ const SHIRT_PAIR = cdnPair("shirt_to_jacket_open.png");
 const JACKET_CANVAS = { w: 600, h: 733 } as const;
 const PANTS_CANVAS = { w: 600, h: 350 } as const;
 const MASK_BLEED_PX = 1.1;
-const TEXTURE_TILE_PX = 150;
+const TEXTURE_TILE_PX = 110;
 const TEXTURE_SCALE_GLOBAL = 1;
 const TEXTURE_SCALE_MIN = 0.08;
 const TEXTURE_SCALE_MAX = 1.1;
@@ -1336,6 +1336,7 @@ const SuitPreview = ({
             mask={pantsMask}
             textureScale={fabricTextureScale}
             textureTileSizePx={TEXTURE_TILE_PX}
+            textureRotationDeg={90}
           />
         )}
         {!usePhotoBase && includeStyle && pantsOverlayLayers.length > 0 && (
