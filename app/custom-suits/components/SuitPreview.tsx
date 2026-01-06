@@ -28,6 +28,9 @@ const TEXTURE_SCALE_GLOBAL = 1;
 const TEXTURE_SCALE_MIN = 0.08;
 const TEXTURE_SCALE_MAX = 1.1;
 
+const FABRIC_AVG_CACHE = new Map<string, string | null>();
+const FABRIC_TILE_CACHE = new Map<string, string>();
+
 type RGB = { r: number; g: number; b: number };
 
 const HEX_COLOR = /^[0-9a-f]{6}$/i;
@@ -683,62 +686,95 @@ const SuitPreview = ({
       setFabricAvgColor(null);
       return;
     }
+    const cachedAvg = FABRIC_AVG_CACHE.get(fabricTexture);
+    const cachedTile = FABRIC_TILE_CACHE.get(fabricTexture);
+    if (cachedAvg !== undefined) setFabricAvgColor(cachedAvg);
+    if (cachedTile) setFabricTileTexture(cachedTile);
+    if (cachedAvg !== undefined && cachedTile) return;
     const img = new Image();
     img.crossOrigin = "anonymous";
+    let cancelled = false;
+    let idleId: number | null = null;
+    let timeoutId: number | null = null;
+    const requestIdle = (typeof window !== "undefined" ? (window as any).requestIdleCallback : undefined) as
+      | ((cb: () => void, options?: { timeout: number }) => number)
+      | undefined;
+    const cancelIdle = (typeof window !== "undefined" ? (window as any).cancelIdleCallback : undefined) as
+      | ((id: number) => void)
+      | undefined;
     img.onload = () => {
-      try {
-        const natural = Math.max(img.naturalWidth || 0, img.naturalHeight || 0, img.width || 0, img.height || 0);
-        const c = document.createElement("canvas");
-        const ctx = c.getContext("2d");
-        if (!ctx) return;
-        const w = 32,
-          h = 32;
-        c.width = w;
-        c.height = h;
-        ctx.drawImage(img, 0, 0, w, h);
-        const d = ctx.getImageData(0, 0, w, h).data;
-        let r = 0,
-          g = 0,
-          b = 0,
-          n = 0;
-        for (let i = 0; i < d.length; i += 4) {
-          const a = d[i + 3];
-          if (a < 10) continue;
-          r += d[i];
-          g += d[i + 1];
-          b += d[i + 2];
-          n++;
-        }
-        if (n > 0) {
-          const toHex = (x: number) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0");
-          setFabricAvgColor(`#${toHex(r / n)}${toHex(g / n)}${toHex(b / n)}`);
-        } else setFabricAvgColor(null);
-
-        const tile = document.createElement("canvas");
-        const tctx = tile.getContext("2d");
-        if (!tctx) return;
-        tile.width = TEXTURE_TILE_PX;
-        tile.height = TEXTURE_TILE_PX;
-        tctx.imageSmoothingEnabled = true;
-        tctx.imageSmoothingQuality = "high";
-        const naturalW = img.naturalWidth || img.width || TEXTURE_TILE_PX;
-        const naturalH = img.naturalHeight || img.height || TEXTURE_TILE_PX;
-        const crop = Math.min(naturalW, naturalH);
-        const sx = Math.max(0, Math.round((naturalW - crop) / 2));
-        const sy = Math.max(0, Math.round((naturalH - crop) / 2));
-        tctx.drawImage(img, sx, sy, crop, crop, 0, 0, TEXTURE_TILE_PX, TEXTURE_TILE_PX);
+      const run = () => {
+        if (cancelled) return;
         try {
-          setFabricTileTexture(tile.toDataURL("image/png"));
-        } catch {
-          setFabricTileTexture(null);
-        }
-      } catch {}
+          const c = document.createElement("canvas");
+          const ctx = c.getContext("2d");
+          if (!ctx) return;
+          const w = 32,
+            h = 32;
+          c.width = w;
+          c.height = h;
+          ctx.drawImage(img, 0, 0, w, h);
+          const d = ctx.getImageData(0, 0, w, h).data;
+          let r = 0,
+            g = 0,
+            b = 0,
+            n = 0;
+          for (let i = 0; i < d.length; i += 4) {
+            const a = d[i + 3];
+            if (a < 10) continue;
+            r += d[i];
+            g += d[i + 1];
+            b += d[i + 2];
+            n++;
+          }
+          if (n > 0) {
+            const toHex = (x: number) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0");
+            const avg = `#${toHex(r / n)}${toHex(g / n)}${toHex(b / n)}`;
+            setFabricAvgColor(avg);
+            FABRIC_AVG_CACHE.set(fabricTexture, avg);
+          } else {
+            setFabricAvgColor(null);
+            FABRIC_AVG_CACHE.set(fabricTexture, null);
+          }
+
+          const tile = document.createElement("canvas");
+          const tctx = tile.getContext("2d");
+          if (!tctx) return;
+          tile.width = TEXTURE_TILE_PX;
+          tile.height = TEXTURE_TILE_PX;
+          tctx.imageSmoothingEnabled = true;
+          tctx.imageSmoothingQuality = "high";
+          const naturalW = img.naturalWidth || img.width || TEXTURE_TILE_PX;
+          const naturalH = img.naturalHeight || img.height || TEXTURE_TILE_PX;
+          const crop = Math.min(naturalW, naturalH);
+          const sx = Math.max(0, Math.round((naturalW - crop) / 2));
+          const sy = Math.max(0, Math.round((naturalH - crop) / 2));
+          tctx.drawImage(img, sx, sy, crop, crop, 0, 0, TEXTURE_TILE_PX, TEXTURE_TILE_PX);
+          try {
+            const url = tile.toDataURL("image/png");
+            setFabricTileTexture(url);
+            FABRIC_TILE_CACHE.set(fabricTexture, url);
+          } catch {
+            setFabricTileTexture(null);
+          }
+        } catch {}
+      };
+      if (requestIdle) {
+        idleId = requestIdle(run, { timeout: 250 });
+      } else {
+        timeoutId = window.setTimeout(run, 0);
+      }
     };
     img.onerror = () => {
       setFabricAvgColor(null);
       setFabricTileTexture(null);
     };
     img.src = fabricTexture;
+    return () => {
+      cancelled = true;
+      if (idleId !== null && cancelIdle) cancelIdle(idleId);
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+    };
   }, [fabricTexture]);
 
   useEffect(() => {
