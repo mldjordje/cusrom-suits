@@ -17,6 +17,7 @@ type Props = {
   canvas: { w: number; h: number };
   mask?: string | null;
   textureScale?: number;
+  textureTileSizePx?: number;
 };
 
 const buildMask = (mask?: string | null, fallback?: SpritePair | null) =>
@@ -35,9 +36,13 @@ const FabricUnionComponent: React.FC<Props> = ({
   canvas,
   mask,
   textureScale = 1,
+  textureTileSizePx,
 }) => {
   const baseScale = panZoom.scale * textureScale;
-  const bgSize = `${(baseScale * 100).toFixed(2)}% ${(baseScale * 100).toFixed(2)}%`;
+  const bgSize =
+    typeof textureTileSizePx === "number" && Number.isFinite(textureTileSizePx)
+      ? `${(textureTileSizePx * baseScale).toFixed(2)}px ${(textureTileSizePx * baseScale).toFixed(2)}px`
+      : `${(baseScale * 100).toFixed(2)}% ${(baseScale * 100).toFixed(2)}%`;
   const bgPos = `calc(50% + ${Math.round(panZoom.offset.x)}px) calc(50% + ${Math.round(
     panZoom.offset.y
   )}px)`;

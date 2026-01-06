@@ -23,9 +23,8 @@ const SHIRT_PAIR = cdnPair("shirt_to_jacket_open.png");
 const JACKET_CANVAS = { w: 600, h: 733 } as const;
 const PANTS_CANVAS = { w: 600, h: 350 } as const;
 const MASK_BLEED_PX = 1.1;
-const DEFAULT_TEXTURE_SCALE = 0.55;
-const TEXTURE_SCALE_REFERENCE = 260;
-const TEXTURE_SCALE_GLOBAL = 0.6;
+const TEXTURE_TILE_PX = 150;
+const TEXTURE_SCALE_GLOBAL = 1;
 const TEXTURE_SCALE_MIN = 0.08;
 const TEXTURE_SCALE_MAX = 1.1;
 
@@ -248,7 +247,6 @@ const SuitPreview = ({
   // Pan/zoom samo na teksturu tkanine (ne menja maske)
   const [scale, setScale] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
-  const [textureResolutionScale, setTextureResolutionScale] = useState(DEFAULT_TEXTURE_SCALE);
   const dragRef = useRef<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false });
 
   const currentSuit = useMemo(
@@ -384,7 +382,7 @@ const SuitPreview = ({
     return typeof raw === "number" && Number.isFinite(raw) ? raw : null;
   }, [selectedFabric]);
   const textureScaleBoost = clamp(
-    (explicitTextureScale ?? textureResolutionScale) * TEXTURE_SCALE_GLOBAL,
+    (explicitTextureScale ?? 1) * TEXTURE_SCALE_GLOBAL,
     TEXTURE_SCALE_MIN,
     TEXTURE_SCALE_MAX
   );
@@ -393,23 +391,6 @@ const SuitPreview = ({
 
   const tb = toneBlend(selectedFabric?.tone, level);
   const toneVis = getToneConfig(selectedFabric?.tone, level);
-  const softenedTone = useMemo(
-    () => ({
-      ...toneVis,
-      fabric: { ...toneVis.fabric, opacity: toneVis.fabric.opacity * (usePhotoBase ? 0.8 : 0.65) },
-      weaveSharpness: toneVis.weaveSharpness * (usePhotoBase ? 1.05 : 0.85),
-      ambientOcclusion: toneVis.ambientOcclusion * (usePhotoBase ? 0.8 : 0.7),
-      noise: toneVis.noise * (usePhotoBase ? 0.6 : 0.4),
-      vignette: toneVis.vignette * (usePhotoBase ? 0.7 : 0.6),
-      highlightTop: toneVis.highlightTop * (usePhotoBase ? 0.7 : 0.6),
-      highlightBottom: toneVis.highlightBottom * (usePhotoBase ? 0.7 : 0.6),
-      detailOpacity: toneVis.detailOpacity * (usePhotoBase ? 0.7 : 0.5),
-      detailScale: toneVis.detailScale * (usePhotoBase ? 0.95 : 0.85),
-      edgesOpacity: toneVis.edgesOpacity * (usePhotoBase ? 0.8 : 0.7),
-      outlinesOpacity: toneVis.outlinesOpacity * (usePhotoBase ? 0.8 : 0.7),
-    }),
-    [toneVis, usePhotoBase]
-  );
   const detailTone = useMemo(
     () => ({
       ...toneVis,
@@ -489,10 +470,7 @@ const SuitPreview = ({
     const strength = Math.max(0.2, textureStrength);
     return Math.min(0.7, base + strength * 0.35);
   }, [fabricTone, textureStrength, useTexture]);
-  const fabricTextureScale = useMemo(
-    () => softenedTone.weaveSharpness * (fabricTone === "dark" ? 0.9 : 0.85) * textureScaleBoost,
-    [fabricTone, softenedTone.weaveSharpness, textureScaleBoost]
-  );
+  const fabricTextureScale = useMemo(() => textureScaleBoost, [textureScaleBoost]);
   const needsDarkBoost = fabricTone === "dark";
   // Average color from fabric texture (to better match hue)
   const [fabricAvgColor, setFabricAvgColor] = useState<string | null>(null);
@@ -700,7 +678,6 @@ const SuitPreview = ({
     setOffset({ x: 0, y: 0 });
     if (!fabricTexture) {
       setFabricAvgColor(null);
-      setTextureResolutionScale(DEFAULT_TEXTURE_SCALE);
       return;
     }
     const img = new Image();
@@ -708,10 +685,6 @@ const SuitPreview = ({
     img.onload = () => {
       try {
         const natural = Math.max(img.naturalWidth || 0, img.naturalHeight || 0, img.width || 0, img.height || 0);
-        if (natural > 0) {
-          const inferred = clamp(TEXTURE_SCALE_REFERENCE / natural, TEXTURE_SCALE_MIN, TEXTURE_SCALE_MAX);
-          setTextureResolutionScale(inferred);
-        }
         const c = document.createElement("canvas");
         const ctx = c.getContext("2d");
         if (!ctx) return;
@@ -741,7 +714,6 @@ const SuitPreview = ({
     };
     img.onerror = () => {
       setFabricAvgColor(null);
-      setTextureResolutionScale(DEFAULT_TEXTURE_SCALE);
     };
     img.src = fabricTexture;
   }, [fabricTexture]);
@@ -1139,6 +1111,7 @@ const SuitPreview = ({
             canvas={JACKET_CANVAS}
             mask={jacketMask}
             textureScale={fabricTextureScale}
+            textureTileSizePx={TEXTURE_TILE_PX}
           />
         )}
         {!usePhotoBase && needsDarkBoost && jacketMask && (
@@ -1298,66 +1271,67 @@ const SuitPreview = ({
             baseColor={tunedFabricFill || toneBaseColor}
             fabricAvgColor={tunedFabricFill}
             baseBlendMode="color"
-              baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+            baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
             panZoom={panZoom}
             canvas={PANTS_CANVAS}
-              mask={pantsMask}
-              textureScale={fabricTextureScale}
-            />
-          )}
-          {!usePhotoBase && includeStyle && pantsOverlayLayers.length > 0 && (
+            mask={pantsMask}
+            textureScale={fabricTextureScale}
+            textureTileSizePx={TEXTURE_TILE_PX}
+          />
+        )}
+        {!usePhotoBase && includeStyle && pantsOverlayLayers.length > 0 && (
+          <BaseLayer
+            layers={pantsOverlayLayers}
+            resolve={resolveCdn}
+            blendMode="soft-light"
+            opacity={styleBaseOverlayOpacityTuned * 0.8}
+            mask={pantsMask}
+          />
+        )}
+        {!usePhotoBase && needsDarkBoost && pantsMask && (
+          <div
+            className="absolute inset-0 pointer-events-none"
+            style={{
+              mixBlendMode: "multiply",
+              opacity: darkBoostOpacity,
+              backgroundColor: darkBoostColor,
+              WebkitMaskImage: `url(${pantsMask})`,
+              WebkitMaskRepeat: "no-repeat",
+              WebkitMaskSize: "contain",
+              WebkitMaskPosition: "center",
+              maskImage: `url(${pantsMask})`,
+              maskRepeat: "no-repeat",
+              maskSize: "contain",
+              maskPosition: "center",
+            }}
+          />
+        )}
+        {!usePhotoBase && showLayer("fabric") && pantsDetailLayers.length > 0 && (
+          <>
             <BaseLayer
-              layers={pantsOverlayLayers}
-              resolve={resolveCdn}
-              blendMode="soft-light"
-              opacity={styleBaseOverlayOpacityTuned * 0.8}
+              layers={pantsDetailLayers}
+              resolve={resolveShading}
+              blendMode={detailTone.shading.blend}
+              opacity={structuralShadingOpacityTuned * 0.9}
               mask={pantsMask}
             />
-          )}
-          {!usePhotoBase && needsDarkBoost && pantsMask && (
-            <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                mixBlendMode: "multiply",
-                opacity: darkBoostOpacity,
-                backgroundColor: darkBoostColor,
-                WebkitMaskImage: `url(${pantsMask})`,
-                WebkitMaskRepeat: "no-repeat",
-                WebkitMaskSize: "contain",
-                WebkitMaskPosition: "center",
-                maskImage: `url(${pantsMask})`,
-                maskRepeat: "no-repeat",
-                maskSize: "contain",
-                maskPosition: "center",
-              }}
+            <BaseLayer
+              layers={pantsDetailLayers}
+              resolve={resolveSpecular}
+              blendMode={detailTone.specular.blend}
+              opacity={structuralSpecularOpacityTuned * 0.6}
+              mask={pantsMask}
             />
-          )}
-          {!usePhotoBase && showLayer("fabric") && pantsDetailLayers.length > 0 && (
-            <>
-              <BaseLayer
-                layers={pantsDetailLayers}
-                resolve={resolveShading}
-                blendMode={detailTone.shading.blend}
-                opacity={structuralShadingOpacityTuned * 0.9}
-                mask={pantsMask}
-              />
-              <BaseLayer
-                layers={pantsDetailLayers}
-                resolve={resolveSpecular}
-                blendMode={detailTone.specular.blend}
-                opacity={structuralSpecularOpacityTuned * 0.6}
-                mask={pantsMask}
-              />
-              <BaseLayer
-                layers={pantsDetailLayers}
-                resolve={resolveEdges}
-                blendMode="multiply"
-                opacity={structuralEdgesOpacityTuned}
-                mask={pantsMask}
-              />
-            </>
-          )}
-          {!usePhotoBase && showLayer("fabric") && pantsStyleLayers.length > 0 && (
+            <BaseLayer
+              layers={pantsDetailLayers}
+              resolve={resolveEdges}
+              blendMode="multiply"
+              opacity={structuralEdgesOpacityTuned}
+              mask={pantsMask}
+            />
+          </>
+        )}
+        {!usePhotoBase && showLayer("fabric") && pantsStyleLayers.length > 0 && (
             <>
               <BaseLayer
                 layers={pantsStyleLayers}
