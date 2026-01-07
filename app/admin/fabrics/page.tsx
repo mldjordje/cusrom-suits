@@ -354,7 +354,7 @@ export default function FabricsAdminPage() {
           <li>Tkanina neka bude ravna, bez nabora i preklapanja.</li>
           <li>PNG/JPG, preporuka 800x800+; nemoj menjati velicinu ili background.</li>
           <li>Koristi ili upload fajla ili Texture URL (ne oba istovremeno).</li>
-          <li>Posle upload-a mozes kliknuti "Predlozi podesavanja" za automatski predlog.</li>
+          <li>Posle upload-a mozes kliknuti &quot;Predlozi podesavanja&quot; za automatski predlog.</li>
         </ul>
       </div>
 
