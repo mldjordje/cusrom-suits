@@ -618,6 +618,10 @@ const SuitPreview = ({
     () => patternStripe || (stripeStrength > 0.22 && stripeOrientation !== "none"),
     [patternStripe, stripeStrength, stripeOrientation]
   );
+  const stripeWhiteBoost = useMemo(
+    () => stripeBoost && (fabricTone === "dark" || fabricMetrics.lightness < 0.4),
+    [stripeBoost, fabricMetrics.lightness, fabricTone]
+  );
   const fabricTextureScale = useMemo(() => {
     const stripeScale = stripeBoost ? clamp(0.72 + (1 - stripeStrength) * 0.08, 0.68, 0.85) : 1;
     return clamp(textureScaleBoost * stripeScale, TEXTURE_SCALE_MIN, TEXTURE_SCALE_MAX);
@@ -640,12 +644,14 @@ const SuitPreview = ({
       const baseBrightness = 1.03;
       const baseContrast = 1.25;
       const baseSaturate = 1.06;
-      const stripeContrast = stripeBoost ? 0.18 + stripeStrength * 0.12 : 0;
-      const stripeBrightness = stripeBoost ? 0.02 + stripeStrength * 0.02 : 0;
-      const stripeSaturate = stripeBoost ? 0.03 : 0;
-      const brightness = textureBrightnessOverride ?? baseBrightness + stripeBrightness;
-      const contrast = textureContrastOverride ?? baseContrast + stripeContrast;
-      const saturate = baseSaturate + stripeSaturate;
+      const stripeContrast = stripeBoost ? (stripeWhiteBoost ? 0.32 + stripeStrength * 0.18 : 0.18 + stripeStrength * 0.12) : 0;
+      const stripeBrightness = stripeBoost ? (stripeWhiteBoost ? 0.08 + stripeStrength * 0.04 : 0.02 + stripeStrength * 0.02) : 0;
+      const stripeSaturate = stripeBoost ? (stripeWhiteBoost ? -0.04 : 0.03) : 0;
+      const baseBrightnessValue = textureBrightnessOverride ?? baseBrightness;
+      const baseContrastValue = textureContrastOverride ?? baseContrast;
+      const brightness = clamp(baseBrightnessValue + stripeBrightness, 0.9, 1.7);
+      const contrast = clamp(baseContrastValue + stripeContrast, 1.0, 1.9);
+      const saturate = clamp(baseSaturate + stripeSaturate, 0.95, 1.25);
       return `${tb.filter} brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)}) saturate(${saturate.toFixed(
         2
       )})`;
@@ -729,9 +735,10 @@ const SuitPreview = ({
   ]);
   const textureBlendMode = useMemo<React.CSSProperties["mixBlendMode"]>(() => {
     if (usePhotoBase) return "soft-light";
+    if (stripeWhiteBoost) return "lighten";
     if (fabricTone === "dark") return "overlay";
     return fabricMetrics.saturation > 0.5 ? "soft-light" : "overlay";
-  }, [fabricMetrics.saturation, fabricTone, usePhotoBase]);
+  }, [fabricMetrics.saturation, fabricTone, stripeWhiteBoost, usePhotoBase]);
   const fabricTextureStyle = useMemo<React.CSSProperties>(
     () => ({
       filter: fabricTextureFilter,
