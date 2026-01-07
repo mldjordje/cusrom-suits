@@ -14,6 +14,7 @@ import { BaseLayer } from "./layers/BaseLayer";
 import { FabricUnion } from "./layers/FabricUnion";
 import { GlobalOverlay } from "./layers/GlobalOverlay";
 import { LightingPasses } from "./layers/LightingPasses";
+import { spriteBackground } from "./layers/types";
 
 /* =====================================================================================
    CDN helpers (ostaju jer maske i strukturalni sprite-ovi su i dalje iz transparent/)
@@ -908,11 +909,18 @@ const SuitPreview = ({
     () => fabricMaskLayers.map((layer) => layer.src).filter(Boolean).join("|"),
     [fabricMaskLayers]
   );
-  const pantsMaskLayers = useMemo(() => [...pantsFabricLayers, ...pantsOverlayLayers], [pantsFabricLayers, pantsOverlayLayers]);
-  const pantsMaskKey = useMemo(
-    () => pantsMaskLayers.map((layer) => layer.src).filter(Boolean).join("|"),
-    [pantsMaskLayers]
+  const pantsMaskLayers = useMemo(
+    () => [...pantsFabricLayers, ...pantsOverlayLayers],
+    [pantsFabricLayers, pantsOverlayLayers]
   );
+  const pantsMaskSourceLayers = useMemo(
+    () => (usePhotoBase ? pantsPhotoLayers : pantsMaskLayers),
+    [pantsMaskLayers, pantsPhotoLayers, usePhotoBase]
+  );
+  const pantsMaskKey = useMemo(() => {
+    const base = pantsMaskSourceLayers.map((layer) => layer.src).filter(Boolean).join("|");
+    return usePhotoBase ? `${base}|photo:${photoVariant}` : base;
+  }, [pantsMaskSourceLayers, photoVariant, usePhotoBase]);
   useEffect(() => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
@@ -1171,8 +1179,8 @@ const SuitPreview = ({
           if (!ctx) return;
           ctx.clearRect(0, 0, c.width, c.height);
           ctx.globalCompositeOperation = "source-over";
-          for (const layer of pantsMaskLayers) {
-            const pair = cdnPair(layer.src);
+          for (const layer of pantsMaskSourceLayers) {
+            const pair = usePhotoBase ? photoPair(layer.src, photoVariant) : cdnPair(layer.src);
             const tryLoad = (url: string) =>
               new Promise<HTMLImageElement>((resolve, reject) => {
                 const img = new Image();
@@ -1238,7 +1246,7 @@ const SuitPreview = ({
       if (timeoutId !== null) window.clearTimeout(timeoutId);
       setPantsMaskBuilding(false);
     };
-  }, [pantsMaskKey, pantsMaskLayers]);
+  }, [pantsMaskKey, pantsMaskSourceLayers, photoVariant, usePhotoBase]);
 
   useEffect(() => {
     if (!detailLayers.length && !pantsLayer) {
@@ -1358,7 +1366,7 @@ const SuitPreview = ({
     [photoVariant]
   );
   const jacketMask = jacketUnionMask;
-  const pantsMask = pantsUnionMask ?? pantsMaskPair?.png ?? null;
+  const pantsMask = pantsUnionMask ?? (pantsMaskPair ? spriteBackground(pantsMaskPair) : null);
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
 

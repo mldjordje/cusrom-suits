@@ -21,8 +21,12 @@ type Props = {
   textureRotationDeg?: number;
 };
 
-const buildMask = (mask?: string | null, fallback?: SpritePair | null) =>
-  mask ? `url(${mask})` : fallback ? spriteBackground(fallback) : undefined;
+const buildMask = (mask?: string | null, fallback?: SpritePair | null) => {
+  if (mask) {
+    return mask.includes("url(") ? mask : `url(${mask})`;
+  }
+  return fallback ? spriteBackground(fallback) : undefined;
+};
 
 const FabricUnionComponent: React.FC<Props> = ({
   layers,

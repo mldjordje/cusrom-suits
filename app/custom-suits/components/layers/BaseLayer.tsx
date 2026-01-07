@@ -23,7 +23,7 @@ const BaseLayerComponent: React.FC<Props> = ({
   composite,
   mask,
 }) => {
-  const maskImage = mask ? `url(${mask})` : undefined;
+  const maskImage = mask ? (mask.includes("url(") ? mask : `url(${mask})`) : undefined;
   const resolvedLayers = useMemo(
     () =>
       layers
