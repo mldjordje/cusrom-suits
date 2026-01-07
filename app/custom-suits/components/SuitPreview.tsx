@@ -502,6 +502,7 @@ const SuitPreview = ({
     () => parseNumber((selectedFabric as any)?.textureBrightness ?? (selectedFabric as any)?.texture_brightness),
     [selectedFabric]
   );
+  const hasExplicitTextureScale = typeof explicitTextureScale === "number" && Number.isFinite(explicitTextureScale);
   const textureScaleBoost = clamp(
     (explicitTextureScale ?? 1) * TEXTURE_SCALE_GLOBAL,
     TEXTURE_SCALE_MIN,
@@ -626,9 +627,12 @@ const SuitPreview = ({
   const stripeShadingMul = stripeWhiteBoost ? 0.82 : 1;
   const stripeEdgeMul = stripeWhiteBoost ? 0.88 : 1;
   const fabricTextureScale = useMemo(() => {
-    const stripeScale = stripeBoost ? clamp(0.72 + (1 - stripeStrength) * 0.08, 0.68, 0.85) : 1;
+    if (!stripeBoost || hasExplicitTextureScale) {
+      return textureScaleBoost;
+    }
+    const stripeScale = clamp(0.82 + (1 - stripeStrength) * 0.1, 0.78, 0.96);
     return clamp(textureScaleBoost * stripeScale, TEXTURE_SCALE_MIN, TEXTURE_SCALE_MAX);
-  }, [stripeBoost, stripeStrength, textureScaleBoost]);
+  }, [hasExplicitTextureScale, stripeBoost, stripeStrength, textureScaleBoost]);
   const pantsTextureRotation = useMemo(() => {
     const raw = parseNumber(
       (selectedFabric as any)?.pantsTextureRotation ?? (selectedFabric as any)?.pants_texture_rotation
@@ -658,8 +662,10 @@ const SuitPreview = ({
           : 0.02 + stripeStrength * 0.02
         : 0;
       const stripeSaturate = stripeBoost ? (stripeWhiteBoost ? -0.06 : 0.03) : 0;
-      const baseBrightnessValue = textureBrightnessOverride ?? baseBrightness;
-      const baseContrastValue = textureContrastOverride ?? baseContrast;
+      const minBrightness = patternStripe ? 1.05 : baseBrightness;
+      const minContrast = patternStripe ? 1.35 : baseContrast;
+      const baseBrightnessValue = Math.max(textureBrightnessOverride ?? baseBrightness, minBrightness);
+      const baseContrastValue = Math.max(textureContrastOverride ?? baseContrast, minContrast);
       const brightness = clamp(baseBrightnessValue + stripeBrightness, 0.9, 1.9);
       const contrast = clamp(baseContrastValue + stripeContrast, 1.0, 2.0);
       const saturate = clamp(baseSaturate + stripeSaturate, 0.9, 1.3);
@@ -672,14 +678,17 @@ const SuitPreview = ({
       const contrast = textureContrastOverride ?? 1.08;
       return `${tb.filter} brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)}) saturate(1.08)`;
     }
-    const midBrightness = textureBrightnessOverride ?? 1.03;
-    const midContrast = textureContrastOverride ?? (stripeBoost ? 1.24 : 1.12);
+    const midBrightnessBase = textureBrightnessOverride ?? 1.03;
+    const midContrastBase = textureContrastOverride ?? (stripeBoost ? 1.24 : 1.12);
+    const midBrightness = patternStripe ? Math.max(midBrightnessBase, 1.05) : midBrightnessBase;
+    const midContrast = patternStripe ? Math.max(midContrastBase, 1.25) : midContrastBase;
     const midSaturate = stripeBoost ? 1.1 : 1.07;
     return `${tb.filter} brightness(${midBrightness.toFixed(2)}) contrast(${midContrast.toFixed(2)}) saturate(${midSaturate.toFixed(
       2
     )})`;
   }, [
     fabricTone,
+    patternStripe,
     stripeBoost,
     stripeStrength,
     stripeWhiteBoost,
@@ -760,18 +769,20 @@ const SuitPreview = ({
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
   );
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
-    if (usePhotoBase || !useTexture || !stripeWhiteBoost) return null;
-    const opacity = clamp(0.18 + stripeStrength * 0.18, 0.18, 0.4);
-    const baseBrightness = textureBrightnessOverride ?? 1.55;
-    const baseContrast = textureContrastOverride ?? 1.75;
-    const brightness = clamp(baseBrightness + 0.1, 1.2, 2.0);
-    const contrast = clamp(baseContrast + 0.2, 1.2, 2.2);
+    if (usePhotoBase || !useTexture || !stripeWhiteBoost || lowPowerMode) return null;
+    const opacity = clamp(0.22 + stripeStrength * 0.22, 0.22, 0.48);
+    const baseBrightness = textureBrightnessOverride ?? (patternStripe ? 1.7 : 1.55);
+    const baseContrast = textureContrastOverride ?? (patternStripe ? 1.95 : 1.75);
+    const brightness = clamp(baseBrightness + (patternStripe ? 0.12 : 0.1), 1.2, 2.1);
+    const contrast = clamp(baseContrast + (patternStripe ? 0.28 : 0.2), 1.2, 2.3);
     return {
       mixBlendMode: "screen",
       opacity,
       filter: `brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)}) saturate(0.9)`,
     };
   }, [
+    lowPowerMode,
+    patternStripe,
     stripeStrength,
     stripeWhiteBoost,
     textureBrightnessOverride,
@@ -924,6 +935,12 @@ const SuitPreview = ({
     if (cachedTile) setFabricTileTexture(cachedTile);
     if (cachedStripe) setFabricStripe(cachedStripe);
     if (cachedAvg !== undefined && cachedTile && cachedStripe) return;
+    if (lowPowerMode) {
+      setFabricAvgColor(cachedAvg ?? null);
+      setFabricTileTexture(cachedTile ?? null);
+      setFabricStripe(cachedStripe ?? EMPTY_STRIPE);
+      return;
+    }
     const img = new Image();
     img.crossOrigin = "anonymous";
     let cancelled = false;
@@ -1020,7 +1037,7 @@ const SuitPreview = ({
       if (idleId !== null && cancelIdle) cancelIdle(idleId);
       if (timeoutId !== null) window.clearTimeout(timeoutId);
     };
-  }, [fabricTexture, patternStripe]);
+  }, [fabricTexture, lowPowerMode, patternStripe]);
 
   useEffect(() => {
     if (onAssetStatus) {
@@ -1030,6 +1047,10 @@ const SuitPreview = ({
 
   // Build a single union mask (PNG data URL) over the jacket silhouette to eliminate any anti-alias seams
   useEffect(() => {
+    if (lowPowerMode) {
+      setJacketUnionMask(null);
+      return;
+    }
     if (!jacketMaskKey) {
       setJacketUnionMask(null);
       return;
@@ -1129,10 +1150,14 @@ const SuitPreview = ({
       if (timeoutId !== null) window.clearTimeout(timeoutId);
       setMaskBuilding(false);
     };
-  }, [fabricMaskLayers, jacketMaskKey]);
+  }, [fabricMaskLayers, jacketMaskKey, lowPowerMode]);
 
   // Build a union mask over the pants silhouette to avoid halo/background bleed
   useEffect(() => {
+    if (lowPowerMode) {
+      setPantsUnionMask(null);
+      return;
+    }
     if (!pantsMaskKey) {
       setPantsUnionMask(null);
       return;
@@ -1232,9 +1257,13 @@ const SuitPreview = ({
       if (timeoutId !== null) window.clearTimeout(timeoutId);
       setPantsMaskBuilding(false);
     };
-  }, [pantsFabricLayers, pantsMaskKey]);
+  }, [pantsFabricLayers, pantsMaskKey, lowPowerMode]);
 
   useEffect(() => {
+    if (lowPowerMode) {
+      setAssetWarnings([]);
+      return;
+    }
     if (!detailLayers.length && !pantsLayer) {
       setAssetWarnings([]);
       return;
@@ -1267,7 +1296,7 @@ const SuitPreview = ({
     return () => {
       cancelled = true;
     };
-  }, [detailLayers, pantsOverlayLayers, pantsFabricLayers, pantsLayer]);
+  }, [detailLayers, lowPowerMode, pantsOverlayLayers, pantsFabricLayers, pantsLayer]);
 
   const interiorOptions = useMemo(() => {
     const fromRemote =
