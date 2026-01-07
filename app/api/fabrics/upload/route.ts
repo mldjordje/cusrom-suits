@@ -75,11 +75,11 @@ export async function POST(req: NextRequest) {
     code,
   };
   payload.pattern = pattern;
-  if (textureScale !== null) payload.textureScale = textureScale;
-  if (textureStrength !== null) payload.textureStrength = textureStrength;
-  if (textureContrast !== null) payload.textureContrast = textureContrast;
-  if (textureBrightness !== null) payload.textureBrightness = textureBrightness;
-  if (pantsTextureRotation !== null) payload.pantsTextureRotation = pantsTextureRotation;
+  if (textureScale !== null) payload.texture_scale = textureScale;
+  if (textureStrength !== null) payload.texture_strength = textureStrength;
+  if (textureContrast !== null) payload.texture_contrast = textureContrast;
+  if (textureBrightness !== null) payload.texture_brightness = textureBrightness;
+  if (pantsTextureRotation !== null) payload.pants_texture_rotation = pantsTextureRotation;
 
   const { data, error } = await supabase.from("fabrics").upsert(payload, { onConflict: "id" }).select("*").single();
 

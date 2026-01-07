@@ -23,11 +23,11 @@ type Status = { type: "idle" | "loading" | "error" | "success"; message?: string
 
 const toneOptions = ["light", "medium", "dark"];
 const patternOptions = [
-  { value: "", label: "auto" },
-  { value: "solid", label: "solid" },
-  { value: "pinstripe", label: "pinstripe" },
-  { value: "stripe", label: "stripe" },
-  { value: "check", label: "check" },
+  { value: "", label: "automatski" },
+  { value: "solid", label: "puna boja" },
+  { value: "pinstripe", label: "tanke pruge" },
+  { value: "stripe", label: "pruge" },
+  { value: "check", label: "karo" },
 ];
 
 export default function FabricsAdminPage() {
@@ -289,10 +289,10 @@ export default function FabricsAdminPage() {
           </div>
         </div>
         <div className="rounded-xl border border-dashed border-gray-200 bg-gray-50/70 p-3">
-          <p className="text-xs font-semibold text-gray-700">Preview overrides (optional)</p>
+          <p className="text-xs font-semibold text-gray-700">Podesavanja prikaza (opciono)</p>
           <div className="mt-2 grid gap-3 sm:grid-cols-3">
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Pattern</label>
+              <label className="text-xs font-semibold text-gray-700">Uzorak</label>
               <select
                 value={form.pattern}
                 onChange={(e) => setForm((s) => ({ ...s, pattern: e.target.value }))}
@@ -306,7 +306,7 @@ export default function FabricsAdminPage() {
               </select>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Texture scale</label>
+              <label className="text-xs font-semibold text-gray-700">Skala teksture</label>
               <input
                 value={form.textureScale}
                 onChange={(e) => setForm((s) => ({ ...s, textureScale: e.target.value }))}
@@ -316,7 +316,7 @@ export default function FabricsAdminPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Texture strength</label>
+              <label className="text-xs font-semibold text-gray-700">Jacina teksture</label>
               <input
                 value={form.textureStrength}
                 onChange={(e) => setForm((s) => ({ ...s, textureStrength: e.target.value }))}
@@ -326,7 +326,7 @@ export default function FabricsAdminPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Texture contrast</label>
+              <label className="text-xs font-semibold text-gray-700">Kontrast teksture</label>
               <input
                 value={form.textureContrast}
                 onChange={(e) => setForm((s) => ({ ...s, textureContrast: e.target.value }))}
@@ -336,7 +336,7 @@ export default function FabricsAdminPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Texture brightness</label>
+              <label className="text-xs font-semibold text-gray-700">Svetlina teksture</label>
               <input
                 value={form.textureBrightness}
                 onChange={(e) => setForm((s) => ({ ...s, textureBrightness: e.target.value }))}
@@ -346,7 +346,7 @@ export default function FabricsAdminPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Pants rotation (deg)</label>
+              <label className="text-xs font-semibold text-gray-700">Rotacija pantalona (stepeni)</label>
               <input
                 value={form.pantsTextureRotation}
                 onChange={(e) => setForm((s) => ({ ...s, pantsTextureRotation: e.target.value }))}
@@ -357,7 +357,7 @@ export default function FabricsAdminPage() {
             </div>
           </div>
           <p className="mt-2 text-[11px] text-gray-500">
-            Pinstripe: try contrast 1.35-1.55, brightness 1.02-1.08, pants rotation 90.
+            Pinstripe: probaj kontrast 1.35-1.55, svetlina 1.02-1.08, rotacija pantalona 90.
           </p>
         </div>
         <div className="space-y-2">
