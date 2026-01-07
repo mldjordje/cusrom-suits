@@ -1137,109 +1137,6 @@ const SuitPreview = ({
     };
   }, [fabricMaskLayers, jacketMaskKey]);
 
-  // Build a union mask over the pants silhouette to avoid halo/background bleed
-  useEffect(() => {
-    if (!pantsMaskKey) {
-      setPantsUnionMask(null);
-      return;
-    }
-    const cached = PANTS_MASK_CACHE.get(pantsMaskKey);
-    if (cached) {
-      setPantsUnionMask(cached);
-      return;
-    }
-
-    let cancelled = false;
-    let idleId: number | null = null;
-    let timeoutId: number | null = null;
-    const requestIdle = (typeof window !== "undefined" ? (window as any).requestIdleCallback : undefined) as
-      | ((cb: () => void, options?: { timeout: number }) => number)
-      | undefined;
-    const cancelIdle = (typeof window !== "undefined" ? (window as any).cancelIdleCallback : undefined) as
-      | ((id: number) => void)
-      | undefined;
-
-    const run = () => {
-      if (cancelled) return;
-      setPantsMaskBuilding(true);
-      (async () => {
-        try {
-          const c = document.createElement("canvas");
-          c.width = PANTS_CANVAS.w;
-          c.height = PANTS_CANVAS.h;
-          const ctx = c.getContext("2d");
-          if (!ctx) return;
-          ctx.clearRect(0, 0, c.width, c.height);
-          ctx.globalCompositeOperation = "source-over";
-          for (const layer of pantsMaskSourceLayers) {
-            const pair = usePhotoBase ? photoPair(layer.src, photoVariant) : cdnPair(layer.src);
-            const tryLoad = (url: string) =>
-              new Promise<HTMLImageElement>((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => resolve(img);
-                img.onerror = reject;
-                img.src = url;
-              });
-            let img: HTMLImageElement | null = null;
-            try {
-              img = await tryLoad(pair.webp);
-            } catch {
-              try {
-                img = await tryLoad(pair.png);
-              } catch {
-                img = null;
-              }
-            }
-            if (!img) continue;
-            const scale = Math.min(c.width / img.width, c.height / img.height);
-            const w = Math.round(img.width * scale);
-            const h = Math.round(img.height * scale);
-            const dx = Math.round((c.width - w) / 2);
-            const dy = Math.round((c.height - h) / 2);
-            ctx.drawImage(img, dx, dy, w, h);
-          }
-          if (MASK_BLEED_PX > 0) {
-            const temp = document.createElement("canvas");
-            temp.width = c.width;
-            temp.height = c.height;
-            const tctx = temp.getContext("2d");
-            if (tctx) {
-              tctx.drawImage(c, 0, 0);
-              ctx.clearRect(0, 0, c.width, c.height);
-              ctx.drawImage(temp, 0, 0);
-              ctx.filter = `blur(${MASK_BLEED_PX}px)`;
-              ctx.drawImage(temp, 0, 0);
-              ctx.filter = "none";
-            }
-          }
-          if (!cancelled) {
-            const url = c.toDataURL("image/png");
-            PANTS_MASK_CACHE.set(pantsMaskKey, url);
-            setPantsUnionMask(url);
-          }
-        } catch {
-          if (!cancelled) setPantsUnionMask(null);
-        } finally {
-          if (!cancelled) setPantsMaskBuilding(false);
-        }
-      })();
-    };
-
-    if (requestIdle) {
-      idleId = requestIdle(run, { timeout: 400 });
-    } else {
-      timeoutId = window.setTimeout(run, 0);
-    }
-
-    return () => {
-      cancelled = true;
-      if (idleId !== null && cancelIdle) cancelIdle(idleId);
-      if (timeoutId !== null) window.clearTimeout(timeoutId);
-      setPantsMaskBuilding(false);
-    };
-  }, [pantsMaskKey, pantsMaskSourceLayers, photoVariant, usePhotoBase]);
-
   useEffect(() => {
     if (!detailLayers.length && !pantsLayer) {
       setAssetWarnings([]);
@@ -1369,6 +1266,109 @@ const SuitPreview = ({
   const pantsMask = pantsUnionMask ?? (pantsMaskPair ? spriteBackground(pantsMaskPair) : null);
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
+
+  // Build a union mask over the pants silhouette to avoid halo/background bleed
+  useEffect(() => {
+    if (!pantsMaskKey) {
+      setPantsUnionMask(null);
+      return;
+    }
+    const cached = PANTS_MASK_CACHE.get(pantsMaskKey);
+    if (cached) {
+      setPantsUnionMask(cached);
+      return;
+    }
+
+    let cancelled = false;
+    let idleId: number | null = null;
+    let timeoutId: number | null = null;
+    const requestIdle = (typeof window !== "undefined" ? (window as any).requestIdleCallback : undefined) as
+      | ((cb: () => void, options?: { timeout: number }) => number)
+      | undefined;
+    const cancelIdle = (typeof window !== "undefined" ? (window as any).cancelIdleCallback : undefined) as
+      | ((id: number) => void)
+      | undefined;
+
+    const run = () => {
+      if (cancelled) return;
+      setPantsMaskBuilding(true);
+      (async () => {
+        try {
+          const c = document.createElement("canvas");
+          c.width = PANTS_CANVAS.w;
+          c.height = PANTS_CANVAS.h;
+          const ctx = c.getContext("2d");
+          if (!ctx) return;
+          ctx.clearRect(0, 0, c.width, c.height);
+          ctx.globalCompositeOperation = "source-over";
+          for (const layer of pantsMaskSourceLayers) {
+            const pair = usePhotoBase ? photoPair(layer.src, photoVariant) : cdnPair(layer.src);
+            const tryLoad = (url: string) =>
+              new Promise<HTMLImageElement>((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = url;
+              });
+            let img: HTMLImageElement | null = null;
+            try {
+              img = await tryLoad(pair.webp);
+            } catch {
+              try {
+                img = await tryLoad(pair.png);
+              } catch {
+                img = null;
+              }
+            }
+            if (!img) continue;
+            const scale = Math.min(c.width / img.width, c.height / img.height);
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const dx = Math.round((c.width - w) / 2);
+            const dy = Math.round((c.height - h) / 2);
+            ctx.drawImage(img, dx, dy, w, h);
+          }
+          if (MASK_BLEED_PX > 0) {
+            const temp = document.createElement("canvas");
+            temp.width = c.width;
+            temp.height = c.height;
+            const tctx = temp.getContext("2d");
+            if (tctx) {
+              tctx.drawImage(c, 0, 0);
+              ctx.clearRect(0, 0, c.width, c.height);
+              ctx.drawImage(temp, 0, 0);
+              ctx.filter = `blur(${MASK_BLEED_PX}px)`;
+              ctx.drawImage(temp, 0, 0);
+              ctx.filter = "none";
+            }
+          }
+          if (!cancelled) {
+            const url = c.toDataURL("image/png");
+            PANTS_MASK_CACHE.set(pantsMaskKey, url);
+            setPantsUnionMask(url);
+          }
+        } catch {
+          if (!cancelled) setPantsUnionMask(null);
+        } finally {
+          if (!cancelled) setPantsMaskBuilding(false);
+        }
+      })();
+    };
+
+    if (requestIdle) {
+      idleId = requestIdle(run, { timeout: 400 });
+    } else {
+      timeoutId = window.setTimeout(run, 0);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleId !== null && cancelIdle) cancelIdle(idleId);
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      setPantsMaskBuilding(false);
+    };
+  }, [pantsMaskKey, pantsMaskSourceLayers, photoVariant, usePhotoBase]);
 
   if (!currentSuit) {
     return (
