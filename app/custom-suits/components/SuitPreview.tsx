@@ -662,8 +662,10 @@ const SuitPreview = ({
           : 0.02 + stripeStrength * 0.02
         : 0;
       const stripeSaturate = stripeBoost ? (stripeWhiteBoost ? -0.06 : 0.03) : 0;
-      const baseBrightnessValue = textureBrightnessOverride ?? baseBrightness;
-      const baseContrastValue = textureContrastOverride ?? baseContrast;
+      const minBrightness = patternStripe ? 1.05 : baseBrightness;
+      const minContrast = patternStripe ? 1.35 : baseContrast;
+      const baseBrightnessValue = Math.max(textureBrightnessOverride ?? baseBrightness, minBrightness);
+      const baseContrastValue = Math.max(textureContrastOverride ?? baseContrast, minContrast);
       const brightness = clamp(baseBrightnessValue + stripeBrightness, 0.9, 1.9);
       const contrast = clamp(baseContrastValue + stripeContrast, 1.0, 2.0);
       const saturate = clamp(baseSaturate + stripeSaturate, 0.9, 1.3);
@@ -676,14 +678,17 @@ const SuitPreview = ({
       const contrast = textureContrastOverride ?? 1.08;
       return `${tb.filter} brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)}) saturate(1.08)`;
     }
-    const midBrightness = textureBrightnessOverride ?? 1.03;
-    const midContrast = textureContrastOverride ?? (stripeBoost ? 1.24 : 1.12);
+    const midBrightnessBase = textureBrightnessOverride ?? 1.03;
+    const midContrastBase = textureContrastOverride ?? (stripeBoost ? 1.24 : 1.12);
+    const midBrightness = patternStripe ? Math.max(midBrightnessBase, 1.05) : midBrightnessBase;
+    const midContrast = patternStripe ? Math.max(midContrastBase, 1.25) : midContrastBase;
     const midSaturate = stripeBoost ? 1.1 : 1.07;
     return `${tb.filter} brightness(${midBrightness.toFixed(2)}) contrast(${midContrast.toFixed(2)}) saturate(${midSaturate.toFixed(
       2
     )})`;
   }, [
     fabricTone,
+    patternStripe,
     stripeBoost,
     stripeStrength,
     stripeWhiteBoost,
