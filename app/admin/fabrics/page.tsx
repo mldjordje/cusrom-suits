@@ -21,6 +21,9 @@ type Fabric = {
 
 type Status = { type: "idle" | "loading" | "error" | "success"; message?: string };
 
+type StripeOrientation = "vertical" | "horizontal" | "none";
+type StripeHint = { strength: number; orientation: StripeOrientation; contrast: number };
+
 const toneOptions = ["light", "medium", "dark"];
 const patternOptions = [
   { value: "", label: "automatski" },
@@ -30,9 +33,49 @@ const patternOptions = [
   { value: "check", label: "karo" },
 ];
 
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+
+const computeStripeHint = (data: Uint8ClampedArray, w: number, h: number): StripeHint => {
+  if (!data.length || w < 2 || h < 2) return { strength: 0, orientation: "none", contrast: 0 };
+  const prevRow = new Float32Array(w);
+  let edgeX = 0;
+  let edgeY = 0;
+  let sum = 0;
+  let sumSq = 0;
+  const pixels = w * h;
+
+  for (let y = 0; y < h; y++) {
+    let prevLum = 0;
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      const lum = 0.2126 * data[idx] + 0.7152 * data[idx + 1] + 0.0722 * data[idx + 2];
+      sum += lum;
+      sumSq += lum * lum;
+      if (x > 0) edgeX += Math.abs(lum - prevLum);
+      if (y > 0) edgeY += Math.abs(lum - prevRow[x]);
+      prevRow[x] = lum;
+      prevLum = lum;
+    }
+  }
+
+  const mean = sum / pixels;
+  const variance = Math.max(0, sumSq / pixels - mean * mean);
+  const contrast = Math.min(1, Math.sqrt(variance) / 255);
+  const edgeAvg = (edgeX + edgeY) / (pixels * 255);
+  const ratio = edgeY < 0.0001 ? 999 : edgeX / edgeY;
+  let orientation: StripeOrientation = "none";
+  if (ratio > 1.2) orientation = "vertical";
+  else if (ratio < 0.83) orientation = "horizontal";
+
+  const strength = clamp(edgeAvg * 1.5 + contrast * 0.9, 0, 1);
+  if (strength < 0.12) orientation = "none";
+  return { strength, orientation, contrast };
+};
+
 export default function FabricsAdminPage() {
   const [fabrics, setFabrics] = useState<Fabric[]>([]);
   const [status, setStatus] = useState<Status>({ type: "idle" });
+  const [suggestStatus, setSuggestStatus] = useState<Status>({ type: "idle" });
   const [form, setForm] = useState({
     id: "",
     name: "",
@@ -49,6 +92,49 @@ export default function FabricsAdminPage() {
   });
   const [file, setFile] = useState<File | null>(null);
   const [autoTone, setAutoTone] = useState<string | null>(null);
+
+  const analyzeTexture = async (blob: File) => {
+    const arrayBuffer = await blob.arrayBuffer();
+    const bytes = new Uint8Array(arrayBuffer);
+    const blobUrl = URL.createObjectURL(new Blob([bytes]));
+    try {
+      const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+        const i = new window.Image();
+        i.onload = () => resolve(i);
+        i.onerror = reject;
+        i.src = blobUrl;
+      });
+      const canvas = document.createElement("canvas");
+      const size = 180;
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.drawImage(img, 0, 0, size, size);
+      const data = ctx.getImageData(0, 0, size, size).data;
+      let sum = 0;
+      let sumSq = 0;
+      let count = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const alpha = data[i + 3] / 255;
+        if (alpha < 0.05) continue;
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        const lum = (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+        sum += lum;
+        sumSq += lum * lum;
+        count++;
+      }
+      const avgLum = count ? sum / count : 0.4;
+      const variance = count ? Math.max(0, sumSq / count - avgLum * avgLum) : 0;
+      const contrast = Math.sqrt(variance);
+      const stripe = computeStripeHint(data, size, size);
+      return { avgLum, contrast, stripe };
+    } finally {
+      URL.revokeObjectURL(blobUrl);
+    }
+  };
 
   const loadFabrics = useMemo(
     () => async () => {
@@ -106,6 +192,7 @@ export default function FabricsAdminPage() {
 
   const onFileChange = async (f: File | null) => {
     setFile(f);
+    setSuggestStatus({ type: "idle" });
     if (!f) {
       setAutoTone(null);
       return;
@@ -116,6 +203,50 @@ export default function FabricsAdminPage() {
       setForm((s) => ({ ...s, tone }));
     } else {
       setAutoTone(null);
+    }
+  };
+
+  const suggestSettings = async () => {
+    if (!file) {
+      setSuggestStatus({ type: "error", message: "Prvo uploaduj tkaninu (fajl), pa klikni Predlozi." });
+      return;
+    }
+    setSuggestStatus({ type: "loading", message: "Analiza tkanine..." });
+    try {
+      const analysis = await analyzeTexture(file);
+      if (!analysis) {
+        setSuggestStatus({ type: "error", message: "Ne mogu da procitam teksturu." });
+        return;
+      }
+      const { avgLum, stripe } = analysis;
+      const isStripe = stripe.strength >= 0.18 && stripe.orientation !== "none";
+      if (!isStripe) {
+        setSuggestStatus({ type: "success", message: "Nisu detektovane pruge. Podesavanja ostaju." });
+        return;
+      }
+      const isBoldStripe = stripe.strength >= 0.38 || stripe.contrast >= 0.2;
+      const tone = avgLum < 0.28 ? "dark" : avgLum < 0.55 ? "medium" : "light";
+      const pattern = isBoldStripe ? "stripe" : "pinstripe";
+      const textureScale = isBoldStripe ? "0.85" : "0.70";
+      const textureStrength = isBoldStripe ? "0.60" : "0.70";
+      const textureBrightness =
+        tone === "dark" ? "1.05" : tone === "medium" ? "1.04" : "1.02";
+      const textureContrast =
+        tone === "dark" ? "1.45" : tone === "medium" ? "1.32" : "1.18";
+      const pantsTextureRotation = stripe.orientation === "vertical" ? "90" : "0";
+
+      setForm((s) => ({
+        ...s,
+        pattern,
+        textureScale,
+        textureStrength,
+        textureContrast,
+        textureBrightness,
+        pantsTextureRotation,
+      }));
+      setSuggestStatus({ type: "success", message: "Predlozena podesavanja su postavljena." });
+    } catch {
+      setSuggestStatus({ type: "error", message: "Greska pri analizi tkanine." });
     }
   };
 
@@ -223,6 +354,7 @@ export default function FabricsAdminPage() {
           <li>Tkanina neka bude ravna, bez nabora i preklapanja.</li>
           <li>PNG/JPG, preporuka 800x800+; nemoj menjati velicinu ili background.</li>
           <li>Koristi ili upload fajla ili Texture URL (ne oba istovremeno).</li>
+          <li>Posle upload-a mozes kliknuti "Predlozi podesavanja" za automatski predlog.</li>
         </ul>
       </div>
 
@@ -355,6 +487,29 @@ export default function FabricsAdminPage() {
                 inputMode="numeric"
               />
             </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={suggestSettings}
+              disabled={suggestStatus.type === "loading"}
+              className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold text-gray-700 transition hover:border-gray-300 disabled:opacity-60"
+            >
+              {suggestStatus.type === "loading" ? "Predlazem..." : "Predlozi podesavanja"}
+            </button>
+            {suggestStatus.type !== "idle" && (
+              <span
+                className={`text-xs ${
+                  suggestStatus.type === "error"
+                    ? "text-red-600"
+                    : suggestStatus.type === "success"
+                      ? "text-emerald-600"
+                      : "text-gray-600"
+                }`}
+              >
+                {suggestStatus.message}
+              </span>
+            )}
           </div>
           <p className="mt-2 text-[11px] text-gray-500">
             Pinstripe: probaj kontrast 1.35-1.55, svetlina 1.02-1.08, rotacija pantalona 90.

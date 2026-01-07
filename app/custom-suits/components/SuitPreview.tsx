@@ -636,8 +636,12 @@ const SuitPreview = ({
       (selectedFabric as any)?.pantsTextureRotation ?? (selectedFabric as any)?.pants_texture_rotation
     );
     if (typeof raw === "number") return raw;
+    if (stripeBoost) {
+      if (stripeOrientation === "horizontal") return 0;
+      return 90;
+    }
     return 0;
-  }, [selectedFabric]);
+  }, [selectedFabric, stripeBoost, stripeOrientation]);
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
     if (fabricTone === "dark") {
@@ -904,9 +908,10 @@ const SuitPreview = ({
     () => fabricMaskLayers.map((layer) => layer.src).filter(Boolean).join("|"),
     [fabricMaskLayers]
   );
+  const pantsMaskLayers = useMemo(() => [...pantsFabricLayers, ...pantsOverlayLayers], [pantsFabricLayers, pantsOverlayLayers]);
   const pantsMaskKey = useMemo(
-    () => pantsFabricLayers.map((layer) => layer.src).filter(Boolean).join("|"),
-    [pantsFabricLayers]
+    () => pantsMaskLayers.map((layer) => layer.src).filter(Boolean).join("|"),
+    [pantsMaskLayers]
   );
   useEffect(() => {
     setScale(1);
@@ -1166,7 +1171,7 @@ const SuitPreview = ({
           if (!ctx) return;
           ctx.clearRect(0, 0, c.width, c.height);
           ctx.globalCompositeOperation = "source-over";
-          for (const layer of pantsFabricLayers) {
+          for (const layer of pantsMaskLayers) {
             const pair = cdnPair(layer.src);
             const tryLoad = (url: string) =>
               new Promise<HTMLImageElement>((resolve, reject) => {
@@ -1233,7 +1238,7 @@ const SuitPreview = ({
       if (timeoutId !== null) window.clearTimeout(timeoutId);
       setPantsMaskBuilding(false);
     };
-  }, [pantsFabricLayers, pantsMaskKey]);
+  }, [pantsMaskKey, pantsMaskLayers]);
 
   useEffect(() => {
     if (!detailLayers.length && !pantsLayer) {
