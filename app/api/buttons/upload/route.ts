@@ -10,7 +10,7 @@ const normalizeButtonImage = async (file: File) => {
   const buffer = Buffer.from(await file.arrayBuffer());
   try {
     const normalized = await sharp(buffer, { limitInputPixels: false })
-      .trim(5)
+      .trim({ threshold: 5 })
       .resize(BUTTON_TARGET_SIZE, BUTTON_TARGET_SIZE, {
         fit: "contain",
         background: { r: 0, g: 0, b: 0, alpha: 0 },
