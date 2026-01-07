@@ -28,6 +28,19 @@ const applyFilters = (list: any[], tone: string | null, sort: string, asc: boole
   return result;
 };
 
+const normalizeFabric = (fabric: any) => ({
+  ...fabric,
+  id: fabric.id ? String(fabric.id) : fabric.uuid || fabric.code || fabric.name,
+  price: fabric.price ?? 0,
+  tone: fabric.tone || "medium",
+  pattern: fabric.pattern ?? null,
+  textureScale: fabric.textureScale ?? fabric.texture_scale ?? null,
+  textureStrength: fabric.textureStrength ?? fabric.texture_strength ?? null,
+  textureContrast: fabric.textureContrast ?? fabric.texture_contrast ?? null,
+  textureBrightness: fabric.textureBrightness ?? fabric.texture_brightness ?? null,
+  pantsTextureRotation: fabric.pantsTextureRotation ?? fabric.pants_texture_rotation ?? null,
+});
+
 export async function GET(req: NextRequest) {
   const supabase = getAnonSupabase();
   const params = req.nextUrl.searchParams;
@@ -38,12 +51,7 @@ export async function GET(req: NextRequest) {
   if (!supabase) {
     const fileData = await readJsonFile<any[]>(FALLBACK_PATH, []);
     const filtered = applyFilters(fileData, tone, sort, asc);
-    const normalized = filtered.map((fabric: any) => ({
-      ...fabric,
-      id: fabric.id ? String(fabric.id) : fabric.uuid || fabric.code || fabric.name,
-      price: fabric.price ?? 0,
-      tone: fabric.tone || "medium",
-    }));
+    const normalized = filtered.map((fabric: any) => normalizeFabric(fabric));
     return NextResponse.json({ success: true, data: normalized, source: "file" }, { status: 200 });
   }
 
@@ -57,14 +65,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, message: error.message }, { status: 200 });
   }
 
-  const normalized = Array.isArray(data)
-    ? data.map((fabric: any) => ({
-        ...fabric,
-        id: fabric.id ? String(fabric.id) : fabric.uuid || fabric.code || fabric.name,
-        price: fabric.price ?? 0,
-        tone: fabric.tone || "medium",
-      }))
-    : [];
+  const normalized = Array.isArray(data) ? data.map((fabric: any) => normalizeFabric(fabric)) : [];
 
   return NextResponse.json({ success: true, data: normalized });
 }

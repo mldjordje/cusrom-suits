@@ -25,21 +25,38 @@ const PANTS_CANVAS = { w: 600, h: 350 } as const;
 const MASK_BLEED_PX = 1.1;
 const TEXTURE_TILE_PX = 90;
 const TEXTURE_TILE_CANVAS_SCALE = 0.12;
-const TEXTURE_TILE_CANVAS_MAX = 220;
+const TEXTURE_TILE_CANVAS_MAX = 280;
+const STRIPE_ANALYSIS_SIZE = 80;
 const TEXTURE_SCALE_GLOBAL = 1;
 const TEXTURE_SCALE_MIN = 0.08;
 const TEXTURE_SCALE_MAX = 1.1;
 
 const FABRIC_AVG_CACHE = new Map<string, string | null>();
 const FABRIC_TILE_CACHE = new Map<string, string>();
-const FABRIC_TILE_ROT_CACHE = new Map<string, string>();
+const FABRIC_STRIPE_CACHE = new Map<string, StripeHint>();
+const JACKET_MASK_CACHE = new Map<string, string>();
+const PANTS_MASK_CACHE = new Map<string, string>();
 
 type RGB = { r: number; g: number; b: number };
+type StripeOrientation = "vertical" | "horizontal" | "none";
+type StripeHint = { strength: number; orientation: StripeOrientation; contrast: number };
+
+const EMPTY_STRIPE: StripeHint = { strength: 0, orientation: "none", contrast: 0 };
 
 const HEX_COLOR = /^[0-9a-f]{6}$/i;
 
 const clampChannel = (value: number) => Math.max(0, Math.min(255, Math.round(value)));
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const parseNumber = (value: unknown) => {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const raw = value.trim();
+    if (!raw) return null;
+    const num = Number(raw);
+    return Number.isFinite(num) ? num : null;
+  }
+  return null;
+};
 
 const normalizeHex = (value?: string | null) => {
   if (!value) return null;
@@ -122,6 +139,43 @@ const relativeLuminance = (rgb: RGB) =>
   0.2126 * linearChannel(rgb.r) +
   0.7152 * linearChannel(rgb.g) +
   0.0722 * linearChannel(rgb.b);
+
+const computeStripeHint = (data: Uint8ClampedArray, w: number, h: number): StripeHint => {
+  if (!data.length || w < 2 || h < 2) return EMPTY_STRIPE;
+  const prevRow = new Float32Array(w);
+  let edgeX = 0;
+  let edgeY = 0;
+  let sum = 0;
+  let sumSq = 0;
+  const pixels = w * h;
+
+  for (let y = 0; y < h; y++) {
+    let prevLum = 0;
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      const lum = 0.2126 * data[idx] + 0.7152 * data[idx + 1] + 0.0722 * data[idx + 2];
+      sum += lum;
+      sumSq += lum * lum;
+      if (x > 0) edgeX += Math.abs(lum - prevLum);
+      if (y > 0) edgeY += Math.abs(lum - prevRow[x]);
+      prevRow[x] = lum;
+      prevLum = lum;
+    }
+  }
+
+  const mean = sum / pixels;
+  const variance = Math.max(0, sumSq / pixels - mean * mean);
+  const contrast = Math.min(1, Math.sqrt(variance) / 255);
+  const edgeAvg = (edgeX + edgeY) / (pixels * 255);
+  const ratio = edgeY < 0.0001 ? 999 : edgeX / edgeY;
+  let orientation: StripeOrientation = "none";
+  if (ratio > 1.2) orientation = "vertical";
+  else if (ratio < 0.83) orientation = "horizontal";
+
+  const strength = clamp(edgeAvg * 1.5 + contrast * 0.9, 0, 1);
+  if (strength < 0.12) orientation = "none";
+  return { strength, orientation, contrast };
+};
 
 const isNeutralTone = (rgb: RGB, tolerance = 12) => {
   const max = Math.max(rgb.r, rgb.g, rgb.b);
@@ -245,6 +299,7 @@ const SuitPreview = ({
   const { buttons } = useButtons();
   const { linings } = useLinings(config.styleId);
   const [lowPowerMode, setLowPowerMode] = useState(false);
+  const [effectsReady, setEffectsReady] = useState(false);
   const [buttonLayouts, setButtonLayouts] = useState<ButtonLayout[]>([]);
   const resolveCdn = useCallback((layer: SuitLayer) => cdnPair(layer.src), []);
   const resolveShading = useCallback((layer: SuitLayer) => shadingPair(layer.src), []);
@@ -274,6 +329,26 @@ const SuitPreview = ({
     return () => {
       remove(smallScreen);
       remove(reducedMotion);
+    };
+  }, []);
+  useEffect(() => {
+    if (typeof window === "undefined") {
+      setEffectsReady(true);
+      return;
+    }
+    const requestIdle = (window as any).requestIdleCallback as ((cb: () => void, options?: { timeout: number }) => number) | undefined;
+    const cancelIdle = (window as any).cancelIdleCallback as ((id: number) => void) | undefined;
+    let idleId: number | null = null;
+    let timeoutId: number | null = null;
+    const run = () => setEffectsReady(true);
+    if (requestIdle) {
+      idleId = requestIdle(run, { timeout: 500 });
+    } else {
+      timeoutId = window.setTimeout(run, 60);
+    }
+    return () => {
+      if (idleId !== null && cancelIdle) cancelIdle(idleId);
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
     };
   }, []);
 
@@ -401,18 +476,32 @@ const SuitPreview = ({
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
   const [fabricTileTexture, setFabricTileTexture] = useState<string | null>(null);
-  const [fabricTileTextureRotated, setFabricTileTextureRotated] = useState<string | null>(null);
+  const [fabricStripe, setFabricStripe] = useState<StripeHint>(EMPTY_STRIPE);
   const fabricTextureSource = fabricTileTexture || fabricTexture;
-  const fabricTextureSourcePants = fabricTileTextureRotated || fabricTextureSource;
+  const fabricTextureSourcePants = fabricTextureSource;
+  const fabricPattern = useMemo(
+    () => String((selectedFabric as any)?.pattern || "").trim().toLowerCase(),
+    [selectedFabric]
+  );
+  const patternStripe = fabricPattern === "pinstripe" || fabricPattern === "stripe";
   const textureStrength = useMemo(() => {
-    const raw = (selectedFabric as any)?.textureStrength;
+    const raw = parseNumber((selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength);
     const normalized = typeof raw === "number" ? raw : 0.24;
-    return Math.max(0.18, Math.min(0.45, normalized * 1.1));
-  }, [selectedFabric]);
+    const boost = patternStripe ? 1.25 : 1.1;
+    const max = patternStripe ? 0.72 : 0.55;
+    return clamp(normalized * boost, 0.16, max);
+  }, [patternStripe, selectedFabric]);
   const explicitTextureScale = useMemo(() => {
-    const raw = (selectedFabric as any)?.textureScale ?? (selectedFabric as any)?.texture_scale;
-    return typeof raw === "number" && Number.isFinite(raw) ? raw : null;
+    return parseNumber((selectedFabric as any)?.textureScale ?? (selectedFabric as any)?.texture_scale);
   }, [selectedFabric]);
+  const textureContrastOverride = useMemo(
+    () => parseNumber((selectedFabric as any)?.textureContrast ?? (selectedFabric as any)?.texture_contrast),
+    [selectedFabric]
+  );
+  const textureBrightnessOverride = useMemo(
+    () => parseNumber((selectedFabric as any)?.textureBrightness ?? (selectedFabric as any)?.texture_brightness),
+    [selectedFabric]
+  );
   const textureScaleBoost = clamp(
     (explicitTextureScale ?? 1) * TEXTURE_SCALE_GLOBAL,
     TEXTURE_SCALE_MIN,
@@ -490,7 +579,7 @@ const SuitPreview = ({
     if (!useTexture) return 0;
     const base = fabricTone === "dark" ? 0.48 : fabricTone === "light" ? 0.34 : 0.4;
     const strength = Math.max(0.2, textureStrength);
-    return Math.min(0.7, base + strength * 0.35);
+    return Math.min(0.78, base + strength * 0.35);
   }, [fabricTone, textureStrength, useTexture]);
   const needsDarkBoost = fabricTone === "dark";
   // Average color from fabric texture (to better match hue)
@@ -517,27 +606,70 @@ const SuitPreview = ({
       lightness: hsl.l,
     };
   }, [fabricFillColor, fabricFillColorBase]);
+  const stripeOrientation = useMemo<StripeOrientation>(() => {
+    if (fabricStripe.orientation !== "none") return fabricStripe.orientation;
+    return patternStripe ? "vertical" : "none";
+  }, [fabricStripe.orientation, patternStripe]);
+  const stripeStrength = useMemo(
+    () => (patternStripe ? Math.max(0.65, fabricStripe.strength) : fabricStripe.strength),
+    [fabricStripe.strength, patternStripe]
+  );
   const stripeBoost = useMemo(
-    () => fabricTone === "dark" && fabricMetrics.luminance < 0.2 && fabricMetrics.saturation < 0.25,
-    [fabricMetrics.luminance, fabricMetrics.saturation, fabricTone]
+    () => patternStripe || (stripeStrength > 0.22 && stripeOrientation !== "none"),
+    [patternStripe, stripeStrength, stripeOrientation]
   );
-  const fabricTextureScale = useMemo(
-    () => clamp(stripeBoost ? textureScaleBoost * 0.85 : textureScaleBoost, TEXTURE_SCALE_MIN, TEXTURE_SCALE_MAX),
-    [stripeBoost, textureScaleBoost]
-  );
+  const fabricTextureScale = useMemo(() => {
+    const stripeScale = stripeBoost ? clamp(0.72 + (1 - stripeStrength) * 0.08, 0.68, 0.85) : 1;
+    return clamp(textureScaleBoost * stripeScale, TEXTURE_SCALE_MIN, TEXTURE_SCALE_MAX);
+  }, [stripeBoost, stripeStrength, textureScaleBoost]);
+  const pantsTextureRotation = useMemo(() => {
+    const raw = parseNumber(
+      (selectedFabric as any)?.pantsTextureRotation ?? (selectedFabric as any)?.pants_texture_rotation
+    );
+    if (typeof raw === "number") return raw;
+    if (stripeBoost) {
+      if (stripeOrientation === "vertical") return 90;
+      if (stripeOrientation === "horizontal") return 0;
+      return 90;
+    }
+    return 0;
+  }, [selectedFabric, stripeBoost, stripeOrientation]);
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
     if (fabricTone === "dark") {
-      const brightness = stripeBoost ? 1.02 : 1.03;
-      const contrast = stripeBoost ? 1.4 : 1.25;
-      const saturate = stripeBoost ? 1.08 : 1.06;
-      return `${tb.filter} brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
+      const baseBrightness = 1.03;
+      const baseContrast = 1.25;
+      const baseSaturate = 1.06;
+      const stripeContrast = stripeBoost ? 0.18 + stripeStrength * 0.12 : 0;
+      const stripeBrightness = stripeBoost ? 0.02 + stripeStrength * 0.02 : 0;
+      const stripeSaturate = stripeBoost ? 0.03 : 0;
+      const brightness = textureBrightnessOverride ?? baseBrightness + stripeBrightness;
+      const contrast = textureContrastOverride ?? baseContrast + stripeContrast;
+      const saturate = baseSaturate + stripeSaturate;
+      return `${tb.filter} brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)}) saturate(${saturate.toFixed(
+        2
+      )})`;
     }
     if (fabricTone === "light") {
-      return `${tb.filter} brightness(1.05) contrast(1.08) saturate(1.08)`;
+      const brightness = textureBrightnessOverride ?? 1.05;
+      const contrast = textureContrastOverride ?? 1.08;
+      return `${tb.filter} brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)}) saturate(1.08)`;
     }
-    return `${tb.filter} brightness(1.03) contrast(1.12) saturate(1.07)`;
-  }, [fabricTone, stripeBoost, tb.filter, usePhotoBase]);
+    const midBrightness = textureBrightnessOverride ?? 1.03;
+    const midContrast = textureContrastOverride ?? (stripeBoost ? 1.24 : 1.12);
+    const midSaturate = stripeBoost ? 1.1 : 1.07;
+    return `${tb.filter} brightness(${midBrightness.toFixed(2)}) contrast(${midContrast.toFixed(2)}) saturate(${midSaturate.toFixed(
+      2
+    )})`;
+  }, [
+    fabricTone,
+    stripeBoost,
+    stripeStrength,
+    tb.filter,
+    textureBrightnessOverride,
+    textureContrastOverride,
+    usePhotoBase,
+  ]);
   const tunedFabricFill = useMemo(
     () =>
       usePhotoBase
@@ -583,14 +715,16 @@ const SuitPreview = ({
       const lumBoost = lum > 0.6 ? 0.12 : lum < 0.25 ? 0.08 : 0.1;
       return clamp(baseTextureOpacity * (0.55 + satBoost + lumBoost), 0.16, 0.42);
     }
-    const boost = stripeBoost ? 1.08 : 1;
-    return clamp(baseTextureOpacity * autoTuning.texture.opacity * boost, 0.12, 0.72);
+    const stripeBoostMul = stripeBoost ? 1 + clamp(stripeStrength * 0.4, 0.12, 0.3) : 1;
+    const maxOpacity = stripeBoost ? 0.82 : 0.72;
+    return clamp(baseTextureOpacity * autoTuning.texture.opacity * stripeBoostMul, 0.12, maxOpacity);
   }, [
     autoTuning.texture.opacity,
     baseTextureOpacity,
     fabricMetrics.lightness,
     fabricMetrics.saturation,
     stripeBoost,
+    stripeStrength,
     usePhotoBase,
   ]);
   const textureBlendMode = useMemo<React.CSSProperties["mixBlendMode"]>(() => {
@@ -697,7 +831,7 @@ const SuitPreview = ({
     return { intensity, shadow, specular, opacity };
   }, [fabricTone, structuralSpecularOpacityTuned]);
   const isBlackFabric = fabricTone === "dark" && fabricLuminance < 0.12;
-  const darkBoostOpacity = isBlackFabric ? 0.4 : 0.26;
+  const darkBoostOpacity = (isBlackFabric ? 0.4 : 0.26) * (stripeBoost ? 0.7 : 1);
   const darkBoostColor = isBlackFabric ? "#020202" : "#080808";
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
@@ -706,8 +840,8 @@ const SuitPreview = ({
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
   const panZoom = useMemo(() => ({ scale, offset }), [scale, offset]);
   const showLayer = (key: keyof LayerVisibility) => (layerVisibility?.[key] ?? true) !== false;
-  const showAo = showLayer("ao") && !lowPowerMode;
-  const showVignette = showLayer("vignette") && !lowPowerMode;
+  const showAo = showLayer("ao") && !lowPowerMode && effectsReady;
+  const showVignette = showLayer("vignette") && !lowPowerMode && effectsReady;
   useEffect(() => {
     let cancelled = false;
     fetch("/api/button-positions", { cache: "no-store" })
@@ -725,22 +859,31 @@ const SuitPreview = ({
       cancelled = true;
     };
   }, [config.styleId]);
+  const jacketMaskKey = useMemo(
+    () => fabricMaskLayers.map((layer) => layer.src).filter(Boolean).join("|"),
+    [fabricMaskLayers]
+  );
+  const pantsMaskKey = useMemo(
+    () => pantsFabricLayers.map((layer) => layer.src).filter(Boolean).join("|"),
+    [pantsFabricLayers]
+  );
   useEffect(() => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
     setFabricTileTexture(null);
-    setFabricTileTextureRotated(null);
+    setFabricStripe(EMPTY_STRIPE);
     if (!fabricTexture) {
       setFabricAvgColor(null);
+      setFabricStripe(EMPTY_STRIPE);
       return;
     }
     const cachedAvg = FABRIC_AVG_CACHE.get(fabricTexture);
     const cachedTile = FABRIC_TILE_CACHE.get(fabricTexture);
-    const cachedTileRot = FABRIC_TILE_ROT_CACHE.get(fabricTexture);
+    const cachedStripe = FABRIC_STRIPE_CACHE.get(fabricTexture);
     if (cachedAvg !== undefined) setFabricAvgColor(cachedAvg);
     if (cachedTile) setFabricTileTexture(cachedTile);
-    if (!lowPowerMode && cachedTileRot) setFabricTileTextureRotated(cachedTileRot);
-    if (cachedAvg !== undefined && cachedTile && (lowPowerMode || cachedTileRot)) return;
+    if (cachedStripe) setFabricStripe(cachedStripe);
+    if (cachedAvg !== undefined && cachedTile && cachedStripe) return;
     const img = new Image();
     img.crossOrigin = "anonymous";
     let cancelled = false;
@@ -759,12 +902,11 @@ const SuitPreview = ({
           const c = document.createElement("canvas");
           const ctx = c.getContext("2d");
           if (!ctx) return;
-          const w = 32,
-            h = 32;
-          c.width = w;
-          c.height = h;
-          ctx.drawImage(img, 0, 0, w, h);
-          const d = ctx.getImageData(0, 0, w, h).data;
+          const size = STRIPE_ANALYSIS_SIZE;
+          c.width = size;
+          c.height = size;
+          ctx.drawImage(img, 0, 0, size, size);
+          const d = ctx.getImageData(0, 0, size, size).data;
           let r = 0,
             g = 0,
             b = 0,
@@ -787,6 +929,11 @@ const SuitPreview = ({
             FABRIC_AVG_CACHE.set(fabricTexture, null);
           }
 
+          const stripeHint = computeStripeHint(d, size, size);
+          setFabricStripe(stripeHint);
+          FABRIC_STRIPE_CACHE.set(fabricTexture, stripeHint);
+          const stripeTileStrength = patternStripe ? Math.max(stripeHint.strength, 0.35) : stripeHint.strength;
+
           const tile = document.createElement("canvas");
           const tctx = tile.getContext("2d");
           if (!tctx) return;
@@ -796,9 +943,11 @@ const SuitPreview = ({
           const sx = Math.max(0, Math.round((naturalW - crop) / 2));
           const sy = Math.max(0, Math.round((naturalH - crop) / 2));
           const minTile = Math.min(TEXTURE_TILE_PX, crop);
-          const tilePx = Math.round(clamp(crop * TEXTURE_TILE_CANVAS_SCALE, minTile, TEXTURE_TILE_CANVAS_MAX));
+          const tileScale =
+            stripeTileStrength > 0.22 ? TEXTURE_TILE_CANVAS_SCALE * 1.6 : TEXTURE_TILE_CANVAS_SCALE;
+          const tilePx = Math.round(clamp(crop * tileScale, minTile, TEXTURE_TILE_CANVAS_MAX));
           const downscale = crop / tilePx;
-          const smooth = downscale <= 4;
+          const smooth = stripeTileStrength > 0.22 ? downscale <= 2.5 : downscale <= 4;
           tile.width = tilePx;
           tile.height = tilePx;
           tctx.imageSmoothingEnabled = smooth;
@@ -812,27 +961,6 @@ const SuitPreview = ({
             setFabricTileTexture(null);
           }
 
-          if (!lowPowerMode) {
-            const rot = document.createElement("canvas");
-            const rctx = rot.getContext("2d");
-            if (!rctx) return;
-            rot.width = tilePx;
-            rot.height = tilePx;
-            rctx.imageSmoothingEnabled = smooth;
-            rctx.imageSmoothingQuality = smooth ? "high" : "low";
-            rctx.translate(tilePx / 2, tilePx / 2);
-            rctx.rotate(Math.PI / 2);
-            rctx.drawImage(img, sx, sy, crop, crop, -tilePx / 2, -tilePx / 2, tilePx, tilePx);
-            try {
-              const urlRot = rot.toDataURL("image/png");
-              setFabricTileTextureRotated(urlRot);
-              FABRIC_TILE_ROT_CACHE.set(fabricTexture, urlRot);
-            } catch {
-              setFabricTileTextureRotated(null);
-            }
-          } else {
-            setFabricTileTextureRotated(null);
-          }
         } catch {}
       };
       if (requestIdle) {
@@ -844,7 +972,7 @@ const SuitPreview = ({
     img.onerror = () => {
       setFabricAvgColor(null);
       setFabricTileTexture(null);
-      setFabricTileTextureRotated(null);
+      setFabricStripe(EMPTY_STRIPE);
     };
     img.src = fabricTexture;
     return () => {
@@ -852,7 +980,7 @@ const SuitPreview = ({
       if (idleId !== null && cancelIdle) cancelIdle(idleId);
       if (timeoutId !== null) window.clearTimeout(timeoutId);
     };
-  }, [fabricTexture, lowPowerMode]);
+  }, [fabricTexture, patternStripe]);
 
   useEffect(() => {
     if (onAssetStatus) {
@@ -862,150 +990,209 @@ const SuitPreview = ({
 
   // Build a single union mask (PNG data URL) over the jacket silhouette to eliminate any anti-alias seams
   useEffect(() => {
-    if (!fabricMaskLayers.length) {
+    if (!jacketMaskKey) {
       setJacketUnionMask(null);
       return;
     }
-
-    let cancelled = false;
-    setMaskBuilding(true);
-    (async () => {
-      try {
-        const c = document.createElement("canvas");
-        c.width = JACKET_CANVAS.w;
-        c.height = JACKET_CANVAS.h;
-        const ctx = c.getContext("2d");
-        if (!ctx) return;
-        ctx.clearRect(0, 0, c.width, c.height);
-        ctx.globalCompositeOperation = "source-over";
-        for (const layer of fabricMaskLayers) {
-          const pair = cdnPair(layer.src);
-          const tryLoad = (url: string) =>
-            new Promise<HTMLImageElement>((resolve, reject) => {
-              const img = new Image();
-              img.crossOrigin = "anonymous";
-              img.onload = () => resolve(img);
-              img.onerror = reject;
-              img.src = url;
-            });
-          let img: HTMLImageElement | null = null;
-          try {
-            img = await tryLoad(pair.webp);
-          } catch {
-            try {
-              img = await tryLoad(pair.png);
-            } catch {
-              img = null;
-            }
-          }
-          if (!img) continue;
-          const scale = Math.min(c.width / img.width, c.height / img.height);
-          const w = Math.round(img.width * scale);
-          const h = Math.round(img.height * scale);
-          const dx = Math.round((c.width - w) / 2);
-          const dy = Math.round((c.height - h) / 2);
-          ctx.drawImage(img, dx, dy, w, h);
-        }
-        if (MASK_BLEED_PX > 0) {
-          const temp = document.createElement("canvas");
-          temp.width = c.width;
-          temp.height = c.height;
-          const tctx = temp.getContext("2d");
-          if (tctx) {
-            tctx.drawImage(c, 0, 0);
-            ctx.clearRect(0, 0, c.width, c.height);
-            ctx.drawImage(temp, 0, 0);
-            ctx.filter = `blur(${MASK_BLEED_PX}px)`;
-            ctx.drawImage(temp, 0, 0);
-            ctx.filter = "none";
-          }
-        }
-        if (!cancelled) setJacketUnionMask(c.toDataURL("image/png"));
-      } catch {
-        if (!cancelled) setJacketUnionMask(null);
-      } finally {
-        if (!cancelled) setMaskBuilding(false);
-      }
-    })();
-    return () => {
-      cancelled = true;
-      setMaskBuilding(false);
-    };
-  }, [fabricMaskLayers]);
-
-  // Build a union mask over the pants silhouette to avoid halo/background bleed
-  useEffect(() => {
-    if (!pantsFabricLayers.length) {
-      setPantsUnionMask(null);
+    const cached = JACKET_MASK_CACHE.get(jacketMaskKey);
+    if (cached) {
+      setJacketUnionMask(cached);
       return;
     }
 
     let cancelled = false;
-    setPantsMaskBuilding(true);
-    (async () => {
-      try {
-        const c = document.createElement("canvas");
-        c.width = PANTS_CANVAS.w;
-        c.height = PANTS_CANVAS.h;
-        const ctx = c.getContext("2d");
-        if (!ctx) return;
-        ctx.clearRect(0, 0, c.width, c.height);
-        ctx.globalCompositeOperation = "source-over";
-        for (const layer of pantsFabricLayers) {
-          const pair = cdnPair(layer.src);
-          const tryLoad = (url: string) =>
-            new Promise<HTMLImageElement>((resolve, reject) => {
-              const img = new Image();
-              img.crossOrigin = "anonymous";
-              img.onload = () => resolve(img);
-              img.onerror = reject;
-              img.src = url;
-            });
-          let img: HTMLImageElement | null = null;
-          try {
-            img = await tryLoad(pair.webp);
-          } catch {
+    let idleId: number | null = null;
+    let timeoutId: number | null = null;
+    const requestIdle = (typeof window !== "undefined" ? (window as any).requestIdleCallback : undefined) as
+      | ((cb: () => void, options?: { timeout: number }) => number)
+      | undefined;
+    const cancelIdle = (typeof window !== "undefined" ? (window as any).cancelIdleCallback : undefined) as
+      | ((id: number) => void)
+      | undefined;
+
+    const run = () => {
+      if (cancelled) return;
+      setMaskBuilding(true);
+      (async () => {
+        try {
+          const c = document.createElement("canvas");
+          c.width = JACKET_CANVAS.w;
+          c.height = JACKET_CANVAS.h;
+          const ctx = c.getContext("2d");
+          if (!ctx) return;
+          ctx.clearRect(0, 0, c.width, c.height);
+          ctx.globalCompositeOperation = "source-over";
+          for (const layer of fabricMaskLayers) {
+            const pair = cdnPair(layer.src);
+            const tryLoad = (url: string) =>
+              new Promise<HTMLImageElement>((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = url;
+              });
+            let img: HTMLImageElement | null = null;
             try {
-              img = await tryLoad(pair.png);
+              img = await tryLoad(pair.webp);
             } catch {
-              img = null;
+              try {
+                img = await tryLoad(pair.png);
+              } catch {
+                img = null;
+              }
+            }
+            if (!img) continue;
+            const scale = Math.min(c.width / img.width, c.height / img.height);
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const dx = Math.round((c.width - w) / 2);
+            const dy = Math.round((c.height - h) / 2);
+            ctx.drawImage(img, dx, dy, w, h);
+          }
+          if (MASK_BLEED_PX > 0) {
+            const temp = document.createElement("canvas");
+            temp.width = c.width;
+            temp.height = c.height;
+            const tctx = temp.getContext("2d");
+            if (tctx) {
+              tctx.drawImage(c, 0, 0);
+              ctx.clearRect(0, 0, c.width, c.height);
+              ctx.drawImage(temp, 0, 0);
+              ctx.filter = `blur(${MASK_BLEED_PX}px)`;
+              ctx.drawImage(temp, 0, 0);
+              ctx.filter = "none";
             }
           }
-          if (!img) continue;
-          const scale = Math.min(c.width / img.width, c.height / img.height);
-          const w = Math.round(img.width * scale);
-          const h = Math.round(img.height * scale);
-          const dx = Math.round((c.width - w) / 2);
-          const dy = Math.round((c.height - h) / 2);
-          ctx.drawImage(img, dx, dy, w, h);
-        }
-        if (MASK_BLEED_PX > 0) {
-          const temp = document.createElement("canvas");
-          temp.width = c.width;
-          temp.height = c.height;
-          const tctx = temp.getContext("2d");
-          if (tctx) {
-            tctx.drawImage(c, 0, 0);
-            ctx.clearRect(0, 0, c.width, c.height);
-            ctx.drawImage(temp, 0, 0);
-            ctx.filter = `blur(${MASK_BLEED_PX}px)`;
-            ctx.drawImage(temp, 0, 0);
-            ctx.filter = "none";
+          if (!cancelled) {
+            const url = c.toDataURL("image/png");
+            JACKET_MASK_CACHE.set(jacketMaskKey, url);
+            setJacketUnionMask(url);
           }
+        } catch {
+          if (!cancelled) setJacketUnionMask(null);
+        } finally {
+          if (!cancelled) setMaskBuilding(false);
         }
-        if (!cancelled) setPantsUnionMask(c.toDataURL("image/png"));
-      } catch {
-        if (!cancelled) setPantsUnionMask(null);
-      } finally {
-        if (!cancelled) setPantsMaskBuilding(false);
-      }
-    })();
+      })();
+    };
+
+    if (requestIdle) {
+      idleId = requestIdle(run, { timeout: 400 });
+    } else {
+      timeoutId = window.setTimeout(run, 0);
+    }
 
     return () => {
       cancelled = true;
+      if (idleId !== null && cancelIdle) cancelIdle(idleId);
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      setMaskBuilding(false);
+    };
+  }, [fabricMaskLayers, jacketMaskKey]);
+
+  // Build a union mask over the pants silhouette to avoid halo/background bleed
+  useEffect(() => {
+    if (!pantsMaskKey) {
+      setPantsUnionMask(null);
+      return;
+    }
+    const cached = PANTS_MASK_CACHE.get(pantsMaskKey);
+    if (cached) {
+      setPantsUnionMask(cached);
+      return;
+    }
+
+    let cancelled = false;
+    let idleId: number | null = null;
+    let timeoutId: number | null = null;
+    const requestIdle = (typeof window !== "undefined" ? (window as any).requestIdleCallback : undefined) as
+      | ((cb: () => void, options?: { timeout: number }) => number)
+      | undefined;
+    const cancelIdle = (typeof window !== "undefined" ? (window as any).cancelIdleCallback : undefined) as
+      | ((id: number) => void)
+      | undefined;
+
+    const run = () => {
+      if (cancelled) return;
+      setPantsMaskBuilding(true);
+      (async () => {
+        try {
+          const c = document.createElement("canvas");
+          c.width = PANTS_CANVAS.w;
+          c.height = PANTS_CANVAS.h;
+          const ctx = c.getContext("2d");
+          if (!ctx) return;
+          ctx.clearRect(0, 0, c.width, c.height);
+          ctx.globalCompositeOperation = "source-over";
+          for (const layer of pantsFabricLayers) {
+            const pair = cdnPair(layer.src);
+            const tryLoad = (url: string) =>
+              new Promise<HTMLImageElement>((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                img.onload = () => resolve(img);
+                img.onerror = reject;
+                img.src = url;
+              });
+            let img: HTMLImageElement | null = null;
+            try {
+              img = await tryLoad(pair.webp);
+            } catch {
+              try {
+                img = await tryLoad(pair.png);
+              } catch {
+                img = null;
+              }
+            }
+            if (!img) continue;
+            const scale = Math.min(c.width / img.width, c.height / img.height);
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const dx = Math.round((c.width - w) / 2);
+            const dy = Math.round((c.height - h) / 2);
+            ctx.drawImage(img, dx, dy, w, h);
+          }
+          if (MASK_BLEED_PX > 0) {
+            const temp = document.createElement("canvas");
+            temp.width = c.width;
+            temp.height = c.height;
+            const tctx = temp.getContext("2d");
+            if (tctx) {
+              tctx.drawImage(c, 0, 0);
+              ctx.clearRect(0, 0, c.width, c.height);
+              ctx.drawImage(temp, 0, 0);
+              ctx.filter = `blur(${MASK_BLEED_PX}px)`;
+              ctx.drawImage(temp, 0, 0);
+              ctx.filter = "none";
+            }
+          }
+          if (!cancelled) {
+            const url = c.toDataURL("image/png");
+            PANTS_MASK_CACHE.set(pantsMaskKey, url);
+            setPantsUnionMask(url);
+          }
+        } catch {
+          if (!cancelled) setPantsUnionMask(null);
+        } finally {
+          if (!cancelled) setPantsMaskBuilding(false);
+        }
+      })();
+    };
+
+    if (requestIdle) {
+      idleId = requestIdle(run, { timeout: 400 });
+    } else {
+      timeoutId = window.setTimeout(run, 0);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleId !== null && cancelIdle) cancelIdle(idleId);
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
       setPantsMaskBuilding(false);
     };
-  }, [pantsFabricLayers]);
+  }, [pantsFabricLayers, pantsMaskKey]);
 
   useEffect(() => {
     if (!detailLayers.length && !pantsLayer) {
@@ -1399,22 +1586,23 @@ const SuitPreview = ({
           />
         )}
         {showLayer("fabric") && (
-          <FabricUnion
-            layers={pantsFabricLayersResolved}
-            resolve={resolveCdn}
-            fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-            textureStyle={fabricTextureStyle}
-            baseColor={tunedFabricFill || toneBaseColor}
-            fabricAvgColor={tunedFabricFill}
-            baseBlendMode="color"
-            baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
-            panZoom={panZoom}
-            canvas={PANTS_CANVAS}
-            mask={pantsMask}
-            textureScale={fabricTextureScale}
-            textureTileSizePx={TEXTURE_TILE_PX}
-          />
-        )}
+            <FabricUnion
+              layers={pantsFabricLayersResolved}
+              resolve={resolveCdn}
+              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+              textureStyle={fabricTextureStyle}
+              baseColor={tunedFabricFill || toneBaseColor}
+              fabricAvgColor={tunedFabricFill}
+              baseBlendMode="color"
+              baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+              panZoom={panZoom}
+              canvas={PANTS_CANVAS}
+              mask={pantsMask}
+              textureScale={fabricTextureScale}
+              textureTileSizePx={TEXTURE_TILE_PX}
+              textureRotationDeg={pantsTextureRotation}
+            />
+          )}
         {!usePhotoBase && includeStyle && pantsOverlayLayers.length > 0 && (
           <BaseLayer
             layers={pantsOverlayLayers}

@@ -15,6 +15,14 @@ const ensureBucket = async (supabase: ReturnType<typeof getServiceSupabase>) => 
   }
 };
 
+const parseNumber = (value: FormDataEntryValue | null) => {
+  if (value == null) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  const num = Number(raw);
+  return Number.isFinite(num) ? num : null;
+};
+
 export async function POST(req: NextRequest) {
   const supabase = getServiceSupabase();
   if (!supabase) {
@@ -29,6 +37,12 @@ export async function POST(req: NextRequest) {
   const code = String(form.get("code") || "").trim() || null;
   const id = String(form.get("id") || "").trim() || randomUUID();
   const textureOverride = String(form.get("texture") || "").trim();
+  const pattern = String(form.get("pattern") || "").trim() || null;
+  const textureScale = parseNumber(form.get("textureScale") ?? form.get("texture_scale"));
+  const textureStrength = parseNumber(form.get("textureStrength") ?? form.get("texture_strength"));
+  const textureContrast = parseNumber(form.get("textureContrast") ?? form.get("texture_contrast"));
+  const textureBrightness = parseNumber(form.get("textureBrightness") ?? form.get("texture_brightness"));
+  const pantsTextureRotation = parseNumber(form.get("pantsTextureRotation") ?? form.get("pants_texture_rotation"));
 
   if (!name) {
     return NextResponse.json({ success: false, message: "Name is required" }, { status: 400 });
@@ -52,21 +66,22 @@ export async function POST(req: NextRequest) {
 
   const price = priceRaw ? Number(priceRaw) : null;
 
-  const { data, error } = await supabase
-    .from("fabrics")
-    .upsert(
-      {
-        id,
-        name,
-        texture: textureUrl,
-        tone,
-        price,
-        code,
-      },
-      { onConflict: "id" }
-    )
-    .select("*")
-    .single();
+  const payload: Record<string, any> = {
+    id,
+    name,
+    texture: textureUrl,
+    tone,
+    price,
+    code,
+  };
+  payload.pattern = pattern;
+  if (textureScale !== null) payload.textureScale = textureScale;
+  if (textureStrength !== null) payload.textureStrength = textureStrength;
+  if (textureContrast !== null) payload.textureContrast = textureContrast;
+  if (textureBrightness !== null) payload.textureBrightness = textureBrightness;
+  if (pantsTextureRotation !== null) payload.pantsTextureRotation = pantsTextureRotation;
+
+  const { data, error } = await supabase.from("fabrics").upsert(payload, { onConflict: "id" }).select("*").single();
 
   if (error) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
