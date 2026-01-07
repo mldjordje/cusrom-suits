@@ -913,14 +913,6 @@ const SuitPreview = ({
     () => [...pantsFabricLayers, ...pantsOverlayLayers],
     [pantsFabricLayers, pantsOverlayLayers]
   );
-  const pantsMaskSourceLayers = useMemo(
-    () => (usePhotoBase ? pantsPhotoLayers : pantsMaskLayers),
-    [pantsMaskLayers, pantsPhotoLayers, usePhotoBase]
-  );
-  const pantsMaskKey = useMemo(() => {
-    const base = pantsMaskSourceLayers.map((layer) => layer.src).filter(Boolean).join("|");
-    return usePhotoBase ? `${base}|photo:${photoVariant}` : base;
-  }, [pantsMaskSourceLayers, photoVariant, usePhotoBase]);
   useEffect(() => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
@@ -1361,6 +1353,14 @@ const SuitPreview = ({
     () => (usePhotoBase ? [...pantsBaseLayers, ...pantsPhotoDetailLayers] : []),
     [pantsBaseLayers, pantsPhotoDetailLayers, usePhotoBase]
   );
+  const pantsMaskSourceLayers = useMemo(
+    () => (usePhotoBase ? pantsPhotoLayers : pantsMaskLayers),
+    [pantsMaskLayers, pantsPhotoLayers, usePhotoBase]
+  );
+  const pantsMaskKey = useMemo(() => {
+    const base = pantsMaskSourceLayers.map((layer) => layer.src).filter(Boolean).join("|");
+    return usePhotoBase ? `${base}|photo:${photoVariant}` : base;
+  }, [pantsMaskSourceLayers, photoVariant, usePhotoBase]);
   const resolvePhoto = useCallback(
     (layer: SuitLayer) => photoPair(layer.src, photoVariant),
     [photoVariant]
