@@ -762,13 +762,13 @@ const SuitPreview = ({
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
   );
   const fabricTextureStylePants = useMemo<React.CSSProperties>(() => {
-    if (!patternStripe) return fabricTextureStyle;
+    if (!stripeBoost) return fabricTextureStyle;
     const baseOpacity = Number(fabricTextureStyle.opacity ?? 0.3);
     const opacity = clamp(baseOpacity * (usePhotoBase ? 0.8 : 0.9), 0.12, 0.65);
     return { ...fabricTextureStyle, mixBlendMode: "soft-light", opacity };
-  }, [fabricTextureStyle, patternStripe, usePhotoBase]);
+  }, [fabricTextureStyle, stripeBoost, usePhotoBase]);
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
-    if (!useTexture || !patternStripe) return null;
+    if (!useTexture || !stripeBoost) return null;
     const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const baseOpacity = usePhotoBase ? 0.12 : 0.18;
     const opacity = clamp(baseOpacity + stripeStrength * (usePhotoBase ? 0.12 : 0.18), baseOpacity, usePhotoBase ? 0.32 : 0.46);
@@ -784,7 +784,7 @@ const SuitPreview = ({
   }, [
     fabricMetrics.lightness,
     fabricTone,
-    patternStripe,
+    stripeBoost,
     stripeStrength,
     textureBrightnessOverride,
     textureContrastOverride,
@@ -792,7 +792,7 @@ const SuitPreview = ({
     usePhotoBase,
   ]);
   const stripeHighlightStylePants = useMemo<React.CSSProperties | null>(() => {
-    if (!useTexture || !patternStripe) return null;
+    if (!useTexture || !stripeBoost) return null;
     const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const baseOpacity = usePhotoBase ? 0.07 : 0.1;
     const opacity = clamp(baseOpacity + stripeStrength * 0.08, baseOpacity, usePhotoBase ? 0.18 : 0.22);
@@ -808,7 +808,7 @@ const SuitPreview = ({
   }, [
     fabricMetrics.lightness,
     fabricTone,
-    patternStripe,
+    stripeBoost,
     stripeStrength,
     textureBrightnessOverride,
     textureContrastOverride,
