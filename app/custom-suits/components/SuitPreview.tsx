@@ -761,6 +761,13 @@ const SuitPreview = ({
     }),
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
   );
+  const fabricTextureStylePants = useMemo<React.CSSProperties>(() => {
+    if (!stripeBoost) return fabricTextureStyle;
+    const baseOpacity = Number(fabricTextureStyle.opacity ?? 0.3);
+    const opacity = clamp(baseOpacity * 1.2, 0.18, usePhotoBase ? 0.6 : 0.75);
+    const mixBlendMode = usePhotoBase ? "overlay" : fabricTextureStyle.mixBlendMode;
+    return { ...fabricTextureStyle, mixBlendMode, opacity };
+  }, [fabricTextureStyle, stripeBoost, usePhotoBase]);
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
     if (!useTexture || !stripeBoost) return null;
     const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
@@ -772,6 +779,30 @@ const SuitPreview = ({
     const contrast = clamp(baseContrast + (usePhotoBase ? 0.1 : 0.2), 1.1, 2.2);
     return {
       mixBlendMode: boostDark ? "screen" : "overlay",
+      opacity,
+      filter: `grayscale(1) brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)})`,
+    };
+  }, [
+    fabricMetrics.lightness,
+    fabricTone,
+    stripeBoost,
+    stripeStrength,
+    textureBrightnessOverride,
+    textureContrastOverride,
+    useTexture,
+    usePhotoBase,
+  ]);
+  const stripeHighlightStylePants = useMemo<React.CSSProperties | null>(() => {
+    if (!useTexture || !stripeBoost) return null;
+    const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
+    const baseOpacity = usePhotoBase ? 0.18 : 0.22;
+    const opacity = clamp(baseOpacity + stripeStrength * 0.25, baseOpacity, usePhotoBase ? 0.5 : 0.6);
+    const baseBrightness = textureBrightnessOverride ?? (boostDark ? 1.7 : 1.4);
+    const baseContrast = textureContrastOverride ?? (boostDark ? 1.95 : 1.6);
+    const brightness = clamp(baseBrightness + 0.1, 1.2, 2.2);
+    const contrast = clamp(baseContrast + 0.2, 1.3, 2.4);
+    return {
+      mixBlendMode: "screen",
       opacity,
       filter: `grayscale(1) brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)})`,
     };
@@ -1664,7 +1695,7 @@ const SuitPreview = ({
               layers={pantsTextureLayers}
               resolve={resolveCdn}
               fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-              textureStyle={fabricTextureStyle}
+              textureStyle={fabricTextureStylePants}
               baseColor={tunedFabricFill || toneBaseColor}
               fabricAvgColor={tunedFabricFill}
               baseBlendMode="color"
@@ -1677,12 +1708,12 @@ const SuitPreview = ({
               textureRotationDeg={pantsTextureRotation}
             />
           )}
-        {showLayer("fabric") && stripeHighlightStyle && (
+        {showLayer("fabric") && stripeHighlightStylePants && (
             <FabricUnion
               layers={pantsTextureLayers}
               resolve={resolveCdn}
               fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-              textureStyle={stripeHighlightStyle}
+              textureStyle={stripeHighlightStylePants}
               baseColor={tunedFabricFill || toneBaseColor}
               baseBlendMode="normal"
               baseOpacity={0}
