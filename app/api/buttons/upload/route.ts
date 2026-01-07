@@ -1,8 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { randomUUID } from "crypto";
+import sharp from "sharp";
 import { getServiceSupabase } from "@/lib/supabase/server";
 
 const bucketName = process.env.SUPABASE_BUTTONS_BUCKET || "buttons";
+const BUTTON_TARGET_SIZE = 512;
+
+const normalizeButtonImage = async (file: File) => {
+  const buffer = Buffer.from(await file.arrayBuffer());
+  try {
+    const normalized = await sharp(buffer, { limitInputPixels: false })
+      .trim(5)
+      .resize(BUTTON_TARGET_SIZE, BUTTON_TARGET_SIZE, {
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 },
+      })
+      .png()
+      .toBuffer();
+    return normalized;
+  } catch {
+    return buffer;
+  }
+};
 
 const ensureBucket = async (supabase: ReturnType<typeof getServiceSupabase>) => {
   if (!supabase) return;
@@ -37,8 +56,12 @@ export async function POST(req: NextRequest) {
   let imageUrl = imageOverride;
   if (!imageUrl && file) {
     await ensureBucket(supabase);
-    const path = `buttons/${id}-${Date.now()}-${file.name}`;
-    const { error: uploadError } = await supabase.storage.from(bucketName).upload(path, file, { upsert: true });
+    const normalized = await normalizeButtonImage(file);
+    const path = `buttons/${id}-${Date.now()}.png`;
+    const { error: uploadError } = await supabase.storage.from(bucketName).upload(path, normalized, {
+      upsert: true,
+      contentType: "image/png",
+    });
     if (uploadError) {
       return NextResponse.json({ success: false, message: uploadError.message }, { status: 500 });
     }

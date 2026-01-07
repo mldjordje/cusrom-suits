@@ -607,8 +607,9 @@ const SuitPreview = ({
     };
   }, [fabricFillColor, fabricFillColorBase]);
   const stripeOrientation = useMemo<StripeOrientation>(() => {
+    if (patternStripe) return "vertical";
     if (fabricStripe.orientation !== "none") return fabricStripe.orientation;
-    return patternStripe ? "vertical" : "none";
+    return "none";
   }, [fabricStripe.orientation, patternStripe]);
   const stripeStrength = useMemo(
     () => (patternStripe ? Math.max(0.65, fabricStripe.strength) : fabricStripe.strength),
@@ -622,6 +623,8 @@ const SuitPreview = ({
     () => stripeBoost && (fabricTone === "dark" || fabricMetrics.lightness < 0.4),
     [stripeBoost, fabricMetrics.lightness, fabricTone]
   );
+  const stripeShadingMul = stripeWhiteBoost ? 0.82 : 1;
+  const stripeEdgeMul = stripeWhiteBoost ? 0.88 : 1;
   const fabricTextureScale = useMemo(() => {
     const stripeScale = stripeBoost ? clamp(0.72 + (1 - stripeStrength) * 0.08, 0.68, 0.85) : 1;
     return clamp(textureScaleBoost * stripeScale, TEXTURE_SCALE_MIN, TEXTURE_SCALE_MAX);
@@ -644,14 +647,22 @@ const SuitPreview = ({
       const baseBrightness = 1.03;
       const baseContrast = 1.25;
       const baseSaturate = 1.06;
-      const stripeContrast = stripeBoost ? (stripeWhiteBoost ? 0.32 + stripeStrength * 0.18 : 0.18 + stripeStrength * 0.12) : 0;
-      const stripeBrightness = stripeBoost ? (stripeWhiteBoost ? 0.08 + stripeStrength * 0.04 : 0.02 + stripeStrength * 0.02) : 0;
-      const stripeSaturate = stripeBoost ? (stripeWhiteBoost ? -0.04 : 0.03) : 0;
+      const stripeContrast = stripeBoost
+        ? stripeWhiteBoost
+          ? 0.42 + stripeStrength * 0.2
+          : 0.18 + stripeStrength * 0.12
+        : 0;
+      const stripeBrightness = stripeBoost
+        ? stripeWhiteBoost
+          ? 0.12 + stripeStrength * 0.05
+          : 0.02 + stripeStrength * 0.02
+        : 0;
+      const stripeSaturate = stripeBoost ? (stripeWhiteBoost ? -0.06 : 0.03) : 0;
       const baseBrightnessValue = textureBrightnessOverride ?? baseBrightness;
       const baseContrastValue = textureContrastOverride ?? baseContrast;
-      const brightness = clamp(baseBrightnessValue + stripeBrightness, 0.9, 1.7);
-      const contrast = clamp(baseContrastValue + stripeContrast, 1.0, 1.9);
-      const saturate = clamp(baseSaturate + stripeSaturate, 0.95, 1.25);
+      const brightness = clamp(baseBrightnessValue + stripeBrightness, 0.9, 1.9);
+      const contrast = clamp(baseContrastValue + stripeContrast, 1.0, 2.0);
+      const saturate = clamp(baseSaturate + stripeSaturate, 0.9, 1.3);
       return `${tb.filter} brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)}) saturate(${saturate.toFixed(
         2
       )})`;
@@ -671,6 +682,7 @@ const SuitPreview = ({
     fabricTone,
     stripeBoost,
     stripeStrength,
+    stripeWhiteBoost,
     tb.filter,
     textureBrightnessOverride,
     textureContrastOverride,
@@ -735,7 +747,7 @@ const SuitPreview = ({
   ]);
   const textureBlendMode = useMemo<React.CSSProperties["mixBlendMode"]>(() => {
     if (usePhotoBase) return "soft-light";
-    if (stripeWhiteBoost) return "lighten";
+    if (stripeWhiteBoost) return "screen";
     if (fabricTone === "dark") return "overlay";
     return fabricMetrics.saturation > 0.5 ? "soft-light" : "overlay";
   }, [fabricMetrics.saturation, fabricTone, stripeWhiteBoost, usePhotoBase]);
@@ -747,6 +759,26 @@ const SuitPreview = ({
     }),
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
   );
+  const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
+    if (usePhotoBase || !useTexture || !stripeWhiteBoost) return null;
+    const opacity = clamp(0.18 + stripeStrength * 0.18, 0.18, 0.4);
+    const baseBrightness = textureBrightnessOverride ?? 1.55;
+    const baseContrast = textureContrastOverride ?? 1.75;
+    const brightness = clamp(baseBrightness + 0.1, 1.2, 2.0);
+    const contrast = clamp(baseContrast + 0.2, 1.2, 2.2);
+    return {
+      mixBlendMode: "screen",
+      opacity,
+      filter: `brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)}) saturate(0.9)`,
+    };
+  }, [
+    stripeStrength,
+    stripeWhiteBoost,
+    textureBrightnessOverride,
+    textureContrastOverride,
+    usePhotoBase,
+    useTexture,
+  ]);
   const photoVariant =
     fabricTone === "light"
       ? "light"
@@ -786,32 +818,32 @@ const SuitPreview = ({
     return clamp(0.68 + lumShift + satShift, 0.62, 0.82);
   }, [fabricMetrics.lightness, fabricMetrics.saturation, usePhotoBase]);
   const structuralShadingOpacityTuned = useMemo(
-    () => clamp(structuralShadingOpacity * autoTuning.shading, 0.12, 0.6),
-    [autoTuning.shading, structuralShadingOpacity]
+    () => clamp(structuralShadingOpacity * autoTuning.shading * stripeShadingMul, 0.12, 0.6),
+    [autoTuning.shading, structuralShadingOpacity, stripeShadingMul]
   );
   const structuralSpecularOpacityTuned = useMemo(
     () => clamp(structuralSpecularOpacity * autoTuning.specular, 0.08, 0.4),
     [autoTuning.specular, structuralSpecularOpacity]
   );
   const structuralEdgesOpacityTuned = useMemo(
-    () => clamp(structuralEdgesOpacity * autoTuning.edges, 0.12, 0.7),
-    [autoTuning.edges, structuralEdgesOpacity]
+    () => clamp(structuralEdgesOpacity * autoTuning.edges * stripeEdgeMul, 0.12, 0.7),
+    [autoTuning.edges, structuralEdgesOpacity, stripeEdgeMul]
   );
   const styleShadingOpacityTuned = useMemo(
-    () => clamp(styleShadingOpacity * autoTuning.shading, 0.12, 0.7),
-    [autoTuning.shading, styleShadingOpacity]
+    () => clamp(styleShadingOpacity * autoTuning.shading * stripeShadingMul, 0.12, 0.7),
+    [autoTuning.shading, styleShadingOpacity, stripeShadingMul]
   );
   const styleSpecularOpacityTuned = useMemo(
     () => clamp(styleSpecularOpacity * autoTuning.specular, 0.06, 0.35),
     [autoTuning.specular, styleSpecularOpacity]
   );
   const styleEdgesOpacityTuned = useMemo(
-    () => clamp(styleEdgesOpacity * autoTuning.edges, 0.12, 0.8),
-    [autoTuning.edges, styleEdgesOpacity]
+    () => clamp(styleEdgesOpacity * autoTuning.edges * stripeEdgeMul, 0.12, 0.8),
+    [autoTuning.edges, styleEdgesOpacity, stripeEdgeMul]
   );
   const styleBaseOverlayOpacityTuned = useMemo(
-    () => clamp(styleBaseOverlayOpacity * autoTuning.shading, 0.12, 0.5),
-    [autoTuning.shading, styleBaseOverlayOpacity]
+    () => clamp(styleBaseOverlayOpacity * autoTuning.shading * stripeShadingMul, 0.12, 0.5),
+    [autoTuning.shading, styleBaseOverlayOpacity, stripeShadingMul]
   );
   const photoOverlayTone = useMemo(
     () => ({
@@ -838,7 +870,8 @@ const SuitPreview = ({
     return { intensity, shadow, specular, opacity };
   }, [fabricTone, structuralSpecularOpacityTuned]);
   const isBlackFabric = fabricTone === "dark" && fabricLuminance < 0.12;
-  const darkBoostOpacity = (isBlackFabric ? 0.4 : 0.26) * (stripeBoost ? 0.7 : 1);
+  const darkBoostOpacity =
+    (isBlackFabric ? 0.4 : 0.26) * (stripeWhiteBoost ? 0.55 : stripeBoost ? 0.7 : 1);
   const darkBoostColor = isBlackFabric ? "#020202" : "#080808";
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
@@ -1444,6 +1477,22 @@ const SuitPreview = ({
             textureTileSizePx={TEXTURE_TILE_PX}
           />
         )}
+        {showLayer("fabric") && stripeHighlightStyle && (
+          <FabricUnion
+            layers={fabricMaskLayers}
+            resolve={resolveCdn}
+            fabricTexture={useTexture ? fabricTextureSource : undefined}
+            textureStyle={stripeHighlightStyle}
+            baseColor={tunedFabricFill || toneBaseColor}
+            baseBlendMode="normal"
+            baseOpacity={0}
+            panZoom={panZoom}
+            canvas={JACKET_CANVAS}
+            mask={jacketMask}
+            textureScale={fabricTextureScale}
+            textureTileSizePx={TEXTURE_TILE_PX}
+          />
+        )}
         {!usePhotoBase && needsDarkBoost && jacketMask && (
           <div
             className="absolute inset-0 pointer-events-none"
@@ -1602,6 +1651,23 @@ const SuitPreview = ({
               fabricAvgColor={tunedFabricFill}
               baseBlendMode="color"
               baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+              panZoom={panZoom}
+              canvas={PANTS_CANVAS}
+              mask={pantsMask}
+              textureScale={fabricTextureScale}
+              textureTileSizePx={TEXTURE_TILE_PX}
+              textureRotationDeg={pantsTextureRotation}
+            />
+          )}
+        {showLayer("fabric") && stripeHighlightStyle && (
+            <FabricUnion
+              layers={pantsFabricLayersResolved}
+              resolve={resolveCdn}
+              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+              textureStyle={stripeHighlightStyle}
+              baseColor={tunedFabricFill || toneBaseColor}
+              baseBlendMode="normal"
+              baseOpacity={0}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
               mask={pantsMask}

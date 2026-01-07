@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import AdminNav from "./components/AdminNav";
 
 const cards = [
   { href: "/admin/fabrics", title: "Fabrics", desc: "Upravljanje tkaninama, upload i lista." },
@@ -12,6 +13,7 @@ const cards = [
 export default function AdminHome() {
   return (
     <div className="mx-auto flex min-h-screen max-w-4xl flex-col gap-6 px-4 py-10">
+      <AdminNav />
       <div>
         <h1 className="text-3xl font-bold text-gray-900">Admin</h1>
         <p className="text-sm text-gray-600">Brzi pristup CMS sekcijama.</p>

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import NextImage from "next/image";
+import AdminNav from "../components/AdminNav";
 
 type Button = {
   id: string;
@@ -94,9 +95,19 @@ export default function ButtonsAdminPage() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-8">
+      <AdminNav />
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Buttons CMS</h1>
         <p className="text-sm text-gray-600">Upload dugmeta za sako. Jedna slika, više pozicija u renderu.</p>
+      </div>
+      <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900 shadow-sm">
+        <p className="font-semibold">Kratak tutorial za dugmad</p>
+        <ul className="mt-2 list-disc pl-5 text-xs text-amber-900">
+          <li>Slika dugmeta mora biti bez pozadine (transparentna).</li>
+          <li>Ukloni pozadinu na https://remove.bg (uploaduj sliku, preuzmi PNG bez pozadine).</li>
+          <li>Tek onda uploaduj taj PNG fajl na ovoj strani.</li>
+          <li>Upload fajl se automatski sece i centrira na isti precnik.</li>
+        </ul>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-4 rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">

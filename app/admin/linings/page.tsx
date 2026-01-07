@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import NextImage from "next/image";
+import AdminNav from "../components/AdminNav";
 
 type Lining = {
   id: string;
@@ -117,6 +118,7 @@ export default function LiningsAdminPage() {
 
   return (
     <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-8">
+      <AdminNav />
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Linings CMS</h1>
         <p className="text-sm text-gray-600">Upload postava (base/left/right slojevi) za sako.</p>
