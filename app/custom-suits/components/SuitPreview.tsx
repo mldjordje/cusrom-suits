@@ -1339,6 +1339,10 @@ const SuitPreview = ({
     () => (pantsFabricLayers.length ? pantsFabricLayers : pantsLayerOnly),
     [pantsFabricLayers, pantsLayerOnly]
   );
+  const pantsTextureLayers = useMemo(
+    () => [...pantsFabricLayersResolved, ...pantsOverlayLayers],
+    [pantsFabricLayersResolved, pantsOverlayLayers]
+  );
   const pantsDetailLayers = pantsBaseLayers;
   const pantsStyleLayers = useMemo(
     () => (includeStyle ? pantsOverlayLayers : []),
@@ -1649,7 +1653,7 @@ const SuitPreview = ({
         )}
         {showLayer("fabric") && (
             <FabricUnion
-              layers={pantsFabricLayersResolved}
+              layers={pantsTextureLayers}
               resolve={resolveCdn}
               fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
               textureStyle={fabricTextureStyle}
@@ -1667,7 +1671,7 @@ const SuitPreview = ({
           )}
         {showLayer("fabric") && stripeHighlightStyle && (
             <FabricUnion
-              layers={pantsFabricLayersResolved}
+              layers={pantsTextureLayers}
               resolve={resolveCdn}
               fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
               textureStyle={stripeHighlightStyle}
