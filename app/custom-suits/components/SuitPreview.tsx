@@ -1226,7 +1226,7 @@ const SuitPreview = ({
     () => (includeStyle ? styleOverlayLayers : []),
     [includeStyle, styleOverlayLayers]
   );
-  const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
+  const pantsMaskFallback = pantsLayer?.src ?? null;
   const pantsBaseLayers = useMemo(
     () => (pantsFabricLayers.length ? pantsFabricLayers : pantsLayer ? [pantsLayer] : []),
     [pantsFabricLayers, pantsLayer]
@@ -1260,7 +1260,7 @@ const SuitPreview = ({
     [photoVariant]
   );
   const jacketMask = jacketUnionMask;
-  const pantsMask = pantsUnionMask ?? (pantsMaskPair ? spriteBackground(pantsMaskPair) : null);
+  const pantsMask = pantsUnionMask ?? pantsMaskFallback;
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
 
@@ -1299,7 +1299,6 @@ const SuitPreview = ({
           ctx.clearRect(0, 0, c.width, c.height);
           ctx.globalCompositeOperation = "source-over";
           for (const layer of pantsMaskSourceLayers) {
-            const pair = cdnPair(layer.src);
             const tryLoad = (url: string) =>
               new Promise<HTMLImageElement>((resolve, reject) => {
                 const img = new Image();
@@ -1310,13 +1309,9 @@ const SuitPreview = ({
               });
             let img: HTMLImageElement | null = null;
             try {
-              img = await tryLoad(pair.webp);
+              img = await tryLoad(layer.src);
             } catch {
-              try {
-                img = await tryLoad(pair.png);
-              } catch {
-                img = null;
-              }
+              img = null;
             }
             if (!img) continue;
             const scale = Math.min(c.width / img.width, c.height / img.height);
