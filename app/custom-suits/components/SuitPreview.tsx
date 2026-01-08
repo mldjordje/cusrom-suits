@@ -6,7 +6,15 @@ import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
 import { toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone, NOISE_DATA } from "../utils/visual";
-import { cdnPair, ensureAssetAvailable, edgesPair, photoPair, shadingPair, specularPair } from "../utils/assets";
+import {
+  cdnPair,
+  ensureAssetAvailable,
+  edgesPair,
+  photoPair,
+  shadingPair,
+  specularPair,
+  toTransparentSilhouette,
+} from "../utils/assets";
 import { useButtons } from "../hooks/useButtons";
 import { useLinings } from "../hooks/useLinings";
 import { ButtonLayout, ButtonPosition, getFallbackPositions } from "../data/buttonPositions";
@@ -1226,7 +1234,7 @@ const SuitPreview = ({
     () => (includeStyle ? styleOverlayLayers : []),
     [includeStyle, styleOverlayLayers]
   );
-  const pantsMaskFallback = pantsLayer?.src ?? null;
+  const pantsMaskFallback = pantsLayer ? toTransparentSilhouette(pantsLayer.src) : null;
   const pantsBaseLayers = useMemo(
     () => (pantsFabricLayers.length ? pantsFabricLayers : pantsLayer ? [pantsLayer] : []),
     [pantsFabricLayers, pantsLayer]
@@ -1299,6 +1307,7 @@ const SuitPreview = ({
           ctx.clearRect(0, 0, c.width, c.height);
           ctx.globalCompositeOperation = "source-over";
           for (const layer of pantsMaskSourceLayers) {
+            const pair = cdnPair(layer.src);
             const tryLoad = (url: string) =>
               new Promise<HTMLImageElement>((resolve, reject) => {
                 const img = new Image();
@@ -1309,9 +1318,13 @@ const SuitPreview = ({
               });
             let img: HTMLImageElement | null = null;
             try {
-              img = await tryLoad(layer.src);
+              img = await tryLoad(pair.webp);
             } catch {
-              img = null;
+              try {
+                img = await tryLoad(pair.png);
+              } catch {
+                img = null;
+              }
             }
             if (!img) continue;
             const scale = Math.min(c.width / img.width, c.height / img.height);
