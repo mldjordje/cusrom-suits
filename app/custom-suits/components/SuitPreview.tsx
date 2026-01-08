@@ -1258,6 +1258,7 @@ const SuitPreview = ({
     [includeStyle, styleOverlayLayers]
   );
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
+  const pantsPhotoMaskPair = pantsLayer && usePhotoBase ? photoPair(pantsLayer.src, photoVariant) : null;
   const pantsBaseLayers = useMemo(
     () => (pantsFabricLayers.length ? pantsFabricLayers : pantsLayer ? [pantsLayer] : []),
     [pantsFabricLayers, pantsLayer]
@@ -1294,12 +1295,20 @@ const SuitPreview = ({
     [photoVariant]
   );
   const jacketMask = jacketUnionMask;
-  const pantsMask = pantsUnionMask ?? (pantsMaskPair ? spriteBackground(pantsMaskPair) : null);
+  const pantsMask = usePhotoBase
+    ? pantsPhotoMaskPair
+      ? spriteBackground(pantsPhotoMaskPair)
+      : null
+    : pantsUnionMask ?? (pantsMaskPair ? spriteBackground(pantsMaskPair) : null);
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
 
   // Build a union mask over the pants silhouette to avoid halo/background bleed
   useEffect(() => {
+    if (usePhotoBase) {
+      setPantsUnionMask(null);
+      return;
+    }
     if (!pantsMaskKey) {
       setPantsUnionMask(null);
       return;
