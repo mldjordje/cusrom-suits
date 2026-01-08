@@ -28,6 +28,18 @@ const buildMask = (mask?: string | null, fallback?: SpritePair | null) => {
   return fallback ? spriteBackground(fallback) : undefined;
 };
 
+const computeRotationScale = (canvas: { w: number; h: number }, angleDeg: number) => {
+  const normalized = ((angleDeg % 360) + 360) % 360;
+  if (normalized === 0) return 1;
+  const rad = (normalized * Math.PI) / 180;
+  const sin = Math.abs(Math.sin(rad));
+  const cos = Math.abs(Math.cos(rad));
+  const bboxW = canvas.w * cos + canvas.h * sin;
+  const bboxH = canvas.w * sin + canvas.h * cos;
+  if (!bboxW || !bboxH) return 1;
+  return Math.max(1, canvas.w / bboxW, canvas.h / bboxH);
+};
+
 const FabricUnionComponent: React.FC<Props> = ({
   layers,
   resolve,
@@ -45,12 +57,19 @@ const FabricUnionComponent: React.FC<Props> = ({
   textureRotationDeg = 0,
 }) => {
   const baseScale = panZoom.scale * textureScale;
-  const bgSize =
+  const rotationScale = textureRotationDeg ? computeRotationScale(canvas, textureRotationDeg) : 1;
+  const rotationCompensation = rotationScale ? 1 / rotationScale : 1;
+  const buildBgSize = (scale: number) =>
     typeof textureTileSizePx === "number" && Number.isFinite(textureTileSizePx)
-      ? `${(textureTileSizePx * baseScale).toFixed(2)}px ${(textureTileSizePx * baseScale).toFixed(2)}px`
-      : `${(baseScale * 100).toFixed(2)}% ${(baseScale * 100).toFixed(2)}%`;
+      ? `${(textureTileSizePx * scale).toFixed(2)}px ${(textureTileSizePx * scale).toFixed(2)}px`
+      : `${(scale * 100).toFixed(2)}% ${(scale * 100).toFixed(2)}%`;
+  const bgSize = buildBgSize(baseScale);
   const bgPos = `calc(50% + ${Math.round(panZoom.offset.x)}px) calc(50% + ${Math.round(
     panZoom.offset.y
+  )}px)`;
+  const rotatedBgSize = buildBgSize(baseScale * rotationCompensation);
+  const rotatedBgPos = `calc(50% + ${Math.round(panZoom.offset.x * rotationCompensation)}px) calc(50% + ${Math.round(
+    panZoom.offset.y * rotationCompensation
   )}px)`;
 
   const renderBaseFill = () => {
@@ -127,6 +146,15 @@ const FabricUnionComponent: React.FC<Props> = ({
     if (mask) {
       const maskImage = buildMask(mask);
       if (textureRotationDeg) {
+        const rotatedStyle: React.CSSProperties = {
+          ...baseStyle,
+          backgroundSize: rotatedBgSize,
+          backgroundPosition: rotatedBgPos,
+        };
+        const transform =
+          rotationScale !== 1
+            ? `rotate(${textureRotationDeg}deg) scale(${rotationScale})`
+            : `rotate(${textureRotationDeg}deg)`;
         return (
           <div
             className="absolute inset-0 pointer-events-none"
@@ -144,8 +172,8 @@ const FabricUnionComponent: React.FC<Props> = ({
             <div
               className="absolute inset-0"
               style={{
-                ...baseStyle,
-                transform: `rotate(${textureRotationDeg}deg)`,
+                ...rotatedStyle,
+                transform,
                 transformOrigin: "center",
               }}
             />
@@ -175,6 +203,15 @@ const FabricUnionComponent: React.FC<Props> = ({
       if (!sprite) return null;
       const maskImage = buildMask(undefined, sprite);
       if (textureRotationDeg) {
+        const rotatedStyle: React.CSSProperties = {
+          ...baseStyle,
+          backgroundSize: rotatedBgSize,
+          backgroundPosition: rotatedBgPos,
+        };
+        const transform =
+          rotationScale !== 1
+            ? `rotate(${textureRotationDeg}deg) scale(${rotationScale})`
+            : `rotate(${textureRotationDeg}deg)`;
         return (
           <div
             key={`fabric-weave-${layer.id}`}
@@ -193,8 +230,8 @@ const FabricUnionComponent: React.FC<Props> = ({
             <div
               className="absolute inset-0"
               style={{
-                ...baseStyle,
-                transform: `rotate(${textureRotationDeg}deg)`,
+                ...rotatedStyle,
+                transform,
                 transformOrigin: "center",
               }}
             />

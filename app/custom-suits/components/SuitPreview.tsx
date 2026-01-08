@@ -6,7 +6,14 @@ import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { getTransparentCdnBase } from "../utils/backend";
 import { toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone, NOISE_DATA } from "../utils/visual";
-import { cdnPair, ensureAssetAvailable, edgesPair, photoPair, shadingPair, specularPair } from "../utils/assets";
+import {
+  cdnPair,
+  ensureAssetAvailable,
+  edgesPair,
+  photoPair,
+  shadingPair,
+  specularPair,
+} from "../utils/assets";
 import { useButtons } from "../hooks/useButtons";
 import { useLinings } from "../hooks/useLinings";
 import { ButtonLayout, ButtonPosition, getFallbackPositions } from "../data/buttonPositions";
@@ -637,12 +644,10 @@ const SuitPreview = ({
       (selectedFabric as any)?.pantsTextureRotation ?? (selectedFabric as any)?.pants_texture_rotation
     );
     if (typeof raw === "number") return raw;
-    if (stripeBoost) {
-      if (stripeOrientation === "horizontal") return 0;
-      return 90;
-    }
+    if (stripeOrientation === "horizontal") return 0;
+    if (stripeOrientation === "vertical") return 90;
     return 0;
-  }, [selectedFabric, stripeBoost, stripeOrientation]);
+  }, [selectedFabric, stripeOrientation]);
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
     if (fabricTone === "dark") {
@@ -909,10 +914,7 @@ const SuitPreview = ({
     () => fabricMaskLayers.map((layer) => layer.src).filter(Boolean).join("|"),
     [fabricMaskLayers]
   );
-  const pantsMaskLayers = useMemo(
-    () => [...pantsFabricLayers, ...pantsOverlayLayers],
-    [pantsFabricLayers, pantsOverlayLayers]
-  );
+  const pantsMaskLayers = useMemo(() => pantsFabricLayers, [pantsFabricLayers]);
   useEffect(() => {
     setScale(1);
     setOffset({ x: 0, y: 0 });
@@ -1226,7 +1228,6 @@ const SuitPreview = ({
     () => (includeStyle ? styleOverlayLayers : []),
     [includeStyle, styleOverlayLayers]
   );
-  const pantsMaskFallback = pantsLayer?.src ?? null;
   const pantsBaseLayers = useMemo(
     () => (pantsFabricLayers.length ? pantsFabricLayers : pantsLayer ? [pantsLayer] : []),
     [pantsFabricLayers, pantsLayer]
@@ -1236,10 +1237,7 @@ const SuitPreview = ({
     () => (pantsFabricLayers.length ? pantsFabricLayers : pantsLayerOnly),
     [pantsFabricLayers, pantsLayerOnly]
   );
-  const pantsTextureLayers = useMemo(
-    () => [...pantsFabricLayersResolved, ...pantsOverlayLayers],
-    [pantsFabricLayersResolved, pantsOverlayLayers]
-  );
+  const pantsTextureLayers = useMemo(() => pantsFabricLayersResolved, [pantsFabricLayersResolved]);
   const pantsDetailLayers = pantsBaseLayers;
   const pantsStyleLayers = useMemo(
     () => (includeStyle ? pantsOverlayLayers : []),
@@ -1260,7 +1258,7 @@ const SuitPreview = ({
     [photoVariant]
   );
   const jacketMask = jacketUnionMask;
-  const pantsMask = pantsUnionMask ?? pantsMaskFallback;
+  const pantsMask = pantsUnionMask;
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
 
@@ -1299,6 +1297,7 @@ const SuitPreview = ({
           ctx.clearRect(0, 0, c.width, c.height);
           ctx.globalCompositeOperation = "source-over";
           for (const layer of pantsMaskSourceLayers) {
+            const pair = cdnPair(layer.src);
             const tryLoad = (url: string) =>
               new Promise<HTMLImageElement>((resolve, reject) => {
                 const img = new Image();
@@ -1309,9 +1308,13 @@ const SuitPreview = ({
               });
             let img: HTMLImageElement | null = null;
             try {
-              img = await tryLoad(layer.src);
+              img = await tryLoad(pair.webp);
             } catch {
-              img = null;
+              try {
+                img = await tryLoad(pair.png);
+              } catch {
+                img = null;
+              }
             }
             if (!img) continue;
             const scale = Math.min(c.width / img.width, c.height / img.height);
