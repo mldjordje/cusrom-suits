@@ -1300,6 +1300,11 @@ const SuitPreview = ({
       ? spriteBackground(pantsPhotoMaskPair)
       : null
     : pantsUnionMask ?? (pantsMaskPair ? spriteBackground(pantsMaskPair) : null);
+  const pantsTextureMask = usePhotoBase
+    ? pantsMaskPair
+      ? spriteBackground(pantsMaskPair)
+      : pantsMask
+    : pantsMask;
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
 
@@ -1711,7 +1716,7 @@ const SuitPreview = ({
               baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
-              mask={pantsMask}
+              mask={pantsTextureMask}
               textureScale={fabricTextureScale}
               textureTileSizePx={TEXTURE_TILE_PX}
               textureRotationDeg={pantsTextureRotation}
@@ -1728,7 +1733,7 @@ const SuitPreview = ({
               baseOpacity={0}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
-              mask={pantsMask}
+              mask={pantsTextureMask}
               textureScale={fabricTextureScale}
               textureTileSizePx={TEXTURE_TILE_PX}
               textureRotationDeg={pantsTextureRotation}
