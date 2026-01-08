@@ -15,11 +15,13 @@ export type UseFabricsResult<T = any> = {
   error: string | null;
 };
 
-export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
-  const [fabrics, setFabrics] = useState<T[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+type CacheEntry<T> = { data: T[]; error: string | null; ts: number };
 
+const CACHE_TTL_MS = 5 * 60 * 1000;
+const FABRICS_CACHE = new Map<string, CacheEntry<any>>();
+const FABRICS_INFLIGHT = new Map<string, Promise<CacheEntry<any>>>();
+
+export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
   const fallbackList = (fallbackFabrics as unknown[]) as T[];
 
   const searchKey = useMemo(() => {
@@ -30,37 +32,67 @@ export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
     return params.toString();
   }, [query?.tone, query?.sort, query?.order]);
 
+  const cacheKey = searchKey || "all";
+  const cached = FABRICS_CACHE.get(cacheKey);
+  const isFresh = cached && Date.now() - cached.ts < CACHE_TTL_MS;
+
+  const [fabrics, setFabrics] = useState<T[]>(() => (isFresh ? cached?.data ?? [] : []));
+  const [loading, setLoading] = useState<boolean>(() => !isFresh);
+  const [error, setError] = useState<string | null>(() => (isFresh ? cached?.error ?? null : null));
+
   useEffect(() => {
     let cancelled = false;
+    if (isFresh) {
+      setFabrics(cached?.data ?? []);
+      setError(cached?.error ?? null);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     setLoading(true);
     const url = `/api/fabrics${searchKey ? `?${searchKey}` : ""}`;
+    const existing = FABRICS_INFLIGHT.get(cacheKey);
+    const inflight =
+      existing ??
+      fetch(url, { cache: "no-store" })
+        .then((response) => response.json())
+        .then((payload) => {
+          const list = Array.isArray(payload?.data) ? payload.data : [];
+          if (payload?.success && list.length) {
+            return { data: list, error: null } as CacheEntry<T>;
+          }
+          return { data: fallbackList, error: payload?.message || "Fallback na lokalne tkanine." } as CacheEntry<T>;
+        })
+        .catch((err) => {
+          return {
+            data: fallbackList,
+            error: err?.message || "Neuspelo ucitavanje tkanina. Koristimo fallback.",
+          } as CacheEntry<T>;
+        })
+        .then((entry) => {
+          const stamped = { ...entry, ts: Date.now() };
+          FABRICS_CACHE.set(cacheKey, stamped);
+          return stamped;
+        })
+        .finally(() => {
+          FABRICS_INFLIGHT.delete(cacheKey);
+        });
 
-    fetch(url, { cache: "no-store" })
-      .then((response) => response.json())
-      .then((payload) => {
-        if (cancelled) return;
-        const list = Array.isArray(payload?.data) ? payload.data : [];
-        if (payload?.success && list.length) {
-          setFabrics(list);
-          setError(null);
-        } else {
-          setFabrics(fallbackList);
-          setError(payload?.message || "Fallback na lokalne tkanine.");
-        }
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setFabrics(fallbackList);
-        setError(err?.message || "Neuspelo ucitavanje tkanina. Koristimo fallback.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    if (!existing) FABRICS_INFLIGHT.set(cacheKey, inflight);
+
+    inflight.then((entry) => {
+      if (cancelled) return;
+      setFabrics(entry.data);
+      setError(entry.error);
+      setLoading(false);
+    });
 
     return () => {
       cancelled = true;
     };
-  }, [fallbackList, searchKey]);
+  }, [cacheKey, fallbackList, isFresh, searchKey]);
 
   return { fabrics, loading, error };
 }

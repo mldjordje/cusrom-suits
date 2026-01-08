@@ -10,11 +10,13 @@ export type Button = {
   diameter?: number | null;
 };
 
-export function useButtons() {
-  const [buttons, setButtons] = useState<Button[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+type CacheEntry = { data: Button[]; error: string | null; ts: number };
 
+const CACHE_TTL_MS = 5 * 60 * 1000;
+let BUTTONS_CACHE: CacheEntry | null = null;
+let BUTTONS_INFLIGHT: Promise<CacheEntry> | null = null;
+
+export function useButtons() {
   const fallbackButtons: Button[] = useMemo(
     () => [
       { id: "btn1", name: "Button 1", image_url: "/btn/1.jpg" },
@@ -25,34 +27,62 @@ export function useButtons() {
     []
   );
 
+  const cached = BUTTONS_CACHE;
+  const isFresh = cached && Date.now() - cached.ts < CACHE_TTL_MS;
+  const [buttons, setButtons] = useState<Button[]>(() => (isFresh ? cached?.data ?? [] : []));
+  const [loading, setLoading] = useState<boolean>(() => !isFresh);
+  const [error, setError] = useState<string | null>(() => (isFresh ? cached?.error ?? null : null));
+
   useEffect(() => {
     let cancelled = false;
+    if (isFresh) {
+      setButtons(cached?.data ?? []);
+      setError(cached?.error ?? null);
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
     setLoading(true);
-    fetch("/api/buttons", { cache: "no-store" })
-      .then((res) => res.json())
-      .then((json) => {
-        if (cancelled) return;
-        const list = Array.isArray(json?.data) ? json.data : [];
-        if (json?.success && list.length) {
-          setButtons(list);
-          setError(null);
-        } else {
-          setButtons(fallbackButtons);
-          setError(json?.message || "Fallback na lokalna dugmad.");
-        }
-      })
-      .catch((err) => {
-        if (cancelled) return;
-        setButtons(fallbackButtons);
-        setError(err?.message || "Neuspelo učitavanje dugmadi. Koristimo fallback.");
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+    const inflight =
+      BUTTONS_INFLIGHT ??
+      fetch("/api/buttons", { cache: "no-store" })
+        .then((res) => res.json())
+        .then((json) => {
+          const list = Array.isArray(json?.data) ? json.data : [];
+          if (json?.success && list.length) {
+            return { data: list, error: null } as CacheEntry;
+          }
+          return { data: fallbackButtons, error: json?.message || "Fallback na lokalna dugmad." } as CacheEntry;
+        })
+        .catch((err) => {
+          return {
+            data: fallbackButtons,
+            error: err?.message || "Neuspelo ucitavanje dugmadi. Koristimo fallback.",
+          } as CacheEntry;
+        })
+        .then((entry) => {
+          const stamped = { ...entry, ts: Date.now() };
+          BUTTONS_CACHE = stamped;
+          return stamped;
+        })
+        .finally(() => {
+          BUTTONS_INFLIGHT = null;
+        });
+
+    if (!BUTTONS_INFLIGHT) BUTTONS_INFLIGHT = inflight;
+
+    inflight.then((entry) => {
+      if (cancelled) return;
+      setButtons(entry.data);
+      setError(entry.error);
+      setLoading(false);
+    });
     return () => {
       cancelled = true;
     };
-  }, [fallbackButtons]);
+  }, [cached?.data, cached?.error, fallbackButtons, isFresh]);
 
   return { buttons, loading, error };
 }

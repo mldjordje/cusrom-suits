@@ -1,6 +1,6 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import React, { useMemo, useState } from "react";
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
@@ -25,6 +25,8 @@ const tabLabels: Record<(typeof tabs)[number], string> = {
   STYLE: "Stil",
   ACCENTS: "Detalji",
 };
+
+const FABRIC_PAGE_SIZE = 24;
 
 const sidebarVariants = {
   hidden: { opacity: 0, x: -32 },
@@ -58,6 +60,9 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
   const [sort, setSort] = useState<"date_desc" | "date_asc">("date_desc");
   const [fabricQuery, setFabricQuery] = useState("");
+  const deferredQuery = useDeferredValue(fabricQuery);
+  const fabricSentinelRef = useRef<HTMLDivElement | null>(null);
+  const [visibleFabricCount, setVisibleFabricCount] = useState(FABRIC_PAGE_SIZE);
   const { fabrics, loading: fabricsLoading, error: fabricsError } = useFabrics({
     tone: toneFilter === "all" ? undefined : toneFilter,
     sort: "created_at",
@@ -67,22 +72,51 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
   const { linings, loading: liningsLoading, error: liningsError } = useLinings(config.styleId);
 
   const price = computePrice(config, suits);
-  const fabricsNormalized = fabrics.length
-    ? fabrics.map((x: any) => ({ ...x, id: String(x.id) }))
-    : fallbackFabrics.map((fabric) => ({
-        ...fabric,
-        id: String(fabric.id),
-        price: (fabric as any).price ?? 0,
-        tone: (fabric as any).tone ?? "medium",
-      }));
-  const normalizedQuery = fabricQuery.trim().toLowerCase();
-  const filteredFabrics = normalizedQuery
-    ? fabricsNormalized.filter((fabric: any) => {
-        const name = String(fabric.name || "").toLowerCase();
-        const code = String(fabric.code || "").toLowerCase();
-        return name.includes(normalizedQuery) || code.includes(normalizedQuery);
-      })
-    : fabricsNormalized;
+  const fabricsNormalized = useMemo(
+    () =>
+      fabrics.length
+        ? fabrics.map((x: any) => ({ ...x, id: String(x.id) }))
+        : fallbackFabrics.map((fabric) => ({
+            ...fabric,
+            id: String(fabric.id),
+            price: (fabric as any).price ?? 0,
+            tone: (fabric as any).tone ?? "medium",
+          })),
+    [fabrics]
+  );
+  const filteredFabrics = useMemo(() => {
+    const normalizedQuery = deferredQuery.trim().toLowerCase();
+    if (!normalizedQuery) return fabricsNormalized;
+    return fabricsNormalized.filter((fabric: any) => {
+      const name = String(fabric.name || "").toLowerCase();
+      const code = String(fabric.code || "").toLowerCase();
+      return name.includes(normalizedQuery) || code.includes(normalizedQuery);
+    });
+  }, [deferredQuery, fabricsNormalized]);
+  const visibleFabrics = useMemo(
+    () => filteredFabrics.slice(0, visibleFabricCount),
+    [filteredFabrics, visibleFabricCount]
+  );
+
+  useEffect(() => {
+    setVisibleFabricCount(FABRIC_PAGE_SIZE);
+  }, [activeTab, deferredQuery, sort, toneFilter, fabricsNormalized.length]);
+
+  useEffect(() => {
+    if (activeTab !== "FABRIC") return;
+    const sentinel = fabricSentinelRef.current;
+    if (!sentinel) return;
+    if (visibleFabricCount >= filteredFabrics.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        setVisibleFabricCount((count) => Math.min(count + FABRIC_PAGE_SIZE, filteredFabrics.length));
+      },
+      { rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [activeTab, filteredFabrics.length, visibleFabricCount]);
   const fabricPrice = fabricsNormalized.find((f: any) => f.id === config.colorId)?.price ?? 0;
 
   const uploadUrl = "/admin/fabrics";
@@ -351,7 +385,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
                 <p className="text-xs text-gray-500">Nema tkanina za filter.</p>
               ) : (
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {filteredFabrics.map((fabric) => {
+                  {visibleFabrics.map((fabric) => {
                     const isActive = config.colorId === fabric.id;
                     return (
                       <button
@@ -388,6 +422,14 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
                       </button>
                     );
                   })}
+                  {filteredFabrics.length > visibleFabrics.length && (
+                    <div
+                      ref={fabricSentinelRef}
+                      className="col-span-full flex h-10 items-center justify-center text-[11px] text-gray-400"
+                    >
+                      Ucitavam jos...
+                    </div>
+                  )}
                 </div>
               )}
             </section>

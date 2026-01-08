@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
@@ -24,6 +24,8 @@ const NAV = [
   { id: "STYLE" as const, label: "Stil", icon: "/custom-suits/icons/iconstyle.png" },
   { id: "ACCENTS" as const, label: "Detalji", icon: "/custom-suits/icons/iconaccents.png" },
 ];
+
+const FABRIC_PAGE_SIZE = 18;
 
 const toneLabels: Record<"all" | "light" | "medium" | "dark", string> = {
   all: "Svi tonovi",
@@ -144,6 +146,7 @@ const FabricCard = ({
         className="h-full w-full object-cover"
         loading="lazy"
         decoding="async"
+        fetchPriority="low"
       />
       {active && <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />}
     </div>
@@ -209,6 +212,10 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
   const [fabricQuery, setFabricQuery] = useState("");
   const [sort, setSort] = useState<"date_desc" | "date_asc">("date_desc");
+  const deferredQuery = useDeferredValue(fabricQuery);
+  const fabricListRef = useRef<HTMLDivElement | null>(null);
+  const fabricSentinelRef = useRef<HTMLDivElement | null>(null);
+  const [visibleFabricCount, setVisibleFabricCount] = useState(FABRIC_PAGE_SIZE);
 
   const { fabrics, loading: fabricsLoading, error: fabricsError } = useFabrics({
     tone: toneFilter === "all" ? undefined : toneFilter,
@@ -232,14 +239,39 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   );
 
   const filteredFabrics = useMemo(() => {
-    const query = fabricQuery.trim().toLowerCase();
+    const query = deferredQuery.trim().toLowerCase();
     if (!query) return fabricsNormalized;
     return fabricsNormalized.filter((fabric: any) => {
       const name = String(fabric.name || "").toLowerCase();
       const code = String(fabric.code || "").toLowerCase();
       return name.includes(query) || code.includes(query);
     });
-  }, [fabricQuery, fabricsNormalized]);
+  }, [deferredQuery, fabricsNormalized]);
+
+  useEffect(() => {
+    setVisibleFabricCount(FABRIC_PAGE_SIZE);
+  }, [currentPanel, deferredQuery, sort, toneFilter, fabricsNormalized.length]);
+
+  useEffect(() => {
+    if (currentPanel !== "FABRIC") return;
+    const sentinel = fabricSentinelRef.current;
+    if (!sentinel) return;
+    if (visibleFabricCount >= filteredFabrics.length) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (!entries[0]?.isIntersecting) return;
+        setVisibleFabricCount((count) => Math.min(count + FABRIC_PAGE_SIZE, filteredFabrics.length));
+      },
+      { root: fabricListRef.current, rootMargin: "200px" }
+    );
+    observer.observe(sentinel);
+    return () => observer.disconnect();
+  }, [currentPanel, filteredFabrics.length, visibleFabricCount]);
+
+  const visibleFabrics = useMemo(
+    () => filteredFabrics.slice(0, visibleFabricCount),
+    [filteredFabrics, visibleFabricCount]
+  );
 
   const price = computePrice(config, suits);
   const fabricPrice = useMemo(
@@ -411,20 +443,33 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
           </div>
           {fabricsError && <p className="text-[11px] text-orange-600">{fabricsError}</p>}
         </div>
-        <div className="flex-1 space-y-3 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-28">
+        <div
+          ref={fabricListRef}
+          className="flex-1 space-y-3 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-28"
+        >
           {fabricsLoading ? (
             <p className="text-sm text-gray-500">Ucitavanje tkanina...</p>
           ) : filteredFabrics.length === 0 ? (
             <p className="text-sm text-gray-500">Nema tkanina za zadate filtere.</p>
           ) : (
-            filteredFabrics.map((fabric: any) => (
-              <FabricCard
-                key={fabric.id}
-                fabric={fabric}
-                active={config.colorId === fabric.id}
-                onSelect={() => dispatch({ type: "SET_COLOR", payload: fabric.id })}
-              />
-            ))
+            <>
+              {visibleFabrics.map((fabric: any) => (
+                <FabricCard
+                  key={fabric.id}
+                  fabric={fabric}
+                  active={config.colorId === fabric.id}
+                  onSelect={() => dispatch({ type: "SET_COLOR", payload: fabric.id })}
+                />
+              ))}
+              {filteredFabrics.length > visibleFabrics.length && (
+                <div
+                  ref={fabricSentinelRef}
+                  className="flex h-10 items-center justify-center text-[11px] text-gray-400"
+                >
+                  Ucitavam jos...
+                </div>
+              )}
+            </>
           )}
         </div>
         <div className="sticky bottom-0 border-t border-gray-100 bg-white px-4 py-3">
@@ -512,7 +557,14 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
                 >
                   <div className="relative h-12 w-full">
                     {btn.image_url ? (
-                      <img src={btn.image_url} alt={btn.name} className="h-full w-full object-contain" />
+                      <img
+                        src={btn.image_url}
+                        alt={btn.name}
+                        className="h-full w-full object-contain"
+                        loading="lazy"
+                        decoding="async"
+                        fetchPriority="low"
+                      />
                     ) : (
                       <div className="flex h-full items-center justify-center text-[10px] text-gray-400">N/A</div>
                     )}
