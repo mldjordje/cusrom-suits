@@ -766,6 +766,13 @@ const SuitPreview = ({
     }),
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
   );
+  const pantsTextureStyle = useMemo<React.CSSProperties>(() => {
+    const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
+    return {
+      ...fabricTextureStyle,
+      opacity: clamp(opacity * 0.72, 0.08, 0.6),
+    };
+  }, [fabricTextureStyle]);
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
     if (!useTexture || !stripeBoost) return null;
     const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
@@ -790,6 +797,14 @@ const SuitPreview = ({
     useTexture,
     usePhotoBase,
   ]);
+  const pantsStripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
+    if (!stripeHighlightStyle) return null;
+    const opacity = Number(stripeHighlightStyle.opacity ?? 0.2);
+    return {
+      ...stripeHighlightStyle,
+      opacity: clamp(opacity * 0.6, 0.05, 0.32),
+    };
+  }, [stripeHighlightStyle]);
   const photoVariant =
     fabricTone === "light"
       ? "light"
@@ -1659,7 +1674,7 @@ const SuitPreview = ({
               layers={pantsTextureLayers}
               resolve={resolveCdn}
               fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-              textureStyle={fabricTextureStyle}
+              textureStyle={pantsTextureStyle}
               baseColor={tunedFabricFill || toneBaseColor}
               fabricAvgColor={tunedFabricFill}
               baseBlendMode="color"
@@ -1677,7 +1692,7 @@ const SuitPreview = ({
               layers={pantsTextureLayers}
               resolve={resolveCdn}
               fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-              textureStyle={stripeHighlightStyle}
+              textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
               baseColor={tunedFabricFill || toneBaseColor}
               baseBlendMode="normal"
               baseOpacity={0}
