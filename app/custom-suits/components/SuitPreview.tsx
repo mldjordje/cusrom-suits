@@ -768,12 +768,12 @@ const SuitPreview = ({
   );
   const pantsTextureStyle = useMemo<React.CSSProperties>(() => {
     const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
-    const stripeMul = stripeBoost ? 0.58 : 0.72;
+    const stripeMul = stripeBoost ? 0.45 : 0.62;
     const mixBlendMode = stripeWhiteBoost ? "soft-light" : fabricTextureStyle.mixBlendMode;
     return {
       ...fabricTextureStyle,
       mixBlendMode,
-      opacity: clamp(opacity * stripeMul, 0.06, 0.55),
+      opacity: clamp(opacity * stripeMul, 0.05, 0.5),
     };
   }, [fabricTextureStyle, stripeBoost, stripeWhiteBoost]);
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
@@ -807,7 +807,7 @@ const SuitPreview = ({
     return {
       ...stripeHighlightStyle,
       mixBlendMode,
-      opacity: clamp(opacity * 0.45, 0.04, 0.26),
+      opacity: clamp(opacity * 0.35, 0.03, 0.22),
     };
   }, [stripeHighlightStyle, stripeWhiteBoost]);
   const photoVariant =
