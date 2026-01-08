@@ -1305,6 +1305,36 @@ const SuitPreview = ({
       ? spriteBackground(pantsMaskPair)
       : pantsMask
     : pantsMask;
+  const pantsSideFillEnabled = usePhotoBase && Boolean(pantsMask);
+  const pantsSideFillCut = 82;
+  const pantsSideTextureStyleLeft = useMemo<React.CSSProperties | null>(() => {
+    if (!pantsSideFillEnabled) return null;
+    return {
+      ...fabricTextureStylePants,
+      clipPath: `inset(0 ${pantsSideFillCut}% 0 0)`,
+    };
+  }, [fabricTextureStylePants, pantsSideFillEnabled]);
+  const pantsSideTextureStyleRight = useMemo<React.CSSProperties | null>(() => {
+    if (!pantsSideFillEnabled) return null;
+    return {
+      ...fabricTextureStylePants,
+      clipPath: `inset(0 0 0 ${pantsSideFillCut}%)`,
+    };
+  }, [fabricTextureStylePants, pantsSideFillEnabled]);
+  const pantsSideStripeStyleLeft = useMemo<React.CSSProperties | null>(() => {
+    if (!pantsSideFillEnabled || !stripeHighlightStylePants) return null;
+    return {
+      ...stripeHighlightStylePants,
+      clipPath: `inset(0 ${pantsSideFillCut}% 0 0)`,
+    };
+  }, [pantsSideFillEnabled, stripeHighlightStylePants]);
+  const pantsSideStripeStyleRight = useMemo<React.CSSProperties | null>(() => {
+    if (!pantsSideFillEnabled || !stripeHighlightStylePants) return null;
+    return {
+      ...stripeHighlightStylePants,
+      clipPath: `inset(0 0 0 ${pantsSideFillCut}%)`,
+    };
+  }, [pantsSideFillEnabled, stripeHighlightStylePants]);
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
 
@@ -1722,6 +1752,40 @@ const SuitPreview = ({
               textureRotationDeg={pantsTextureRotation}
             />
           )}
+        {showLayer("fabric") && pantsSideTextureStyleLeft && (
+            <FabricUnion
+              layers={pantsTextureLayers}
+              resolve={resolveCdn}
+              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+              textureStyle={pantsSideTextureStyleLeft}
+              baseColor={tunedFabricFill || toneBaseColor}
+              baseBlendMode="normal"
+              baseOpacity={0}
+              panZoom={panZoom}
+              canvas={PANTS_CANVAS}
+              mask={pantsMask}
+              textureScale={fabricTextureScale}
+              textureTileSizePx={TEXTURE_TILE_PX}
+              textureRotationDeg={pantsTextureRotation}
+            />
+          )}
+        {showLayer("fabric") && pantsSideTextureStyleRight && (
+            <FabricUnion
+              layers={pantsTextureLayers}
+              resolve={resolveCdn}
+              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+              textureStyle={pantsSideTextureStyleRight}
+              baseColor={tunedFabricFill || toneBaseColor}
+              baseBlendMode="normal"
+              baseOpacity={0}
+              panZoom={panZoom}
+              canvas={PANTS_CANVAS}
+              mask={pantsMask}
+              textureScale={fabricTextureScale}
+              textureTileSizePx={TEXTURE_TILE_PX}
+              textureRotationDeg={pantsTextureRotation}
+            />
+          )}
         {showLayer("fabric") && stripeHighlightStylePants && (
             <FabricUnion
               layers={pantsTextureLayers}
@@ -1734,6 +1798,40 @@ const SuitPreview = ({
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
               mask={pantsTextureMask}
+              textureScale={fabricTextureScale}
+              textureTileSizePx={TEXTURE_TILE_PX}
+              textureRotationDeg={pantsTextureRotation}
+            />
+          )}
+        {showLayer("fabric") && pantsSideStripeStyleLeft && (
+            <FabricUnion
+              layers={pantsTextureLayers}
+              resolve={resolveCdn}
+              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+              textureStyle={pantsSideStripeStyleLeft}
+              baseColor={tunedFabricFill || toneBaseColor}
+              baseBlendMode="normal"
+              baseOpacity={0}
+              panZoom={panZoom}
+              canvas={PANTS_CANVAS}
+              mask={pantsMask}
+              textureScale={fabricTextureScale}
+              textureTileSizePx={TEXTURE_TILE_PX}
+              textureRotationDeg={pantsTextureRotation}
+            />
+          )}
+        {showLayer("fabric") && pantsSideStripeStyleRight && (
+            <FabricUnion
+              layers={pantsTextureLayers}
+              resolve={resolveCdn}
+              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+              textureStyle={pantsSideStripeStyleRight}
+              baseColor={tunedFabricFill || toneBaseColor}
+              baseBlendMode="normal"
+              baseOpacity={0}
+              panZoom={panZoom}
+              canvas={PANTS_CANVAS}
+              mask={pantsMask}
               textureScale={fabricTextureScale}
               textureTileSizePx={TEXTURE_TILE_PX}
               textureRotationDeg={pantsTextureRotation}
