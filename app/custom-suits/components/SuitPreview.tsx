@@ -761,13 +761,6 @@ const SuitPreview = ({
     }),
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
   );
-  const fabricTextureStylePants = useMemo<React.CSSProperties>(() => {
-    if (!stripeBoost) return fabricTextureStyle;
-    const baseOpacity = Number(fabricTextureStyle.opacity ?? 0.3);
-    const opacity = clamp(baseOpacity * 1.2, 0.18, usePhotoBase ? 0.6 : 0.75);
-    const mixBlendMode = usePhotoBase ? "overlay" : fabricTextureStyle.mixBlendMode;
-    return { ...fabricTextureStyle, mixBlendMode, opacity };
-  }, [fabricTextureStyle, stripeBoost, usePhotoBase]);
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
     if (!useTexture || !stripeBoost) return null;
     const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
@@ -779,30 +772,6 @@ const SuitPreview = ({
     const contrast = clamp(baseContrast + (usePhotoBase ? 0.1 : 0.2), 1.1, 2.2);
     return {
       mixBlendMode: boostDark ? "screen" : "overlay",
-      opacity,
-      filter: `grayscale(1) brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)})`,
-    };
-  }, [
-    fabricMetrics.lightness,
-    fabricTone,
-    stripeBoost,
-    stripeStrength,
-    textureBrightnessOverride,
-    textureContrastOverride,
-    useTexture,
-    usePhotoBase,
-  ]);
-  const stripeHighlightStylePants = useMemo<React.CSSProperties | null>(() => {
-    if (!useTexture || !stripeBoost) return null;
-    const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
-    const baseOpacity = usePhotoBase ? 0.18 : 0.22;
-    const opacity = clamp(baseOpacity + stripeStrength * 0.25, baseOpacity, usePhotoBase ? 0.5 : 0.6);
-    const baseBrightness = textureBrightnessOverride ?? (boostDark ? 1.7 : 1.4);
-    const baseContrast = textureContrastOverride ?? (boostDark ? 1.95 : 1.6);
-    const brightness = clamp(baseBrightness + 0.1, 1.2, 2.2);
-    const contrast = clamp(baseContrast + 0.2, 1.3, 2.4);
-    return {
-      mixBlendMode: "screen",
       opacity,
       filter: `grayscale(1) brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)})`,
     };
@@ -1282,14 +1251,11 @@ const SuitPreview = ({
     () => (usePhotoBase ? [...pantsBaseLayers, ...pantsPhotoDetailLayers] : []),
     [pantsBaseLayers, pantsPhotoDetailLayers, usePhotoBase]
   );
-  const pantsMaskSourceLayers = useMemo(
-    () => (usePhotoBase ? pantsPhotoLayers : pantsMaskLayers),
-    [pantsMaskLayers, pantsPhotoLayers, usePhotoBase]
+  const pantsMaskSourceLayers = useMemo(() => pantsMaskLayers, [pantsMaskLayers]);
+  const pantsMaskKey = useMemo(
+    () => pantsMaskSourceLayers.map((layer) => layer.src).filter(Boolean).join("|"),
+    [pantsMaskSourceLayers]
   );
-  const pantsMaskKey = useMemo(() => {
-    const base = pantsMaskSourceLayers.map((layer) => layer.src).filter(Boolean).join("|");
-    return usePhotoBase ? `${base}|photo:${photoVariant}` : base;
-  }, [pantsMaskSourceLayers, photoVariant, usePhotoBase]);
   const resolvePhoto = useCallback(
     (layer: SuitLayer) => photoPair(layer.src, photoVariant),
     [photoVariant]
@@ -1300,41 +1266,6 @@ const SuitPreview = ({
       ? spriteBackground(pantsPhotoMaskPair)
       : null
     : pantsUnionMask ?? (pantsMaskPair ? spriteBackground(pantsMaskPair) : null);
-  const pantsTextureMask = usePhotoBase
-    ? pantsMaskPair
-      ? spriteBackground(pantsMaskPair)
-      : pantsMask
-    : pantsMask;
-  const pantsSideFillEnabled = usePhotoBase && Boolean(pantsMask);
-  const pantsSideFillCut = 82;
-  const pantsSideTextureStyleLeft = useMemo<React.CSSProperties | null>(() => {
-    if (!pantsSideFillEnabled) return null;
-    return {
-      ...fabricTextureStylePants,
-      clipPath: `inset(0 ${pantsSideFillCut}% 0 0)`,
-    };
-  }, [fabricTextureStylePants, pantsSideFillEnabled]);
-  const pantsSideTextureStyleRight = useMemo<React.CSSProperties | null>(() => {
-    if (!pantsSideFillEnabled) return null;
-    return {
-      ...fabricTextureStylePants,
-      clipPath: `inset(0 0 0 ${pantsSideFillCut}%)`,
-    };
-  }, [fabricTextureStylePants, pantsSideFillEnabled]);
-  const pantsSideStripeStyleLeft = useMemo<React.CSSProperties | null>(() => {
-    if (!pantsSideFillEnabled || !stripeHighlightStylePants) return null;
-    return {
-      ...stripeHighlightStylePants,
-      clipPath: `inset(0 ${pantsSideFillCut}% 0 0)`,
-    };
-  }, [pantsSideFillEnabled, stripeHighlightStylePants]);
-  const pantsSideStripeStyleRight = useMemo<React.CSSProperties | null>(() => {
-    if (!pantsSideFillEnabled || !stripeHighlightStylePants) return null;
-    return {
-      ...stripeHighlightStylePants,
-      clipPath: `inset(0 0 0 ${pantsSideFillCut}%)`,
-    };
-  }, [pantsSideFillEnabled, stripeHighlightStylePants]);
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
 
@@ -1377,7 +1308,7 @@ const SuitPreview = ({
           ctx.clearRect(0, 0, c.width, c.height);
           ctx.globalCompositeOperation = "source-over";
           for (const layer of pantsMaskSourceLayers) {
-            const pair = usePhotoBase ? photoPair(layer.src, photoVariant) : cdnPair(layer.src);
+            const pair = cdnPair(layer.src);
             const tryLoad = (url: string) =>
               new Promise<HTMLImageElement>((resolve, reject) => {
                 const img = new Image();
@@ -1443,7 +1374,7 @@ const SuitPreview = ({
       if (timeoutId !== null) window.clearTimeout(timeoutId);
       setPantsMaskBuilding(false);
     };
-  }, [pantsMaskKey, pantsMaskSourceLayers, photoVariant, usePhotoBase]);
+  }, [pantsMaskKey, pantsMaskSourceLayers, usePhotoBase]);
 
   if (!currentSuit) {
     return (
@@ -1739,93 +1670,25 @@ const SuitPreview = ({
               layers={pantsTextureLayers}
               resolve={resolveCdn}
               fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-              textureStyle={fabricTextureStylePants}
+              textureStyle={fabricTextureStyle}
               baseColor={tunedFabricFill || toneBaseColor}
               fabricAvgColor={tunedFabricFill}
               baseBlendMode="color"
               baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
-              mask={pantsTextureMask}
-              textureScale={fabricTextureScale}
-              textureTileSizePx={TEXTURE_TILE_PX}
-              textureRotationDeg={pantsTextureRotation}
-            />
-          )}
-        {showLayer("fabric") && pantsSideTextureStyleLeft && (
-            <FabricUnion
-              layers={pantsTextureLayers}
-              resolve={resolveCdn}
-              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-              textureStyle={pantsSideTextureStyleLeft}
-              baseColor={tunedFabricFill || toneBaseColor}
-              baseBlendMode="normal"
-              baseOpacity={0}
-              panZoom={panZoom}
-              canvas={PANTS_CANVAS}
               mask={pantsMask}
               textureScale={fabricTextureScale}
               textureTileSizePx={TEXTURE_TILE_PX}
               textureRotationDeg={pantsTextureRotation}
             />
           )}
-        {showLayer("fabric") && pantsSideTextureStyleRight && (
+        {showLayer("fabric") && stripeHighlightStyle && (
             <FabricUnion
               layers={pantsTextureLayers}
               resolve={resolveCdn}
               fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-              textureStyle={pantsSideTextureStyleRight}
-              baseColor={tunedFabricFill || toneBaseColor}
-              baseBlendMode="normal"
-              baseOpacity={0}
-              panZoom={panZoom}
-              canvas={PANTS_CANVAS}
-              mask={pantsMask}
-              textureScale={fabricTextureScale}
-              textureTileSizePx={TEXTURE_TILE_PX}
-              textureRotationDeg={pantsTextureRotation}
-            />
-          )}
-        {showLayer("fabric") && stripeHighlightStylePants && (
-            <FabricUnion
-              layers={pantsTextureLayers}
-              resolve={resolveCdn}
-              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-              textureStyle={stripeHighlightStylePants}
-              baseColor={tunedFabricFill || toneBaseColor}
-              baseBlendMode="normal"
-              baseOpacity={0}
-              panZoom={panZoom}
-              canvas={PANTS_CANVAS}
-              mask={pantsTextureMask}
-              textureScale={fabricTextureScale}
-              textureTileSizePx={TEXTURE_TILE_PX}
-              textureRotationDeg={pantsTextureRotation}
-            />
-          )}
-        {showLayer("fabric") && pantsSideStripeStyleLeft && (
-            <FabricUnion
-              layers={pantsTextureLayers}
-              resolve={resolveCdn}
-              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-              textureStyle={pantsSideStripeStyleLeft}
-              baseColor={tunedFabricFill || toneBaseColor}
-              baseBlendMode="normal"
-              baseOpacity={0}
-              panZoom={panZoom}
-              canvas={PANTS_CANVAS}
-              mask={pantsMask}
-              textureScale={fabricTextureScale}
-              textureTileSizePx={TEXTURE_TILE_PX}
-              textureRotationDeg={pantsTextureRotation}
-            />
-          )}
-        {showLayer("fabric") && pantsSideStripeStyleRight && (
-            <FabricUnion
-              layers={pantsTextureLayers}
-              resolve={resolveCdn}
-              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-              textureStyle={pantsSideStripeStyleRight}
+              textureStyle={stripeHighlightStyle}
               baseColor={tunedFabricFill || toneBaseColor}
               baseBlendMode="normal"
               baseOpacity={0}
