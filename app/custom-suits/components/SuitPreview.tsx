@@ -768,11 +768,14 @@ const SuitPreview = ({
   );
   const pantsTextureStyle = useMemo<React.CSSProperties>(() => {
     const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
+    const stripeMul = stripeBoost ? 0.58 : 0.72;
+    const mixBlendMode = stripeWhiteBoost ? "soft-light" : fabricTextureStyle.mixBlendMode;
     return {
       ...fabricTextureStyle,
-      opacity: clamp(opacity * 0.72, 0.08, 0.6),
+      mixBlendMode,
+      opacity: clamp(opacity * stripeMul, 0.06, 0.55),
     };
-  }, [fabricTextureStyle]);
+  }, [fabricTextureStyle, stripeBoost, stripeWhiteBoost]);
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
     if (!useTexture || !stripeBoost) return null;
     const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
@@ -800,11 +803,13 @@ const SuitPreview = ({
   const pantsStripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
     if (!stripeHighlightStyle) return null;
     const opacity = Number(stripeHighlightStyle.opacity ?? 0.2);
+    const mixBlendMode = stripeWhiteBoost ? "soft-light" : stripeHighlightStyle.mixBlendMode;
     return {
       ...stripeHighlightStyle,
-      opacity: clamp(opacity * 0.6, 0.05, 0.32),
+      mixBlendMode,
+      opacity: clamp(opacity * 0.45, 0.04, 0.26),
     };
-  }, [stripeHighlightStyle]);
+  }, [stripeHighlightStyle, stripeWhiteBoost]);
   const photoVariant =
     fabricTone === "light"
       ? "light"
