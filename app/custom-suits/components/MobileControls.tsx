@@ -124,6 +124,13 @@ const DrawerHeader = ({
   </div>
 );
 
+const PanelLoading = ({ title, onClose }: { title: string; onClose: () => void }) => (
+  <>
+    <DrawerHeader title={title} onClose={onClose} />
+    <div className="flex flex-1 items-center justify-center text-sm text-gray-500">Pripremam panel...</div>
+  </>
+);
+
 const FabricCard = ({
   fabric,
   active,
@@ -175,7 +182,7 @@ const Drawer = ({
   return (
     <div className="fixed inset-0 z-[60] flex lg:hidden">
       <motion.div
-        className="pointer-events-auto flex h-full w-[68vw] min-w-[240px] max-w-[320px] flex-col overflow-hidden transform bg-white shadow-2xl"
+        className="pointer-events-auto flex h-full w-[56vw] min-w-[210px] max-w-[280px] flex-col overflow-hidden transform bg-white shadow-2xl"
         initial="hidden"
         animate="visible"
         exit="exit"
@@ -199,6 +206,7 @@ const Drawer = ({
 function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props) {
   const [internalPanel, setInternalPanel] = useState<Panel | null>(null);
   const currentPanel = activePanel !== undefined ? activePanel : internalPanel;
+  const [readyPanel, setReadyPanel] = useState<Panel | null>(null);
   const setPanel = (panel: Panel | null) => {
     setInternalPanel(panel);
     onPanelChange?.(panel);
@@ -209,6 +217,14 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
       setInternalPanel(activePanel);
     }
   }, [activePanel]);
+  useEffect(() => {
+    if (!currentPanel) {
+      setReadyPanel(null);
+      return;
+    }
+    const raf = window.requestAnimationFrame(() => setReadyPanel(currentPanel));
+    return () => window.cancelAnimationFrame(raf);
+  }, [currentPanel]);
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
   const [fabricQuery, setFabricQuery] = useState("");
   const [sort, setSort] = useState<"date_desc" | "date_asc">("date_desc");
@@ -646,6 +662,12 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
     </>
   );
   const drawerBody = (() => {
+    if (!currentPanel) return null;
+    if (readyPanel !== currentPanel) {
+      const title =
+        currentPanel === "FABRIC" ? "Biblioteka tkanina" : currentPanel === "STYLE" ? "Stil" : "Detalji";
+      return <PanelLoading title={title} onClose={() => setPanel(null)} />;
+    }
     if (currentPanel === "FABRIC") return renderFabricPanel();
     if (currentPanel === "STYLE") return renderStylePanel();
     if (currentPanel === "ACCENTS") return renderAccentsPanel();

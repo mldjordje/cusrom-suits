@@ -67,7 +67,10 @@ export default function CustomSuitsPage() {
     },
   };
   const price = React.useMemo(() => computePrice(config, suits), [config]);
-  const fabricsFallback = initialFabrics?.length ? initialFabrics : fallbackFabrics;
+  const fabricsFallback = React.useMemo(
+    () => (initialFabrics?.length ? initialFabrics : fallbackFabrics),
+    [initialFabrics]
+  );
   const selectedFabric = React.useMemo(
     () => fabricsFallback.find((fabric: any) => String(fabric.id) === String(config.colorId)) ?? fabricsFallback[0] ?? null,
     [config.colorId, fabricsFallback]
@@ -91,12 +94,15 @@ export default function CustomSuitsPage() {
   }, [config]);
   const [savingCart, setSavingCart] = React.useState(false);
   const previewView: PreviewView = "both";
-  const layerVisibility: Record<PreviewLayer, boolean> = {
-    fabric: true,
-    style: true,
-    ao: true,
-    vignette: true,
-  };
+  const layerVisibility = React.useMemo<Record<PreviewLayer, boolean>>(
+    () => ({
+      fabric: true,
+      style: true,
+      ao: true,
+      vignette: true,
+    }),
+    []
+  );
   const storeOrderId = (orderId: string) => {
     localStorage.setItem("lastOrderId", orderId);
     const existingRaw = localStorage.getItem("suitCart");
@@ -185,8 +191,8 @@ export default function CustomSuitsPage() {
           </motion.section>
           <motion.section
             className={`order-2 relative flex w-full items-center justify-center overflow-visible p-0 sm:rounded-[28px] sm:bg-white/90 sm:p-3 sm:shadow-[0_20px_70px_rgba(15,23,42,0.12)] sm:ring-1 sm:ring-black/5 sm:backdrop-blur-sm lg:order-2 lg:h-full lg:bg-transparent lg:p-0 lg:shadow-none lg:ring-0 lg:backdrop-blur-0 lg:rounded-none transition-transform duration-300 ease-out origin-left ${
-              activeMobilePanel ? "translate-x-28 scale-[0.82] sm:translate-x-32 sm:scale-[0.84]" : "translate-x-0"
-            } lg:translate-x-0 lg:scale-100`}
+              activeMobilePanel ? "translate-x-20 scale-[0.86] sm:translate-x-24 sm:scale-[0.88]" : "translate-x-0"
+            } lg:translate-x-0 lg:scale-100 will-change-transform transform-gpu`}
             variants={columnVariants}
             initial="hidden"
             animate="visible"
