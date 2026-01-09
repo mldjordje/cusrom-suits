@@ -15,14 +15,19 @@ export type UseFabricsResult<T = any> = {
   error: string | null;
 };
 
+export type UseFabricsOptions = {
+  enabled?: boolean;
+};
+
 type CacheEntry<T> = { data: T[]; error: string | null; ts: number };
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const FABRICS_CACHE = new Map<string, CacheEntry<any>>();
 const FABRICS_INFLIGHT = new Map<string, Promise<CacheEntry<any>>>();
 
-export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
+export function useFabrics<T = any>(query?: FabricQuery, options?: UseFabricsOptions): UseFabricsResult<T> {
   const fallbackList = (fallbackFabrics as unknown[]) as T[];
+  const enabled = options?.enabled ?? true;
 
   const searchKey = useMemo(() => {
     const params = new URLSearchParams();
@@ -42,6 +47,12 @@ export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
 
   useEffect(() => {
     let cancelled = false;
+    if (!enabled) {
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
     if (isFresh) {
       setFabrics(cached?.data ?? []);
       setError(cached?.error ?? null);
@@ -92,7 +103,7 @@ export function useFabrics<T = any>(query?: FabricQuery): UseFabricsResult<T> {
     return () => {
       cancelled = true;
     };
-  }, [cacheKey, fallbackList, isFresh, searchKey]);
+  }, [cacheKey, enabled, fallbackList, isFresh, searchKey]);
 
   return { fabrics, loading, error };
 }

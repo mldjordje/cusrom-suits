@@ -13,13 +13,18 @@ export type Lining = {
   price?: number | null;
 };
 
+export type UseLiningsOptions = {
+  enabled?: boolean;
+};
+
 type CacheEntry = { data: Lining[]; ts: number };
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
 let LININGS_CACHE: CacheEntry | null = null;
 let LININGS_INFLIGHT: Promise<{ data: Lining[]; error: string | null; cache: boolean }> | null = null;
 
-export function useLinings(styleId?: string) {
+export function useLinings(styleId?: string, options?: UseLiningsOptions) {
+  const enabled = options?.enabled ?? true;
   const fallback: Lining[] = useMemo(() => {
     const current = suits.find((s) => s.id === styleId);
     const interiors = current?.interiors || suits[0]?.interiors || [];
@@ -41,6 +46,12 @@ export function useLinings(styleId?: string) {
 
   useEffect(() => {
     let cancelled = false;
+    if (!enabled) {
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
     if (isFresh) {
       setLinings(cached?.data ?? []);
       setError(null);
@@ -95,7 +106,7 @@ export function useLinings(styleId?: string) {
     return () => {
       cancelled = true;
     };
-  }, [cached?.data, fallback, isFresh]);
+  }, [cached?.data, enabled, fallback, isFresh]);
 
   return { linings, loading, error };
 }

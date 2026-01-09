@@ -2,7 +2,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import React, { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
@@ -25,7 +25,7 @@ const NAV = [
   { id: "ACCENTS" as const, label: "Detalji", icon: "/custom-suits/icons/iconaccents.png" },
 ];
 
-const FABRIC_PAGE_SIZE = 18;
+const FABRIC_PAGE_SIZE = 12;
 
 const toneLabels: Record<"all" | "light" | "medium" | "dark", string> = {
   all: "Svi tonovi",
@@ -207,6 +207,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   const [internalPanel, setInternalPanel] = useState<Panel | null>(null);
   const currentPanel = activePanel !== undefined ? activePanel : internalPanel;
   const [readyPanel, setReadyPanel] = useState<Panel | null>(null);
+  const [isPending, startTransition] = useTransition();
   const setPanel = (panel: Panel | null) => {
     setInternalPanel(panel);
     onPanelChange?.(panel);
@@ -222,9 +223,11 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
       setReadyPanel(null);
       return;
     }
-    const raf = window.requestAnimationFrame(() => setReadyPanel(currentPanel));
+    const raf = window.requestAnimationFrame(() => {
+      startTransition(() => setReadyPanel(currentPanel));
+    });
     return () => window.cancelAnimationFrame(raf);
-  }, [currentPanel]);
+  }, [currentPanel, startTransition]);
   const [toneFilter, setToneFilter] = useState<"all" | "light" | "medium" | "dark">("all");
   const [fabricQuery, setFabricQuery] = useState("");
   const [sort, setSort] = useState<"date_desc" | "date_asc">("date_desc");
@@ -233,13 +236,21 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   const fabricSentinelRef = useRef<HTMLDivElement | null>(null);
   const [visibleFabricCount, setVisibleFabricCount] = useState(FABRIC_PAGE_SIZE);
 
-  const { fabrics, loading: fabricsLoading, error: fabricsError } = useFabrics({
-    tone: toneFilter === "all" ? undefined : toneFilter,
-    sort: "created_at",
-    order: sort === "date_desc" ? "desc" : "asc",
+  const isFabricPanel = currentPanel === "FABRIC";
+  const isAccentsPanel = currentPanel === "ACCENTS";
+
+  const { fabrics, loading: fabricsLoading, error: fabricsError } = useFabrics(
+    {
+      tone: toneFilter === "all" ? undefined : toneFilter,
+      sort: "created_at",
+      order: sort === "date_desc" ? "desc" : "asc",
+    },
+    { enabled: isFabricPanel }
+  );
+  const { buttons, loading: buttonsLoading, error: buttonsError } = useButtons({ enabled: isAccentsPanel });
+  const { linings, loading: liningsLoading, error: liningsError } = useLinings(config.styleId, {
+    enabled: isAccentsPanel,
   });
-  const { buttons, loading: buttonsLoading, error: buttonsError } = useButtons();
-  const { linings, loading: liningsLoading, error: liningsError } = useLinings(config.styleId);
 
   const fabricsNormalized = useMemo(
     () =>
@@ -663,7 +674,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   );
   const drawerBody = (() => {
     if (!currentPanel) return null;
-    if (readyPanel !== currentPanel) {
+    if (readyPanel !== currentPanel || isPending) {
       const title =
         currentPanel === "FABRIC" ? "Biblioteka tkanina" : currentPanel === "STYLE" ? "Stil" : "Detalji";
       return <PanelLoading title={title} onClose={() => setPanel(null)} />;

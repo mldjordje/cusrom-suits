@@ -16,7 +16,8 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 let BUTTONS_CACHE: CacheEntry | null = null;
 let BUTTONS_INFLIGHT: Promise<CacheEntry> | null = null;
 
-export function useButtons() {
+export function useButtons(options?: { enabled?: boolean }) {
+  const enabled = options?.enabled ?? true;
   const fallbackButtons: Button[] = useMemo(
     () => [
       { id: "btn1", name: "Button 1", image_url: "/btn/1.jpg" },
@@ -35,6 +36,12 @@ export function useButtons() {
 
   useEffect(() => {
     let cancelled = false;
+    if (!enabled) {
+      setLoading(false);
+      return () => {
+        cancelled = true;
+      };
+    }
     if (isFresh) {
       setButtons(cached?.data ?? []);
       setError(cached?.error ?? null);
@@ -82,7 +89,7 @@ export function useButtons() {
     return () => {
       cancelled = true;
     };
-  }, [cached?.data, cached?.error, fallbackButtons, isFresh]);
+  }, [cached?.data, cached?.error, enabled, fallbackButtons, isFresh]);
 
   return { buttons, loading, error };
 }
