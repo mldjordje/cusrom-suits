@@ -481,7 +481,7 @@ const SuitPreview = ({
     [pantsLayer]
   );
 
-  const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
+  const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId)) ?? fabrics[0] ?? null;
   const fabricTexture = selectedFabric?.texture || "";
   const [fabricTileTexture, setFabricTileTexture] = useState<string | null>(null);
   const [fabricStripe, setFabricStripe] = useState<StripeHint>(EMPTY_STRIPE);
@@ -1459,9 +1459,20 @@ const SuitPreview = ({
                 />
               );
             })
-          : interiorLayers?.map((l) => (
-              <img key={`int-${l.id}`} src={l.src} alt={l.name} className="absolute inset-0 w-full h-full object-contain pointer-events-none" />
-            ))}
+          : interiorLayers?.map((l) => {
+              const isLcpLayer = l.id === "interior_base";
+              return (
+                <img
+                  key={`int-${l.id}`}
+                  src={l.src}
+                  alt={l.name}
+                  className="absolute inset-0 w-full h-full object-contain pointer-events-none"
+                  decoding="async"
+                  fetchPriority={isLcpLayer ? "high" : undefined}
+                  loading={isLcpLayer ? "eager" : undefined}
+                />
+              );
+            })}
         {config.showShirt && (
           <img
             src={SHIRT_PAIR.webp}

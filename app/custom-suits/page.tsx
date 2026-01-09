@@ -4,7 +4,6 @@ import React from "react";
 import { motion, type Variants } from "framer-motion";
 import { suits, fabrics as fallbackFabrics } from "./data/options";
 import { useSuitConfigurator } from "./hooks/useSuitConfigurator";
-import { useImagePreloader } from "./hooks/useImagePreloader";
 import { useFabrics } from "./hooks/useFabrics";
 import SuitPreview from "./components/SuitPreview";
 import Sidebar from "./components/Sidebar";
@@ -27,17 +26,16 @@ export default function CustomSuitsPage() {
   const defaultColorSet = React.useRef(false);
   const [activeMobilePanel, setActiveMobilePanel] = React.useState<MobilePanel | null>(null);
 
-  const currentSuit = React.useMemo(() => suits.find((s) => s.id === config.styleId), [config.styleId]);
-  const layers = React.useMemo(() => currentSuit?.layers || [], [currentSuit]);
-
-  const preloadUrls = React.useMemo(() => layers.map((l) => l.src).filter(Boolean), [layers]);
-  const imagesLoaded = useImagePreloader(preloadUrls);
 
   // Preselect first available fabric so preview is ready without a manual choice
   const firstFabricId = initialFabrics?.[0]?.id ? String(initialFabrics[0].id) : null;
   React.useEffect(() => {
     if (!firstFabricId) return;
     if (defaultColorSet.current) return;
+    if (config.colorId) {
+      defaultColorSet.current = true;
+      return;
+    }
     dispatch({ type: "SET_COLOR", payload: firstFabricId });
     defaultColorSet.current = true;
   }, [config.colorId, dispatch, firstFabricId]);
@@ -71,7 +69,7 @@ export default function CustomSuitsPage() {
   const price = React.useMemo(() => computePrice(config, suits), [config]);
   const fabricsFallback = initialFabrics?.length ? initialFabrics : fallbackFabrics;
   const selectedFabric = React.useMemo(
-    () => fabricsFallback.find((fabric: any) => String(fabric.id) === String(config.colorId)),
+    () => fabricsFallback.find((fabric: any) => String(fabric.id) === String(config.colorId)) ?? fabricsFallback[0] ?? null,
     [config.colorId, fabricsFallback]
   );
   const fabricPrice = selectedFabric?.price ?? 0;
@@ -109,14 +107,6 @@ export default function CustomSuitsPage() {
       localStorage.setItem("suitCart", JSON.stringify(parsed));
     }
   };
-
-  if (!imagesLoaded) {
-    return (
-      <div className="flex h-screen items-center justify-center text-gray-500">
-        Loading suit images...
-      </div>
-    );
-  }
 
   const handleAddToCart = async () => {
     if (savingCart) return;
@@ -207,7 +197,7 @@ export default function CustomSuitsPage() {
                 config={config}
                 view={previewView}
                 layerVisibility={layerVisibility}
-                fabrics={initialFabrics}
+                fabrics={fabricsFallback}
                 fabricsLoading={fabricsLoading}
               />
             </div>
