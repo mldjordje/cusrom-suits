@@ -5,7 +5,7 @@ import { getServiceSupabase } from "@/lib/supabase/server";
 
 const bucketName = process.env.SUPABASE_BUTTONS_BUCKET || "buttons";
 const BUTTON_TARGET_SIZE = 512;
-const ALPHA_THRESHOLD = 12;
+const ALPHA_THRESHOLD = 1;
 const TRANSPARENT_BG = { r: 0, g: 0, b: 0, alpha: 0 };
 const DEFAULT_VISIBLE_RATIO = 0.78;
 const REFERENCE_BUTTON_NAME = process.env.BUTTON_REFERENCE_NAME || "crno sivo";
@@ -49,6 +49,7 @@ const getAlphaBounds = (data: Buffer, width: number, height: number): AlphaBound
 
 const getVisibleRatioFromBuffer = async (buffer: Buffer) => {
   const { data, info } = await sharp(buffer, { limitInputPixels: false })
+    .rotate()
     .ensureAlpha()
     .raw()
     .toBuffer({ resolveWithObject: true });
@@ -69,6 +70,7 @@ const normalizeButtonImage = async (
     const resolvedRatioData = ratioData ?? (await getVisibleRatioFromBuffer(buffer));
     if (!resolvedRatioData) {
       return await sharp(buffer, { limitInputPixels: false })
+        .rotate()
         .resize(BUTTON_TARGET_SIZE, BUTTON_TARGET_SIZE, {
           fit: "contain",
           background: TRANSPARENT_BG,
@@ -84,6 +86,7 @@ const normalizeButtonImage = async (
       : DEFAULT_VISIBLE_RATIO;
     const targetDim = Math.max(maxDim, Math.round(maxDim / desiredRatio));
     const contentBuffer = await sharp(buffer, { limitInputPixels: false })
+      .rotate()
       .ensureAlpha()
       .extract(bounds)
       .png()
