@@ -9,6 +9,7 @@ const ALPHA_THRESHOLD = 12;
 const TRANSPARENT_BG = { r: 0, g: 0, b: 0, alpha: 0 };
 const DEFAULT_VISIBLE_RATIO = 0.78;
 const REFERENCE_BUTTON_NAME = process.env.BUTTON_REFERENCE_NAME || "crno sivo";
+const REFERENCE_BUTTON_ID = process.env.BUTTON_REFERENCE_ID || "";
 const REFERENCE_CACHE_TTL_MS = 10 * 60 * 1000;
 
 let referenceRatioCache: { ratio: number; ts: number } | null = null;
@@ -121,12 +122,27 @@ const getReferenceVisibleRatio = async (supabase: ReturnType<typeof getServiceSu
   }
 
   try {
-    const { data } = await supabase
-      .from("buttons")
-      .select("image_url")
-      .ilike("name", REFERENCE_BUTTON_NAME)
-      .limit(1)
-      .maybeSingle();
+    const trimmedName = REFERENCE_BUTTON_NAME.trim();
+    let data: { image_url?: string | null } | null = null;
+    if (REFERENCE_BUTTON_ID.trim()) {
+      const response = await supabase
+        .from("buttons")
+        .select("image_url")
+        .eq("id", REFERENCE_BUTTON_ID.trim())
+        .limit(1)
+        .maybeSingle();
+      data = response.data ?? null;
+    }
+    if (!data && trimmedName) {
+      const response = await supabase
+        .from("buttons")
+        .select("image_url")
+        .ilike("name", `%${trimmedName}%`)
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+      data = response.data ?? null;
+    }
     const imageUrl = data?.image_url;
     if (!imageUrl) return null;
     const buffer = await downloadImageBuffer(imageUrl);
