@@ -15,6 +15,7 @@ const REFERENCE_CACHE_TTL_MS = 10 * 60 * 1000;
 let referenceRatioCache: { ratio: number; ts: number } | null = null;
 
 type AlphaBounds = { left: number; top: number; width: number; height: number };
+type RatioData = { ratio: number; bounds: AlphaBounds; buffer: Buffer };
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const isRatioValid = (value: number | null) => typeof value === "number" && value > 0.3 && value < 0.98;
@@ -47,24 +48,26 @@ const getAlphaBounds = (data: Buffer, width: number, height: number): AlphaBound
   return { left, top, width: cropWidth, height: cropHeight };
 };
 
-const getVisibleRatioFromBuffer = async (buffer: Buffer) => {
-  const { data, info } = await sharp(buffer, { limitInputPixels: false })
-    .rotate()
-    .ensureAlpha()
-    .raw()
-    .toBuffer({ resolveWithObject: true });
+const getVisibleRatioFromBuffer = async (buffer: Buffer): Promise<RatioData | null> => {
+  const trimmed = sharp(buffer, { limitInputPixels: false }).rotate().ensureAlpha().trim({ threshold: 2 });
+  const { data, info } = await trimmed.raw().toBuffer({ resolveWithObject: true });
   const bounds = getAlphaBounds(data, info.width, info.height);
   if (!bounds) return null;
   const maxDim = Math.max(bounds.width, bounds.height);
   const canvasDim = Math.max(info.width, info.height);
   if (!canvasDim) return null;
-  return { ratio: maxDim / canvasDim, bounds };
+  const normalizedBuffer = await sharp(data, {
+    raw: { width: info.width, height: info.height, channels: info.channels },
+  })
+    .png()
+    .toBuffer();
+  return { ratio: maxDim / canvasDim, bounds, buffer: normalizedBuffer };
 };
 
 const normalizeButtonImage = async (
   buffer: Buffer,
   targetVisibleRatio: number | null,
-  ratioData?: { ratio: number; bounds: AlphaBounds } | null
+  ratioData?: RatioData | null
 ) => {
   try {
     const resolvedRatioData = ratioData ?? (await getVisibleRatioFromBuffer(buffer));
@@ -85,8 +88,7 @@ const normalizeButtonImage = async (
       ? clamp(targetVisibleRatio as number, 0.3, 0.98)
       : DEFAULT_VISIBLE_RATIO;
     const targetDim = Math.max(maxDim, Math.round(maxDim / desiredRatio));
-    const contentBuffer = await sharp(buffer, { limitInputPixels: false })
-      .rotate()
+    const contentBuffer = await sharp(resolvedRatioData.buffer, { limitInputPixels: false })
       .ensureAlpha()
       .extract(bounds)
       .png()
@@ -207,7 +209,7 @@ export async function POST(req: NextRequest) {
   }
 
   await ensureBucket(supabase);
-  let ratioData: { ratio: number; bounds: AlphaBounds } | null = null;
+  let ratioData: RatioData | null = null;
   try {
     ratioData = await getVisibleRatioFromBuffer(sourceBuffer);
   } catch {
