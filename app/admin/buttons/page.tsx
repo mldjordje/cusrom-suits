@@ -104,7 +104,18 @@ export default function ButtonsAdminPage() {
         <p className="font-semibold">Kratak tutorial za dugmad</p>
         <ul className="mt-2 list-disc pl-5 text-xs text-amber-900">
           <li>Slika dugmeta mora biti bez pozadine (transparentna).</li>
-          <li>Ukloni pozadinu na https://remove.bg (uploaduj sliku, preuzmi PNG bez pozadine).</li>
+          <li>
+            Ukloni pozadinu na{" "}
+            <a
+              href="https://remove.bg"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold underline underline-offset-2"
+            >
+              remove.bg
+            </a>{" "}
+            (uploaduj sliku, preuzmi PNG bez pozadine).
+          </li>
           <li>Tek onda uploaduj taj PNG fajl na ovoj strani.</li>
           <li>Upload fajl se automatski sece i centrira na isti precnik.</li>
         </ul>
