@@ -9,7 +9,7 @@ const ALPHA_THRESHOLD = 12;
 const TRANSPARENT_BG = { r: 0, g: 0, b: 0, alpha: 0 };
 const DEFAULT_VISIBLE_RATIO = 0.78;
 const REFERENCE_BUTTON_NAME = process.env.BUTTON_REFERENCE_NAME || "crno sivo";
-const REFERENCE_BUTTON_ID = process.env.BUTTON_REFERENCE_ID || "";
+const REFERENCE_BUTTON_ID = process.env.BUTTON_REFERENCE_ID || "7161d701-8292-4909-8e26-35be977b2ddd";
 const REFERENCE_CACHE_TTL_MS = 10 * 60 * 1000;
 
 let referenceRatioCache: { ratio: number; ts: number } | null = null;
