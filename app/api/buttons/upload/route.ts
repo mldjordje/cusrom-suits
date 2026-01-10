@@ -7,8 +7,16 @@ const bucketName = process.env.SUPABASE_BUTTONS_BUCKET || "buttons";
 const BUTTON_TARGET_SIZE = 512;
 const ALPHA_THRESHOLD = 12;
 const TRANSPARENT_BG = { r: 0, g: 0, b: 0, alpha: 0 };
+const DEFAULT_VISIBLE_RATIO = 0.78;
+const REFERENCE_BUTTON_NAME = process.env.BUTTON_REFERENCE_NAME || "crno sivo";
+const REFERENCE_CACHE_TTL_MS = 10 * 60 * 1000;
+
+let referenceRatioCache: { ratio: number; ts: number } | null = null;
 
 type AlphaBounds = { left: number; top: number; width: number; height: number };
+
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const isRatioValid = (value: number | null) => typeof value === "number" && value > 0.3 && value < 0.98;
 
 const getAlphaBounds = (data: Buffer, width: number, height: number): AlphaBounds | null => {
   let minX = width;
@@ -38,18 +46,53 @@ const getAlphaBounds = (data: Buffer, width: number, height: number): AlphaBound
   return { left, top, width: cropWidth, height: cropHeight };
 };
 
-const normalizeButtonImage = async (buffer: Buffer) => {
+const getVisibleRatioFromBuffer = async (buffer: Buffer) => {
+  const { data, info } = await sharp(buffer, { limitInputPixels: false })
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const bounds = getAlphaBounds(data, info.width, info.height);
+  if (!bounds) return null;
+  const maxDim = Math.max(bounds.width, bounds.height);
+  const canvasDim = Math.max(info.width, info.height);
+  if (!canvasDim) return null;
+  return { ratio: maxDim / canvasDim, bounds };
+};
+
+const normalizeButtonImage = async (
+  buffer: Buffer,
+  targetVisibleRatio: number | null,
+  ratioData?: { ratio: number; bounds: AlphaBounds } | null
+) => {
   try {
-    const { data, info } = await sharp(buffer, { limitInputPixels: false })
-      .ensureAlpha()
-      .raw()
-      .toBuffer({ resolveWithObject: true });
-    const bounds = getAlphaBounds(data, info.width, info.height);
-    let pipeline = sharp(buffer, { limitInputPixels: false });
-    if (bounds) {
-      pipeline = pipeline.extract(bounds);
+    const resolvedRatioData = ratioData ?? (await getVisibleRatioFromBuffer(buffer));
+    if (!resolvedRatioData) {
+      return await sharp(buffer, { limitInputPixels: false })
+        .resize(BUTTON_TARGET_SIZE, BUTTON_TARGET_SIZE, {
+          fit: "contain",
+          background: TRANSPARENT_BG,
+        })
+        .png()
+        .toBuffer();
     }
-    return await pipeline
+
+    const bounds = resolvedRatioData.bounds;
+    const maxDim = Math.max(bounds.width, bounds.height);
+    const desiredRatio = isRatioValid(targetVisibleRatio)
+      ? clamp(targetVisibleRatio as number, 0.3, 0.98)
+      : DEFAULT_VISIBLE_RATIO;
+    const targetDim = Math.max(maxDim, Math.round(maxDim / desiredRatio));
+    const contentBuffer = await sharp(buffer, { limitInputPixels: false })
+      .ensureAlpha()
+      .extract(bounds)
+      .png()
+      .toBuffer();
+    const left = Math.max(0, Math.floor((targetDim - bounds.width) / 2));
+    const top = Math.max(0, Math.floor((targetDim - bounds.height) / 2));
+    return await sharp({
+      create: { width: targetDim, height: targetDim, channels: 4, background: TRANSPARENT_BG },
+    })
+      .composite([{ input: contentBuffer, left, top }])
       .resize(BUTTON_TARGET_SIZE, BUTTON_TARGET_SIZE, {
         fit: "contain",
         background: TRANSPARENT_BG,
@@ -68,6 +111,32 @@ const downloadImageBuffer = async (url: string) => {
   }
   const arrayBuffer = await res.arrayBuffer();
   return Buffer.from(arrayBuffer);
+};
+
+const getReferenceVisibleRatio = async (supabase: ReturnType<typeof getServiceSupabase>) => {
+  if (!REFERENCE_BUTTON_NAME || !supabase) return null;
+  const now = Date.now();
+  if (referenceRatioCache && now - referenceRatioCache.ts < REFERENCE_CACHE_TTL_MS) {
+    return referenceRatioCache.ratio;
+  }
+
+  try {
+    const { data } = await supabase
+      .from("buttons")
+      .select("image_url")
+      .ilike("name", REFERENCE_BUTTON_NAME)
+      .limit(1)
+      .maybeSingle();
+    const imageUrl = data?.image_url;
+    if (!imageUrl) return null;
+    const buffer = await downloadImageBuffer(imageUrl);
+    const ratioData = await getVisibleRatioFromBuffer(buffer);
+    if (!ratioData || !isRatioValid(ratioData.ratio)) return null;
+    referenceRatioCache = { ratio: ratioData.ratio, ts: now };
+    return ratioData.ratio;
+  } catch {
+    return null;
+  }
 };
 
 const ensureBucket = async (supabase: ReturnType<typeof getServiceSupabase>) => {
@@ -119,7 +188,16 @@ export async function POST(req: NextRequest) {
   }
 
   await ensureBucket(supabase);
-  const normalized = await normalizeButtonImage(sourceBuffer);
+  let ratioData: { ratio: number; bounds: AlphaBounds } | null = null;
+  try {
+    ratioData = await getVisibleRatioFromBuffer(sourceBuffer);
+  } catch {
+    ratioData = null;
+  }
+  const refName = REFERENCE_BUTTON_NAME.trim().toLowerCase();
+  const isReferenceUpload = refName && name.trim().toLowerCase() === refName;
+  const referenceRatio = isReferenceUpload ? ratioData?.ratio ?? null : await getReferenceVisibleRatio(supabase);
+  const normalized = await normalizeButtonImage(sourceBuffer, referenceRatio, ratioData);
   const path = `buttons/${id}-${Date.now()}.png`;
   const { error: uploadError } = await supabase.storage.from(bucketName).upload(path, normalized, {
     upsert: true,
