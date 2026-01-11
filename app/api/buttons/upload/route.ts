@@ -112,22 +112,22 @@ const normalizeButtonImage = async (
     const desiredRatio = isRatioValid(targetVisibleRatio)
       ? clamp(targetVisibleRatio as number, 0.3, 0.98)
       : DEFAULT_VISIBLE_RATIO;
-    const targetDim = Math.max(maxDim, Math.round(maxDim / desiredRatio));
+    const targetVisiblePx = Math.max(1, Math.round(desiredRatio * BUTTON_TARGET_SIZE));
+    const scale = targetVisiblePx / Math.max(1, maxDim);
+    const scaledWidth = Math.max(1, Math.round(bounds.width * scale));
+    const scaledHeight = Math.max(1, Math.round(bounds.height * scale));
     const contentBuffer = await sharp(resolvedRatioData.buffer, { limitInputPixels: false })
       .ensureAlpha()
       .extract(bounds)
+      .resize(scaledWidth, scaledHeight, { fit: "fill" })
       .png()
       .toBuffer();
-    const left = Math.max(0, Math.floor((targetDim - bounds.width) / 2));
-    const top = Math.max(0, Math.floor((targetDim - bounds.height) / 2));
+    const left = Math.max(0, Math.floor((BUTTON_TARGET_SIZE - scaledWidth) / 2));
+    const top = Math.max(0, Math.floor((BUTTON_TARGET_SIZE - scaledHeight) / 2));
     return await sharp({
-      create: { width: targetDim, height: targetDim, channels: 4, background: TRANSPARENT_BG },
+      create: { width: BUTTON_TARGET_SIZE, height: BUTTON_TARGET_SIZE, channels: 4, background: TRANSPARENT_BG },
     })
       .composite([{ input: contentBuffer, left, top }])
-      .resize(BUTTON_TARGET_SIZE, BUTTON_TARGET_SIZE, {
-        fit: "contain",
-        background: TRANSPARENT_BG,
-      })
       .png()
       .toBuffer();
   } catch {
