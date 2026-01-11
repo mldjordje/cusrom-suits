@@ -8,6 +8,7 @@ const BUTTON_TARGET_SIZE = 512;
 const ALPHA_THRESHOLD = 6;
 const OUTLIER_TRIM_RATIO = 0.002;
 const BOUNDS_PADDING = 2;
+const BUTTON_RATIO_BOOST = Number(process.env.BUTTON_RATIO_BOOST || "1.04");
 const TRANSPARENT_BG = { r: 0, g: 0, b: 0, alpha: 0 };
 const DEFAULT_VISIBLE_RATIO = 0.78;
 const REFERENCE_BUTTON_NAME = process.env.BUTTON_REFERENCE_NAME || "crno sivo";
@@ -74,8 +75,11 @@ const getAlphaBounds = (data: Buffer, width: number, height: number): AlphaBound
 };
 
 const getVisibleRatioFromBuffer = async (buffer: Buffer): Promise<RatioData | null> => {
-  const trimmed = sharp(buffer, { limitInputPixels: false }).rotate().ensureAlpha().trim({ threshold: 2 });
-  const { data, info } = await trimmed.raw().toBuffer({ resolveWithObject: true });
+  const { data, info } = await sharp(buffer, { limitInputPixels: false })
+    .rotate()
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
   const bounds = getAlphaBounds(data, info.width, info.height);
   if (!bounds) return null;
   const maxDim = Math.max(bounds.width, bounds.height);
@@ -109,9 +113,11 @@ const normalizeButtonImage = async (
 
     const bounds = resolvedRatioData.bounds;
     const maxDim = Math.max(bounds.width, bounds.height);
-    const desiredRatio = isRatioValid(targetVisibleRatio)
+    const baseRatio = isRatioValid(targetVisibleRatio)
       ? clamp(targetVisibleRatio as number, 0.3, 0.98)
       : DEFAULT_VISIBLE_RATIO;
+    const boost = Number.isFinite(BUTTON_RATIO_BOOST) ? BUTTON_RATIO_BOOST : 1;
+    const desiredRatio = clamp(baseRatio * boost, 0.3, 0.98);
     const targetVisiblePx = Math.max(1, Math.round(desiredRatio * BUTTON_TARGET_SIZE));
     const scale = targetVisiblePx / Math.max(1, maxDim);
     const scaledWidth = Math.max(1, Math.round(bounds.width * scale));
