@@ -5,7 +5,9 @@ import { getServiceSupabase } from "@/lib/supabase/server";
 
 const bucketName = process.env.SUPABASE_BUTTONS_BUCKET || "buttons";
 const BUTTON_TARGET_SIZE = 512;
-const ALPHA_THRESHOLD = 1;
+const ALPHA_THRESHOLD = 6;
+const OUTLIER_TRIM_RATIO = 0.002;
+const BOUNDS_PADDING = 2;
 const TRANSPARENT_BG = { r: 0, g: 0, b: 0, alpha: 0 };
 const DEFAULT_VISIBLE_RATIO = 0.78;
 const REFERENCE_BUTTON_NAME = process.env.BUTTON_REFERENCE_NAME || "crno sivo";
@@ -21,28 +23,51 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 const isRatioValid = (value: number | null) => typeof value === "number" && value > 0.3 && value < 0.98;
 
 const getAlphaBounds = (data: Buffer, width: number, height: number): AlphaBounds | null => {
-  let minX = width;
-  let minY = height;
-  let maxX = -1;
-  let maxY = -1;
+  const xCounts = new Uint32Array(width);
+  const yCounts = new Uint32Array(height);
+  let total = 0;
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const alpha = data[(y * width + x) * 4 + 3];
       if (alpha > ALPHA_THRESHOLD) {
-        if (x < minX) minX = x;
-        if (y < minY) minY = y;
-        if (x > maxX) maxX = x;
-        if (y > maxY) maxY = y;
+        xCounts[x] += 1;
+        yCounts[y] += 1;
+        total += 1;
       }
     }
   }
 
-  if (maxX < minX || maxY < minY) return null;
-  const left = Math.max(0, minX);
-  const top = Math.max(0, minY);
-  const right = Math.min(width - 1, maxX);
-  const bottom = Math.min(height - 1, maxY);
+  if (!total) return null;
+  const trimCount = total > 500 ? Math.floor(total * OUTLIER_TRIM_RATIO) : 0;
+
+  const findEdge = (counts: Uint32Array, fromStart: boolean) => {
+    let sum = 0;
+    if (fromStart) {
+      for (let i = 0; i < counts.length; i++) {
+        sum += counts[i];
+        if (sum > trimCount) return i;
+      }
+      return 0;
+    }
+    for (let i = counts.length - 1; i >= 0; i--) {
+      sum += counts[i];
+      if (sum > trimCount) return i;
+    }
+    return counts.length - 1;
+  };
+
+  let left = findEdge(xCounts, true);
+  let right = findEdge(xCounts, false);
+  let top = findEdge(yCounts, true);
+  let bottom = findEdge(yCounts, false);
+
+  left = Math.max(0, left - BOUNDS_PADDING);
+  top = Math.max(0, top - BOUNDS_PADDING);
+  right = Math.min(width - 1, right + BOUNDS_PADDING);
+  bottom = Math.min(height - 1, bottom + BOUNDS_PADDING);
+
+  if (right < left || bottom < top) return null;
   const cropWidth = Math.max(1, right - left + 1);
   const cropHeight = Math.max(1, bottom - top + 1);
   return { left, top, width: cropWidth, height: cropHeight };
