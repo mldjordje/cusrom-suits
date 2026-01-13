@@ -1599,7 +1599,7 @@ const SuitPreview = ({
 
             const topLeftAngle = computeTopEdgeAngle(leftLabel);
             const topRightAngle = computeTopEdgeAngle(rightLabel);
-            const leftAngle =
+            const rawLeftAngle =
               topLeftAngle ??
               (leftCount > 200 && leftMaxY > leftMinY
                 ? computeMaskAxisAngle(
@@ -1610,6 +1610,10 @@ const SuitPreview = ({
                     leftMaxY
                   )
                 : axisAngle);
+            const leftAngle =
+              typeof rawLeftAngle === "number" && Number.isFinite(rawLeftAngle)
+                ? Math.abs(rawLeftAngle)
+                : rawLeftAngle;
             const rawRightAngle =
               topRightAngle ??
               (rightCount > 200 && rightMaxY > rightMinY
@@ -2042,7 +2046,7 @@ const SuitPreview = ({
                 baseOpacity={0}
                 panZoom={panZoom}
                 canvas={PANTS_CANVAS}
-                mask={pantsLegMasks?.right ?? pantsMask}
+                mask={pantsMask}
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
                 textureRotationDeg={pantsTextureRotationRight}
@@ -2095,7 +2099,7 @@ const SuitPreview = ({
                 baseOpacity={0}
                 panZoom={panZoom}
                 canvas={PANTS_CANVAS}
-                mask={pantsLegMasks?.right ?? pantsMask}
+                mask={pantsMask}
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
                 textureRotationDeg={pantsTextureRotationRight}
