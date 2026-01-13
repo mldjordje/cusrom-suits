@@ -189,12 +189,13 @@ const computeStripeHint = (data: Uint8ClampedArray, w: number, h: number): Strip
   return { strength, orientation, contrast };
 };
 
-const computeMaskAxisAngle = (data: Uint8ClampedArray, w: number, h: number) => {
+const computeMaskAxisAngle = (data: Uint8ClampedArray, w: number, h: number, yMin = 0, yMax = h - 1) => {
   if (!data.length || w < 2 || h < 2) return 0;
   let sumX = 0;
   let sumY = 0;
   let count = 0;
   for (let y = 0; y < h; y++) {
+    if (y < yMin || y > yMax) continue;
     for (let x = 0; x < w; x++) {
       const alpha = data[(y * w + x) * 4 + 3];
       if (alpha < 10) continue;
@@ -1491,11 +1492,37 @@ const SuitPreview = ({
                 labels[y * sampleW + x] = dx0 * dx0 + dy0 * dy0 <= dx1 * dx1 + dy1 * dy1 ? 0 : 1;
               }
             }
+            const boundary = new Uint8Array(sampleW * sampleH);
+            for (let y = 0; y < sampleH; y++) {
+              for (let x = 0; x < sampleW; x++) {
+                const idx = y * sampleW + x;
+                const label = labels[idx];
+                if (label < 0) continue;
+                const left = x > 0 ? labels[idx - 1] : label;
+                const right = x < sampleW - 1 ? labels[idx + 1] : label;
+                const up = y > 0 ? labels[idx - sampleW] : label;
+                const down = y < sampleH - 1 ? labels[idx + sampleW] : label;
+                if (
+                  (left >= 0 && left !== label) ||
+                  (right >= 0 && right !== label) ||
+                  (up >= 0 && up !== label) ||
+                  (down >= 0 && down !== label)
+                ) {
+                  boundary[idx] = 1;
+                }
+              }
+            }
 
             const leftLabel = c0.x <= c1.x ? 0 : 1;
             const rightLabel = leftLabel === 0 ? 1 : 0;
             const leftMask = ctx.createImageData(c.width, c.height);
             const rightMask = ctx.createImageData(c.width, c.height);
+            let leftCount = 0;
+            let rightCount = 0;
+            let leftMinY = c.height;
+            let leftMaxY = -1;
+            let rightMinY = c.height;
+            let rightMaxY = -1;
             const full = unionData.data;
             const sampleScaleX = sampleW / c.width;
             const sampleScaleY = sampleH / c.height;
@@ -1506,6 +1533,8 @@ const SuitPreview = ({
                 const alpha = full[idx + 3];
                 if (alpha < 10) continue;
                 const sx = Math.min(sampleW - 1, Math.floor(x * sampleScaleX));
+                const sidx = sy * sampleW + sx;
+                if (boundary[sidx]) continue;
                 let label = labels[sy * sampleW + sx];
                 if (label < 0) {
                   const dx0 = sx - c0.x;
@@ -1519,11 +1548,38 @@ const SuitPreview = ({
                 target[idx + 1] = 255;
                 target[idx + 2] = 255;
                 target[idx + 3] = alpha;
+                if (label === leftLabel) {
+                  leftCount++;
+                  if (y < leftMinY) leftMinY = y;
+                  if (y > leftMaxY) leftMaxY = y;
+                } else {
+                  rightCount++;
+                  if (y < rightMinY) rightMinY = y;
+                  if (y > rightMaxY) rightMaxY = y;
+                }
               }
             }
 
-            const leftAngle = computeMaskAxisAngle(leftMask.data, c.width, c.height);
-            const rightAngle = computeMaskAxisAngle(rightMask.data, c.width, c.height);
+            const leftAngle =
+              leftCount > 200 && leftMaxY > leftMinY
+                ? computeMaskAxisAngle(
+                    leftMask.data,
+                    c.width,
+                    c.height,
+                    Math.round(leftMinY + (leftMaxY - leftMinY) * 0.28),
+                    leftMaxY
+                  )
+                : axisAngle;
+            const rightAngle =
+              rightCount > 200 && rightMaxY > rightMinY
+                ? computeMaskAxisAngle(
+                    rightMask.data,
+                    c.width,
+                    c.height,
+                    Math.round(rightMinY + (rightMaxY - rightMinY) * 0.28),
+                    rightMaxY
+                  )
+                : axisAngle;
             const leftCanvas = document.createElement("canvas");
             const rightCanvas = document.createElement("canvas");
             leftCanvas.width = c.width;
