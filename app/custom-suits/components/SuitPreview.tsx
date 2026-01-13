@@ -36,8 +36,10 @@ const TEXTURE_TILE_CANVAS_SCALE = 0.12;
 const TEXTURE_TILE_CANVAS_MAX = 280;
 const STRIPE_ANALYSIS_SIZE = 80;
 const PANTS_MASK_SAMPLE_W = 120;
-const PANTS_STRIPE_LEFT_ANGLE = 11.3;
+const PANTS_STRIPE_LEFT_ROT_DEG = 11.3;
+const PANTS_RIGHT_UPPER_ROT_DEG = 90;
 const PANTS_RIGHT_SPLIT_RATIO = 98 / 254;
+const PANTS_RIGHT_FORCE_X_RATIO = 0.9;
 const TEXTURE_SCALE_GLOBAL = 1;
 const TEXTURE_SCALE_MIN = 0.08;
 const TEXTURE_SCALE_MAX = 1.1;
@@ -711,21 +713,17 @@ const SuitPreview = ({
     () => angleToRotation(pantsAxisAngle),
     [angleToRotation, pantsAxisAngle]
   );
-  const pantsStripeLeftAngle = stripeRotationActive ? PANTS_STRIPE_LEFT_ANGLE : pantsLegAngles?.left ?? pantsAxisAngle;
-  const pantsStripeRightLowerAngle = stripeRotationActive
-    ? PANTS_STRIPE_LEFT_ANGLE
-    : pantsLegAngles?.right ?? pantsAxisAngle;
   const pantsTextureRotationLeft = useMemo(
-    () => angleToRotation(pantsStripeLeftAngle),
-    [angleToRotation, pantsStripeLeftAngle]
+    () => (stripeRotationActive ? PANTS_STRIPE_LEFT_ROT_DEG : pantsTextureRotationBase),
+    [pantsTextureRotationBase, stripeRotationActive]
   );
   const pantsTextureRotationRightLower = useMemo(
-    () => angleToRotation(pantsStripeRightLowerAngle),
-    [angleToRotation, pantsStripeRightLowerAngle]
+    () => (stripeRotationActive ? PANTS_STRIPE_LEFT_ROT_DEG : pantsTextureRotationBase),
+    [pantsTextureRotationBase, stripeRotationActive]
   );
   const pantsTextureRotationRightUpper = useMemo(
-    () => angleToRotation(0),
-    [angleToRotation]
+    () => (stripeRotationActive ? PANTS_RIGHT_UPPER_ROT_DEG : pantsTextureRotationBase),
+    [pantsTextureRotationBase, stripeRotationActive]
   );
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
@@ -1723,6 +1721,18 @@ const SuitPreview = ({
                 : axisAngle);
             const rightAngle = Math.abs(rawRightAngle) < 12 ? 0 : rawRightAngle;
 
+            const rightForceX = Math.round(c.width * PANTS_RIGHT_FORCE_X_RATIO);
+            for (let y = 0; y < c.height; y++) {
+              for (let x = rightForceX; x < c.width; x++) {
+                const idx = (y * c.width + x) * 4;
+                const unionAlpha = full[idx + 3];
+                if (unionAlpha < 1) continue;
+                rightMask.data[idx] = 255;
+                rightMask.data[idx + 1] = 255;
+                rightMask.data[idx + 2] = 255;
+                rightMask.data[idx + 3] = unionAlpha;
+              }
+            }
             // Ensure left mask fully covers pants area not owned by right mask.
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
