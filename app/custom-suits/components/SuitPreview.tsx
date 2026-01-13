@@ -1487,18 +1487,6 @@ const SuitPreview = ({
               if (count0 > 0) c0 = { x: sum0x / count0, y: sum0y / count0 };
               if (count1 > 0) c1 = { x: sum1x / count1, y: sum1y / count1 };
             }
-            const normalizeAngle = (deg: number) => {
-              let angle = ((deg % 180) + 180) % 180;
-              if (angle > 90) angle -= 180;
-              return angle;
-            };
-            const seamAngleFromCenters = (() => {
-              const dx = c1.x - c0.x;
-              const dy = c1.y - c0.y;
-              if (!dx && !dy) return null;
-              const centerAngle = (Math.atan2(dy, dx) * 180) / Math.PI;
-              return normalizeAngle(centerAngle + 90);
-            })();
 
             const labels = new Int8Array(sampleW * sampleH);
             labels.fill(-1);
@@ -1533,34 +1521,6 @@ const SuitPreview = ({
                 }
               }
             }
-            const computeBoundaryAngle = () => {
-              const seamX = (c0.x + c1.x) / 2;
-              const maxDx = sampleW * 0.18;
-              const minY = sampleH * 0.15;
-              const maxY = sampleH * 0.95;
-              let sumX = 0;
-              let sumY = 0;
-              let sumXX = 0;
-              let sumXY = 0;
-              let count = 0;
-              for (let y = 0; y < sampleH; y++) {
-                if (y < minY || y > maxY) continue;
-                for (let x = 0; x < sampleW; x++) {
-                  if (boundary[y * sampleW + x] !== 1) continue;
-                  if (Math.abs(x - seamX) > maxDx) continue;
-                  sumX += x;
-                  sumY += y;
-                  sumXX += x * x;
-                  sumXY += x * y;
-                  count++;
-                }
-              }
-              if (count < 20) return null;
-              const denom = count * sumXX - sumX * sumX;
-              if (Math.abs(denom) < 1e-3) return null;
-              const slope = (count * sumXY - sumX * sumY) / denom;
-              return (Math.atan(slope) * 180) / Math.PI;
-            };
             const computeTopEdgeAngle = (label: number) => {
               let sumX = 0;
               let sumY = 0;
@@ -1639,9 +1599,7 @@ const SuitPreview = ({
 
             const topLeftAngle = computeTopEdgeAngle(leftLabel);
             const topRightAngle = computeTopEdgeAngle(rightLabel);
-            const boundaryAngle = computeBoundaryAngle() ?? seamAngleFromCenters;
             const leftAngle =
-              boundaryAngle ??
               topLeftAngle ??
               (leftCount > 200 && leftMaxY > leftMinY
                 ? computeMaskAxisAngle(
@@ -1663,7 +1621,7 @@ const SuitPreview = ({
                     rightMaxY
                   )
                 : axisAngle);
-            const rightAngle = boundaryAngle ? 0 : Math.abs(rawRightAngle) < 12 ? 0 : rawRightAngle;
+            const rightAngle = Math.abs(rawRightAngle) < 12 ? 0 : rawRightAngle;
             const leftCanvas = document.createElement("canvas");
             const rightCanvas = document.createElement("canvas");
             leftCanvas.width = c.width;
