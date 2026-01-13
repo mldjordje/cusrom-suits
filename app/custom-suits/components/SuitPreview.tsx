@@ -690,28 +690,30 @@ const SuitPreview = ({
     );
     return typeof raw === "number" ? raw : stripeOrientation === "vertical" ? 90 : 0;
   }, [selectedFabric, stripeOrientation]);
+  const stripeRotationActive = stripeBoost || fabricStripe.strength > 0.08;
   const angleToRotation = useMemo(
     () => (desiredAngle: number | null | undefined) => {
+      if (!stripeRotationActive) return pantsTextureRotationBase;
       if (typeof desiredAngle !== "number" || !Number.isFinite(desiredAngle)) {
         return pantsTextureRotationBase;
       }
-      if (stripeOrientation === "horizontal") return -desiredAngle;
-      if (stripeOrientation === "vertical") return 90 - desiredAngle;
+      if (stripeOrientation === "horizontal") return desiredAngle;
+      if (stripeOrientation === "vertical") return desiredAngle - 90;
       return pantsTextureRotationBase;
     },
-    [pantsTextureRotationBase, stripeOrientation]
+    [pantsTextureRotationBase, stripeOrientation, stripeRotationActive]
   );
   const pantsTextureRotation = useMemo(
-    () => (stripeBoost ? angleToRotation(pantsAxisAngle) : pantsTextureRotationBase),
-    [angleToRotation, pantsAxisAngle, pantsTextureRotationBase, stripeBoost]
+    () => angleToRotation(pantsAxisAngle),
+    [angleToRotation, pantsAxisAngle]
   );
   const pantsTextureRotationLeft = useMemo(
-    () => (stripeBoost ? angleToRotation(pantsLegAngles?.left ?? pantsAxisAngle) : pantsTextureRotationBase),
-    [angleToRotation, pantsAxisAngle, pantsLegAngles, pantsTextureRotationBase, stripeBoost]
+    () => angleToRotation(pantsLegAngles?.left ?? pantsAxisAngle),
+    [angleToRotation, pantsAxisAngle, pantsLegAngles]
   );
   const pantsTextureRotationRight = useMemo(
-    () => (stripeBoost ? angleToRotation(pantsLegAngles?.right ?? pantsAxisAngle) : pantsTextureRotationBase),
-    [angleToRotation, pantsAxisAngle, pantsLegAngles, pantsTextureRotationBase, stripeBoost]
+    () => angleToRotation(pantsLegAngles?.right ?? pantsAxisAngle),
+    [angleToRotation, pantsAxisAngle, pantsLegAngles]
   );
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
@@ -1346,10 +1348,7 @@ const SuitPreview = ({
   const pantsMask = pantsUnionMask;
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
-  const useSplitPantsTexture =
-    useTexture &&
-    Boolean(pantsLegMasks && pantsLegAngles) &&
-    (stripeBoost || fabricStripe.strength > 0.08);
+  const useSplitPantsTexture = useTexture && Boolean(pantsLegMasks && pantsLegAngles) && stripeRotationActive;
 
   // Build a union mask over the pants silhouette to avoid halo/background bleed
   useEffect(() => {
