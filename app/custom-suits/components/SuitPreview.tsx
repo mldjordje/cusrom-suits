@@ -690,21 +690,28 @@ const SuitPreview = ({
     );
     return typeof raw === "number" ? raw : stripeOrientation === "vertical" ? 90 : 0;
   }, [selectedFabric, stripeOrientation]);
+  const angleToRotation = useMemo(
+    () => (desiredAngle: number | null | undefined) => {
+      if (typeof desiredAngle !== "number" || !Number.isFinite(desiredAngle)) {
+        return pantsTextureRotationBase;
+      }
+      if (stripeOrientation === "horizontal") return -desiredAngle;
+      if (stripeOrientation === "vertical") return 90 - desiredAngle;
+      return pantsTextureRotationBase;
+    },
+    [pantsTextureRotationBase, stripeOrientation]
+  );
   const pantsTextureRotation = useMemo(
-    () => pantsTextureRotationBase + (stripeBoost ? pantsAxisAngle : 0),
-    [pantsAxisAngle, pantsTextureRotationBase, stripeBoost]
+    () => (stripeBoost ? angleToRotation(pantsAxisAngle) : pantsTextureRotationBase),
+    [angleToRotation, pantsAxisAngle, pantsTextureRotationBase, stripeBoost]
   );
   const pantsTextureRotationLeft = useMemo(
-    () =>
-      pantsTextureRotationBase +
-      (stripeBoost ? (pantsLegAngles?.left ?? pantsAxisAngle) : 0),
-    [pantsAxisAngle, pantsLegAngles, pantsTextureRotationBase, stripeBoost]
+    () => (stripeBoost ? angleToRotation(pantsLegAngles?.left ?? pantsAxisAngle) : pantsTextureRotationBase),
+    [angleToRotation, pantsAxisAngle, pantsLegAngles, pantsTextureRotationBase, stripeBoost]
   );
   const pantsTextureRotationRight = useMemo(
-    () =>
-      pantsTextureRotationBase +
-      (stripeBoost ? (pantsLegAngles?.right ?? pantsAxisAngle) : 0),
-    [pantsAxisAngle, pantsLegAngles, pantsTextureRotationBase, stripeBoost]
+    () => (stripeBoost ? angleToRotation(pantsLegAngles?.right ?? pantsAxisAngle) : pantsTextureRotationBase),
+    [angleToRotation, pantsAxisAngle, pantsLegAngles, pantsTextureRotationBase, stripeBoost]
   );
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
