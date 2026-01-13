@@ -1521,6 +1521,70 @@ const SuitPreview = ({
                 }
               }
             }
+            const seamLine = (() => {
+              const minY = sampleH * 0.12;
+              const maxY = sampleH * 0.95;
+              let sumX = 0;
+              let sumY = 0;
+              let sumXX = 0;
+              let sumXY = 0;
+              let count = 0;
+              for (let y = 0; y < sampleH; y++) {
+                if (y < minY || y > maxY) continue;
+                for (let x = 0; x < sampleW; x++) {
+                  const idx = y * sampleW + x;
+                  if (boundary[idx] !== 1) continue;
+                  sumX += x;
+                  sumY += y;
+                  sumXX += x * x;
+                  sumXY += x * y;
+                  count++;
+                }
+              }
+              if (count < 20) return null;
+              const denom = count * sumXX - sumX * sumX;
+              if (Math.abs(denom) < 1e-3) return null;
+              const slope = (count * sumXY - sumX * sumY) / denom;
+              const intercept = (sumY - slope * sumX) / count;
+              const c0Side = c0.y >= slope * c0.x + intercept;
+              return { slope, intercept, c0Side };
+            })();
+
+            const activeLabels = seamLine ? new Int8Array(sampleW * sampleH) : labels;
+            if (seamLine) {
+              activeLabels.fill(-1);
+              for (let y = 0; y < sampleH; y++) {
+                for (let x = 0; x < sampleW; x++) {
+                  const idx = y * sampleW + x;
+                  const alpha = sdata[idx * 4 + 3];
+                  if (alpha < 10) continue;
+                  const side = y >= seamLine.slope * x + seamLine.intercept;
+                  activeLabels[idx] = side === seamLine.c0Side ? 0 : 1;
+                }
+              }
+            }
+            const activeBoundary = seamLine ? new Uint8Array(sampleW * sampleH) : boundary;
+            if (seamLine) {
+              for (let y = 0; y < sampleH; y++) {
+                for (let x = 0; x < sampleW; x++) {
+                  const idx = y * sampleW + x;
+                  const label = activeLabels[idx];
+                  if (label < 0) continue;
+                  const left = x > 0 ? activeLabels[idx - 1] : label;
+                  const right = x < sampleW - 1 ? activeLabels[idx + 1] : label;
+                  const up = y > 0 ? activeLabels[idx - sampleW] : label;
+                  const down = y < sampleH - 1 ? activeLabels[idx + sampleW] : label;
+                  if (
+                    (left >= 0 && left !== label) ||
+                    (right >= 0 && right !== label) ||
+                    (up >= 0 && up !== label) ||
+                    (down >= 0 && down !== label)
+                  ) {
+                    activeBoundary[idx] = 1;
+                  }
+                }
+              }
+            }
             const computeTopEdgeAngle = (label: number) => {
               let sumX = 0;
               let sumY = 0;
@@ -1531,8 +1595,8 @@ const SuitPreview = ({
                 let yMin = -1;
                 for (let y = 0; y < sampleH; y++) {
                   const idx = y * sampleW + x;
-                  if (labels[idx] !== label) continue;
-                  if (boundary[idx]) continue;
+                  if (activeLabels[idx] !== label) continue;
+                  if (activeBoundary[idx]) continue;
                   const alpha = sdata[idx * 4 + 3];
                   if (alpha < 10) continue;
                   yMin = y;
@@ -1572,7 +1636,7 @@ const SuitPreview = ({
                 const alpha = full[idx + 3];
                 if (alpha < 10) continue;
                 const sx = Math.min(sampleW - 1, Math.floor(x * sampleScaleX));
-                let label = labels[sy * sampleW + sx];
+                let label = activeLabels[sy * sampleW + sx];
                 if (label < 0) {
                   const dx0 = sx - c0.x;
                   const dy0 = sy - c0.y;
@@ -2046,7 +2110,7 @@ const SuitPreview = ({
                 baseOpacity={0}
                 panZoom={panZoom}
                 canvas={PANTS_CANVAS}
-                mask={pantsMask}
+                mask={pantsLegMasks?.right ?? pantsMask}
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
                 textureRotationDeg={pantsTextureRotationRight}
@@ -2099,7 +2163,7 @@ const SuitPreview = ({
                 baseOpacity={0}
                 panZoom={panZoom}
                 canvas={PANTS_CANVAS}
-                mask={pantsMask}
+                mask={pantsLegMasks?.right ?? pantsMask}
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
                 textureRotationDeg={pantsTextureRotationRight}
