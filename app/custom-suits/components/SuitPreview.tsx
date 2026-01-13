@@ -1541,9 +1541,11 @@ const SuitPreview = ({
                 }
               }
             }
-            const seamLine = (() => {
+            const seamClassifier = (() => {
               const minY = sampleH * 0.12;
               const maxY = sampleH * 0.95;
+              const seamX = (c0.x + c1.x) / 2;
+              const maxDx = sampleW * 0.2;
               let sumX = 0;
               let sumY = 0;
               let sumXX = 0;
@@ -1554,6 +1556,7 @@ const SuitPreview = ({
                 for (let x = 0; x < sampleW; x++) {
                   const idx = y * sampleW + x;
                   if (boundary[idx] !== 1) continue;
+                  if (Math.abs(x - seamX) > maxDx) continue;
                   sumX += x;
                   sumY += y;
                   sumXX += x * x;
@@ -1561,30 +1564,39 @@ const SuitPreview = ({
                   count++;
                 }
               }
-              if (count < 20) return null;
-              const denom = count * sumXX - sumX * sumX;
-              if (Math.abs(denom) < 1e-3) return null;
-              const slope = (count * sumXY - sumX * sumY) / denom;
-              const intercept = (sumY - slope * sumX) / count;
-              const c0Side = c0.y >= slope * c0.x + intercept;
-              return { slope, intercept, c0Side };
+              if (count >= 20) {
+                const denom = count * sumXX - sumX * sumX;
+                if (Math.abs(denom) > 1e-3) {
+                  const slope = (count * sumXY - sumX * sumY) / denom;
+                  const intercept = (sumY - slope * sumX) / count;
+                  const side = (x: number, y: number) => y >= slope * x + intercept;
+                  return { side, c0Side: side(c0.x, c0.y) };
+                }
+              }
+              const dx = c1.x - c0.x;
+              const dy = c1.y - c0.y;
+              if (!dx && !dy) return null;
+              const midX = (c0.x + c1.x) / 2;
+              const midY = (c0.y + c1.y) / 2;
+              const side = (x: number, y: number) => dx * (x - midX) + dy * (y - midY) >= 0;
+              return { side, c0Side: side(c0.x, c0.y) };
             })();
 
-            const activeLabels = seamLine ? new Int8Array(sampleW * sampleH) : labels;
-            if (seamLine) {
+            const activeLabels = seamClassifier ? new Int8Array(sampleW * sampleH) : labels;
+            if (seamClassifier) {
               activeLabels.fill(-1);
               for (let y = 0; y < sampleH; y++) {
                 for (let x = 0; x < sampleW; x++) {
                   const idx = y * sampleW + x;
                   const alpha = sdata[idx * 4 + 3];
                   if (alpha < 10) continue;
-                  const side = y >= seamLine.slope * x + seamLine.intercept;
-                  activeLabels[idx] = side === seamLine.c0Side ? 0 : 1;
+                  const side = seamClassifier.side(x, y);
+                  activeLabels[idx] = side === seamClassifier.c0Side ? 0 : 1;
                 }
               }
             }
-            const activeBoundary = seamLine ? new Uint8Array(sampleW * sampleH) : boundary;
-            if (seamLine) {
+            const activeBoundary = seamClassifier ? new Uint8Array(sampleW * sampleH) : boundary;
+            if (seamClassifier) {
               for (let y = 0; y < sampleH; y++) {
                 for (let x = 0; x < sampleW; x++) {
                   const idx = y * sampleW + x;
