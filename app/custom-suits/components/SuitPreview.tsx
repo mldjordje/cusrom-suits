@@ -1581,7 +1581,7 @@ const SuitPreview = ({
             })();
 
             const activeLabels = seamClassifier ? new Int8Array(sampleW * sampleH) : labels;
-            if (seamClassifier) {
+            if (seamClassifier && seamClassifier.line) {
               activeLabels.fill(-1);
               for (let y = 0; y < sampleH; y++) {
                 for (let x = 0; x < sampleW; x++) {
@@ -1593,8 +1593,8 @@ const SuitPreview = ({
                 }
               }
             }
-            const activeBoundary = seamClassifier ? new Uint8Array(sampleW * sampleH) : boundary;
-            if (seamClassifier) {
+            const activeBoundary = seamClassifier && seamClassifier.line ? new Uint8Array(sampleW * sampleH) : boundary;
+            if (seamClassifier && seamClassifier.line) {
               for (let y = 0; y < sampleH; y++) {
                 for (let x = 0; x < sampleW; x++) {
                   const idx = y * sampleW + x;
