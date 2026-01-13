@@ -1339,7 +1339,10 @@ const SuitPreview = ({
   const pantsMask = pantsUnionMask;
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
-  const useSplitPantsTexture = stripeBoost && useTexture && Boolean(pantsLegMasks && pantsLegAngles);
+  const useSplitPantsTexture =
+    useTexture &&
+    Boolean(pantsLegMasks && pantsLegAngles) &&
+    (stripeBoost || fabricStripe.strength > 0.08);
 
   // Build a union mask over the pants silhouette to avoid halo/background bleed
   useEffect(() => {
@@ -1478,6 +1481,18 @@ const SuitPreview = ({
               if (count0 > 0) c0 = { x: sum0x / count0, y: sum0y / count0 };
               if (count1 > 0) c1 = { x: sum1x / count1, y: sum1y / count1 };
             }
+            const normalizeAngle = (deg: number) => {
+              let angle = ((deg % 180) + 180) % 180;
+              if (angle > 90) angle -= 180;
+              return angle;
+            };
+            const seamAngleFromCenters = (() => {
+              const dx = c1.x - c0.x;
+              const dy = c1.y - c0.y;
+              if (!dx && !dy) return null;
+              const centerAngle = (Math.atan2(dy, dx) * 180) / Math.PI;
+              return normalizeAngle(centerAngle + 90);
+            })();
 
             const labels = new Int8Array(sampleW * sampleH);
             labels.fill(-1);
@@ -1618,7 +1633,7 @@ const SuitPreview = ({
 
             const topLeftAngle = computeTopEdgeAngle(leftLabel);
             const topRightAngle = computeTopEdgeAngle(rightLabel);
-            const boundaryAngle = computeBoundaryAngle();
+            const boundaryAngle = computeBoundaryAngle() ?? seamAngleFromCenters;
             const leftAngle =
               boundaryAngle ??
               topLeftAngle ??
