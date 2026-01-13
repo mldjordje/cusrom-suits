@@ -1568,7 +1568,7 @@ const SuitPreview = ({
                   const slope = (count * sumXY - sumX * sumY) / denom;
                   const intercept = (sumY - slope * sumX) / count;
                   const side = (x: number, y: number) => y >= slope * x + intercept;
-                  return { side, c0Side: side(c0.x, c0.y) };
+                  return { side, c0Side: side(c0.x, c0.y), line: { slope, intercept } };
                 }
               }
               const dx = c1.x - c0.x;
@@ -1577,7 +1577,7 @@ const SuitPreview = ({
               const midX = (c0.x + c1.x) / 2;
               const midY = (c0.y + c1.y) / 2;
               const side = (x: number, y: number) => dx * (x - midX) + dy * (y - midY) >= 0;
-              return { side, c0Side: side(c0.x, c0.y) };
+              return { side, c0Side: side(c0.x, c0.y), line: null as null | { slope: number; intercept: number } };
             })();
 
             const activeLabels = seamClassifier ? new Int8Array(sampleW * sampleH) : labels;
@@ -1754,7 +1754,6 @@ const SuitPreview = ({
               }
             }
 
-            const rightSplitY = Math.round(PANTS_CANVAS.h * PANTS_RIGHT_SPLIT_RATIO);
             const rightUpper = ctx.createImageData(c.width, c.height);
             const rightLower = ctx.createImageData(c.width, c.height);
             for (let y = 0; y < c.height; y++) {
@@ -1762,7 +1761,15 @@ const SuitPreview = ({
                 const idx = (y * c.width + x) * 4;
                 const alpha = rightMask.data[idx + 3];
                 if (alpha < 1) continue;
-                const target = y <= rightSplitY ? rightUpper.data : rightLower.data;
+                let upper = false;
+                if (seamClassifier?.line) {
+                  const seamY = seamClassifier.line.slope * x + seamClassifier.line.intercept;
+                  upper = y <= seamY;
+                } else {
+                  const rightSplitY = Math.round(PANTS_CANVAS.h * PANTS_RIGHT_SPLIT_RATIO);
+                  upper = y <= rightSplitY;
+                }
+                const target = upper ? rightUpper.data : rightLower.data;
                 target[idx] = 255;
                 target[idx + 1] = 255;
                 target[idx + 2] = 255;
