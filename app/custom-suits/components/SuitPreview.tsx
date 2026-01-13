@@ -44,6 +44,7 @@ const FABRIC_TILE_CACHE = new Map<string, string>();
 const FABRIC_STRIPE_CACHE = new Map<string, StripeHint>();
 const JACKET_MASK_CACHE = new Map<string, string>();
 const PANTS_MASK_CACHE = new Map<string, string>();
+const PANTS_AXIS_CACHE = new Map<string, number>();
 
 type RGB = { r: number; g: number; b: number };
 type StripeOrientation = "vertical" | "horizontal" | "none";
@@ -183,6 +184,43 @@ const computeStripeHint = (data: Uint8ClampedArray, w: number, h: number): Strip
   const strength = clamp(edgeAvg * 1.5 + contrast * 0.9, 0, 1);
   if (strength < 0.12) orientation = "none";
   return { strength, orientation, contrast };
+};
+
+const computeMaskAxisAngle = (data: Uint8ClampedArray, w: number, h: number) => {
+  if (!data.length || w < 2 || h < 2) return 0;
+  let sumX = 0;
+  let sumY = 0;
+  let count = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const alpha = data[(y * w + x) * 4 + 3];
+      if (alpha < 10) continue;
+      sumX += x;
+      sumY += y;
+      count++;
+    }
+  }
+  if (count < 2) return 0;
+  const meanX = sumX / count;
+  const meanY = sumY / count;
+  let sxx = 0;
+  let syy = 0;
+  let sxy = 0;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const alpha = data[(y * w + x) * 4 + 3];
+      if (alpha < 10) continue;
+      const dx = x - meanX;
+      const dy = y - meanY;
+      sxx += dx * dx;
+      syy += dy * dy;
+      sxy += dx * dy;
+    }
+  }
+  if (!sxx && !syy) return 0;
+  const angle = 0.5 * Math.atan2(2 * sxy, sxx - syy);
+  const deg = (angle * 180) / Math.PI;
+  return Number.isFinite(deg) ? deg : 0;
 };
 
 const isNeutralTone = (rgb: RGB, tolerance = 12) => {
@@ -485,6 +523,7 @@ const SuitPreview = ({
   const fabricTexture = selectedFabric?.texture || "";
   const [fabricTileTexture, setFabricTileTexture] = useState<string | null>(null);
   const [fabricStripe, setFabricStripe] = useState<StripeHint>(EMPTY_STRIPE);
+  const [pantsAxisAngle, setPantsAxisAngle] = useState(0);
   const fabricTextureSource = fabricTileTexture || fabricTexture;
   const fabricTextureSourcePants = fabricTextureSource;
   const fabricPattern = useMemo(
@@ -643,11 +682,10 @@ const SuitPreview = ({
     const raw = parseNumber(
       (selectedFabric as any)?.pantsTextureRotation ?? (selectedFabric as any)?.pants_texture_rotation
     );
-    if (typeof raw === "number") return raw;
-    if (stripeOrientation === "horizontal") return 0;
-    if (stripeOrientation === "vertical") return 90;
-    return 0;
-  }, [selectedFabric, stripeOrientation]);
+    const baseRotation = typeof raw === "number" ? raw : stripeOrientation === "vertical" ? 90 : 0;
+    const axisRotation = stripeBoost ? pantsAxisAngle : 0;
+    return baseRotation + axisRotation;
+  }, [pantsAxisAngle, selectedFabric, stripeBoost, stripeOrientation]);
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
     if (fabricTone === "dark") {
@@ -1286,11 +1324,14 @@ const SuitPreview = ({
   useEffect(() => {
     if (!pantsMaskKey) {
       setPantsUnionMask(null);
+      setPantsAxisAngle(0);
       return;
     }
     const cached = PANTS_MASK_CACHE.get(pantsMaskKey);
+    const cachedAxis = PANTS_AXIS_CACHE.get(pantsMaskKey);
     if (cached) {
       setPantsUnionMask(cached);
+      setPantsAxisAngle(typeof cachedAxis === "number" ? cachedAxis : 0);
       return;
     }
 
@@ -1344,6 +1385,15 @@ const SuitPreview = ({
             const dy = Math.round((c.height - h) / 2);
             ctx.drawImage(img, dx, dy, w, h);
           }
+          const axisAngle = computeMaskAxisAngle(
+            ctx.getImageData(0, 0, c.width, c.height).data,
+            c.width,
+            c.height
+          );
+          if (!cancelled) {
+            setPantsAxisAngle(axisAngle);
+            PANTS_AXIS_CACHE.set(pantsMaskKey, axisAngle);
+          }
           if (MASK_BLEED_PX > 0) {
             const temp = document.createElement("canvas");
             temp.width = c.width;
@@ -1364,7 +1414,10 @@ const SuitPreview = ({
             setPantsUnionMask(url);
           }
         } catch {
-          if (!cancelled) setPantsUnionMask(null);
+          if (!cancelled) {
+            setPantsUnionMask(null);
+            setPantsAxisAngle(0);
+          }
         } finally {
           if (!cancelled) setPantsMaskBuilding(false);
         }
