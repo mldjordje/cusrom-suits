@@ -1523,6 +1523,7 @@ const SuitPreview = ({
                 for (let y = 0; y < sampleH; y++) {
                   const idx = y * sampleW + x;
                   if (labels[idx] !== label) continue;
+                  if (boundary[idx]) continue;
                   const alpha = sdata[idx * 4 + 3];
                   if (alpha < 10) continue;
                   yMin = y;
@@ -1562,8 +1563,6 @@ const SuitPreview = ({
                 const alpha = full[idx + 3];
                 if (alpha < 10) continue;
                 const sx = Math.min(sampleW - 1, Math.floor(x * sampleScaleX));
-                const sidx = sy * sampleW + sx;
-                if (boundary[sidx]) continue;
                 let label = labels[sy * sampleW + sx];
                 if (label < 0) {
                   const dx0 = sx - c0.x;
@@ -1602,7 +1601,7 @@ const SuitPreview = ({
                     leftMaxY
                   )
                 : axisAngle);
-            const rightAngle =
+            const rawRightAngle =
               topRightAngle ??
               (rightCount > 200 && rightMaxY > rightMinY
                 ? computeMaskAxisAngle(
@@ -1613,6 +1612,7 @@ const SuitPreview = ({
                     rightMaxY
                   )
                 : axisAngle);
+            const rightAngle = Math.abs(rawRightAngle) < 12 ? 0 : rawRightAngle;
             const leftCanvas = document.createElement("canvas");
             const rightCanvas = document.createElement("canvas");
             leftCanvas.width = c.width;
