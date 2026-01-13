@@ -1512,6 +1512,35 @@ const SuitPreview = ({
                 }
               }
             }
+            const computeTopEdgeAngle = (label: number) => {
+              let sumX = 0;
+              let sumY = 0;
+              let sumXX = 0;
+              let sumXY = 0;
+              let count = 0;
+              for (let x = 0; x < sampleW; x++) {
+                let yMin = -1;
+                for (let y = 0; y < sampleH; y++) {
+                  const idx = y * sampleW + x;
+                  if (labels[idx] !== label) continue;
+                  const alpha = sdata[idx * 4 + 3];
+                  if (alpha < 10) continue;
+                  yMin = y;
+                  break;
+                }
+                if (yMin < 0) continue;
+                sumX += x;
+                sumY += yMin;
+                sumXX += x * x;
+                sumXY += x * yMin;
+                count++;
+              }
+              if (count < 10) return null;
+              const denom = count * sumXX - sumX * sumX;
+              if (Math.abs(denom) < 1e-3) return 0;
+              const slope = (count * sumXY - sumX * sumY) / denom;
+              return (Math.atan(slope) * 180) / Math.PI;
+            };
 
             const leftLabel = c0.x <= c1.x ? 0 : 1;
             const rightLabel = leftLabel === 0 ? 1 : 0;
@@ -1560,8 +1589,11 @@ const SuitPreview = ({
               }
             }
 
+            const topLeftAngle = computeTopEdgeAngle(leftLabel);
+            const topRightAngle = computeTopEdgeAngle(rightLabel);
             const leftAngle =
-              leftCount > 200 && leftMaxY > leftMinY
+              topLeftAngle ??
+              (leftCount > 200 && leftMaxY > leftMinY
                 ? computeMaskAxisAngle(
                     leftMask.data,
                     c.width,
@@ -1569,9 +1601,10 @@ const SuitPreview = ({
                     Math.round(leftMinY + (leftMaxY - leftMinY) * 0.28),
                     leftMaxY
                   )
-                : axisAngle;
+                : axisAngle);
             const rightAngle =
-              rightCount > 200 && rightMaxY > rightMinY
+              topRightAngle ??
+              (rightCount > 200 && rightMaxY > rightMinY
                 ? computeMaskAxisAngle(
                     rightMask.data,
                     c.width,
@@ -1579,7 +1612,7 @@ const SuitPreview = ({
                     Math.round(rightMinY + (rightMaxY - rightMinY) * 0.28),
                     rightMaxY
                   )
-                : axisAngle;
+                : axisAngle);
             const leftCanvas = document.createElement("canvas");
             const rightCanvas = document.createElement("canvas");
             leftCanvas.width = c.width;
