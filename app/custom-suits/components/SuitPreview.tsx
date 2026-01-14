@@ -542,7 +542,13 @@ const SuitPreview = ({
     () => String((selectedFabric as any)?.pattern || "").trim().toLowerCase(),
     [selectedFabric]
   );
-  const patternStripe = fabricPattern === "pinstripe" || fabricPattern === "stripe";
+  const stripeNameHint = useMemo(() => {
+    const name = String((selectedFabric as any)?.name || "");
+    const texture = String(fabricTextureSource || fabricTexture || "");
+    const haystack = `${name} ${texture}`.toLowerCase();
+    return /pinstripe|stripe|linije|lines|pruga|pruge/.test(haystack);
+  }, [fabricTexture, fabricTextureSource, selectedFabric]);
+  const patternStripe = fabricPattern === "pinstripe" || fabricPattern === "stripe" || stripeNameHint;
   const textureStrength = useMemo(() => {
     const raw = parseNumber((selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength);
     const normalized = typeof raw === "number" ? raw : 0.24;
