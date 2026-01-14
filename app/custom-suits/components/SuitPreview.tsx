@@ -22,6 +22,7 @@ import { FabricUnion } from "./layers/FabricUnion";
 import { GlobalOverlay } from "./layers/GlobalOverlay";
 import { LightingPasses } from "./layers/LightingPasses";
 import { spriteBackground } from "./layers/types";
+import { PANTS_STRIPE_TUNING } from "./pantsStripeTuning";
 
 /* =====================================================================================
    CDN helpers (ostaju jer maske i strukturalni sprite-ovi su i dalje iz transparent/)
@@ -36,15 +37,6 @@ const TEXTURE_TILE_CANVAS_SCALE = 0.12;
 const TEXTURE_TILE_CANVAS_MAX = 280;
 const STRIPE_ANALYSIS_SIZE = 80;
 const PANTS_MASK_SAMPLE_W = 120;
-const PANTS_STRIPE_LEFT_ROT_DEG = 11.3;
-const PANTS_RIGHT_UPPER_ROT_DEG = 90;
-const PANTS_RIGHT_SPLIT_RATIO = 98 / 254;
-const PANTS_RIGHT_FORCE_X_RATIO = 0.9;
-const PANTS_WAISTBAND_X_RATIO = 0.945;
-const PANTS_SEAM_REF_W = 484;
-const PANTS_SEAM_REF_H = 254;
-const PANTS_SEAM_REF_SLOPE = 0.43496;
-const PANTS_SEAM_REF_INTERCEPT = 16.11;
 const TEXTURE_SCALE_GLOBAL = 1;
 const TEXTURE_SCALE_MIN = 0.08;
 const TEXTURE_SCALE_MAX = 1.1;
@@ -709,7 +701,8 @@ const SuitPreview = ({
     );
     return typeof raw === "number" ? raw : stripeOrientation === "vertical" ? 90 : 0;
   }, [selectedFabric, stripeOrientation]);
-  const stripeRotationActive = stripeBoost || fabricStripe.strength > 0.02;
+  const stripeRotationActive =
+    stripeBoost || fabricStripe.strength > PANTS_STRIPE_TUNING.stripeRotationMinStrength;
   const angleToRotation = useMemo(
     () => (desiredAngle: number | null | undefined) => {
       if (!stripeRotationActive) return pantsTextureRotationBase;
@@ -727,20 +720,20 @@ const SuitPreview = ({
     [angleToRotation, pantsAxisAngle]
   );
   const pantsTextureRotationLeft = useMemo(
-    () => (stripeRotationActive ? PANTS_STRIPE_LEFT_ROT_DEG : pantsTextureRotationBase),
+    () => (stripeRotationActive ? PANTS_STRIPE_TUNING.leftRotationDeg : pantsTextureRotationBase),
     [pantsTextureRotationBase, stripeRotationActive]
   );
   const pantsTextureRotationRightLower = useMemo(
-    () => (stripeRotationActive ? PANTS_RIGHT_UPPER_ROT_DEG : pantsTextureRotationBase),
+    () => (stripeRotationActive ? PANTS_STRIPE_TUNING.rightLowerRotationDeg : pantsTextureRotationBase),
     [pantsTextureRotationBase, stripeRotationActive]
   );
   const pantsTextureRotationRightUpper = useMemo(
-    () => (stripeRotationActive ? PANTS_RIGHT_UPPER_ROT_DEG : pantsTextureRotationBase),
+    () => (stripeRotationActive ? PANTS_STRIPE_TUNING.rightUpperRotationDeg : pantsTextureRotationBase),
     [pantsTextureRotationBase, stripeRotationActive]
   );
   const pantsTextureRotationWaist = useMemo(() => {
     if (!stripeRotationActive) return pantsTextureRotationBase;
-    return 0;
+    return PANTS_STRIPE_TUNING.waistRotationDeg;
   }, [pantsTextureRotationBase, stripeRotationActive]);
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
@@ -1746,7 +1739,7 @@ const SuitPreview = ({
                 : axisAngle);
             const rightAngle = Math.abs(rawRightAngle) < 12 ? 0 : rawRightAngle;
 
-            const rightForceX = Math.round(c.width * PANTS_RIGHT_FORCE_X_RATIO);
+            const rightForceX = Math.round(c.width * PANTS_STRIPE_TUNING.rightForceXRatio);
             for (let y = 0; y < c.height; y++) {
               for (let x = rightForceX; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
@@ -1780,9 +1773,11 @@ const SuitPreview = ({
             }
 
             const seamSlope =
-              PANTS_SEAM_REF_SLOPE * (c.height / PANTS_SEAM_REF_H) * (PANTS_SEAM_REF_W / c.width);
-            const seamIntercept = PANTS_SEAM_REF_INTERCEPT * (c.height / PANTS_SEAM_REF_H);
-            const seamXMax = Math.round(c.width * PANTS_WAISTBAND_X_RATIO);
+              PANTS_STRIPE_TUNING.seam.slope *
+              (c.height / PANTS_STRIPE_TUNING.seam.refHeight) *
+              (PANTS_STRIPE_TUNING.seam.refWidth / c.width);
+            const seamIntercept = PANTS_STRIPE_TUNING.seam.intercept * (c.height / PANTS_STRIPE_TUNING.seam.refHeight);
+            const seamXMax = Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio);
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < seamXMax; x++) {
                 const idx = (y * c.width + x) * 4;
@@ -1802,7 +1797,7 @@ const SuitPreview = ({
 
             // Carve out the waistband strip for vertical stripe direction.
             const waistMask = ctx.createImageData(c.width, c.height);
-            const waistX = Math.round(c.width * PANTS_WAISTBAND_X_RATIO);
+            const waistX = Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio);
             if (waistX < c.width) {
               for (let y = 0; y < c.height; y++) {
                 for (let x = waistX; x < c.width; x++) {
@@ -1837,7 +1832,7 @@ const SuitPreview = ({
                   const seamY = seamClassifier.line.slope * x + seamClassifier.line.intercept;
                   upper = y <= seamY;
                 } else {
-                  const rightSplitY = Math.round(PANTS_CANVAS.h * PANTS_RIGHT_SPLIT_RATIO);
+                  const rightSplitY = Math.round(PANTS_CANVAS.h * PANTS_STRIPE_TUNING.rightSplitRatio);
                   upper = y <= rightSplitY;
                 }
                 const target = upper ? rightUpper.data : rightLower.data;
