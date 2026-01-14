@@ -1368,6 +1368,16 @@ const SuitPreview = ({
   const pantsMask = pantsUnionMask;
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
+  const pantsStripeMaskProps = useMemo(
+    () => ({
+      maskSize: "100% 100%",
+      maskPosition: "0 0",
+      maskRepeat: "no-repeat" as const,
+      backgroundAnchor: "top-left" as const,
+      rotationOrigin: "0 0",
+    }),
+    []
+  );
   const hasPantsLegSplit = Boolean(pantsLegMasks);
   const hasPantsRightSplit = Boolean(pantsRightSplitMasks);
   const useSplitPantsTexture = useTexture && hasPantsLegSplit && stripeRotationActive;
@@ -2263,6 +2273,7 @@ const SuitPreview = ({
                 mask={pantsMask}
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
+                {...pantsStripeMaskProps}
               />
               <FabricUnion
                 layers={pantsTextureLayers}
@@ -2278,6 +2289,7 @@ const SuitPreview = ({
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
                 textureRotationDeg={pantsTextureRotationLeft}
+                {...pantsStripeMaskProps}
               />
               {hasPantsRightSplit ? (
                 <>
@@ -2295,6 +2307,7 @@ const SuitPreview = ({
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
                     textureRotationDeg={pantsTextureRotationRightUpper}
+                    {...pantsStripeMaskProps}
                   />
                   <FabricUnion
                     layers={pantsTextureLayers}
@@ -2310,6 +2323,7 @@ const SuitPreview = ({
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
                     textureRotationDeg={pantsTextureRotationRightLower}
+                    {...pantsStripeMaskProps}
                   />
                 </>
               ) : (
@@ -2327,6 +2341,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationRightUpper}
+                  {...pantsStripeMaskProps}
                 />
               )}
               {pantsWaistMask && (
@@ -2344,6 +2359,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationWaist}
+                  {...pantsStripeMaskProps}
                 />
               )}
             </>
@@ -2363,6 +2379,7 @@ const SuitPreview = ({
               textureScale={fabricTextureScale}
               textureTileSizePx={TEXTURE_TILE_PX}
               textureRotationDeg={pantsTextureRotation}
+              {...pantsStripeMaskProps}
             />
           ))}
         {showLayer("fabric") &&
@@ -2383,6 +2400,7 @@ const SuitPreview = ({
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
                 textureRotationDeg={pantsTextureRotationLeft}
+                {...pantsStripeMaskProps}
               />
               {hasPantsRightSplit ? (
                 <>
@@ -2400,6 +2418,7 @@ const SuitPreview = ({
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
                     textureRotationDeg={pantsTextureRotationRightUpper}
+                    {...pantsStripeMaskProps}
                   />
                   <FabricUnion
                     layers={pantsTextureLayers}
@@ -2415,6 +2434,7 @@ const SuitPreview = ({
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
                     textureRotationDeg={pantsTextureRotationRightLower}
+                    {...pantsStripeMaskProps}
                   />
                 </>
               ) : (
@@ -2432,6 +2452,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationRightUpper}
+                  {...pantsStripeMaskProps}
                 />
               )}
               {pantsWaistMask && (
@@ -2449,6 +2470,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationWaist}
+                  {...pantsStripeMaskProps}
                 />
               )}
             </>
@@ -2467,6 +2489,7 @@ const SuitPreview = ({
               textureScale={fabricTextureScale}
               textureTileSizePx={TEXTURE_TILE_PX}
               textureRotationDeg={pantsTextureRotation}
+              {...pantsStripeMaskProps}
             />
           ))}
         {!usePhotoBase && includeStyle && pantsOverlayLayers.length > 0 && (

@@ -19,6 +19,11 @@ type Props = {
   textureScale?: number;
   textureTileSizePx?: number;
   textureRotationDeg?: number;
+  maskSize?: string;
+  maskPosition?: string;
+  maskRepeat?: React.CSSProperties["maskRepeat"];
+  backgroundAnchor?: "center" | "top-left";
+  rotationOrigin?: string;
 };
 
 const buildMask = (mask?: string | null, fallback?: SpritePair | null) => {
@@ -55,6 +60,11 @@ const FabricUnionComponent: React.FC<Props> = ({
   textureScale = 1,
   textureTileSizePx,
   textureRotationDeg = 0,
+  maskSize = "contain",
+  maskPosition = "center",
+  maskRepeat = "no-repeat",
+  backgroundAnchor = "center",
+  rotationOrigin = "center",
 }) => {
   const baseScale = panZoom.scale * textureScale;
   const rotationScale = textureRotationDeg ? computeRotationScale(canvas, textureRotationDeg) : 1;
@@ -64,13 +74,22 @@ const FabricUnionComponent: React.FC<Props> = ({
       ? `${(textureTileSizePx * scale).toFixed(2)}px ${(textureTileSizePx * scale).toFixed(2)}px`
       : `${(scale * 100).toFixed(2)}% ${(scale * 100).toFixed(2)}%`;
   const bgSize = buildBgSize(baseScale);
-  const bgPos = `calc(50% + ${Math.round(panZoom.offset.x)}px) calc(50% + ${Math.round(
-    panZoom.offset.y
-  )}px)`;
+  const bgPos =
+    backgroundAnchor === "top-left"
+      ? `${Math.round(panZoom.offset.x)}px ${Math.round(panZoom.offset.y)}px`
+      : `calc(50% + ${Math.round(panZoom.offset.x)}px) calc(50% + ${Math.round(panZoom.offset.y)}px)`;
   const rotatedBgSize = buildBgSize(baseScale * rotationCompensation);
-  const rotatedBgPos = `calc(50% + ${Math.round(panZoom.offset.x * rotationCompensation)}px) calc(50% + ${Math.round(
-    panZoom.offset.y * rotationCompensation
-  )}px)`;
+  const rotatedBgPos =
+    backgroundAnchor === "top-left"
+      ? `${Math.round(panZoom.offset.x * rotationCompensation)}px ${Math.round(
+          panZoom.offset.y * rotationCompensation
+        )}px`
+      : `calc(50% + ${Math.round(panZoom.offset.x * rotationCompensation)}px) calc(50% + ${Math.round(
+          panZoom.offset.y * rotationCompensation
+        )}px)`;
+  const maskSizeValue = maskSize;
+  const maskPositionValue = maskPosition;
+  const maskRepeatValue = maskRepeat;
 
   const renderBaseFill = () => {
     if (mask) {
@@ -82,13 +101,13 @@ const FabricUnionComponent: React.FC<Props> = ({
             mixBlendMode: baseBlendMode,
             opacity: baseOpacity,
             WebkitMaskImage: buildMask(mask),
-            WebkitMaskRepeat: "no-repeat",
-            WebkitMaskSize: "contain",
-            WebkitMaskPosition: "center",
+            WebkitMaskRepeat: maskRepeatValue,
+            WebkitMaskSize: maskSizeValue,
+            WebkitMaskPosition: maskPositionValue,
             maskImage: buildMask(mask),
-            maskRepeat: "no-repeat",
-            maskSize: "contain",
-            maskPosition: "center",
+            maskRepeat: maskRepeatValue,
+            maskSize: maskSizeValue,
+            maskPosition: maskPositionValue,
             pointerEvents: "none",
           }}
         />
@@ -108,13 +127,13 @@ const FabricUnionComponent: React.FC<Props> = ({
           mixBlendMode: baseBlendMode,
           opacity: baseOpacity,
           WebkitMaskImage: maskImage,
-          WebkitMaskRepeat: "no-repeat",
-          WebkitMaskSize: "contain",
-            WebkitMaskPosition: "center",
+          WebkitMaskRepeat: maskRepeatValue,
+          WebkitMaskSize: maskSizeValue,
+            WebkitMaskPosition: maskPositionValue,
             maskImage,
-            maskRepeat: "no-repeat",
-            maskSize: "contain",
-            maskPosition: "center",
+            maskRepeat: maskRepeatValue,
+            maskSize: maskSizeValue,
+            maskPosition: maskPositionValue,
             pointerEvents: "none",
           }}
         />
@@ -160,13 +179,13 @@ const FabricUnionComponent: React.FC<Props> = ({
             className="absolute inset-0 pointer-events-none"
             style={{
               WebkitMaskImage: maskImage,
-              WebkitMaskRepeat: "no-repeat",
-              WebkitMaskSize: "contain",
-              WebkitMaskPosition: "center",
+              WebkitMaskRepeat: maskRepeatValue,
+              WebkitMaskSize: maskSizeValue,
+              WebkitMaskPosition: maskPositionValue,
               maskImage,
-              maskRepeat: "no-repeat",
-              maskSize: "contain",
-              maskPosition: "center",
+              maskRepeat: maskRepeatValue,
+              maskSize: maskSizeValue,
+              maskPosition: maskPositionValue,
             }}
           >
             <div
@@ -174,7 +193,7 @@ const FabricUnionComponent: React.FC<Props> = ({
               style={{
                 ...rotatedStyle,
                 transform,
-                transformOrigin: "center",
+                transformOrigin: rotationOrigin,
               }}
             />
           </div>
@@ -186,13 +205,13 @@ const FabricUnionComponent: React.FC<Props> = ({
           style={{
             ...baseStyle,
             WebkitMaskImage: maskImage,
-            WebkitMaskRepeat: "no-repeat",
-            WebkitMaskSize: "contain",
-            WebkitMaskPosition: "center",
+            WebkitMaskRepeat: maskRepeatValue,
+            WebkitMaskSize: maskSizeValue,
+            WebkitMaskPosition: maskPositionValue,
             maskImage,
-            maskRepeat: "no-repeat",
-            maskSize: "contain",
-            maskPosition: "center",
+            maskRepeat: maskRepeatValue,
+            maskSize: maskSizeValue,
+            maskPosition: maskPositionValue,
           }}
         />
       );
@@ -218,13 +237,13 @@ const FabricUnionComponent: React.FC<Props> = ({
             className="absolute inset-0 pointer-events-none"
             style={{
               WebkitMaskImage: maskImage,
-              WebkitMaskRepeat: "no-repeat",
-              WebkitMaskSize: "contain",
-              WebkitMaskPosition: "center",
+              WebkitMaskRepeat: maskRepeatValue,
+              WebkitMaskSize: maskSizeValue,
+              WebkitMaskPosition: maskPositionValue,
               maskImage,
-              maskRepeat: "no-repeat",
-              maskSize: "contain",
-              maskPosition: "center",
+              maskRepeat: maskRepeatValue,
+              maskSize: maskSizeValue,
+              maskPosition: maskPositionValue,
             }}
           >
             <div
@@ -232,7 +251,7 @@ const FabricUnionComponent: React.FC<Props> = ({
               style={{
                 ...rotatedStyle,
                 transform,
-                transformOrigin: "center",
+                transformOrigin: rotationOrigin,
               }}
             />
           </div>
@@ -245,13 +264,13 @@ const FabricUnionComponent: React.FC<Props> = ({
           style={{
             ...baseStyle,
             WebkitMaskImage: maskImage,
-            WebkitMaskRepeat: "no-repeat",
-            WebkitMaskSize: "contain",
-            WebkitMaskPosition: "center",
+            WebkitMaskRepeat: maskRepeatValue,
+            WebkitMaskSize: maskSizeValue,
+            WebkitMaskPosition: maskPositionValue,
             maskImage,
-            maskRepeat: "no-repeat",
-            maskSize: "contain",
-            maskPosition: "center",
+            maskRepeat: maskRepeatValue,
+            maskSize: maskSizeValue,
+            maskPosition: maskPositionValue,
           }}
         />
       );
