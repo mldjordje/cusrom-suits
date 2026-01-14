@@ -22,12 +22,27 @@ const cdnTransparent = getTransparentCdnBase();
 const SHIRT_PAIR = cdnPair("shirt_to_jacket_open.png");
 const JACKET_CANVAS = { w: 600, h: 733 } as const;
 const PANTS_CANVAS = { w: 600, h: 350 } as const;
+const STRIPE_ANALYSIS_SIZE = 80;
+const PANTS_MASK_SAMPLE_W = 120;
+const PANTS_STRIPE_LEFT_ROT_DEG = 11.3;
+const PANTS_RIGHT_UPPER_ROT_DEG = 90;
+const PANTS_RIGHT_SPLIT_RATIO = 98 / 254;
+const PANTS_RIGHT_FORCE_X_RATIO = 0.9;
+
+const PANTS_MASK_CACHE = new Map<string, string>();
+const PANTS_LEG_MASK_CACHE = new Map<string, { left: string; right: string }>();
+const PANTS_RIGHT_SPLIT_CACHE = new Map<string, { upper: string; lower: string }>();
 
 type RGB = { r: number; g: number; b: number };
+type StripeOrientation = "vertical" | "horizontal" | "none";
+type StripeHint = { strength: number; orientation: StripeOrientation; contrast: number };
+
+const EMPTY_STRIPE: StripeHint = { strength: 0, orientation: "none", contrast: 0 };
 
 const HEX_COLOR = /^[0-9a-f]{6}$/i;
 
 const clampChannel = (value: number) => Math.max(0, Math.min(255, Math.round(value)));
+const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 
 const normalizeHex = (value?: string | null) => {
   if (!value) return null;
@@ -110,6 +125,43 @@ const relativeLuminance = (rgb: RGB) =>
   0.2126 * linearChannel(rgb.r) +
   0.7152 * linearChannel(rgb.g) +
   0.0722 * linearChannel(rgb.b);
+
+const computeStripeHint = (data: Uint8ClampedArray, w: number, h: number): StripeHint => {
+  if (!data.length || w < 2 || h < 2) return EMPTY_STRIPE;
+  const prevRow = new Float32Array(w);
+  let edgeX = 0;
+  let edgeY = 0;
+  let sum = 0;
+  let sumSq = 0;
+  const pixels = w * h;
+
+  for (let y = 0; y < h; y++) {
+    let prevLum = 0;
+    for (let x = 0; x < w; x++) {
+      const idx = (y * w + x) * 4;
+      const lum = 0.2126 * data[idx] + 0.7152 * data[idx + 1] + 0.0722 * data[idx + 2];
+      sum += lum;
+      sumSq += lum * lum;
+      if (x > 0) edgeX += Math.abs(lum - prevLum);
+      if (y > 0) edgeY += Math.abs(lum - prevRow[x]);
+      prevRow[x] = lum;
+      prevLum = lum;
+    }
+  }
+
+  const mean = sum / pixels;
+  const variance = Math.max(0, sumSq / pixels - mean * mean);
+  const contrast = Math.min(1, Math.sqrt(variance) / 255);
+  const edgeAvg = (edgeX + edgeY) / (pixels * 255);
+  const ratio = edgeY < 0.0001 ? 999 : edgeX / edgeY;
+  let orientation: StripeOrientation = "none";
+  if (ratio > 1.2) orientation = "vertical";
+  else if (ratio < 0.83) orientation = "horizontal";
+
+  const strength = clamp(edgeAvg * 1.5 + contrast * 0.9, 0, 1);
+  if (strength < 0.12) orientation = "none";
+  return { strength, orientation, contrast };
+};
 
 const isNeutralTone = (rgb: RGB, tolerance = 12) => {
   const max = Math.max(rgb.r, rgb.g, rgb.b);
@@ -295,6 +347,10 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     if (cuffsLayer && cuffsLayer.src !== pantsLayer?.src) layers.push(cuffsLayer);
     return layers;
   }, [pantsLayer, cuffsLayer]);
+  const pantsMaskLayers = useMemo(
+    () => (pantsFabricLayers.length ? pantsFabricLayers : pantsLayer ? [pantsLayer] : []),
+    [pantsFabricLayers, pantsLayer]
+  );
 
   const selectedFabric = fabrics.find((f) => String(f.id) === String(config.colorId));
   const fabricTexture = selectedFabric?.texture || "";
@@ -305,6 +361,42 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   }, [selectedFabric]);
   const textureScaleBoost = (selectedFabric as any)?.textureScale ?? 1;
   const useTexture = Boolean(fabricTexture && textureStrength > 0);
+  const [fabricStripe, setFabricStripe] = useState<StripeHint>(EMPTY_STRIPE);
+  const fabricPattern = useMemo(
+    () => String((selectedFabric as any)?.pattern || "").trim().toLowerCase(),
+    [selectedFabric]
+  );
+  const patternStripe = fabricPattern === "pinstripe" || fabricPattern === "stripe";
+  const stripeOrientation = useMemo<StripeOrientation>(() => {
+    if (patternStripe) return "vertical";
+    if (fabricStripe.orientation !== "none") return fabricStripe.orientation;
+    return "none";
+  }, [fabricStripe.orientation, patternStripe]);
+  const stripeStrength = useMemo(
+    () => (patternStripe ? Math.max(0.65, fabricStripe.strength) : fabricStripe.strength),
+    [fabricStripe.strength, patternStripe]
+  );
+  const stripeRotationActive = useMemo(
+    () => patternStripe || stripeStrength > 0.22 || fabricStripe.strength > 0.08,
+    [fabricStripe.strength, patternStripe, stripeStrength]
+  );
+  const pantsTextureRotationBase = useMemo(() => {
+    const raw = (selectedFabric as any)?.pantsTextureRotation ?? (selectedFabric as any)?.pants_texture_rotation;
+    return typeof raw === "number" ? raw : stripeOrientation === "vertical" ? 90 : 0;
+  }, [selectedFabric, stripeOrientation]);
+  const pantsTextureRotation = useMemo(() => pantsTextureRotationBase, [pantsTextureRotationBase]);
+  const pantsTextureRotationLeft = useMemo(
+    () => (stripeRotationActive ? PANTS_STRIPE_LEFT_ROT_DEG : pantsTextureRotationBase),
+    [pantsTextureRotationBase, stripeRotationActive]
+  );
+  const pantsTextureRotationRightLower = useMemo(
+    () => (stripeRotationActive ? PANTS_STRIPE_LEFT_ROT_DEG : pantsTextureRotationBase),
+    [pantsTextureRotationBase, stripeRotationActive]
+  );
+  const pantsTextureRotationRightUpper = useMemo(
+    () => (stripeRotationActive ? PANTS_RIGHT_UPPER_ROT_DEG : pantsTextureRotationBase),
+    [pantsTextureRotationBase, stripeRotationActive]
+  );
 
   const tb = toneBlend(selectedFabric?.tone, level);
   const toneVis = getToneConfig(selectedFabric?.tone, level);
@@ -370,8 +462,16 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
     () => enhanceFabricColor(fabricFillColorBase, fabricTone),
     [fabricFillColorBase, fabricTone]
   );
+  const pantsMaskKey = useMemo(
+    () => pantsMaskLayers.map((layer) => layer.src).filter(Boolean).join("|"),
+    [pantsMaskLayers]
+  );
   const [jacketUnionMask, setJacketUnionMask] = useState<string | null>(null);
   const [maskBuilding, setMaskBuilding] = useState(false);
+  const [pantsUnionMask, setPantsUnionMask] = useState<string | null>(null);
+  const [pantsMaskBuilding, setPantsMaskBuilding] = useState(false);
+  const [pantsLegMasks, setPantsLegMasks] = useState<{ left: string; right: string } | null>(null);
+  const [pantsRightSplitMasks, setPantsRightSplitMasks] = useState<{ upper: string; lower: string } | null>(null);
   const [assetWarnings, setAssetWarnings] = useState<string[]>([]);
   const panZoom = { scale, offset };
   const showLayer = (key: keyof LayerVisibility) => (layerVisibility?.[key] ?? true) !== false;
@@ -395,6 +495,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   useEffect(() => {
     if (!fabricTexture) {
       setFabricAvgColor(null);
+      setFabricStripe(EMPTY_STRIPE);
       return;
     }
     const img = new Image();
@@ -404,12 +505,11 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
         const c = document.createElement("canvas");
         const ctx = c.getContext("2d");
         if (!ctx) return;
-        const w = 32,
-          h = 32;
-        c.width = w;
-        c.height = h;
-        ctx.drawImage(img, 0, 0, w, h);
-        const d = ctx.getImageData(0, 0, w, h).data;
+        const size = STRIPE_ANALYSIS_SIZE;
+        c.width = size;
+        c.height = size;
+        ctx.drawImage(img, 0, 0, size, size);
+        const d = ctx.getImageData(0, 0, size, size).data;
         let r = 0,
           g = 0,
           b = 0,
@@ -425,10 +525,16 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
         if (n > 0) {
           const toHex = (x: number) => Math.max(0, Math.min(255, Math.round(x))).toString(16).padStart(2, "0");
           setFabricAvgColor(`#${toHex(r / n)}${toHex(g / n)}${toHex(b / n)}`);
-        } else setFabricAvgColor(null);
+        } else {
+          setFabricAvgColor(null);
+        }
+        setFabricStripe(computeStripeHint(d, size, size));
       } catch {}
     };
-    img.onerror = () => setFabricAvgColor(null);
+    img.onerror = () => {
+      setFabricAvgColor(null);
+      setFabricStripe(EMPTY_STRIPE);
+    };
     img.src = fabricTexture;
   }, [fabricTexture]);
 
@@ -496,6 +602,350 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
       setMaskBuilding(false);
     };
   }, [fabricLayers]);
+
+  useEffect(() => {
+    if (!pantsMaskKey) {
+      setPantsUnionMask(null);
+      setPantsLegMasks(null);
+      setPantsRightSplitMasks(null);
+      return;
+    }
+    const cached = PANTS_MASK_CACHE.get(pantsMaskKey);
+    const cachedLegMasks = PANTS_LEG_MASK_CACHE.get(pantsMaskKey);
+    const cachedRightSplit = PANTS_RIGHT_SPLIT_CACHE.get(pantsMaskKey);
+    if (cached) setPantsUnionMask(cached);
+    else setPantsUnionMask(null);
+    setPantsLegMasks(cachedLegMasks ?? null);
+    setPantsRightSplitMasks(cachedRightSplit ?? null);
+    if (cached && cachedLegMasks && cachedRightSplit) return;
+
+    let cancelled = false;
+    setPantsMaskBuilding(true);
+    (async () => {
+      try {
+        const c = document.createElement("canvas");
+        c.width = PANTS_CANVAS.w;
+        c.height = PANTS_CANVAS.h;
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.globalCompositeOperation = "source-over";
+        for (const layer of pantsMaskLayers) {
+          const pair = cdnPair(layer.src);
+          const tryLoad = (url: string) =>
+            new Promise<HTMLImageElement>((resolve, reject) => {
+              const img = new Image();
+              img.crossOrigin = "anonymous";
+              img.onload = () => resolve(img);
+              img.onerror = reject;
+              img.src = url;
+            });
+          let img: HTMLImageElement | null = null;
+          try {
+            img = await tryLoad(pair.webp);
+          } catch {
+            try {
+              img = await tryLoad(pair.png);
+            } catch {
+              img = null;
+            }
+          }
+          if (!img) continue;
+          const scale = Math.min(c.width / img.width, c.height / img.height);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const dx = Math.round((c.width - w) / 2);
+          const dy = Math.round((c.height - h) / 2);
+          ctx.drawImage(img, dx, dy, w, h);
+        }
+        const unionData = ctx.getImageData(0, 0, c.width, c.height);
+        const legResult = (() => {
+          const sampleW = Math.min(PANTS_MASK_SAMPLE_W, c.width);
+          const sampleH = Math.max(1, Math.round((sampleW * c.height) / c.width));
+          const sample = document.createElement("canvas");
+          sample.width = sampleW;
+          sample.height = sampleH;
+          const sctx = sample.getContext("2d");
+          if (!sctx) return null;
+          sctx.clearRect(0, 0, sampleW, sampleH);
+          sctx.drawImage(c, 0, 0, sampleW, sampleH);
+          const sdata = sctx.getImageData(0, 0, sampleW, sampleH).data;
+          const points: Array<{ x: number; y: number }> = [];
+          let minPoint: { x: number; y: number } | null = null;
+          let maxPoint: { x: number; y: number } | null = null;
+          for (let y = 0; y < sampleH; y++) {
+            for (let x = 0; x < sampleW; x++) {
+              const alpha = sdata[(y * sampleW + x) * 4 + 3];
+              if (alpha < 10) continue;
+              points.push({ x, y });
+              if (!minPoint || x < minPoint.x) minPoint = { x, y };
+              if (!maxPoint || x > maxPoint.x) maxPoint = { x, y };
+            }
+          }
+          if (points.length < 80 || !minPoint || !maxPoint) return null;
+
+          let c0 = { x: minPoint.x, y: minPoint.y };
+          let c1 = { x: maxPoint.x, y: maxPoint.y };
+          for (let iter = 0; iter < 6; iter++) {
+            let sum0x = 0;
+            let sum0y = 0;
+            let sum1x = 0;
+            let sum1y = 0;
+            let count0 = 0;
+            let count1 = 0;
+            for (const p of points) {
+              const dx0 = p.x - c0.x;
+              const dy0 = p.y - c0.y;
+              const dx1 = p.x - c1.x;
+              const dy1 = p.y - c1.y;
+              if (dx0 * dx0 + dy0 * dy0 <= dx1 * dx1 + dy1 * dy1) {
+                sum0x += p.x;
+                sum0y += p.y;
+                count0++;
+              } else {
+                sum1x += p.x;
+                sum1y += p.y;
+                count1++;
+              }
+            }
+            if (count0 > 0) c0 = { x: sum0x / count0, y: sum0y / count0 };
+            if (count1 > 0) c1 = { x: sum1x / count1, y: sum1y / count1 };
+          }
+
+          const labels = new Int8Array(sampleW * sampleH);
+          labels.fill(-1);
+          for (let y = 0; y < sampleH; y++) {
+            for (let x = 0; x < sampleW; x++) {
+              const alpha = sdata[(y * sampleW + x) * 4 + 3];
+              if (alpha < 10) continue;
+              const dx0 = x - c0.x;
+              const dy0 = y - c0.y;
+              const dx1 = x - c1.x;
+              const dy1 = y - c1.y;
+              labels[y * sampleW + x] = dx0 * dx0 + dy0 * dy0 <= dx1 * dx1 + dy1 * dy1 ? 0 : 1;
+            }
+          }
+          const boundary = new Uint8Array(sampleW * sampleH);
+          for (let y = 0; y < sampleH; y++) {
+            for (let x = 0; x < sampleW; x++) {
+              const idx = y * sampleW + x;
+              const label = labels[idx];
+              if (label < 0) continue;
+              const left = x > 0 ? labels[idx - 1] : label;
+              const right = x < sampleW - 1 ? labels[idx + 1] : label;
+              const up = y > 0 ? labels[idx - sampleW] : label;
+              const down = y < sampleH - 1 ? labels[idx + sampleW] : label;
+              if (
+                (left >= 0 && left !== label) ||
+                (right >= 0 && right !== label) ||
+                (up >= 0 && up !== label) ||
+                (down >= 0 && down !== label)
+              ) {
+                boundary[idx] = 1;
+              }
+            }
+          }
+          const seamClassifier = (() => {
+            const minY = sampleH * 0.12;
+            const maxY = sampleH * 0.95;
+            const seamX = (c0.x + c1.x) / 2;
+            const maxDx = sampleW * 0.2;
+            let sumX = 0;
+            let sumY = 0;
+            let sumXX = 0;
+            let sumXY = 0;
+            let count = 0;
+            for (let y = 0; y < sampleH; y++) {
+              if (y < minY || y > maxY) continue;
+              for (let x = 0; x < sampleW; x++) {
+                const idx = y * sampleW + x;
+                if (boundary[idx] !== 1) continue;
+                if (Math.abs(x - seamX) > maxDx) continue;
+                sumX += x;
+                sumY += y;
+                sumXX += x * x;
+                sumXY += x * y;
+                count++;
+              }
+            }
+            if (count >= 20) {
+              const denom = count * sumXX - sumX * sumX;
+              if (Math.abs(denom) > 1e-3) {
+                const slope = (count * sumXY - sumX * sumY) / denom;
+                const intercept = (sumY - slope * sumX) / count;
+                const side = (x: number, y: number) => y >= slope * x + intercept;
+                return { side, c0Side: side(c0.x, c0.y), line: { slope, intercept } };
+              }
+            }
+            const dx = c1.x - c0.x;
+            const dy = c1.y - c0.y;
+            if (!dx && !dy) return null;
+            const midX = (c0.x + c1.x) / 2;
+            const midY = (c0.y + c1.y) / 2;
+            const side = (x: number, y: number) => dx * (x - midX) + dy * (y - midY) >= 0;
+            return { side, c0Side: side(c0.x, c0.y), line: null as null | { slope: number; intercept: number } };
+          })();
+
+          const activeLabels = seamClassifier && seamClassifier.line ? new Int8Array(sampleW * sampleH) : labels;
+          if (seamClassifier && seamClassifier.line) {
+            activeLabels.fill(-1);
+            for (let y = 0; y < sampleH; y++) {
+              for (let x = 0; x < sampleW; x++) {
+                const idx = y * sampleW + x;
+                const alpha = sdata[idx * 4 + 3];
+                if (alpha < 10) continue;
+                const side = seamClassifier.side(x, y);
+                activeLabels[idx] = side === seamClassifier.c0Side ? 0 : 1;
+              }
+            }
+          }
+
+          const leftLabel = c0.x <= c1.x ? 0 : 1;
+          const rightLabel = leftLabel === 0 ? 1 : 0;
+          const leftMask = ctx.createImageData(c.width, c.height);
+          const rightMask = ctx.createImageData(c.width, c.height);
+          const full = unionData.data;
+          const sampleScaleX = sampleW / c.width;
+          const sampleScaleY = sampleH / c.height;
+          for (let y = 0; y < c.height; y++) {
+            const sy = Math.min(sampleH - 1, Math.floor(y * sampleScaleY));
+            for (let x = 0; x < c.width; x++) {
+              const idx = (y * c.width + x) * 4;
+              const alpha = full[idx + 3];
+              if (alpha < 10) continue;
+              const sx = Math.min(sampleW - 1, Math.floor(x * sampleScaleX));
+              let label = activeLabels[sy * sampleW + sx];
+              if (label < 0) {
+                const dx0 = sx - c0.x;
+                const dy0 = sy - c0.y;
+                const dx1 = sx - c1.x;
+                const dy1 = sy - c1.y;
+                label = dx0 * dx0 + dy0 * dy0 <= dx1 * dx1 + dy1 * dy1 ? 0 : 1;
+              }
+              const target = label === leftLabel ? leftMask.data : rightMask.data;
+              target[idx] = 255;
+              target[idx + 1] = 255;
+              target[idx + 2] = 255;
+              target[idx + 3] = alpha;
+            }
+          }
+
+          const rightForceX = Math.round(c.width * PANTS_RIGHT_FORCE_X_RATIO);
+          for (let y = 0; y < c.height; y++) {
+            for (let x = rightForceX; x < c.width; x++) {
+              const idx = (y * c.width + x) * 4;
+              const unionAlpha = full[idx + 3];
+              if (unionAlpha < 1) continue;
+              rightMask.data[idx] = 255;
+              rightMask.data[idx + 1] = 255;
+              rightMask.data[idx + 2] = 255;
+              rightMask.data[idx + 3] = unionAlpha;
+            }
+          }
+          for (let y = 0; y < c.height; y++) {
+            for (let x = 0; x < c.width; x++) {
+              const idx = (y * c.width + x) * 4;
+              const unionAlpha = full[idx + 3];
+              const rightAlpha = rightMask.data[idx + 3];
+              if (rightAlpha > 0) {
+                leftMask.data[idx + 3] = 0;
+                continue;
+              }
+              if (unionAlpha > 0) {
+                leftMask.data[idx] = 255;
+                leftMask.data[idx + 1] = 255;
+                leftMask.data[idx + 2] = 255;
+                leftMask.data[idx + 3] = unionAlpha;
+              } else {
+                leftMask.data[idx + 3] = 0;
+              }
+            }
+          }
+
+          const rightUpper = ctx.createImageData(c.width, c.height);
+          const rightLower = ctx.createImageData(c.width, c.height);
+          for (let y = 0; y < c.height; y++) {
+            for (let x = 0; x < c.width; x++) {
+              const idx = (y * c.width + x) * 4;
+              const alpha = rightMask.data[idx + 3];
+              if (alpha < 1) continue;
+              let upper = false;
+              if (seamClassifier?.line) {
+                const seamY = seamClassifier.line.slope * x + seamClassifier.line.intercept;
+                upper = y <= seamY;
+              } else {
+                const rightSplitY = Math.round(PANTS_CANVAS.h * PANTS_RIGHT_SPLIT_RATIO);
+                upper = y <= rightSplitY;
+              }
+              const target = upper ? rightUpper.data : rightLower.data;
+              target[idx] = 255;
+              target[idx + 1] = 255;
+              target[idx + 2] = 255;
+              target[idx + 3] = alpha;
+            }
+          }
+
+          const leftCanvas = document.createElement("canvas");
+          const rightCanvas = document.createElement("canvas");
+          const rightUpperCanvas = document.createElement("canvas");
+          const rightLowerCanvas = document.createElement("canvas");
+          leftCanvas.width = c.width;
+          leftCanvas.height = c.height;
+          rightCanvas.width = c.width;
+          rightCanvas.height = c.height;
+          rightUpperCanvas.width = c.width;
+          rightUpperCanvas.height = c.height;
+          rightLowerCanvas.width = c.width;
+          rightLowerCanvas.height = c.height;
+          const lctx = leftCanvas.getContext("2d");
+          const rctx = rightCanvas.getContext("2d");
+          const uctx = rightUpperCanvas.getContext("2d");
+          const dctx = rightLowerCanvas.getContext("2d");
+          if (!lctx || !rctx || !uctx || !dctx) return null;
+          lctx.putImageData(leftMask, 0, 0);
+          rctx.putImageData(rightMask, 0, 0);
+          uctx.putImageData(rightUpper, 0, 0);
+          dctx.putImageData(rightLower, 0, 0);
+          return {
+            leftMaskUrl: leftCanvas.toDataURL("image/png"),
+            rightMaskUrl: rightCanvas.toDataURL("image/png"),
+            rightUpperUrl: rightUpperCanvas.toDataURL("image/png"),
+            rightLowerUrl: rightLowerCanvas.toDataURL("image/png"),
+          };
+        })();
+        if (!cancelled) {
+          if (legResult) {
+            const masks = { left: legResult.leftMaskUrl, right: legResult.rightMaskUrl };
+            const splitMasks = { upper: legResult.rightUpperUrl, lower: legResult.rightLowerUrl };
+            setPantsLegMasks(masks);
+            setPantsRightSplitMasks(splitMasks);
+            PANTS_LEG_MASK_CACHE.set(pantsMaskKey, masks);
+            PANTS_RIGHT_SPLIT_CACHE.set(pantsMaskKey, splitMasks);
+          } else {
+            setPantsLegMasks(null);
+            setPantsRightSplitMasks(null);
+          }
+        }
+        if (!cancelled) {
+          const url = c.toDataURL("image/png");
+          PANTS_MASK_CACHE.set(pantsMaskKey, url);
+          setPantsUnionMask(url);
+        }
+      } catch {
+        if (!cancelled) {
+          setPantsUnionMask(null);
+          setPantsLegMasks(null);
+          setPantsRightSplitMasks(null);
+        }
+      } finally {
+        if (!cancelled) setPantsMaskBuilding(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+      setPantsMaskBuilding(false);
+    };
+  }, [pantsMaskKey, pantsMaskLayers]);
 
   useEffect(() => {
     if (!fabricLayers.length && !pantsLayer) {
@@ -604,6 +1054,9 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
 
   const allJacketLayers = structuralJacketLayers;
   const pantsMaskPair = pantsLayer ? cdnPair(pantsLayer.src) : null;
+  const pantsMask = pantsUnionMask ?? pantsMaskPair?.png ?? null;
+  const useSplitPantsTexture =
+    useTexture && stripeRotationActive && Boolean(pantsLegMasks && pantsRightSplitMasks);
   return (
     <div className="relative w-full select-none">
       <div className="relative mx-auto w-full max-w-[580px] sm:max-w-[540px]">
@@ -617,7 +1070,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseUp}
         >
-        {maskBuilding && (
+        {(maskBuilding || pantsMaskBuilding) && (
           <div className="absolute inset-0 z-20 flex items-center justify-center rounded-[32px] bg-white/60 backdrop-blur-sm">
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900" />
           </div>
@@ -766,18 +1219,82 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
             />
           )}
           {showLayer("fabric") && (
-            <FabricUnion
-              layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
-            resolve={(layer) => cdnPair(layer.src)}
-            fabricTexture={useTexture ? fabricTexture : undefined}
-            textureStyle={fabricTextureStyle}
-            baseColor={fabricFillColor || toneBaseColor}
-            fabricAvgColor={fabricFillColor}
-            panZoom={panZoom}
-            canvas={PANTS_CANVAS}
-            textureScale={fabricTextureScale}
-          />
-        )}
+            <>
+              <FabricUnion
+                layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
+                resolve={(layer) => cdnPair(layer.src)}
+                fabricTexture={undefined}
+                textureStyle={fabricTextureStyle}
+                baseColor={fabricFillColor || toneBaseColor}
+                fabricAvgColor={fabricFillColor}
+                panZoom={panZoom}
+                canvas={PANTS_CANVAS}
+                mask={pantsMask}
+                textureScale={fabricTextureScale}
+              />
+              {useSplitPantsTexture ? (
+                <>
+                  <FabricUnion
+                    layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
+                    resolve={(layer) => cdnPair(layer.src)}
+                    fabricTexture={useTexture ? fabricTexture : undefined}
+                    textureStyle={fabricTextureStyle}
+                    baseColor={fabricFillColor || toneBaseColor}
+                    baseBlendMode="normal"
+                    baseOpacity={0}
+                    panZoom={panZoom}
+                    canvas={PANTS_CANVAS}
+                    mask={pantsLegMasks?.left ?? pantsMask ?? undefined}
+                    textureScale={fabricTextureScale}
+                    textureRotationDeg={pantsTextureRotationLeft}
+                  />
+                  <FabricUnion
+                    layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
+                    resolve={(layer) => cdnPair(layer.src)}
+                    fabricTexture={useTexture ? fabricTexture : undefined}
+                    textureStyle={fabricTextureStyle}
+                    baseColor={fabricFillColor || toneBaseColor}
+                    baseBlendMode="normal"
+                    baseOpacity={0}
+                    panZoom={panZoom}
+                    canvas={PANTS_CANVAS}
+                    mask={pantsRightSplitMasks?.upper ?? pantsLegMasks?.right ?? pantsMask ?? undefined}
+                    textureScale={fabricTextureScale}
+                    textureRotationDeg={pantsTextureRotationRightUpper}
+                  />
+                  <FabricUnion
+                    layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
+                    resolve={(layer) => cdnPair(layer.src)}
+                    fabricTexture={useTexture ? fabricTexture : undefined}
+                    textureStyle={fabricTextureStyle}
+                    baseColor={fabricFillColor || toneBaseColor}
+                    baseBlendMode="normal"
+                    baseOpacity={0}
+                    panZoom={panZoom}
+                    canvas={PANTS_CANVAS}
+                    mask={pantsRightSplitMasks?.lower ?? pantsLegMasks?.right ?? pantsMask ?? undefined}
+                    textureScale={fabricTextureScale}
+                    textureRotationDeg={pantsTextureRotationRightLower}
+                  />
+                </>
+              ) : (
+                <FabricUnion
+                  layers={pantsFabricLayers.length ? pantsFabricLayers : [pantsLayer]}
+                  resolve={(layer) => cdnPair(layer.src)}
+                  fabricTexture={useTexture ? fabricTexture : undefined}
+                  textureStyle={fabricTextureStyle}
+                  baseColor={fabricFillColor || toneBaseColor}
+                  baseBlendMode="normal"
+                  baseOpacity={0}
+                  panZoom={panZoom}
+                  canvas={PANTS_CANVAS}
+                  mask={pantsMask}
+                  textureScale={fabricTextureScale}
+                  textureRotationDeg={pantsTextureRotation}
+                />
+              )}
+            </>
+          )}
           {activeButton?.image_url &&
             pantsButtons.map((pos, idx) => (
               <img
@@ -798,18 +1315,18 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
                 }}
               />
             ))}
-          {needsDarkBoost && pantsMaskPair && (
+          {needsDarkBoost && pantsMask && (
             <div
               className="absolute inset-0 pointer-events-none"
               style={{
                 mixBlendMode: "multiply",
                 opacity: 0.35,
                 backgroundColor: "#080808",
-                WebkitMaskImage: `url(${pantsMaskPair.png})`,
+                WebkitMaskImage: `url(${pantsMask})`,
                 WebkitMaskRepeat: "no-repeat",
                 WebkitMaskSize: "contain",
                 WebkitMaskPosition: "center",
-                maskImage: `url(${pantsMaskPair.png})`,
+                maskImage: `url(${pantsMask})`,
                 maskRepeat: "no-repeat",
                 maskSize: "contain",
                 maskPosition: "center",
