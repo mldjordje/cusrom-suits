@@ -1,14 +1,14 @@
 export const PANTS_STRIPE_TUNING = {
-  // glavna nogavica (leva velika površina) – treba jače da se nagne u dijagonalu
-  leftRotationDeg: -24.5,
+  // 1️⃣ LEVA NOGAVICA – jaka dijagonala
+  leftRotationDeg: -28.0,
 
-  // desna strana (zona preklopa/šlica) – ne 90° (to često “ubije” smer),
-  // nego isti dijagonalni smer kao referenca
-  rightUpperRotationDeg: -24.5,
-  rightLowerRotationDeg: -24.5,
+  // 2️⃣ PREKLOP / ŠLIC
+  // gotovo horizontalno (mnogo manji nagib)
+  rightUpperRotationDeg: -6.0,
+  rightLowerRotationDeg: -6.0,
 
-  // pojas – blago prati dijagonalu (na referenci nije “0° flat”)
-  waistRotationDeg: -6.0,
+  // 3️⃣ POJAS – čisto vertikalno
+  waistRotationDeg: 90,
 
   seam: {
     refWidth: 484,
@@ -17,15 +17,14 @@ export const PANTS_STRIPE_TUNING = {
     intercept: 16.11,
   },
 
-  // split na desnoj strani: malo pomeri rez da se pruge bolje “nastave”
-  rightSplitRatio: 102 / 254,
+  // split mora ostati neutralan da ne “lomi” pruge
+  rightSplitRatio: 98 / 254,
 
-  // blagi push ka X da se linije poravnaju preko preklopa
-  rightForceXRatio: 0.86,
+  // blagi X push samo za kontinuitet
+  rightForceXRatio: 0.88,
+  waistbandXRatio: 0.945,
 
-  // waistband offset sitno unazad (manje “beži” pattern)
-  waistbandXRatio: 0.935,
-
-  // da rotacija stvarno “pobedi” preko shading-a i maski (trenutno ti je preslabo)
-  stripeRotationMinStrength: 0.065,
+  // OVO MORA BITI NISKO
+  // inače ubija razliku između zona
+  stripeRotationMinStrength: 0.02,
 };
