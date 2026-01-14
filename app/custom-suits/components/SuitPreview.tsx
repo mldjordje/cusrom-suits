@@ -41,6 +41,10 @@ const PANTS_RIGHT_UPPER_ROT_DEG = 90;
 const PANTS_RIGHT_SPLIT_RATIO = 98 / 254;
 const PANTS_RIGHT_FORCE_X_RATIO = 0.9;
 const PANTS_WAISTBAND_X_RATIO = 0.945;
+const PANTS_SEAM_REF_W = 484;
+const PANTS_SEAM_REF_H = 254;
+const PANTS_SEAM_REF_SLOPE = 0.43496;
+const PANTS_SEAM_REF_INTERCEPT = 16.11;
 const TEXTURE_SCALE_GLOBAL = 1;
 const TEXTURE_SCALE_MIN = 0.08;
 const TEXTURE_SCALE_MAX = 1.1;
@@ -705,7 +709,7 @@ const SuitPreview = ({
     );
     return typeof raw === "number" ? raw : stripeOrientation === "vertical" ? 90 : 0;
   }, [selectedFabric, stripeOrientation]);
-  const stripeRotationActive = stripeBoost || fabricStripe.strength > 0.08;
+  const stripeRotationActive = stripeBoost || fabricStripe.strength > 0.02;
   const angleToRotation = useMemo(
     () => (desiredAngle: number | null | undefined) => {
       if (!stripeRotationActive) return pantsTextureRotationBase;
@@ -736,10 +740,8 @@ const SuitPreview = ({
   );
   const pantsTextureRotationWaist = useMemo(() => {
     if (!stripeRotationActive) return pantsTextureRotationBase;
-    if (stripeOrientation === "horizontal") return 90;
-    if (stripeOrientation === "vertical") return 0;
-    return pantsTextureRotationBase;
-  }, [pantsTextureRotationBase, stripeOrientation, stripeRotationActive]);
+    return 0;
+  }, [pantsTextureRotationBase, stripeRotationActive]);
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
     if (fabricTone === "dark") {
@@ -1774,6 +1776,27 @@ const SuitPreview = ({
                 } else {
                   leftMask.data[idx + 3] = 0;
                 }
+              }
+            }
+
+            const seamSlope =
+              PANTS_SEAM_REF_SLOPE * (c.height / PANTS_SEAM_REF_H) * (PANTS_SEAM_REF_W / c.width);
+            const seamIntercept = PANTS_SEAM_REF_INTERCEPT * (c.height / PANTS_SEAM_REF_H);
+            const seamXMax = Math.round(c.width * PANTS_WAISTBAND_X_RATIO);
+            for (let y = 0; y < c.height; y++) {
+              for (let x = 0; x < seamXMax; x++) {
+                const idx = (y * c.width + x) * 4;
+                const rightAlpha = rightMask.data[idx + 3];
+                if (rightAlpha < 1) continue;
+                const seamY = seamSlope * x + seamIntercept;
+                if (y <= seamY) continue;
+                const unionAlpha = full[idx + 3];
+                if (unionAlpha < 1) continue;
+                rightMask.data[idx + 3] = 0;
+                leftMask.data[idx] = 255;
+                leftMask.data[idx + 1] = 255;
+                leftMask.data[idx + 2] = 255;
+                leftMask.data[idx + 3] = unionAlpha;
               }
             }
 
