@@ -537,8 +537,6 @@ const SuitPreview = ({
   const [pantsLegAngles, setPantsLegAngles] = useState<{ left: number; right: number } | null>(null);
   const [pantsRightSplitMasks, setPantsRightSplitMasks] = useState<{ upper: string; lower: string } | null>(null);
   const [pantsWaistMask, setPantsWaistMask] = useState<string | null>(null);
-  const rightFlyDebugLoggedRef = useRef(false);
-  const rightFlyPixelCountRef = useRef<number | null>(null);
   const fabricTextureSource = fabricTileTexture || fabricTexture;
   const fabricTextureSourcePants = fabricTextureSource;
   const fabricPattern = useMemo(
@@ -1386,20 +1384,8 @@ const SuitPreview = ({
   const hasPantsLegSplit = Boolean(pantsLegMasks);
   const hasPantsRightSplit = Boolean(pantsRightSplitMasks);
   const useSplitPantsTexture = useTexture && hasPantsLegSplit && stripeBoost;
+  const pantsStripeTexture = fabricTileTexture ?? fabricTextureSourcePants;
 
-  useEffect(() => {
-    if (rightFlyDebugLoggedRef.current) return;
-    if (!useSplitPantsTexture) return;
-    if (!pantsRightSplitMasks) return;
-    if (rightFlyPixelCountRef.current == null) return;
-    rightFlyDebugLoggedRef.current = true;
-    const pixelCount = rightFlyPixelCountRef.current;
-    console.log("[pants stripes] RIGHT_FLY", {
-      rotationDeg: pantsTextureRotationRightUpper,
-      maskHasPixels: pixelCount > 0,
-      pixelCount,
-    });
-  }, [pantsRightSplitMasks, pantsTextureRotationRightUpper, useSplitPantsTexture]);
 
   // Build a union mask over the pants silhouette to avoid halo/background bleed
   useEffect(() => {
@@ -1883,7 +1869,6 @@ const SuitPreview = ({
                 target[idx + 3] = rightAlpha;
               }
             }
-            let rightFlyCount = 0;
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
@@ -1895,9 +1880,7 @@ const SuitPreview = ({
                   waistMask.data[idx + 3] > 0
                 ) {
                   rightUpper.data[idx + 3] = 0;
-                  continue;
                 }
-                rightFlyCount++;
               }
             }
             const leftCanvas = document.createElement("canvas");
@@ -1944,7 +1927,6 @@ const SuitPreview = ({
               rightUpperUrl: rightUpperCanvas.toDataURL("image/png"),
               rightLowerUrl: rightLowerCanvas.toDataURL("image/png"),
               waistMaskUrl: waistCanvas.toDataURL("image/png"),
-              rightFlyCount,
               leftAngle,
               rightAngle,
             };
@@ -1954,7 +1936,6 @@ const SuitPreview = ({
               const masks = { left: legResult.leftMaskUrl, right: legResult.rightMaskUrl };
               const angles = { left: legResult.leftAngle, right: legResult.rightAngle };
               const leftSplit = { main: legResult.leftMainUrl, under: legResult.leftUnderUrl };
-              rightFlyPixelCountRef.current = legResult.rightFlyCount;
               setPantsLegMasks(masks);
               setPantsLegAngles(angles);
               setPantsLeftSplitMasks(leftSplit);
@@ -2346,7 +2327,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsTextureStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
@@ -2365,7 +2346,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsTextureStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
@@ -2383,7 +2364,7 @@ const SuitPreview = ({
               <FabricUnion
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
-                fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                fabricTexture={useTexture ? pantsStripeTexture : undefined}
                 textureStyle={pantsTextureStyle}
                 baseColor={tunedFabricFill || toneBaseColor}
                 baseBlendMode="normal"
@@ -2401,7 +2382,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsTextureStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
@@ -2419,7 +2400,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsTextureStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
@@ -2438,7 +2419,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsTextureStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
@@ -2481,7 +2462,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
@@ -2500,7 +2481,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
@@ -2518,7 +2499,7 @@ const SuitPreview = ({
               <FabricUnion
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
-                fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                fabricTexture={useTexture ? pantsStripeTexture : undefined}
                 textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
                 baseColor={tunedFabricFill || toneBaseColor}
                 baseBlendMode="normal"
@@ -2536,7 +2517,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
@@ -2554,7 +2535,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
@@ -2573,7 +2554,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
