@@ -2246,10 +2246,20 @@ const SuitPreview = ({
                 if (
                   rightLower.data[idx + 3] > 0 ||
                   leftUnder.data[idx + 3] > 0 ||
-                  leftMain.data[idx + 3] > 0 ||
                   waistMask.data[idx + 3] > 0
                 ) {
                   rightUpper.data[idx + 3] = 0;
+                }
+              }
+            }
+            for (let y = 0; y < c.height; y++) {
+              for (let x = 0; x < c.width; x++) {
+                const idx = (y * c.width + x) * 4;
+                if (rightUpper.data[idx + 3] > 0 && leftMain.data[idx + 3] > 0) {
+                  leftMain.data[idx + 3] = 0;
+                }
+                if (rightLower.data[idx + 3] > 0 && leftUnder.data[idx + 3] > 0) {
+                  rightLower.data[idx + 3] = 0;
                 }
               }
             }
