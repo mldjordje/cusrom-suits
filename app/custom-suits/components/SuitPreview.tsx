@@ -978,13 +978,19 @@ const SuitPreview = ({
   const buildPantsPatternStyle = useCallback(
     (
       angleDeg: number,
-      options?: { opacityMul?: number; brightenMul?: number }
+      options?: {
+        opacityMul?: number;
+        brightenMul?: number;
+        mixBlendMode?: React.CSSProperties["mixBlendMode"];
+        opacityMin?: number;
+      }
     ): React.CSSProperties => {
       if (!pantsPatternOverlayConfig) return {};
       const { lineWidth, spacing, opacity, pattern, lineRgb } = pantsPatternOverlayConfig;
       const opacityMul = options?.opacityMul ?? 1;
       const brightenMul = options?.brightenMul ?? 1;
-      const tunedOpacity = clamp(opacity * opacityMul, 0.05, 0.3);
+      const opacityMin = options?.opacityMin ?? 0.05;
+      const tunedOpacity = clamp(opacity * opacityMul, opacityMin, 0.3);
       const tunedRgb = {
         r: clampChannel(lineRgb.r * brightenMul),
         g: clampChannel(lineRgb.g * brightenMul),
@@ -996,7 +1002,8 @@ const SuitPreview = ({
         pattern === "karo"
           ? `repeating-linear-gradient(0deg, ${lineColor} 0px, ${lineColor} ${lineWidth}px, transparent ${lineWidth}px, transparent ${spacing}px), repeating-linear-gradient(90deg, ${lineColor} 0px, ${lineColor} ${lineWidth}px, transparent ${lineWidth}px, transparent ${spacing}px)`
           : stripe;
-      const mixBlendMode: React.CSSProperties["mixBlendMode"] = usePhotoBase ? "overlay" : "soft-light";
+      const mixBlendMode: React.CSSProperties["mixBlendMode"] =
+        options?.mixBlendMode ?? (usePhotoBase ? "overlay" : "soft-light");
       return {
         backgroundImage,
         backgroundRepeat: "repeat",
@@ -1557,16 +1564,20 @@ const SuitPreview = ({
   const pantsOverlayStyleFly = useMemo(
     () =>
       buildPantsPatternStyle(PANTS_STRIPE_TUNING.rightUpperRotationDeg, {
-        opacityMul: 1.25,
-        brightenMul: 1.2,
+        opacityMul: 1.55,
+        brightenMul: 1.35,
+        mixBlendMode: "screen",
+        opacityMin: 0.14,
       }),
     [buildPantsPatternStyle]
   );
   const pantsOverlayStyleWaist = useMemo(
     () =>
       buildPantsPatternStyle(PANTS_STRIPE_TUNING.waistRotationDeg, {
-        opacityMul: 1.2,
-        brightenMul: 1.1,
+        opacityMul: 1.3,
+        brightenMul: 1.2,
+        mixBlendMode: "screen",
+        opacityMin: 0.12,
       }),
     [buildPantsPatternStyle]
   );
