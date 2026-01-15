@@ -30,7 +30,7 @@ export const PANTS_STRIPE_TUNING = {
 
   // blagi X push samo za kontinuitet
   rightForceXRatio: 0.88,
-  waistbandXRatio: 0.96,
+  waistbandXRatio: 0.975,
 
   // OVO MORA BITI NISKO
   // inače ubija razliku između zona

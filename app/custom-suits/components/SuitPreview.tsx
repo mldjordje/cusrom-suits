@@ -1982,7 +1982,7 @@ const SuitPreview = ({
             }
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
-            const bottomCurveStart = Math.round(c.height * 0.6); // clip underlap before the rounded hem
+            const bottomCurveStart = Math.round(c.height * 0.66); // clip underlap before the rounded hem
             const leftMain = ctx.createImageData(c.width, c.height);
             const leftUnder = ctx.createImageData(c.width, c.height);
             const rightUpper = ctx.createImageData(c.width, c.height);
