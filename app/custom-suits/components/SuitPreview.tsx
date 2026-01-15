@@ -1037,8 +1037,8 @@ const SuitPreview = ({
     const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
     return {
       ...fabricTextureStyle,
-      mixBlendMode: fabricTextureStyle.mixBlendMode,
-      opacity: clamp(opacity, 0.14, 0.9),
+      mixBlendMode: "normal",
+      opacity: clamp(opacity * 1.8, 0.22, 0.9),
     };
   }, [fabricTextureStyle, pantsTextureStyle, useSplitPantsTexture]);
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
