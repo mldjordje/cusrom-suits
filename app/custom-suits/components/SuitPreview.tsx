@@ -1554,7 +1554,7 @@ const SuitPreview = ({
   const hasStripeTile = Boolean(fabricTileTexture);
   const useSplitPantsTexture =
     hasStripeTile && useTexture && hasPantsLegSplit && (stripeBoost || isPantsCmsStripe);
-  const pantsStripeTexture = fabricTileTexture ?? null;
+  const pantsStripeTexture = fabricTileTexture ?? undefined;
   const pantsOverlayTexture = fabricTileTexture ?? fabricTextureSourcePants;
   const canRenderPantsPatternOverlay = Boolean(
     usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks && pantsOverlayTexture
@@ -2764,7 +2764,7 @@ const SuitPreview = ({
               <FabricUnion
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
-                fabricTexture={useTexture ? pantsStripeTexture : undefined}
+                fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
                 textureStyle={pantsTextureStyle}
                 baseColor={tunedFabricFill || toneBaseColor}
                 baseBlendMode="normal"
@@ -2782,7 +2782,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
+                  fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsTextureStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
@@ -2801,7 +2801,7 @@ const SuitPreview = ({
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
-                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
+                  fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
                   textureStyle={pantsTextureStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
