@@ -796,18 +796,6 @@ const SuitPreview = ({
     () => angleToRotation(pantsAxisAngle),
     [angleToRotation, pantsAxisAngle]
   );
-  const pantsTextureRotationLeft = useMemo(
-    () => (stripeRotationActive ? PANTS_STRIPE_TUNING.leftRotationDeg : pantsTextureRotationBase),
-    [pantsTextureRotationBase, stripeRotationActive]
-  );
-  const pantsTextureRotationRightUpper = useMemo(
-    () => (stripeRotationActive ? PANTS_STRIPE_TUNING.rightUpperRotationDeg : pantsTextureRotationBase),
-    [pantsTextureRotationBase, stripeRotationActive]
-  );
-  const pantsTextureRotationWaist = useMemo(() => {
-    if (!stripeRotationActive) return pantsTextureRotationBase;
-    return PANTS_STRIPE_TUNING.waistRotationDeg;
-  }, [pantsTextureRotationBase, stripeRotationActive]);
   const fabricTextureFilter = useMemo(() => {
     if (usePhotoBase) return "none";
     if (fabricTone === "dark") {
@@ -1543,12 +1531,11 @@ const SuitPreview = ({
     []
   );
   const pantsStripeOffsets = PANTS_STRIPE_TUNING.stripeOffsets;
-  const pantsLeftMainMask = pantsLeftSplitMasks?.main ?? pantsLegMasks?.left ?? pantsMask;
-  const pantsLeftUnderMask = pantsLeftSplitMasks?.under ?? null;
-  const pantsRightFlyMask = pantsRightSplitMasks?.upper ?? pantsLegMasks?.right ?? pantsMask;
-  const pantsRightUnderMask = pantsRightSplitMasks?.lower ?? pantsLegMasks?.right ?? pantsMask;
+  const pantsLeftMainMask = pantsLeftSplitMasks?.main ?? pantsMask;
+  const pantsLeftUnderMask = null;
+  const pantsRightFlyMask = pantsRightSplitMasks?.upper ?? null;
+  const pantsRightUnderMask = null;
   const hasPantsLegSplit = Boolean(pantsLegMasks);
-  const hasPantsRightSplit = Boolean(pantsRightSplitMasks);
   const useSplitPantsTexture = useTexture && hasPantsLegSplit && (stripeBoost || isPantsCmsStripe);
   const pantsStripeTexture = fabricTileTexture ?? fabricTextureSourcePants;
   const canRenderPantsPatternOverlay = Boolean(
@@ -1581,10 +1568,6 @@ const SuitPreview = ({
         opacityMin: 0.12,
       }),
     [buildPantsPatternStyle]
-  );
-  const rightFlyBaseRotationDeg = useMemo(
-    () => pantsTextureRotationRightUpper + (stripeOrientation === "vertical" ? -90 : 0),
-    [pantsTextureRotationRightUpper, stripeOrientation]
   );
   const rightFlyBackgroundOffset = useMemo(
     () => ({
@@ -2234,31 +2217,6 @@ const SuitPreview = ({
                 if (seamBoundaryX[y] < seamXMax) seamBoundaryX[y] = Math.max(0, seamBoundaryX[y]);
               }
             }
-            const bottomEdge = new Int16Array(c.width);
-            bottomEdge.fill(-1);
-            for (let x = 0; x < c.width; x++) {
-              for (let y = c.height - 1; y >= 0; y--) {
-                const idx = (y * c.width + x) * 4;
-                if (full[idx + 3] > 0) {
-                  bottomEdge[x] = y;
-                  break;
-                }
-              }
-            }
-            const bottomCurveMask = ctx.createImageData(c.width, c.height);
-            const bottomBand = Math.max(8, Math.round(c.height * 0.08));
-            for (let x = 0; x < c.width; x++) {
-              const yMax = bottomEdge[x];
-              if (yMax < 0) continue;
-              const yStart = Math.max(0, yMax - bottomBand);
-              for (let y = yStart; y <= yMax; y++) {
-                const idx = (y * c.width + x) * 4;
-                bottomCurveMask.data[idx] = 255;
-                bottomCurveMask.data[idx + 1] = 255;
-                bottomCurveMask.data[idx + 2] = 255;
-                bottomCurveMask.data[idx + 3] = 255;
-              }
-            }
             const leftMain = ctx.createImageData(c.width, c.height);
             const leftUnder = ctx.createImageData(c.width, c.height);
             const rightUpper = ctx.createImageData(c.width, c.height);
@@ -2276,39 +2234,9 @@ const SuitPreview = ({
                 const seamLineUsed = seamLineFromMask ?? seamLine;
                 const seamY = seamLineUsed.slope * x + seamLineUsed.intercept;
                 const isUnder = x < seamXMax && y > seamY;
-                const underAllowed = isUnder && bottomCurveMask.data[idx + 3] < 1;
                 const boundaryX = seamBoundaryX[y] >= 0 ? seamBoundaryX[y] : seamXMax;
                 const isRightSide = x >= boundaryX;
-                const useRight = isRightSide;
-                if (isUnder) {
-                  if (underAllowed) {
-                    if (useRight) {
-                      rightLower.data[idx] = 255;
-                      rightLower.data[idx + 1] = 255;
-                      rightLower.data[idx + 2] = 255;
-                      rightLower.data[idx + 3] = unionAlpha;
-                      rightUnderCount++;
-                    } else {
-                      leftUnder.data[idx] = 255;
-                      leftUnder.data[idx + 1] = 255;
-                      leftUnder.data[idx + 2] = 255;
-                      leftUnder.data[idx + 3] = unionAlpha;
-                      leftUnderCount++;
-                    }
-                  } else if (useRight) {
-                    rightUpper.data[idx] = 255;
-                    rightUpper.data[idx + 1] = 255;
-                    rightUpper.data[idx + 2] = 255;
-                    rightUpper.data[idx + 3] = unionAlpha;
-                    rightFlyCount++;
-                  } else {
-                    leftMain.data[idx] = 255;
-                    leftMain.data[idx + 1] = 255;
-                    leftMain.data[idx + 2] = 255;
-                    leftMain.data[idx + 3] = unionAlpha;
-                    leftMainCount++;
-                  }
-                } else if (useRight) {
+                if (isRightSide && !isUnder) {
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
                   rightUpper.data[idx + 2] = 255;
@@ -2789,44 +2717,6 @@ const SuitPreview = ({
                 textureTileSizePx={TEXTURE_TILE_PX}
                 {...pantsStripeMaskProps}
               />
-              {pantsLeftUnderMask && (
-                <FabricUnion
-                  layers={pantsTextureLayers}
-                  resolve={resolveCdn}
-                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsTextureStyle}
-                  baseColor={tunedFabricFill || toneBaseColor}
-                  baseBlendMode="normal"
-                  baseOpacity={0}
-                  panZoom={panZoom}
-                  canvas={PANTS_CANVAS}
-                  mask={pantsLeftUnderMask}
-                  textureScale={fabricTextureScale}
-                  textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={pantsTextureRotationLeft}
-                  backgroundOffset={pantsStripeOffsets.leftUnderlap}
-                  {...pantsStripeMaskProps}
-                />
-              )}
-              {pantsRightUnderMask && (
-                <FabricUnion
-                  layers={pantsTextureLayers}
-                  resolve={resolveCdn}
-                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsTextureStyle}
-                  baseColor={tunedFabricFill || toneBaseColor}
-                  baseBlendMode="normal"
-                  baseOpacity={0}
-                  panZoom={panZoom}
-                  canvas={PANTS_CANVAS}
-                  mask={pantsRightUnderMask}
-                  textureScale={fabricTextureScale}
-                  textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={pantsTextureRotationLeft}
-                  backgroundOffset={pantsStripeOffsets.rightUnder}
-                  {...pantsStripeMaskProps}
-                />
-              )}
               <FabricUnion
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
@@ -2840,7 +2730,7 @@ const SuitPreview = ({
                 mask={pantsLeftMainMask}
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
-                textureRotationDeg={pantsTextureRotationLeft}
+                textureRotationDeg={PANTS_STRIPE_TUNING.leftRotationDeg}
                 backgroundOffset={pantsStripeOffsets.leftMain}
                 {...pantsStripeMaskProps}
               />
@@ -2858,7 +2748,7 @@ const SuitPreview = ({
                   mask={pantsRightFlyMask}
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={rightFlyBaseRotationDeg}
+                  textureRotationDeg={PANTS_STRIPE_TUNING.rightUpperRotationDeg}
                   backgroundOffset={rightFlyBackgroundOffset}
                   {...pantsStripeMaskProps}
                 />
@@ -2877,7 +2767,7 @@ const SuitPreview = ({
                   mask={pantsWaistMask}
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={pantsTextureRotationWaist}
+                  textureRotationDeg={PANTS_STRIPE_TUNING.waistRotationDeg}
                   backgroundOffset={pantsStripeOffsets.waist}
                   {...pantsStripeMaskProps}
                 />
@@ -2902,123 +2792,25 @@ const SuitPreview = ({
               {...pantsStripeMaskProps}
             />
           ))}
-        {showLayer("fabric") &&
-          stripeHighlightStyle &&
-          (useSplitPantsTexture ? (
-            <>
-              {pantsLeftUnderMask && (
-                <FabricUnion
-                  layers={pantsTextureLayers}
-                  resolve={resolveCdn}
-                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
-                  baseColor={tunedFabricFill || toneBaseColor}
-                  baseBlendMode="normal"
-                  baseOpacity={0}
-                  panZoom={panZoom}
-                  canvas={PANTS_CANVAS}
-                  mask={pantsLeftUnderMask}
-                  textureScale={fabricTextureScale}
-                  textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={pantsTextureRotationLeft}
-                  backgroundOffset={pantsStripeOffsets.leftUnderlap}
-                  {...pantsStripeMaskProps}
-                />
-              )}
-              {pantsRightUnderMask && (
-                <FabricUnion
-                  layers={pantsTextureLayers}
-                  resolve={resolveCdn}
-                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
-                  baseColor={tunedFabricFill || toneBaseColor}
-                  baseBlendMode="normal"
-                  baseOpacity={0}
-                  panZoom={panZoom}
-                  canvas={PANTS_CANVAS}
-                  mask={pantsRightUnderMask}
-                  textureScale={fabricTextureScale}
-                  textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={pantsTextureRotationLeft}
-                  backgroundOffset={pantsStripeOffsets.rightUnder}
-                  {...pantsStripeMaskProps}
-                />
-              )}
-              <FabricUnion
-                layers={pantsTextureLayers}
-                resolve={resolveCdn}
-                fabricTexture={useTexture ? pantsStripeTexture : undefined}
-                textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
-                baseColor={tunedFabricFill || toneBaseColor}
-                baseBlendMode="normal"
-                baseOpacity={0}
-                panZoom={panZoom}
-                canvas={PANTS_CANVAS}
-                mask={pantsLeftMainMask}
-                textureScale={fabricTextureScale}
-                textureTileSizePx={TEXTURE_TILE_PX}
-                textureRotationDeg={pantsTextureRotationLeft}
-                backgroundOffset={pantsStripeOffsets.leftMain}
-                {...pantsStripeMaskProps}
-              />
-              {pantsRightFlyMask && (
-                <FabricUnion
-                  layers={pantsTextureLayers}
-                  resolve={resolveCdn}
-                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
-                  baseColor={tunedFabricFill || toneBaseColor}
-                  baseBlendMode="normal"
-                  baseOpacity={0}
-                  panZoom={panZoom}
-                  canvas={PANTS_CANVAS}
-                  mask={pantsRightFlyMask}
-                  textureScale={fabricTextureScale}
-                  textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={rightFlyBaseRotationDeg}
-                  backgroundOffset={rightFlyBackgroundOffset}
-                  {...pantsStripeMaskProps}
-                />
-              )}
-              {pantsWaistMask && (
-                <FabricUnion
-                  layers={pantsTextureLayers}
-                  resolve={resolveCdn}
-                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
-                  baseColor={tunedFabricFill || toneBaseColor}
-                  baseBlendMode="normal"
-                  baseOpacity={0}
-                  panZoom={panZoom}
-                  canvas={PANTS_CANVAS}
-                  mask={pantsWaistMask}
-                  textureScale={fabricTextureScale}
-                  textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={pantsTextureRotationWaist}
-                  backgroundOffset={pantsStripeOffsets.waist}
-                  {...pantsStripeMaskProps}
-                />
-              )}
-            </>
-          ) : (
-            <FabricUnion
-              layers={pantsTextureLayers}
-              resolve={resolveCdn}
-              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
-              textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
-              baseColor={tunedFabricFill || toneBaseColor}
-              baseBlendMode="normal"
-              baseOpacity={0}
-              panZoom={panZoom}
-              canvas={PANTS_CANVAS}
-              mask={pantsMask}
-              textureScale={fabricTextureScale}
-              textureTileSizePx={TEXTURE_TILE_PX}
-              textureRotationDeg={pantsTextureRotation}
-              {...pantsStripeMaskProps}
-            />
-          ))}
-        {showLayer("fabric") && canRenderPantsPatternOverlay && (
+        {showLayer("fabric") && stripeHighlightStyle && !useSplitPantsTexture && (
+          <FabricUnion
+            layers={pantsTextureLayers}
+            resolve={resolveCdn}
+            fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+            textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
+            baseColor={tunedFabricFill || toneBaseColor}
+            baseBlendMode="normal"
+            baseOpacity={0}
+            panZoom={panZoom}
+            canvas={PANTS_CANVAS}
+            mask={pantsMask}
+            textureScale={fabricTextureScale}
+            textureTileSizePx={TEXTURE_TILE_PX}
+            textureRotationDeg={pantsTextureRotation}
+            {...pantsStripeMaskProps}
+          />
+        )}
+        {showLayer("fabric") && canRenderPantsPatternOverlay && !useSplitPantsTexture && (
           <>
             {pantsLeftUnderMask && (
               <FabricUnion
@@ -3038,7 +2830,7 @@ const SuitPreview = ({
                 {...pantsStripeMaskProps}
               />
             )}
-            {hasPantsRightSplit && (
+            {pantsRightUnderMask && (
               <FabricUnion
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
@@ -3072,7 +2864,7 @@ const SuitPreview = ({
               backgroundOffset={pantsStripeOffsets.leftMain}
               {...pantsStripeMaskProps}
             />
-            {hasPantsRightSplit && (
+            {pantsRightFlyMask && (
               <FabricUnion
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
