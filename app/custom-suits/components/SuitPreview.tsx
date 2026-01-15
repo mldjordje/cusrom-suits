@@ -1032,15 +1032,6 @@ const SuitPreview = ({
       opacity: clamp(opacity * stripeMul, 0.05, maxOpacity),
     };
   }, [fabricTextureStyle, isPantsCmsStripe, stripeBoost, stripeWhiteBoost]);
-  const pantsSplitTextureStyle = useMemo<React.CSSProperties>(() => {
-    if (!useSplitPantsTexture) return pantsTextureStyle;
-    const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
-    return {
-      ...fabricTextureStyle,
-      mixBlendMode: "normal",
-      opacity: clamp(opacity * 1.8, 0.22, 0.9),
-    };
-  }, [fabricTextureStyle, pantsTextureStyle, useSplitPantsTexture]);
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
     if (!useTexture || !stripeBoost) return null;
     const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
@@ -1573,6 +1564,15 @@ const SuitPreview = ({
   const hasStripeTile = Boolean(fabricTileTexture);
   const useSplitPantsTexture =
     hasStripeTile && useTexture && hasPantsLegSplit && (stripeBoost || isPantsCmsStripe);
+  const pantsSplitTextureStyle = useMemo<React.CSSProperties>(() => {
+    if (!useSplitPantsTexture) return pantsTextureStyle;
+    const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
+    return {
+      ...fabricTextureStyle,
+      mixBlendMode: "normal",
+      opacity: clamp(opacity * 1.8, 0.22, 0.9),
+    };
+  }, [fabricTextureStyle, pantsTextureStyle, useSplitPantsTexture]);
   const pantsStripeTexture = fabricTileTexture ?? undefined;
   const pantsOverlayTexture = fabricTileTexture ?? fabricTextureSourcePants ?? EMPTY_TEXTURE_DATA_URL;
   const canRenderPantsPatternOverlay = Boolean(
