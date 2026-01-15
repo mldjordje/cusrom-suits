@@ -2150,11 +2150,17 @@ const SuitPreview = ({
             if (seamMaskData?.data) {
               const seamData = seamMaskData.data;
               const columnCounts = new Int16Array(c.width);
+              const rowCounts = new Int16Array(c.height);
               for (let y = 0; y < c.height; y++) {
+                let rowCount = 0;
                 for (let x = 0; x < c.width; x++) {
                   const idx = (y * c.width + x) * 4;
-                  if (seamData[idx + 3] > 0) columnCounts[x]++;
+                  if (seamData[idx + 3] > 0) {
+                    columnCounts[x]++;
+                    rowCount++;
+                  }
                 }
+                rowCounts[y] = rowCount;
               }
               const tallThreshold = Math.round(c.height * 0.6);
               let waistMin = -1;
@@ -2168,7 +2174,9 @@ const SuitPreview = ({
               const seamBoundary = new Int16Array(c.height);
               seamBoundary.fill(-1);
               const points: Array<{ x: number; y: number }> = [];
+              const horizontalThreshold = Math.max(24, Math.round(c.width * 0.06));
               for (let y = 0; y < c.height; y++) {
+                if (rowCounts[y] >= horizontalThreshold) continue;
                 for (let x = 0; x <= seamSearchMax; x++) {
                   const idx = (y * c.width + x) * 4;
                   if (seamData[idx + 3] > 0) {
