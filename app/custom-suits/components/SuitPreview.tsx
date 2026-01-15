@@ -31,6 +31,7 @@ const cdnTransparent = getTransparentCdnBase();
 const SHIRT_PAIR = cdnPair("shirt_to_jacket_open.png");
 const JACKET_CANVAS = { w: 600, h: 733 } as const;
 const PANTS_CANVAS = { w: 600, h: 350 } as const;
+const PANTS_SEAM_MASK_SRC = "/assets/suits/masks/pants_seam.png";
 const MASK_BLEED_PX = 1.1;
 const TEXTURE_TILE_PX = 90;
 const TEXTURE_TILE_CANVAS_SCALE = 0.12;
@@ -1731,6 +1732,14 @@ const SuitPreview = ({
       setPantsMaskBuilding(true);
       (async () => {
         try {
+          const loadImage = (url: string) =>
+            new Promise<HTMLImageElement>((resolve, reject) => {
+              const img = new Image();
+              img.crossOrigin = "anonymous";
+              img.onload = () => resolve(img);
+              img.onerror = reject;
+              img.src = url;
+            });
           const c = document.createElement("canvas");
           c.width = PANTS_CANVAS.w;
           c.height = PANTS_CANVAS.h;
@@ -1740,20 +1749,12 @@ const SuitPreview = ({
           ctx.globalCompositeOperation = "source-over";
           for (const layer of pantsMaskSourceLayers) {
             const pair = cdnPair(layer.src);
-            const tryLoad = (url: string) =>
-              new Promise<HTMLImageElement>((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => resolve(img);
-                img.onerror = reject;
-                img.src = url;
-              });
             let img: HTMLImageElement | null = null;
             try {
-              img = await tryLoad(pair.webp);
+              img = await loadImage(pair.webp);
             } catch {
               try {
-                img = await tryLoad(pair.png);
+                img = await loadImage(pair.png);
               } catch {
                 img = null;
               }
@@ -1767,6 +1768,21 @@ const SuitPreview = ({
             ctx.drawImage(img, dx, dy, w, h);
           }
           const unionData = ctx.getImageData(0, 0, c.width, c.height);
+          let seamMaskData: ImageData | null = null;
+          try {
+            const seamImg = await loadImage(PANTS_SEAM_MASK_SRC);
+            const seamCanvas = document.createElement("canvas");
+            seamCanvas.width = c.width;
+            seamCanvas.height = c.height;
+            const sctx = seamCanvas.getContext("2d");
+            if (sctx) {
+              sctx.clearRect(0, 0, seamCanvas.width, seamCanvas.height);
+              sctx.drawImage(seamImg, 0, 0, seamCanvas.width, seamCanvas.height);
+              seamMaskData = sctx.getImageData(0, 0, seamCanvas.width, seamCanvas.height);
+            }
+          } catch {
+            seamMaskData = null;
+          }
           const axisAngle = computeMaskAxisAngle(unionData.data, c.width, c.height);
           if (!cancelled) {
             setPantsAxisAngle(axisAngle);
@@ -2127,17 +2143,95 @@ const SuitPreview = ({
             }
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
-            const seamBoundaryX = new Int16Array(c.height);
-            seamBoundaryX.fill(c.width);
-            for (let y = 0; y < c.height; y++) {
-              for (let x = 0; x < c.width; x++) {
-                const idx = (y * c.width + x) * 4;
-                if (rightMask.data[idx + 3] > 0) {
-                  seamBoundaryX[y] = x;
-                  break;
+            let seamSearchMax = Math.min(c.width - 1, Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio) - 2);
+            let seamBoundaryX: Int16Array;
+            let seamYByX: Int16Array | null = null;
+            let hasSeamMask = false;
+            if (seamMaskData?.data) {
+              const seamData = seamMaskData.data;
+              const columnCounts = new Int16Array(c.width);
+              for (let y = 0; y < c.height; y++) {
+                for (let x = 0; x < c.width; x++) {
+                  const idx = (y * c.width + x) * 4;
+                  if (seamData[idx + 3] > 0) columnCounts[x]++;
                 }
               }
-              if (seamBoundaryX[y] < seamXMax) seamBoundaryX[y] = Math.max(0, seamBoundaryX[y]);
+              let waistColumn = -1;
+              let maxCount = 0;
+              for (let x = 0; x < c.width; x++) {
+                if (columnCounts[x] > maxCount) {
+                  maxCount = columnCounts[x];
+                  waistColumn = x;
+                }
+              }
+              if (waistColumn > 2) seamSearchMax = Math.min(seamSearchMax, waistColumn - 2);
+              const seamBoundary = new Int16Array(c.height);
+              seamBoundary.fill(-1);
+              for (let y = 0; y < c.height; y++) {
+                for (let x = 0; x <= seamSearchMax; x++) {
+                  const idx = (y * c.width + x) * 4;
+                  if (seamData[idx + 3] > 0) {
+                    seamBoundary[y] = x;
+                    hasSeamMask = true;
+                    break;
+                  }
+                }
+              }
+              if (hasSeamMask) {
+                let last = -1;
+                for (let y = 0; y < c.height; y++) {
+                  if (seamBoundary[y] < 0) seamBoundary[y] = last;
+                  else last = seamBoundary[y];
+                }
+                let next = -1;
+                for (let y = c.height - 1; y >= 0; y--) {
+                  if (seamBoundary[y] < 0) seamBoundary[y] = next;
+                  else next = seamBoundary[y];
+                }
+                for (let y = 0; y < c.height; y++) {
+                  if (seamBoundary[y] < 0) seamBoundary[y] = seamXMax;
+                }
+                const seamY = new Int16Array(c.width);
+                seamY.fill(-1);
+                for (let y = 0; y < c.height; y++) {
+                  const x = seamBoundary[y];
+                  if (x < 0 || x > seamSearchMax) continue;
+                  if (seamY[x] < 0 || y < seamY[x]) seamY[x] = y;
+                }
+                let lastY = -1;
+                for (let x = 0; x <= seamSearchMax; x++) {
+                  if (seamY[x] < 0) seamY[x] = lastY;
+                  else lastY = seamY[x];
+                }
+                let nextY = -1;
+                for (let x = seamSearchMax; x >= 0; x--) {
+                  if (seamY[x] < 0) seamY[x] = nextY;
+                  else nextY = seamY[x];
+                }
+                for (let x = 0; x <= seamSearchMax; x++) {
+                  if (seamY[x] < 0) seamY[x] = Math.round(seamLine.slope * x + seamLine.intercept);
+                }
+                seamBoundaryX = seamBoundary;
+                seamYByX = seamY;
+              } else {
+                seamBoundaryX = new Int16Array(c.height);
+                seamBoundaryX.fill(c.width);
+              }
+            } else {
+              seamBoundaryX = new Int16Array(c.height);
+              seamBoundaryX.fill(c.width);
+            }
+            if (!hasSeamMask) {
+              for (let y = 0; y < c.height; y++) {
+                for (let x = 0; x < c.width; x++) {
+                  const idx = (y * c.width + x) * 4;
+                  if (rightMask.data[idx + 3] > 0) {
+                    seamBoundaryX[y] = x;
+                    break;
+                  }
+                }
+                if (seamBoundaryX[y] < seamXMax) seamBoundaryX[y] = Math.max(0, seamBoundaryX[y]);
+              }
             }
             const bottomEdge = new Int16Array(c.width);
             bottomEdge.fill(-1);
@@ -2178,10 +2272,14 @@ const SuitPreview = ({
                 const unionAlpha = full[idx + 3];
                 if (unionAlpha < 1) continue;
                 if (waistMask.data[idx + 3] > 0) continue;
-                const seamY = seamLine.slope * x + seamLine.intercept;
+                const seamY =
+                  seamYByX && x <= seamSearchMax && seamYByX[x] >= 0
+                    ? seamYByX[x]
+                    : seamLine.slope * x + seamLine.intercept;
                 const isUnder = x < seamXMax && y > seamY;
                 const underAllowed = isUnder && bottomCurveMask.data[idx + 3] < 1;
-                const isRightSide = x >= seamBoundaryX[y];
+                const boundaryX = seamBoundaryX[y] >= 0 ? seamBoundaryX[y] : seamXMax;
+                const isRightSide = x >= boundaryX;
                 const useRight = isRightSide;
                 if (isUnder) {
                   if (underAllowed) {
