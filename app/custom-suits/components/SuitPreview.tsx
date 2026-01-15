@@ -1385,6 +1385,13 @@ const SuitPreview = ({
   const hasPantsRightSplit = Boolean(pantsRightSplitMasks);
   const useSplitPantsTexture = useTexture && hasPantsLegSplit && stripeBoost;
   const pantsStripeTexture = fabricTileTexture ?? fabricTextureSourcePants;
+  const rightFlyBackgroundOffset = useMemo(
+    () => ({
+      x: pantsStripeOffsets.rightFly.x - panZoom.offset.x,
+      y: pantsStripeOffsets.rightFly.y - panZoom.offset.y,
+    }),
+    [panZoom.offset.x, panZoom.offset.y, pantsStripeOffsets.rightFly.x, pantsStripeOffsets.rightFly.y]
+  );
 
 
   // Build a union mask over the pants silhouette to avoid halo/background bleed
@@ -2393,7 +2400,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationRightUpper}
-                  backgroundOffset={pantsStripeOffsets.rightFly}
+                  backgroundOffset={rightFlyBackgroundOffset}
                   {...pantsStripeMaskProps}
                 />
               ) : (
@@ -2411,7 +2418,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationRightUpper}
-                  backgroundOffset={pantsStripeOffsets.rightFly}
+                  backgroundOffset={rightFlyBackgroundOffset}
                   {...pantsStripeMaskProps}
                 />
               )}
@@ -2528,7 +2535,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationRightUpper}
-                  backgroundOffset={pantsStripeOffsets.rightFly}
+                  backgroundOffset={rightFlyBackgroundOffset}
                   {...pantsStripeMaskProps}
                 />
               ) : (
@@ -2546,7 +2553,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationRightUpper}
-                  backgroundOffset={pantsStripeOffsets.rightFly}
+                  backgroundOffset={rightFlyBackgroundOffset}
                   {...pantsStripeMaskProps}
                 />
               )}

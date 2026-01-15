@@ -1,6 +1,6 @@
 export const PANTS_STRIPE_TUNING = {
   // 1️⃣ LEVA NOGAVICA – jaka dijagonala
-  leftRotationDeg: -41,
+  leftRotationDeg: -44,
 
   // 2️⃣ PREKLOP / ŠLIC
   // gotovo horizontalno (mnogo manji nagib)
@@ -21,7 +21,7 @@ export const PANTS_STRIPE_TUNING = {
     leftMain: { x: 0, y: 0 },
     leftUnderlap: { x: 0, y: 24 },
     rightFly: { x: 0, y: 0 },
-    rightUnder: { x: 0, y: 24 },
+    rightUnder: { x: 0, y: 0 },
     waist: { x: 0, y: 0 },
   },
 
