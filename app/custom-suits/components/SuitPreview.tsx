@@ -888,7 +888,7 @@ const SuitPreview = ({
     const brightnessRaw = parseNumber(
       (selectedFabric as any)?.textureBrightness ?? (selectedFabric as any)?.texture_brightness
     );
-    const brighten = clamp(brightnessRaw ?? 1.08, 0.85, 1.35);
+    const brighten = clamp(brightnessRaw ?? 1.12, 1.05, 1.2);
     const baseHex = tunedFabricFill || toneBaseColor;
     const baseRgb = hexToRgb(baseHex) ?? { r: 255, g: 255, b: 255 };
     const lineRgb = {
@@ -916,24 +916,23 @@ const SuitPreview = ({
   const buildPantsPatternStyle = useCallback(
     (angleDeg: number): React.CSSProperties => {
       if (!pantsPatternOverlayConfig) return {};
-      const { lineWidth, spacing, opacity, pattern } = pantsPatternOverlayConfig;
-      const visibleOpacity = Math.max(opacity, 0.35);
-      const visibleColor = "rgba(255, 255, 255, 0.35)";
-      const stripe = `repeating-linear-gradient(${angleDeg}deg, ${visibleColor} 0 ${lineWidth}px, transparent ${lineWidth}px ${spacing}px)`;
+      const { lineWidth, spacing, opacity, lineColor, pattern } = pantsPatternOverlayConfig;
+      const stripe = `repeating-linear-gradient(${angleDeg}deg, ${lineColor} 0px, ${lineColor} ${lineWidth}px, transparent ${lineWidth}px, transparent ${spacing}px)`;
       const backgroundImage =
         pattern === "karo"
-          ? `${stripe}, repeating-linear-gradient(${angleDeg + 90}deg, ${visibleColor} 0 ${lineWidth}px, transparent ${lineWidth}px ${spacing}px)`
+          ? `repeating-linear-gradient(0deg, ${lineColor} 0px, ${lineColor} ${lineWidth}px, transparent ${lineWidth}px, transparent ${spacing}px), repeating-linear-gradient(90deg, ${lineColor} 0px, ${lineColor} ${lineWidth}px, transparent ${lineWidth}px, transparent ${spacing}px)`
           : stripe;
+      const mixBlendMode: React.CSSProperties["mixBlendMode"] = usePhotoBase ? "overlay" : "soft-light";
       return {
         backgroundImage,
         backgroundRepeat: "repeat",
         backgroundSize: `${spacing}px ${spacing}px`,
-        mixBlendMode: "normal",
-        opacity: visibleOpacity,
+        mixBlendMode,
+        opacity,
         filter: "none",
       };
     },
-    [pantsPatternOverlayConfig]
+    [pantsPatternOverlayConfig, usePhotoBase]
   );
   const pantsTextureStyle = useMemo<React.CSSProperties>(() => {
     const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
