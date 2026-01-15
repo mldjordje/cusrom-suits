@@ -2133,6 +2133,7 @@ const SuitPreview = ({
             const seamY1 = seamSlope * seamXMax + seamIntercept;
             const seamDx = seamX1 - seamX0;
             const seamDy = seamY1 - seamY0;
+            const seamSideSign = (seamXMax + 1 - seamX0) * seamDy - (seamY1 - seamY0) * seamDx >= 0 ? 1 : -1;
             const bottomEdge = new Int16Array(c.width);
             bottomEdge.fill(-1);
             for (let x = 0; x < c.width; x++) {
@@ -2176,7 +2177,7 @@ const SuitPreview = ({
                 const isUnder = x < seamXMax && y > seamY;
                 const underAllowed = isUnder && bottomCurveMask.data[idx + 3] < 1;
                 const cross = (x - seamX0) * seamDy - (y - seamY0) * seamDx;
-                const isRightSide = cross > 0;
+                const isRightSide = cross * seamSideSign >= 0;
                 if (isUnder) {
                   if (underAllowed) {
                     if (isRightSide) {
@@ -2230,17 +2231,6 @@ const SuitPreview = ({
                   waistMask.data[idx + 3] > 0
                 ) {
                   rightUpper.data[idx + 3] = 0;
-                }
-              }
-            }
-            for (let y = 0; y < c.height; y++) {
-              for (let x = 0; x < c.width; x++) {
-                const idx = (y * c.width + x) * 4;
-                if (rightUpper.data[idx + 3] > 0 && leftMain.data[idx + 3] > 0) {
-                  leftMain.data[idx + 3] = 0;
-                }
-                if (rightLower.data[idx + 3] > 0 && leftUnder.data[idx + 3] > 0) {
-                  rightLower.data[idx + 3] = 0;
                 }
               }
             }
