@@ -2210,6 +2210,38 @@ const SuitPreview = ({
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
+                const unionAlpha = full[idx + 3];
+                if (unionAlpha < 1) continue;
+                if (waistMask.data[idx + 3] > 0) continue;
+                if (
+                  leftMain.data[idx + 3] > 0 ||
+                  leftUnder.data[idx + 3] > 0 ||
+                  rightUpper.data[idx + 3] > 0 ||
+                  rightLower.data[idx + 3] > 0
+                ) {
+                  continue;
+                }
+                const seamY = seamLine.slope * x + seamLine.intercept;
+                const isUnder = x < seamXMax && y > seamY;
+                const underAllowed = isUnder && bottomCurveMask.data[idx + 3] < 1;
+                if (isUnder && underAllowed) {
+                  leftUnder.data[idx] = 255;
+                  leftUnder.data[idx + 1] = 255;
+                  leftUnder.data[idx + 2] = 255;
+                  leftUnder.data[idx + 3] = unionAlpha;
+                  leftUnderCount++;
+                } else if (!isUnder) {
+                  rightUpper.data[idx] = 255;
+                  rightUpper.data[idx + 1] = 255;
+                  rightUpper.data[idx + 2] = 255;
+                  rightUpper.data[idx + 3] = unionAlpha;
+                  rightFlyCount++;
+                }
+              }
+            }
+            for (let y = 0; y < c.height; y++) {
+              for (let x = 0; x < c.width; x++) {
+                const idx = (y * c.width + x) * 4;
                 if (rightUpper.data[idx + 3] < 1) continue;
                 if (
                   rightLower.data[idx + 3] > 0 ||
