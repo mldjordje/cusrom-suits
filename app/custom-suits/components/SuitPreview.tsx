@@ -1968,6 +1968,7 @@ const SuitPreview = ({
             }
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
+            const bottomCurveStart = Math.round(c.height * 0.62); // clip underlap before the rounded hem
             const leftMain = ctx.createImageData(c.width, c.height);
             const leftUnder = ctx.createImageData(c.width, c.height);
             const rightUpper = ctx.createImageData(c.width, c.height);
@@ -1977,21 +1978,34 @@ const SuitPreview = ({
                 const idx = (y * c.width + x) * 4;
                 const seamY = seamLine.slope * x + seamLine.intercept;
                 const isUnder = x < seamXMax && y > seamY;
+                const underAllowed = isUnder && y < bottomCurveStart;
                 const leftAlpha = leftMask.data[idx + 3];
                 if (leftAlpha >= 1) {
-                  const target = isUnder ? leftUnder.data : leftMain.data;
-                  target[idx] = 255;
-                  target[idx + 1] = 255;
-                  target[idx + 2] = 255;
-                  target[idx + 3] = leftAlpha;
+                  if (underAllowed) {
+                    leftUnder.data[idx] = 255;
+                    leftUnder.data[idx + 1] = 255;
+                    leftUnder.data[idx + 2] = 255;
+                    leftUnder.data[idx + 3] = leftAlpha;
+                  } else if (!isUnder) {
+                    leftMain.data[idx] = 255;
+                    leftMain.data[idx + 1] = 255;
+                    leftMain.data[idx + 2] = 255;
+                    leftMain.data[idx + 3] = leftAlpha;
+                  }
                 }
                 const rightAlpha = rightMask.data[idx + 3];
                 if (rightAlpha < 1) continue;
-                const target = isUnder ? rightLower.data : rightUpper.data;
-                target[idx] = 255;
-                target[idx + 1] = 255;
-                target[idx + 2] = 255;
-                target[idx + 3] = rightAlpha;
+                if (underAllowed) {
+                  rightLower.data[idx] = 255;
+                  rightLower.data[idx + 1] = 255;
+                  rightLower.data[idx + 2] = 255;
+                  rightLower.data[idx + 3] = rightAlpha;
+                } else if (!isUnder) {
+                  rightUpper.data[idx] = 255;
+                  rightUpper.data[idx + 1] = 255;
+                  rightUpper.data[idx + 2] = 255;
+                  rightUpper.data[idx + 3] = rightAlpha;
+                }
               }
             }
             for (let y = 0; y < c.height; y++) {
