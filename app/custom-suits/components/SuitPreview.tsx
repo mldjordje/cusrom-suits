@@ -2127,6 +2127,12 @@ const SuitPreview = ({
             }
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
+            const seamX0 = 0;
+            const seamY0 = seamIntercept;
+            const seamX1 = seamXMax;
+            const seamY1 = seamSlope * seamXMax + seamIntercept;
+            const seamDx = seamX1 - seamX0;
+            const seamDy = seamY1 - seamY0;
             const bottomEdge = new Int16Array(c.width);
             bottomEdge.fill(-1);
             for (let x = 0; x < c.width; x++) {
@@ -2163,79 +2169,54 @@ const SuitPreview = ({
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
+                const unionAlpha = full[idx + 3];
+                if (unionAlpha < 1) continue;
+                if (waistMask.data[idx + 3] > 0) continue;
                 const seamY = seamLine.slope * x + seamLine.intercept;
                 const isUnder = x < seamXMax && y > seamY;
                 const underAllowed = isUnder && bottomCurveMask.data[idx + 3] < 1;
-                const leftAlpha = leftMask.data[idx + 3];
-                if (leftAlpha >= 1) {
+                const cross = (x - seamX0) * seamDy - (y - seamY0) * seamDx;
+                const isRightSide = cross > 0;
+                if (isUnder) {
                   if (underAllowed) {
-                    leftUnder.data[idx] = 255;
-                    leftUnder.data[idx + 1] = 255;
-                    leftUnder.data[idx + 2] = 255;
-                    leftUnder.data[idx + 3] = leftAlpha;
-                    leftUnderCount++;
+                    if (isRightSide) {
+                      rightLower.data[idx] = 255;
+                      rightLower.data[idx + 1] = 255;
+                      rightLower.data[idx + 2] = 255;
+                      rightLower.data[idx + 3] = unionAlpha;
+                      rightUnderCount++;
+                    } else {
+                      leftUnder.data[idx] = 255;
+                      leftUnder.data[idx + 1] = 255;
+                      leftUnder.data[idx + 2] = 255;
+                      leftUnder.data[idx + 3] = unionAlpha;
+                      leftUnderCount++;
+                    }
+                  } else if (isRightSide) {
+                    rightUpper.data[idx] = 255;
+                    rightUpper.data[idx + 1] = 255;
+                    rightUpper.data[idx + 2] = 255;
+                    rightUpper.data[idx + 3] = unionAlpha;
+                    rightFlyCount++;
                   } else {
                     leftMain.data[idx] = 255;
                     leftMain.data[idx + 1] = 255;
                     leftMain.data[idx + 2] = 255;
-                    leftMain.data[idx + 3] = leftAlpha;
+                    leftMain.data[idx + 3] = unionAlpha;
                     leftMainCount++;
                   }
-                }
-                const rightAlpha = rightMask.data[idx + 3];
-                if (rightAlpha < 1) continue;
-                if (isUnder) {
-                  if (underAllowed) {
-                    rightLower.data[idx] = 255;
-                    rightLower.data[idx + 1] = 255;
-                    rightLower.data[idx + 2] = 255;
-                    rightLower.data[idx + 3] = rightAlpha;
-                    rightUnderCount++;
-                  } else {
-                    rightUpper.data[idx] = 255;
-                    rightUpper.data[idx + 1] = 255;
-                    rightUpper.data[idx + 2] = 255;
-                    rightUpper.data[idx + 3] = rightAlpha;
-                    rightFlyCount++;
-                  }
-                } else {
-                  rightUpper.data[idx] = 255;
-                  rightUpper.data[idx + 1] = 255;
-                  rightUpper.data[idx + 2] = 255;
-                  rightUpper.data[idx + 3] = rightAlpha;
-                  rightFlyCount++;
-                }
-              }
-            }
-            for (let y = 0; y < c.height; y++) {
-              for (let x = 0; x < c.width; x++) {
-                const idx = (y * c.width + x) * 4;
-                const unionAlpha = full[idx + 3];
-                if (unionAlpha < 1) continue;
-                if (waistMask.data[idx + 3] > 0) continue;
-                if (
-                  leftMain.data[idx + 3] > 0 ||
-                  leftUnder.data[idx + 3] > 0 ||
-                  rightUpper.data[idx + 3] > 0 ||
-                  rightLower.data[idx + 3] > 0
-                ) {
-                  continue;
-                }
-                const seamY = seamLine.slope * x + seamLine.intercept;
-                const isUnder = x < seamXMax && y > seamY;
-                const underAllowed = isUnder && bottomCurveMask.data[idx + 3] < 1;
-                if (isUnder && underAllowed) {
-                  leftUnder.data[idx] = 255;
-                  leftUnder.data[idx + 1] = 255;
-                  leftUnder.data[idx + 2] = 255;
-                  leftUnder.data[idx + 3] = unionAlpha;
-                  leftUnderCount++;
-                } else if (!isUnder) {
+                } else if (isRightSide) {
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
                   rightUpper.data[idx + 2] = 255;
                   rightUpper.data[idx + 3] = unionAlpha;
                   rightFlyCount++;
+                } else {
+                  leftMain.data[idx] = 255;
+                  leftMain.data[idx + 1] = 255;
+                  leftMain.data[idx + 2] = 255;
+                  leftMain.data[idx + 3] = unionAlpha;
+                  leftMainCount++;
                 }
               }
             }
