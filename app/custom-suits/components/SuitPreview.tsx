@@ -2178,9 +2178,7 @@ const SuitPreview = ({
                 const underAllowed = isUnder && bottomCurveMask.data[idx + 3] < 1;
                 const cross = (x - seamX0) * seamDy - (y - seamY0) * seamDx;
                 const isRightSide = cross * seamSideSign >= 0;
-                const leftAlpha = leftMask.data[idx + 3];
-                const rightAlpha = rightMask.data[idx + 3];
-                const useRight = isRightSide && rightAlpha > 0;
+                const useRight = isRightSide;
                 if (isUnder) {
                   if (underAllowed) {
                     if (useRight) {
@@ -2189,7 +2187,7 @@ const SuitPreview = ({
                       rightLower.data[idx + 2] = 255;
                       rightLower.data[idx + 3] = unionAlpha;
                       rightUnderCount++;
-                    } else if (leftAlpha > 0) {
+                    } else {
                       leftUnder.data[idx] = 255;
                       leftUnder.data[idx + 1] = 255;
                       leftUnder.data[idx + 2] = 255;
@@ -2202,7 +2200,7 @@ const SuitPreview = ({
                     rightUpper.data[idx + 2] = 255;
                     rightUpper.data[idx + 3] = unionAlpha;
                     rightFlyCount++;
-                  } else if (leftAlpha > 0) {
+                  } else {
                     leftMain.data[idx] = 255;
                     leftMain.data[idx + 1] = 255;
                     leftMain.data[idx + 2] = 255;
@@ -2215,7 +2213,7 @@ const SuitPreview = ({
                   rightUpper.data[idx + 2] = 255;
                   rightUpper.data[idx + 3] = unionAlpha;
                   rightFlyCount++;
-                } else if (leftAlpha > 0) {
+                } else {
                   leftMain.data[idx] = 255;
                   leftMain.data[idx + 1] = 255;
                   leftMain.data[idx + 2] = 255;
