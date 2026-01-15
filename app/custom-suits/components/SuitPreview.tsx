@@ -1032,6 +1032,15 @@ const SuitPreview = ({
       opacity: clamp(opacity * stripeMul, 0.05, maxOpacity),
     };
   }, [fabricTextureStyle, isPantsCmsStripe, stripeBoost, stripeWhiteBoost]);
+  const pantsSplitTextureStyle = useMemo<React.CSSProperties>(() => {
+    if (!useSplitPantsTexture) return pantsTextureStyle;
+    const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
+    return {
+      ...fabricTextureStyle,
+      mixBlendMode: fabricTextureStyle.mixBlendMode,
+      opacity: clamp(opacity, 0.14, 0.9),
+    };
+  }, [fabricTextureStyle, pantsTextureStyle, useSplitPantsTexture]);
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
     if (!useTexture || !stripeBoost) return null;
     const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
@@ -2775,7 +2784,7 @@ const SuitPreview = ({
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
                 fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
-                textureStyle={pantsTextureStyle}
+                textureStyle={pantsSplitTextureStyle}
                 baseColor={tunedFabricFill || toneBaseColor}
                 baseBlendMode="normal"
                 baseOpacity={0}
@@ -2793,7 +2802,7 @@ const SuitPreview = ({
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
                   fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsTextureStyle}
+                  textureStyle={pantsSplitTextureStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
                   baseOpacity={0}
@@ -2812,7 +2821,7 @@ const SuitPreview = ({
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
                   fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsTextureStyle}
+                  textureStyle={pantsSplitTextureStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
                   baseOpacity={0}
