@@ -98,6 +98,13 @@ const rgbToHex = (rgb: RGB) =>
     .toString(16)
     .padStart(2, "0")}${clampChannel(rgb.b).toString(16).padStart(2, "0")}`;
 
+const normalizePattern = (value?: string | null) => String(value ?? "").trim().toLowerCase();
+const shouldUsePantsPatternOverlay = (fabric: unknown) => {
+  const data = fabric as { pattern?: string; uzorak?: string } | null | undefined;
+  const raw = normalizePattern(data?.pattern ?? data?.uzorak);
+  return raw === "tanke pruge" || raw === "pruge" || raw === "karo";
+};
+
 const rgbToHsl = ({ r, g, b }: RGB) => {
   const rn = r / 255;
   const gn = g / 255;
@@ -543,6 +550,14 @@ const SuitPreview = ({
     () => String((selectedFabric as any)?.pattern || "").trim().toLowerCase(),
     [selectedFabric]
   );
+  const pantsPatternValue = useMemo(
+    () => normalizePattern((selectedFabric as any)?.pattern ?? (selectedFabric as any)?.uzorak),
+    [selectedFabric]
+  );
+  const usePantsPatternOverlay = useMemo(
+    () => shouldUsePantsPatternOverlay(selectedFabric),
+    [selectedFabric]
+  );
   const stripeNameHint = useMemo(() => {
     const name = String((selectedFabric as any)?.name || "");
     const texture = String(fabricTextureSource || fabricTexture || "");
@@ -850,6 +865,71 @@ const SuitPreview = ({
       opacity: tunedTextureOpacity,
     }),
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
+  );
+  const pantsPatternOverlayConfig = useMemo(() => {
+    if (!usePantsPatternOverlay) return null;
+    const defaults =
+      pantsPatternValue === "tanke pruge"
+        ? { lineWidth: 1, spacing: 18, opacity: 0.14 }
+        : pantsPatternValue === "pruge"
+          ? { lineWidth: 2, spacing: 26, opacity: 0.14 }
+          : { lineWidth: 1, spacing: 20, opacity: 0.12 };
+    const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
+    const spacing = clamp(defaults.spacing / Math.max(0.2, scale), 8, 80);
+    const strengthRaw = parseNumber(
+      (selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength
+    );
+    const opacity =
+      typeof strengthRaw === "number"
+        ? clamp(0.05 + strengthRaw * 0.2, 0.05, 0.25)
+        : defaults.opacity;
+    const brightnessRaw = parseNumber(
+      (selectedFabric as any)?.textureBrightness ?? (selectedFabric as any)?.texture_brightness
+    );
+    const brighten = clamp(brightnessRaw ?? 1.08, 0.85, 1.35);
+    const baseHex = tunedFabricFill || toneBaseColor;
+    const baseRgb = hexToRgb(baseHex) ?? { r: 255, g: 255, b: 255 };
+    const lineRgb = {
+      r: clampChannel(baseRgb.r * brighten),
+      g: clampChannel(baseRgb.g * brighten),
+      b: clampChannel(baseRgb.b * brighten),
+    };
+    const lineColor = `rgb(${lineRgb.r}, ${lineRgb.g}, ${lineRgb.b})`;
+    return {
+      pattern: pantsPatternValue,
+      lineWidth: defaults.lineWidth,
+      spacing,
+      opacity,
+      lineColor,
+    };
+  }, [
+    hasExplicitTextureScale,
+    pantsPatternValue,
+    selectedFabric,
+    textureScaleBoost,
+    toneBaseColor,
+    tunedFabricFill,
+    usePantsPatternOverlay,
+  ]);
+  const buildPantsPatternStyle = useCallback(
+    (angleDeg: number): React.CSSProperties => {
+      if (!pantsPatternOverlayConfig) return {};
+      const { lineWidth, spacing, opacity, lineColor, pattern } = pantsPatternOverlayConfig;
+      const stripe = `repeating-linear-gradient(${angleDeg}deg, ${lineColor} 0 ${lineWidth}px, transparent ${lineWidth}px ${spacing}px)`;
+      const backgroundImage =
+        pattern === "karo"
+          ? `${stripe}, repeating-linear-gradient(${angleDeg + 90}deg, ${lineColor} 0 ${lineWidth}px, transparent ${lineWidth}px ${spacing}px)`
+          : stripe;
+      return {
+        backgroundImage,
+        backgroundRepeat: "repeat",
+        backgroundSize: `${spacing}px ${spacing}px`,
+        mixBlendMode: "soft-light",
+        opacity,
+        filter: "none",
+      };
+    },
+    [pantsPatternOverlayConfig]
   );
   const pantsTextureStyle = useMemo<React.CSSProperties>(() => {
     const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
@@ -1385,6 +1465,9 @@ const SuitPreview = ({
   const hasPantsRightSplit = Boolean(pantsRightSplitMasks);
   const useSplitPantsTexture = useTexture && hasPantsLegSplit && stripeBoost;
   const pantsStripeTexture = fabricTileTexture ?? fabricTextureSourcePants;
+  const canRenderPantsPatternOverlay = Boolean(
+    usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks && pantsRightSplitMasks && pantsStripeTexture
+  );
   const rightFlyBackgroundOffset = useMemo(
     () => ({
       x: pantsStripeOffsets.rightFly.x - panZoom.offset.x,
@@ -2595,6 +2678,98 @@ const SuitPreview = ({
               {...pantsStripeMaskProps}
             />
           ))}
+        {showLayer("fabric") && canRenderPantsPatternOverlay && (
+          <>
+            {pantsLeftUnderMask && (
+              <FabricUnion
+                layers={pantsTextureLayers}
+                resolve={resolveCdn}
+                fabricTexture={pantsStripeTexture}
+                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.leftRotationDeg)}
+                baseColor={tunedFabricFill || toneBaseColor}
+                baseBlendMode="normal"
+                baseOpacity={0}
+                panZoom={panZoom}
+                canvas={PANTS_CANVAS}
+                mask={pantsLeftUnderMask}
+                textureScale={fabricTextureScale}
+                textureTileSizePx={TEXTURE_TILE_PX}
+                backgroundOffset={pantsStripeOffsets.leftUnderlap}
+                {...pantsStripeMaskProps}
+              />
+            )}
+            {hasPantsRightSplit && (
+              <FabricUnion
+                layers={pantsTextureLayers}
+                resolve={resolveCdn}
+                fabricTexture={pantsStripeTexture}
+                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.leftRotationDeg)}
+                baseColor={tunedFabricFill || toneBaseColor}
+                baseBlendMode="normal"
+                baseOpacity={0}
+                panZoom={panZoom}
+                canvas={PANTS_CANVAS}
+                mask={pantsRightUnderMask}
+                textureScale={fabricTextureScale}
+                textureTileSizePx={TEXTURE_TILE_PX}
+                backgroundOffset={pantsStripeOffsets.rightUnder}
+                {...pantsStripeMaskProps}
+              />
+            )}
+            <FabricUnion
+              layers={pantsTextureLayers}
+              resolve={resolveCdn}
+              fabricTexture={pantsStripeTexture}
+              textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.leftRotationDeg)}
+              baseColor={tunedFabricFill || toneBaseColor}
+              baseBlendMode="normal"
+              baseOpacity={0}
+              panZoom={panZoom}
+              canvas={PANTS_CANVAS}
+              mask={pantsLeftMainMask}
+              textureScale={fabricTextureScale}
+              textureTileSizePx={TEXTURE_TILE_PX}
+              backgroundOffset={pantsStripeOffsets.leftMain}
+              {...pantsStripeMaskProps}
+            />
+            {hasPantsRightSplit && (
+              <FabricUnion
+                layers={pantsTextureLayers}
+                resolve={resolveCdn}
+                fabricTexture={pantsStripeTexture}
+                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.rightUpperRotationDeg)}
+                baseColor={tunedFabricFill || toneBaseColor}
+                baseBlendMode="normal"
+                baseOpacity={0}
+                panZoom={panZoom}
+                canvas={PANTS_CANVAS}
+                mask={pantsRightFlyMask}
+                textureScale={fabricTextureScale}
+                textureTileSizePx={TEXTURE_TILE_PX}
+                backgroundOffset={rightFlyBackgroundOffset}
+                {...pantsStripeMaskProps}
+              />
+            )}
+            {pantsWaistMask && (
+              <FabricUnion
+                layers={pantsTextureLayers}
+                resolve={resolveCdn}
+                fabricTexture={pantsStripeTexture}
+                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.waistRotationDeg)}
+                baseColor={tunedFabricFill || toneBaseColor}
+                baseBlendMode="normal"
+                baseOpacity={0}
+                panZoom={panZoom}
+                canvas={PANTS_CANVAS}
+                mask={pantsWaistMask}
+                textureScale={fabricTextureScale}
+                textureTileSizePx={TEXTURE_TILE_PX}
+                backgroundOffset={pantsStripeOffsets.waist}
+                {...pantsStripeMaskProps}
+              />
+            )}
+          </>
+        )}
         {!usePhotoBase && includeStyle && pantsOverlayLayers.length > 0 && (
           <BaseLayer
             layers={pantsOverlayLayers}
