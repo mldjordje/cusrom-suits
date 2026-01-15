@@ -2178,41 +2178,44 @@ const SuitPreview = ({
                 const underAllowed = isUnder && bottomCurveMask.data[idx + 3] < 1;
                 const cross = (x - seamX0) * seamDy - (y - seamY0) * seamDx;
                 const isRightSide = cross * seamSideSign >= 0;
+                const leftAlpha = leftMask.data[idx + 3];
+                const rightAlpha = rightMask.data[idx + 3];
+                const useRight = isRightSide && rightAlpha > 0;
                 if (isUnder) {
                   if (underAllowed) {
-                    if (isRightSide) {
+                    if (useRight) {
                       rightLower.data[idx] = 255;
                       rightLower.data[idx + 1] = 255;
                       rightLower.data[idx + 2] = 255;
                       rightLower.data[idx + 3] = unionAlpha;
                       rightUnderCount++;
-                    } else {
+                    } else if (leftAlpha > 0) {
                       leftUnder.data[idx] = 255;
                       leftUnder.data[idx + 1] = 255;
                       leftUnder.data[idx + 2] = 255;
                       leftUnder.data[idx + 3] = unionAlpha;
                       leftUnderCount++;
                     }
-                  } else if (isRightSide) {
+                  } else if (useRight) {
                     rightUpper.data[idx] = 255;
                     rightUpper.data[idx + 1] = 255;
                     rightUpper.data[idx + 2] = 255;
                     rightUpper.data[idx + 3] = unionAlpha;
                     rightFlyCount++;
-                  } else {
+                  } else if (leftAlpha > 0) {
                     leftMain.data[idx] = 255;
                     leftMain.data[idx + 1] = 255;
                     leftMain.data[idx + 2] = 255;
                     leftMain.data[idx + 3] = unionAlpha;
                     leftMainCount++;
                   }
-                } else if (isRightSide) {
+                } else if (useRight) {
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
                   rightUpper.data[idx + 2] = 255;
                   rightUpper.data[idx + 3] = unionAlpha;
                   rightFlyCount++;
-                } else {
+                } else if (leftAlpha > 0) {
                   leftMain.data[idx] = 255;
                   leftMain.data[idx + 1] = 255;
                   leftMain.data[idx + 2] = 255;
