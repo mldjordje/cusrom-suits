@@ -4,7 +4,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
-import { buildBackendUrl, getTransparentCdnBase } from "../utils/backend";
+import { getBackendBase, getTransparentCdnBase } from "../utils/backend";
 import { toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone, NOISE_DATA } from "../utils/visual";
 import {
   cdnPair,
@@ -1163,7 +1163,7 @@ const SuitPreview = ({
   const showVignette = showLayer("vignette") && !lowPowerMode && effectsReady;
   useEffect(() => {
     let cancelled = false;
-    fetch(buildBackendUrl("button-positions"), { cache: "no-store" })
+    fetch(`${getBackendBase()}button-positions`, { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
         if (cancelled) return;
