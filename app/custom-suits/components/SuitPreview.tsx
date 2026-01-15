@@ -2127,11 +2127,17 @@ const SuitPreview = ({
             }
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
-            const seamBoundaryX = new Float32Array(c.height);
-            const seamSlopeSafe = Math.abs(seamSlope) < 1e-4 ? 1e-4 : seamSlope;
+            const seamBoundaryX = new Int16Array(c.height);
+            seamBoundaryX.fill(c.width);
             for (let y = 0; y < c.height; y++) {
-              const seamXAtY = (y - seamIntercept) / seamSlopeSafe;
-              seamBoundaryX[y] = Math.max(0, Math.min(seamXMax, seamXAtY));
+              for (let x = 0; x < c.width; x++) {
+                const idx = (y * c.width + x) * 4;
+                if (rightMask.data[idx + 3] > 0) {
+                  seamBoundaryX[y] = x;
+                  break;
+                }
+              }
+              if (seamBoundaryX[y] < seamXMax) seamBoundaryX[y] = Math.max(0, seamBoundaryX[y]);
             }
             const bottomEdge = new Int16Array(c.width);
             bottomEdge.fill(-1);
