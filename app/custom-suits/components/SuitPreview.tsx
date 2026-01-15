@@ -601,25 +601,32 @@ const SuitPreview = ({
     () => cmsPatternNorm || namePatternNorm,
     [cmsPatternNorm, namePatternNorm]
   );
-  const isPantsCmsStripe = useMemo(
-    () =>
-      pantsPatternValue.includes("pruge") ||
-      pantsPatternValue.includes("pinstripe") ||
-      pantsPatternValue.includes("stripes") ||
-      pantsPatternValue.includes("stripe"),
-    [pantsPatternValue]
-  );
-  const fabricPattern = useMemo(() => pantsPatternValue, [pantsPatternValue]);
-  const usePantsPatternOverlay = useMemo(
-    () => Boolean(pantsPatternValue) || shouldUsePantsPatternOverlay(selectedFabric),
-    [pantsPatternValue, selectedFabric]
-  );
   const stripeNameHint = useMemo(() => {
     const name = String((selectedFabric as any)?.name || "");
     const texture = String(fabricTextureSource || fabricTexture || "");
     const haystack = `${name} ${texture}`.toLowerCase();
     return /pinstripe|stripe|linije|lines|pruga|pruge/.test(haystack);
   }, [fabricTexture, fabricTextureSource, selectedFabric]);
+  const pantsPatternValueResolved = useMemo(
+    () => pantsPatternValue || (stripeNameHint ? "pruge" : ""),
+    [pantsPatternValue, stripeNameHint]
+  );
+  const isPantsCmsStripe = useMemo(
+    () =>
+      pantsPatternValueResolved.includes("pruge") ||
+      pantsPatternValueResolved.includes("pinstripe") ||
+      pantsPatternValueResolved.includes("stripes") ||
+      pantsPatternValueResolved.includes("stripe"),
+    [pantsPatternValueResolved]
+  );
+  const fabricPattern = useMemo(() => pantsPatternValueResolved, [pantsPatternValueResolved]);
+  const usePantsPatternOverlay = useMemo(
+    () =>
+      Boolean(pantsPatternValueResolved) ||
+      shouldUsePantsPatternOverlay(selectedFabric) ||
+      stripeNameHint,
+    [pantsPatternValueResolved, selectedFabric, stripeNameHint]
+  );
   const patternStripe =
     fabricPattern === "pinstripe" ||
     fabricPattern === "stripe" ||
@@ -926,13 +933,14 @@ const SuitPreview = ({
   const pantsPatternOverlayConfig = useMemo(() => {
     if (!usePantsPatternOverlay) return null;
     const defaults =
-      pantsPatternValue === "tanke pruge"
+      pantsPatternValueResolved === "tanke pruge"
         ? { lineWidth: 1, spacing: 18, opacity: 0.14 }
-        : pantsPatternValue === "pruge"
+        : pantsPatternValueResolved === "pruge"
           ? { lineWidth: 2, spacing: 26, opacity: 0.14 }
           : { lineWidth: 1, spacing: 20, opacity: 0.12 };
     const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
-    const isThinStripe = pantsPatternValue.includes("tanke") || pantsPatternValue.includes("pinstripe");
+    const isThinStripe =
+      pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
     const spacingBase = defaults.spacing / Math.max(0.2, scale);
     const spacing = clamp(spacingBase * (isThinStripe ? 1.2 : 1), 8, 80);
     const strengthRaw = parseNumber(
@@ -956,7 +964,7 @@ const SuitPreview = ({
     };
     const lineColor = `rgb(${lineRgb.r}, ${lineRgb.g}, ${lineRgb.b})`;
     return {
-      pattern: pantsPatternValue,
+      pattern: pantsPatternValueResolved,
       lineWidth: defaults.lineWidth,
       spacing,
       opacity,
@@ -966,7 +974,7 @@ const SuitPreview = ({
   }, [
     hasExplicitTextureScale,
     isPantsCmsStripe,
-    pantsPatternValue,
+    pantsPatternValueResolved,
     selectedFabric,
     textureScaleBoost,
     toneBaseColor,
@@ -1634,7 +1642,7 @@ const SuitPreview = ({
       fabricId: (selectedFabric as any)?.id,
       fabricName: (selectedFabric as any)?.name,
       rawPatternFields: rawFields,
-      normalizedPattern: pantsPatternValue,
+      normalizedPattern: pantsPatternValueResolved,
       overlayEnabled: usePantsPatternOverlay,
       hasUnionMask: Boolean(pantsMask),
       hasLeftMask: Boolean(pantsLeftMainMask),
@@ -1646,7 +1654,7 @@ const SuitPreview = ({
     });
     pantsOverlayDebugLoggedRef.current = true;
   }, [
-    pantsPatternValue,
+    pantsPatternValueResolved,
     fabricTileTexture,
     pantsLeftMainMask,
     pantsLegMasks?.right,
