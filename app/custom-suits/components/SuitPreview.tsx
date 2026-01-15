@@ -100,6 +100,14 @@ const rgbToHex = (rgb: RGB) =>
     .padStart(2, "0")}${clampChannel(rgb.b).toString(16).padStart(2, "0")}`;
 
 const normalizePattern = (value?: string | null) => String(value ?? "").trim().toLowerCase();
+const inferPatternFromText = (value?: string | null) => {
+  const raw = normalizePattern(value);
+  if (!raw) return "";
+  if (raw.includes("karo") || raw.includes("check")) return "karo";
+  if (raw.includes("tanke") || raw.includes("pinstripe")) return "tanke pruge";
+  if (raw.includes("pruge") || raw.includes("stripe")) return "pruge";
+  return "";
+};
 const getFabricPatternRaw = (fabric: unknown) => {
   if (!fabric || typeof fabric !== "object") return "";
   const data = fabric as Record<string, unknown>;
@@ -581,19 +589,27 @@ const SuitPreview = ({
   const fabricTextureSourcePants = fabricTextureSource;
   const cmsPatternRaw = useMemo(() => getFabricPatternRaw(selectedFabric), [selectedFabric]);
   const cmsPatternNorm = useMemo(() => normalizePattern(cmsPatternRaw), [cmsPatternRaw]);
+  const namePatternNorm = useMemo(() => {
+    const name = String((selectedFabric as any)?.name ?? "");
+    const texture = String(fabricTextureSource ?? fabricTexture ?? "");
+    return inferPatternFromText(`${name} ${texture}`);
+  }, [fabricTexture, fabricTextureSource, selectedFabric]);
+  const pantsPatternValue = useMemo(
+    () => cmsPatternNorm || namePatternNorm,
+    [cmsPatternNorm, namePatternNorm]
+  );
   const isPantsCmsStripe = useMemo(
     () =>
-      cmsPatternNorm.includes("pruge") ||
-      cmsPatternNorm.includes("pinstripe") ||
-      cmsPatternNorm.includes("stripes") ||
-      cmsPatternNorm.includes("stripe"),
-    [cmsPatternNorm]
+      pantsPatternValue.includes("pruge") ||
+      pantsPatternValue.includes("pinstripe") ||
+      pantsPatternValue.includes("stripes") ||
+      pantsPatternValue.includes("stripe"),
+    [pantsPatternValue]
   );
-  const fabricPattern = useMemo(() => cmsPatternNorm, [cmsPatternNorm]);
-  const pantsPatternValue = useMemo(() => cmsPatternNorm, [cmsPatternNorm]);
+  const fabricPattern = useMemo(() => pantsPatternValue, [pantsPatternValue]);
   const usePantsPatternOverlay = useMemo(
-    () => shouldUsePantsPatternOverlay(selectedFabric),
-    [selectedFabric]
+    () => Boolean(pantsPatternValue) || shouldUsePantsPatternOverlay(selectedFabric),
+    [pantsPatternValue, selectedFabric]
   );
   const stripeNameHint = useMemo(() => {
     const name = String((selectedFabric as any)?.name || "");
@@ -606,6 +622,7 @@ const SuitPreview = ({
     fabricPattern === "stripe" ||
     fabricPattern.includes("pruge") ||
     fabricPattern.includes("stripe") ||
+    fabricPattern.includes("pinstripe") ||
     stripeNameHint;
   const textureStrength = useMemo(() => {
     const raw = parseNumber((selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength);
@@ -1568,8 +1585,9 @@ const SuitPreview = ({
   useEffect(() => {
     if (!DEBUG_PANTS_OVERLAY) return;
     if (pantsOverlayDebugLoggedRef.current) return;
-    if (!showPants) return;
+    if (!showPants || fabricsLoading || pantsMaskBuilding) return;
     if (!selectedFabric) return;
+    if (!pantsMaskStats) return;
     const rawFields = {
       pattern: (selectedFabric as any)?.pattern,
       uzorak: (selectedFabric as any)?.uzorak,
@@ -1596,10 +1614,11 @@ const SuitPreview = ({
       waist: 0,
     };
     console.log("[pants overlay debug]", {
+      configColorId: config.colorId,
       fabricId: (selectedFabric as any)?.id,
       fabricName: (selectedFabric as any)?.name,
       rawPatternFields: rawFields,
-      normalizedPattern: cmsPatternNorm,
+      normalizedPattern: pantsPatternValue,
       overlayEnabled: usePantsPatternOverlay,
       hasUnionMask: Boolean(pantsMask),
       hasLeftMask: Boolean(pantsLeftMainMask),
@@ -1611,7 +1630,7 @@ const SuitPreview = ({
     });
     pantsOverlayDebugLoggedRef.current = true;
   }, [
-    cmsPatternNorm,
+    pantsPatternValue,
     fabricTileTexture,
     pantsLeftMainMask,
     pantsLegMasks?.right,
@@ -1619,6 +1638,9 @@ const SuitPreview = ({
     pantsMaskStats,
     pantsRightFlyMask,
     pantsWaistMask,
+    pantsMaskBuilding,
+    fabricsLoading,
+    config.colorId,
     selectedFabric,
     showPants,
     usePantsPatternOverlay,
