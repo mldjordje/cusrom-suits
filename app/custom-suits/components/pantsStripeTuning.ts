@@ -19,8 +19,8 @@ export const PANTS_STRIPE_TUNING = {
 
   stripeOffsets: {
     left: { x: 0, y: 0 },
-    rightUpper: { x: 0, y: 0 },
-    rightLower: { x: 0, y: 0 },
+    rightUpper: { x: 0, y: 18 },
+    rightLower: { x: 0, y: 18 },
     waist: { x: 0, y: 0 },
   },
 
