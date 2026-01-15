@@ -1,14 +1,9 @@
 export const PANTS_STRIPE_TUNING = {
-  // 1️⃣ LEVA NOGAVICA – jaka dijagonala
-  leftRotationDeg: -44,
-
-  // 2️⃣ PREKLOP / ŠLIC
-  // gotovo horizontalno (mnogo manji nagib)
-  rightUpperRotationDeg: -0.8,
-  rightLowerRotationDeg: -0.8,
-
-  // 3️⃣ POJAS – čisto vertikalno
-  waistRotationDeg: 90,
+  // Rotation deltas relative to the stripe tile base orientation.
+  // Base orientation is computed from the tile and treated as "horizontal".
+  diagDeltaDeg: -44,
+  flyDeltaDeg: 0,
+  waistDeltaDeg: 90,
 
   seam: {
     refWidth: 484,
@@ -25,14 +20,13 @@ export const PANTS_STRIPE_TUNING = {
     waist: { x: 0, y: 0 },
   },
 
-  // split mora ostati neutralan da ne “lomi” pruge
+  // Keep split neutral to avoid breaking stripe continuity.
   rightSplitRatio: 98 / 254,
 
-  // blagi X push samo za kontinuitet
+  // Gentle X push for continuity on the right.
   rightForceXRatio: 0.88,
   waistbandXRatio: 0.975,
 
-  // OVO MORA BITI NISKO
-  // inače ubija razliku između zona
+  // Must stay low to preserve zone separation.
   stripeRotationMinStrength: 0.02,
 };
