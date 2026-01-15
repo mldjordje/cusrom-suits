@@ -102,7 +102,7 @@ const normalizePattern = (value?: string | null) => String(value ?? "").trim().t
 const shouldUsePantsPatternOverlay = (fabric: unknown) => {
   const data = fabric as { pattern?: string; uzorak?: string } | null | undefined;
   const raw = normalizePattern(data?.pattern ?? data?.uzorak);
-  return raw === "tanke pruge" || raw === "pruge" || raw === "karo";
+  return raw.includes("pruge") || raw.includes("pinstripe") || raw.includes("stripes") || raw === "karo";
 };
 
 const rgbToHsl = ({ r, g, b }: RGB) => {
@@ -546,14 +546,16 @@ const SuitPreview = ({
   const [pantsWaistMask, setPantsWaistMask] = useState<string | null>(null);
   const fabricTextureSource = fabricTileTexture || fabricTexture;
   const fabricTextureSourcePants = fabricTextureSource;
+  const cmsPatternRaw = useMemo(
+    () => String((selectedFabric as any)?.pattern ?? (selectedFabric as any)?.uzorak ?? ""),
+    [selectedFabric]
+  );
+  const cmsPatternNorm = useMemo(() => normalizePattern(cmsPatternRaw), [cmsPatternRaw]);
   const fabricPattern = useMemo(
     () => String((selectedFabric as any)?.pattern || "").trim().toLowerCase(),
     [selectedFabric]
   );
-  const pantsPatternValue = useMemo(
-    () => normalizePattern((selectedFabric as any)?.pattern ?? (selectedFabric as any)?.uzorak),
-    [selectedFabric]
-  );
+  const pantsPatternValue = useMemo(() => cmsPatternNorm, [cmsPatternNorm]);
   const usePantsPatternOverlay = useMemo(
     () => shouldUsePantsPatternOverlay(selectedFabric),
     [selectedFabric]
@@ -914,18 +916,20 @@ const SuitPreview = ({
   const buildPantsPatternStyle = useCallback(
     (angleDeg: number): React.CSSProperties => {
       if (!pantsPatternOverlayConfig) return {};
-      const { lineWidth, spacing, opacity, lineColor, pattern } = pantsPatternOverlayConfig;
-      const stripe = `repeating-linear-gradient(${angleDeg}deg, ${lineColor} 0 ${lineWidth}px, transparent ${lineWidth}px ${spacing}px)`;
+      const { lineWidth, spacing, opacity, pattern } = pantsPatternOverlayConfig;
+      const visibleOpacity = Math.max(opacity, 0.35);
+      const visibleColor = "rgba(255, 255, 255, 0.35)";
+      const stripe = `repeating-linear-gradient(${angleDeg}deg, ${visibleColor} 0 ${lineWidth}px, transparent ${lineWidth}px ${spacing}px)`;
       const backgroundImage =
         pattern === "karo"
-          ? `${stripe}, repeating-linear-gradient(${angleDeg + 90}deg, ${lineColor} 0 ${lineWidth}px, transparent ${lineWidth}px ${spacing}px)`
+          ? `${stripe}, repeating-linear-gradient(${angleDeg + 90}deg, ${visibleColor} 0 ${lineWidth}px, transparent ${lineWidth}px ${spacing}px)`
           : stripe;
       return {
         backgroundImage,
         backgroundRepeat: "repeat",
         backgroundSize: `${spacing}px ${spacing}px`,
-        mixBlendMode: "soft-light",
-        opacity,
+        mixBlendMode: "normal",
+        opacity: visibleOpacity,
         filter: "none",
       };
     },
@@ -1475,6 +1479,23 @@ const SuitPreview = ({
     }),
     [panZoom.offset.x, panZoom.offset.y, pantsStripeOffsets.rightFly.x, pantsStripeOffsets.rightFly.y]
   );
+  const pantsOverlayLoggedRef = useRef(false);
+  useEffect(() => {
+    if (pantsOverlayLoggedRef.current) return;
+    if (!showPants) return;
+    const spacing = pantsPatternOverlayConfig?.spacing ?? null;
+    const opacity = pantsPatternOverlayConfig ? Math.max(pantsPatternOverlayConfig.opacity, 0.35) : null;
+    const blendMode = "normal";
+    pantsOverlayLoggedRef.current = true;
+    console.log("[pants overlay]", {
+      cmsPatternRaw,
+      cmsPatternNorm,
+      overlayEnabled: usePantsPatternOverlay,
+      spacing,
+      opacity,
+      blendMode,
+    });
+  }, [cmsPatternNorm, cmsPatternRaw, pantsPatternOverlayConfig, showPants, usePantsPatternOverlay]);
 
 
   // Build a union mask over the pants silhouette to avoid halo/background bleed
