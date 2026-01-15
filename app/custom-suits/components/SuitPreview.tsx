@@ -2145,8 +2145,8 @@ const SuitPreview = ({
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
             let seamSearchMax = Math.min(c.width - 1, Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio) - 2);
             let seamBoundaryX: Int16Array;
-            let seamYByX: Int16Array | null = null;
             let hasSeamMask = false;
+            let seamLineFromMask: { slope: number; intercept: number } | null = null;
             if (seamMaskData?.data) {
               const seamData = seamMaskData.data;
               const columnCounts = new Int16Array(c.width);
@@ -2156,63 +2156,56 @@ const SuitPreview = ({
                   if (seamData[idx + 3] > 0) columnCounts[x]++;
                 }
               }
-              let waistColumn = -1;
-              let maxCount = 0;
+              const tallThreshold = Math.round(c.height * 0.6);
+              let waistMin = -1;
               for (let x = 0; x < c.width; x++) {
-                if (columnCounts[x] > maxCount) {
-                  maxCount = columnCounts[x];
-                  waistColumn = x;
+                if (columnCounts[x] >= tallThreshold) {
+                  waistMin = x;
+                  break;
                 }
               }
-              if (waistColumn > 2) seamSearchMax = Math.min(seamSearchMax, waistColumn - 2);
+              if (waistMin > 2) seamSearchMax = Math.min(seamSearchMax, waistMin - 2);
               const seamBoundary = new Int16Array(c.height);
               seamBoundary.fill(-1);
+              const points: Array<{ x: number; y: number }> = [];
               for (let y = 0; y < c.height; y++) {
                 for (let x = 0; x <= seamSearchMax; x++) {
                   const idx = (y * c.width + x) * 4;
                   if (seamData[idx + 3] > 0) {
                     seamBoundary[y] = x;
+                    points.push({ x, y });
                     hasSeamMask = true;
                     break;
                   }
                 }
               }
               if (hasSeamMask) {
-                let last = -1;
+                if (points.length >= 12) {
+                  let sumX = 0;
+                  let sumY = 0;
+                  let sumXX = 0;
+                  let sumXY = 0;
+                  for (const p of points) {
+                    sumX += p.x;
+                    sumY += p.y;
+                    sumXX += p.x * p.x;
+                    sumXY += p.x * p.y;
+                  }
+                  const count = points.length;
+                  const denom = count * sumXX - sumX * sumX;
+                  if (Math.abs(denom) > 1e-3) {
+                    const slope = (count * sumXY - sumX * sumY) / denom;
+                    const intercept = (sumY - slope * sumX) / count;
+                    seamLineFromMask = { slope, intercept };
+                  }
+                }
+                const seamLineUsed = seamLineFromMask ?? seamLine;
                 for (let y = 0; y < c.height; y++) {
-                  if (seamBoundary[y] < 0) seamBoundary[y] = last;
-                  else last = seamBoundary[y];
-                }
-                let next = -1;
-                for (let y = c.height - 1; y >= 0; y--) {
-                  if (seamBoundary[y] < 0) seamBoundary[y] = next;
-                  else next = seamBoundary[y];
-                }
-                for (let y = 0; y < c.height; y++) {
-                  if (seamBoundary[y] < 0) seamBoundary[y] = seamXMax;
-                }
-                const seamY = new Int16Array(c.width);
-                seamY.fill(-1);
-                for (let y = 0; y < c.height; y++) {
-                  const x = seamBoundary[y];
-                  if (x < 0 || x > seamSearchMax) continue;
-                  if (seamY[x] < 0 || y < seamY[x]) seamY[x] = y;
-                }
-                let lastY = -1;
-                for (let x = 0; x <= seamSearchMax; x++) {
-                  if (seamY[x] < 0) seamY[x] = lastY;
-                  else lastY = seamY[x];
-                }
-                let nextY = -1;
-                for (let x = seamSearchMax; x >= 0; x--) {
-                  if (seamY[x] < 0) seamY[x] = nextY;
-                  else nextY = seamY[x];
-                }
-                for (let x = 0; x <= seamSearchMax; x++) {
-                  if (seamY[x] < 0) seamY[x] = Math.round(seamLine.slope * x + seamLine.intercept);
+                  if (seamBoundary[y] >= 0 && seamBoundary[y] <= seamSearchMax) continue;
+                  const x = Math.round((y - seamLineUsed.intercept) / seamLineUsed.slope);
+                  seamBoundary[y] = Math.max(0, Math.min(seamSearchMax, x));
                 }
                 seamBoundaryX = seamBoundary;
-                seamYByX = seamY;
               } else {
                 seamBoundaryX = new Int16Array(c.height);
                 seamBoundaryX.fill(c.width);
@@ -2272,10 +2265,8 @@ const SuitPreview = ({
                 const unionAlpha = full[idx + 3];
                 if (unionAlpha < 1) continue;
                 if (waistMask.data[idx + 3] > 0) continue;
-                const seamY =
-                  seamYByX && x <= seamSearchMax && seamYByX[x] >= 0
-                    ? seamYByX[x]
-                    : seamLine.slope * x + seamLine.intercept;
+                const seamLineUsed = seamLineFromMask ?? seamLine;
+                const seamY = seamLineUsed.slope * x + seamLineUsed.intercept;
                 const isUnder = x < seamXMax && y > seamY;
                 const underAllowed = isUnder && bottomCurveMask.data[idx + 3] < 1;
                 const boundaryX = seamBoundaryX[y] >= 0 ? seamBoundaryX[y] : seamXMax;
