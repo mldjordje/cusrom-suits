@@ -2127,13 +2127,12 @@ const SuitPreview = ({
             }
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
-            const seamX0 = 0;
-            const seamY0 = seamIntercept;
-            const seamX1 = seamXMax;
-            const seamY1 = seamSlope * seamXMax + seamIntercept;
-            const seamDx = seamX1 - seamX0;
-            const seamDy = seamY1 - seamY0;
-            const seamSideSign = (seamXMax + 1 - seamX0) * seamDy - (seamY1 - seamY0) * seamDx >= 0 ? 1 : -1;
+            const seamBoundaryX = new Float32Array(c.height);
+            const seamSlopeSafe = Math.abs(seamSlope) < 1e-4 ? 1e-4 : seamSlope;
+            for (let y = 0; y < c.height; y++) {
+              const seamXAtY = (y - seamIntercept) / seamSlopeSafe;
+              seamBoundaryX[y] = Math.max(0, Math.min(seamXMax, seamXAtY));
+            }
             const bottomEdge = new Int16Array(c.width);
             bottomEdge.fill(-1);
             for (let x = 0; x < c.width; x++) {
@@ -2176,8 +2175,7 @@ const SuitPreview = ({
                 const seamY = seamLine.slope * x + seamLine.intercept;
                 const isUnder = x < seamXMax && y > seamY;
                 const underAllowed = isUnder && bottomCurveMask.data[idx + 3] < 1;
-                const cross = (x - seamX0) * seamDy - (y - seamY0) * seamDx;
-                const isRightSide = cross * seamSideSign >= 0;
+                const isRightSide = x >= seamBoundaryX[y];
                 const useRight = isRightSide;
                 if (isUnder) {
                   if (underAllowed) {
