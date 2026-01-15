@@ -551,6 +551,13 @@ const SuitPreview = ({
     [selectedFabric]
   );
   const cmsPatternNorm = useMemo(() => normalizePattern(cmsPatternRaw), [cmsPatternRaw]);
+  const isPantsCmsStripe = useMemo(
+    () =>
+      cmsPatternNorm.includes("pruge") ||
+      cmsPatternNorm.includes("pinstripe") ||
+      cmsPatternNorm.includes("stripes"),
+    [cmsPatternNorm]
+  );
   const fabricPattern = useMemo(
     () => String((selectedFabric as any)?.pattern || "").trim().toLowerCase(),
     [selectedFabric]
@@ -883,10 +890,11 @@ const SuitPreview = ({
     const strengthRaw = parseNumber(
       (selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength
     );
-    const opacity =
+    const opacityBase =
       typeof strengthRaw === "number"
         ? clamp(0.05 + strengthRaw * 0.2, 0.05, 0.25)
         : defaults.opacity;
+    const opacity = isPantsCmsStripe ? clamp(opacityBase, 0.06, 0.1) : opacityBase;
     const brightnessRaw = parseNumber(
       (selectedFabric as any)?.textureBrightness ?? (selectedFabric as any)?.texture_brightness
     );
@@ -909,6 +917,7 @@ const SuitPreview = ({
     };
   }, [
     hasExplicitTextureScale,
+    isPantsCmsStripe,
     pantsPatternValue,
     selectedFabric,
     textureScaleBoost,
@@ -951,14 +960,15 @@ const SuitPreview = ({
   );
   const pantsTextureStyle = useMemo<React.CSSProperties>(() => {
     const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
-    const stripeMul = stripeBoost ? 0.45 : 0.62;
+    const stripeMul = stripeBoost ? (isPantsCmsStripe ? 0.75 : 0.45) : 0.62;
     const mixBlendMode = stripeWhiteBoost ? "soft-light" : fabricTextureStyle.mixBlendMode;
+    const maxOpacity = isPantsCmsStripe ? 0.7 : 0.5;
     return {
       ...fabricTextureStyle,
       mixBlendMode,
-      opacity: clamp(opacity * stripeMul, 0.05, 0.5),
+      opacity: clamp(opacity * stripeMul, 0.05, maxOpacity),
     };
-  }, [fabricTextureStyle, stripeBoost, stripeWhiteBoost]);
+  }, [fabricTextureStyle, isPantsCmsStripe, stripeBoost, stripeWhiteBoost]);
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
     if (!useTexture || !stripeBoost) return null;
     const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
@@ -1486,6 +1496,10 @@ const SuitPreview = ({
   const canRenderPantsPatternOverlay = Boolean(
     usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks && pantsRightSplitMasks && pantsStripeTexture
   );
+  const pantsBaseFillOpacity = useMemo(() => {
+    const base = usePhotoBase ? photoBaseOpacity : 0.95;
+    return isPantsCmsStripe ? base * 0.85 : base;
+  }, [isPantsCmsStripe, photoBaseOpacity, usePhotoBase]);
   const rightFlyBackgroundOffset = useMemo(
     () => ({
       x: pantsStripeOffsets.rightFly.x - panZoom.offset.x,
@@ -2454,7 +2468,7 @@ const SuitPreview = ({
                 baseColor={tunedFabricFill || toneBaseColor}
                 fabricAvgColor={tunedFabricFill}
                 baseBlendMode="color"
-                baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+                baseOpacity={pantsBaseFillOpacity}
                 panZoom={panZoom}
                 canvas={PANTS_CANVAS}
                 mask={pantsMask}
@@ -2583,7 +2597,7 @@ const SuitPreview = ({
               baseColor={tunedFabricFill || toneBaseColor}
               fabricAvgColor={tunedFabricFill}
               baseBlendMode="color"
-              baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+              baseOpacity={pantsBaseFillOpacity}
               panZoom={panZoom}
               canvas={PANTS_CANVAS}
               mask={pantsMask}
