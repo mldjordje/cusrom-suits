@@ -48,6 +48,7 @@ const JACKET_MASK_CACHE = new Map<string, string>();
 const PANTS_MASK_CACHE = new Map<string, string>();
 const PANTS_AXIS_CACHE = new Map<string, number>();
 const PANTS_LEG_MASK_CACHE = new Map<string, { left: string; right: string }>();
+const PANTS_LEFT_SPLIT_CACHE = new Map<string, { main: string; under: string }>();
 const PANTS_LEG_AXIS_CACHE = new Map<string, { left: number; right: number }>();
 const PANTS_RIGHT_SPLIT_CACHE = new Map<string, { upper: string; lower: string }>();
 const PANTS_WAIST_MASK_CACHE = new Map<string, string>();
@@ -532,6 +533,7 @@ const SuitPreview = ({
   const [fabricStripe, setFabricStripe] = useState<StripeHint>(EMPTY_STRIPE);
   const [pantsAxisAngle, setPantsAxisAngle] = useState(0);
   const [pantsLegMasks, setPantsLegMasks] = useState<{ left: string; right: string } | null>(null);
+  const [pantsLeftSplitMasks, setPantsLeftSplitMasks] = useState<{ main: string; under: string } | null>(null);
   const [pantsLegAngles, setPantsLegAngles] = useState<{ left: number; right: number } | null>(null);
   const [pantsRightSplitMasks, setPantsRightSplitMasks] = useState<{ upper: string; lower: string } | null>(null);
   const [pantsWaistMask, setPantsWaistMask] = useState<string | null>(null);
@@ -721,10 +723,6 @@ const SuitPreview = ({
   );
   const pantsTextureRotationLeft = useMemo(
     () => (stripeRotationActive ? PANTS_STRIPE_TUNING.leftRotationDeg : pantsTextureRotationBase),
-    [pantsTextureRotationBase, stripeRotationActive]
-  );
-  const pantsTextureRotationRightLower = useMemo(
-    () => (stripeRotationActive ? PANTS_STRIPE_TUNING.rightLowerRotationDeg : pantsTextureRotationBase),
     [pantsTextureRotationBase, stripeRotationActive]
   );
   const pantsTextureRotationRightUpper = useMemo(
@@ -1379,6 +1377,10 @@ const SuitPreview = ({
     []
   );
   const pantsStripeOffsets = PANTS_STRIPE_TUNING.stripeOffsets;
+  const pantsLeftMainMask = pantsLeftSplitMasks?.main ?? pantsLegMasks?.left ?? pantsMask;
+  const pantsLeftUnderMask = pantsLeftSplitMasks?.under ?? null;
+  const pantsRightFlyMask = pantsRightSplitMasks?.upper ?? pantsLegMasks?.right ?? pantsMask;
+  const pantsRightUnderMask = pantsRightSplitMasks?.lower ?? pantsLegMasks?.right ?? pantsMask;
   const hasPantsLegSplit = Boolean(pantsLegMasks);
   const hasPantsRightSplit = Boolean(pantsRightSplitMasks);
   const useSplitPantsTexture = useTexture && hasPantsLegSplit && stripeRotationActive;
@@ -1390,6 +1392,7 @@ const SuitPreview = ({
       setPantsAxisAngle(0);
       setPantsLegMasks(null);
       setPantsLegAngles(null);
+      setPantsLeftSplitMasks(null);
       setPantsRightSplitMasks(null);
       setPantsWaistMask(null);
       return;
@@ -1397,6 +1400,7 @@ const SuitPreview = ({
     const cached = PANTS_MASK_CACHE.get(pantsMaskKey);
     const cachedAxis = PANTS_AXIS_CACHE.get(pantsMaskKey);
     const cachedLegMasks = PANTS_LEG_MASK_CACHE.get(pantsMaskKey);
+    const cachedLeftSplit = PANTS_LEFT_SPLIT_CACHE.get(pantsMaskKey);
     const cachedLegAngles = PANTS_LEG_AXIS_CACHE.get(pantsMaskKey);
     const cachedRightSplit = PANTS_RIGHT_SPLIT_CACHE.get(pantsMaskKey);
     const cachedWaist = PANTS_WAIST_MASK_CACHE.get(pantsMaskKey);
@@ -1413,6 +1417,11 @@ const SuitPreview = ({
       setPantsLegMasks(null);
       setPantsLegAngles(null);
     }
+    if (cachedLeftSplit) {
+      setPantsLeftSplitMasks(cachedLeftSplit);
+    } else {
+      setPantsLeftSplitMasks(null);
+    }
     if (cachedRightSplit) {
       setPantsRightSplitMasks(cachedRightSplit);
     } else {
@@ -1423,7 +1432,7 @@ const SuitPreview = ({
     } else {
       setPantsWaistMask(null);
     }
-    if (cached && cachedLegMasks && cachedLegAngles && cachedRightSplit && cachedWaist) return;
+    if (cached && cachedLegMasks && cachedLegAngles && cachedLeftSplit && cachedRightSplit && cachedWaist) return;
 
     let cancelled = false;
     let idleId: number | null = null;
@@ -1831,35 +1840,46 @@ const SuitPreview = ({
               }
             }
 
+            const seamLine = { slope: seamSlope, intercept: seamIntercept };
+            const leftMain = ctx.createImageData(c.width, c.height);
+            const leftUnder = ctx.createImageData(c.width, c.height);
             const rightUpper = ctx.createImageData(c.width, c.height);
             const rightLower = ctx.createImageData(c.width, c.height);
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
-                const alpha = rightMask.data[idx + 3];
-                if (alpha < 1) continue;
-                let upper = false;
-                if (seamClassifier?.line) {
-                  const seamY = seamClassifier.line.slope * x + seamClassifier.line.intercept;
-                  upper = y <= seamY;
-                } else {
-                  const rightSplitY = Math.round(PANTS_CANVAS.h * PANTS_STRIPE_TUNING.rightSplitRatio);
-                  upper = y <= rightSplitY;
+                const seamY = seamLine.slope * x + seamLine.intercept;
+                const isUnder = x < seamXMax && y > seamY;
+                const leftAlpha = leftMask.data[idx + 3];
+                if (leftAlpha >= 1) {
+                  const target = isUnder ? leftUnder.data : leftMain.data;
+                  target[idx] = 255;
+                  target[idx + 1] = 255;
+                  target[idx + 2] = 255;
+                  target[idx + 3] = leftAlpha;
                 }
-                const target = upper ? rightUpper.data : rightLower.data;
+                const rightAlpha = rightMask.data[idx + 3];
+                if (rightAlpha < 1) continue;
+                const target = isUnder ? rightLower.data : rightUpper.data;
                 target[idx] = 255;
                 target[idx + 1] = 255;
                 target[idx + 2] = 255;
-                target[idx + 3] = alpha;
+                target[idx + 3] = rightAlpha;
               }
             }
             const leftCanvas = document.createElement("canvas");
+            const leftMainCanvas = document.createElement("canvas");
+            const leftUnderCanvas = document.createElement("canvas");
             const rightCanvas = document.createElement("canvas");
             const rightUpperCanvas = document.createElement("canvas");
             const rightLowerCanvas = document.createElement("canvas");
             const waistCanvas = document.createElement("canvas");
             leftCanvas.width = c.width;
             leftCanvas.height = c.height;
+            leftMainCanvas.width = c.width;
+            leftMainCanvas.height = c.height;
+            leftUnderCanvas.width = c.width;
+            leftUnderCanvas.height = c.height;
             rightCanvas.width = c.width;
             rightCanvas.height = c.height;
             rightUpperCanvas.width = c.width;
@@ -1869,18 +1889,24 @@ const SuitPreview = ({
             waistCanvas.width = c.width;
             waistCanvas.height = c.height;
             const lctx = leftCanvas.getContext("2d");
+            const lmctx = leftMainCanvas.getContext("2d");
+            const luctx = leftUnderCanvas.getContext("2d");
             const rctx = rightCanvas.getContext("2d");
             const uctx = rightUpperCanvas.getContext("2d");
             const dctx = rightLowerCanvas.getContext("2d");
             const wctx = waistCanvas.getContext("2d");
-            if (!lctx || !rctx || !uctx || !dctx || !wctx) return null;
+            if (!lctx || !lmctx || !luctx || !rctx || !uctx || !dctx || !wctx) return null;
             lctx.putImageData(leftMask, 0, 0);
+            lmctx.putImageData(leftMain, 0, 0);
+            luctx.putImageData(leftUnder, 0, 0);
             rctx.putImageData(rightMask, 0, 0);
             uctx.putImageData(rightUpper, 0, 0);
             dctx.putImageData(rightLower, 0, 0);
             wctx.putImageData(waistMask, 0, 0);
             return {
               leftMaskUrl: leftCanvas.toDataURL("image/png"),
+              leftMainUrl: leftMainCanvas.toDataURL("image/png"),
+              leftUnderUrl: leftUnderCanvas.toDataURL("image/png"),
               rightMaskUrl: rightCanvas.toDataURL("image/png"),
               rightUpperUrl: rightUpperCanvas.toDataURL("image/png"),
               rightLowerUrl: rightLowerCanvas.toDataURL("image/png"),
@@ -1893,10 +1919,13 @@ const SuitPreview = ({
             if (legResult) {
               const masks = { left: legResult.leftMaskUrl, right: legResult.rightMaskUrl };
               const angles = { left: legResult.leftAngle, right: legResult.rightAngle };
+              const leftSplit = { main: legResult.leftMainUrl, under: legResult.leftUnderUrl };
               setPantsLegMasks(masks);
               setPantsLegAngles(angles);
+              setPantsLeftSplitMasks(leftSplit);
               PANTS_LEG_MASK_CACHE.set(pantsMaskKey, masks);
               PANTS_LEG_AXIS_CACHE.set(pantsMaskKey, angles);
+              PANTS_LEFT_SPLIT_CACHE.set(pantsMaskKey, leftSplit);
               const splitMasks = { upper: legResult.rightUpperUrl, lower: legResult.rightLowerUrl };
               setPantsRightSplitMasks(splitMasks);
               PANTS_RIGHT_SPLIT_CACHE.set(pantsMaskKey, splitMasks);
@@ -1905,6 +1934,7 @@ const SuitPreview = ({
             } else {
               setPantsLegMasks(null);
               setPantsLegAngles(null);
+              setPantsLeftSplitMasks(null);
               setPantsRightSplitMasks(null);
               setPantsWaistMask(null);
             }
@@ -1934,6 +1964,7 @@ const SuitPreview = ({
             setPantsAxisAngle(0);
             setPantsLegMasks(null);
             setPantsLegAngles(null);
+            setPantsLeftSplitMasks(null);
             setPantsRightSplitMasks(null);
             setPantsWaistMask(null);
           }
@@ -2286,13 +2317,32 @@ const SuitPreview = ({
                 baseOpacity={0}
                 panZoom={panZoom}
                 canvas={PANTS_CANVAS}
-                mask={pantsLegMasks?.left ?? pantsMask}
+                mask={pantsLeftMainMask}
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
                 textureRotationDeg={pantsTextureRotationLeft}
-                backgroundOffset={pantsStripeOffsets.left}
+                backgroundOffset={pantsStripeOffsets.leftMain}
                 {...pantsStripeMaskProps}
               />
+              {pantsLeftUnderMask && (
+                <FabricUnion
+                  layers={pantsTextureLayers}
+                  resolve={resolveCdn}
+                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  textureStyle={pantsTextureStyle}
+                  baseColor={tunedFabricFill || toneBaseColor}
+                  baseBlendMode="normal"
+                  baseOpacity={0}
+                  panZoom={panZoom}
+                  canvas={PANTS_CANVAS}
+                  mask={pantsLeftUnderMask}
+                  textureScale={fabricTextureScale}
+                  textureTileSizePx={TEXTURE_TILE_PX}
+                  textureRotationDeg={pantsTextureRotationLeft}
+                  backgroundOffset={pantsStripeOffsets.leftUnderlap}
+                  {...pantsStripeMaskProps}
+                />
+              )}
               {hasPantsRightSplit ? (
                 <>
                   <FabricUnion
@@ -2305,11 +2355,11 @@ const SuitPreview = ({
                     baseOpacity={0}
                     panZoom={panZoom}
                     canvas={PANTS_CANVAS}
-                    mask={pantsRightSplitMasks?.upper ?? pantsLegMasks?.right ?? pantsMask}
+                    mask={pantsRightFlyMask}
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
                     textureRotationDeg={pantsTextureRotationRightUpper}
-                    backgroundOffset={pantsStripeOffsets.rightUpper}
+                    backgroundOffset={pantsStripeOffsets.rightFly}
                     {...pantsStripeMaskProps}
                   />
                   <FabricUnion
@@ -2322,11 +2372,11 @@ const SuitPreview = ({
                     baseOpacity={0}
                     panZoom={panZoom}
                     canvas={PANTS_CANVAS}
-                    mask={pantsRightSplitMasks?.lower ?? pantsLegMasks?.right ?? pantsMask}
+                    mask={pantsRightUnderMask}
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
-                    textureRotationDeg={pantsTextureRotationRightLower}
-                    backgroundOffset={pantsStripeOffsets.rightLower}
+                    textureRotationDeg={pantsTextureRotationLeft}
+                    backgroundOffset={pantsStripeOffsets.rightUnder}
                     {...pantsStripeMaskProps}
                   />
                 </>
@@ -2345,7 +2395,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationRightUpper}
-                  backgroundOffset={pantsStripeOffsets.rightUpper}
+                  backgroundOffset={pantsStripeOffsets.rightFly}
                   {...pantsStripeMaskProps}
                 />
               )}
@@ -2402,13 +2452,32 @@ const SuitPreview = ({
                 baseOpacity={0}
                 panZoom={panZoom}
                 canvas={PANTS_CANVAS}
-                mask={pantsLegMasks?.left ?? pantsMask}
+                mask={pantsLeftMainMask}
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
                 textureRotationDeg={pantsTextureRotationLeft}
-                backgroundOffset={pantsStripeOffsets.left}
+                backgroundOffset={pantsStripeOffsets.leftMain}
                 {...pantsStripeMaskProps}
               />
+              {pantsLeftUnderMask && (
+                <FabricUnion
+                  layers={pantsTextureLayers}
+                  resolve={resolveCdn}
+                  fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+                  textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
+                  baseColor={tunedFabricFill || toneBaseColor}
+                  baseBlendMode="normal"
+                  baseOpacity={0}
+                  panZoom={panZoom}
+                  canvas={PANTS_CANVAS}
+                  mask={pantsLeftUnderMask}
+                  textureScale={fabricTextureScale}
+                  textureTileSizePx={TEXTURE_TILE_PX}
+                  textureRotationDeg={pantsTextureRotationLeft}
+                  backgroundOffset={pantsStripeOffsets.leftUnderlap}
+                  {...pantsStripeMaskProps}
+                />
+              )}
               {hasPantsRightSplit ? (
                 <>
                   <FabricUnion
@@ -2421,11 +2490,11 @@ const SuitPreview = ({
                     baseOpacity={0}
                     panZoom={panZoom}
                     canvas={PANTS_CANVAS}
-                    mask={pantsRightSplitMasks?.upper ?? pantsLegMasks?.right ?? pantsMask}
+                    mask={pantsRightFlyMask}
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
                     textureRotationDeg={pantsTextureRotationRightUpper}
-                    backgroundOffset={pantsStripeOffsets.rightUpper}
+                    backgroundOffset={pantsStripeOffsets.rightFly}
                     {...pantsStripeMaskProps}
                   />
                   <FabricUnion
@@ -2438,11 +2507,11 @@ const SuitPreview = ({
                     baseOpacity={0}
                     panZoom={panZoom}
                     canvas={PANTS_CANVAS}
-                    mask={pantsRightSplitMasks?.lower ?? pantsLegMasks?.right ?? pantsMask}
+                    mask={pantsRightUnderMask}
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
-                    textureRotationDeg={pantsTextureRotationRightLower}
-                    backgroundOffset={pantsStripeOffsets.rightLower}
+                    textureRotationDeg={pantsTextureRotationLeft}
+                    backgroundOffset={pantsStripeOffsets.rightUnder}
                     {...pantsStripeMaskProps}
                   />
                 </>
@@ -2461,7 +2530,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationRightUpper}
-                  backgroundOffset={pantsStripeOffsets.rightUpper}
+                  backgroundOffset={pantsStripeOffsets.rightFly}
                   {...pantsStripeMaskProps}
                 />
               )}
