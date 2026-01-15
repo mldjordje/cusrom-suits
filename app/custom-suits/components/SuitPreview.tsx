@@ -4,7 +4,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
-import { getTransparentCdnBase } from "../utils/backend";
+import { buildBackendUrl, getTransparentCdnBase } from "../utils/backend";
 import { toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone, NOISE_DATA } from "../utils/visual";
 import {
   cdnPair,
@@ -32,6 +32,8 @@ const SHIRT_PAIR = cdnPair("shirt_to_jacket_open.png");
 const JACKET_CANVAS = { w: 600, h: 733 } as const;
 const PANTS_CANVAS = { w: 600, h: 350 } as const;
 const PANTS_SEAM_MASK_SRC = "/assets/suits/masks/pants_seam.png";
+const EMPTY_TEXTURE_DATA_URL =
+  "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 const MASK_BLEED_PX = 1.1;
 const TEXTURE_TILE_PX = 90;
 const TEXTURE_TILE_CANVAS_SCALE = 0.12;
@@ -1161,7 +1163,7 @@ const SuitPreview = ({
   const showVignette = showLayer("vignette") && !lowPowerMode && effectsReady;
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/button-positions", { cache: "no-store" })
+    fetch(buildBackendUrl("button-positions"), { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
         if (cancelled) return;
@@ -1555,9 +1557,9 @@ const SuitPreview = ({
   const useSplitPantsTexture =
     hasStripeTile && useTexture && hasPantsLegSplit && (stripeBoost || isPantsCmsStripe);
   const pantsStripeTexture = fabricTileTexture ?? undefined;
-  const pantsOverlayTexture = fabricTileTexture ?? fabricTextureSourcePants;
+  const pantsOverlayTexture = fabricTileTexture ?? fabricTextureSourcePants ?? EMPTY_TEXTURE_DATA_URL;
   const canRenderPantsPatternOverlay = Boolean(
-    usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks && pantsOverlayTexture
+    usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks
   );
   const pantsBaseFillOpacity = useMemo(() => {
     const base = usePhotoBase ? photoBaseOpacity : 0.95;
