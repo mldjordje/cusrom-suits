@@ -40,6 +40,7 @@ const PANTS_MASK_SAMPLE_W = 120;
 const TEXTURE_SCALE_GLOBAL = 1;
 const TEXTURE_SCALE_MIN = 0.08;
 const TEXTURE_SCALE_MAX = 1.1;
+const DEBUG_PANTS_OVERLAY = true;
 
 const FABRIC_AVG_CACHE = new Map<string, string | null>();
 const FABRIC_TILE_CACHE = new Map<string, string>();
@@ -99,10 +100,32 @@ const rgbToHex = (rgb: RGB) =>
     .padStart(2, "0")}${clampChannel(rgb.b).toString(16).padStart(2, "0")}`;
 
 const normalizePattern = (value?: string | null) => String(value ?? "").trim().toLowerCase();
+const getFabricPatternRaw = (fabric: unknown) => {
+  if (!fabric || typeof fabric !== "object") return "";
+  const data = fabric as Record<string, unknown>;
+  const candidates = [
+    data.pattern,
+    data.uzorak,
+    data.weave,
+    data.weave_name,
+    data.weaveName,
+    data.pattern_name,
+    data.patternName,
+    data.pattern_type,
+    data.patternType,
+    data.texturePattern,
+    data.texture_pattern,
+    data.design,
+    data.motif,
+  ];
+  for (const value of candidates) {
+    if (typeof value === "string" && value.trim()) return value;
+  }
+  return "";
+};
 const shouldUsePantsPatternOverlay = (fabric: unknown) => {
-  const data = fabric as { pattern?: string; uzorak?: string } | null | undefined;
-  const raw = normalizePattern(data?.pattern ?? data?.uzorak);
-  return raw.includes("pruge") || raw.includes("pinstripe") || raw.includes("stripes") || raw === "karo";
+  const raw = normalizePattern(getFabricPatternRaw(fabric));
+  return raw.includes("pruge") || raw.includes("pinstripe") || raw.includes("stripe") || raw === "karo";
 };
 
 const rgbToHsl = ({ r, g, b }: RGB) => {
@@ -544,24 +567,29 @@ const SuitPreview = ({
   const [pantsLegAngles, setPantsLegAngles] = useState<{ left: number; right: number } | null>(null);
   const [pantsRightSplitMasks, setPantsRightSplitMasks] = useState<{ upper: string; lower: string } | null>(null);
   const [pantsWaistMask, setPantsWaistMask] = useState<string | null>(null);
+  const [pantsMaskStats, setPantsMaskStats] = useState<{
+    union: number;
+    left: number;
+    right: number;
+    leftMain: number;
+    leftUnder: number;
+    rightFly: number;
+    rightUnder: number;
+    waist: number;
+  } | null>(null);
   const fabricTextureSource = fabricTileTexture || fabricTexture;
   const fabricTextureSourcePants = fabricTextureSource;
-  const cmsPatternRaw = useMemo(
-    () => String((selectedFabric as any)?.pattern ?? (selectedFabric as any)?.uzorak ?? ""),
-    [selectedFabric]
-  );
+  const cmsPatternRaw = useMemo(() => getFabricPatternRaw(selectedFabric), [selectedFabric]);
   const cmsPatternNorm = useMemo(() => normalizePattern(cmsPatternRaw), [cmsPatternRaw]);
   const isPantsCmsStripe = useMemo(
     () =>
       cmsPatternNorm.includes("pruge") ||
       cmsPatternNorm.includes("pinstripe") ||
-      cmsPatternNorm.includes("stripes"),
+      cmsPatternNorm.includes("stripes") ||
+      cmsPatternNorm.includes("stripe"),
     [cmsPatternNorm]
   );
-  const fabricPattern = useMemo(
-    () => String((selectedFabric as any)?.pattern || "").trim().toLowerCase(),
-    [selectedFabric]
-  );
+  const fabricPattern = useMemo(() => cmsPatternNorm, [cmsPatternNorm]);
   const pantsPatternValue = useMemo(() => cmsPatternNorm, [cmsPatternNorm]);
   const usePantsPatternOverlay = useMemo(
     () => shouldUsePantsPatternOverlay(selectedFabric),
@@ -573,7 +601,12 @@ const SuitPreview = ({
     const haystack = `${name} ${texture}`.toLowerCase();
     return /pinstripe|stripe|linije|lines|pruga|pruge/.test(haystack);
   }, [fabricTexture, fabricTextureSource, selectedFabric]);
-  const patternStripe = fabricPattern === "pinstripe" || fabricPattern === "stripe" || stripeNameHint;
+  const patternStripe =
+    fabricPattern === "pinstripe" ||
+    fabricPattern === "stripe" ||
+    fabricPattern.includes("pruge") ||
+    fabricPattern.includes("stripe") ||
+    stripeNameHint;
   const textureStrength = useMemo(() => {
     const raw = parseNumber((selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength);
     const normalized = typeof raw === "number" ? raw : 0.24;
@@ -1494,7 +1527,7 @@ const SuitPreview = ({
   const useSplitPantsTexture = useTexture && hasPantsLegSplit && (stripeBoost || isPantsCmsStripe);
   const pantsStripeTexture = fabricTileTexture ?? fabricTextureSourcePants;
   const canRenderPantsPatternOverlay = Boolean(
-    usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks && pantsRightSplitMasks && pantsStripeTexture
+    usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks && pantsStripeTexture
   );
   const pantsBaseFillOpacity = useMemo(() => {
     const base = usePhotoBase ? photoBaseOpacity : 0.95;
@@ -1531,6 +1564,65 @@ const SuitPreview = ({
     }),
     [panZoom.offset.x, panZoom.offset.y, pantsStripeOffsets.rightFly.x, pantsStripeOffsets.rightFly.y]
   );
+  const pantsOverlayDebugLoggedRef = useRef(false);
+  useEffect(() => {
+    if (!DEBUG_PANTS_OVERLAY) return;
+    if (pantsOverlayDebugLoggedRef.current) return;
+    if (!showPants) return;
+    if (!selectedFabric) return;
+    const rawFields = {
+      pattern: (selectedFabric as any)?.pattern,
+      uzorak: (selectedFabric as any)?.uzorak,
+      weave: (selectedFabric as any)?.weave,
+      weave_name: (selectedFabric as any)?.weave_name,
+      weaveName: (selectedFabric as any)?.weaveName,
+      pattern_name: (selectedFabric as any)?.pattern_name,
+      patternName: (selectedFabric as any)?.patternName,
+      pattern_type: (selectedFabric as any)?.pattern_type,
+      patternType: (selectedFabric as any)?.patternType,
+      texturePattern: (selectedFabric as any)?.texturePattern,
+      texture_pattern: (selectedFabric as any)?.texture_pattern,
+      design: (selectedFabric as any)?.design,
+      motif: (selectedFabric as any)?.motif,
+    };
+    const maskStats = pantsMaskStats ?? {
+      union: 0,
+      left: 0,
+      right: 0,
+      leftMain: 0,
+      leftUnder: 0,
+      rightFly: 0,
+      rightUnder: 0,
+      waist: 0,
+    };
+    console.log("[pants overlay debug]", {
+      fabricId: (selectedFabric as any)?.id,
+      fabricName: (selectedFabric as any)?.name,
+      rawPatternFields: rawFields,
+      normalizedPattern: cmsPatternNorm,
+      overlayEnabled: usePantsPatternOverlay,
+      hasUnionMask: Boolean(pantsMask),
+      hasLeftMask: Boolean(pantsLeftMainMask),
+      hasRightMask: Boolean(pantsLegMasks?.right),
+      hasFlyMask: Boolean(pantsRightFlyMask),
+      hasWaistMask: Boolean(pantsWaistMask),
+      maskPixelCount: maskStats,
+      usingStripeTile: Boolean(fabricTileTexture),
+    });
+    pantsOverlayDebugLoggedRef.current = true;
+  }, [
+    cmsPatternNorm,
+    fabricTileTexture,
+    pantsLeftMainMask,
+    pantsLegMasks?.right,
+    pantsMask,
+    pantsMaskStats,
+    pantsRightFlyMask,
+    pantsWaistMask,
+    selectedFabric,
+    showPants,
+    usePantsPatternOverlay,
+  ]);
 
   // Build a union mask over the pants silhouette to avoid halo/background bleed
   useEffect(() => {
@@ -1542,6 +1634,7 @@ const SuitPreview = ({
       setPantsLeftSplitMasks(null);
       setPantsRightSplitMasks(null);
       setPantsWaistMask(null);
+      setPantsMaskStats(null);
       return;
     }
     const cached = PANTS_MASK_CACHE.get(pantsMaskKey);
@@ -1579,7 +1672,16 @@ const SuitPreview = ({
     } else {
       setPantsWaistMask(null);
     }
-    if (cached && cachedLegMasks && cachedLegAngles && cachedLeftSplit && cachedRightSplit && cachedWaist) return;
+    if (
+      cached &&
+      cachedLegMasks &&
+      cachedLegAngles &&
+      cachedLeftSplit &&
+      cachedRightSplit &&
+      cachedWaist &&
+      (!DEBUG_PANTS_OVERLAY || pantsMaskStats)
+    )
+      return;
 
     let cancelled = false;
     let idleId: number | null = null;
@@ -1841,6 +1943,7 @@ const SuitPreview = ({
             let leftMaxY = -1;
             let rightMinY = c.height;
             let rightMaxY = -1;
+            let unionCount = 0;
             const full = unionData.data;
             const sampleScaleX = sampleW / c.width;
             const sampleScaleY = sampleH / c.height;
@@ -1850,6 +1953,7 @@ const SuitPreview = ({
                 const idx = (y * c.width + x) * 4;
                 const alpha = full[idx + 3];
                 if (alpha < 10) continue;
+                unionCount++;
                 const sx = Math.min(sampleW - 1, Math.floor(x * sampleScaleX));
                 let label = activeLabels[sy * sampleW + sx];
                 if (label < 0) {
@@ -1965,6 +2069,7 @@ const SuitPreview = ({
             // Carve out the waistband strip for vertical stripe direction.
             const waistMask = ctx.createImageData(c.width, c.height);
             const waistX = Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio);
+            let waistCount = 0;
             if (waistX < c.width) {
               for (let y = 0; y < c.height; y++) {
                 for (let x = waistX; x < c.width; x++) {
@@ -1975,6 +2080,7 @@ const SuitPreview = ({
                   waistMask.data[idx + 1] = 255;
                   waistMask.data[idx + 2] = 255;
                   waistMask.data[idx + 3] = unionAlpha;
+                  waistCount++;
                 }
               }
               for (let y = 0; y < c.height; y++) {
@@ -2017,6 +2123,10 @@ const SuitPreview = ({
             const leftUnder = ctx.createImageData(c.width, c.height);
             const rightUpper = ctx.createImageData(c.width, c.height);
             const rightLower = ctx.createImageData(c.width, c.height);
+            let leftMainCount = 0;
+            let leftUnderCount = 0;
+            let rightFlyCount = 0;
+            let rightUnderCount = 0;
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
@@ -2030,11 +2140,13 @@ const SuitPreview = ({
                     leftUnder.data[idx + 1] = 255;
                     leftUnder.data[idx + 2] = 255;
                     leftUnder.data[idx + 3] = leftAlpha;
+                    leftUnderCount++;
                   } else {
                     leftMain.data[idx] = 255;
                     leftMain.data[idx + 1] = 255;
                     leftMain.data[idx + 2] = 255;
                     leftMain.data[idx + 3] = leftAlpha;
+                    leftMainCount++;
                   }
                 }
                 const rightAlpha = rightMask.data[idx + 3];
@@ -2045,17 +2157,20 @@ const SuitPreview = ({
                     rightLower.data[idx + 1] = 255;
                     rightLower.data[idx + 2] = 255;
                     rightLower.data[idx + 3] = rightAlpha;
+                    rightUnderCount++;
                   } else {
                     rightUpper.data[idx] = 255;
                     rightUpper.data[idx + 1] = 255;
                     rightUpper.data[idx + 2] = 255;
                     rightUpper.data[idx + 3] = rightAlpha;
+                    rightFlyCount++;
                   }
                 } else {
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
                   rightUpper.data[idx + 2] = 255;
                   rightUpper.data[idx + 3] = rightAlpha;
+                  rightFlyCount++;
                 }
               }
             }
@@ -2117,6 +2232,16 @@ const SuitPreview = ({
               rightUpperUrl: rightUpperCanvas.toDataURL("image/png"),
               rightLowerUrl: rightLowerCanvas.toDataURL("image/png"),
               waistMaskUrl: waistCanvas.toDataURL("image/png"),
+              maskStats: {
+                union: unionCount,
+                left: leftCount,
+                right: rightCount,
+                leftMain: leftMainCount,
+                leftUnder: leftUnderCount,
+                rightFly: rightFlyCount,
+                rightUnder: rightUnderCount,
+                waist: waistCount,
+              },
               leftAngle,
               rightAngle,
             };
@@ -2129,6 +2254,7 @@ const SuitPreview = ({
               setPantsLegMasks(masks);
               setPantsLegAngles(angles);
               setPantsLeftSplitMasks(leftSplit);
+              setPantsMaskStats(legResult.maskStats);
               PANTS_LEG_MASK_CACHE.set(pantsMaskKey, masks);
               PANTS_LEG_AXIS_CACHE.set(pantsMaskKey, angles);
               PANTS_LEFT_SPLIT_CACHE.set(pantsMaskKey, leftSplit);
@@ -2143,6 +2269,7 @@ const SuitPreview = ({
               setPantsLeftSplitMasks(null);
               setPantsRightSplitMasks(null);
               setPantsWaistMask(null);
+              setPantsMaskStats(null);
             }
           }
           if (MASK_BLEED_PX > 0) {
@@ -2173,6 +2300,7 @@ const SuitPreview = ({
       setPantsLeftSplitMasks(null);
       setPantsRightSplitMasks(null);
       setPantsWaistMask(null);
+      setPantsMaskStats(null);
     }
         } finally {
           if (!cancelled) setPantsMaskBuilding(false);
@@ -2192,7 +2320,7 @@ const SuitPreview = ({
       if (timeoutId !== null) window.clearTimeout(timeoutId);
       setPantsMaskBuilding(false);
     };
-  }, [pantsMaskKey, pantsMaskSourceLayers]);
+  }, [pantsMaskKey, pantsMaskSourceLayers, pantsMaskStats]);
 
   if (!currentSuit) {
     return (
