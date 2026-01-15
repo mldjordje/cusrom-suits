@@ -40,7 +40,7 @@ const PANTS_MASK_SAMPLE_W = 120;
 const TEXTURE_SCALE_GLOBAL = 1;
 const TEXTURE_SCALE_MIN = 0.08;
 const TEXTURE_SCALE_MAX = 1.1;
-const DEBUG_PANTS_OVERLAY = true;
+const DEBUG_PANTS_OVERLAY = false;
 
 const FABRIC_AVG_CACHE = new Map<string, string | null>();
 const FABRIC_TILE_CACHE = new Map<string, string>();
@@ -2682,7 +2682,7 @@ const SuitPreview = ({
                   {...pantsStripeMaskProps}
                 />
               )}
-              {hasPantsRightSplit && (
+              {pantsRightUnderMask && (
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
@@ -2718,7 +2718,7 @@ const SuitPreview = ({
                 backgroundOffset={pantsStripeOffsets.leftMain}
                 {...pantsStripeMaskProps}
               />
-              {hasPantsRightSplit ? (
+              {pantsRightFlyMask && (
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
@@ -2730,24 +2730,6 @@ const SuitPreview = ({
                   panZoom={panZoom}
                   canvas={PANTS_CANVAS}
                   mask={pantsRightFlyMask}
-                  textureScale={fabricTextureScale}
-                  textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={rightFlyBaseRotationDeg}
-                  backgroundOffset={rightFlyBackgroundOffset}
-                  {...pantsStripeMaskProps}
-                />
-              ) : (
-                <FabricUnion
-                  layers={pantsTextureLayers}
-                  resolve={resolveCdn}
-                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsTextureStyle}
-                  baseColor={tunedFabricFill || toneBaseColor}
-                  baseBlendMode="normal"
-                  baseOpacity={0}
-                  panZoom={panZoom}
-                  canvas={PANTS_CANVAS}
-                  mask={pantsLegMasks?.right ?? pantsMask}
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={rightFlyBaseRotationDeg}
@@ -2817,7 +2799,7 @@ const SuitPreview = ({
                   {...pantsStripeMaskProps}
                 />
               )}
-              {hasPantsRightSplit && (
+              {pantsRightUnderMask && (
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
@@ -2853,7 +2835,7 @@ const SuitPreview = ({
                 backgroundOffset={pantsStripeOffsets.leftMain}
                 {...pantsStripeMaskProps}
               />
-              {hasPantsRightSplit ? (
+              {pantsRightFlyMask && (
                 <FabricUnion
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
@@ -2865,24 +2847,6 @@ const SuitPreview = ({
                   panZoom={panZoom}
                   canvas={PANTS_CANVAS}
                   mask={pantsRightFlyMask}
-                  textureScale={fabricTextureScale}
-                  textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={rightFlyBaseRotationDeg}
-                  backgroundOffset={rightFlyBackgroundOffset}
-                  {...pantsStripeMaskProps}
-                />
-              ) : (
-                <FabricUnion
-                  layers={pantsTextureLayers}
-                  resolve={resolveCdn}
-                  fabricTexture={useTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsStripeHighlightStyle ?? stripeHighlightStyle}
-                  baseColor={tunedFabricFill || toneBaseColor}
-                  baseBlendMode="normal"
-                  baseOpacity={0}
-                  panZoom={panZoom}
-                  canvas={PANTS_CANVAS}
-                  mask={pantsLegMasks?.right ?? pantsMask}
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={rightFlyBaseRotationDeg}
