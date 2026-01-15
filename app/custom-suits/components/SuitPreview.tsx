@@ -1491,7 +1491,7 @@ const SuitPreview = ({
   const pantsRightUnderMask = pantsRightSplitMasks?.lower ?? pantsLegMasks?.right ?? pantsMask;
   const hasPantsLegSplit = Boolean(pantsLegMasks);
   const hasPantsRightSplit = Boolean(pantsRightSplitMasks);
-  const useSplitPantsTexture = useTexture && hasPantsLegSplit && stripeBoost;
+  const useSplitPantsTexture = useTexture && hasPantsLegSplit && (stripeBoost || isPantsCmsStripe);
   const pantsStripeTexture = fabricTileTexture ?? fabricTextureSourcePants;
   const canRenderPantsPatternOverlay = Boolean(
     usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks && pantsRightSplitMasks && pantsStripeTexture
@@ -2039,12 +2039,19 @@ const SuitPreview = ({
                 }
                 const rightAlpha = rightMask.data[idx + 3];
                 if (rightAlpha < 1) continue;
-                if (underAllowed) {
-                  rightLower.data[idx] = 255;
-                  rightLower.data[idx + 1] = 255;
-                  rightLower.data[idx + 2] = 255;
-                  rightLower.data[idx + 3] = rightAlpha;
-                } else if (!isUnder) {
+                if (isUnder) {
+                  if (underAllowed) {
+                    rightLower.data[idx] = 255;
+                    rightLower.data[idx + 1] = 255;
+                    rightLower.data[idx + 2] = 255;
+                    rightLower.data[idx + 3] = rightAlpha;
+                  } else {
+                    rightUpper.data[idx] = 255;
+                    rightUpper.data[idx + 1] = 255;
+                    rightUpper.data[idx + 2] = 255;
+                    rightUpper.data[idx + 3] = rightAlpha;
+                  }
+                } else {
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
                   rightUpper.data[idx + 2] = 255;
