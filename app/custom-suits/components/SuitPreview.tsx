@@ -2000,7 +2000,7 @@ const SuitPreview = ({
                     leftUnder.data[idx + 1] = 255;
                     leftUnder.data[idx + 2] = 255;
                     leftUnder.data[idx + 3] = leftAlpha;
-                  } else if (!isUnder) {
+                  } else {
                     leftMain.data[idx] = 255;
                     leftMain.data[idx + 1] = 255;
                     leftMain.data[idx + 2] = 255;
