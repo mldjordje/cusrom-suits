@@ -24,6 +24,7 @@ type Props = {
   maskRepeat?: React.CSSProperties["maskRepeat"];
   backgroundAnchor?: "center" | "top-left";
   rotationOrigin?: string;
+  backgroundOffset?: { x: number; y: number };
 };
 
 const buildMask = (mask?: string | null, fallback?: SpritePair | null) => {
@@ -65,10 +66,13 @@ const FabricUnionComponent: React.FC<Props> = ({
   maskRepeat = "no-repeat",
   backgroundAnchor = "center",
   rotationOrigin = "center",
+  backgroundOffset,
 }) => {
   const baseScale = panZoom.scale * textureScale;
   const rotationScale = textureRotationDeg ? computeRotationScale(canvas, textureRotationDeg) : 1;
   const rotationCompensation = rotationScale ? 1 / rotationScale : 1;
+  const offsetX = panZoom.offset.x + (backgroundOffset?.x ?? 0);
+  const offsetY = panZoom.offset.y + (backgroundOffset?.y ?? 0);
   const buildBgSize = (scale: number) =>
     typeof textureTileSizePx === "number" && Number.isFinite(textureTileSizePx)
       ? `${(textureTileSizePx * scale).toFixed(2)}px ${(textureTileSizePx * scale).toFixed(2)}px`
@@ -76,16 +80,16 @@ const FabricUnionComponent: React.FC<Props> = ({
   const bgSize = buildBgSize(baseScale);
   const bgPos =
     backgroundAnchor === "top-left"
-      ? `${Math.round(panZoom.offset.x)}px ${Math.round(panZoom.offset.y)}px`
-      : `calc(50% + ${Math.round(panZoom.offset.x)}px) calc(50% + ${Math.round(panZoom.offset.y)}px)`;
+      ? `${Math.round(offsetX)}px ${Math.round(offsetY)}px`
+      : `calc(50% + ${Math.round(offsetX)}px) calc(50% + ${Math.round(offsetY)}px)`;
   const rotatedBgSize = buildBgSize(baseScale * rotationCompensation);
   const rotatedBgPos =
     backgroundAnchor === "top-left"
-      ? `${Math.round(panZoom.offset.x * rotationCompensation)}px ${Math.round(
-          panZoom.offset.y * rotationCompensation
+      ? `${Math.round(offsetX * rotationCompensation)}px ${Math.round(
+          offsetY * rotationCompensation
         )}px`
-      : `calc(50% + ${Math.round(panZoom.offset.x * rotationCompensation)}px) calc(50% + ${Math.round(
-          panZoom.offset.y * rotationCompensation
+      : `calc(50% + ${Math.round(offsetX * rotationCompensation)}px) calc(50% + ${Math.round(
+          offsetY * rotationCompensation
         )}px)`;
   const maskSizeValue = maskSize;
   const maskPositionValue = maskPosition;

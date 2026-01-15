@@ -1378,6 +1378,7 @@ const SuitPreview = ({
     }),
     []
   );
+  const pantsStripeOffsets = PANTS_STRIPE_TUNING.stripeOffsets;
   const hasPantsLegSplit = Boolean(pantsLegMasks);
   const hasPantsRightSplit = Boolean(pantsRightSplitMasks);
   const useSplitPantsTexture = useTexture && hasPantsLegSplit && stripeRotationActive;
@@ -2289,6 +2290,7 @@ const SuitPreview = ({
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
                 textureRotationDeg={pantsTextureRotationLeft}
+                backgroundOffset={pantsStripeOffsets.left}
                 {...pantsStripeMaskProps}
               />
               {hasPantsRightSplit ? (
@@ -2307,6 +2309,7 @@ const SuitPreview = ({
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
                     textureRotationDeg={pantsTextureRotationRightUpper}
+                    backgroundOffset={pantsStripeOffsets.rightUpper}
                     {...pantsStripeMaskProps}
                   />
                   <FabricUnion
@@ -2323,6 +2326,7 @@ const SuitPreview = ({
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
                     textureRotationDeg={pantsTextureRotationRightLower}
+                    backgroundOffset={pantsStripeOffsets.rightLower}
                     {...pantsStripeMaskProps}
                   />
                 </>
@@ -2341,6 +2345,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationRightUpper}
+                  backgroundOffset={pantsStripeOffsets.rightUpper}
                   {...pantsStripeMaskProps}
                 />
               )}
@@ -2359,6 +2364,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationWaist}
+                  backgroundOffset={pantsStripeOffsets.waist}
                   {...pantsStripeMaskProps}
                 />
               )}
@@ -2400,6 +2406,7 @@ const SuitPreview = ({
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
                 textureRotationDeg={pantsTextureRotationLeft}
+                backgroundOffset={pantsStripeOffsets.left}
                 {...pantsStripeMaskProps}
               />
               {hasPantsRightSplit ? (
@@ -2418,6 +2425,7 @@ const SuitPreview = ({
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
                     textureRotationDeg={pantsTextureRotationRightUpper}
+                    backgroundOffset={pantsStripeOffsets.rightUpper}
                     {...pantsStripeMaskProps}
                   />
                   <FabricUnion
@@ -2434,6 +2442,7 @@ const SuitPreview = ({
                     textureScale={fabricTextureScale}
                     textureTileSizePx={TEXTURE_TILE_PX}
                     textureRotationDeg={pantsTextureRotationRightLower}
+                    backgroundOffset={pantsStripeOffsets.rightLower}
                     {...pantsStripeMaskProps}
                   />
                 </>
@@ -2452,6 +2461,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationRightUpper}
+                  backgroundOffset={pantsStripeOffsets.rightUpper}
                   {...pantsStripeMaskProps}
                 />
               )}
@@ -2470,6 +2480,7 @@ const SuitPreview = ({
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
                   textureRotationDeg={pantsTextureRotationWaist}
+                  backgroundOffset={pantsStripeOffsets.waist}
                   {...pantsStripeMaskProps}
                 />
               )}

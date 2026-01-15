@@ -1,11 +1,11 @@
 export const PANTS_STRIPE_TUNING = {
   // 1️⃣ LEVA NOGAVICA – jaka dijagonala
-  leftRotationDeg: -28.0,
+  leftRotationDeg: -41,
 
   // 2️⃣ PREKLOP / ŠLIC
   // gotovo horizontalno (mnogo manji nagib)
-  rightUpperRotationDeg: -6.0,
-  rightLowerRotationDeg: -6.0,
+  rightUpperRotationDeg: -0.8,
+  rightLowerRotationDeg: -0.8,
 
   // 3️⃣ POJAS – čisto vertikalno
   waistRotationDeg: 90,
@@ -15,6 +15,13 @@ export const PANTS_STRIPE_TUNING = {
     refHeight: 254,
     slope: 0.43496,
     intercept: 16.11,
+  },
+
+  stripeOffsets: {
+    left: { x: 0, y: 0 },
+    rightUpper: { x: 0, y: 0 },
+    rightLower: { x: 0, y: 0 },
+    waist: { x: 0, y: 0 },
   },
 
   // split mora ostati neutralan da ne “lomi” pruge
