@@ -877,7 +877,9 @@ const SuitPreview = ({
           ? { lineWidth: 2, spacing: 26, opacity: 0.14 }
           : { lineWidth: 1, spacing: 20, opacity: 0.12 };
     const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
-    const spacing = clamp(defaults.spacing / Math.max(0.2, scale), 8, 80);
+    const isThinStripe = pantsPatternValue.includes("tanke") || pantsPatternValue.includes("pinstripe");
+    const spacingBase = defaults.spacing / Math.max(0.2, scale);
+    const spacing = clamp(spacingBase * (isThinStripe ? 1.15 : 1), 8, 80);
     const strengthRaw = parseNumber(
       (selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength
     );
@@ -903,6 +905,7 @@ const SuitPreview = ({
       spacing,
       opacity,
       lineColor,
+      lineRgb,
     };
   }, [
     hasExplicitTextureScale,
@@ -914,9 +917,21 @@ const SuitPreview = ({
     usePantsPatternOverlay,
   ]);
   const buildPantsPatternStyle = useCallback(
-    (angleDeg: number): React.CSSProperties => {
+    (
+      angleDeg: number,
+      options?: { opacityMul?: number; brightenMul?: number }
+    ): React.CSSProperties => {
       if (!pantsPatternOverlayConfig) return {};
-      const { lineWidth, spacing, opacity, lineColor, pattern } = pantsPatternOverlayConfig;
+      const { lineWidth, spacing, opacity, pattern, lineRgb } = pantsPatternOverlayConfig;
+      const opacityMul = options?.opacityMul ?? 1;
+      const brightenMul = options?.brightenMul ?? 1;
+      const tunedOpacity = clamp(opacity * opacityMul, 0.05, 0.3);
+      const tunedRgb = {
+        r: clampChannel(lineRgb.r * brightenMul),
+        g: clampChannel(lineRgb.g * brightenMul),
+        b: clampChannel(lineRgb.b * brightenMul),
+      };
+      const lineColor = `rgb(${tunedRgb.r}, ${tunedRgb.g}, ${tunedRgb.b})`;
       const stripe = `repeating-linear-gradient(${angleDeg}deg, ${lineColor} 0px, ${lineColor} ${lineWidth}px, transparent ${lineWidth}px, transparent ${spacing}px)`;
       const backgroundImage =
         pattern === "karo"
@@ -928,7 +943,7 @@ const SuitPreview = ({
         backgroundRepeat: "repeat",
         backgroundSize: `${spacing}px ${spacing}px`,
         mixBlendMode,
-        opacity,
+        opacity: tunedOpacity,
         filter: "none",
       };
     },
@@ -2705,7 +2720,7 @@ const SuitPreview = ({
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
                 fabricTexture={pantsStripeTexture}
-                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.leftRotationDeg)}
+                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.leftRotationDeg, { opacityMul: 0.85 })}
                 baseColor={tunedFabricFill || toneBaseColor}
                 baseBlendMode="normal"
                 baseOpacity={0}
@@ -2723,7 +2738,7 @@ const SuitPreview = ({
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
                 fabricTexture={pantsStripeTexture}
-                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.leftRotationDeg)}
+                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.leftRotationDeg, { opacityMul: 0.85 })}
                 baseColor={tunedFabricFill || toneBaseColor}
                 baseBlendMode="normal"
                 baseOpacity={0}
@@ -2740,7 +2755,7 @@ const SuitPreview = ({
               layers={pantsTextureLayers}
               resolve={resolveCdn}
               fabricTexture={pantsStripeTexture}
-              textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.leftRotationDeg)}
+              textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.leftRotationDeg, { opacityMul: 0.85 })}
               baseColor={tunedFabricFill || toneBaseColor}
               baseBlendMode="normal"
               baseOpacity={0}
@@ -2757,7 +2772,10 @@ const SuitPreview = ({
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
                 fabricTexture={pantsStripeTexture}
-                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.rightUpperRotationDeg)}
+                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.rightUpperRotationDeg, {
+                  opacityMul: 1.35,
+                  brightenMul: 1.2,
+                })}
                 baseColor={tunedFabricFill || toneBaseColor}
                 baseBlendMode="normal"
                 baseOpacity={0}
@@ -2775,7 +2793,10 @@ const SuitPreview = ({
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
                 fabricTexture={pantsStripeTexture}
-                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.waistRotationDeg)}
+                textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.waistRotationDeg, {
+                  opacityMul: 1.2,
+                  brightenMul: 1.1,
+                })}
                 baseColor={tunedFabricFill || toneBaseColor}
                 baseBlendMode="normal"
                 baseOpacity={0}
