@@ -879,7 +879,7 @@ const SuitPreview = ({
     const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
     const isThinStripe = pantsPatternValue.includes("tanke") || pantsPatternValue.includes("pinstripe");
     const spacingBase = defaults.spacing / Math.max(0.2, scale);
-    const spacing = clamp(spacingBase * (isThinStripe ? 1.15 : 1), 8, 80);
+    const spacing = clamp(spacingBase * (isThinStripe ? 1.2 : 1), 8, 80);
     const strengthRaw = parseNumber(
       (selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength
     );
@@ -2773,7 +2773,7 @@ const SuitPreview = ({
                 resolve={resolveCdn}
                 fabricTexture={pantsStripeTexture}
                 textureStyle={buildPantsPatternStyle(PANTS_STRIPE_TUNING.rightUpperRotationDeg, {
-                  opacityMul: 1.35,
+                  opacityMul: 1.25,
                   brightenMul: 1.2,
                 })}
                 baseColor={tunedFabricFill || toneBaseColor}
