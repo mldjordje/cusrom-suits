@@ -2402,6 +2402,19 @@ const SuitPreview = ({
                 }
               }
             }
+            let rightUpperCleanCount = 0;
+            for (let y = 0; y < c.height; y++) {
+              for (let x = 0; x < c.width; x++) {
+                const idx = (y * c.width + x) * 4;
+                if (rightUpper.data[idx + 3] < 1) continue;
+                if (leftUnder.data[idx + 3] > 0 || leftMask.data[idx + 3] > 0) {
+                  rightUpper.data[idx + 3] = 0;
+                } else {
+                  rightUpperCleanCount++;
+                }
+              }
+            }
+            rightFlyCount = rightUpperCleanCount;
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
