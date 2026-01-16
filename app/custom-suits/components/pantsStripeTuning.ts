@@ -1,9 +1,11 @@
 export const PANTS_STRIPE_TUNING = {
   // Rotation deltas relative to the stripe tile base orientation.
   // Base orientation is computed from the tile and treated as "horizontal".
-  diagDeltaDeg: -44,
-  flyDeltaDeg: 0,
-  waistDeltaDeg: 90,
+  // Assumes stripe tile base is vertical for pinstripes.
+  // Deltas rotate the base to the desired visual directions.
+  diagDeltaDeg: 46,
+  flyDeltaDeg: 90,
+  waistDeltaDeg: 0,
 
   seam: {
     refWidth: 484,
