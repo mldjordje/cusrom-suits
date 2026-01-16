@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import NextImage from "next/image";
 import AdminNav from "../components/AdminNav";
+import { buildBackendUrl } from "../../custom-suits/utils/backend";
 
 type Fabric = {
   id: string;
@@ -17,6 +18,7 @@ type Fabric = {
   textureContrast?: number | null;
   textureBrightness?: number | null;
   pantsTextureRotation?: number | null;
+  stripeSpacing?: number | null;
 };
 
 type Status = { type: "idle" | "loading" | "error" | "success"; message?: string };
@@ -89,6 +91,7 @@ export default function FabricsAdminPage() {
     textureContrast: "",
     textureBrightness: "",
     pantsTextureRotation: "",
+    stripeSpacing: "",
   });
   const [file, setFile] = useState<File | null>(null);
   const [autoTone, setAutoTone] = useState<string | null>(null);
@@ -138,7 +141,7 @@ export default function FabricsAdminPage() {
 
   const loadFabrics = useMemo(
     () => async () => {
-      const res = await fetch("/api/fabrics");
+      const res = await fetch(buildBackendUrl("fabrics"));
       const json = await res.json();
       if (json?.data) setFabrics(json.data);
     },
@@ -274,9 +277,10 @@ export default function FabricsAdminPage() {
     if (form.textureContrast.trim()) fd.set("textureContrast", form.textureContrast.trim());
     if (form.textureBrightness.trim()) fd.set("textureBrightness", form.textureBrightness.trim());
     if (form.pantsTextureRotation.trim()) fd.set("pantsTextureRotation", form.pantsTextureRotation.trim());
+    if (form.stripeSpacing.trim()) fd.set("stripeSpacing", form.stripeSpacing.trim());
     if (file) fd.set("file", file);
 
-    const res = await fetch("/api/fabrics/upload", { method: "POST", body: fd });
+    const res = await fetch(buildBackendUrl("fabrics/upload"), { method: "POST", body: fd });
     const json = await res.json();
     if (!res.ok || !json?.success) {
       setStatus({ type: "error", message: json?.message || "Upload failed" });
@@ -296,6 +300,7 @@ export default function FabricsAdminPage() {
       textureContrast: "",
       textureBrightness: "",
       pantsTextureRotation: "",
+      stripeSpacing: "",
     });
     setFile(null);
     setAutoTone(null);
@@ -305,7 +310,7 @@ export default function FabricsAdminPage() {
   const onDelete = async (id: string) => {
     if (!confirm("Obrisati tkaninu?")) return;
     setStatus({ type: "loading", message: "Brisanje..." });
-    const res = await fetch("/api/fabrics/upload", {
+    const res = await fetch(buildBackendUrl("fabrics/upload"), {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
@@ -333,6 +338,7 @@ export default function FabricsAdminPage() {
       textureContrast: typeof fab.textureContrast === "number" ? String(fab.textureContrast) : "",
       textureBrightness: typeof fab.textureBrightness === "number" ? String(fab.textureBrightness) : "",
       pantsTextureRotation: typeof fab.pantsTextureRotation === "number" ? String(fab.pantsTextureRotation) : "",
+      stripeSpacing: typeof fab.stripeSpacing === "number" ? String(fab.stripeSpacing) : "",
     });
     setAutoTone(null);
     setFile(null);
@@ -487,6 +493,16 @@ export default function FabricsAdminPage() {
                 inputMode="numeric"
               />
             </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-gray-700">Gustina pruga (px razmak)</label>
+              <input
+                value={form.stripeSpacing}
+                onChange={(e) => setForm((s) => ({ ...s, stripeSpacing: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                placeholder="6"
+                inputMode="decimal"
+              />
+            </div>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
@@ -577,6 +593,7 @@ export default function FabricsAdminPage() {
               typeof f.textureContrast === "number" ? `contrast ${f.textureContrast}` : null,
               typeof f.textureBrightness === "number" ? `bright ${f.textureBrightness}` : null,
               typeof f.pantsTextureRotation === "number" ? `pants rot ${f.pantsTextureRotation}` : null,
+              typeof f.stripeSpacing === "number" ? `stripe spacing ${f.stripeSpacing}` : null,
             ]
               .filter(Boolean)
               .join(" • ");

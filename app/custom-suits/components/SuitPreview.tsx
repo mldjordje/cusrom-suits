@@ -942,15 +942,19 @@ const SuitPreview = ({
     const darkBoost = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const defaults =
       pantsPatternValueResolved === "tanke pruge"
-        ? { lineWidth: 1, spacing: 5, opacity: 0.3 }
+        ? { lineWidth: 1, spacing: 4, opacity: 0.3 }
         : pantsPatternValueResolved === "pruge"
-          ? { lineWidth: 1.5, spacing: 9, opacity: 0.26 }
+          ? { lineWidth: 1.2, spacing: 7, opacity: 0.26 }
           : { lineWidth: 1, spacing: 12, opacity: 0.2 };
     const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
     const isThinStripe =
       pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
     const spacingBase = defaults.spacing / Math.max(0.2, scale);
-    const spacing = clamp(spacingBase * (isThinStripe ? 1.0 : 1), 6, 80);
+    const spacingOverride = parseNumber(
+      (selectedFabric as any)?.stripeSpacing ?? (selectedFabric as any)?.stripe_spacing
+    );
+    const spacingRaw = typeof spacingOverride === "number" ? spacingOverride : spacingBase * (isThinStripe ? 1.0 : 1);
+    const spacing = clamp(spacingRaw, 4, 80);
     const strengthRaw = parseNumber(
       (selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength
     );
@@ -1668,11 +1672,8 @@ const SuitPreview = ({
       }),
     [buildPantsPatternStyle, pantsPatternBlendMode, pantsSplitRotation.waist]
   );
-  const hasPantsFoldMask = Boolean(pantsLeftUnderMask || pantsRightLowerMask);
-  const pantsOverlayStyleMain = hasPantsFoldMask ? pantsOverlayStyleRight : pantsOverlayStyleLeft;
-  const pantsSplitRotationMain = hasPantsFoldMask
-    ? pantsSplitTextureRotation.right
-    : pantsSplitTextureRotation.left;
+  const pantsOverlayStyleMain = pantsOverlayStyleLeft;
+  const pantsSplitRotationMain = pantsSplitTextureRotation.left;
   const rightFlyBackgroundOffset = useMemo(
     () => ({
       x: pantsStripeOffsets.rightFly.x - panZoom.offset.x,
@@ -2358,6 +2359,8 @@ const SuitPreview = ({
             let leftUnderCount = 0;
             let rightFlyCount = 0;
             let rightUnderCount = 0;
+            const boundaryPad = PANTS_STRIPE_TUNING.boundaryPadPx ?? 0;
+            const seamBoundaryPad = PANTS_STRIPE_TUNING.seam.boundaryPadPx ?? 0;
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
@@ -2369,9 +2372,11 @@ const SuitPreview = ({
                 const seamXPad = PANTS_STRIPE_TUNING.seam.xPadPx ?? 0;
                 const seamX = seamXForY[y] + seamXPad;
                 const isUnder = x < seamXMax && y > seamY && x <= seamX;
-                const boundaryPad = PANTS_STRIPE_TUNING.boundaryPadPx ?? 0;
                 const boundaryRaw = legBoundaryX[y];
-                const boundaryX = Math.min(c.width - 1, Math.max(0, Math.max(boundaryRaw + boundaryPad, seamX)));
+                const boundaryX = Math.min(
+                  c.width - 1,
+                  Math.max(0, Math.max(boundaryRaw + boundaryPad, seamX + seamBoundaryPad))
+                );
                 const isRightSide = x >= boundaryX;
                 if (isUnder) {
                   leftUnder.data[idx] = 255;
@@ -2405,7 +2410,7 @@ const SuitPreview = ({
                   const boundaryRaw = legBoundaryX[y];
                   const boundaryX = Math.min(
                     c.width - 1,
-                    Math.max(0, boundaryRaw + (PANTS_STRIPE_TUNING.boundaryPadPx ?? 0))
+                    Math.max(0, Math.max(boundaryRaw + boundaryPad, seamXForY[y] + seamBoundaryPad))
                   );
                   if (x < boundaryX) continue;
                   rightUpper.data[idx] = 255;
@@ -2421,6 +2426,10 @@ const SuitPreview = ({
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
                 if (rightUpper.data[idx + 3] < 1) continue;
+                if (x < seamXForY[y] + seamBoundaryPad) {
+                  rightUpper.data[idx + 3] = 0;
+                  continue;
+                }
                 if (leftUnder.data[idx + 3] > 0 || leftMask.data[idx + 3] > 0) {
                   rightUpper.data[idx + 3] = 0;
                 } else {
