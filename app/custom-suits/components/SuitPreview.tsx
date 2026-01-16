@@ -942,10 +942,10 @@ const SuitPreview = ({
     const darkBoost = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const defaults =
       pantsPatternValueResolved === "tanke pruge"
-        ? { lineWidth: 1, spacing: 7, opacity: 0.24 }
+        ? { lineWidth: 1, spacing: 6, opacity: 0.28 }
         : pantsPatternValueResolved === "pruge"
-          ? { lineWidth: 1.5, spacing: 12, opacity: 0.22 }
-          : { lineWidth: 1, spacing: 16, opacity: 0.16 };
+          ? { lineWidth: 1.5, spacing: 10, opacity: 0.24 }
+          : { lineWidth: 1, spacing: 14, opacity: 0.18 };
     const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
     const isThinStripe =
       pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
@@ -2296,39 +2296,24 @@ const SuitPreview = ({
             }
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
-            const seamSearchMax = Math.max(1, Math.min(c.width - 1, seamXMax - 2));
-            const seamBoundaryX = new Int16Array(c.height);
-            seamBoundaryX.fill(-1);
-            if (seamMaskData?.data) {
-              const seamData = seamMaskData.data;
-              const rowCounts = new Int16Array(c.height);
-              for (let y = 0; y < c.height; y++) {
-                let rowCount = 0;
-                for (let x = 0; x < c.width; x++) {
-                  const idx = (y * c.width + x) * 4;
-                  if (seamData[idx + 3] > 0) rowCount++;
-                }
-                rowCounts[y] = rowCount;
-              }
-              const horizontalThreshold = Math.max(24, Math.round(c.width * 0.06));
-              for (let y = 0; y < c.height; y++) {
-                if (rowCounts[y] >= horizontalThreshold) continue;
-                for (let x = 0; x <= seamSearchMax; x++) {
-                  const idx = (y * c.width + x) * 4;
-                  if (seamData[idx + 3] > 0) {
-                    seamBoundaryX[y] = x;
-                    break;
-                  }
+            const legBoundaryX = new Int16Array(c.height);
+            legBoundaryX.fill(-1);
+            for (let y = 0; y < c.height; y++) {
+              for (let x = 0; x < c.width; x++) {
+                const idx = (y * c.width + x) * 4;
+                if (rightMask.data[idx + 3] > 0) {
+                  legBoundaryX[y] = x;
+                  break;
                 }
               }
             }
-            const seamFallbackX = Math.round(c.width * PANTS_STRIPE_TUNING.rightForceXRatio);
+            const legFallbackX = Math.round(c.width * PANTS_STRIPE_TUNING.rightForceXRatio);
             let lastBoundaryX = -1;
             for (let y = 0; y < c.height; y++) {
-              if (seamBoundaryX[y] >= 0) {
-                lastBoundaryX = seamBoundaryX[y];
+              if (legBoundaryX[y] >= 0) {
+                lastBoundaryX = legBoundaryX[y];
               } else {
-                seamBoundaryX[y] = lastBoundaryX >= 0 ? lastBoundaryX : seamFallbackX;
+                legBoundaryX[y] = lastBoundaryX >= 0 ? lastBoundaryX : legFallbackX;
               }
             }
             const leftMain = ctx.createImageData(c.width, c.height);
@@ -2349,10 +2334,10 @@ const SuitPreview = ({
                 const seamY = seamLine.slope * x + seamLine.intercept - seamBias;
                 const isUnder = x < seamXMax && y > seamY;
                 const boundaryPad = PANTS_STRIPE_TUNING.boundaryPadPx ?? 0;
-                const boundaryRaw = seamBoundaryX[y] >= 0 ? seamBoundaryX[y] : seamSearchMax;
+                const boundaryRaw = legBoundaryX[y];
                 const boundaryX = Math.min(c.width - 1, Math.max(0, boundaryRaw + boundaryPad));
                 const isRightSide = x >= boundaryX;
-                if (isUnder) {
+                if (isUnder && !isRightSide) {
                   leftUnder.data[idx] = 255;
                   leftUnder.data[idx + 1] = 255;
                   leftUnder.data[idx + 2] = 255;
@@ -2381,7 +2366,7 @@ const SuitPreview = ({
                   const unionAlpha = full[idx + 3];
                   if (unionAlpha < 1) continue;
                   if (waistMask.data[idx + 3] > 0) continue;
-                  const boundaryRaw = seamBoundaryX[y] >= 0 ? seamBoundaryX[y] : seamSearchMax;
+                  const boundaryRaw = legBoundaryX[y];
                   const boundaryX = Math.min(
                     c.width - 1,
                     Math.max(0, boundaryRaw + (PANTS_STRIPE_TUNING.boundaryPadPx ?? 0))
