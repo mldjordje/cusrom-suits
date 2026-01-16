@@ -1578,7 +1578,7 @@ const SuitPreview = ({
   const canRenderPantsPatternOverlay = Boolean(
     usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks
   );
-  const shouldRenderPantsPatternOverlay = canRenderPantsPatternOverlay;
+  const shouldRenderPantsPatternOverlay = canRenderPantsPatternOverlay && !useSplitPantsTexture;
   const pantsBaseFillOpacity = useMemo(() => {
     const base = usePhotoBase ? photoBaseOpacity : 0.95;
     return isPantsCmsStripe ? base * 0.85 : base;
@@ -2785,7 +2785,7 @@ const SuitPreview = ({
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
                 fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
-                textureStyle={pantsSplitTextureStyle}
+                textureStyle={fabricTextureStyle}
                 baseColor={tunedFabricFill || toneBaseColor}
                 baseBlendMode="normal"
                 baseOpacity={0}
@@ -2803,7 +2803,7 @@ const SuitPreview = ({
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
                   fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsSplitTextureStyle}
+                  textureStyle={fabricTextureStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
                   baseOpacity={0}
@@ -2822,7 +2822,7 @@ const SuitPreview = ({
                   layers={pantsTextureLayers}
                   resolve={resolveCdn}
                   fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
-                  textureStyle={pantsSplitTextureStyle}
+                  textureStyle={fabricTextureStyle}
                   baseColor={tunedFabricFill || toneBaseColor}
                   baseBlendMode="normal"
                   baseOpacity={0}
@@ -2836,13 +2836,13 @@ const SuitPreview = ({
                   {...pantsStripeMaskProps}
                 />
               )}
-              {pantsStripeHighlightStyle && (
+              {stripeHighlightStyle && (
                 <>
                   <FabricUnion
                     layers={pantsTextureLayers}
                     resolve={resolveCdn}
                     fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
-                    textureStyle={pantsStripeHighlightStyle}
+                    textureStyle={stripeHighlightStyle}
                     baseColor={tunedFabricFill || toneBaseColor}
                     baseBlendMode="normal"
                     baseOpacity={0}
@@ -2860,7 +2860,7 @@ const SuitPreview = ({
                       layers={pantsTextureLayers}
                       resolve={resolveCdn}
                       fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
-                      textureStyle={pantsStripeHighlightStyle}
+                      textureStyle={stripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="normal"
                       baseOpacity={0}
@@ -2879,7 +2879,7 @@ const SuitPreview = ({
                       layers={pantsTextureLayers}
                       resolve={resolveCdn}
                       fabricTexture={useSplitPantsTexture ? pantsStripeTexture : undefined}
-                      textureStyle={pantsStripeHighlightStyle}
+                      textureStyle={stripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="normal"
                       baseOpacity={0}
