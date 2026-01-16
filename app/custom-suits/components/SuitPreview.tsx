@@ -2201,6 +2201,7 @@ const SuitPreview = ({
             }
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
+            const forcedSeamBoundaryX = Math.round(c.width * PANTS_STRIPE_TUNING.rightForceXRatio);
             let seamSearchMax = Math.min(c.width - 1, Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio) - 2);
             let seamBoundaryX: Int16Array;
             let hasSeamMask = false;
@@ -2309,7 +2310,10 @@ const SuitPreview = ({
                 const seamLineUsed = seamLineFromMask ?? seamLine;
                 const seamY = seamLineUsed.slope * x + seamLineUsed.intercept;
                 const isUnder = x < seamXMax && y > seamY;
-                const boundaryX = seamBoundaryX[y] >= 0 ? seamBoundaryX[y] : seamXMax;
+                const boundaryX =
+                  seamBoundaryX[y] >= 0
+                    ? seamBoundaryX[y]
+                    : forcedSeamBoundaryX;
                 const isRightSide = x >= boundaryX;
                 if (isRightSide && !isUnder) {
                   rightUpper.data[idx] = 255;
