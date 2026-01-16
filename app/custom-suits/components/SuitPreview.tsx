@@ -2305,13 +2305,27 @@ const SuitPreview = ({
                 }
               }
             }
-            if (Math.abs(seamLine.slope) < 1e-3) {
-              for (let y = 0; y < c.height; y++) {
-                if (!Number.isFinite(seamXForY[y])) seamXForY[y] = c.width - 1;
+            let lastSeamX = Number.NaN;
+            for (let y = 0; y < c.height; y++) {
+              if (Number.isFinite(seamXForY[y])) {
+                lastSeamX = seamXForY[y];
+                continue;
               }
-            } else {
-              for (let y = 0; y < c.height; y++) {
-                if (Number.isFinite(seamXForY[y])) continue;
+              if (Number.isFinite(lastSeamX)) seamXForY[y] = lastSeamX;
+            }
+            let nextSeamX = Number.NaN;
+            for (let y = c.height - 1; y >= 0; y--) {
+              if (Number.isFinite(seamXForY[y])) {
+                nextSeamX = seamXForY[y];
+                continue;
+              }
+              if (Number.isFinite(nextSeamX)) seamXForY[y] = nextSeamX;
+            }
+            for (let y = 0; y < c.height; y++) {
+              if (Number.isFinite(seamXForY[y])) continue;
+              if (Math.abs(seamLine.slope) < 1e-3) {
+                seamXForY[y] = c.width - 1;
+              } else {
                 const rawX = (y - seamLine.intercept) / seamLine.slope;
                 seamXForY[y] = clamp(rawX, 0, c.width - 1);
               }
