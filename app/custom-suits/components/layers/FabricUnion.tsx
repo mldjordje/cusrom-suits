@@ -46,6 +46,26 @@ const computeRotationScale = (canvas: { w: number; h: number }, angleDeg: number
   return Math.max(1, canvas.w / bboxW, canvas.h / bboxH);
 };
 
+const parsePxBackgroundSize = (value?: React.CSSProperties["backgroundSize"]) => {
+  if (typeof value !== "string") return null;
+  const parts = value.trim().split(/\s+/);
+  if (!parts.length) return null;
+  const [xRaw, yRaw] = parts.length === 1 ? [parts[0], parts[0]] : parts;
+  const parsePart = (part: string) => {
+    const trimmed = part.trim();
+    if (!trimmed.endsWith("px")) return null;
+    const num = Number.parseFloat(trimmed.slice(0, -2));
+    return Number.isFinite(num) ? num : null;
+  };
+  const x = parsePart(xRaw);
+  const y = parsePart(yRaw);
+  if (x === null || y === null) return null;
+  return { x, y };
+};
+
+const scalePxBackgroundSize = (size: { x: number; y: number }, scale: number) =>
+  `${(size.x * scale).toFixed(2)}px ${(size.y * scale).toFixed(2)}px`;
+
 const FabricUnionComponent: React.FC<Props> = ({
   layers,
   resolve,
@@ -82,7 +102,13 @@ const FabricUnionComponent: React.FC<Props> = ({
     backgroundAnchor === "top-left"
       ? `${Math.round(offsetX)}px ${Math.round(offsetY)}px`
       : `calc(50% + ${Math.round(offsetX)}px) calc(50% + ${Math.round(offsetY)}px)`;
-  const rotatedBgSize = buildBgSize(baseScale * rotationCompensation);
+  const textureBgSize = textureStyle.backgroundSize;
+  const resolvedBgSize = textureBgSize ?? bgSize;
+  const resolvedBgPos = textureStyle.backgroundPosition ?? bgPos;
+  const parsedBgSize = parsePxBackgroundSize(textureBgSize);
+  const rotatedBgSize = parsedBgSize
+    ? scalePxBackgroundSize(parsedBgSize, rotationCompensation)
+    : textureBgSize ?? buildBgSize(baseScale * rotationCompensation);
   const rotatedBgPos =
     backgroundAnchor === "top-left"
       ? `${Math.round(offsetX * rotationCompensation)}px ${Math.round(
@@ -157,8 +183,8 @@ const FabricUnionComponent: React.FC<Props> = ({
     const baseStyle: React.CSSProperties = {
       backgroundImage: `url(${fabricTexture})`,
       backgroundRepeat: "repeat",
-      backgroundSize: bgSize,
-      backgroundPosition: bgPos,
+      backgroundSize: resolvedBgSize,
+      backgroundPosition: resolvedBgPos,
       pointerEvents: "none",
       ...textureStyle,
       mixBlendMode,
