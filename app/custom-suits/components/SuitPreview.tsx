@@ -607,9 +607,15 @@ const SuitPreview = ({
     const haystack = `${name} ${texture}`.toLowerCase();
     return /pinstripe|stripe|linije|lines|pruga|pruge/.test(haystack);
   }, [fabricTexture, fabricTextureSource, selectedFabric]);
+  const autoStripePattern = useMemo(() => {
+    if (fabricStripe.orientation === "none") return "";
+    if (fabricStripe.strength < 0.16) return "";
+    if (fabricStripe.contrast >= 0.2 || fabricStripe.strength >= 0.35) return "pruge";
+    return "tanke pruge";
+  }, [fabricStripe]);
   const pantsPatternValueResolved = useMemo(
-    () => pantsPatternValue || (stripeNameHint ? "pruge" : ""),
-    [pantsPatternValue, stripeNameHint]
+    () => pantsPatternValue || autoStripePattern || (stripeNameHint ? "pruge" : ""),
+    [autoStripePattern, pantsPatternValue, stripeNameHint]
   );
   const isPantsCmsStripe = useMemo(
     () =>
@@ -933,29 +939,34 @@ const SuitPreview = ({
   );
   const pantsPatternOverlayConfig = useMemo(() => {
     if (!usePantsPatternOverlay) return null;
+    const darkBoost = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const defaults =
       pantsPatternValueResolved === "tanke pruge"
-        ? { lineWidth: 1, spacing: 12, opacity: 0.18 }
+        ? { lineWidth: 1, spacing: 11, opacity: 0.2 }
         : pantsPatternValueResolved === "pruge"
-          ? { lineWidth: 1.5, spacing: 20, opacity: 0.16 }
+          ? { lineWidth: 1.5, spacing: 18, opacity: 0.18 }
           : { lineWidth: 1, spacing: 20, opacity: 0.12 };
     const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
     const isThinStripe =
       pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
     const spacingBase = defaults.spacing / Math.max(0.2, scale);
-    const spacing = clamp(spacingBase * (isThinStripe ? 1.2 : 1), 8, 80);
+    const spacing = clamp(spacingBase * (isThinStripe ? 1.1 : 1), 6, 80);
     const strengthRaw = parseNumber(
       (selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength
     );
     const opacityBase =
       typeof strengthRaw === "number"
-        ? clamp(0.05 + strengthRaw * 0.2, 0.05, 0.25)
+        ? clamp(0.06 + strengthRaw * 0.26, 0.08, 0.3)
         : defaults.opacity;
-    const opacity = isPantsCmsStripe ? clamp(opacityBase, 0.12, 0.22) : opacityBase;
+    const boostedOpacity = opacityBase + (darkBoost ? 0.04 : 0);
+    const opacity = isPantsCmsStripe
+      ? clamp(boostedOpacity, 0.14, 0.34)
+      : clamp(boostedOpacity, 0.08, 0.28);
     const brightnessRaw = parseNumber(
       (selectedFabric as any)?.textureBrightness ?? (selectedFabric as any)?.texture_brightness
     );
-    const brighten = clamp(brightnessRaw ?? 1.12, 1.05, 1.2);
+    const brightenBase = brightnessRaw ?? (darkBoost ? 1.24 : 1.12);
+    const brighten = clamp(brightenBase, 1.05, darkBoost ? 1.32 : 1.2);
     const baseHex = tunedFabricFill || toneBaseColor;
     const baseRgb = hexToRgb(baseHex) ?? { r: 255, g: 255, b: 255 };
     const lineRgb = {
@@ -973,6 +984,8 @@ const SuitPreview = ({
       lineRgb,
     };
   }, [
+    fabricMetrics.lightness,
+    fabricTone,
     hasExplicitTextureScale,
     isPantsCmsStripe,
     pantsPatternValueResolved,
@@ -1549,6 +1562,14 @@ const SuitPreview = ({
     []
   );
   const pantsStripeOffsets = PANTS_STRIPE_TUNING.stripeOffsets;
+  const resolveLegAngle = useCallback(
+    (measured: number | null | undefined, fallback: number) => {
+      if (typeof measured !== "number" || !Number.isFinite(measured)) return fallback;
+      if (Math.abs(measured) < 6) return fallback;
+      return measured;
+    },
+    []
+  );
   const resolvePantsSplitRotation = useCallback(
     (desiredAngle: number) => {
       return desiredAngle;
@@ -1566,15 +1587,15 @@ const SuitPreview = ({
   const pantsSplitTextureRotation = useMemo(
     () => ({
       left: angleToRotation(
-        typeof pantsLegAngles?.left === "number" ? pantsLegAngles.left : PANTS_STRIPE_TUNING.diagAbsDeg
+        resolveLegAngle(pantsLegAngles?.left, PANTS_STRIPE_TUNING.diagAbsDeg)
       ),
       right: angleToRotation(
-        typeof pantsLegAngles?.right === "number" ? pantsLegAngles.right : PANTS_STRIPE_TUNING.flyAbsDeg
+        resolveLegAngle(pantsLegAngles?.right, PANTS_STRIPE_TUNING.flyAbsDeg)
       ),
       fly: angleToRotation(PANTS_STRIPE_TUNING.flyAbsDeg),
       waist: angleToRotation(PANTS_STRIPE_TUNING.waistAbsDeg),
     }),
-    [angleToRotation, pantsLegAngles]
+    [angleToRotation, pantsLegAngles, resolveLegAngle]
   );
   const pantsLeftMainMask = pantsLeftSplitMasks?.main ?? pantsMask;
   const pantsLeftUnderMask = null;
@@ -1603,37 +1624,44 @@ const SuitPreview = ({
     const base = usePhotoBase ? photoBaseOpacity : 0.95;
     return isPantsCmsStripe ? base * 0.85 : base;
   }, [isPantsCmsStripe, photoBaseOpacity, usePhotoBase]);
+  const pantsPatternBlendMode: React.CSSProperties["mixBlendMode"] = stripeWhiteBoost
+    ? "screen"
+    : "normal";
   const pantsOverlayStyleLeft = useMemo(
-    () => buildPantsPatternStyle(pantsSplitRotation.diag, { opacityMul: 1.05, mixBlendMode: "normal" }),
-    [buildPantsPatternStyle, pantsSplitRotation.diag]
+    () =>
+      buildPantsPatternStyle(pantsSplitRotation.diag, {
+        opacityMul: 1.05,
+        mixBlendMode: pantsPatternBlendMode,
+      }),
+    [buildPantsPatternStyle, pantsPatternBlendMode, pantsSplitRotation.diag]
   );
   const pantsOverlayStyleRight = useMemo(
     () =>
-      buildPantsPatternStyle(
-        typeof pantsLegAngles?.right === "number" ? pantsLegAngles.right : pantsSplitRotation.fly,
-        { opacityMul: 1.05, mixBlendMode: "normal" }
-      ),
-    [buildPantsPatternStyle, pantsLegAngles, pantsSplitRotation.fly]
+      buildPantsPatternStyle(pantsSplitRotation.fly, {
+        opacityMul: 1.05,
+        mixBlendMode: pantsPatternBlendMode,
+      }),
+    [buildPantsPatternStyle, pantsPatternBlendMode, pantsSplitRotation.fly]
   );
   const pantsOverlayStyleFly = useMemo(
     () =>
       buildPantsPatternStyle(pantsSplitRotation.fly, {
         opacityMul: 1.35,
         brightenMul: 1.2,
-        mixBlendMode: "normal",
+        mixBlendMode: pantsPatternBlendMode,
         opacityMin: 0.16,
       }),
-    [buildPantsPatternStyle, pantsSplitRotation.fly]
+    [buildPantsPatternStyle, pantsPatternBlendMode, pantsSplitRotation.fly]
   );
   const pantsOverlayStyleWaist = useMemo(
     () =>
       buildPantsPatternStyle(pantsSplitRotation.waist, {
         opacityMul: 1.2,
         brightenMul: 1.1,
-        mixBlendMode: "normal",
+        mixBlendMode: pantsPatternBlendMode,
         opacityMin: 0.14,
       }),
-    [buildPantsPatternStyle, pantsSplitRotation.waist]
+    [buildPantsPatternStyle, pantsPatternBlendMode, pantsSplitRotation.waist]
   );
   const rightFlyBackgroundOffset = useMemo(
     () => ({
