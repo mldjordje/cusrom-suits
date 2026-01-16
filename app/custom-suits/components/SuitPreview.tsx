@@ -942,15 +942,15 @@ const SuitPreview = ({
     const darkBoost = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const defaults =
       pantsPatternValueResolved === "tanke pruge"
-        ? { lineWidth: 1, spacing: 11, opacity: 0.2 }
+        ? { lineWidth: 1, spacing: 7, opacity: 0.24 }
         : pantsPatternValueResolved === "pruge"
-          ? { lineWidth: 1.5, spacing: 18, opacity: 0.18 }
-          : { lineWidth: 1, spacing: 20, opacity: 0.12 };
+          ? { lineWidth: 1.5, spacing: 12, opacity: 0.22 }
+          : { lineWidth: 1, spacing: 16, opacity: 0.16 };
     const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
     const isThinStripe =
       pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
     const spacingBase = defaults.spacing / Math.max(0.2, scale);
-    const spacing = clamp(spacingBase * (isThinStripe ? 1.1 : 1), 6, 80);
+    const spacing = clamp(spacingBase * (isThinStripe ? 1.0 : 1), 6, 80);
     const strengthRaw = parseNumber(
       (selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength
     );
@@ -2344,9 +2344,6 @@ const SuitPreview = ({
                 const idx = (y * c.width + x) * 4;
                 const unionAlpha = full[idx + 3];
                 if (unionAlpha < 1) continue;
-                const leftAlpha = leftMask.data[idx + 3];
-                const rightAlpha = rightMask.data[idx + 3];
-                if (leftAlpha < 1 && rightAlpha < 1) continue;
                 if (waistMask.data[idx + 3] > 0) continue;
                 const seamBias = PANTS_STRIPE_TUNING.seam.underBiasPx ?? 0;
                 const seamY = seamLine.slope * x + seamLine.intercept - seamBias;
@@ -2354,27 +2351,25 @@ const SuitPreview = ({
                 const boundaryPad = PANTS_STRIPE_TUNING.boundaryPadPx ?? 0;
                 const boundaryRaw = seamBoundaryX[y] >= 0 ? seamBoundaryX[y] : seamSearchMax;
                 const boundaryX = Math.min(c.width - 1, Math.max(0, boundaryRaw + boundaryPad));
-                const isRightSide =
-                  rightAlpha > 0 && (leftAlpha < 1 ? true : x >= boundaryX);
-                const sideAlpha = isRightSide ? rightAlpha : leftAlpha;
-                if (isRightSide && isUnder) {
-                  rightLower.data[idx] = 255;
-                  rightLower.data[idx + 1] = 255;
-                  rightLower.data[idx + 2] = 255;
-                  rightLower.data[idx + 3] = sideAlpha || unionAlpha;
-                  rightUnderCount++;
-                } else if (isRightSide && !isUnder) {
-                  rightUpper.data[idx] = 255;
-                  rightUpper.data[idx + 1] = 255;
-                  rightUpper.data[idx + 2] = 255;
-                  rightUpper.data[idx + 3] = sideAlpha || unionAlpha;
-                  rightFlyCount++;
-                } else if (!isRightSide && isUnder) {
+                const isRightSide = x >= boundaryX;
+                if (isUnder) {
                   leftUnder.data[idx] = 255;
                   leftUnder.data[idx + 1] = 255;
                   leftUnder.data[idx + 2] = 255;
-                  leftUnder.data[idx + 3] = sideAlpha || unionAlpha;
+                  leftUnder.data[idx + 3] = unionAlpha;
                   leftUnderCount++;
+                } else if (isRightSide) {
+                  rightUpper.data[idx] = 255;
+                  rightUpper.data[idx + 1] = 255;
+                  rightUpper.data[idx + 2] = 255;
+                  rightUpper.data[idx + 3] = unionAlpha;
+                  rightFlyCount++;
+                } else {
+                  leftMain.data[idx] = 255;
+                  leftMain.data[idx + 1] = 255;
+                  leftMain.data[idx + 2] = 255;
+                  leftMain.data[idx + 3] = unionAlpha;
+                  leftMainCount++;
                 }
               }
             }
@@ -2383,36 +2378,21 @@ const SuitPreview = ({
               for (let y = 0; y < c.height; y++) {
                 for (let x = 0; x < c.width; x++) {
                   const idx = (y * c.width + x) * 4;
-                  const rightAlpha = rightMask.data[idx + 3];
-                  if (rightAlpha < 1) continue;
+                  const unionAlpha = full[idx + 3];
+                  if (unionAlpha < 1) continue;
                   if (waistMask.data[idx + 3] > 0) continue;
+                  const boundaryRaw = seamBoundaryX[y] >= 0 ? seamBoundaryX[y] : seamSearchMax;
+                  const boundaryX = Math.min(
+                    c.width - 1,
+                    Math.max(0, boundaryRaw + (PANTS_STRIPE_TUNING.boundaryPadPx ?? 0))
+                  );
+                  if (x < boundaryX) continue;
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
                   rightUpper.data[idx + 2] = 255;
-                  rightUpper.data[idx + 3] = rightAlpha;
+                  rightUpper.data[idx + 3] = unionAlpha;
                   rightFlyCount++;
                 }
-              }
-            }
-            for (let y = 0; y < c.height; y++) {
-              for (let x = 0; x < c.width; x++) {
-                const idx = (y * c.width + x) * 4;
-                const unionAlpha = full[idx + 3];
-                if (unionAlpha < 1) continue;
-                const leftAlpha = leftMask.data[idx + 3];
-                if (leftAlpha < 1) continue;
-                if (waistMask.data[idx + 3] > 0) continue;
-                if (
-                  rightUpper.data[idx + 3] > 0 ||
-                  rightLower.data[idx + 3] > 0 ||
-                  leftUnder.data[idx + 3] > 0
-                )
-                  continue;
-                leftMain.data[idx] = 255;
-                leftMain.data[idx + 1] = 255;
-                leftMain.data[idx + 2] = 255;
-                leftMain.data[idx + 3] = leftAlpha || unionAlpha;
-                leftMainCount++;
               }
             }
             for (let y = 0; y < c.height; y++) {
