@@ -1551,9 +1551,7 @@ const SuitPreview = ({
   const pantsStripeOffsets = PANTS_STRIPE_TUNING.stripeOffsets;
   const resolvePantsSplitRotation = useCallback(
     (desiredAngle: number) => {
-      if (stripeOrientation === "vertical") return desiredAngle - 90;
-      if (stripeOrientation === "horizontal") return desiredAngle;
-      return desiredAngle;
+    return desiredAngle;
     },
     [stripeOrientation]
   );
