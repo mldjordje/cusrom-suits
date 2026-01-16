@@ -1668,8 +1668,9 @@ const SuitPreview = ({
       }),
     [buildPantsPatternStyle, pantsPatternBlendMode, pantsSplitRotation.waist]
   );
-  const pantsOverlayStyleMain = pantsLeftUnderMask ? pantsOverlayStyleRight : pantsOverlayStyleLeft;
-  const pantsSplitRotationMain = pantsLeftUnderMask
+  const hasPantsFoldMask = Boolean(pantsLeftUnderMask || pantsRightLowerMask);
+  const pantsOverlayStyleMain = hasPantsFoldMask ? pantsOverlayStyleRight : pantsOverlayStyleLeft;
+  const pantsSplitRotationMain = hasPantsFoldMask
     ? pantsSplitTextureRotation.right
     : pantsSplitTextureRotation.left;
   const rightFlyBackgroundOffset = useMemo(
@@ -2890,8 +2891,8 @@ const SuitPreview = ({
                   mask={pantsRightLowerMask}
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={pantsSplitTextureRotation.right}
-                  backgroundOffset={rightFlyBackgroundOffset}
+                  textureRotationDeg={pantsSplitTextureRotation.left}
+                  backgroundOffset={pantsStripeOffsets.rightUnder}
                   {...pantsStripeMaskProps}
                 />
               )}
@@ -2985,8 +2986,8 @@ const SuitPreview = ({
                       mask={pantsRightLowerMask}
                       textureScale={fabricTextureScale}
                       textureTileSizePx={TEXTURE_TILE_PX}
-                      textureRotationDeg={pantsSplitTextureRotation.right}
-                      backgroundOffset={rightFlyBackgroundOffset}
+                      textureRotationDeg={pantsSplitTextureRotation.left}
+                      backgroundOffset={pantsStripeOffsets.rightUnder}
                       {...pantsStripeMaskProps}
                     />
                   )}
@@ -3056,7 +3057,7 @@ const SuitPreview = ({
                 layers={pantsTextureLayers}
                 resolve={resolveCdn}
                 fabricTexture={pantsOverlayTexture}
-                textureStyle={pantsOverlayStyleRight}
+                textureStyle={pantsOverlayStyleLeft}
                 baseColor={tunedFabricFill || toneBaseColor}
                 baseBlendMode="normal"
                 baseOpacity={0}
