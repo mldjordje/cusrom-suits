@@ -1882,6 +1882,7 @@ const SuitPreview = ({
           }
           const unionData = ctx.getImageData(0, 0, c.width, c.height);
           let seamMaskData: ImageData | null = null;
+          let seamLineFromMask: { slope: number; intercept: number } | null = null;
           try {
             const seamImg = await loadImage(PANTS_SEAM_MASK_SRC);
             const seamCanvas = document.createElement("canvas");
@@ -1895,6 +1896,42 @@ const SuitPreview = ({
             }
           } catch {
             seamMaskData = null;
+          }
+          if (seamMaskData?.data) {
+            const seamData = seamMaskData.data;
+            const seamXMax = Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio);
+            const rowThreshold = Math.max(10, Math.round(c.width * 0.04));
+            let sumX = 0;
+            let sumY = 0;
+            let sumXX = 0;
+            let sumXY = 0;
+            let count = 0;
+            for (let y = 0; y < c.height; y++) {
+              let rowCount = 0;
+              let firstX = -1;
+              for (let x = 0; x < seamXMax; x++) {
+                const idx = (y * c.width + x) * 4;
+                if (seamData[idx + 3] > 0) {
+                  rowCount++;
+                  if (firstX < 0) firstX = x;
+                }
+              }
+              if (rowCount > 0 && rowCount <= rowThreshold && firstX >= 0) {
+                sumX += firstX;
+                sumY += y;
+                sumXX += firstX * firstX;
+                sumXY += firstX * y;
+                count++;
+              }
+            }
+            if (count >= 12) {
+              const denom = count * sumXX - sumX * sumX;
+              if (Math.abs(denom) > 1e-3) {
+                const slope = (count * sumXY - sumX * sumY) / denom;
+                const intercept = (sumY - slope * sumX) / count;
+                seamLineFromMask = { slope, intercept };
+              }
+            }
           }
           const axisAngle = computeMaskAxisAngle(unionData.data, c.width, c.height);
           if (!cancelled) {
@@ -2205,11 +2242,14 @@ const SuitPreview = ({
               }
             }
 
-            const seamSlope =
+            const tunedSeamSlope =
               PANTS_STRIPE_TUNING.seam.slope *
               (c.height / PANTS_STRIPE_TUNING.seam.refHeight) *
               (PANTS_STRIPE_TUNING.seam.refWidth / c.width);
-            const seamIntercept = PANTS_STRIPE_TUNING.seam.intercept * (c.height / PANTS_STRIPE_TUNING.seam.refHeight);
+            const tunedSeamIntercept =
+              PANTS_STRIPE_TUNING.seam.intercept * (c.height / PANTS_STRIPE_TUNING.seam.refHeight);
+            const seamSlope = seamLineFromMask?.slope ?? tunedSeamSlope;
+            const seamIntercept = seamLineFromMask?.intercept ?? tunedSeamIntercept;
             const seamXMax = Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio);
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < seamXMax; x++) {
@@ -2304,28 +2344,36 @@ const SuitPreview = ({
                 const idx = (y * c.width + x) * 4;
                 const unionAlpha = full[idx + 3];
                 if (unionAlpha < 1) continue;
+                const leftAlpha = leftMask.data[idx + 3];
+                const rightAlpha = rightMask.data[idx + 3];
+                if (leftAlpha < 1 && rightAlpha < 1) continue;
                 if (waistMask.data[idx + 3] > 0) continue;
-                const seamY = seamLine.slope * x + seamLine.intercept;
+                const seamBias = PANTS_STRIPE_TUNING.seam.underBiasPx ?? 0;
+                const seamY = seamLine.slope * x + seamLine.intercept - seamBias;
                 const isUnder = x < seamXMax && y > seamY;
-                const boundaryX = seamBoundaryX[y] >= 0 ? seamBoundaryX[y] : seamSearchMax;
-                const isRightSide = x >= boundaryX;
+                const boundaryPad = PANTS_STRIPE_TUNING.boundaryPadPx ?? 0;
+                const boundaryRaw = seamBoundaryX[y] >= 0 ? seamBoundaryX[y] : seamSearchMax;
+                const boundaryX = Math.min(c.width - 1, Math.max(0, boundaryRaw + boundaryPad));
+                const isRightSide =
+                  rightAlpha > 0 && (leftAlpha < 1 ? true : x >= boundaryX);
+                const sideAlpha = isRightSide ? rightAlpha : leftAlpha;
                 if (isRightSide && isUnder) {
                   rightLower.data[idx] = 255;
                   rightLower.data[idx + 1] = 255;
                   rightLower.data[idx + 2] = 255;
-                  rightLower.data[idx + 3] = unionAlpha;
+                  rightLower.data[idx + 3] = sideAlpha || unionAlpha;
                   rightUnderCount++;
                 } else if (isRightSide && !isUnder) {
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
                   rightUpper.data[idx + 2] = 255;
-                  rightUpper.data[idx + 3] = unionAlpha;
+                  rightUpper.data[idx + 3] = sideAlpha || unionAlpha;
                   rightFlyCount++;
                 } else if (!isRightSide && isUnder) {
                   leftUnder.data[idx] = 255;
                   leftUnder.data[idx + 1] = 255;
                   leftUnder.data[idx + 2] = 255;
-                  leftUnder.data[idx + 3] = unionAlpha;
+                  leftUnder.data[idx + 3] = sideAlpha || unionAlpha;
                   leftUnderCount++;
                 }
               }
@@ -2351,6 +2399,8 @@ const SuitPreview = ({
                 const idx = (y * c.width + x) * 4;
                 const unionAlpha = full[idx + 3];
                 if (unionAlpha < 1) continue;
+                const leftAlpha = leftMask.data[idx + 3];
+                if (leftAlpha < 1) continue;
                 if (waistMask.data[idx + 3] > 0) continue;
                 if (
                   rightUpper.data[idx + 3] > 0 ||
@@ -2361,7 +2411,7 @@ const SuitPreview = ({
                 leftMain.data[idx] = 255;
                 leftMain.data[idx + 1] = 255;
                 leftMain.data[idx + 2] = 255;
-                leftMain.data[idx + 3] = unionAlpha;
+                leftMain.data[idx + 3] = leftAlpha || unionAlpha;
                 leftMainCount++;
               }
             }
