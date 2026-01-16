@@ -1578,6 +1578,12 @@ const SuitPreview = ({
   const canRenderPantsPatternOverlay = Boolean(
     usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks
   );
+  const shouldRenderPantsPatternOverlay = useMemo(
+    () =>
+      canRenderPantsPatternOverlay &&
+      (!useSplitPantsTexture || !pantsStripeTexture || stripeStrength < 0.18),
+    [canRenderPantsPatternOverlay, pantsStripeTexture, stripeStrength, useSplitPantsTexture]
+  );
   const pantsBaseFillOpacity = useMemo(() => {
     const base = usePhotoBase ? photoBaseOpacity : 0.95;
     return isPantsCmsStripe ? base * 0.85 : base;
@@ -2932,7 +2938,7 @@ const SuitPreview = ({
             {...pantsStripeMaskProps}
           />
         )}
-        {showLayer("fabric") && canRenderPantsPatternOverlay && !useSplitPantsTexture && (
+        {showLayer("fabric") && shouldRenderPantsPatternOverlay && (
           <>
             {pantsLeftUnderMask && (
               <FabricUnion
