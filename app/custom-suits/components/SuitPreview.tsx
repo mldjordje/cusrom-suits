@@ -2325,7 +2325,7 @@ const SuitPreview = ({
                 const boundaryRaw = legBoundaryX[y];
                 const boundaryX = Math.min(c.width - 1, Math.max(0, boundaryRaw + boundaryPad));
                 const isRightSide = x >= boundaryX;
-                if (isUnder && !isRightSide) {
+                if (isUnder) {
                   leftUnder.data[idx] = 255;
                   leftUnder.data[idx + 1] = 255;
                   leftUnder.data[idx + 2] = 255;
