@@ -942,10 +942,10 @@ const SuitPreview = ({
     const darkBoost = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const defaults =
       pantsPatternValueResolved === "tanke pruge"
-        ? { lineWidth: 1, spacing: 6, opacity: 0.28 }
+        ? { lineWidth: 1, spacing: 5, opacity: 0.3 }
         : pantsPatternValueResolved === "pruge"
-          ? { lineWidth: 1.5, spacing: 10, opacity: 0.24 }
-          : { lineWidth: 1, spacing: 14, opacity: 0.18 };
+          ? { lineWidth: 1.5, spacing: 9, opacity: 0.26 }
+          : { lineWidth: 1, spacing: 12, opacity: 0.2 };
     const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
     const isThinStripe =
       pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
@@ -2209,18 +2209,6 @@ const SuitPreview = ({
                 : axisAngle);
             const rightAngle = Math.abs(rawRightAngle) < 12 ? 0 : rawRightAngle;
 
-            const rightForceX = Math.round(c.width * PANTS_STRIPE_TUNING.rightForceXRatio);
-            for (let y = 0; y < c.height; y++) {
-              for (let x = rightForceX; x < c.width; x++) {
-                const idx = (y * c.width + x) * 4;
-                const unionAlpha = full[idx + 3];
-                if (unionAlpha < 1) continue;
-                rightMask.data[idx] = 255;
-                rightMask.data[idx + 1] = 255;
-                rightMask.data[idx + 2] = 255;
-                rightMask.data[idx + 3] = unionAlpha;
-              }
-            }
             // Ensure left mask fully covers pants area not owned by right mask.
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
