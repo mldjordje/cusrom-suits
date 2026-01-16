@@ -951,7 +951,7 @@ const SuitPreview = ({
       typeof strengthRaw === "number"
         ? clamp(0.05 + strengthRaw * 0.2, 0.05, 0.25)
         : defaults.opacity;
-    const opacity = isPantsCmsStripe ? clamp(opacityBase, 0.06, 0.1) : opacityBase;
+    const opacity = isPantsCmsStripe ? clamp(opacityBase, 0.12, 0.22) : opacityBase;
     const brightnessRaw = parseNumber(
       (selectedFabric as any)?.textureBrightness ?? (selectedFabric as any)?.texture_brightness
     );
@@ -1010,7 +1010,7 @@ const SuitPreview = ({
           ? `repeating-linear-gradient(0deg, ${lineColor} 0px, ${lineColor} ${lineWidth}px, transparent ${lineWidth}px, transparent ${spacing}px), repeating-linear-gradient(90deg, ${lineColor} 0px, ${lineColor} ${lineWidth}px, transparent ${lineWidth}px, transparent ${spacing}px)`
           : stripe;
       const mixBlendMode: React.CSSProperties["mixBlendMode"] =
-        options?.mixBlendMode ?? (usePhotoBase ? "overlay" : "soft-light");
+        options?.mixBlendMode ?? "normal";
       return {
         backgroundImage,
         backgroundRepeat: "repeat",
@@ -1584,26 +1584,26 @@ const SuitPreview = ({
     return isPantsCmsStripe ? base * 0.85 : base;
   }, [isPantsCmsStripe, photoBaseOpacity, usePhotoBase]);
   const pantsOverlayStyleLeft = useMemo(
-    () => buildPantsPatternStyle(pantsSplitRotation.diag, { opacityMul: 0.85 }),
+    () => buildPantsPatternStyle(pantsSplitRotation.diag, { opacityMul: 1.05, mixBlendMode: "normal" }),
     [buildPantsPatternStyle, pantsSplitRotation.diag]
   );
   const pantsOverlayStyleFly = useMemo(
     () =>
       buildPantsPatternStyle(pantsSplitRotation.fly, {
-        opacityMul: 1.55,
-        brightenMul: 1.35,
-        mixBlendMode: "screen",
-        opacityMin: 0.14,
+        opacityMul: 1.35,
+        brightenMul: 1.2,
+        mixBlendMode: "normal",
+        opacityMin: 0.16,
       }),
     [buildPantsPatternStyle, pantsSplitRotation.fly]
   );
   const pantsOverlayStyleWaist = useMemo(
     () =>
       buildPantsPatternStyle(pantsSplitRotation.waist, {
-        opacityMul: 1.3,
-        brightenMul: 1.2,
-        mixBlendMode: "screen",
-        opacityMin: 0.12,
+        opacityMul: 1.2,
+        brightenMul: 1.1,
+        mixBlendMode: "normal",
+        opacityMin: 0.14,
       }),
     [buildPantsPatternStyle, pantsSplitRotation.waist]
   );
