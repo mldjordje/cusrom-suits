@@ -1561,9 +1561,8 @@ const SuitPreview = ({
   const pantsRightFlyMask = pantsRightSplitMasks?.upper ?? null;
   const pantsRightUnderMask = null;
   const hasPantsLegSplit = Boolean(pantsLegMasks);
-  const hasStripeTile = Boolean(fabricTileTexture);
   const useSplitPantsTexture =
-    hasStripeTile && useTexture && hasPantsLegSplit && (stripeBoost || isPantsCmsStripe);
+    useTexture && hasPantsLegSplit && (stripeBoost || isPantsCmsStripe);
   const pantsSplitTextureStyle = useMemo<React.CSSProperties>(() => {
     if (!useSplitPantsTexture) return pantsTextureStyle;
     const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
@@ -1573,7 +1572,7 @@ const SuitPreview = ({
       opacity: clamp(opacity * 1.8, 0.22, 0.9),
     };
   }, [fabricTextureStyle, pantsTextureStyle, useSplitPantsTexture]);
-  const pantsStripeTexture = fabricTileTexture ?? undefined;
+  const pantsStripeTexture = fabricTileTexture ?? fabricTextureSourcePants ?? undefined;
   const pantsOverlayTexture = fabricTileTexture ?? fabricTextureSourcePants ?? EMPTY_TEXTURE_DATA_URL;
   const canRenderPantsPatternOverlay = Boolean(
     usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks
