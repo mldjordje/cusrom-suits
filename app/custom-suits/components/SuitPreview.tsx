@@ -2201,6 +2201,32 @@ const SuitPreview = ({
             }
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
+            const seamSearchMax = Math.max(1, Math.min(c.width - 1, seamXMax - 2));
+            const seamBoundaryX = new Int16Array(c.height);
+            seamBoundaryX.fill(Math.round(c.width * PANTS_STRIPE_TUNING.rightForceXRatio));
+            if (seamMaskData?.data) {
+              const seamData = seamMaskData.data;
+              const rowCounts = new Int16Array(c.height);
+              for (let y = 0; y < c.height; y++) {
+                let rowCount = 0;
+                for (let x = 0; x < c.width; x++) {
+                  const idx = (y * c.width + x) * 4;
+                  if (seamData[idx + 3] > 0) rowCount++;
+                }
+                rowCounts[y] = rowCount;
+              }
+              const horizontalThreshold = Math.max(24, Math.round(c.width * 0.06));
+              for (let y = 0; y < c.height; y++) {
+                if (rowCounts[y] >= horizontalThreshold) continue;
+                for (let x = 0; x <= seamSearchMax; x++) {
+                  const idx = (y * c.width + x) * 4;
+                  if (seamData[idx + 3] > 0) {
+                    seamBoundaryX[y] = x;
+                    break;
+                  }
+                }
+              }
+            }
             const leftMain = ctx.createImageData(c.width, c.height);
             const leftUnder = ctx.createImageData(c.width, c.height);
             const rightUpper = ctx.createImageData(c.width, c.height);
@@ -2216,8 +2242,10 @@ const SuitPreview = ({
                 if (unionAlpha < 1) continue;
                 if (waistMask.data[idx + 3] > 0) continue;
                 const seamY = seamLine.slope * x + seamLine.intercept;
-                const isFly = x >= seamXMax || y <= seamY;
-                if (isFly) {
+                const isUnder = x < seamXMax && y > seamY;
+                const boundaryX = seamBoundaryX[y] >= 0 ? seamBoundaryX[y] : seamSearchMax;
+                const isRightSide = x >= boundaryX;
+                if (isRightSide && !isUnder) {
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
                   rightUpper.data[idx + 2] = 255;
