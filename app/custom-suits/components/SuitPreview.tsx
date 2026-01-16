@@ -2227,6 +2227,22 @@ const SuitPreview = ({
                 }
               }
             }
+            if (rightFlyCount < 8) {
+              rightFlyCount = 0;
+              for (let y = 0; y < c.height; y++) {
+                for (let x = 0; x < c.width; x++) {
+                  const idx = (y * c.width + x) * 4;
+                  const rightAlpha = rightMask.data[idx + 3];
+                  if (rightAlpha < 1) continue;
+                  if (waistMask.data[idx + 3] > 0) continue;
+                  rightUpper.data[idx] = 255;
+                  rightUpper.data[idx + 1] = 255;
+                  rightUpper.data[idx + 2] = 255;
+                  rightUpper.data[idx + 3] = rightAlpha;
+                  rightFlyCount++;
+                }
+              }
+            }
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
