@@ -2216,9 +2216,8 @@ const SuitPreview = ({
                 if (unionAlpha < 1) continue;
                 if (waistMask.data[idx + 3] > 0) continue;
                 const seamY = seamLine.slope * x + seamLine.intercept;
-                const isUnder = x < seamXMax && y > seamY;
-                const isRightSide = rightMask.data[idx + 3] > 0;
-                if (isRightSide && !isUnder) {
+                const isFly = x >= seamXMax || y <= seamY;
+                if (isFly) {
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
                   rightUpper.data[idx + 2] = 255;
