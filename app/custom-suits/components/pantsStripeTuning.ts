@@ -9,8 +9,8 @@ export const PANTS_STRIPE_TUNING = {
     refHeight: 254,
     slope: 0.43496,
     intercept: 16.11,
-    underBiasPx: 4,
-    xPadPx: 6,
+    underBiasPx: 6,
+    xPadPx: 14,
   },
 
   stripeOffsets: {
@@ -26,7 +26,7 @@ export const PANTS_STRIPE_TUNING = {
 
   // Gentle X push for continuity on the right.
   rightForceXRatio: 0.88,
-  boundaryPadPx: 6,
+  boundaryPadPx: 10,
   waistbandXRatio: 0.975,
 
   // Must stay low to preserve zone separation.
