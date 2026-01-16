@@ -2285,10 +2285,33 @@ const SuitPreview = ({
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
             const seamXForY = new Float32Array(c.height);
+            seamXForY.fill(Number.NaN);
+            if (seamMaskData?.data) {
+              const seamData = seamMaskData.data;
+              const seamXLimit = Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio);
+              const rowThreshold = Math.max(10, Math.round(c.width * 0.04));
+              for (let y = 0; y < c.height; y++) {
+                let rowCount = 0;
+                let firstX = -1;
+                for (let x = 0; x < seamXLimit; x++) {
+                  const idx = (y * c.width + x) * 4;
+                  if (seamData[idx + 3] > 0) {
+                    rowCount++;
+                    if (firstX < 0) firstX = x;
+                  }
+                }
+                if (rowCount > 0 && rowCount <= rowThreshold && firstX >= 0) {
+                  seamXForY[y] = firstX;
+                }
+              }
+            }
             if (Math.abs(seamLine.slope) < 1e-3) {
-              seamXForY.fill(c.width);
+              for (let y = 0; y < c.height; y++) {
+                if (!Number.isFinite(seamXForY[y])) seamXForY[y] = c.width - 1;
+              }
             } else {
               for (let y = 0; y < c.height; y++) {
+                if (Number.isFinite(seamXForY[y])) continue;
                 const rawX = (y - seamLine.intercept) / seamLine.slope;
                 seamXForY[y] = clamp(rawX, 0, c.width - 1);
               }
