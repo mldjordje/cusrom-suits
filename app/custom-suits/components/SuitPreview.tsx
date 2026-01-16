@@ -1563,6 +1563,10 @@ const SuitPreview = ({
     }),
     [resolvePantsSplitRotation]
   );
+  const pantsSplitFlyRotation = useMemo(
+    () => (stripeOrientation === "vertical" ? 90 : pantsSplitRotation.fly),
+    [pantsSplitRotation.fly, stripeOrientation]
+  );
   const pantsLeftMainMask = pantsLeftSplitMasks?.main ?? pantsMask;
   const pantsLeftUnderMask = null;
   const pantsRightFlyMask = pantsRightSplitMasks?.upper ?? null;
@@ -1697,7 +1701,7 @@ const SuitPreview = ({
       flyAbsDeg: PANTS_STRIPE_TUNING.flyAbsDeg,
       waistAbsDeg: PANTS_STRIPE_TUNING.waistAbsDeg,
       finalDiagDeg: pantsSplitRotation.diag,
-      finalFlyDeg: pantsSplitRotation.fly,
+      finalFlyDeg: pantsSplitFlyRotation,
       finalWaistDeg: pantsSplitRotation.waist,
     });
     pantsSplitRotationLoggedRef.current = true;
@@ -2827,7 +2831,7 @@ const SuitPreview = ({
                   mask={pantsRightFlyMask}
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={pantsSplitRotation.fly}
+                  textureRotationDeg={pantsSplitFlyRotation}
                   backgroundOffset={rightFlyBackgroundOffset}
                   {...pantsStripeMaskProps}
                 />
@@ -2884,7 +2888,7 @@ const SuitPreview = ({
                       mask={pantsRightFlyMask}
                       textureScale={fabricTextureScale}
                       textureTileSizePx={TEXTURE_TILE_PX}
-                      textureRotationDeg={pantsSplitRotation.fly}
+                      textureRotationDeg={pantsSplitFlyRotation}
                       backgroundOffset={rightFlyBackgroundOffset}
                       {...pantsStripeMaskProps}
                     />
