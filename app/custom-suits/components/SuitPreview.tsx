@@ -1549,13 +1549,21 @@ const SuitPreview = ({
     []
   );
   const pantsStripeOffsets = PANTS_STRIPE_TUNING.stripeOffsets;
+  const resolvePantsSplitRotation = useCallback(
+    (desiredAngle: number) => {
+      if (stripeOrientation === "vertical") return desiredAngle - 90;
+      if (stripeOrientation === "horizontal") return desiredAngle;
+      return desiredAngle;
+    },
+    [stripeOrientation]
+  );
   const pantsSplitRotation = useMemo(
     () => ({
-      diag: PANTS_STRIPE_TUNING.diagAbsDeg,
-      fly: PANTS_STRIPE_TUNING.flyAbsDeg,
-      waist: PANTS_STRIPE_TUNING.waistAbsDeg,
+      diag: resolvePantsSplitRotation(PANTS_STRIPE_TUNING.diagAbsDeg),
+      fly: resolvePantsSplitRotation(PANTS_STRIPE_TUNING.flyAbsDeg),
+      waist: resolvePantsSplitRotation(PANTS_STRIPE_TUNING.waistAbsDeg),
     }),
-    []
+    [resolvePantsSplitRotation]
   );
   const pantsLeftMainMask = pantsLeftSplitMasks?.main ?? pantsMask;
   const pantsLeftUnderMask = null;
@@ -1686,6 +1694,7 @@ const SuitPreview = ({
     if (!useSplitPantsTexture) return;
     console.log("[pants split rotation]", {
       baseStripeAngleDeg,
+      stripeOrientation,
       diagAbsDeg: PANTS_STRIPE_TUNING.diagAbsDeg,
       flyAbsDeg: PANTS_STRIPE_TUNING.flyAbsDeg,
       waistAbsDeg: PANTS_STRIPE_TUNING.waistAbsDeg,
