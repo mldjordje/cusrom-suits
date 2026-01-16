@@ -659,6 +659,7 @@ const SuitPreview = ({
     TEXTURE_SCALE_MAX
   );
   const useTexture = Boolean(fabricTextureSource && textureStrength > 0);
+  const usePantsTexture = Boolean(fabricTextureSourcePants);
   const usePhotoBase = Boolean(process.env.NEXT_PUBLIC_PHOTO_CDN_BASE);
 
   const tb = toneBlend(selectedFabric?.tone, level);
@@ -1562,7 +1563,7 @@ const SuitPreview = ({
   const pantsRightUnderMask = null;
   const hasPantsLegSplit = Boolean(pantsLegMasks);
   const useSplitPantsTexture =
-    useTexture && hasPantsLegSplit && (stripeBoost || isPantsCmsStripe);
+    usePantsTexture && hasPantsLegSplit && (stripeBoost || isPantsCmsStripe);
   const pantsSplitTextureStyle = useMemo<React.CSSProperties>(() => {
     if (!useSplitPantsTexture) return pantsTextureStyle;
     const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
@@ -2898,7 +2899,7 @@ const SuitPreview = ({
             <FabricUnion
               layers={pantsTextureLayers}
               resolve={resolveCdn}
-              fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
+              fabricTexture={usePantsTexture ? fabricTextureSourcePants : undefined}
               textureStyle={pantsTextureStyle}
               baseColor={tunedFabricFill || toneBaseColor}
               fabricAvgColor={tunedFabricFill}
