@@ -10,6 +10,7 @@ export const PANTS_STRIPE_TUNING = {
     slope: 0.43496,
     intercept: 16.11,
     underBiasPx: 4,
+    xPadPx: 6,
   },
 
   stripeOffsets: {

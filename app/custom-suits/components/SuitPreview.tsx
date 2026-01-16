@@ -1027,7 +1027,7 @@ const SuitPreview = ({
       return {
         backgroundImage,
         backgroundRepeat: "repeat",
-        backgroundSize: `${spacing}px ${spacing}px`,
+        backgroundSize: "auto",
         mixBlendMode,
         opacity: tunedOpacity,
         filter: "none",
@@ -2284,6 +2284,15 @@ const SuitPreview = ({
             }
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
+            const seamXForY = new Float32Array(c.height);
+            if (Math.abs(seamLine.slope) < 1e-3) {
+              seamXForY.fill(c.width);
+            } else {
+              for (let y = 0; y < c.height; y++) {
+                const rawX = (y - seamLine.intercept) / seamLine.slope;
+                seamXForY[y] = clamp(rawX, 0, c.width - 1);
+              }
+            }
             const legBoundaryX = new Int16Array(c.height);
             legBoundaryX.fill(-1);
             for (let y = 0; y < c.height; y++) {
@@ -2320,10 +2329,12 @@ const SuitPreview = ({
                 if (waistMask.data[idx + 3] > 0) continue;
                 const seamBias = PANTS_STRIPE_TUNING.seam.underBiasPx ?? 0;
                 const seamY = seamLine.slope * x + seamLine.intercept - seamBias;
-                const isUnder = x < seamXMax && y > seamY;
+                const seamXPad = PANTS_STRIPE_TUNING.seam.xPadPx ?? 0;
+                const seamX = seamXForY[y] + seamXPad;
+                const isUnder = x < seamXMax && y > seamY && x <= seamX;
                 const boundaryPad = PANTS_STRIPE_TUNING.boundaryPadPx ?? 0;
                 const boundaryRaw = legBoundaryX[y];
-                const boundaryX = Math.min(c.width - 1, Math.max(0, boundaryRaw + boundaryPad));
+                const boundaryX = Math.min(c.width - 1, Math.max(0, Math.max(boundaryRaw + boundaryPad, seamX)));
                 const isRightSide = x >= boundaryX;
                 if (isUnder) {
                   leftUnder.data[idx] = 255;
