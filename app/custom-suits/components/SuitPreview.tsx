@@ -2258,7 +2258,7 @@ const SuitPreview = ({
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
             const seamSearchMax = Math.max(1, Math.min(c.width - 1, seamXMax - 2));
             const seamBoundaryX = new Int16Array(c.height);
-            seamBoundaryX.fill(Math.round(c.width * PANTS_STRIPE_TUNING.rightForceXRatio));
+            seamBoundaryX.fill(-1);
             if (seamMaskData?.data) {
               const seamData = seamMaskData.data;
               const rowCounts = new Int16Array(c.height);
@@ -2280,6 +2280,15 @@ const SuitPreview = ({
                     break;
                   }
                 }
+              }
+            }
+            const seamFallbackX = Math.round(c.width * PANTS_STRIPE_TUNING.rightForceXRatio);
+            let lastBoundaryX = -1;
+            for (let y = 0; y < c.height; y++) {
+              if (seamBoundaryX[y] >= 0) {
+                lastBoundaryX = seamBoundaryX[y];
+              } else {
+                seamBoundaryX[y] = lastBoundaryX >= 0 ? lastBoundaryX : seamFallbackX;
               }
             }
             const leftMain = ctx.createImageData(c.width, c.height);
