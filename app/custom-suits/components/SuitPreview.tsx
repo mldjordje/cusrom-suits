@@ -1596,9 +1596,9 @@ const SuitPreview = ({
   const pantsStripeTexture = fabricTileTexture ?? fabricTextureSourcePants ?? undefined;
   const pantsOverlayTexture = fabricTileTexture ?? fabricTextureSourcePants ?? EMPTY_TEXTURE_DATA_URL;
   const canRenderPantsPatternOverlay = Boolean(
-    usePantsPatternOverlay && pantsPatternOverlayConfig && pantsLegMasks
+    usePantsPatternOverlay && pantsPatternOverlayConfig && (pantsLegMasks || pantsMask)
   );
-  const shouldRenderPantsPatternOverlay = canRenderPantsPatternOverlay && !useSplitPantsTexture;
+  const shouldRenderPantsPatternOverlay = canRenderPantsPatternOverlay;
   const pantsBaseFillOpacity = useMemo(() => {
     const base = usePhotoBase ? photoBaseOpacity : 0.95;
     return isPantsCmsStripe ? base * 0.85 : base;
