@@ -2200,99 +2200,7 @@ const SuitPreview = ({
               }
             }
 
-            const seamLine = { slope: seamSlope, intercept: seamIntercept };
-            const forcedSeamBoundaryX = Math.round(c.width * PANTS_STRIPE_TUNING.rightForceXRatio);
-            let seamSearchMax = Math.min(c.width - 1, Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio) - 2);
-            let seamBoundaryX: Int16Array;
-            let hasSeamMask = false;
-            let seamLineFromMask: { slope: number; intercept: number } | null = null;
-            if (seamMaskData?.data) {
-              const seamData = seamMaskData.data;
-              const columnCounts = new Int16Array(c.width);
-              const rowCounts = new Int16Array(c.height);
-              for (let y = 0; y < c.height; y++) {
-                let rowCount = 0;
-                for (let x = 0; x < c.width; x++) {
-                  const idx = (y * c.width + x) * 4;
-                  if (seamData[idx + 3] > 0) {
-                    columnCounts[x]++;
-                    rowCount++;
-                  }
-                }
-                rowCounts[y] = rowCount;
-              }
-              const tallThreshold = Math.round(c.height * 0.6);
-              let waistMin = -1;
-              for (let x = 0; x < c.width; x++) {
-                if (columnCounts[x] >= tallThreshold) {
-                  waistMin = x;
-                  break;
-                }
-              }
-              if (waistMin > 2) seamSearchMax = Math.min(seamSearchMax, waistMin - 2);
-              const seamBoundary = new Int16Array(c.height);
-              seamBoundary.fill(-1);
-              const points: Array<{ x: number; y: number }> = [];
-              const horizontalThreshold = Math.max(24, Math.round(c.width * 0.06));
-              for (let y = 0; y < c.height; y++) {
-                if (rowCounts[y] >= horizontalThreshold) continue;
-                for (let x = 0; x <= seamSearchMax; x++) {
-                  const idx = (y * c.width + x) * 4;
-                  if (seamData[idx + 3] > 0) {
-                    seamBoundary[y] = x;
-                    points.push({ x, y });
-                    hasSeamMask = true;
-                    break;
-                  }
-                }
-              }
-              if (hasSeamMask) {
-                if (points.length >= 12) {
-                  let sumX = 0;
-                  let sumY = 0;
-                  let sumXX = 0;
-                  let sumXY = 0;
-                  for (const p of points) {
-                    sumX += p.x;
-                    sumY += p.y;
-                    sumXX += p.x * p.x;
-                    sumXY += p.x * p.y;
-                  }
-                  const count = points.length;
-                  const denom = count * sumXX - sumX * sumX;
-                  if (Math.abs(denom) > 1e-3) {
-                    const slope = (count * sumXY - sumX * sumY) / denom;
-                    const intercept = (sumY - slope * sumX) / count;
-                    seamLineFromMask = { slope, intercept };
-                  }
-                }
-                const seamLineUsed = seamLineFromMask ?? seamLine;
-                for (let y = 0; y < c.height; y++) {
-                  if (seamBoundary[y] >= 0 && seamBoundary[y] <= seamSearchMax) continue;
-                  const x = Math.round((y - seamLineUsed.intercept) / seamLineUsed.slope);
-                  seamBoundary[y] = Math.max(0, Math.min(seamSearchMax, x));
-                }
-                seamBoundaryX = seamBoundary;
-              } else {
-                seamBoundaryX = new Int16Array(c.height);
-                seamBoundaryX.fill(c.width);
-              }
-            } else {
-              seamBoundaryX = new Int16Array(c.height);
-              seamBoundaryX.fill(c.width);
-            }
-            if (!hasSeamMask) {
-              for (let y = 0; y < c.height; y++) {
-                for (let x = 0; x < c.width; x++) {
-                  const idx = (y * c.width + x) * 4;
-                  if (rightMask.data[idx + 3] > 0) {
-                    seamBoundaryX[y] = x;
-                    break;
-                  }
-                }
-                if (seamBoundaryX[y] < seamXMax) seamBoundaryX[y] = Math.max(0, seamBoundaryX[y]);
-              }
-            }
+            const flyX = Math.round(c.width * PANTS_STRIPE_TUNING.rightForceXRatio);
             const leftMain = ctx.createImageData(c.width, c.height);
             const leftUnder = ctx.createImageData(c.width, c.height);
             const rightUpper = ctx.createImageData(c.width, c.height);
@@ -2307,35 +2215,11 @@ const SuitPreview = ({
                 const unionAlpha = full[idx + 3];
                 if (unionAlpha < 1) continue;
                 if (waistMask.data[idx + 3] > 0) continue;
-                const seamLineUsed = seamLineFromMask ?? seamLine;
-                const seamY = seamLineUsed.slope * x + seamLineUsed.intercept;
-                const isUnder = x < seamXMax && y > seamY;
-                const boundaryX =
-                  seamBoundaryX[y] >= 0
-                    ? seamBoundaryX[y]
-                    : forcedSeamBoundaryX;
-                const isRightSide = x >= boundaryX;
-                if (isRightSide && !isUnder) {
+                if (x >= flyX) {
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
                   rightUpper.data[idx + 2] = 255;
                   rightUpper.data[idx + 3] = unionAlpha;
-                  rightFlyCount++;
-                }
-              }
-            }
-            if (rightFlyCount < 8) {
-              rightFlyCount = 0;
-              for (let y = 0; y < c.height; y++) {
-                for (let x = 0; x < c.width; x++) {
-                  const idx = (y * c.width + x) * 4;
-                  const rightAlpha = rightMask.data[idx + 3];
-                  if (rightAlpha < 1) continue;
-                  if (waistMask.data[idx + 3] > 0) continue;
-                  rightUpper.data[idx] = 255;
-                  rightUpper.data[idx + 1] = 255;
-                  rightUpper.data[idx + 2] = 255;
-                  rightUpper.data[idx + 3] = rightAlpha;
                   rightFlyCount++;
                 }
               }
