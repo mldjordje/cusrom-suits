@@ -2313,13 +2313,21 @@ const SuitPreview = ({
                   rightUpper.data[idx + 2] = 255;
                   rightUpper.data[idx + 3] = unionAlpha;
                   rightFlyCount++;
-                } else {
-                  leftMain.data[idx] = 255;
-                  leftMain.data[idx + 1] = 255;
-                  leftMain.data[idx + 2] = 255;
-                  leftMain.data[idx + 3] = unionAlpha;
-                  leftMainCount++;
                 }
+              }
+            }
+            for (let y = 0; y < c.height; y++) {
+              for (let x = 0; x < c.width; x++) {
+                const idx = (y * c.width + x) * 4;
+                const unionAlpha = full[idx + 3];
+                if (unionAlpha < 1) continue;
+                if (waistMask.data[idx + 3] > 0) continue;
+                if (rightUpper.data[idx + 3] > 0) continue;
+                leftMain.data[idx] = 255;
+                leftMain.data[idx + 1] = 255;
+                leftMain.data[idx + 2] = 255;
+                leftMain.data[idx + 3] = unionAlpha;
+                leftMainCount++;
               }
             }
             for (let y = 0; y < c.height; y++) {
