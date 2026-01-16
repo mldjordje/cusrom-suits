@@ -2200,7 +2200,7 @@ const SuitPreview = ({
               }
             }
 
-            const flyX = Math.round(c.width * PANTS_STRIPE_TUNING.rightForceXRatio);
+            const seamLine = { slope: seamSlope, intercept: seamIntercept };
             const leftMain = ctx.createImageData(c.width, c.height);
             const leftUnder = ctx.createImageData(c.width, c.height);
             const rightUpper = ctx.createImageData(c.width, c.height);
@@ -2215,7 +2215,10 @@ const SuitPreview = ({
                 const unionAlpha = full[idx + 3];
                 if (unionAlpha < 1) continue;
                 if (waistMask.data[idx + 3] > 0) continue;
-                if (x >= flyX) {
+                const seamY = seamLine.slope * x + seamLine.intercept;
+                const isUnder = x < seamXMax && y > seamY;
+                const isRightSide = rightMask.data[idx + 3] > 0;
+                if (isRightSide && !isUnder) {
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
                   rightUpper.data[idx + 2] = 255;
