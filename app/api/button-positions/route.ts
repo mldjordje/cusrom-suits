@@ -15,12 +15,29 @@ export async function GET(req: NextRequest) {
 
   const normalized =
     Array.isArray(data) && data.length
-      ? data.map((row: any) => ({
-          styleId: String(row.style_id || row.styleId || ""),
-          layout: String(row.layout || "2"),
-          area: (row.area as any) || "front",
-          positions: Array.isArray(row.positions) ? row.positions : [],
-        }))
+      ? data.map((row: any) => {
+          const styleId = String(row.style_id || row.styleId || "");
+          const area = (row.area as any) || "front";
+          const fallback =
+            fallbackButtonLayouts.find((item) => item.styleId === styleId && (item.area || "front") === area) ||
+            (area === "back_pocket"
+              ? fallbackButtonLayouts.find((item) => item.styleId === styleId && item.area === "pants")
+              : null);
+          const fallbackPositions = fallback?.positions ?? [];
+          const incomingPositions = Array.isArray(row.positions) ? row.positions : [];
+          const useFallback =
+            fallbackPositions.length > 0 && incomingPositions.length !== fallbackPositions.length;
+          return {
+            styleId,
+            layout: String(row.layout || fallback?.layout || "2"),
+            area,
+            positions: useFallback
+              ? fallbackPositions
+              : incomingPositions.length
+                ? incomingPositions
+                : fallbackPositions,
+          };
+        })
       : fallbackButtonLayouts;
 
   return NextResponse.json({ success: true, data: normalized });
