@@ -44,6 +44,12 @@ export async function POST(req: NextRequest) {
   const textureBrightness = parseNumber(form.get("textureBrightness") ?? form.get("texture_brightness"));
   const pantsTextureRotation = parseNumber(form.get("pantsTextureRotation") ?? form.get("pants_texture_rotation"));
   const stripeSpacing = parseNumber(form.get("stripeSpacing") ?? form.get("stripe_spacing"));
+  const stripeSpacingJacket = parseNumber(
+    form.get("stripeSpacingJacket") ?? form.get("stripe_spacing_jacket")
+  );
+  const stripeSpacingPants = parseNumber(
+    form.get("stripeSpacingPants") ?? form.get("stripe_spacing_pants")
+  );
   const detailFile = form.get("detailFile") as File | null;
   const detailImageOverride = String(form.get("detailImage") ?? form.get("detail_image") ?? "").trim();
   const detailText = String(form.get("detailText") ?? form.get("detail_text") ?? "").trim();
@@ -98,6 +104,8 @@ export async function POST(req: NextRequest) {
   if (textureBrightness !== null) payload.texture_brightness = textureBrightness;
   if (pantsTextureRotation !== null) payload.pants_texture_rotation = pantsTextureRotation;
   if (stripeSpacing !== null) payload.stripe_spacing = stripeSpacing;
+  if (stripeSpacingJacket !== null) payload.stripe_spacing_jacket = stripeSpacingJacket;
+  if (stripeSpacingPants !== null) payload.stripe_spacing_pants = stripeSpacingPants;
   if (detailImageUrl) payload.detail_image = detailImageUrl;
   if (detailText) payload.detail_text = detailText;
 

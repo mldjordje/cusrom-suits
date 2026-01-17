@@ -40,6 +40,8 @@ const normalizeFabric = (fabric: any) => ({
   textureBrightness: fabric.textureBrightness ?? fabric.texture_brightness ?? null,
   pantsTextureRotation: fabric.pantsTextureRotation ?? fabric.pants_texture_rotation ?? null,
   stripeSpacing: fabric.stripeSpacing ?? fabric.stripe_spacing ?? null,
+  stripeSpacingJacket: fabric.stripeSpacingJacket ?? fabric.stripe_spacing_jacket ?? null,
+  stripeSpacingPants: fabric.stripeSpacingPants ?? fabric.stripe_spacing_pants ?? null,
   detailImage:
     fabric.detailImage ??
     fabric.detail_image ??

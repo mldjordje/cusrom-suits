@@ -9,6 +9,7 @@ import SuitPreview from "./components/SuitPreview";
 import Sidebar from "./components/Sidebar";
 import MobileControls, { Panel as MobilePanel } from "./components/MobileControls";
 import { computePrice } from "./utils/price";
+import { buildBackendUrl } from "./utils/backend";
 import StickyMiniNav from "../components/landing/StickyMiniNav";
 import Image from "next/image";
 
@@ -25,6 +26,7 @@ export default function CustomSuitsPage() {
   });
   const defaultColorSet = React.useRef(false);
   const [activeMobilePanel, setActiveMobilePanel] = React.useState<MobilePanel | null>(null);
+  const isMobilePanelOpen = Boolean(activeMobilePanel);
 
 
   // Preselect first available fabric so preview is ready without a manual choice
@@ -97,11 +99,11 @@ export default function CustomSuitsPage() {
   const layerVisibility = React.useMemo<Record<PreviewLayer, boolean>>(
     () => ({
       fabric: true,
-      style: true,
-      ao: true,
-      vignette: true,
+      style: !isMobilePanelOpen,
+      ao: !isMobilePanelOpen,
+      vignette: !isMobilePanelOpen,
     }),
-    []
+    [isMobilePanelOpen]
   );
   const storeOrderId = (orderId: string) => {
     localStorage.setItem("lastOrderId", orderId);
@@ -130,7 +132,7 @@ export default function CustomSuitsPage() {
       localStorage.setItem("suitCart", JSON.stringify(parsed));
 
       try {
-        const res = await fetch("/api/orders", {
+        const res = await fetch(buildBackendUrl("orders"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -218,7 +220,7 @@ export default function CustomSuitsPage() {
               <div className="rounded-[26px] border border-black/5 bg-white/85 p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)] backdrop-blur-sm">
                 <div className="rounded-2xl border border-[#eadfd8] bg-white/95 px-4 py-3">
                   <p className="text-[10px] font-semibold uppercase tracking-[0.3em] text-[#6f625b]">
-                    Korak 1/3 · Dizajn
+                    Korak 1/3 - Dizajn
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {flowSteps.map((step) => (

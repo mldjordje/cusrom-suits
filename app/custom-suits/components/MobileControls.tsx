@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 /* eslint-disable @next/next/no-img-element */
 
 import { AnimatePresence, motion, type Variants } from "framer-motion";
@@ -516,6 +516,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
         <div
           ref={fabricListRef}
           className="flex-1 space-y-3 overflow-y-auto overscroll-y-auto touch-pan-y px-4 py-4 pb-28"
+          style={{ contentVisibility: "auto" }}
         >
           {fabricsLoading ? (
             <p className="text-sm text-gray-500">Ucitavanje tkanina...</p>
@@ -583,7 +584,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
         />
         {activeLapel?.widths?.length ? (
           <ChoiceGroup
-            title="Å irina revera"
+            title="Sirina revera"
             options={activeLapel.widths.map((width) => ({ id: width.id, label: width.name }))}
             selectedId={selectedLapelWidthId}
             onSelect={(id) => dispatch({ type: "SET_LAPEL_WIDTH", payload: id })}

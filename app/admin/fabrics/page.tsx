@@ -18,6 +18,8 @@ type Fabric = {
   textureBrightness?: number | null;
   pantsTextureRotation?: number | null;
   stripeSpacing?: number | null;
+  stripeSpacingJacket?: number | null;
+  stripeSpacingPants?: number | null;
   detailImage?: string | null;
   detailText?: string | null;
 };
@@ -93,6 +95,8 @@ export default function FabricsAdminPage() {
     textureBrightness: "",
     pantsTextureRotation: "",
     stripeSpacing: "",
+    stripeSpacingJacket: "",
+    stripeSpacingPants: "",
     detailImage: "",
     detailText: "",
   });
@@ -282,6 +286,8 @@ export default function FabricsAdminPage() {
     if (form.textureBrightness.trim()) fd.set("textureBrightness", form.textureBrightness.trim());
     if (form.pantsTextureRotation.trim()) fd.set("pantsTextureRotation", form.pantsTextureRotation.trim());
     if (form.stripeSpacing.trim()) fd.set("stripeSpacing", form.stripeSpacing.trim());
+    if (form.stripeSpacingJacket.trim()) fd.set("stripeSpacingJacket", form.stripeSpacingJacket.trim());
+    if (form.stripeSpacingPants.trim()) fd.set("stripeSpacingPants", form.stripeSpacingPants.trim());
     if (form.detailImage.trim()) fd.set("detailImage", form.detailImage.trim());
     if (form.detailText.trim()) fd.set("detailText", form.detailText.trim());
     if (file) fd.set("file", file);
@@ -293,7 +299,7 @@ export default function FabricsAdminPage() {
       setStatus({ type: "error", message: json?.message || "Upload failed" });
       return;
     }
-    setStatus({ type: "success", message: "Sačuvano" });
+    setStatus({ type: "success", message: "Sacuvano" });
     setForm({
       id: "",
       name: "",
@@ -308,6 +314,8 @@ export default function FabricsAdminPage() {
       textureBrightness: "",
       pantsTextureRotation: "",
       stripeSpacing: "",
+      stripeSpacingJacket: "",
+      stripeSpacingPants: "",
       detailImage: "",
       detailText: "",
     });
@@ -327,7 +335,7 @@ export default function FabricsAdminPage() {
     });
     const json = await res.json();
     if (!res.ok || !json?.success) {
-      setStatus({ type: "error", message: json?.message || "Brisanje neuspešno" });
+      setStatus({ type: "error", message: json?.message || "Brisanje neuspesno" });
     } else {
       setStatus({ type: "success", message: "Obrisano" });
       setFabrics((prev) => prev.filter((f) => f.id !== id));
@@ -349,6 +357,10 @@ export default function FabricsAdminPage() {
       textureBrightness: typeof fab.textureBrightness === "number" ? String(fab.textureBrightness) : "",
       pantsTextureRotation: typeof fab.pantsTextureRotation === "number" ? String(fab.pantsTextureRotation) : "",
       stripeSpacing: typeof fab.stripeSpacing === "number" ? String(fab.stripeSpacing) : "",
+      stripeSpacingJacket:
+        typeof fab.stripeSpacingJacket === "number" ? String(fab.stripeSpacingJacket) : "",
+      stripeSpacingPants:
+        typeof fab.stripeSpacingPants === "number" ? String(fab.stripeSpacingPants) : "",
       detailImage: fab.detailImage || (fab as any).detail_image || "",
       detailText: fab.detailText || (fab as any).detail_text || "",
     });
@@ -394,7 +406,7 @@ export default function FabricsAdminPage() {
               value={form.id}
               onChange={(e) => setForm((s) => ({ ...s, id: e.target.value }))}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-              placeholder="Slug/šifra"
+              placeholder="Slug/sifra"
             />
           </div>
           <div className="space-y-1">
@@ -421,7 +433,7 @@ export default function FabricsAdminPage() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-700">Šifra / code (opciono)</label>
+            <label className="text-xs font-semibold text-gray-700">Sifra / code (opciono)</label>
             <input
               value={form.code}
               onChange={(e) => setForm((s) => ({ ...s, code: e.target.value }))}
@@ -525,10 +537,36 @@ export default function FabricsAdminPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Gustina pruga (1-10, 6 = normalno)</label>
+              <label className="text-xs font-semibold text-gray-700">Gustina pruga (globalno, fallback)</label>
               <input
                 value={form.stripeSpacing}
                 onChange={(e) => setForm((s) => ({ ...s, stripeSpacing: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                placeholder="6 (default)"
+                inputMode="numeric"
+                min={1}
+                max={10}
+                step={1}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-gray-700">Gustina pruga - sako</label>
+              <input
+                value={form.stripeSpacingJacket}
+                onChange={(e) => setForm((s) => ({ ...s, stripeSpacingJacket: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                placeholder="6"
+                inputMode="numeric"
+                min={1}
+                max={10}
+                step={1}
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-gray-700">Gustina pruga - pantalone</label>
+              <input
+                value={form.stripeSpacingPants}
+                onChange={(e) => setForm((s) => ({ ...s, stripeSpacingPants: e.target.value }))}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
                 placeholder="6"
                 inputMode="numeric"
@@ -616,7 +654,7 @@ export default function FabricsAdminPage() {
             disabled={status.type === "loading"}
             className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
           >
-            {status.type === "loading" ? "Čuvam..." : "Sačuvaj tkaninu"}
+            {status.type === "loading" ? "Cuvam..." : "Sacuvaj tkaninu"}
           </button>
           {status.type !== "idle" && (
             <span
@@ -650,10 +688,12 @@ export default function FabricsAdminPage() {
               typeof f.textureBrightness === "number" ? `bright ${f.textureBrightness}` : null,
               typeof f.pantsTextureRotation === "number" ? `pants rot ${f.pantsTextureRotation}` : null,
               typeof f.stripeSpacing === "number" ? `stripe spacing ${f.stripeSpacing}` : null,
+              typeof f.stripeSpacingJacket === "number" ? `stripe jacket ${f.stripeSpacingJacket}` : null,
+              typeof f.stripeSpacingPants === "number" ? `stripe pants ${f.stripeSpacingPants}` : null,
               f.detailImage || f.detailText ? "detail" : null,
             ]
               .filter(Boolean)
-              .join(" • ");
+              .join(" | ");
             return (
               <div key={f.id} className="flex gap-3 rounded-xl border border-gray-200 p-3">
                 <div className="relative h-16 w-20 overflow-hidden rounded-lg bg-gray-100">
@@ -665,7 +705,7 @@ export default function FabricsAdminPage() {
                   <p className="text-sm font-semibold text-gray-900">{f.name}</p>
                   <p className="text-xs text-gray-500">{f.id}</p>
                   <p className="text-xs text-gray-500">
-                    Ton: {f.tone || "medium"} {typeof f.price === "number" ? `• ${f.price} EUR` : ""}
+                    Ton: {f.tone || "medium"} {typeof f.price === "number" ? `- ${f.price} EUR` : ""}
                   </p>
                   {f.code && <p className="text-[11px] text-gray-400">Code: {f.code}</p>}
                   {previewMeta && <p className="text-[11px] text-gray-400">Preview: {previewMeta}</p>}
@@ -693,3 +733,4 @@ export default function FabricsAdminPage() {
     </div>
   );
 }
+

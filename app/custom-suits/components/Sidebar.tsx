@@ -405,7 +405,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
               ) : filteredFabrics.length === 0 ? (
                 <p className="text-xs text-gray-500">Nema tkanina za filter.</p>
               ) : (
-                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" style={{ contentVisibility: "auto" }}>
                   {visibleFabrics.map((fabric) => {
                     const isActive = config.colorId === fabric.id;
                     const detailInfo = resolveFabricDetail(fabric);

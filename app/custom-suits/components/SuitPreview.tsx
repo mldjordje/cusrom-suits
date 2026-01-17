@@ -35,7 +35,7 @@ const PANTS_SEAM_MASK_SRC = "/assets/suits/masks/pants_seam.png";
 const EMPTY_TEXTURE_DATA_URL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 const MASK_BLEED_PX = 1.1;
-const TEXTURE_TILE_PX = 90;
+const TEXTURE_TILE_PX = 75;
 const TEXTURE_TILE_CANVAS_SCALE = 0.12;
 const TEXTURE_TILE_CANVAS_MAX = 280;
 const STRIPE_ANALYSIS_SIZE = 80;
@@ -106,7 +106,6 @@ const normalizePattern = (value?: string | null) => String(value ?? "").trim().t
 const inferPatternFromText = (value?: string | null) => {
   const raw = normalizePattern(value);
   if (!raw) return "";
-  if (raw.includes("karo") || raw.includes("check")) return "karo";
   if (raw.includes("tanke") || raw.includes("pinstripe")) return "tanke pruge";
   if (raw.includes("pruge") || raw.includes("stripe")) return "pruge";
   return "";
@@ -608,18 +607,52 @@ const SuitPreview = ({
     const haystack = `${name} ${texture}`.toLowerCase();
     return /pinstripe|stripe|linije|lines|pruga|pruge/.test(haystack);
   }, [fabricTexture, fabricTextureSource, selectedFabric]);
-  const stripeSpacingOverride = useMemo(
+  const stripeSpacingBaseOverride = useMemo(
     () => parseNumber((selectedFabric as any)?.stripeSpacing ?? (selectedFabric as any)?.stripe_spacing),
     [selectedFabric]
   );
-  const stripeSpacingValue =
-    typeof stripeSpacingOverride === "number" ? clamp(stripeSpacingOverride, 1, 10) : null;
-  const hasStripeSpacingOverride =
-    typeof stripeSpacingValue === "number" && Math.abs(stripeSpacingValue - 6) > 0.01;
-  const stripeSpacingScale = useMemo(() => {
-    if (!hasStripeSpacingOverride || stripeSpacingValue === null) return 1;
-    return clamp(1 + (stripeSpacingValue - 6) * 0.07, 0.65, 1.35);
-  }, [hasStripeSpacingOverride, stripeSpacingValue]);
+  const stripeSpacingJacketRaw = useMemo(() => {
+    const raw = parseNumber(
+      (selectedFabric as any)?.stripeSpacingJacket ?? (selectedFabric as any)?.stripe_spacing_jacket
+    );
+    return typeof raw === "number" ? raw : stripeSpacingBaseOverride;
+  }, [selectedFabric, stripeSpacingBaseOverride]);
+  const stripeSpacingPantsRaw = useMemo(() => {
+    const raw = parseNumber(
+      (selectedFabric as any)?.stripeSpacingPants ?? (selectedFabric as any)?.stripe_spacing_pants
+    );
+    return typeof raw === "number" ? raw : stripeSpacingBaseOverride;
+  }, [selectedFabric, stripeSpacingBaseOverride]);
+  const stripeSpacingJacketValue =
+    typeof stripeSpacingJacketRaw === "number" ? clamp(stripeSpacingJacketRaw, 1, 10) : null;
+  const stripeSpacingPantsValue =
+    typeof stripeSpacingPantsRaw === "number" ? clamp(stripeSpacingPantsRaw, 1, 10) : null;
+  const hasStripeSpacingJacketOverride =
+    typeof stripeSpacingJacketValue === "number" && Math.abs(stripeSpacingJacketValue - 6) > 0.01;
+  const hasStripeSpacingPantsOverride =
+    typeof stripeSpacingPantsValue === "number" && Math.abs(stripeSpacingPantsValue - 6) > 0.01;
+  const hasStripeSpacingOverride = hasStripeSpacingJacketOverride || hasStripeSpacingPantsOverride;
+  const stripeSpacingScaleJacket = useMemo(() => {
+    if (!hasStripeSpacingJacketOverride || stripeSpacingJacketValue === null) return 1;
+    return clamp(1 + (stripeSpacingJacketValue - 6) * 0.07, 0.65, 1.35);
+  }, [hasStripeSpacingJacketOverride, stripeSpacingJacketValue]);
+  const stripeSpacingScalePants = useMemo(() => {
+    if (!hasStripeSpacingPantsOverride || stripeSpacingPantsValue === null) return 1;
+    return clamp(1 + (stripeSpacingPantsValue - 6) * 0.07, 0.65, 1.35);
+  }, [hasStripeSpacingPantsOverride, stripeSpacingPantsValue]);
+  const stripeSpacingScaleBase = useMemo(() => {
+    if (hasStripeSpacingJacketOverride && hasStripeSpacingPantsOverride) {
+      return clamp((stripeSpacingScaleJacket + stripeSpacingScalePants) / 2, 0.65, 1.35);
+    }
+    if (hasStripeSpacingJacketOverride) return stripeSpacingScaleJacket;
+    if (hasStripeSpacingPantsOverride) return stripeSpacingScalePants;
+    return 1;
+  }, [
+    hasStripeSpacingJacketOverride,
+    hasStripeSpacingPantsOverride,
+    stripeSpacingScaleJacket,
+    stripeSpacingScalePants,
+  ]);
   const allowAutoStripe = useMemo(() => !isExplicitSolid, [isExplicitSolid]);
   const autoStripePattern = useMemo(() => {
     if (!allowAutoStripe) return "";
@@ -631,6 +664,14 @@ const SuitPreview = ({
   const pantsPatternValueResolved = useMemo(
     () => (isExplicitSolid ? "" : pantsPatternValue || autoStripePattern || (stripeNameHint ? "pruge" : "")),
     [autoStripePattern, isExplicitSolid, pantsPatternValue, stripeNameHint]
+  );
+  const hasCheckPattern = useMemo(
+    () => pantsPatternValueResolved.includes("karo") || pantsPatternValueResolved.includes("check"),
+    [pantsPatternValueResolved]
+  );
+  const allowCheckOverlay = useMemo(
+    () => !hasCheckPattern || fabricStripe.strength >= 0.22,
+    [fabricStripe.strength, hasCheckPattern]
   );
   const isPantsCmsStripe = useMemo(
     () =>
@@ -647,8 +688,16 @@ const SuitPreview = ({
       (Boolean(pantsPatternValueResolved) ||
         shouldUsePantsPatternOverlay(selectedFabric) ||
         stripeNameHint ||
-        hasStripeSpacingOverride),
-    [hasStripeSpacingOverride, isExplicitSolid, pantsPatternValueResolved, selectedFabric, stripeNameHint]
+        hasStripeSpacingOverride) &&
+      allowCheckOverlay,
+    [
+      allowCheckOverlay,
+      hasStripeSpacingOverride,
+      isExplicitSolid,
+      pantsPatternValueResolved,
+      selectedFabric,
+      stripeNameHint,
+    ]
   );
   const patternStripe =
     fabricPattern === "pinstripe" ||
@@ -811,14 +860,14 @@ const SuitPreview = ({
   const fabricTextureScale = useMemo(() => {
     if (patternStripe && hasExplicitTextureScale) return textureScaleBoost;
     const stripeScale = stripeBoost ? clamp(0.82 + (1 - stripeStrength) * 0.1, 0.78, 0.95) : 1;
-    const spacingScale = hasStripeSpacingOverride ? stripeSpacingScale : 1;
+    const spacingScale = hasStripeSpacingOverride ? stripeSpacingScaleBase : 1;
     return clamp(textureScaleBoost * stripeScale * spacingScale, TEXTURE_SCALE_MIN, TEXTURE_SCALE_MAX);
   }, [
     hasExplicitTextureScale,
     hasStripeSpacingOverride,
     patternStripe,
     stripeBoost,
-    stripeSpacingScale,
+    stripeSpacingScaleBase,
     stripeStrength,
     textureScaleBoost,
   ]);
@@ -964,6 +1013,15 @@ const SuitPreview = ({
     }),
     [fabricTextureFilter, textureBlendMode, tunedTextureOpacity]
   );
+  type PatternOverlayConfig = {
+    pattern: string;
+    lineWidth: number;
+    spacing: number;
+    opacity: number;
+    lineColor: string;
+    lineRgb: RGB;
+    maxOpacity: number;
+  };
   const pantsPatternOverlayConfig = useMemo(() => {
     if (!usePantsPatternOverlay) return null;
     const darkBoost = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
@@ -977,7 +1035,7 @@ const SuitPreview = ({
     const isThinStripe =
       pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
     const spacingBase = defaults.spacing / Math.max(0.2, scale);
-    const spacingScale = hasStripeSpacingOverride ? stripeSpacingScale : 1;
+    const spacingScale = hasStripeSpacingPantsOverride ? stripeSpacingScalePants : 1;
     const spacingRaw = spacingBase * spacingScale * (isThinStripe ? 1.0 : 1);
     const spacing = clamp(spacingRaw, 3, 80);
     const strengthRaw = parseNumber(
@@ -987,7 +1045,7 @@ const SuitPreview = ({
       typeof strengthRaw === "number"
         ? clamp(0.06 + strengthRaw * 0.26, 0.08, 0.3)
         : defaults.opacity;
-    const opacityScale = hasStripeSpacingOverride ? 0.85 : 1;
+    const opacityScale = hasStripeSpacingPantsOverride ? 0.85 : 1;
     const boostedOpacity = (opacityBase + (darkBoost ? 0.04 : 0)) * opacityScale;
     const opacity = isPantsCmsStripe
       ? clamp(boostedOpacity, 0.14, 0.34)
@@ -1005,7 +1063,7 @@ const SuitPreview = ({
       b: clampChannel(baseRgb.b * brighten),
     };
     const lineColor = `rgb(${lineRgb.r}, ${lineRgb.g}, ${lineRgb.b})`;
-    const lineWidth = hasStripeSpacingOverride ? clamp(spacing * 0.14, 0.5, 1.4) : defaults.lineWidth;
+    const lineWidth = hasStripeSpacingPantsOverride ? clamp(spacing * 0.14, 0.5, 1.4) : defaults.lineWidth;
     return {
       pattern: pantsPatternValueResolved,
       lineWidth,
@@ -1013,6 +1071,7 @@ const SuitPreview = ({
       opacity,
       lineColor,
       lineRgb,
+      maxOpacity: hasStripeSpacingPantsOverride ? 0.24 : 0.3,
     };
   }, [
     fabricMetrics.lightness,
@@ -1021,15 +1080,81 @@ const SuitPreview = ({
     isPantsCmsStripe,
     pantsPatternValueResolved,
     selectedFabric,
-    hasStripeSpacingOverride,
-    stripeSpacingScale,
+    hasStripeSpacingPantsOverride,
+    stripeSpacingScalePants,
     textureScaleBoost,
     toneBaseColor,
     tunedFabricFill,
     usePantsPatternOverlay,
   ]);
-  const buildPantsPatternStyle = useCallback(
+  const jacketPatternOverlayConfig = useMemo(() => {
+    if (!usePantsPatternOverlay) return null;
+    const darkBoost = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
+    const defaults =
+      pantsPatternValueResolved === "tanke pruge"
+        ? { lineWidth: 1, spacing: 4, opacity: 0.3 }
+        : pantsPatternValueResolved === "pruge"
+          ? { lineWidth: 1.2, spacing: 7, opacity: 0.26 }
+          : { lineWidth: 1, spacing: 12, opacity: 0.2 };
+    const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
+    const isThinStripe =
+      pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
+    const spacingBase = defaults.spacing / Math.max(0.2, scale);
+    const spacingScale = hasStripeSpacingJacketOverride ? stripeSpacingScaleJacket : 1;
+    const spacingRaw = spacingBase * spacingScale * (isThinStripe ? 1.0 : 1);
+    const spacing = clamp(spacingRaw, 3, 80);
+    const strengthRaw = parseNumber(
+      (selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength
+    );
+    const opacityBase =
+      typeof strengthRaw === "number"
+        ? clamp(0.06 + strengthRaw * 0.26, 0.08, 0.3)
+        : defaults.opacity;
+    const opacityScale = hasStripeSpacingJacketOverride ? 0.85 : 1;
+    const boostedOpacity = (opacityBase + (darkBoost ? 0.04 : 0)) * opacityScale;
+    const opacity = isPantsCmsStripe
+      ? clamp(boostedOpacity, 0.14, 0.34)
+      : clamp(boostedOpacity, 0.08, 0.28);
+    const brightnessRaw = parseNumber(
+      (selectedFabric as any)?.textureBrightness ?? (selectedFabric as any)?.texture_brightness
+    );
+    const brightenBase = brightnessRaw ?? (darkBoost ? 1.24 : 1.12);
+    const brighten = clamp(brightenBase, 1.05, darkBoost ? 1.32 : 1.2);
+    const baseHex = tunedFabricFill || toneBaseColor;
+    const baseRgb = hexToRgb(baseHex) ?? { r: 255, g: 255, b: 255 };
+    const lineRgb = {
+      r: clampChannel(baseRgb.r * brighten),
+      g: clampChannel(baseRgb.g * brighten),
+      b: clampChannel(baseRgb.b * brighten),
+    };
+    const lineColor = `rgb(${lineRgb.r}, ${lineRgb.g}, ${lineRgb.b})`;
+    const lineWidth = hasStripeSpacingJacketOverride ? clamp(spacing * 0.14, 0.5, 1.4) : defaults.lineWidth;
+    return {
+      pattern: pantsPatternValueResolved,
+      lineWidth,
+      spacing,
+      opacity,
+      lineColor,
+      lineRgb,
+      maxOpacity: hasStripeSpacingJacketOverride ? 0.24 : 0.3,
+    };
+  }, [
+    fabricMetrics.lightness,
+    fabricTone,
+    hasExplicitTextureScale,
+    hasStripeSpacingJacketOverride,
+    isPantsCmsStripe,
+    pantsPatternValueResolved,
+    selectedFabric,
+    stripeSpacingScaleJacket,
+    textureScaleBoost,
+    toneBaseColor,
+    tunedFabricFill,
+    usePantsPatternOverlay,
+  ]);
+  const buildPatternStyle = useCallback(
     (
+      config: PatternOverlayConfig | null,
       angleDeg: number,
       options?: {
         opacityMul?: number;
@@ -1038,12 +1163,11 @@ const SuitPreview = ({
         opacityMin?: number;
       }
     ): React.CSSProperties => {
-      if (!pantsPatternOverlayConfig) return {};
-      const { lineWidth, spacing, opacity, pattern, lineRgb } = pantsPatternOverlayConfig;
+      if (!config) return {};
+      const { lineWidth, spacing, opacity, pattern, lineRgb, maxOpacity } = config;
       const opacityMul = options?.opacityMul ?? 1;
       const brightenMul = options?.brightenMul ?? 1;
       const opacityMin = options?.opacityMin ?? 0.05;
-      const maxOpacity = hasStripeSpacingOverride ? 0.24 : 0.3;
       const tunedOpacity = clamp(opacity * opacityMul, opacityMin, maxOpacity);
       const tunedRgb = {
         r: clampChannel(lineRgb.r * brightenMul),
@@ -1067,7 +1191,7 @@ const SuitPreview = ({
         filter: "none",
       };
     },
-    [hasStripeSpacingOverride, pantsPatternOverlayConfig, usePhotoBase]
+    []
   );
   const pantsTextureStyle = useMemo<React.CSSProperties>(() => {
     const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
@@ -1122,10 +1246,13 @@ const SuitPreview = ({
   }, [stripeHighlightStyle, stripeWhiteBoost]);
   const jacketPatternBlendMode: React.CSSProperties["mixBlendMode"] = stripeWhiteBoost ? "screen" : "normal";
   const jacketPatternOverlayStyle = useMemo<React.CSSProperties | null>(() => {
-    if (!pantsPatternOverlayConfig) return null;
+    if (!jacketPatternOverlayConfig) return null;
     const angle = stripeOrientation === "horizontal" ? 0 : 90;
-    return buildPantsPatternStyle(angle, { opacityMul: 1.0, mixBlendMode: jacketPatternBlendMode });
-  }, [buildPantsPatternStyle, jacketPatternBlendMode, pantsPatternOverlayConfig, stripeOrientation]);
+    return buildPatternStyle(jacketPatternOverlayConfig, angle, {
+      opacityMul: 1.0,
+      mixBlendMode: jacketPatternBlendMode,
+    });
+  }, [buildPatternStyle, jacketPatternBlendMode, jacketPatternOverlayConfig, stripeOrientation]);
   const photoVariant =
     fabricTone === "light"
       ? "light"
@@ -1681,39 +1808,39 @@ const SuitPreview = ({
     : "normal";
   const pantsOverlayStyleLeft = useMemo(
     () =>
-      buildPantsPatternStyle(pantsSplitRotation.diag, {
+      buildPatternStyle(pantsPatternOverlayConfig, pantsSplitRotation.diag, {
         opacityMul: 1.05,
         mixBlendMode: pantsPatternBlendMode,
       }),
-    [buildPantsPatternStyle, pantsPatternBlendMode, pantsSplitRotation.diag]
+    [buildPatternStyle, pantsPatternBlendMode, pantsPatternOverlayConfig, pantsSplitRotation.diag]
   );
   const pantsOverlayStyleRight = useMemo(
     () =>
-      buildPantsPatternStyle(pantsSplitRotation.fly, {
+      buildPatternStyle(pantsPatternOverlayConfig, pantsSplitRotation.fly, {
         opacityMul: 1.05,
         mixBlendMode: pantsPatternBlendMode,
       }),
-    [buildPantsPatternStyle, pantsPatternBlendMode, pantsSplitRotation.fly]
+    [buildPatternStyle, pantsPatternBlendMode, pantsPatternOverlayConfig, pantsSplitRotation.fly]
   );
   const pantsOverlayStyleFly = useMemo(
     () =>
-      buildPantsPatternStyle(pantsSplitRotation.fly, {
+      buildPatternStyle(pantsPatternOverlayConfig, pantsSplitRotation.fly, {
         opacityMul: 1.35,
         brightenMul: 1.2,
         mixBlendMode: pantsPatternBlendMode,
         opacityMin: 0.16,
       }),
-    [buildPantsPatternStyle, pantsPatternBlendMode, pantsSplitRotation.fly]
+    [buildPatternStyle, pantsPatternBlendMode, pantsPatternOverlayConfig, pantsSplitRotation.fly]
   );
   const pantsOverlayStyleWaist = useMemo(
     () =>
-      buildPantsPatternStyle(pantsSplitRotation.waist, {
+      buildPatternStyle(pantsPatternOverlayConfig, pantsSplitRotation.waist, {
         opacityMul: 1.2,
         brightenMul: 1.1,
         mixBlendMode: pantsPatternBlendMode,
         opacityMin: 0.14,
       }),
-    [buildPantsPatternStyle, pantsPatternBlendMode, pantsSplitRotation.waist]
+    [buildPatternStyle, pantsPatternBlendMode, pantsPatternOverlayConfig, pantsSplitRotation.waist]
   );
   const pantsOverlayStyleMain = pantsOverlayStyleLeft;
   const pantsSplitRotationMain = pantsSplitTextureRotation.left;
