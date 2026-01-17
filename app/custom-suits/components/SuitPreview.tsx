@@ -1189,7 +1189,7 @@ const SuitPreview = ({
   const showVignette = showLayer("vignette") && !lowPowerMode && effectsReady;
   useEffect(() => {
     let cancelled = false;
-    fetch(`${getBackendBase()}button-positions`, { cache: "no-store" })
+    fetch("/api/button-positions", { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
         if (cancelled) return;
@@ -2361,6 +2361,10 @@ const SuitPreview = ({
             let rightUnderCount = 0;
             const boundaryPad = PANTS_STRIPE_TUNING.boundaryPadPx ?? 0;
             const seamBoundaryPad = PANTS_STRIPE_TUNING.seam.boundaryPadPx ?? 0;
+            const seamBoundaryMax = Math.max(
+              seamBoundaryPad,
+              PANTS_STRIPE_TUNING.seam.boundaryMaxPadPx ?? seamBoundaryPad
+            );
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
@@ -2373,10 +2377,12 @@ const SuitPreview = ({
                 const seamX = seamXForY[y] + seamXPad;
                 const isUnder = x < seamXMax && y > seamY && x <= seamX;
                 const boundaryRaw = legBoundaryX[y];
-                const boundaryX = Math.min(
-                  c.width - 1,
-                  Math.max(0, Math.max(boundaryRaw + boundaryPad, seamX + seamBoundaryPad))
+                const boundaryTarget = clamp(
+                  boundaryRaw + boundaryPad,
+                  seamX + seamBoundaryPad,
+                  seamX + seamBoundaryMax
                 );
+                const boundaryX = Math.min(c.width - 1, Math.max(0, boundaryTarget));
                 const isRightSide = x >= boundaryX;
                 if (isUnder) {
                   leftUnder.data[idx] = 255;
@@ -2408,10 +2414,12 @@ const SuitPreview = ({
                   if (unionAlpha < 1) continue;
                   if (waistMask.data[idx + 3] > 0) continue;
                   const boundaryRaw = legBoundaryX[y];
-                  const boundaryX = Math.min(
-                    c.width - 1,
-                    Math.max(0, Math.max(boundaryRaw + boundaryPad, seamXForY[y] + seamBoundaryPad))
+                  const boundaryTarget = clamp(
+                    boundaryRaw + boundaryPad,
+                    seamXForY[y] + seamBoundaryPad,
+                    seamXForY[y] + seamBoundaryMax
                   );
+                  const boundaryX = Math.min(c.width - 1, Math.max(0, boundaryTarget));
                   if (x < boundaryX) continue;
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;

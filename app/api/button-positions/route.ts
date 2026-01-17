@@ -25,17 +25,20 @@ export async function GET(req: NextRequest) {
               : null);
           const fallbackPositions = fallback?.positions ?? [];
           const incomingPositions = Array.isArray(row.positions) ? row.positions : [];
-          const useFallback =
-            fallbackPositions.length > 0 && incomingPositions.length !== fallbackPositions.length;
+          const mergedPositions =
+            incomingPositions.length && fallbackPositions.length
+              ? fallbackPositions.map((pos, idx) => incomingPositions[idx] ?? pos)
+              : incomingPositions;
           return {
             styleId,
             layout: String(row.layout || fallback?.layout || "2"),
             area,
-            positions: useFallback
-              ? fallbackPositions
-              : incomingPositions.length
-                ? incomingPositions
-                : fallbackPositions,
+            positions:
+              incomingPositions.length === 0
+                ? fallbackPositions
+                : incomingPositions.length < fallbackPositions.length
+                  ? mergedPositions
+                  : incomingPositions,
           };
         })
       : fallbackButtonLayouts;

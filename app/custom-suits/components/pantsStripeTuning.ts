@@ -11,7 +11,8 @@ export const PANTS_STRIPE_TUNING = {
     intercept: 16.11,
     underBiasPx: 6,
     xPadPx: 14,
-    boundaryPadPx: 8,
+    boundaryPadPx: 6,
+    boundaryMaxPadPx: 14,
   },
 
   stripeOffsets: {
