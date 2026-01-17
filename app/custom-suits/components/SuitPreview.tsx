@@ -70,7 +70,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 const PREVIEW_EXPOSURE = (() => {
   const raw = process.env.NEXT_PUBLIC_PREVIEW_EXPOSURE;
   const num = raw ? Number(raw) : NaN;
-  if (!Number.isFinite(num)) return 1.12;
+  if (!Number.isFinite(num)) return 1.2;
   return clamp(num, 0.9, 1.35);
 })();
 const parseNumber = (value: unknown) => {
