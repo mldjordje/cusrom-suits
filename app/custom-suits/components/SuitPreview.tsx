@@ -617,18 +617,17 @@ const SuitPreview = ({
     () => parseNumber((selectedFabric as any)?.stripeSpacing ?? (selectedFabric as any)?.stripe_spacing),
     [selectedFabric]
   );
-  const hasStripeSpacingOverride = typeof stripeSpacingOverride === "number";
+  const stripeSpacingValue =
+    typeof stripeSpacingOverride === "number" ? clamp(stripeSpacingOverride, 1, 10) : null;
+  const hasStripeSpacingOverride =
+    typeof stripeSpacingValue === "number" && Math.abs(stripeSpacingValue - 6) > 0.01;
   const stripeSpacingScale = useMemo(() => {
-    if (!hasStripeSpacingOverride) return 1;
-    const value = clamp(stripeSpacingOverride as number, 1, 10);
-    return clamp(1 + (value - 6) * 0.07, 0.65, 1.35);
-  }, [hasStripeSpacingOverride, stripeSpacingOverride]);
+    if (!hasStripeSpacingOverride || stripeSpacingValue === null) return 1;
+    return clamp(1 + (stripeSpacingValue - 6) * 0.07, 0.65, 1.35);
+  }, [hasStripeSpacingOverride, stripeSpacingValue]);
   const pantsPatternValueResolved = useMemo(
-    () =>
-      pantsPatternValue ||
-      autoStripePattern ||
-      (stripeNameHint || hasStripeSpacingOverride ? "pruge" : ""),
-    [autoStripePattern, hasStripeSpacingOverride, pantsPatternValue, stripeNameHint]
+    () => pantsPatternValue || autoStripePattern || (stripeNameHint ? "pruge" : ""),
+    [autoStripePattern, pantsPatternValue, stripeNameHint]
   );
   const isPantsCmsStripe = useMemo(
     () =>
@@ -643,9 +642,8 @@ const SuitPreview = ({
     () =>
       Boolean(pantsPatternValueResolved) ||
       shouldUsePantsPatternOverlay(selectedFabric) ||
-      stripeNameHint ||
-      hasStripeSpacingOverride,
-    [hasStripeSpacingOverride, pantsPatternValueResolved, selectedFabric, stripeNameHint]
+      stripeNameHint,
+    [pantsPatternValueResolved, selectedFabric, stripeNameHint]
   );
   const patternStripe =
     fabricPattern === "pinstripe" ||
