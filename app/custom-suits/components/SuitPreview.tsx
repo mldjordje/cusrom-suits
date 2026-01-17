@@ -2447,6 +2447,38 @@ const SuitPreview = ({
             }
             rightFlyCount = rightUpperCleanCount;
             for (let y = 0; y < c.height; y++) {
+              const seamXPad = PANTS_STRIPE_TUNING.seam.xPadPx ?? 0;
+              const seamX = seamXForY[y] + seamXPad;
+              const boundaryTarget = clamp(
+                legBoundaryX[y] + boundaryPad,
+                seamX + seamBoundaryPad,
+                seamX + seamBoundaryMax
+              );
+              const boundaryX = Math.min(c.width - 1, Math.max(0, boundaryTarget));
+              for (let x = 0; x < c.width; x++) {
+                const idx = (y * c.width + x) * 4;
+                const unionAlpha = full[idx + 3];
+                if (unionAlpha < 1) continue;
+                if (waistMask.data[idx + 3] > 0) continue;
+                if (leftUnder.data[idx + 3] > 0) continue;
+                if (rightUpper.data[idx + 3] > 0) continue;
+                if (leftMain.data[idx + 3] > 0) continue;
+                if (x >= boundaryX) {
+                  rightUpper.data[idx] = 255;
+                  rightUpper.data[idx + 1] = 255;
+                  rightUpper.data[idx + 2] = 255;
+                  rightUpper.data[idx + 3] = unionAlpha;
+                  rightFlyCount++;
+                } else {
+                  leftMain.data[idx] = 255;
+                  leftMain.data[idx + 1] = 255;
+                  leftMain.data[idx + 2] = 255;
+                  leftMain.data[idx + 3] = unionAlpha;
+                  leftMainCount++;
+                }
+              }
+            }
+            for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
                 if (rightUpper.data[idx + 3] < 1) continue;
