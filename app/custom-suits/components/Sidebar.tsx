@@ -428,7 +428,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
                           <div className={`px-2.5 py-2.5 text-[11px] ${isActive ? "text-gray-900" : "text-gray-600"}`}>
                             <p className="font-semibold leading-tight">{fabric.name || "Bez naziva"}</p>
                             <p className="text-[10px] text-gray-500">
-                              {fabric.price ?? 0} EUR Aú ton {fabric.tone || "medium"}
+                              {fabric.price ?? 0} EUR - ton {fabric.tone || "medium"}
                             </p>
                             {(fabric.zoom1 || fabric.zoom2) && (
                               <div className="mt-1 flex gap-2 text-[10px] underline">
@@ -505,7 +505,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
 
                   {activeLapel?.widths?.length ? (
                     <ChipGroup
-                    title="Å irina revera"
+                      title="Sirina revera"
                       options={activeLapel.widths.map((width) => ({ id: width.id, label: width.name }))}
                       selectedId={selectedLapelWidthId}
                       onSelect={(id) => dispatch({ type: "SET_LAPEL_WIDTH", payload: id })}
