@@ -493,13 +493,16 @@ export default function FabricsAdminPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Gustina pruga (px razmak)</label>
+              <label className="text-xs font-semibold text-gray-700">Gustina pruga (1-10, 6 = normalno)</label>
               <input
                 value={form.stripeSpacing}
                 onChange={(e) => setForm((s) => ({ ...s, stripeSpacing: e.target.value }))}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
                 placeholder="6"
-                inputMode="decimal"
+                inputMode="numeric"
+                min={1}
+                max={10}
+                step={1}
               />
             </div>
           </div>
