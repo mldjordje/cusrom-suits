@@ -44,6 +44,9 @@ export async function POST(req: NextRequest) {
   const textureBrightness = parseNumber(form.get("textureBrightness") ?? form.get("texture_brightness"));
   const pantsTextureRotation = parseNumber(form.get("pantsTextureRotation") ?? form.get("pants_texture_rotation"));
   const stripeSpacing = parseNumber(form.get("stripeSpacing") ?? form.get("stripe_spacing"));
+  const detailFile = form.get("detailFile") as File | null;
+  const detailImageOverride = String(form.get("detailImage") ?? form.get("detail_image") ?? "").trim();
+  const detailText = String(form.get("detailText") ?? form.get("detail_text") ?? "").trim();
 
   if (!name) {
     return NextResponse.json({ success: false, message: "Name is required" }, { status: 400 });
@@ -53,6 +56,7 @@ export async function POST(req: NextRequest) {
   }
 
   let textureUrl = textureOverride || "";
+  let detailImageUrl = detailImageOverride || "";
 
   if (!textureUrl && file) {
     await ensureBucket(supabase);
@@ -63,6 +67,18 @@ export async function POST(req: NextRequest) {
     }
     const { data: publicData } = supabase.storage.from(bucketName).getPublicUrl(path);
     textureUrl = publicData?.publicUrl || "";
+  }
+  if (!detailImageUrl && detailFile) {
+    await ensureBucket(supabase);
+    const detailPath = `fabrics/details/${id}-${Date.now()}-${detailFile.name}`;
+    const { error: detailUploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(detailPath, detailFile, { upsert: true });
+    if (detailUploadError) {
+      return NextResponse.json({ success: false, message: detailUploadError.message }, { status: 500 });
+    }
+    const { data: detailPublic } = supabase.storage.from(bucketName).getPublicUrl(detailPath);
+    detailImageUrl = detailPublic?.publicUrl || "";
   }
 
   const price = priceRaw ? Number(priceRaw) : null;
@@ -82,6 +98,8 @@ export async function POST(req: NextRequest) {
   if (textureBrightness !== null) payload.texture_brightness = textureBrightness;
   if (pantsTextureRotation !== null) payload.pants_texture_rotation = pantsTextureRotation;
   if (stripeSpacing !== null) payload.stripe_spacing = stripeSpacing;
+  if (detailImageUrl) payload.detail_image = detailImageUrl;
+  if (detailText) payload.detail_text = detailText;
 
   const { data, error } = await supabase.from("fabrics").upsert(payload, { onConflict: "id" }).select("*").single();
 

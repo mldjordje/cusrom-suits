@@ -2,13 +2,15 @@
 /* eslint-disable @next/next/no-img-element */
 
 import { AnimatePresence, motion, type Variants } from "framer-motion";
-import React, { useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
 import { useButtons } from "../hooks/useButtons";
 import { useLinings } from "../hooks/useLinings";
 import { computePrice } from "../utils/price";
+import { buildBackendUrl } from "../utils/backend";
+import FabricDetailModal, { FabricDetail } from "./FabricDetailModal";
 
 export type Panel = "FABRIC" | "STYLE" | "ACCENTS";
 
@@ -135,39 +137,59 @@ const FabricCard = ({
   fabric,
   active,
   onSelect,
+  onDetail,
+  hasDetail,
 }: {
   fabric: any;
   active: boolean;
   onSelect: () => void;
+  onDetail?: () => void;
+  hasDetail?: boolean;
 }) => (
-  <button
-    onClick={onSelect}
-    className={`flex w-full items-center gap-3 rounded-2xl border bg-white p-3 text-left transition ${
+  <div
+    className={`rounded-2xl border bg-white text-left transition ${
       active ? "border-gray-900 shadow-md" : "border-gray-200 hover:border-gray-400"
     }`}
   >
-    <div className="relative h-20 w-24 overflow-hidden rounded-xl bg-gray-100">
-      <img
-        src={fabric.texture}
-        alt={fabric.name}
-        className="h-full w-full object-cover"
-        loading="lazy"
-        decoding="async"
-        fetchPriority="low"
-      />
-      {active && <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />}
-    </div>
-    <div className="flex-1">
-      <div className="flex items-center gap-2">
-        <p className="text-sm font-semibold text-gray-900">{fabric.name || "Tkanina"}</p>
-        {active && <Badge label="Izabrano" />}
+    <button
+      type="button"
+      onClick={onSelect}
+      className="flex w-full items-center gap-3 p-3 text-left"
+    >
+      <div className="relative h-20 w-24 overflow-hidden rounded-xl bg-gray-100">
+        <img
+          src={fabric.texture}
+          alt={fabric.name}
+          className="h-full w-full object-cover"
+          loading="lazy"
+          decoding="async"
+          fetchPriority="low"
+        />
+        {active && <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />}
       </div>
-      <p className="text-[11px] text-gray-500">
-        {fabric.price ?? 0} EUR - ton {fabric.tone || "medium"}
-      </p>
-      {fabric.code && <p className="text-[11px] text-gray-400">ifra: {fabric.code}</p>}
-    </div>
-  </button>
+      <div className="flex-1">
+        <div className="flex items-center gap-2">
+          <p className="text-sm font-semibold text-gray-900">{fabric.name || "Tkanina"}</p>
+          {active && <Badge label="Izabrano" />}
+        </div>
+        <p className="text-[11px] text-gray-500">
+          {fabric.price ?? 0} EUR - ton {fabric.tone || "medium"}
+        </p>
+        {fabric.code && <p className="text-[11px] text-gray-400">ifra: {fabric.code}</p>}
+      </div>
+    </button>
+    {hasDetail && (
+      <div className="px-3 pb-3">
+        <button
+          type="button"
+          onClick={onDetail}
+          className="text-[11px] font-semibold text-gray-700 underline underline-offset-4 transition hover:text-gray-900"
+        >
+          Detalji tkanine
+        </button>
+      </div>
+    )}
+  </div>
 );
 
 const Drawer = ({
@@ -208,6 +230,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   const currentPanel = activePanel !== undefined ? activePanel : internalPanel;
   const [readyPanel, setReadyPanel] = useState<Panel | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [detailFabric, setDetailFabric] = useState<FabricDetail | null>(null);
   const setPanel = (panel: Panel | null) => {
     setInternalPanel(panel);
     onPanelChange?.(panel);
@@ -235,6 +258,26 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   const fabricListRef = useRef<HTMLDivElement | null>(null);
   const fabricSentinelRef = useRef<HTMLDivElement | null>(null);
   const [visibleFabricCount, setVisibleFabricCount] = useState(FABRIC_PAGE_SIZE);
+
+  const resolveFabricDetail = useCallback((fabric: any): FabricDetail | null => {
+    const detailImage =
+      fabric?.detailImage ??
+      fabric?.detail_image ??
+      fabric?.detailImageUrl ??
+      fabric?.detail_image_url ??
+      fabric?.zoom1 ??
+      fabric?.zoom2 ??
+      null;
+    const detailText = fabric?.detailText ?? fabric?.detail_text ?? null;
+    if (!detailImage && !detailText) return null;
+    return {
+      name: fabric?.name,
+      code: fabric?.code,
+      texture: fabric?.texture,
+      detailImage,
+      detailText,
+    };
+  }, []);
 
   const isFabricPanel = currentPanel === "FABRIC";
   const isAccentsPanel = currentPanel === "ACCENTS";
@@ -390,7 +433,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
       localStorage.setItem("suitCart", JSON.stringify(parsed));
 
       try {
-        const res = await fetch("/api/orders", {
+        const res = await fetch(buildBackendUrl("orders"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -480,14 +523,19 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
             <p className="text-sm text-gray-500">Nema tkanina za zadate filtere.</p>
           ) : (
             <>
-              {visibleFabrics.map((fabric: any) => (
-                <FabricCard
-                  key={fabric.id}
-                  fabric={fabric}
-                  active={config.colorId === fabric.id}
-                  onSelect={() => dispatch({ type: "SET_COLOR", payload: fabric.id })}
-                />
-              ))}
+              {visibleFabrics.map((fabric: any) => {
+                const detailInfo = resolveFabricDetail(fabric);
+                return (
+                  <FabricCard
+                    key={fabric.id}
+                    fabric={fabric}
+                    active={config.colorId === fabric.id}
+                    onSelect={() => dispatch({ type: "SET_COLOR", payload: fabric.id })}
+                    hasDetail={Boolean(detailInfo)}
+                    onDetail={detailInfo ? () => setDetailFabric(detailInfo) : undefined}
+                  />
+                );
+              })}
               {filteredFabrics.length > visibleFabrics.length && (
                 <div
                   ref={fabricSentinelRef}
@@ -743,6 +791,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
           </Drawer>
         )}
       </AnimatePresence>
+      <FabricDetailModal fabric={detailFabric} onClose={() => setDetailFabric(null)} />
     </>
   );
 }

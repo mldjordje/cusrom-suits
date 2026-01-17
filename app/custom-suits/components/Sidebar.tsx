@@ -1,16 +1,17 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
-import React, { useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { computePrice } from "../utils/price";
 import { SuitState } from "../hooks/useSuitConfigurator";
-import { getBackendBase } from "../utils/backend";
+import { buildBackendUrl } from "../utils/backend";
 import { useFabrics } from "../hooks/useFabrics";
 import { useButtons } from "../hooks/useButtons";
 import { useLinings } from "../hooks/useLinings";
+import FabricDetailModal, { FabricDetail } from "./FabricDetailModal";
 
 type Props = {
   config: SuitState;
@@ -44,6 +45,7 @@ const sidebarVariants = {
 
 const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFooter = true }) => {
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("FABRIC");
+  const [detailFabric, setDetailFabric] = useState<FabricDetail | null>(null);
   const currentSuit = suits.find((s) => s.id === config.styleId);
   const [savingCart, setSavingCart] = useState(false);
   const storeOrderId = (orderId: string) => {
@@ -84,6 +86,25 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
           })),
     [fabrics]
   );
+  const resolveFabricDetail = useCallback((fabric: any): FabricDetail | null => {
+    const detailImage =
+      fabric?.detailImage ??
+      fabric?.detail_image ??
+      fabric?.detailImageUrl ??
+      fabric?.detail_image_url ??
+      fabric?.zoom1 ??
+      fabric?.zoom2 ??
+      null;
+    const detailText = fabric?.detailText ?? fabric?.detail_text ?? null;
+    if (!detailImage && !detailText) return null;
+    return {
+      name: fabric?.name,
+      code: fabric?.code,
+      texture: fabric?.texture,
+      detailImage,
+      detailText,
+    };
+  }, []);
   const filteredFabrics = useMemo(() => {
     const normalizedQuery = deferredQuery.trim().toLowerCase();
     if (!normalizedQuery) return fabricsNormalized;
@@ -227,7 +248,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
 
       // Send to Supabase orders via API route
       try {
-      const res = await fetch("/api/orders", {
+      const res = await fetch(buildBackendUrl("orders"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -387,39 +408,56 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                   {visibleFabrics.map((fabric) => {
                     const isActive = config.colorId === fabric.id;
+                    const detailInfo = resolveFabricDetail(fabric);
                     return (
-                      <button
+                      <div
                         key={fabric.id}
-                        onClick={() => dispatch({ type: "SET_COLOR", payload: fabric.id })}
                         className={`group overflow-hidden rounded-xl border text-left transition ${
                           isActive ? "border-gray-900 shadow-md" : "border-gray-200 hover:border-gray-400"
                         }`}
                       >
-                        <div className="relative h-20 w-full overflow-hidden">
-                          <Image src={fabric.texture} alt={fabric.name} fill style={{ objectFit: "cover" }} />
-                          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 to-transparent opacity-0 transition group-hover:opacity-100" />
-                        </div>
-                        <div className={`px-2.5 py-2.5 text-[11px] ${isActive ? "text-gray-900" : "text-gray-600"}`}>
-                          <p className="font-semibold leading-tight">{fabric.name || "Bez naziva"}</p>
-                          <p className="text-[10px] text-gray-500">
-                            {fabric.price ?? 0} EUR Â· ton {fabric.tone || "medium"}
-                          </p>
-                          {(fabric.zoom1 || fabric.zoom2) && (
-                            <div className="mt-1 flex gap-2 text-[10px] underline">
-                              {fabric.zoom1 && (
-                                <a href={fabric.zoom1} target="_blank" rel="noreferrer">
-                                  Zoom 1
-                                </a>
-                              )}
-                              {fabric.zoom2 && (
-                                <a href={fabric.zoom2} target="_blank" rel="noreferrer">
-                                  Zoom 2
-                                </a>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </button>
+                        <button
+                          type="button"
+                          onClick={() => dispatch({ type: "SET_COLOR", payload: fabric.id })}
+                          className="w-full text-left"
+                        >
+                          <div className="relative h-20 w-full overflow-hidden">
+                            <Image src={fabric.texture} alt={fabric.name} fill style={{ objectFit: "cover" }} />
+                            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 to-transparent opacity-0 transition group-hover:opacity-100" />
+                          </div>
+                          <div className={`px-2.5 py-2.5 text-[11px] ${isActive ? "text-gray-900" : "text-gray-600"}`}>
+                            <p className="font-semibold leading-tight">{fabric.name || "Bez naziva"}</p>
+                            <p className="text-[10px] text-gray-500">
+                              {fabric.price ?? 0} EUR Aú ton {fabric.tone || "medium"}
+                            </p>
+                            {(fabric.zoom1 || fabric.zoom2) && (
+                              <div className="mt-1 flex gap-2 text-[10px] underline">
+                                {fabric.zoom1 && (
+                                  <a href={fabric.zoom1} target="_blank" rel="noreferrer">
+                                    Zoom 1
+                                  </a>
+                                )}
+                                {fabric.zoom2 && (
+                                  <a href={fabric.zoom2} target="_blank" rel="noreferrer">
+                                    Zoom 2
+                                  </a>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </button>
+                        {detailInfo && (
+                          <div className="px-2.5 pb-2.5">
+                            <button
+                              type="button"
+                              onClick={() => setDetailFabric(detailInfo)}
+                              className="text-[10px] font-semibold text-gray-700 underline underline-offset-4 transition hover:text-gray-900"
+                            >
+                              Detalji tkanine
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     );
                   })}
                   {filteredFabrics.length > visibleFabrics.length && (
@@ -620,11 +658,14 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
           </div>
         )}
       </div>
+      <FabricDetailModal fabric={detailFabric} onClose={() => setDetailFabric(null)} />
     </motion.div>
   );
 };
 
 export default Sidebar;
+
+
 
 
 

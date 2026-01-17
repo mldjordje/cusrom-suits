@@ -40,6 +40,15 @@ const normalizeFabric = (fabric: any) => ({
   textureBrightness: fabric.textureBrightness ?? fabric.texture_brightness ?? null,
   pantsTextureRotation: fabric.pantsTextureRotation ?? fabric.pants_texture_rotation ?? null,
   stripeSpacing: fabric.stripeSpacing ?? fabric.stripe_spacing ?? null,
+  detailImage:
+    fabric.detailImage ??
+    fabric.detail_image ??
+    fabric.detailImageUrl ??
+    fabric.detail_image_url ??
+    fabric.zoom1 ??
+    fabric.zoom2 ??
+    null,
+  detailText: fabric.detailText ?? fabric.detail_text ?? null,
 });
 
 export async function GET(req: NextRequest) {

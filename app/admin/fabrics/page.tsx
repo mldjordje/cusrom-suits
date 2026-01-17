@@ -18,6 +18,8 @@ type Fabric = {
   textureBrightness?: number | null;
   pantsTextureRotation?: number | null;
   stripeSpacing?: number | null;
+  detailImage?: string | null;
+  detailText?: string | null;
 };
 
 type Status = { type: "idle" | "loading" | "error" | "success"; message?: string };
@@ -91,8 +93,11 @@ export default function FabricsAdminPage() {
     textureBrightness: "",
     pantsTextureRotation: "",
     stripeSpacing: "",
+    detailImage: "",
+    detailText: "",
   });
   const [file, setFile] = useState<File | null>(null);
+  const [detailFile, setDetailFile] = useState<File | null>(null);
   const [autoTone, setAutoTone] = useState<string | null>(null);
 
   const analyzeTexture = async (blob: File) => {
@@ -277,7 +282,10 @@ export default function FabricsAdminPage() {
     if (form.textureBrightness.trim()) fd.set("textureBrightness", form.textureBrightness.trim());
     if (form.pantsTextureRotation.trim()) fd.set("pantsTextureRotation", form.pantsTextureRotation.trim());
     if (form.stripeSpacing.trim()) fd.set("stripeSpacing", form.stripeSpacing.trim());
+    if (form.detailImage.trim()) fd.set("detailImage", form.detailImage.trim());
+    if (form.detailText.trim()) fd.set("detailText", form.detailText.trim());
     if (file) fd.set("file", file);
+    if (detailFile) fd.set("detailFile", detailFile);
 
     const res = await fetch("/api/fabrics/upload", { method: "POST", body: fd });
     const json = await res.json();
@@ -300,8 +308,11 @@ export default function FabricsAdminPage() {
       textureBrightness: "",
       pantsTextureRotation: "",
       stripeSpacing: "",
+      detailImage: "",
+      detailText: "",
     });
     setFile(null);
+    setDetailFile(null);
     setAutoTone(null);
     await loadFabrics();
   };
@@ -338,9 +349,12 @@ export default function FabricsAdminPage() {
       textureBrightness: typeof fab.textureBrightness === "number" ? String(fab.textureBrightness) : "",
       pantsTextureRotation: typeof fab.pantsTextureRotation === "number" ? String(fab.pantsTextureRotation) : "",
       stripeSpacing: typeof fab.stripeSpacing === "number" ? String(fab.stripeSpacing) : "",
+      detailImage: fab.detailImage || (fab as any).detail_image || "",
+      detailText: fab.detailText || (fab as any).detail_text || "",
     });
     setAutoTone(null);
     setFile(null);
+    setDetailFile(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
@@ -422,6 +436,24 @@ export default function FabricsAdminPage() {
               onChange={(e) => setForm((s) => ({ ...s, texture: e.target.value }))}
               className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
               placeholder="https://..."
+            />
+          </div>
+          <div className="space-y-1">
+            <label className="text-xs font-semibold text-gray-700">Detaljna slika URL (opciono)</label>
+            <input
+              value={form.detailImage}
+              onChange={(e) => setForm((s) => ({ ...s, detailImage: e.target.value }))}
+              className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+              placeholder="https://..."
+            />
+          </div>
+          <div className="space-y-1 sm:col-span-2">
+            <label className="text-xs font-semibold text-gray-700">Opis tkanine (opciono)</label>
+            <textarea
+              value={form.detailText}
+              onChange={(e) => setForm((s) => ({ ...s, detailText: e.target.value }))}
+              className="min-h-[80px] w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+              placeholder="Kratak opis, sastav, poreklo, kolekcija..."
             />
           </div>
         </div>
@@ -556,6 +588,28 @@ export default function FabricsAdminPage() {
           </label>
           {autoTone && <p className="text-xs text-gray-500">Auto ton: {autoTone}</p>}
         </div>
+        <div className="space-y-2">
+          <label className="text-xs font-semibold text-gray-700">Upload detaljne slike (opciono)</label>
+          <input
+            id="detail-file"
+            type="file"
+            accept="image/*"
+            onChange={(e) => setDetailFile(e.target.files?.[0] || null)}
+            className="sr-only"
+          />
+          <label
+            htmlFor="detail-file"
+            className="flex cursor-pointer items-center justify-between rounded-xl border border-dashed border-gray-300 bg-gray-50 px-4 py-3 transition hover:border-gray-400"
+          >
+            <div className="space-y-0.5">
+              <p className="text-sm font-semibold text-gray-800">Dodaj detaljnu sliku za popup</p>
+              <p className="text-xs text-gray-500">
+                PNG/JPG, preporuka 1000px+. Trenutno: {detailFile?.name ?? "nije izabran fajl"}
+              </p>
+            </div>
+            <span className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white shadow-sm">Izaberi fajl</span>
+          </label>
+        </div>
         <div className="flex items-center gap-3">
           <button
             type="submit"
@@ -596,6 +650,7 @@ export default function FabricsAdminPage() {
               typeof f.textureBrightness === "number" ? `bright ${f.textureBrightness}` : null,
               typeof f.pantsTextureRotation === "number" ? `pants rot ${f.pantsTextureRotation}` : null,
               typeof f.stripeSpacing === "number" ? `stripe spacing ${f.stripeSpacing}` : null,
+              f.detailImage || f.detailText ? "detail" : null,
             ]
               .filter(Boolean)
               .join(" • ");

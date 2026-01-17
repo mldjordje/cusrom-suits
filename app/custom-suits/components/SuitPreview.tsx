@@ -592,14 +592,15 @@ const SuitPreview = ({
   const fabricTextureSourcePants = fabricTextureSource;
   const cmsPatternRaw = useMemo(() => getFabricPatternRaw(selectedFabric), [selectedFabric]);
   const cmsPatternNorm = useMemo(() => normalizePattern(cmsPatternRaw), [cmsPatternRaw]);
+  const isExplicitSolid = cmsPatternNorm === "solid";
   const namePatternNorm = useMemo(() => {
     const name = String((selectedFabric as any)?.name ?? "");
     const texture = String(fabricTextureSource ?? fabricTexture ?? "");
     return inferPatternFromText(`${name} ${texture}`);
   }, [fabricTexture, fabricTextureSource, selectedFabric]);
   const pantsPatternValue = useMemo(
-    () => cmsPatternNorm || namePatternNorm,
-    [cmsPatternNorm, namePatternNorm]
+    () => (isExplicitSolid ? "" : cmsPatternNorm) || namePatternNorm,
+    [cmsPatternNorm, isExplicitSolid, namePatternNorm]
   );
   const stripeNameHint = useMemo(() => {
     const name = String((selectedFabric as any)?.name || "");
@@ -607,12 +608,6 @@ const SuitPreview = ({
     const haystack = `${name} ${texture}`.toLowerCase();
     return /pinstripe|stripe|linije|lines|pruga|pruge/.test(haystack);
   }, [fabricTexture, fabricTextureSource, selectedFabric]);
-  const autoStripePattern = useMemo(() => {
-    if (fabricStripe.orientation === "none") return "";
-    if (fabricStripe.strength < 0.16) return "";
-    if (fabricStripe.contrast >= 0.2 || fabricStripe.strength >= 0.35) return "pruge";
-    return "tanke pruge";
-  }, [fabricStripe]);
   const stripeSpacingOverride = useMemo(
     () => parseNumber((selectedFabric as any)?.stripeSpacing ?? (selectedFabric as any)?.stripe_spacing),
     [selectedFabric]
@@ -625,9 +620,17 @@ const SuitPreview = ({
     if (!hasStripeSpacingOverride || stripeSpacingValue === null) return 1;
     return clamp(1 + (stripeSpacingValue - 6) * 0.07, 0.65, 1.35);
   }, [hasStripeSpacingOverride, stripeSpacingValue]);
+  const allowAutoStripe = useMemo(() => !isExplicitSolid, [isExplicitSolid]);
+  const autoStripePattern = useMemo(() => {
+    if (!allowAutoStripe) return "";
+    if (fabricStripe.orientation === "none") return "";
+    if (fabricStripe.strength < 0.26) return "";
+    if (fabricStripe.contrast >= 0.2 || fabricStripe.strength >= 0.4) return "pruge";
+    return "tanke pruge";
+  }, [allowAutoStripe, fabricStripe]);
   const pantsPatternValueResolved = useMemo(
-    () => pantsPatternValue || autoStripePattern || (stripeNameHint ? "pruge" : ""),
-    [autoStripePattern, pantsPatternValue, stripeNameHint]
+    () => (isExplicitSolid ? "" : pantsPatternValue || autoStripePattern || (stripeNameHint ? "pruge" : "")),
+    [autoStripePattern, isExplicitSolid, pantsPatternValue, stripeNameHint]
   );
   const isPantsCmsStripe = useMemo(
     () =>
@@ -640,10 +643,12 @@ const SuitPreview = ({
   const fabricPattern = useMemo(() => pantsPatternValueResolved, [pantsPatternValueResolved]);
   const usePantsPatternOverlay = useMemo(
     () =>
-      Boolean(pantsPatternValueResolved) ||
-      shouldUsePantsPatternOverlay(selectedFabric) ||
-      stripeNameHint,
-    [pantsPatternValueResolved, selectedFabric, stripeNameHint]
+      !isExplicitSolid &&
+      (Boolean(pantsPatternValueResolved) ||
+        shouldUsePantsPatternOverlay(selectedFabric) ||
+        stripeNameHint ||
+        hasStripeSpacingOverride),
+    [hasStripeSpacingOverride, isExplicitSolid, pantsPatternValueResolved, selectedFabric, stripeNameHint]
   );
   const patternStripe =
     fabricPattern === "pinstripe" ||
@@ -651,7 +656,8 @@ const SuitPreview = ({
     fabricPattern.includes("pruge") ||
     fabricPattern.includes("stripe") ||
     fabricPattern.includes("pinstripe") ||
-    stripeNameHint;
+    (!isExplicitSolid && stripeNameHint);
+  const stripeAnalysis = useMemo(() => (isExplicitSolid ? EMPTY_STRIPE : fabricStripe), [fabricStripe, isExplicitSolid]);
   const textureStrength = useMemo(() => {
     const raw = parseNumber((selectedFabric as any)?.textureStrength ?? (selectedFabric as any)?.texture_strength);
     const normalized = typeof raw === "number" ? raw : 0.24;
@@ -778,23 +784,23 @@ const SuitPreview = ({
   }, [fabricFillColor, fabricFillColorBase]);
   const stripeOrientation = useMemo<StripeOrientation>(() => {
     if (patternStripe) return "vertical";
-    if (fabricStripe.orientation !== "none") return fabricStripe.orientation;
+    if (stripeAnalysis.orientation !== "none") return stripeAnalysis.orientation;
     return "none";
-  }, [fabricStripe.orientation, patternStripe]);
+  }, [patternStripe, stripeAnalysis.orientation]);
   const baseStripeAngleDeg = useMemo(() => {
     const orientation =
-      fabricStripe.orientation !== "none" ? fabricStripe.orientation : stripeOrientation;
+      stripeAnalysis.orientation !== "none" ? stripeAnalysis.orientation : stripeOrientation;
     if (orientation === "vertical") return -90;
     if (orientation === "horizontal") return 0;
     return 0;
-  }, [fabricStripe.orientation, stripeOrientation]);
+  }, [stripeAnalysis.orientation, stripeOrientation]);
   const stripeStrength = useMemo(
-    () => (patternStripe ? Math.max(0.65, fabricStripe.strength) : fabricStripe.strength),
-    [fabricStripe.strength, patternStripe]
+    () => (patternStripe ? Math.max(0.65, stripeAnalysis.strength) : stripeAnalysis.strength),
+    [patternStripe, stripeAnalysis.strength]
   );
   const stripeBoost = useMemo(
-    () => patternStripe || (stripeStrength > 0.22 && stripeOrientation !== "none"),
-    [patternStripe, stripeStrength, stripeOrientation]
+    () => patternStripe || (!isExplicitSolid && stripeStrength > 0.22 && stripeOrientation !== "none"),
+    [isExplicitSolid, patternStripe, stripeStrength, stripeOrientation]
   );
   const stripeWhiteBoost = useMemo(
     () => stripeBoost && (fabricTone === "dark" || fabricMetrics.lightness < 0.4),
@@ -823,7 +829,7 @@ const SuitPreview = ({
     return typeof raw === "number" ? raw : stripeOrientation === "vertical" ? 90 : 0;
   }, [selectedFabric, stripeOrientation]);
   const stripeRotationActive =
-    stripeBoost || fabricStripe.strength > PANTS_STRIPE_TUNING.stripeRotationMinStrength;
+    stripeBoost || stripeAnalysis.strength > PANTS_STRIPE_TUNING.stripeRotationMinStrength;
   const angleToRotation = useMemo(
     () => (desiredAngle: number | null | undefined) => {
       if (!stripeRotationActive) return pantsTextureRotationBase;
