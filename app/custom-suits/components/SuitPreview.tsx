@@ -67,6 +67,12 @@ const HEX_COLOR = /^[0-9a-f]{6}$/i;
 
 const clampChannel = (value: number) => Math.max(0, Math.min(255, Math.round(value)));
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const PREVIEW_EXPOSURE = (() => {
+  const raw = process.env.NEXT_PUBLIC_PREVIEW_EXPOSURE;
+  const num = raw ? Number(raw) : NaN;
+  if (!Number.isFinite(num)) return 1.12;
+  return clamp(num, 0.9, 1.35);
+})();
 const parseNumber = (value: unknown) => {
   if (typeof value === "number" && Number.isFinite(value)) return value;
   if (typeof value === "string") {
@@ -282,6 +288,13 @@ const scaleRgb = (rgb: RGB, factor: number): RGB => ({
   g: clampChannel(rgb.g * factor),
   b: clampChannel(rgb.b * factor),
 });
+
+const applyPreviewExposure = (hex: string, exposure: number) => {
+  if (exposure === 1) return hex;
+  const rgb = hexToRgb(hex);
+  if (!rgb) return hex;
+  return rgbToHex(scaleRgb(rgb, exposure));
+};
 
 const extractFabricHex = (fabric: any): string | null => {
   if (!fabric || typeof fabric !== "object") return null;
@@ -815,10 +828,10 @@ const SuitPreview = ({
       computeFabricBaseColor(fabricAvgColor, toneBaseColor, selectedFabric?.tone as Tone | undefined, explicitFabricColor),
     [fabricAvgColor, toneBaseColor, selectedFabric?.tone, explicitFabricColor]
   );
-  const fabricFillColor = useMemo(
-    () => (usePhotoBase ? fabricFillColorBase : enhanceFabricColor(fabricFillColorBase, fabricTone)),
-    [fabricFillColorBase, fabricTone, usePhotoBase]
-  );
+  const fabricFillColor = useMemo(() => {
+    const base = usePhotoBase ? fabricFillColorBase : enhanceFabricColor(fabricFillColorBase, fabricTone);
+    return applyPreviewExposure(base, PREVIEW_EXPOSURE);
+  }, [fabricFillColorBase, fabricTone, usePhotoBase]);
   const fabricMetrics = useMemo(() => {
     const rgb = hexToRgb(fabricFillColor) ?? hexToRgb(fabricFillColorBase);
     if (!rgb) {
@@ -914,7 +927,7 @@ const SuitPreview = ({
       const stripeSaturate = stripeBoost ? (stripeWhiteBoost ? -0.06 : 0.03) : 0;
       const baseBrightnessValue = textureBrightnessOverride ?? baseBrightness;
       const baseContrastValue = textureContrastOverride ?? baseContrast;
-      const brightness = clamp(baseBrightnessValue + stripeBrightness, 0.9, 1.9);
+      const brightness = clamp((baseBrightnessValue + stripeBrightness) * PREVIEW_EXPOSURE, 0.9, 2.2);
       const contrast = clamp(baseContrastValue + stripeContrast, 1.0, 2.0);
       const saturate = clamp(baseSaturate + stripeSaturate, 0.9, 1.3);
       return `${tb.filter} brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)}) saturate(${saturate.toFixed(
@@ -922,11 +935,11 @@ const SuitPreview = ({
       )})`;
     }
     if (fabricTone === "light") {
-      const brightness = textureBrightnessOverride ?? 1.05;
+      const brightness = clamp((textureBrightnessOverride ?? 1.05) * PREVIEW_EXPOSURE, 0.9, 1.6);
       const contrast = textureContrastOverride ?? 1.08;
       return `${tb.filter} brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)}) saturate(1.08)`;
     }
-    const midBrightness = textureBrightnessOverride ?? 1.03;
+    const midBrightness = clamp((textureBrightnessOverride ?? 1.03) * PREVIEW_EXPOSURE, 0.9, 1.9);
     const midContrast = textureContrastOverride ?? (stripeBoost ? 1.24 : 1.12);
     const midSaturate = stripeBoost ? 1.1 : 1.07;
     return `${tb.filter} brightness(${midBrightness.toFixed(2)}) contrast(${midContrast.toFixed(2)}) saturate(${midSaturate.toFixed(
@@ -1270,8 +1283,8 @@ const SuitPreview = ({
     return clamp(exposure, 0.82, 1.12);
   }, [fabricMetrics.lightness, usePhotoBase]);
   const photoFilter = useMemo(() => {
-    if (usePhotoBase) return `grayscale(1) brightness(${photoExposure.toFixed(2)})`;
-    const brightness = (1 + autoTuning.photo.brightness).toFixed(2);
+    if (usePhotoBase) return `grayscale(1) brightness(${(photoExposure * PREVIEW_EXPOSURE).toFixed(2)})`;
+    const brightness = clamp((1 + autoTuning.photo.brightness) * PREVIEW_EXPOSURE, 0.8, 1.6).toFixed(2);
     const contrast = autoTuning.photo.contrast.toFixed(2);
     const saturate = clamp(autoTuning.photo.saturate, 0.85, 1.15).toFixed(2);
     return `grayscale(1) brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;

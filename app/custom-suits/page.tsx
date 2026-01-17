@@ -26,7 +26,6 @@ export default function CustomSuitsPage() {
   });
   const defaultColorSet = React.useRef(false);
   const [activeMobilePanel, setActiveMobilePanel] = React.useState<MobilePanel | null>(null);
-  const isMobilePanelOpen = Boolean(activeMobilePanel);
 
 
   // Preselect first available fabric so preview is ready without a manual choice
@@ -99,11 +98,11 @@ export default function CustomSuitsPage() {
   const layerVisibility = React.useMemo<Record<PreviewLayer, boolean>>(
     () => ({
       fabric: true,
-      style: !isMobilePanelOpen,
-      ao: !isMobilePanelOpen,
-      vignette: !isMobilePanelOpen,
+      style: true,
+      ao: true,
+      vignette: true,
     }),
-    [isMobilePanelOpen]
+    []
   );
   const storeOrderId = (orderId: string) => {
     localStorage.setItem("lastOrderId", orderId);
