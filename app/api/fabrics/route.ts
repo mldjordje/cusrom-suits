@@ -39,6 +39,7 @@ const normalizeFabric = (fabric: any) => ({
   textureContrast: fabric.textureContrast ?? fabric.texture_contrast ?? null,
   textureBrightness: fabric.textureBrightness ?? fabric.texture_brightness ?? null,
   pantsTextureRotation: fabric.pantsTextureRotation ?? fabric.pants_texture_rotation ?? null,
+  stripeSpacing: fabric.stripeSpacing ?? fabric.stripe_spacing ?? null,
 });
 
 export async function GET(req: NextRequest) {

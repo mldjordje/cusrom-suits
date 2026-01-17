@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
   const textureContrast = parseNumber(form.get("textureContrast") ?? form.get("texture_contrast"));
   const textureBrightness = parseNumber(form.get("textureBrightness") ?? form.get("texture_brightness"));
   const pantsTextureRotation = parseNumber(form.get("pantsTextureRotation") ?? form.get("pants_texture_rotation"));
+  const stripeSpacing = parseNumber(form.get("stripeSpacing") ?? form.get("stripe_spacing"));
 
   if (!name) {
     return NextResponse.json({ success: false, message: "Name is required" }, { status: 400 });
@@ -80,6 +81,7 @@ export async function POST(req: NextRequest) {
   if (textureContrast !== null) payload.texture_contrast = textureContrast;
   if (textureBrightness !== null) payload.texture_brightness = textureBrightness;
   if (pantsTextureRotation !== null) payload.pants_texture_rotation = pantsTextureRotation;
+  if (stripeSpacing !== null) payload.stripe_spacing = stripeSpacing;
 
   const { data, error } = await supabase.from("fabrics").upsert(payload, { onConflict: "id" }).select("*").single();
 
