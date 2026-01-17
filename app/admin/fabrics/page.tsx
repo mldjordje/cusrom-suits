@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState } from "react";
 import NextImage from "next/image";
 import AdminNav from "../components/AdminNav";
-import { buildBackendUrl } from "../../custom-suits/utils/backend";
 
 type Fabric = {
   id: string;
@@ -141,7 +140,7 @@ export default function FabricsAdminPage() {
 
   const loadFabrics = useMemo(
     () => async () => {
-      const res = await fetch(buildBackendUrl("fabrics"));
+      const res = await fetch("/api/fabrics");
       const json = await res.json();
       if (json?.data) setFabrics(json.data);
     },
@@ -280,7 +279,7 @@ export default function FabricsAdminPage() {
     if (form.stripeSpacing.trim()) fd.set("stripeSpacing", form.stripeSpacing.trim());
     if (file) fd.set("file", file);
 
-    const res = await fetch(buildBackendUrl("fabrics/upload"), { method: "POST", body: fd });
+    const res = await fetch("/api/fabrics/upload", { method: "POST", body: fd });
     const json = await res.json();
     if (!res.ok || !json?.success) {
       setStatus({ type: "error", message: json?.message || "Upload failed" });
@@ -310,7 +309,7 @@ export default function FabricsAdminPage() {
   const onDelete = async (id: string) => {
     if (!confirm("Obrisati tkaninu?")) return;
     setStatus({ type: "loading", message: "Brisanje..." });
-    const res = await fetch(buildBackendUrl("fabrics/upload"), {
+    const res = await fetch("/api/fabrics/upload", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id }),
