@@ -1,7 +1,13 @@
-﻿export function getBackendBase() {
+export function getBackendBase() {
   const env = process.env.NEXT_PUBLIC_BACKEND_BASE?.trim();
   const base = env && env.length > 0 ? env : "https://customsuits.adspire.rs/api/";
   return base.endsWith("/") ? base : `${base}/`;
+}
+
+export function buildBackendUrl(path: string) {
+  const base = getBackendBase();
+  const trimmed = path.replace(/^\/+/, "");
+  return `${base}${trimmed}`;
 }
 
 const ensureTrailingSlash = (value: string) =>
