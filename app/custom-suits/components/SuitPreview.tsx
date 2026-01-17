@@ -1084,6 +1084,12 @@ const SuitPreview = ({
       opacity: clamp(opacity * 0.35, 0.03, 0.22),
     };
   }, [stripeHighlightStyle, stripeWhiteBoost]);
+  const jacketPatternBlendMode: React.CSSProperties["mixBlendMode"] = stripeWhiteBoost ? "screen" : "normal";
+  const jacketPatternOverlayStyle = useMemo<React.CSSProperties | null>(() => {
+    if (!pantsPatternOverlayConfig) return null;
+    const angle = stripeOrientation === "horizontal" ? 0 : 90;
+    return buildPantsPatternStyle(angle, { opacityMul: 1.0, mixBlendMode: jacketPatternBlendMode });
+  }, [buildPantsPatternStyle, jacketPatternBlendMode, pantsPatternOverlayConfig, stripeOrientation]);
   const photoVariant =
     fabricTone === "light"
       ? "light"
@@ -1625,6 +1631,7 @@ const SuitPreview = ({
   }, [fabricTextureStyle, pantsTextureStyle, useSplitPantsTexture]);
   const pantsStripeTexture = fabricTileTexture ?? fabricTextureSourcePants ?? undefined;
   const pantsOverlayTexture = fabricTileTexture ?? fabricTextureSourcePants ?? EMPTY_TEXTURE_DATA_URL;
+  const jacketOverlayTexture = fabricTileTexture ?? fabricTextureSource ?? EMPTY_TEXTURE_DATA_URL;
   const canRenderPantsPatternOverlay = Boolean(
     usePantsPatternOverlay && pantsPatternOverlayConfig && (pantsLegMasks || pantsMask)
   );
@@ -2754,6 +2761,22 @@ const SuitPreview = ({
             fabricAvgColor={tunedFabricFill}
             baseBlendMode="color"
             baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+            panZoom={panZoom}
+            canvas={JACKET_CANVAS}
+            mask={jacketMask}
+            textureScale={fabricTextureScale}
+            textureTileSizePx={TEXTURE_TILE_PX}
+          />
+        )}
+        {showLayer("fabric") && jacketPatternOverlayStyle && (
+          <FabricUnion
+            layers={fabricMaskLayers}
+            resolve={resolveCdn}
+            fabricTexture={jacketOverlayTexture}
+            textureStyle={jacketPatternOverlayStyle}
+            baseColor={tunedFabricFill || toneBaseColor}
+            baseBlendMode="normal"
+            baseOpacity={0}
             panZoom={panZoom}
             canvas={JACKET_CANVAS}
             mask={jacketMask}
