@@ -25,20 +25,21 @@ export async function GET(req: NextRequest) {
               : null);
           const fallbackPositions = fallback?.positions ?? [];
           const incomingPositions = Array.isArray(row.positions) ? row.positions : [];
-          const mergedPositions =
-            incomingPositions.length && fallbackPositions.length
-              ? fallbackPositions.map((pos, idx) => incomingPositions[idx] ?? pos)
-              : incomingPositions;
+          const validIncoming =
+            incomingPositions.length > 0 &&
+            incomingPositions.every((pos: any) => {
+              const x = Number(pos?.x);
+              const y = Number(pos?.y);
+              return Number.isFinite(x) && Number.isFinite(y) && x >= 0 && x <= 1 && y >= 0 && y <= 1;
+            });
           return {
             styleId,
             layout: String(row.layout || fallback?.layout || "2"),
             area,
             positions:
-              incomingPositions.length === 0
+              incomingPositions.length < fallbackPositions.length || !validIncoming
                 ? fallbackPositions
-                : incomingPositions.length < fallbackPositions.length
-                  ? mergedPositions
-                  : incomingPositions,
+                : incomingPositions,
           };
         })
       : fallbackButtonLayouts;
