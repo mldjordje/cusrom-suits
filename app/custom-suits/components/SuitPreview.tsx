@@ -1047,7 +1047,7 @@ const SuitPreview = ({
     const isThinStripe =
       pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
     const spacingBase = defaults.spacing / Math.max(0.2, scale);
-    const spacingScale = hasStripeSpacingPantsOverride ? stripeSpacingScalePants : 1;
+    const spacingScale = hasStripeSpacingOverride ? stripeSpacingScaleBase : 1;
     const spacingRaw = spacingBase * spacingScale * (isThinStripe ? 1.0 : 1);
     const spacing = clamp(spacingRaw, 3, 80);
     const strengthRaw = parseNumber(
@@ -1057,7 +1057,7 @@ const SuitPreview = ({
       typeof strengthRaw === "number"
         ? clamp(0.06 + strengthRaw * 0.26, 0.08, 0.3)
         : defaults.opacity;
-    const opacityScale = hasStripeSpacingPantsOverride ? 0.85 : 1;
+    const opacityScale = hasStripeSpacingOverride ? 0.85 : 1;
     const boostedOpacity = (opacityBase + (darkBoost ? 0.04 : 0)) * opacityScale;
     const opacity = isPantsCmsStripe
       ? clamp(boostedOpacity, 0.14, 0.34)
@@ -1075,7 +1075,7 @@ const SuitPreview = ({
       b: clampChannel(baseRgb.b * brighten),
     };
     const lineColor = `rgb(${lineRgb.r}, ${lineRgb.g}, ${lineRgb.b})`;
-    const lineWidth = hasStripeSpacingPantsOverride ? clamp(spacing * 0.14, 0.5, 1.4) : defaults.lineWidth;
+    const lineWidth = hasStripeSpacingOverride ? clamp(spacing * 0.14, 0.5, 1.4) : defaults.lineWidth;
     return {
       pattern: pantsPatternValueResolved,
       lineWidth,
@@ -1083,7 +1083,7 @@ const SuitPreview = ({
       opacity,
       lineColor,
       lineRgb,
-      maxOpacity: hasStripeSpacingPantsOverride ? 0.24 : 0.3,
+      maxOpacity: hasStripeSpacingOverride ? 0.24 : 0.3,
     };
   }, [
     fabricMetrics.lightness,
@@ -1092,8 +1092,8 @@ const SuitPreview = ({
     isPantsCmsStripe,
     pantsPatternValueResolved,
     selectedFabric,
-    hasStripeSpacingPantsOverride,
-    stripeSpacingScalePants,
+    hasStripeSpacingOverride,
+    stripeSpacingScaleBase,
     textureScaleBoost,
     toneBaseColor,
     tunedFabricFill,
@@ -1112,7 +1112,7 @@ const SuitPreview = ({
     const isThinStripe =
       pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
     const spacingBase = defaults.spacing / Math.max(0.2, scale);
-    const spacingScale = hasStripeSpacingJacketOverride ? stripeSpacingScaleJacket : 1;
+    const spacingScale = hasStripeSpacingOverride ? stripeSpacingScaleBase : 1;
     const spacingRaw = spacingBase * spacingScale * (isThinStripe ? 1.0 : 1);
     const spacing = clamp(spacingRaw, 3, 80);
     const strengthRaw = parseNumber(
@@ -1122,7 +1122,7 @@ const SuitPreview = ({
       typeof strengthRaw === "number"
         ? clamp(0.06 + strengthRaw * 0.26, 0.08, 0.3)
         : defaults.opacity;
-    const opacityScale = hasStripeSpacingJacketOverride ? 0.85 : 1;
+    const opacityScale = hasStripeSpacingOverride ? 0.85 : 1;
     const boostedOpacity = (opacityBase + (darkBoost ? 0.04 : 0)) * opacityScale;
     const opacity = isPantsCmsStripe
       ? clamp(boostedOpacity, 0.14, 0.34)
@@ -1140,7 +1140,7 @@ const SuitPreview = ({
       b: clampChannel(baseRgb.b * brighten),
     };
     const lineColor = `rgb(${lineRgb.r}, ${lineRgb.g}, ${lineRgb.b})`;
-    const lineWidth = hasStripeSpacingJacketOverride ? clamp(spacing * 0.14, 0.5, 1.4) : defaults.lineWidth;
+    const lineWidth = hasStripeSpacingOverride ? clamp(spacing * 0.14, 0.5, 1.4) : defaults.lineWidth;
     return {
       pattern: pantsPatternValueResolved,
       lineWidth,
@@ -1148,17 +1148,17 @@ const SuitPreview = ({
       opacity,
       lineColor,
       lineRgb,
-      maxOpacity: hasStripeSpacingJacketOverride ? 0.24 : 0.3,
+      maxOpacity: hasStripeSpacingOverride ? 0.24 : 0.3,
     };
   }, [
     fabricMetrics.lightness,
     fabricTone,
     hasExplicitTextureScale,
-    hasStripeSpacingJacketOverride,
+    hasStripeSpacingOverride,
     isPantsCmsStripe,
     pantsPatternValueResolved,
     selectedFabric,
-    stripeSpacingScaleJacket,
+    stripeSpacingScaleBase,
     textureScaleBoost,
     toneBaseColor,
     tunedFabricFill,
@@ -2066,6 +2066,7 @@ const SuitPreview = ({
           const unionData = ctx.getImageData(0, 0, c.width, c.height);
           let seamMaskData: ImageData | null = null;
           let seamLineFromMask: { slope: number; intercept: number } | null = null;
+          let seamXForYFromMask: Float32Array | null = null;
           try {
             const seamImg = await loadImage(PANTS_SEAM_MASK_SRC);
             const seamCanvas = document.createElement("canvas");
@@ -2082,30 +2083,55 @@ const SuitPreview = ({
           }
           if (seamMaskData?.data) {
             const seamData = seamMaskData.data;
-            const seamXMax = Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio);
+            const seamXLimit = Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio);
             const rowThreshold = Math.max(10, Math.round(c.width * 0.04));
+            const maxJumpRatio = PANTS_STRIPE_TUNING.seam.sampleMaxJumpRatio ?? 0.12;
+            const maxJumpPx = Math.max(10, Math.round(c.width * maxJumpRatio));
+
+            // Track the diagonal seam and ignore distant side-seam hits.
+            seamXForYFromMask = new Float32Array(c.height);
+            seamXForYFromMask.fill(Number.NaN);
+            let lastX = Number.NaN;
+            for (let y = 0; y < c.height; y++) {
+              let rowCount = 0;
+              let bestX = -1;
+              let bestDist = Number.POSITIVE_INFINITY;
+              for (let x = 0; x < seamXLimit; x++) {
+                const idx = (y * c.width + x) * 4;
+                if (seamData[idx + 3] > 0) {
+                  rowCount++;
+                  if (!Number.isFinite(lastX)) {
+                    if (bestX < 0) bestX = x;
+                  } else {
+                    const dist = Math.abs(x - lastX);
+                    if (dist < bestDist) {
+                      bestDist = dist;
+                      bestX = x;
+                    }
+                  }
+                }
+              }
+              if (rowCount > 0 && rowCount <= rowThreshold && bestX >= 0) {
+                if (!Number.isFinite(lastX) || bestDist <= maxJumpPx) {
+                  seamXForYFromMask[y] = bestX;
+                  lastX = bestX;
+                }
+              }
+            }
+
             let sumX = 0;
             let sumY = 0;
             let sumXX = 0;
             let sumXY = 0;
             let count = 0;
             for (let y = 0; y < c.height; y++) {
-              let rowCount = 0;
-              let firstX = -1;
-              for (let x = 0; x < seamXMax; x++) {
-                const idx = (y * c.width + x) * 4;
-                if (seamData[idx + 3] > 0) {
-                  rowCount++;
-                  if (firstX < 0) firstX = x;
-                }
-              }
-              if (rowCount > 0 && rowCount <= rowThreshold && firstX >= 0) {
-                sumX += firstX;
-                sumY += y;
-                sumXX += firstX * firstX;
-                sumXY += firstX * y;
-                count++;
-              }
+              const x = seamXForYFromMask[y];
+              if (!Number.isFinite(x)) continue;
+              sumX += x;
+              sumY += y;
+              sumXX += x * x;
+              sumXY += x * y;
+              count++;
             }
             if (count >= 12) {
               const denom = count * sumXX - sumX * sumX;
@@ -2467,27 +2493,10 @@ const SuitPreview = ({
             }
 
             const seamLine = { slope: seamSlope, intercept: seamIntercept };
-            const seamXForY = new Float32Array(c.height);
-            seamXForY.fill(Number.NaN);
-            if (seamMaskData?.data) {
-              const seamData = seamMaskData.data;
-              const seamXLimit = Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio);
-              const rowThreshold = Math.max(10, Math.round(c.width * 0.04));
-              for (let y = 0; y < c.height; y++) {
-                let rowCount = 0;
-                let firstX = -1;
-                for (let x = 0; x < seamXLimit; x++) {
-                  const idx = (y * c.width + x) * 4;
-                  if (seamData[idx + 3] > 0) {
-                    rowCount++;
-                    if (firstX < 0) firstX = x;
-                  }
-                }
-                if (rowCount > 0 && rowCount <= rowThreshold && firstX >= 0) {
-                  seamXForY[y] = firstX;
-                }
-              }
-            }
+            const seamXForY = seamXForYFromMask
+              ? new Float32Array(seamXForYFromMask)
+              : new Float32Array(c.height);
+            if (!seamXForYFromMask) seamXForY.fill(Number.NaN);
             let lastSeamX = Number.NaN;
             for (let y = 0; y < c.height; y++) {
               if (Number.isFinite(seamXForY[y])) {
