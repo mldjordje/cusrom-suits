@@ -70,7 +70,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 const PREVIEW_EXPOSURE = (() => {
   const raw = process.env.NEXT_PUBLIC_PREVIEW_EXPOSURE;
   const num = raw ? Number(raw) : NaN;
-  if (!Number.isFinite(num)) return 1.2;
+  if (!Number.isFinite(num)) return 1.25;
   return clamp(num, 0.9, 1.35);
 })();
 const parseNumber = (value: unknown) => {
@@ -670,8 +670,10 @@ const SuitPreview = ({
   const autoStripePattern = useMemo(() => {
     if (!allowAutoStripe) return "";
     if (fabricStripe.orientation === "none") return "";
-    if (fabricStripe.strength < 0.26) return "";
-    if (fabricStripe.contrast >= 0.2 || fabricStripe.strength >= 0.4) return "pruge";
+    const minStrength = 0.32;
+    const minContrast = 0.18;
+    if (fabricStripe.strength < minStrength || fabricStripe.contrast < minContrast) return "";
+    if (fabricStripe.contrast >= 0.26 || fabricStripe.strength >= 0.5) return "pruge";
     return "tanke pruge";
   }, [allowAutoStripe, fabricStripe]);
   const pantsPatternValueResolved = useMemo(
@@ -860,10 +862,7 @@ const SuitPreview = ({
     () => (patternStripe ? Math.max(0.65, stripeAnalysis.strength) : stripeAnalysis.strength),
     [patternStripe, stripeAnalysis.strength]
   );
-  const stripeBoost = useMemo(
-    () => patternStripe || (!isExplicitSolid && stripeStrength > 0.22 && stripeOrientation !== "none"),
-    [isExplicitSolid, patternStripe, stripeStrength, stripeOrientation]
-  );
+  const stripeBoost = useMemo(() => patternStripe, [patternStripe]);
   const stripeWhiteBoost = useMemo(
     () => stripeBoost && (fabricTone === "dark" || fabricMetrics.lightness < 0.4),
     [stripeBoost, fabricMetrics.lightness, fabricTone]
