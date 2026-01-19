@@ -2530,6 +2530,15 @@ const SuitPreview = ({
                 seamXForY[y] = clamp(rawX, 0, c.width - 1);
               }
             }
+            const seamClampPad =
+              PANTS_STRIPE_TUNING.seam.boundaryMaxPadPx ?? PANTS_STRIPE_TUNING.seam.boundaryPadPx ?? 0;
+            if (Math.abs(tunedSeamSlope) > 1e-3 && seamClampPad > 0) {
+              for (let y = 0; y < c.height; y++) {
+                const tunedX = clamp((y - tunedSeamIntercept) / tunedSeamSlope, 0, c.width - 1);
+                const maxAllowed = Math.min(c.width - 1, tunedX + seamClampPad);
+                if (seamXForY[y] > maxAllowed) seamXForY[y] = maxAllowed;
+              }
+            }
             const legBoundaryX = new Int16Array(c.height);
             legBoundaryX.fill(-1);
             for (let y = 0; y < c.height; y++) {
@@ -2576,12 +2585,9 @@ const SuitPreview = ({
                 const seamX = seamXForY[y] + seamXPad;
                 const isUnder = x < seamXMax && y > seamY && x <= seamX;
                 const boundaryRaw = legBoundaryX[y];
-                const boundaryTarget = clamp(
-                  boundaryRaw + boundaryPad,
-                  seamX + seamBoundaryPad,
-                  seamX + seamBoundaryMax
-                );
-                const boundaryX = Math.min(c.width - 1, Math.max(0, boundaryTarget));
+                const boundaryBase = boundaryRaw + boundaryPad;
+                const boundaryTarget = clamp(boundaryBase, seamX + seamBoundaryPad, seamX + seamBoundaryMax);
+                const boundaryX = Math.min(c.width - 1, Math.max(0, Math.min(boundaryTarget, boundaryBase)));
                 const isRightSide = x >= boundaryX;
                 if (isUnder) {
                   leftUnder.data[idx] = 255;
@@ -2613,12 +2619,13 @@ const SuitPreview = ({
                   if (unionAlpha < 1) continue;
                   if (waistMask.data[idx + 3] > 0) continue;
                   const boundaryRaw = legBoundaryX[y];
+                  const boundaryBase = boundaryRaw + boundaryPad;
                   const boundaryTarget = clamp(
-                    boundaryRaw + boundaryPad,
+                    boundaryBase,
                     seamXForY[y] + seamBoundaryPad,
                     seamXForY[y] + seamBoundaryMax
                   );
-                  const boundaryX = Math.min(c.width - 1, Math.max(0, boundaryTarget));
+                  const boundaryX = Math.min(c.width - 1, Math.max(0, Math.min(boundaryTarget, boundaryBase)));
                   if (x < boundaryX) continue;
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
@@ -2648,12 +2655,9 @@ const SuitPreview = ({
             for (let y = 0; y < c.height; y++) {
               const seamXPad = PANTS_STRIPE_TUNING.seam.xPadPx ?? 0;
               const seamX = seamXForY[y] + seamXPad;
-              const boundaryTarget = clamp(
-                legBoundaryX[y] + boundaryPad,
-                seamX + seamBoundaryPad,
-                seamX + seamBoundaryMax
-              );
-              const boundaryX = Math.min(c.width - 1, Math.max(0, boundaryTarget));
+              const boundaryBase = legBoundaryX[y] + boundaryPad;
+              const boundaryTarget = clamp(boundaryBase, seamX + seamBoundaryPad, seamX + seamBoundaryMax);
+              const boundaryX = Math.min(c.width - 1, Math.max(0, Math.min(boundaryTarget, boundaryBase)));
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
                 const unionAlpha = full[idx + 3];
@@ -3228,7 +3232,7 @@ const SuitPreview = ({
                   mask={pantsRightLowerMask}
                   textureScale={fabricTextureScale}
                   textureTileSizePx={TEXTURE_TILE_PX}
-                  textureRotationDeg={pantsSplitTextureRotation.left}
+                  textureRotationDeg={pantsSplitTextureRotation.right}
                   backgroundOffset={pantsStripeOffsets.rightUnder}
                   {...pantsStripeMaskProps}
                 />
@@ -3320,14 +3324,14 @@ const SuitPreview = ({
                       baseOpacity={0}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
-                      mask={pantsRightLowerMask}
-                      textureScale={fabricTextureScale}
-                      textureTileSizePx={TEXTURE_TILE_PX}
-                      textureRotationDeg={pantsSplitTextureRotation.left}
-                      backgroundOffset={pantsStripeOffsets.rightUnder}
-                      {...pantsStripeMaskProps}
-                    />
-                  )}
+                  mask={pantsRightLowerMask}
+                  textureScale={fabricTextureScale}
+                  textureTileSizePx={TEXTURE_TILE_PX}
+                  textureRotationDeg={pantsSplitTextureRotation.right}
+                  backgroundOffset={pantsStripeOffsets.rightUnder}
+                  {...pantsStripeMaskProps}
+                />
+              )}
                   {pantsWaistMask && (
                     <FabricUnion
                       layers={pantsTextureLayers}
@@ -3389,24 +3393,6 @@ const SuitPreview = ({
         )}
         {showLayer("fabric") && shouldRenderPantsPatternOverlay && (
           <>
-            {pantsRightUnderMask && (
-              <FabricUnion
-                layers={pantsTextureLayers}
-                resolve={resolveCdn}
-                fabricTexture={pantsOverlayTexture}
-                textureStyle={pantsOverlayStyleLeft}
-                baseColor={tunedFabricFill || toneBaseColor}
-                baseBlendMode="normal"
-                baseOpacity={0}
-                panZoom={panZoom}
-                canvas={PANTS_CANVAS}
-                mask={pantsRightUnderMask}
-                textureScale={fabricTextureScale}
-                textureTileSizePx={TEXTURE_TILE_PX}
-                backgroundOffset={pantsStripeOffsets.rightUnder}
-                {...pantsStripeMaskProps}
-              />
-            )}
             <FabricUnion
               layers={pantsTextureLayers}
               resolve={resolveCdn}
@@ -3423,24 +3409,6 @@ const SuitPreview = ({
               backgroundOffset={pantsStripeOffsets.leftMain}
               {...pantsStripeMaskProps}
             />
-            {pantsRightFlyMask && (
-              <FabricUnion
-                layers={pantsTextureLayers}
-                resolve={resolveCdn}
-                fabricTexture={pantsOverlayTexture}
-                textureStyle={pantsOverlayStyleFly}
-                baseColor={tunedFabricFill || toneBaseColor}
-                baseBlendMode="normal"
-                baseOpacity={0}
-                panZoom={panZoom}
-                canvas={PANTS_CANVAS}
-                mask={pantsRightFlyMask}
-                textureScale={fabricTextureScale}
-                textureTileSizePx={TEXTURE_TILE_PX}
-                backgroundOffset={rightFlyBackgroundOffset}
-                {...pantsStripeMaskProps}
-              />
-            )}
             {pantsLeftUnderMask && (
               <FabricUnion
                 layers={pantsTextureLayers}
@@ -3456,6 +3424,42 @@ const SuitPreview = ({
                 textureScale={fabricTextureScale}
                 textureTileSizePx={TEXTURE_TILE_PX}
                 backgroundOffset={pantsStripeOffsets.leftUnderlap}
+                {...pantsStripeMaskProps}
+              />
+            )}
+            {pantsRightUnderMask && (
+              <FabricUnion
+                layers={pantsTextureLayers}
+                resolve={resolveCdn}
+                fabricTexture={pantsOverlayTexture}
+                textureStyle={pantsOverlayStyleRight}
+                baseColor={tunedFabricFill || toneBaseColor}
+                baseBlendMode="normal"
+                baseOpacity={0}
+                panZoom={panZoom}
+                canvas={PANTS_CANVAS}
+                mask={pantsRightUnderMask}
+                textureScale={fabricTextureScale}
+                textureTileSizePx={TEXTURE_TILE_PX}
+                backgroundOffset={pantsStripeOffsets.rightUnder}
+                {...pantsStripeMaskProps}
+              />
+            )}
+            {pantsRightFlyMask && (
+              <FabricUnion
+                layers={pantsTextureLayers}
+                resolve={resolveCdn}
+                fabricTexture={pantsOverlayTexture}
+                textureStyle={pantsOverlayStyleFly}
+                baseColor={tunedFabricFill || toneBaseColor}
+                baseBlendMode="normal"
+                baseOpacity={0}
+                panZoom={panZoom}
+                canvas={PANTS_CANVAS}
+                mask={pantsRightFlyMask}
+                textureScale={fabricTextureScale}
+                textureTileSizePx={TEXTURE_TILE_PX}
+                backgroundOffset={rightFlyBackgroundOffset}
                 {...pantsStripeMaskProps}
               />
             )}
