@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { fabrics as fallbackFabrics } from "../data/options";
+import { buildBackendUrl } from "../utils/backend";
 
 export type FabricQuery = {
   tone?: "light" | "medium" | "dark";
@@ -63,7 +64,7 @@ export function useFabrics<T = any>(query?: FabricQuery, options?: UseFabricsOpt
     }
 
     setLoading(true);
-    const url = `/api/fabrics${searchKey ? `?${searchKey}` : ""}`;
+    const url = `${buildBackendUrl("fabrics")}${searchKey ? `?${searchKey}` : ""}`;
     const existing = FABRICS_INFLIGHT.get(cacheKey);
     const inflight =
       existing ??

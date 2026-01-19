@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { buildBackendUrl } from "../utils/backend";
 
 export type Button = {
   id: string;
@@ -54,7 +55,7 @@ export function useButtons(options?: { enabled?: boolean }) {
     setLoading(true);
     const inflight =
       BUTTONS_INFLIGHT ??
-      fetch("/api/buttons", { cache: "no-store" })
+      fetch(buildBackendUrl("buttons"), { cache: "no-store" })
         .then((res) => res.json())
         .then((json) => {
           const list = Array.isArray(json?.data) ? json.data : [];

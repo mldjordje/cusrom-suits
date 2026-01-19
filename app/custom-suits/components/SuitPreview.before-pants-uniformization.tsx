@@ -4,7 +4,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { suits, SuitLayer } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
-import { getTransparentCdnBase } from "../utils/backend";
+import { buildBackendUrl, getTransparentCdnBase } from "../utils/backend";
 import { NOISE_DATA, toneBlend, getToneConfig, getToneBaseColor, ContrastLevel, Tone } from "../utils/visual";
 import { cdnPair, ensureAssetAvailable } from "../utils/assets";
 import { useFabrics } from "../hooks/useFabrics";
@@ -477,7 +477,7 @@ export default function SuitPreview({ config, level = "medium", layerVisibility,
   const showLayer = (key: keyof LayerVisibility) => (layerVisibility?.[key] ?? true) !== false;
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/button-positions", { cache: "no-store" })
+    fetch(buildBackendUrl("button-positions"), { cache: "no-store" })
       .then((res) => res.json())
       .then((json) => {
         if (cancelled) return;

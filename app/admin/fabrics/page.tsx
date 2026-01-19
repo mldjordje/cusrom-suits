@@ -72,8 +72,8 @@ const computeStripeHint = (data: Uint8ClampedArray, w: number, h: number): Strip
   if (ratio > 1.2) orientation = "vertical";
   else if (ratio < 0.83) orientation = "horizontal";
 
-  const strength = clamp(edgeAvg * 1.5 + contrast * 0.9, 0, 1);
-  if (strength < 0.12) orientation = "none";
+  const strength = clamp(edgeAvg * 2.05 + contrast * 0.85, 0, 1);
+  if (strength < 0.08) orientation = "none";
   return { strength, orientation, contrast };
 };
 
@@ -103,6 +103,24 @@ export default function FabricsAdminPage() {
   const [file, setFile] = useState<File | null>(null);
   const [detailFile, setDetailFile] = useState<File | null>(null);
   const [autoTone, setAutoTone] = useState<string | null>(null);
+  const stripeSpacingValue = Number.parseFloat(form.stripeSpacing);
+  const stripeSpacingDisplay = Number.isFinite(stripeSpacingValue)
+    ? clamp(stripeSpacingValue, 1, 10)
+    : 6;
+  const stripeSpacingScale = clamp(1 + (stripeSpacingDisplay - 6) * 0.07, 0.65, 1.35);
+  const stripePreviewSpacingPx = Math.round(12 * stripeSpacingScale);
+  const stripePreviewStyle = {
+    backgroundImage: `repeating-linear-gradient(90deg, rgba(60,60,60,0.55) 0px, rgba(60,60,60,0.55) 1px, transparent 1px, transparent ${stripePreviewSpacingPx}px)`,
+  };
+  const applyStripeSpacingPreset = (value: number) => {
+    setForm((s) => ({ ...s, stripeSpacing: String(value) }));
+  };
+  const applyStripeSpacingToParts = () => {
+    setForm((s) => {
+      const value = s.stripeSpacing?.trim() ? s.stripeSpacing : "6";
+      return { ...s, stripeSpacing: value, stripeSpacingJacket: value, stripeSpacingPants: value };
+    });
+  };
 
   const analyzeTexture = async (blob: File) => {
     const arrayBuffer = await blob.arrayBuffer();
@@ -116,7 +134,7 @@ export default function FabricsAdminPage() {
         i.src = blobUrl;
       });
       const canvas = document.createElement("canvas");
-      const size = 180;
+      const size = 240;
       canvas.width = size;
       canvas.height = size;
       const ctx = canvas.getContext("2d");
@@ -230,12 +248,13 @@ export default function FabricsAdminPage() {
         return;
       }
       const { avgLum, stripe } = analysis;
-      const isStripe = stripe.strength >= 0.18 && stripe.orientation !== "none";
+      const isStripe =
+        stripe.orientation !== "none" && (stripe.strength >= 0.12 || stripe.contrast >= 0.1);
       if (!isStripe) {
         setSuggestStatus({ type: "success", message: "Nisu detektovane pruge. Podesavanja ostaju." });
         return;
       }
-      const isBoldStripe = stripe.strength >= 0.38 || stripe.contrast >= 0.2;
+      const isBoldStripe = stripe.strength >= 0.32 || stripe.contrast >= 0.18;
       const tone = avgLum < 0.28 ? "dark" : avgLum < 0.55 ? "medium" : "light";
       const pattern = isBoldStripe ? "stripe" : "pinstripe";
       const textureScale = isBoldStripe ? "0.85" : "0.70";
@@ -536,26 +555,78 @@ export default function FabricsAdminPage() {
                 inputMode="numeric"
               />
             </div>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Gustina pruga (globalno, fallback)</label>
-              <input
-                value={form.stripeSpacing}
-                onChange={(e) => setForm((s) => ({ ...s, stripeSpacing: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-                placeholder="6 (default)"
-                inputMode="numeric"
-                min={1}
-                max={10}
-                step={1}
-              />
+            <div className="space-y-2 sm:col-span-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <label className="text-xs font-semibold text-gray-700">Gustina pruga (globalno)</label>
+                <span className="text-[11px] text-gray-500">1 = gusto, 6 = default, 10 = razmaknuto</span>
+              </div>
+              <div className="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-center">
+                <input
+                  type="range"
+                  min={1}
+                  max={10}
+                  step={1}
+                  value={stripeSpacingDisplay}
+                  onChange={(e) => setForm((s) => ({ ...s, stripeSpacing: e.target.value }))}
+                  className="h-2 w-full cursor-pointer accent-gray-900"
+                />
+                <input
+                  type="number"
+                  value={form.stripeSpacing}
+                  onChange={(e) => setForm((s) => ({ ...s, stripeSpacing: e.target.value }))}
+                  className="w-20 rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                  placeholder="6"
+                  inputMode="numeric"
+                  min={1}
+                  max={10}
+                  step={1}
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2 text-[11px] text-gray-500">
+                <span className="font-semibold text-gray-700">Preseti:</span>
+                <button
+                  type="button"
+                  onClick={() => applyStripeSpacingPreset(4)}
+                  className="rounded-full border border-gray-200 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:border-gray-300"
+                >
+                  Tanke (4)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyStripeSpacingPreset(6)}
+                  className="rounded-full border border-gray-200 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:border-gray-300"
+                >
+                  Standard (6)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => applyStripeSpacingPreset(8)}
+                  className="rounded-full border border-gray-200 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:border-gray-300"
+                >
+                  Sire (8)
+                </button>
+                <button
+                  type="button"
+                  onClick={applyStripeSpacingToParts}
+                  className="rounded-full border border-gray-200 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700 hover:border-gray-300"
+                >
+                  Primeni na sako/pantalone
+                </button>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="h-6 w-32 rounded border border-gray-200 bg-white" style={stripePreviewStyle} />
+                <p className="text-[11px] text-gray-500">Preview razmaka (aproksimacija).</p>
+              </div>
+              <p className="text-[11px] text-gray-500">Ako sako/pantalone ostanu prazno, koristi se globalno.</p>
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Gustina pruga - sako</label>
+              <label className="text-xs font-semibold text-gray-700">Gustina pruga - sako (opciono)</label>
               <input
+                type="number"
                 value={form.stripeSpacingJacket}
                 onChange={(e) => setForm((s) => ({ ...s, stripeSpacingJacket: e.target.value }))}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-                placeholder="6"
+                placeholder="prazno = globalno"
                 inputMode="numeric"
                 min={1}
                 max={10}
@@ -563,12 +634,13 @@ export default function FabricsAdminPage() {
               />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Gustina pruga - pantalone</label>
+              <label className="text-xs font-semibold text-gray-700">Gustina pruga - pantalone (opciono)</label>
               <input
+                type="number"
                 value={form.stripeSpacingPants}
                 onChange={(e) => setForm((s) => ({ ...s, stripeSpacingPants: e.target.value }))}
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-                placeholder="6"
+                placeholder="prazno = globalno"
                 inputMode="numeric"
                 min={1}
                 max={10}

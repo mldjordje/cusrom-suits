@@ -7,6 +7,7 @@ import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
 import { computePrice } from "../utils/price";
 import { SuitState } from "../hooks/useSuitConfigurator";
+import { buildBackendUrl } from "../utils/backend";
 
 type Reco = {
   size: string;
@@ -354,14 +355,14 @@ function MeasurePageContent() {
         try {
           let res: Response | null = null;
           if (lastOrderId) {
-            res = await fetch("/api/orders", {
+            res = await fetch(buildBackendUrl("orders"), {
               method: "PATCH",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ id: lastOrderId, ...apiPayload }),
             });
           }
           if (!res || !res.ok) {
-            res = await fetch("/api/orders", {
+            res = await fetch(buildBackendUrl("orders"), {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify(apiPayload),

@@ -24,3 +24,17 @@ Thumbs.db
 # backend assets (local only)
 custom-suits-backend/
 transparent-upload/
+
+# local artifacts (previews/tests)
+/app/uploads/
+/btn/
+/latest*.png
+/reference.png
+/image.png
+/pants.png
+/our-*.png
+/out-mask*.png
+/temp-*.png
+/tmp-*.png
+/white-mask.png
+/stripe reference.png

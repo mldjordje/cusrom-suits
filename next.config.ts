@@ -24,6 +24,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async rewrites() {
+    return {
+      beforeFiles: [
+        {
+          source: "/uploads/:path*",
+          destination: "https://customsuits.adspire.rs/uploads/:path*",
+        },
+      ],
+    };
+  },
 };
 
 export default nextConfig;

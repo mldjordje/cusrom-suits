@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { suits } from "../data/options";
+import { buildBackendUrl } from "../utils/backend";
 
 export type Lining = {
   id: string;
@@ -64,7 +65,7 @@ export function useLinings(styleId?: string, options?: UseLiningsOptions) {
     setLoading(true);
     const inflight =
       LININGS_INFLIGHT ??
-      fetch("/api/linings", { cache: "no-store" })
+      fetch(buildBackendUrl("linings"), { cache: "no-store" })
         .then((res) => res.json())
         .then((json) => {
           const list = Array.isArray(json?.data) ? json.data : [];
