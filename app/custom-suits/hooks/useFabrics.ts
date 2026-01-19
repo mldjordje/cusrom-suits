@@ -69,7 +69,16 @@ export function useFabrics<T = any>(query?: FabricQuery, options?: UseFabricsOpt
     const inflight =
       existing ??
       fetch(url, { cache: "no-store" })
-        .then((response) => response.json())
+        .then(async (response) => {
+          const contentType = response.headers.get("content-type") || "";
+          if (!response.ok) {
+            throw new Error(`Fabrics API error (${response.status})`);
+          }
+          if (!contentType.includes("application/json")) {
+            throw new Error("Fabrics API nije vratio JSON.");
+          }
+          return response.json();
+        })
         .then((payload) => {
           const list = Array.isArray(payload?.data) ? payload.data : [];
           if (payload?.success && list.length) {
