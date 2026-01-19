@@ -2064,6 +2064,12 @@ const SuitPreview = ({
             ctx.drawImage(img, dx, dy, w, h);
           }
           const unionData = ctx.getImageData(0, 0, c.width, c.height);
+          const tunedSeamSlope =
+            PANTS_STRIPE_TUNING.seam.slope *
+            (c.height / PANTS_STRIPE_TUNING.seam.refHeight) *
+            (PANTS_STRIPE_TUNING.seam.refWidth / c.width);
+          const tunedSeamIntercept =
+            PANTS_STRIPE_TUNING.seam.intercept * (c.height / PANTS_STRIPE_TUNING.seam.refHeight);
           let seamMaskData: ImageData | null = null;
           let seamLineFromMask: { slope: number; intercept: number } | null = null;
           let seamXForYFromMask: Float32Array | null = null;
@@ -2093,6 +2099,11 @@ const SuitPreview = ({
             seamXForYFromMask.fill(Number.NaN);
             let lastX = Number.NaN;
             for (let y = 0; y < c.height; y++) {
+              const expectedXRaw =
+                Math.abs(tunedSeamSlope) < 1e-3 ? Number.NaN : (y - tunedSeamIntercept) / tunedSeamSlope;
+              const expectedX = Number.isFinite(expectedXRaw)
+                ? clamp(expectedXRaw, 0, seamXLimit - 1)
+                : Number.NaN;
               let rowCount = 0;
               let bestX = -1;
               let bestDist = Number.POSITIVE_INFINITY;
@@ -2100,19 +2111,20 @@ const SuitPreview = ({
                 const idx = (y * c.width + x) * 4;
                 if (seamData[idx + 3] > 0) {
                   rowCount++;
-                  if (!Number.isFinite(lastX)) {
-                    if (bestX < 0) bestX = x;
-                  } else {
-                    const dist = Math.abs(x - lastX);
-                    if (dist < bestDist) {
-                      bestDist = dist;
-                      bestX = x;
-                    }
+                  const targetX = Number.isFinite(expectedX)
+                    ? expectedX
+                    : Number.isFinite(lastX)
+                      ? lastX
+                      : x;
+                  const dist = Math.abs(x - targetX);
+                  if (dist < bestDist) {
+                    bestDist = dist;
+                    bestX = x;
                   }
                 }
               }
               if (rowCount > 0 && rowCount <= rowThreshold && bestX >= 0) {
-                if (!Number.isFinite(lastX) || bestDist <= maxJumpPx) {
+                if (!Number.isFinite(expectedX) || bestDist <= maxJumpPx) {
                   seamXForYFromMask[y] = bestX;
                   lastX = bestX;
                 }
@@ -2140,6 +2152,8 @@ const SuitPreview = ({
                 const intercept = (sumY - slope * sumX) / count;
                 seamLineFromMask = { slope, intercept };
               }
+            } else {
+              seamXForYFromMask = null;
             }
           }
           const axisAngle = computeMaskAxisAngle(unionData.data, c.width, c.height);
@@ -2439,12 +2453,6 @@ const SuitPreview = ({
               }
             }
 
-            const tunedSeamSlope =
-              PANTS_STRIPE_TUNING.seam.slope *
-              (c.height / PANTS_STRIPE_TUNING.seam.refHeight) *
-              (PANTS_STRIPE_TUNING.seam.refWidth / c.width);
-            const tunedSeamIntercept =
-              PANTS_STRIPE_TUNING.seam.intercept * (c.height / PANTS_STRIPE_TUNING.seam.refHeight);
             const seamSlope = seamLineFromMask?.slope ?? tunedSeamSlope;
             const seamIntercept = seamLineFromMask?.intercept ?? tunedSeamIntercept;
             const seamXMax = Math.round(c.width * PANTS_STRIPE_TUNING.waistbandXRatio);
