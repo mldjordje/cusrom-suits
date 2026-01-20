@@ -1,7 +1,7 @@
 export const PANTS_STRIPE_TUNING = {
   // Absolute rotations for pants split zones (ignore tile base orientation).
   diagAbsDeg: 24,
-  flyAbsDeg: 24,
+  flyAbsDeg: 0,
   waistAbsDeg: 90,
 
   seam: {
