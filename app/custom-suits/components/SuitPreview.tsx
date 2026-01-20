@@ -2650,11 +2650,11 @@ const SuitPreview = ({
                 const seamY = seamLine.slope * x + seamLine.intercept - seamBias;
                 const seamXPad = PANTS_STRIPE_TUNING.seam.xPadPx ?? 0;
                 const seamX = seamXForY[y] + seamXPad;
-                const isUnder = x < seamXMax && y > seamY && x <= seamX;
                 const boundaryRaw = legBoundaryX[y];
                 const boundaryBase = boundaryRaw + boundaryPad;
                 const boundaryTarget = clamp(boundaryBase, seamX + seamBoundaryPad, seamX + seamBoundaryMax);
                 const boundaryX = Math.min(c.width - 1, Math.max(0, Math.min(boundaryTarget, boundaryBase)));
+                const isUnder = x < seamXMax && y > seamY && x <= seamX && x < boundaryX;
                 const isRightSide = x >= boundaryX;
                 if (isUnder) {
                   leftUnder.data[idx] = 255;
