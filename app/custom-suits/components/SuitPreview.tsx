@@ -2558,6 +2558,24 @@ const SuitPreview = ({
                 if (seamXForY[y] > maxAllowed) seamXForY[y] = maxAllowed;
               }
             }
+            const seamSmoothPx = PANTS_STRIPE_TUNING.seam.smoothPx ?? 0;
+            if (seamSmoothPx > 0) {
+              const smooth = new Float32Array(c.height);
+              for (let y = 0; y < c.height; y++) {
+                let sum = 0;
+                let count = 0;
+                const y0 = Math.max(0, y - seamSmoothPx);
+                const y1 = Math.min(c.height - 1, y + seamSmoothPx);
+                for (let ky = y0; ky <= y1; ky++) {
+                  const v = seamXForY[ky];
+                  if (!Number.isFinite(v)) continue;
+                  sum += v;
+                  count++;
+                }
+                smooth[y] = count ? sum / count : seamXForY[y];
+              }
+              for (let y = 0; y < c.height; y++) seamXForY[y] = smooth[y];
+            }
             const legBoundaryX = new Int16Array(c.height);
             legBoundaryX.fill(-1);
             for (let y = 0; y < c.height; y++) {
@@ -2580,6 +2598,25 @@ const SuitPreview = ({
               } else {
                 legBoundaryX[y] = lastBoundaryX >= 0 ? lastBoundaryX : Math.min(legFallbackX, diagonalClampX);
               }
+            }
+            const boundarySmoothPx = PANTS_STRIPE_TUNING.boundarySmoothPx ?? 0;
+            if (boundarySmoothPx > 0) {
+              const smooth = new Int16Array(c.height);
+              for (let y = 0; y < c.height; y++) {
+                let sum = 0;
+                let count = 0;
+                const y0 = Math.max(0, y - boundarySmoothPx);
+                const y1 = Math.min(c.height - 1, y + boundarySmoothPx);
+                for (let ky = y0; ky <= y1; ky++) {
+                  const v = legBoundaryX[ky];
+                  if (v < 0) continue;
+                  sum += v;
+                  count++;
+                }
+                const avg = count ? Math.round(sum / count) : legBoundaryX[y];
+                smooth[y] = clamp(avg, 0, c.width - 1);
+              }
+              for (let y = 0; y < c.height; y++) legBoundaryX[y] = smooth[y];
             }
             const leftMain = ctx.createImageData(c.width, c.height);
             const leftUnder = ctx.createImageData(c.width, c.height);
