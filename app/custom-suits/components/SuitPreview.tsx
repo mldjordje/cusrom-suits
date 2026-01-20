@@ -749,6 +749,11 @@ const SuitPreview = ({
   const useTexture = Boolean(fabricTextureSource && textureStrength > 0);
   const usePantsTexture = Boolean(fabricTextureSourcePants);
   const usePhotoBase = Boolean(process.env.NEXT_PUBLIC_PHOTO_CDN_BASE);
+  const strongTextureStripe =
+    stripeAnalysis.strength >= 0.22 || stripeAnalysis.contrast >= 0.16;
+  const usePantsPatternOverlayForPants =
+    usePantsPatternOverlay && !(patternStripe && usePantsTexture && strongTextureStripe);
+  const useJacketPatternOverlay = usePantsPatternOverlay;
 
   const tb = toneBlend(selectedFabric?.tone, level);
   const toneVis = getToneConfig(selectedFabric?.tone, level);
@@ -1035,7 +1040,7 @@ const SuitPreview = ({
     maxOpacity: number;
   };
   const pantsPatternOverlayConfig = useMemo(() => {
-    if (!usePantsPatternOverlay) return null;
+    if (!usePantsPatternOverlayForPants) return null;
     const darkBoost = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const defaults =
       pantsPatternValueResolved === "tanke pruge"
@@ -1097,10 +1102,10 @@ const SuitPreview = ({
     textureScaleBoost,
     toneBaseColor,
     tunedFabricFill,
-    usePantsPatternOverlay,
+    usePantsPatternOverlayForPants,
   ]);
   const jacketPatternOverlayConfig = useMemo(() => {
-    if (!usePantsPatternOverlay) return null;
+    if (!useJacketPatternOverlay) return null;
     const darkBoost = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const defaults =
       pantsPatternValueResolved === "tanke pruge"
@@ -1162,7 +1167,7 @@ const SuitPreview = ({
     textureScaleBoost,
     toneBaseColor,
     tunedFabricFill,
-    usePantsPatternOverlay,
+    useJacketPatternOverlay,
   ]);
   const buildPatternStyle = useCallback(
     (
@@ -1798,18 +1803,28 @@ const SuitPreview = ({
     usePantsTexture && hasPantsLegSplit && (stripeBoost || isPantsCmsStripe);
   const pantsSplitTextureStyle = useMemo<React.CSSProperties>(() => {
     if (!useSplitPantsTexture) return pantsTextureStyle;
-    const opacity = Number(fabricTextureStyle.opacity ?? 0.26);
+    const opacity = Number(
+      pantsTextureStyle.opacity ?? fabricTextureStyle.opacity ?? 0.26
+    );
+    const maxOpacity = isPantsCmsStripe ? 0.6 : 0.5;
     return {
-      ...fabricTextureStyle,
-      mixBlendMode: "normal",
-      opacity: clamp(opacity * 1.8, 0.22, 0.9),
+      ...pantsTextureStyle,
+      mixBlendMode: pantsTextureStyle.mixBlendMode ?? "normal",
+      opacity: clamp(opacity * 1.15, 0.1, maxOpacity),
     };
-  }, [fabricTextureStyle, pantsTextureStyle, useSplitPantsTexture]);
+  }, [
+    fabricTextureStyle.opacity,
+    isPantsCmsStripe,
+    pantsTextureStyle,
+    useSplitPantsTexture,
+  ]);
   const pantsStripeTexture = fabricTileTexture ?? fabricTextureSourcePants ?? undefined;
   const pantsOverlayTexture = fabricTileTexture ?? fabricTextureSourcePants ?? EMPTY_TEXTURE_DATA_URL;
   const jacketOverlayTexture = fabricTileTexture ?? fabricTextureSource ?? EMPTY_TEXTURE_DATA_URL;
   const canRenderPantsPatternOverlay = Boolean(
-    usePantsPatternOverlay && pantsPatternOverlayConfig && (pantsLegMasks || pantsMask)
+    usePantsPatternOverlayForPants &&
+      pantsPatternOverlayConfig &&
+      (pantsLegMasks || pantsMask)
   );
   const shouldRenderPantsPatternOverlay = canRenderPantsPatternOverlay;
   const pantsBaseFillOpacity = useMemo(() => {
@@ -1903,7 +1918,7 @@ const SuitPreview = ({
       fabricName: (selectedFabric as any)?.name,
       rawPatternFields: rawFields,
       normalizedPattern: pantsPatternValueResolved,
-      overlayEnabled: usePantsPatternOverlay,
+      overlayEnabled: usePantsPatternOverlayForPants,
       hasUnionMask: Boolean(pantsMask),
       hasLeftMask: Boolean(pantsLeftMainMask),
       hasRightMask: Boolean(pantsLegMasks?.right),
@@ -1927,7 +1942,7 @@ const SuitPreview = ({
     config.colorId,
     selectedFabric,
     showPants,
-    usePantsPatternOverlay,
+    usePantsPatternOverlayForPants,
   ]);
 
   useEffect(() => {
