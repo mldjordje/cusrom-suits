@@ -35,6 +35,7 @@ const PANTS_SEAM_MASK_SRC = "/assets/suits/masks/pants_seam.png";
 const EMPTY_TEXTURE_DATA_URL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 const MASK_BLEED_PX = 1.1;
+const SPLIT_MASK_BLEED_PX = 1.2;
 const TEXTURE_TILE_PX = 75;
 const TEXTURE_TILE_CANVAS_SCALE = 0.12;
 const TEXTURE_TILE_CANVAS_MAX = 280;
@@ -2779,6 +2780,21 @@ const SuitPreview = ({
             const dctx = rightLowerCanvas.getContext("2d");
             const wctx = waistCanvas.getContext("2d");
             if (!lctx || !lmctx || !luctx || !rctx || !uctx || !dctx || !wctx) return null;
+            const blurMaskCanvas = (canvas: HTMLCanvasElement, px: number) => {
+              if (!px || px <= 0) return;
+              const bctx = canvas.getContext("2d");
+              if (!bctx) return;
+              const temp = document.createElement("canvas");
+              temp.width = canvas.width;
+              temp.height = canvas.height;
+              const tctx = temp.getContext("2d");
+              if (!tctx) return;
+              tctx.drawImage(canvas, 0, 0);
+              bctx.clearRect(0, 0, canvas.width, canvas.height);
+              bctx.filter = `blur(${px}px)`;
+              bctx.drawImage(temp, 0, 0);
+              bctx.filter = "none";
+            };
             lctx.putImageData(leftMask, 0, 0);
             lmctx.putImageData(leftMain, 0, 0);
             luctx.putImageData(leftUnder, 0, 0);
@@ -2786,6 +2802,15 @@ const SuitPreview = ({
             uctx.putImageData(rightUpper, 0, 0);
             dctx.putImageData(rightLower, 0, 0);
             wctx.putImageData(waistMask, 0, 0);
+            if (SPLIT_MASK_BLEED_PX > 0) {
+              [
+                leftMainCanvas,
+                leftUnderCanvas,
+                rightUpperCanvas,
+                rightLowerCanvas,
+                waistCanvas,
+              ].forEach((canvas) => blurMaskCanvas(canvas, SPLIT_MASK_BLEED_PX));
+            }
             return {
               leftMaskUrl: leftCanvas.toDataURL("image/png"),
               leftMainUrl: leftMainCanvas.toDataURL("image/png"),
