@@ -2665,7 +2665,10 @@ const SuitPreview = ({
                 const seamX = seamBoundaryXForY[y] + seamXPad;
                 const boundaryX = Math.min(
                   c.width - 1,
-                  Math.max(0, seamX + Math.max(seamBoundaryPad, boundaryPad))
+                  Math.max(
+                    0,
+                    Math.max(seamX + seamBoundaryPad, legBoundaryX[y] + boundaryPad)
+                  )
                 );
                 const isUnder = x < seamXMax && y > seamY && x <= seamX && x < boundaryX;
                 const isRightSide = x >= boundaryX;
@@ -2700,7 +2703,13 @@ const SuitPreview = ({
                   if (waistMask.data[idx + 3] > 0) continue;
                   const boundaryX = Math.min(
                     c.width - 1,
-                    Math.max(0, seamBoundaryXForY[y] + Math.max(seamBoundaryPad, boundaryPad))
+                    Math.max(
+                      0,
+                      Math.max(
+                        seamBoundaryXForY[y] + seamBoundaryPad,
+                        legBoundaryX[y] + boundaryPad
+                      )
+                    )
                   );
                   if (x < boundaryX) continue;
                   rightUpper.data[idx] = 255;
@@ -2713,10 +2722,20 @@ const SuitPreview = ({
             }
             let rightUpperCleanCount = 0;
             for (let y = 0; y < c.height; y++) {
+              const boundaryX = Math.min(
+                c.width - 1,
+                Math.max(
+                  0,
+                  Math.max(
+                    seamBoundaryXForY[y] + seamBoundaryPad,
+                    legBoundaryX[y] + boundaryPad
+                  )
+                )
+              );
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
                 if (rightUpper.data[idx + 3] < 1) continue;
-                if (x < seamBoundaryXForY[y] + seamBoundaryPad) {
+                if (x < boundaryX) {
                   rightUpper.data[idx + 3] = 0;
                   continue;
                 }
@@ -2733,7 +2752,10 @@ const SuitPreview = ({
               const seamX = seamBoundaryXForY[y] + seamXPad;
               const boundaryX = Math.min(
                 c.width - 1,
-                Math.max(0, seamX + Math.max(seamBoundaryPad, boundaryPad))
+                Math.max(
+                  0,
+                  Math.max(seamX + seamBoundaryPad, legBoundaryX[y] + boundaryPad)
+                )
               );
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
