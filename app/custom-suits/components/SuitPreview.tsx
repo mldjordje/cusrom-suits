@@ -914,7 +914,14 @@ const SuitPreview = ({
     [angleToRotation, pantsAxisAngle]
   );
   const fabricTextureFilter = useMemo(() => {
-    if (usePhotoBase) return "none";
+    const hasOverride =
+      typeof textureBrightnessOverride === "number" || typeof textureContrastOverride === "number";
+    if (usePhotoBase) {
+      if (!hasOverride) return "none";
+      const brightness = clamp((textureBrightnessOverride ?? 1) * PREVIEW_EXPOSURE, 0.8, 2.4);
+      const contrast = clamp(textureContrastOverride ?? 1, 0.9, 1.8);
+      return `brightness(${brightness.toFixed(2)}) contrast(${contrast.toFixed(2)})`;
+    }
     if (fabricTone === "dark") {
       const baseBrightness = 1.03;
       const baseContrast = 1.25;
@@ -1753,6 +1760,10 @@ const SuitPreview = ({
     []
   );
   const pantsStripeOffsets = PANTS_STRIPE_TUNING.stripeOffsets;
+  const pantsStripeBaseAngle = useMemo(
+    () => pantsTextureRotationBase,
+    [pantsTextureRotationBase]
+  );
   const resolveLegAngle = useCallback(
     (measured: number | null | undefined, fallback: number) => {
       if (typeof measured !== "number" || !Number.isFinite(measured)) return fallback;
@@ -1762,10 +1773,10 @@ const SuitPreview = ({
     []
   );
   const resolvePantsSplitRotation = useCallback(
-    (desiredAngle: number) => {
-      return desiredAngle;
+    (_desiredAngle: number) => {
+      return pantsStripeBaseAngle;
     },
-    [stripeOrientation]
+    [pantsStripeBaseAngle]
   );
   const pantsSplitRotation = useMemo(
     () => ({
@@ -1776,22 +1787,29 @@ const SuitPreview = ({
     [resolvePantsSplitRotation]
   );
   const useFixedSplitRotation = patternStripe || stripeBoost;
+  const fixedSplitRotation = useMemo(
+    () => angleToRotation(pantsStripeBaseAngle),
+    [angleToRotation, pantsStripeBaseAngle]
+  );
   const pantsSplitTextureRotation = useMemo(
     () => ({
-      left: angleToRotation(
-        useFixedSplitRotation
-          ? PANTS_STRIPE_TUNING.diagAbsDeg
-          : resolveLegAngle(pantsLegAngles?.left, PANTS_STRIPE_TUNING.diagAbsDeg)
-      ),
-      right: angleToRotation(
-        useFixedSplitRotation
-          ? PANTS_STRIPE_TUNING.flyAbsDeg
-          : resolveLegAngle(pantsLegAngles?.right, PANTS_STRIPE_TUNING.flyAbsDeg)
-      ),
-      fly: angleToRotation(PANTS_STRIPE_TUNING.flyAbsDeg),
-      waist: angleToRotation(PANTS_STRIPE_TUNING.waistAbsDeg),
+      left: useFixedSplitRotation
+        ? fixedSplitRotation
+        : angleToRotation(resolveLegAngle(pantsLegAngles?.left, pantsStripeBaseAngle)),
+      right: useFixedSplitRotation
+        ? fixedSplitRotation
+        : angleToRotation(resolveLegAngle(pantsLegAngles?.right, pantsStripeBaseAngle)),
+      fly: useFixedSplitRotation ? fixedSplitRotation : angleToRotation(pantsStripeBaseAngle),
+      waist: useFixedSplitRotation ? fixedSplitRotation : angleToRotation(pantsStripeBaseAngle),
     }),
-    [angleToRotation, pantsLegAngles, resolveLegAngle, useFixedSplitRotation]
+    [
+      angleToRotation,
+      fixedSplitRotation,
+      pantsLegAngles,
+      pantsStripeBaseAngle,
+      resolveLegAngle,
+      useFixedSplitRotation,
+    ]
   );
   const pantsLeftMainMask = pantsLeftSplitMasks?.main ?? pantsMask;
   const pantsLeftUnderMask = pantsLeftSplitMasks?.under ?? null;

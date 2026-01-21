@@ -25,10 +25,17 @@ type CacheEntry<T> = { data: T[]; error: string | null; ts: number };
 const CACHE_TTL_MS = 5 * 60 * 1000;
 const FABRICS_CACHE = new Map<string, CacheEntry<any>>();
 const FABRICS_INFLIGHT = new Map<string, Promise<CacheEntry<any>>>();
+const FABRICS_REV_KEY = "fabrics:rev";
+
+const readRevision = () => {
+  if (typeof window === "undefined") return "0";
+  return window.localStorage.getItem(FABRICS_REV_KEY) || "0";
+};
 
 export function useFabrics<T = any>(query?: FabricQuery, options?: UseFabricsOptions): UseFabricsResult<T> {
   const fallbackList = (fallbackFabrics as unknown[]) as T[];
   const enabled = options?.enabled ?? true;
+  const [cacheRevision, setCacheRevision] = useState(readRevision);
 
   const searchKey = useMemo(() => {
     const params = new URLSearchParams();
@@ -38,13 +45,27 @@ export function useFabrics<T = any>(query?: FabricQuery, options?: UseFabricsOpt
     return params.toString();
   }, [query?.tone, query?.sort, query?.order]);
 
-  const cacheKey = searchKey || "all";
+  const cacheKey = `${searchKey || "all"}:${cacheRevision}`;
   const cached = FABRICS_CACHE.get(cacheKey);
   const isFresh = cached && Date.now() - cached.ts < CACHE_TTL_MS;
 
   const [fabrics, setFabrics] = useState<T[]>(() => (isFresh ? cached?.data ?? [] : []));
   const [loading, setLoading] = useState<boolean>(() => !isFresh);
   const [error, setError] = useState<string | null>(() => (isFresh ? cached?.error ?? null : null));
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleUpdate = () => setCacheRevision(readRevision());
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === FABRICS_REV_KEY) handleUpdate();
+    };
+    window.addEventListener("storage", handleStorage);
+    window.addEventListener("fabrics:updated", handleUpdate as EventListener);
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("fabrics:updated", handleUpdate as EventListener);
+    };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;

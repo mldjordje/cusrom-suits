@@ -121,6 +121,12 @@ export default function FabricsAdminPage() {
       return { ...s, stripeSpacing: value, stripeSpacingJacket: value, stripeSpacingPants: value };
     });
   };
+  const bumpFabricsRevision = () => {
+    if (typeof window === "undefined") return;
+    const stamp = String(Date.now());
+    window.localStorage.setItem("fabrics:rev", stamp);
+    window.dispatchEvent(new Event("fabrics:updated"));
+  };
 
   const analyzeTexture = async (blob: File) => {
     const arrayBuffer = await blob.arrayBuffer();
@@ -342,6 +348,7 @@ export default function FabricsAdminPage() {
     setDetailFile(null);
     setAutoTone(null);
     await loadFabrics();
+    bumpFabricsRevision();
   };
 
   const onDelete = async (id: string) => {
@@ -358,6 +365,7 @@ export default function FabricsAdminPage() {
     } else {
       setStatus({ type: "success", message: "Obrisano" });
       setFabrics((prev) => prev.filter((f) => f.id !== id));
+      bumpFabricsRevision();
     }
   };
 
