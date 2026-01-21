@@ -35,7 +35,7 @@ const PANTS_SEAM_MASK_SRC = "/assets/suits/masks/pants_seam.png";
 const EMPTY_TEXTURE_DATA_URL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
 const MASK_BLEED_PX = 1.1;
-const SPLIT_MASK_BLEED_PX = 0.6;
+const SPLIT_MASK_BLEED_PX = 0.9;
 const TEXTURE_TILE_PX = 75;
 const TEXTURE_TILE_CANVAS_SCALE = 0.12;
 const TEXTURE_TILE_CANVAS_MAX = 280;
@@ -1964,6 +1964,7 @@ const SuitPreview = ({
     fabricsLoading,
     pantsMaskBuilding,
     pantsSplitTextureRotation,
+    stripeOrientation,
     showPants,
     useSplitPantsTexture,
   ]);
@@ -2573,6 +2574,26 @@ const SuitPreview = ({
               }
               for (let y = 0; y < c.height; y++) seamXForY[y] = smooth[y];
             }
+            const boundarySmoothPx = PANTS_STRIPE_TUNING.boundarySmoothPx ?? 0;
+            const seamBoundaryXForY = new Float32Array(seamXForY);
+            if (boundarySmoothPx > 0) {
+              const smooth = new Float32Array(c.height);
+              for (let y = 0; y < c.height; y++) {
+                let sum = 0;
+                let count = 0;
+                const y0 = Math.max(0, y - boundarySmoothPx);
+                const y1 = Math.min(c.height - 1, y + boundarySmoothPx);
+                for (let ky = y0; ky <= y1; ky++) {
+                  const v = seamBoundaryXForY[ky];
+                  if (!Number.isFinite(v)) continue;
+                  sum += v;
+                  count++;
+                }
+                const avg = count ? sum / count : seamBoundaryXForY[y];
+                smooth[y] = clamp(avg, 0, c.width - 1);
+              }
+              for (let y = 0; y < c.height; y++) seamBoundaryXForY[y] = smooth[y];
+            }
             const legBoundaryX = new Int16Array(c.height);
             legBoundaryX.fill(-1);
             for (let y = 0; y < c.height; y++) {
@@ -2596,7 +2617,6 @@ const SuitPreview = ({
                 legBoundaryX[y] = lastBoundaryX >= 0 ? lastBoundaryX : Math.min(legFallbackX, diagonalClampX);
               }
             }
-            const boundarySmoothPx = PANTS_STRIPE_TUNING.boundarySmoothPx ?? 0;
             if (boundarySmoothPx > 0) {
               const smooth = new Int16Array(c.height);
               for (let y = 0; y < c.height; y++) {
@@ -2625,10 +2645,6 @@ const SuitPreview = ({
             let rightUnderCount = 0;
             const boundaryPad = PANTS_STRIPE_TUNING.boundaryPadPx ?? 0;
             const seamBoundaryPad = PANTS_STRIPE_TUNING.seam.boundaryPadPx ?? 0;
-            const seamBoundaryMax = Math.max(
-              seamBoundaryPad,
-              PANTS_STRIPE_TUNING.seam.boundaryMaxPadPx ?? seamBoundaryPad
-            );
             for (let y = 0; y < c.height; y++) {
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
@@ -2646,11 +2662,11 @@ const SuitPreview = ({
                 const seamBias = PANTS_STRIPE_TUNING.seam.underBiasPx ?? 0;
                 const seamY = seamLine.slope * x + seamLine.intercept - seamBias;
                 const seamXPad = PANTS_STRIPE_TUNING.seam.xPadPx ?? 0;
-                const seamX = seamXForY[y] + seamXPad;
-                const boundaryRaw = legBoundaryX[y];
-                const boundaryBase = boundaryRaw + boundaryPad;
-                const boundaryTarget = clamp(boundaryBase, seamX + seamBoundaryPad, seamX + seamBoundaryMax);
-                const boundaryX = Math.min(c.width - 1, Math.max(0, Math.min(boundaryTarget, boundaryBase)));
+                const seamX = seamBoundaryXForY[y] + seamXPad;
+                const boundaryX = Math.min(
+                  c.width - 1,
+                  Math.max(0, seamX + Math.max(seamBoundaryPad, boundaryPad))
+                );
                 const isUnder = x < seamXMax && y > seamY && x <= seamX && x < boundaryX;
                 const isRightSide = x >= boundaryX;
                 if (isUnder) {
@@ -2682,14 +2698,10 @@ const SuitPreview = ({
                   const unionAlpha = full[idx + 3];
                   if (unionAlpha < 1) continue;
                   if (waistMask.data[idx + 3] > 0) continue;
-                  const boundaryRaw = legBoundaryX[y];
-                  const boundaryBase = boundaryRaw + boundaryPad;
-                  const boundaryTarget = clamp(
-                    boundaryBase,
-                    seamXForY[y] + seamBoundaryPad,
-                    seamXForY[y] + seamBoundaryMax
+                  const boundaryX = Math.min(
+                    c.width - 1,
+                    Math.max(0, seamBoundaryXForY[y] + Math.max(seamBoundaryPad, boundaryPad))
                   );
-                  const boundaryX = Math.min(c.width - 1, Math.max(0, Math.min(boundaryTarget, boundaryBase)));
                   if (x < boundaryX) continue;
                   rightUpper.data[idx] = 255;
                   rightUpper.data[idx + 1] = 255;
@@ -2704,7 +2716,7 @@ const SuitPreview = ({
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
                 if (rightUpper.data[idx + 3] < 1) continue;
-                if (x < seamXForY[y] + seamBoundaryPad) {
+                if (x < seamBoundaryXForY[y] + seamBoundaryPad) {
                   rightUpper.data[idx + 3] = 0;
                   continue;
                 }
@@ -2718,10 +2730,11 @@ const SuitPreview = ({
             rightFlyCount = rightUpperCleanCount;
             for (let y = 0; y < c.height; y++) {
               const seamXPad = PANTS_STRIPE_TUNING.seam.xPadPx ?? 0;
-              const seamX = seamXForY[y] + seamXPad;
-              const boundaryBase = legBoundaryX[y] + boundaryPad;
-              const boundaryTarget = clamp(boundaryBase, seamX + seamBoundaryPad, seamX + seamBoundaryMax);
-              const boundaryX = Math.min(c.width - 1, Math.max(0, Math.min(boundaryTarget, boundaryBase)));
+              const seamX = seamBoundaryXForY[y] + seamXPad;
+              const boundaryX = Math.min(
+                c.width - 1,
+                Math.max(0, seamX + Math.max(seamBoundaryPad, boundaryPad))
+              );
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
                 const unionAlpha = full[idx + 3];
@@ -2759,7 +2772,7 @@ const SuitPreview = ({
               }
             }
             for (let y = 0; y < c.height; y++) {
-              const seamX = seamXForY[y] + seamBoundaryPad;
+              const seamX = seamBoundaryXForY[y] + seamBoundaryPad;
               for (let x = 0; x < c.width; x++) {
                 const idx = (y * c.width + x) * 4;
                 const unionAlpha = full[idx + 3];

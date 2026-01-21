@@ -194,6 +194,8 @@ const FabricCard = React.memo(
   )
 );
 
+FabricCard.displayName = "FabricCard";
+
 const Drawer = ({
   panel,
   children,

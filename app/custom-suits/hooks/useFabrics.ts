@@ -47,11 +47,13 @@ export function useFabrics<T = any>(query?: FabricQuery, options?: UseFabricsOpt
 
   const cacheKey = `${searchKey || "all"}:${cacheRevision}`;
   const cached = FABRICS_CACHE.get(cacheKey);
+  const cachedData = cached?.data;
+  const cachedError = cached?.error;
   const isFresh = cached && Date.now() - cached.ts < CACHE_TTL_MS;
 
-  const [fabrics, setFabrics] = useState<T[]>(() => (isFresh ? cached?.data ?? [] : []));
+  const [fabrics, setFabrics] = useState<T[]>(() => (isFresh ? cachedData ?? [] : []));
   const [loading, setLoading] = useState<boolean>(() => !isFresh);
-  const [error, setError] = useState<string | null>(() => (isFresh ? cached?.error ?? null : null));
+  const [error, setError] = useState<string | null>(() => (isFresh ? cachedError ?? null : null));
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -76,8 +78,8 @@ export function useFabrics<T = any>(query?: FabricQuery, options?: UseFabricsOpt
       };
     }
     if (isFresh) {
-      setFabrics(cached?.data ?? []);
-      setError(cached?.error ?? null);
+      setFabrics(cachedData ?? []);
+      setError(cachedError ?? null);
       setLoading(false);
       return () => {
         cancelled = true;
@@ -134,7 +136,7 @@ export function useFabrics<T = any>(query?: FabricQuery, options?: UseFabricsOpt
     return () => {
       cancelled = true;
     };
-  }, [cacheKey, enabled, fallbackList, isFresh, searchKey]);
+  }, [cacheKey, cachedData, cachedError, enabled, fallbackList, isFresh, searchKey]);
 
   return { fabrics, loading, error };
 }
