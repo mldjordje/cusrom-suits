@@ -172,12 +172,12 @@ export default function CustomSuitsPage() {
       </div>
       <motion.div
         id="konfigurator"
-        className="mx-auto w-full max-w-[1480px] px-3 pb-10 pt-12 sm:px-4 sm:pb-24 sm:pt-24 lg:px-2 lg:pb-16"
+        className="mx-auto w-full max-w-[1600px] px-3 pb-10 pt-12 sm:px-4 sm:pb-24 sm:pt-24 lg:px-2 lg:pb-16"
         variants={configuratorVariants}
         initial="hidden"
         animate="visible"
       >
-        <div className="relative isolate flex min-h-[100svh] flex-col gap-2 sm:gap-3 lg:min-h-[78vh] lg:grid lg:grid-cols-[360px_minmax(0,1fr)_280px] lg:gap-8 xl:grid-cols-[420px_minmax(0,1fr)_300px]">
+        <div className="relative isolate flex min-h-[100svh] flex-col gap-2 sm:gap-3 lg:min-h-[78vh] lg:grid lg:grid-cols-[420px_minmax(0,1fr)_280px] lg:gap-8 xl:grid-cols-[480px_minmax(0,1fr)_300px]">
           <motion.section
             className="order-1 hidden w-full lg:order-1 lg:block"
             variants={columnVariants}

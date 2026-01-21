@@ -133,63 +133,65 @@ const PanelLoading = ({ title, onClose }: { title: string; onClose: () => void }
   </>
 );
 
-const FabricCard = ({
-  fabric,
-  active,
-  onSelect,
-  onDetail,
-  hasDetail,
-}: {
-  fabric: any;
-  active: boolean;
-  onSelect: () => void;
-  onDetail?: () => void;
-  hasDetail?: boolean;
-}) => (
-  <div
-    className={`rounded-2xl border bg-white text-left transition ${
-      active ? "border-gray-900 shadow-md" : "border-gray-200 hover:border-gray-400"
-    }`}
-  >
-    <button
-      type="button"
-      onClick={onSelect}
-      className="flex w-full items-center gap-3 p-3 text-left"
+const FabricCard = React.memo(
+  ({
+    fabric,
+    active,
+    onSelect,
+    onDetail,
+    hasDetail,
+  }: {
+    fabric: any;
+    active: boolean;
+    onSelect: () => void;
+    onDetail?: () => void;
+    hasDetail?: boolean;
+  }) => (
+    <div
+      className={`rounded-2xl border bg-white text-left transition ${
+        active ? "border-gray-900 shadow-md" : "border-gray-200 hover:border-gray-400"
+      }`}
     >
-      <div className="relative h-20 w-24 overflow-hidden rounded-xl bg-gray-100">
-        <img
-          src={fabric.texture}
-          alt={fabric.name}
-          className="h-full w-full object-cover"
-          loading="lazy"
-          decoding="async"
-          fetchPriority="low"
-        />
-        {active && <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />}
-      </div>
-      <div className="flex-1">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-gray-900">{fabric.name || "Tkanina"}</p>
-          {active && <Badge label="Izabrano" />}
+      <button
+        type="button"
+        onClick={onSelect}
+        className="flex w-full items-center gap-3 p-3 text-left"
+      >
+        <div className="relative h-20 w-24 overflow-hidden rounded-xl bg-gray-100">
+          <img
+            src={fabric.texture}
+            alt={fabric.name}
+            className="h-full w-full object-cover"
+            loading="lazy"
+            decoding="async"
+            fetchPriority="low"
+          />
+          {active && <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />}
         </div>
-        <p className="text-[11px] text-gray-500">
-          {fabric.price ?? 0} EUR - ton {fabric.tone || "medium"}
-        </p>
-        {fabric.code && <p className="text-[11px] text-gray-400">ifra: {fabric.code}</p>}
-      </div>
-    </button>
-    {hasDetail && (
-      <div className="px-3 pb-3">
-        <button
-          type="button"
-          onClick={onDetail}
-          className="text-[11px] font-semibold text-gray-700 underline underline-offset-4 transition hover:text-gray-900"
-        >
-          Detalji tkanine
-        </button>
-      </div>
-    )}
-  </div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <p className="text-sm font-semibold text-gray-900">{fabric.name || "Tkanina"}</p>
+            {active && <Badge label="Izabrano" />}
+          </div>
+          <p className="text-[11px] text-gray-500">
+            {fabric.price ?? 0} EUR - ton {fabric.tone || "medium"}
+          </p>
+          {fabric.code && <p className="text-[11px] text-gray-400">ifra: {fabric.code}</p>}
+        </div>
+      </button>
+      {hasDetail && (
+        <div className="px-3 pb-3">
+          <button
+            type="button"
+            onClick={onDetail}
+            className="text-[11px] font-semibold text-gray-700 underline underline-offset-4 transition hover:text-gray-900"
+          >
+            Detalji tkanine
+          </button>
+        </div>
+      )}
+    </div>
+  )
 );
 
 const Drawer = ({

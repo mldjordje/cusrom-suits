@@ -671,10 +671,10 @@ const SuitPreview = ({
   const autoStripePattern = useMemo(() => {
     if (!allowAutoStripe) return "";
     if (fabricStripe.orientation === "none") return "";
-    const minStrength = 0.32;
-    const minContrast = 0.18;
-    if (fabricStripe.strength < minStrength || fabricStripe.contrast < minContrast) return "";
-    if (fabricStripe.contrast >= 0.26 || fabricStripe.strength >= 0.5) return "pruge";
+    const minStrength = 0.18;
+    const minContrast = 0.1;
+    if (fabricStripe.strength < minStrength && fabricStripe.contrast < minContrast) return "";
+    if (fabricStripe.contrast >= 0.22 || fabricStripe.strength >= 0.4) return "pruge";
     return "tanke pruge";
   }, [allowAutoStripe, fabricStripe]);
   const pantsPatternValueResolved = useMemo(
@@ -750,10 +750,7 @@ const SuitPreview = ({
   const useTexture = Boolean(fabricTextureSource && textureStrength > 0);
   const usePantsTexture = Boolean(fabricTextureSourcePants);
   const usePhotoBase = Boolean(process.env.NEXT_PUBLIC_PHOTO_CDN_BASE);
-  const strongTextureStripe =
-    stripeAnalysis.strength >= 0.22 || stripeAnalysis.contrast >= 0.16;
-  const usePantsPatternOverlayForPants =
-    usePantsPatternOverlay && !(patternStripe && usePantsTexture && strongTextureStripe);
+  const usePantsPatternOverlayForPants = usePantsPatternOverlay;
   const useJacketPatternOverlay = usePantsPatternOverlay;
 
   const tb = toneBlend(selectedFabric?.tone, level);
@@ -909,10 +906,10 @@ const SuitPreview = ({
     },
     [pantsTextureRotationBase, stripeOrientation, stripeRotationActive]
   );
-  const pantsTextureRotation = useMemo(
-    () => angleToRotation(pantsAxisAngle),
-    [angleToRotation, pantsAxisAngle]
-  );
+  const pantsTextureRotation = useMemo(() => {
+    if (patternStripe || stripeNameHint) return pantsTextureRotationBase;
+    return angleToRotation(pantsAxisAngle);
+  }, [angleToRotation, pantsAxisAngle, pantsTextureRotationBase, patternStripe, stripeNameHint]);
   const fabricTextureFilter = useMemo(() => {
     const hasOverride =
       typeof textureBrightnessOverride === "number" || typeof textureContrastOverride === "number";
@@ -1005,23 +1002,28 @@ const SuitPreview = ({
     };
   }, [fabricMetrics.luminance, fabricMetrics.saturation]);
   const tunedTextureOpacity = useMemo(() => {
+    const stripeDamp = patternStripe || stripeNameHint ? 0.28 : 1;
     if (usePhotoBase) {
       const sat = fabricMetrics.saturation;
       const lum = fabricMetrics.lightness;
       const satBoost = sat > 0.55 ? 0.22 : sat < 0.2 ? 0.1 : 0.16;
       const lumBoost = lum > 0.6 ? 0.12 : lum < 0.25 ? 0.08 : 0.1;
-      return clamp(baseTextureOpacity * (0.55 + satBoost + lumBoost), 0.16, 0.42);
+      const baseOpacity = clamp(baseTextureOpacity * (0.55 + satBoost + lumBoost), 0.16, 0.42);
+      return clamp(baseOpacity * stripeDamp, 0.08, 0.42);
     }
     const stripeBoostMul = stripeBoost ? 1 + clamp(stripeStrength * 0.4, 0.12, 0.3) : 1;
     const maxOpacity = stripeBoost ? 0.82 : 0.72;
-    return clamp(baseTextureOpacity * autoTuning.texture.opacity * stripeBoostMul, 0.12, maxOpacity);
+    const baseOpacity = clamp(baseTextureOpacity * autoTuning.texture.opacity * stripeBoostMul, 0.12, maxOpacity);
+    return clamp(baseOpacity * stripeDamp, 0.08, maxOpacity);
   }, [
     autoTuning.texture.opacity,
     baseTextureOpacity,
     fabricMetrics.lightness,
     fabricMetrics.saturation,
+    patternStripe,
     stripeBoost,
     stripeStrength,
+    stripeNameHint,
     usePhotoBase,
   ]);
   const textureBlendMode = useMemo<React.CSSProperties["mixBlendMode"]>(() => {
@@ -1052,10 +1054,10 @@ const SuitPreview = ({
     const darkBoost = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const defaults =
       pantsPatternValueResolved === "tanke pruge"
-        ? { lineWidth: 1, spacing: 4, opacity: 0.3 }
+        ? { lineWidth: 0.8, spacing: 5, opacity: 0.22 }
         : pantsPatternValueResolved === "pruge"
-          ? { lineWidth: 1.2, spacing: 7, opacity: 0.26 }
-          : { lineWidth: 1, spacing: 12, opacity: 0.2 };
+          ? { lineWidth: 1, spacing: 8, opacity: 0.2 }
+          : { lineWidth: 0.9, spacing: 12, opacity: 0.18 };
     const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
     const isThinStripe =
       pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
@@ -1068,18 +1070,18 @@ const SuitPreview = ({
     );
     const opacityBase =
       typeof strengthRaw === "number"
-        ? clamp(0.06 + strengthRaw * 0.26, 0.08, 0.3)
+        ? clamp(0.05 + strengthRaw * 0.2, 0.06, 0.24)
         : defaults.opacity;
     const opacityScale = hasStripeSpacingOverride ? 0.85 : 1;
-    const boostedOpacity = (opacityBase + (darkBoost ? 0.04 : 0)) * opacityScale;
+    const boostedOpacity = (opacityBase + (darkBoost ? 0.02 : 0)) * opacityScale;
     const opacity = isPantsCmsStripe
-      ? clamp(boostedOpacity, 0.14, 0.34)
-      : clamp(boostedOpacity, 0.08, 0.28);
+      ? clamp(boostedOpacity, 0.1, 0.26)
+      : clamp(boostedOpacity, 0.06, 0.22);
     const brightnessRaw = parseNumber(
       (selectedFabric as any)?.textureBrightness ?? (selectedFabric as any)?.texture_brightness
     );
-    const brightenBase = brightnessRaw ?? (darkBoost ? 1.24 : 1.12);
-    const brighten = clamp(brightenBase, 1.05, darkBoost ? 1.32 : 1.2);
+    const brightenBase = brightnessRaw ?? (darkBoost ? 1.18 : 1.08);
+    const brighten = clamp(brightenBase, 1.03, darkBoost ? 1.24 : 1.16);
     const baseHex = tunedFabricFill || toneBaseColor;
     const baseRgb = hexToRgb(baseHex) ?? { r: 255, g: 255, b: 255 };
     const lineRgb = {
@@ -1088,7 +1090,7 @@ const SuitPreview = ({
       b: clampChannel(baseRgb.b * brighten),
     };
     const lineColor = `rgb(${lineRgb.r}, ${lineRgb.g}, ${lineRgb.b})`;
-    const lineWidth = hasStripeSpacingOverride ? clamp(spacing * 0.14, 0.5, 1.4) : defaults.lineWidth;
+    const lineWidth = hasStripeSpacingOverride ? clamp(spacing * 0.12, 0.4, 1.1) : defaults.lineWidth;
     return {
       pattern: pantsPatternValueResolved,
       lineWidth,
@@ -1096,7 +1098,7 @@ const SuitPreview = ({
       opacity,
       lineColor,
       lineRgb,
-      maxOpacity: hasStripeSpacingOverride ? 0.24 : 0.3,
+      maxOpacity: hasStripeSpacingOverride ? 0.2 : 0.24,
     };
   }, [
     fabricMetrics.lightness,
@@ -1117,10 +1119,10 @@ const SuitPreview = ({
     const darkBoost = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const defaults =
       pantsPatternValueResolved === "tanke pruge"
-        ? { lineWidth: 1, spacing: 4, opacity: 0.3 }
+        ? { lineWidth: 0.8, spacing: 5, opacity: 0.22 }
         : pantsPatternValueResolved === "pruge"
-          ? { lineWidth: 1.2, spacing: 7, opacity: 0.26 }
-          : { lineWidth: 1, spacing: 12, opacity: 0.2 };
+          ? { lineWidth: 1, spacing: 8, opacity: 0.2 }
+          : { lineWidth: 0.9, spacing: 12, opacity: 0.18 };
     const scale = hasExplicitTextureScale ? textureScaleBoost : 1;
     const isThinStripe =
       pantsPatternValueResolved.includes("tanke") || pantsPatternValueResolved.includes("pinstripe");
@@ -1133,18 +1135,18 @@ const SuitPreview = ({
     );
     const opacityBase =
       typeof strengthRaw === "number"
-        ? clamp(0.06 + strengthRaw * 0.26, 0.08, 0.3)
+        ? clamp(0.05 + strengthRaw * 0.2, 0.06, 0.24)
         : defaults.opacity;
     const opacityScale = hasStripeSpacingOverride ? 0.85 : 1;
-    const boostedOpacity = (opacityBase + (darkBoost ? 0.04 : 0)) * opacityScale;
+    const boostedOpacity = (opacityBase + (darkBoost ? 0.02 : 0)) * opacityScale;
     const opacity = isPantsCmsStripe
-      ? clamp(boostedOpacity, 0.14, 0.34)
-      : clamp(boostedOpacity, 0.08, 0.28);
+      ? clamp(boostedOpacity, 0.1, 0.26)
+      : clamp(boostedOpacity, 0.06, 0.22);
     const brightnessRaw = parseNumber(
       (selectedFabric as any)?.textureBrightness ?? (selectedFabric as any)?.texture_brightness
     );
-    const brightenBase = brightnessRaw ?? (darkBoost ? 1.24 : 1.12);
-    const brighten = clamp(brightenBase, 1.05, darkBoost ? 1.32 : 1.2);
+    const brightenBase = brightnessRaw ?? (darkBoost ? 1.18 : 1.08);
+    const brighten = clamp(brightenBase, 1.03, darkBoost ? 1.24 : 1.16);
     const baseHex = tunedFabricFill || toneBaseColor;
     const baseRgb = hexToRgb(baseHex) ?? { r: 255, g: 255, b: 255 };
     const lineRgb = {
@@ -1153,7 +1155,7 @@ const SuitPreview = ({
       b: clampChannel(baseRgb.b * brighten),
     };
     const lineColor = `rgb(${lineRgb.r}, ${lineRgb.g}, ${lineRgb.b})`;
-    const lineWidth = hasStripeSpacingOverride ? clamp(spacing * 0.14, 0.5, 1.4) : defaults.lineWidth;
+    const lineWidth = hasStripeSpacingOverride ? clamp(spacing * 0.12, 0.4, 1.1) : defaults.lineWidth;
     return {
       pattern: pantsPatternValueResolved,
       lineWidth,
@@ -1161,7 +1163,7 @@ const SuitPreview = ({
       opacity,
       lineColor,
       lineRgb,
-      maxOpacity: hasStripeSpacingOverride ? 0.24 : 0.3,
+      maxOpacity: hasStripeSpacingOverride ? 0.2 : 0.24,
     };
   }, [
     fabricMetrics.lightness,
@@ -1230,7 +1232,7 @@ const SuitPreview = ({
     };
   }, [fabricTextureStyle, isPantsCmsStripe, stripeBoost, stripeWhiteBoost]);
   const stripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
-    if (!useTexture || !stripeBoost) return null;
+    if (lowPowerMode || !useTexture || !stripeBoost) return null;
     const boostDark = fabricTone === "dark" || fabricMetrics.lightness < 0.45;
     const baseOpacity = usePhotoBase ? 0.12 : 0.18;
     const spacingOpacityMul = hasStripeSpacingOverride ? 0.7 : 1;
@@ -1252,6 +1254,7 @@ const SuitPreview = ({
     fabricMetrics.lightness,
     fabricTone,
     hasStripeSpacingOverride,
+    lowPowerMode,
     stripeBoost,
     stripeStrength,
     textureBrightnessOverride,
@@ -1438,7 +1441,7 @@ const SuitPreview = ({
           const c = document.createElement("canvas");
           const ctx = c.getContext("2d");
           if (!ctx) return;
-          const size = STRIPE_ANALYSIS_SIZE;
+          const size = lowPowerMode ? 64 : STRIPE_ANALYSIS_SIZE;
           c.width = size;
           c.height = size;
           ctx.drawImage(img, 0, 0, size, size);
@@ -1479,9 +1482,10 @@ const SuitPreview = ({
           const sx = Math.max(0, Math.round((naturalW - crop) / 2));
           const sy = Math.max(0, Math.round((naturalH - crop) / 2));
           const minTile = Math.min(TEXTURE_TILE_PX, crop);
-          const tileScale =
-            stripeTileStrength > 0.22 ? TEXTURE_TILE_CANVAS_SCALE * 1.6 : TEXTURE_TILE_CANVAS_SCALE;
-          const tilePx = Math.round(clamp(crop * tileScale, minTile, TEXTURE_TILE_CANVAS_MAX));
+          const tileScaleBase = lowPowerMode ? TEXTURE_TILE_CANVAS_SCALE * 0.85 : TEXTURE_TILE_CANVAS_SCALE;
+          const tileScale = stripeTileStrength > 0.22 ? tileScaleBase * 1.6 : tileScaleBase;
+          const tileMax = lowPowerMode ? Math.min(200, TEXTURE_TILE_CANVAS_MAX) : TEXTURE_TILE_CANVAS_MAX;
+          const tilePx = Math.round(clamp(crop * tileScale, minTile, tileMax));
           const downscale = crop / tilePx;
           const smooth = stripeTileStrength > 0.22 ? downscale <= 2.5 : downscale <= 4;
           tile.width = tilePx;
@@ -1516,7 +1520,7 @@ const SuitPreview = ({
       if (idleId !== null && cancelIdle) cancelIdle(idleId);
       if (timeoutId !== null) window.clearTimeout(timeoutId);
     };
-  }, [fabricTexture, patternStripe]);
+  }, [fabricTexture, lowPowerMode, patternStripe]);
 
   useEffect(() => {
     if (onAssetStatus) {
@@ -1760,10 +1764,7 @@ const SuitPreview = ({
     []
   );
   const pantsStripeOffsets = PANTS_STRIPE_TUNING.stripeOffsets;
-  const pantsStripeBaseAngle = useMemo(
-    () => pantsTextureRotationBase,
-    [pantsTextureRotationBase]
-  );
+  const pantsStripeBaseAngle = useMemo(() => pantsTextureRotationBase, [pantsTextureRotationBase]);
   const resolveLegAngle = useCallback(
     (measured: number | null | undefined, fallback: number) => {
       if (typeof measured !== "number" || !Number.isFinite(measured)) return fallback;
@@ -1772,44 +1773,22 @@ const SuitPreview = ({
     },
     []
   );
-  const resolvePantsSplitRotation = useCallback(
-    (_desiredAngle: number) => {
-      return pantsStripeBaseAngle;
-    },
-    [pantsStripeBaseAngle]
-  );
   const pantsSplitRotation = useMemo(
     () => ({
-      diag: resolvePantsSplitRotation(PANTS_STRIPE_TUNING.diagAbsDeg),
-      fly: resolvePantsSplitRotation(PANTS_STRIPE_TUNING.flyAbsDeg),
-      waist: resolvePantsSplitRotation(PANTS_STRIPE_TUNING.waistAbsDeg),
+      diag: resolveLegAngle(pantsLegAngles?.left, PANTS_STRIPE_TUNING.diagAbsDeg),
+      fly: 0,
+      waist: 0,
     }),
-    [resolvePantsSplitRotation]
-  );
-  const useFixedSplitRotation = patternStripe || stripeBoost;
-  const fixedSplitRotation = useMemo(
-    () => angleToRotation(pantsStripeBaseAngle),
-    [angleToRotation, pantsStripeBaseAngle]
+    [pantsLegAngles?.left, resolveLegAngle]
   );
   const pantsSplitTextureRotation = useMemo(
     () => ({
-      left: useFixedSplitRotation
-        ? fixedSplitRotation
-        : angleToRotation(resolveLegAngle(pantsLegAngles?.left, pantsStripeBaseAngle)),
-      right: useFixedSplitRotation
-        ? fixedSplitRotation
-        : angleToRotation(resolveLegAngle(pantsLegAngles?.right, pantsStripeBaseAngle)),
-      fly: useFixedSplitRotation ? fixedSplitRotation : angleToRotation(pantsStripeBaseAngle),
-      waist: useFixedSplitRotation ? fixedSplitRotation : angleToRotation(pantsStripeBaseAngle),
+      left: angleToRotation(resolveLegAngle(pantsLegAngles?.left, pantsStripeBaseAngle)),
+      right: angleToRotation(0),
+      fly: angleToRotation(0),
+      waist: angleToRotation(0),
     }),
-    [
-      angleToRotation,
-      fixedSplitRotation,
-      pantsLegAngles,
-      pantsStripeBaseAngle,
-      resolveLegAngle,
-      useFixedSplitRotation,
-    ]
+    [angleToRotation, pantsLegAngles?.left, pantsStripeBaseAngle, resolveLegAngle]
   );
   const pantsLeftMainMask = pantsLeftSplitMasks?.main ?? pantsMask;
   const pantsLeftUnderMask = pantsLeftSplitMasks?.under ?? null;
