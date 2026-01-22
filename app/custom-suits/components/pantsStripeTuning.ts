@@ -1,6 +1,6 @@
 export const PANTS_STRIPE_TUNING = {
   // Absolute rotations for pants split zones (ignore tile base orientation).
-  diagAbsDeg: 24,
+  diagAbsDeg: 55,
   flyAbsDeg: 0,
   waistAbsDeg: 90,
 
@@ -9,13 +9,13 @@ export const PANTS_STRIPE_TUNING = {
     refHeight: 254,
     slope: 0.43496,
     intercept: 16.11,
-    underBiasPx: 4,
-    xPadPx: 4,
-    smoothPx: 6,
+    underBiasPx: 12,
+    xPadPx: 2,
+    smoothPx: 5,
     sampleMaxJumpRatio: 0.12,
-    diagonalMaxXRatio: 0.6,
-    boundaryPadPx: 5,
-    boundaryMaxPadPx: 10,
+    diagonalMaxXRatio: 0.86,
+    boundaryPadPx: 18,
+    boundaryMaxPadPx: 22,
   },
 
   stripeOffsets: {
@@ -30,10 +30,11 @@ export const PANTS_STRIPE_TUNING = {
   rightSplitRatio: 98 / 254,
 
   // Gentle X push for continuity on the right.
-  rightForceXRatio: 0.94,
-  boundaryPadPx: 12,
-  boundarySmoothPx: 9,
-  waistbandXRatio: 0.975,
+  rightForceXRatio: 0.975,
+  boundaryPadPx: 28,
+  boundarySmoothPx: 6,
+  waistbandXRatio: 0.94,
+  waistMaskXRatio: 0.965,
 
   // Must stay low to preserve zone separation.
   stripeRotationMinStrength: 0.02,
