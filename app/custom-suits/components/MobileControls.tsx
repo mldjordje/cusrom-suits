@@ -742,37 +742,41 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
     <>
       <div className="lg:hidden">
         <div className="fixed bottom-0 left-0 right-0 z-30">
-          <div className="mx-auto w-full max-w-md border-t border-black/5 bg-white/95 px-3 pb-3 pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur-sm">
-            <div className="flex items-center justify-between gap-2">
+          <div className="mx-auto w-full max-w-md rounded-t-[26px] border border-black/5 bg-white/90 px-3 pb-2.5 pt-1.5 shadow-[0_-10px_30px_rgba(15,23,42,0.12)] backdrop-blur-md">
+            <div className="flex items-center justify-between gap-1.5">
               {NAV.map((item) => {
                 const active = currentPanel === item.id;
                 return (
                   <button
                     key={item.id}
                     onClick={() => setPanel(item.id)}
-                    className={`flex flex-1 flex-col items-center gap-1 py-1 transition ${
+                    className={`flex flex-1 flex-col items-center gap-0.5 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] transition ${
                       active ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
                     }`}
                   >
-                    <span className="flex h-8 w-8 items-center justify-center">
-                      <img src={item.icon} alt={item.label} className="h-5 w-5 object-contain opacity-80" />
+                    <span
+                      className={`flex h-7 w-7 items-center justify-center rounded-full ${active ? "bg-gray-100" : "bg-transparent"}`}
+                    >
+                      <img src={item.icon} alt={item.label} className="h-[18px] w-[18px] object-contain opacity-80" />
                     </span>
-                    <span className="text-[9px] font-semibold tracking-[0.2em] uppercase">{item.label}</span>
+                    <span className="leading-tight">{item.label}</span>
                   </button>
                 );
               })}
             </div>
-            <div className="mt-2 flex items-center justify-between gap-3">
+            <div className="mt-1.5 flex items-center justify-between gap-3 rounded-2xl border border-black/5 bg-white/95 px-3 py-2">
               <div className="min-w-0">
                 <p className="text-[10px] font-semibold text-gray-900">Vase odelo</p>
-                <p className="text-xl font-semibold text-gray-900">{price.total} EUR</p>
-                <p className="text-[10px] text-gray-500">Tkanina {fabricPrice} EUR</p>
+                <div className="flex items-baseline gap-1">
+                  <p className="text-lg font-semibold text-gray-900">{price.total} EUR</p>
+                  <p className="text-[10px] text-gray-500">Tkanina {fabricPrice} EUR</p>
+                </div>
                 <button
                   type="button"
                   onClick={() => {
                     window.location.href = measurementUrl;
                   }}
-                  className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
+                  className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.18em] text-gray-500 underline-offset-4 hover:text-gray-900"
                 >
                   Nastavi na merenje
                 </button>
@@ -780,7 +784,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
               <button
                 onClick={handleAddToCart}
                 disabled={savingCart}
-                className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
+                className="rounded-full bg-[#ff7a00] px-3.5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
               >
                 Sacuvaj dizajn
               </button>
@@ -801,7 +805,4 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   );
 }
 
-export default MobileControls;
-
-
-
+export default React.memo(MobileControls);
