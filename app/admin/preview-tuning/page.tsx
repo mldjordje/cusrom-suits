@@ -4,12 +4,15 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminNav from "../components/AdminNav";
 import SuitPreview from "@/app/custom-suits/components/SuitPreview";
 import { useSuitConfigurator } from "@/app/custom-suits/hooks/useSuitConfigurator";
-import {
-  suits,
-  vestStyles,
-  fabrics as fallbackFabrics,
-} from "@/app/custom-suits/data/options";
+import * as SuitOptions from "@/app/custom-suits/data/options";
 import { useFabrics } from "@/app/custom-suits/hooks/useFabrics";
+
+const suits = SuitOptions.suits;
+const fallbackFabrics = SuitOptions.fabrics;
+const vestStyles = ((SuitOptions as any).vestStyles ?? []) as Array<{
+  id: string;
+  name: string;
+}>;
 
 type PreviewView = "both" | "jacket" | "pants";
 type ContrastLevel = "low" | "medium" | "high";
