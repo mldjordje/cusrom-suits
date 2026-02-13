@@ -6,6 +6,7 @@ import SuitPreview from "@/app/custom-suits/components/SuitPreview";
 import { useSuitConfigurator } from "@/app/custom-suits/hooks/useSuitConfigurator";
 import { suits, fabrics as fallbackFabrics } from "@/app/custom-suits/data/options";
 import { useFabrics } from "@/app/custom-suits/hooks/useFabrics";
+import { PANTS_STRIPE_MANUAL_TUNING } from "@/app/custom-suits/components/pantsStripeManualTuning";
 
 const vestStyles: Array<{
   id: string;
@@ -51,6 +52,39 @@ type TuningDraft = {
 
 type DraftKey = keyof TuningDraft;
 
+type PantsZoneDraft = {
+  singleLeftAbsDeg: string;
+  singleFlyAbsDeg: string;
+  singleRightAbsDeg: string;
+  leftMainAbsDeg: string;
+  rightUpperAbsDeg: string;
+  rightLowerAbsDeg: string;
+  waistAbsDeg: string;
+  boundaryTopXRatio: string;
+  boundaryBottomXRatio: string;
+  boundaryMinXRatio: string;
+  boundaryMaxXRatio: string;
+  waistXRatio: string;
+  rightLowerStartYRatio: string;
+  rightLowerSlopeRatio: string;
+  beltStartXRatio: string;
+  beltTopYRatio: string;
+  beltBottomYRatio: string;
+  boundaryFeatherPx: string;
+  leftMainOffsetX: string;
+  leftMainOffsetY: string;
+  leftUnderlapOffsetX: string;
+  leftUnderlapOffsetY: string;
+  rightFlyOffsetX: string;
+  rightFlyOffsetY: string;
+  rightUnderOffsetX: string;
+  rightUnderOffsetY: string;
+  waistOffsetX: string;
+  waistOffsetY: string;
+};
+
+type PantsZoneKey = keyof PantsZoneDraft;
+
 type FabricPatch = {
   textureScale?: number;
   textureStrength?: number;
@@ -84,6 +118,16 @@ type SliderDef = {
   fixed: number;
 };
 
+type ZoneSliderDef = {
+  key: PantsZoneKey;
+  label: string;
+  min: number;
+  max: number;
+  step: number;
+  fallback: number;
+  fixed: number;
+};
+
 const PRESET_STORAGE_KEY = "admin:preview-tuning:presets:v2";
 const DEFAULT_STYLE = suits[0]?.id || "single_1btn";
 const DEFAULT_COLOR = suits[0]?.colorId || "blue";
@@ -100,6 +144,37 @@ const DEFAULT_DRAFT: TuningDraft = {
   renderMode: "",
   renderBasePath: "",
   colorHex: "",
+};
+
+const DEFAULT_ZONE_DRAFT: PantsZoneDraft = {
+  singleLeftAbsDeg: String(PANTS_STRIPE_MANUAL_TUNING.directions.singleLeftAbsDeg),
+  singleFlyAbsDeg: String(PANTS_STRIPE_MANUAL_TUNING.directions.singleFlyAbsDeg),
+  singleRightAbsDeg: String(PANTS_STRIPE_MANUAL_TUNING.directions.singleRightAbsDeg),
+  leftMainAbsDeg: String(PANTS_STRIPE_MANUAL_TUNING.directions.leftMainAbsDeg),
+  rightUpperAbsDeg: String(PANTS_STRIPE_MANUAL_TUNING.directions.rightUpperAbsDeg),
+  rightLowerAbsDeg: String(PANTS_STRIPE_MANUAL_TUNING.directions.rightLowerAbsDeg),
+  waistAbsDeg: String(PANTS_STRIPE_MANUAL_TUNING.directions.waistAbsDeg),
+  boundaryTopXRatio: String(PANTS_STRIPE_MANUAL_TUNING.boundaries.boundaryTopXRatio),
+  boundaryBottomXRatio: String(PANTS_STRIPE_MANUAL_TUNING.boundaries.boundaryBottomXRatio),
+  boundaryMinXRatio: String(PANTS_STRIPE_MANUAL_TUNING.boundaries.boundaryMinXRatio),
+  boundaryMaxXRatio: String(PANTS_STRIPE_MANUAL_TUNING.boundaries.boundaryMaxXRatio),
+  waistXRatio: String(PANTS_STRIPE_MANUAL_TUNING.boundaries.waistXRatio),
+  rightLowerStartYRatio: String(PANTS_STRIPE_MANUAL_TUNING.boundaries.rightLowerStartYRatio),
+  rightLowerSlopeRatio: String(PANTS_STRIPE_MANUAL_TUNING.boundaries.rightLowerSlopeRatio),
+  beltStartXRatio: String(PANTS_STRIPE_MANUAL_TUNING.boundaries.beltStartXRatio),
+  beltTopYRatio: String(PANTS_STRIPE_MANUAL_TUNING.boundaries.beltTopYRatio),
+  beltBottomYRatio: String(PANTS_STRIPE_MANUAL_TUNING.boundaries.beltBottomYRatio),
+  boundaryFeatherPx: String(PANTS_STRIPE_MANUAL_TUNING.boundaries.boundaryFeatherPx),
+  leftMainOffsetX: String(PANTS_STRIPE_MANUAL_TUNING.offsets.leftMain.x),
+  leftMainOffsetY: String(PANTS_STRIPE_MANUAL_TUNING.offsets.leftMain.y),
+  leftUnderlapOffsetX: String(PANTS_STRIPE_MANUAL_TUNING.offsets.leftUnderlap.x),
+  leftUnderlapOffsetY: String(PANTS_STRIPE_MANUAL_TUNING.offsets.leftUnderlap.y),
+  rightFlyOffsetX: String(PANTS_STRIPE_MANUAL_TUNING.offsets.rightFly.x),
+  rightFlyOffsetY: String(PANTS_STRIPE_MANUAL_TUNING.offsets.rightFly.y),
+  rightUnderOffsetX: String(PANTS_STRIPE_MANUAL_TUNING.offsets.rightUnder.x),
+  rightUnderOffsetY: String(PANTS_STRIPE_MANUAL_TUNING.offsets.rightUnder.y),
+  waistOffsetX: String(PANTS_STRIPE_MANUAL_TUNING.offsets.waist.x),
+  waistOffsetY: String(PANTS_STRIPE_MANUAL_TUNING.offsets.waist.y),
 };
 
 const DEFAULT_LAYER_VISIBILITY: Record<LayerKey, boolean> = {
@@ -127,8 +202,8 @@ const SLIDERS: SliderDef[] = [
   {
     key: "textureScale",
     label: "Texture scale",
-    min: 0.08,
-    max: 1.1,
+    min: 0.03,
+    max: 3.2,
     step: 0.01,
     fallback: 1,
     fixed: 2,
@@ -136,8 +211,8 @@ const SLIDERS: SliderDef[] = [
   {
     key: "textureStrength",
     label: "Texture strength",
-    min: 0.05,
-    max: 0.8,
+    min: 0,
+    max: 2.2,
     step: 0.01,
     fallback: 0.28,
     fixed: 2,
@@ -145,8 +220,8 @@ const SLIDERS: SliderDef[] = [
   {
     key: "textureContrast",
     label: "Texture contrast",
-    min: 0.85,
-    max: 1.6,
+    min: 0.5,
+    max: 2.4,
     step: 0.01,
     fallback: 1.1,
     fixed: 2,
@@ -154,8 +229,8 @@ const SLIDERS: SliderDef[] = [
   {
     key: "textureBrightness",
     label: "Texture brightness",
-    min: 0.8,
-    max: 1.35,
+    min: 0.5,
+    max: 2.2,
     step: 0.01,
     fallback: 1,
     fixed: 2,
@@ -163,30 +238,61 @@ const SLIDERS: SliderDef[] = [
   {
     key: "stripeSpacingJacket",
     label: "Stripe spacing jacket",
-    min: 1,
-    max: 10,
-    step: 1,
+    min: 0.5,
+    max: 24,
+    step: 0.5,
     fallback: 6,
-    fixed: 0,
+    fixed: 1,
   },
   {
     key: "stripeSpacingPants",
     label: "Stripe spacing pants",
-    min: 1,
-    max: 10,
-    step: 1,
+    min: 0.5,
+    max: 24,
+    step: 0.5,
     fallback: 6,
-    fixed: 0,
+    fixed: 1,
   },
   {
     key: "pantsTextureRotation",
     label: "Pants rotation",
-    min: -90,
-    max: 90,
+    min: -180,
+    max: 180,
     step: 1,
     fallback: 0,
     fixed: 0,
   },
+];
+
+const ZONE_SLIDERS: ZoneSliderDef[] = [
+  { key: "singleLeftAbsDeg", label: "Single left angle", min: -180, max: 180, step: 1, fallback: 0, fixed: 0 },
+  { key: "singleFlyAbsDeg", label: "Single fly angle", min: -180, max: 180, step: 1, fallback: 0, fixed: 0 },
+  { key: "singleRightAbsDeg", label: "Single right angle", min: -180, max: 180, step: 1, fallback: 0, fixed: 0 },
+  { key: "leftMainAbsDeg", label: "Left zone angle", min: -180, max: 180, step: 1, fallback: 0, fixed: 0 },
+  { key: "rightUpperAbsDeg", label: "Right upper angle", min: -180, max: 180, step: 1, fallback: 0, fixed: 0 },
+  { key: "rightLowerAbsDeg", label: "Right lower angle", min: -180, max: 180, step: 1, fallback: 0, fixed: 0 },
+  { key: "waistAbsDeg", label: "Belt angle", min: -180, max: 180, step: 1, fallback: 0, fixed: 0 },
+  { key: "boundaryTopXRatio", label: "Boundary top X", min: -0.2, max: 1.2, step: 0.01, fallback: 0.2, fixed: 2 },
+  { key: "boundaryBottomXRatio", label: "Boundary bottom X", min: -0.2, max: 1.2, step: 0.01, fallback: 0.5, fixed: 2 },
+  { key: "boundaryMinXRatio", label: "Boundary min X", min: -0.2, max: 1.2, step: 0.01, fallback: 0.2, fixed: 2 },
+  { key: "boundaryMaxXRatio", label: "Boundary max X", min: -0.2, max: 1.2, step: 0.01, fallback: 0.6, fixed: 2 },
+  { key: "waistXRatio", label: "Waist split X", min: 0.6, max: 1.2, step: 0.005, fallback: 0.94, fixed: 3 },
+  { key: "rightLowerStartYRatio", label: "Right lower start Y", min: -0.2, max: 1.8, step: 0.01, fallback: 1.1, fixed: 2 },
+  { key: "rightLowerSlopeRatio", label: "Right lower slope", min: -1, max: 1, step: 0.01, fallback: 0, fixed: 2 },
+  { key: "beltStartXRatio", label: "Belt start X", min: 0.7, max: 1.05, step: 0.001, fallback: 0.97, fixed: 3 },
+  { key: "beltTopYRatio", label: "Belt top Y", min: -0.2, max: 1.2, step: 0.005, fallback: 0.02, fixed: 3 },
+  { key: "beltBottomYRatio", label: "Belt bottom Y", min: -0.2, max: 1.2, step: 0.005, fallback: 0.98, fixed: 3 },
+  { key: "boundaryFeatherPx", label: "Boundary feather", min: 0, max: 8, step: 0.05, fallback: 0.6, fixed: 2 },
+  { key: "leftMainOffsetX", label: "Left offset X", min: -80, max: 80, step: 1, fallback: 0, fixed: 0 },
+  { key: "leftMainOffsetY", label: "Left offset Y", min: -80, max: 80, step: 1, fallback: 0, fixed: 0 },
+  { key: "leftUnderlapOffsetX", label: "Underlap offset X", min: -80, max: 80, step: 1, fallback: 0, fixed: 0 },
+  { key: "leftUnderlapOffsetY", label: "Underlap offset Y", min: -80, max: 80, step: 1, fallback: 0, fixed: 0 },
+  { key: "rightFlyOffsetX", label: "Right fly offset X", min: -80, max: 80, step: 1, fallback: 0, fixed: 0 },
+  { key: "rightFlyOffsetY", label: "Right fly offset Y", min: -80, max: 80, step: 1, fallback: 0, fixed: 0 },
+  { key: "rightUnderOffsetX", label: "Right lower offset X", min: -80, max: 80, step: 1, fallback: 0, fixed: 0 },
+  { key: "rightUnderOffsetY", label: "Right lower offset Y", min: -80, max: 80, step: 1, fallback: 0, fixed: 0 },
+  { key: "waistOffsetX", label: "Waist offset X", min: -80, max: 80, step: 1, fallback: 0, fixed: 0 },
+  { key: "waistOffsetY", label: "Waist offset Y", min: -80, max: 80, step: 1, fallback: 0, fixed: 0 },
 ];
 
 const clamp = (value: number, min: number, max: number) =>
@@ -384,6 +490,7 @@ export default function PreviewTuningAdminPage() {
   const [presetName, setPresetName] = useState("");
   const [presets, setPresets] = useState<LocalPreset[]>([]);
   const [jsonPatchInput, setJsonPatchInput] = useState("");
+  const [zoneDraft, setZoneDraft] = useState<PantsZoneDraft>(DEFAULT_ZONE_DRAFT);
   const { fabrics, loading: fabricsLoading, error: fabricsError } = useFabrics();
 
   const fabricList = useMemo(() => (fabrics.length ? fabrics : fallbackFabrics), [fabrics]);
@@ -446,6 +553,132 @@ export default function PreviewTuningAdminPage() {
     window.localStorage.setItem(PRESET_STORAGE_KEY, JSON.stringify(presets));
   }, [presets]);
 
+  const zoneOverrideRuntime = useMemo(() => {
+    const toNum = (value: string, fallback: number) => {
+      const num = Number(value);
+      return Number.isFinite(num) ? num : fallback;
+    };
+    return {
+      directions: {
+        singleLeftAbsDeg: toNum(
+          zoneDraft.singleLeftAbsDeg,
+          PANTS_STRIPE_MANUAL_TUNING.directions.singleLeftAbsDeg
+        ),
+        singleFlyAbsDeg: toNum(
+          zoneDraft.singleFlyAbsDeg,
+          PANTS_STRIPE_MANUAL_TUNING.directions.singleFlyAbsDeg
+        ),
+        singleRightAbsDeg: toNum(
+          zoneDraft.singleRightAbsDeg,
+          PANTS_STRIPE_MANUAL_TUNING.directions.singleRightAbsDeg
+        ),
+        leftMainAbsDeg: toNum(
+          zoneDraft.leftMainAbsDeg,
+          PANTS_STRIPE_MANUAL_TUNING.directions.leftMainAbsDeg
+        ),
+        rightUpperAbsDeg: toNum(
+          zoneDraft.rightUpperAbsDeg,
+          PANTS_STRIPE_MANUAL_TUNING.directions.rightUpperAbsDeg
+        ),
+        rightLowerAbsDeg: toNum(
+          zoneDraft.rightLowerAbsDeg,
+          PANTS_STRIPE_MANUAL_TUNING.directions.rightLowerAbsDeg
+        ),
+        waistAbsDeg: toNum(zoneDraft.waistAbsDeg, PANTS_STRIPE_MANUAL_TUNING.directions.waistAbsDeg),
+      },
+      boundaries: {
+        boundaryTopXRatio: toNum(
+          zoneDraft.boundaryTopXRatio,
+          PANTS_STRIPE_MANUAL_TUNING.boundaries.boundaryTopXRatio
+        ),
+        boundaryBottomXRatio: toNum(
+          zoneDraft.boundaryBottomXRatio,
+          PANTS_STRIPE_MANUAL_TUNING.boundaries.boundaryBottomXRatio
+        ),
+        boundaryMinXRatio: toNum(
+          zoneDraft.boundaryMinXRatio,
+          PANTS_STRIPE_MANUAL_TUNING.boundaries.boundaryMinXRatio
+        ),
+        boundaryMaxXRatio: toNum(
+          zoneDraft.boundaryMaxXRatio,
+          PANTS_STRIPE_MANUAL_TUNING.boundaries.boundaryMaxXRatio
+        ),
+        waistXRatio: toNum(
+          zoneDraft.waistXRatio,
+          PANTS_STRIPE_MANUAL_TUNING.boundaries.waistXRatio
+        ),
+        rightLowerStartYRatio: toNum(
+          zoneDraft.rightLowerStartYRatio,
+          PANTS_STRIPE_MANUAL_TUNING.boundaries.rightLowerStartYRatio
+        ),
+        rightLowerSlopeRatio: toNum(
+          zoneDraft.rightLowerSlopeRatio,
+          PANTS_STRIPE_MANUAL_TUNING.boundaries.rightLowerSlopeRatio
+        ),
+        beltStartXRatio: toNum(
+          zoneDraft.beltStartXRatio,
+          PANTS_STRIPE_MANUAL_TUNING.boundaries.beltStartXRatio
+        ),
+        beltTopYRatio: toNum(
+          zoneDraft.beltTopYRatio,
+          PANTS_STRIPE_MANUAL_TUNING.boundaries.beltTopYRatio
+        ),
+        beltBottomYRatio: toNum(
+          zoneDraft.beltBottomYRatio,
+          PANTS_STRIPE_MANUAL_TUNING.boundaries.beltBottomYRatio
+        ),
+        boundaryFeatherPx: toNum(
+          zoneDraft.boundaryFeatherPx,
+          PANTS_STRIPE_MANUAL_TUNING.boundaries.boundaryFeatherPx
+        ),
+      },
+      offsets: {
+        leftMain: {
+          x: toNum(zoneDraft.leftMainOffsetX, PANTS_STRIPE_MANUAL_TUNING.offsets.leftMain.x),
+          y: toNum(zoneDraft.leftMainOffsetY, PANTS_STRIPE_MANUAL_TUNING.offsets.leftMain.y),
+        },
+        leftUnderlap: {
+          x: toNum(
+            zoneDraft.leftUnderlapOffsetX,
+            PANTS_STRIPE_MANUAL_TUNING.offsets.leftUnderlap.x
+          ),
+          y: toNum(
+            zoneDraft.leftUnderlapOffsetY,
+            PANTS_STRIPE_MANUAL_TUNING.offsets.leftUnderlap.y
+          ),
+        },
+        rightFly: {
+          x: toNum(zoneDraft.rightFlyOffsetX, PANTS_STRIPE_MANUAL_TUNING.offsets.rightFly.x),
+          y: toNum(zoneDraft.rightFlyOffsetY, PANTS_STRIPE_MANUAL_TUNING.offsets.rightFly.y),
+        },
+        rightUnder: {
+          x: toNum(zoneDraft.rightUnderOffsetX, PANTS_STRIPE_MANUAL_TUNING.offsets.rightUnder.x),
+          y: toNum(zoneDraft.rightUnderOffsetY, PANTS_STRIPE_MANUAL_TUNING.offsets.rightUnder.y),
+        },
+        waist: {
+          x: toNum(zoneDraft.waistOffsetX, PANTS_STRIPE_MANUAL_TUNING.offsets.waist.x),
+          y: toNum(zoneDraft.waistOffsetY, PANTS_STRIPE_MANUAL_TUNING.offsets.waist.y),
+        },
+      },
+    } as const;
+  }, [zoneDraft]);
+
+  if (typeof window !== "undefined") {
+    (window as any).__SANTOS_PANTS_STRIPE_TUNING_OVERRIDE = zoneOverrideRuntime;
+  }
+
+  const zoneSignature = useMemo(() => JSON.stringify(zoneOverrideRuntime), [zoneOverrideRuntime]);
+
+  useEffect(
+    () => () => {
+      if (typeof window === "undefined") return;
+      if ((window as any).__SANTOS_PANTS_STRIPE_TUNING_OVERRIDE) {
+        delete (window as any).__SANTOS_PANTS_STRIPE_TUNING_OVERRIDE;
+      }
+    },
+    []
+  );
+
   const visibleFabrics = useMemo(() => {
     const q = search.trim().toLowerCase();
     return fabricList.filter((fabric: any) => {
@@ -471,6 +704,10 @@ export default function PreviewTuningAdminPage() {
   const setDraftField = (key: DraftKey, value: string) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
     if (status.type === "success") setStatus({ type: "idle" });
+  };
+
+  const setZoneField = (key: PantsZoneKey, value: string) => {
+    setZoneDraft((prev) => ({ ...prev, [key]: value }));
   };
 
   const resetDraft = () => {
@@ -637,6 +874,14 @@ export default function PreviewTuningAdminPage() {
     const current = parseNullableNumber(draft[field]) ?? meta.fallback;
     const next = clamp(current + delta, meta.min, meta.max);
     setDraftField(field, next.toFixed(meta.fixed));
+  };
+
+  const nudgeZoneNumber = (field: PantsZoneKey, delta: number) => {
+    const meta = ZONE_SLIDERS.find((item) => item.key === field);
+    if (!meta) return;
+    const current = parseNullableNumber(zoneDraft[field]) ?? meta.fallback;
+    const next = clamp(current + delta, meta.min, meta.max);
+    setZoneField(field, next.toFixed(meta.fixed));
   };
 
   const savePreset = () => {
@@ -896,6 +1141,7 @@ export default function PreviewTuningAdminPage() {
               <div className="rounded-xl border border-gray-200 bg-[#efefef] p-3">
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-700">Baseline</h3>
                 <SuitPreviewCompat
+                  key={`baseline-${zoneSignature}-${config.styleId}-${String(config.colorId || "")}`}
                   config={config}
                   view={previewView}
                   level={previewLevel}
@@ -908,6 +1154,7 @@ export default function PreviewTuningAdminPage() {
               <div className="rounded-xl border border-gray-200 bg-[#efefef] p-3">
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-700">Tuned</h3>
                 <SuitPreviewCompat
+                  key={`tuned-${zoneSignature}-${config.styleId}-${String(config.colorId || "")}`}
                   config={config}
                   view={previewView}
                   level={previewLevel}
@@ -921,6 +1168,7 @@ export default function PreviewTuningAdminPage() {
           ) : (
             <div className="rounded-xl border border-gray-200 bg-[#efefef] p-3">
               <SuitPreviewCompat
+                key={`single-${zoneSignature}-${config.styleId}-${String(config.colorId || "")}`}
                 config={config}
                 view={previewView}
                 level={previewLevel}
@@ -943,7 +1191,7 @@ export default function PreviewTuningAdminPage() {
                   <div key={meta.key} className="space-y-1.5">
                     <div className="flex items-center justify-between text-[11px] text-gray-700">
                       <span className="font-semibold">{meta.label}</span>
-                      <span>{current.toFixed(meta.fixed)}</span>
+                      <span>{`${current.toFixed(meta.fixed)} (${meta.min.toFixed(meta.fixed)}-${meta.max.toFixed(meta.fixed)})`}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <button
@@ -973,6 +1221,66 @@ export default function PreviewTuningAdminPage() {
                   </div>
                 );
               })}
+            </div>
+
+            <div className="space-y-3 rounded-xl border border-gray-200 bg-gray-50 p-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.14em] text-gray-700">
+                  Pants Zone Tuning
+                </h3>
+                <button
+                  type="button"
+                  onClick={() => setZoneDraft(DEFAULT_ZONE_DRAFT)}
+                  className="rounded border border-gray-200 bg-white px-2 py-1 text-[11px] font-semibold text-gray-700"
+                >
+                  Reset zones
+                </button>
+              </div>
+              <div className="grid gap-2 md:grid-cols-2">
+                {ZONE_SLIDERS.map((meta) => {
+                  const current = clamp(
+                    parseNullableNumber(zoneDraft[meta.key]) ?? meta.fallback,
+                    meta.min,
+                    meta.max
+                  );
+                  return (
+                    <div key={meta.key} className="space-y-1.5 rounded-lg border border-gray-200 bg-white p-2">
+                      <div className="flex items-center justify-between text-[11px] text-gray-700">
+                        <span className="font-semibold">{meta.label}</span>
+                        <span>{`${current.toFixed(meta.fixed)} (${meta.min.toFixed(meta.fixed)}-${meta.max.toFixed(meta.fixed)})`}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => nudgeZoneNumber(meta.key, -meta.step)}
+                          className="rounded border border-gray-200 bg-white px-2 py-1 text-xs font-semibold"
+                        >
+                          -
+                        </button>
+                        <input
+                          type="range"
+                          min={meta.min}
+                          max={meta.max}
+                          step={meta.step}
+                          value={current}
+                          onChange={(e) => setZoneField(meta.key, e.target.value)}
+                          className="h-2 flex-1 cursor-pointer accent-gray-900"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => nudgeZoneNumber(meta.key, meta.step)}
+                          className="rounded border border-gray-200 bg-white px-2 py-1 text-xs font-semibold"
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-gray-500">
+                Ovi slideri utiču samo na live preview u ovoj admin stranici (bez čuvanja u fabric CMS).
+              </p>
             </div>
 
             <div className="grid gap-2 rounded-xl border border-gray-200 bg-gray-50 p-3">

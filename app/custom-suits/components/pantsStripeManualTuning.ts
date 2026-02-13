@@ -28,9 +28,9 @@ export const PANTS_STRIPE_MANUAL_TUNING = {
 
     // Right-lower split line controls.
     // Larger start means lower zone appears less often.
-    rightLowerStartYRatio: 0.72,
+    rightLowerStartYRatio: 1.2,
     // Positive slope tilts the split down as X increases.
-    rightLowerSlopeRatio: -0.02,
+    rightLowerSlopeRatio: 0,
 
     // Legacy/fallback clamps still used by split logic.
     boundaryMinXRatio: 0.12,
@@ -45,7 +45,7 @@ export const PANTS_STRIPE_MANUAL_TUNING = {
     beltBottomYRatio: 0.98,
 
     // Feather to soften hard seams between masks.
-    boundaryFeatherPx: 0.8,
+    boundaryFeatherPx: 0.45,
   },
 
   offsets: {
