@@ -6,35 +6,35 @@ export type ManualOffset = { x: number; y: number };
 export const PANTS_STRIPE_MANUAL_TUNING = {
   directions: {
     // Single-split fallback angles (used when deterministic zone masks are not available).
-    singleLeftAbsDeg: 66,
-    singleFlyAbsDeg: 90,
-    singleRightAbsDeg: 90,
+    singleLeftAbsDeg: -64,
+    singleFlyAbsDeg: -86,
+    singleRightAbsDeg: -86,
 
     // Deterministic zone directions.
     // Negative = clockwise diagonal, 0 = native weave orientation.
     // Keep right side closer to horizontal but not too steep,
     // otherwise stripe contrast can visually collapse on dark fabrics.
-    leftMainAbsDeg: 66,
-    rightUpperAbsDeg: 90,
-    rightLowerAbsDeg: 90,
+    leftMainAbsDeg: -64,
+    rightUpperAbsDeg: -86,
+    rightLowerAbsDeg: -86,
     waistAbsDeg: 0,
   },
 
   boundaries: {
     // Main boundary between left-main and right-upper zones.
     // 0 = far left, 1 = far right (within pants union bbox).
-    boundaryTopXRatio: 0.08,
-    boundaryBottomXRatio: 0.49,
+    boundaryTopXRatio: 0.14,
+    boundaryBottomXRatio: 0.5,
 
     // Right-lower split line controls.
     // Larger start means lower zone appears less often.
-    rightLowerStartYRatio: 0.58,
+    rightLowerStartYRatio: 0.72,
     // Positive slope tilts the split down as X increases.
-    rightLowerSlopeRatio: -0.05,
+    rightLowerSlopeRatio: -0.02,
 
     // Legacy/fallback clamps still used by split logic.
-    boundaryMinXRatio: 0.08,
-    boundaryMaxXRatio: 0.54,
+    boundaryMinXRatio: 0.12,
+    boundaryMaxXRatio: 0.56,
 
     // Waist partition start.
     waistXRatio: 1,
@@ -45,7 +45,7 @@ export const PANTS_STRIPE_MANUAL_TUNING = {
     beltBottomYRatio: 0.98,
 
     // Feather to soften hard seams between masks.
-    boundaryFeatherPx: 0.25,
+    boundaryFeatherPx: 0.8,
   },
 
   offsets: {
