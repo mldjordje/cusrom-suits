@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { type ComponentType, useCallback, useEffect, useMemo, useState } from "react";
 import AdminNav from "../components/AdminNav";
 import SuitPreview from "@/app/custom-suits/components/SuitPreview";
 import { useSuitConfigurator } from "@/app/custom-suits/hooks/useSuitConfigurator";
@@ -15,6 +15,7 @@ const vestStyles: Array<{
   { id: "single_5", name: "Jednoredni (5 dugmadi)" },
   { id: "double_6", name: "Dvoredni (6 dugmadi)" },
 ];
+const SuitPreviewCompat = SuitPreview as unknown as ComponentType<Record<string, unknown>>;
 
 type PreviewView = "both" | "jacket" | "pants";
 type ContrastLevel = "low" | "medium" | "high";
@@ -894,7 +895,7 @@ export default function PreviewTuningAdminPage() {
             <div className="grid gap-4 xl:grid-cols-2">
               <div className="rounded-xl border border-gray-200 bg-[#efefef] p-3">
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-700">Baseline</h3>
-                <SuitPreview
+                <SuitPreviewCompat
                   config={config}
                   view={previewView}
                   level={previewLevel}
@@ -906,7 +907,7 @@ export default function PreviewTuningAdminPage() {
               </div>
               <div className="rounded-xl border border-gray-200 bg-[#efefef] p-3">
                 <h3 className="mb-2 text-xs font-semibold uppercase tracking-[0.2em] text-gray-700">Tuned</h3>
-                <SuitPreview
+                <SuitPreviewCompat
                   config={config}
                   view={previewView}
                   level={previewLevel}
@@ -919,7 +920,7 @@ export default function PreviewTuningAdminPage() {
             </div>
           ) : (
             <div className="rounded-xl border border-gray-200 bg-[#efefef] p-3">
-              <SuitPreview
+              <SuitPreviewCompat
                 config={config}
                 view={previewView}
                 level={previewLevel}
