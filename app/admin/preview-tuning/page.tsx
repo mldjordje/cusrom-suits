@@ -4,15 +4,17 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminNav from "../components/AdminNav";
 import SuitPreview from "@/app/custom-suits/components/SuitPreview";
 import { useSuitConfigurator } from "@/app/custom-suits/hooks/useSuitConfigurator";
-import * as SuitOptions from "@/app/custom-suits/data/options";
+import { suits, fabrics as fallbackFabrics } from "@/app/custom-suits/data/options";
 import { useFabrics } from "@/app/custom-suits/hooks/useFabrics";
 
-const suits = SuitOptions.suits;
-const fallbackFabrics = SuitOptions.fabrics;
-const vestStyles = ((SuitOptions as any).vestStyles ?? []) as Array<{
+const vestStyles: Array<{
   id: string;
   name: string;
-}>;
+}> = [
+  { id: "single_4", name: "Jednoredni (4 dugmeta)" },
+  { id: "single_5", name: "Jednoredni (5 dugmadi)" },
+  { id: "double_6", name: "Dvoredni (6 dugmadi)" },
+];
 
 type PreviewView = "both" | "jacket" | "pants";
 type ContrastLevel = "low" | "medium" | "high";
@@ -361,6 +363,11 @@ const summarizeDebug = (debug: SuitPreviewRenderDebug | null) => {
 
 export default function PreviewTuningAdminPage() {
   const [config, dispatch] = useSuitConfigurator({ styleId: DEFAULT_STYLE, colorId: DEFAULT_COLOR });
+  const configWithVest = config as typeof config & {
+    vestEnabled?: boolean;
+    vestStyleId?: string;
+  };
+  const dispatchLoose = dispatch as unknown as (action: { type: string; payload?: unknown }) => void;
   const [draft, setDraft] = useState<TuningDraft>(DEFAULT_DRAFT);
   const [status, setStatus] = useState<Status>({ type: "idle" });
   const [search, setSearch] = useState("");
@@ -829,12 +836,12 @@ export default function PreviewTuningAdminPage() {
             <label className="flex items-center gap-2 text-xs font-semibold text-gray-700">
               <input
                 type="checkbox"
-                checked={Boolean(config.vestEnabled)}
+                checked={Boolean(configWithVest.vestEnabled)}
                 onChange={(e) => {
                   const enabled = e.target.checked;
-                  dispatch({ type: "SET_VEST_ENABLED", payload: enabled });
-                  if (enabled && !config.vestStyleId && vestStyles[0]?.id) {
-                    dispatch({ type: "SET_VEST_STYLE", payload: vestStyles[0].id });
+                  dispatchLoose({ type: "SET_VEST_ENABLED", payload: enabled });
+                  if (enabled && !configWithVest.vestStyleId && vestStyles[0]?.id) {
+                    dispatchLoose({ type: "SET_VEST_STYLE", payload: vestStyles[0].id });
                   }
                 }}
                 className="h-3.5 w-3.5 accent-gray-900"
@@ -842,10 +849,12 @@ export default function PreviewTuningAdminPage() {
               Three-piece
             </label>
 
-            {config.vestEnabled && (
+            {configWithVest.vestEnabled && (
               <select
-                value={config.vestStyleId || vestStyles[0]?.id || ""}
-                onChange={(e) => dispatch({ type: "SET_VEST_STYLE", payload: e.target.value })}
+                value={configWithVest.vestStyleId || vestStyles[0]?.id || ""}
+                onChange={(e) =>
+                  dispatchLoose({ type: "SET_VEST_STYLE", payload: e.target.value })
+                }
                 className="w-full rounded-lg border border-gray-200 bg-white px-2 py-2 text-xs"
               >
                 {vestStyles.map((style) => (
