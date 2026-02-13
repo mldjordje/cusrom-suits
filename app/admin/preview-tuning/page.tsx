@@ -2,9 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import AdminNav from "../components/AdminNav";
-import SuitPreview, {
-  type SuitPreviewRenderDebug,
-} from "@/app/custom-suits/components/SuitPreview";
+import SuitPreview from "@/app/custom-suits/components/SuitPreview";
 import { useSuitConfigurator } from "@/app/custom-suits/hooks/useSuitConfigurator";
 import {
   suits,
@@ -18,6 +16,18 @@ type ContrastLevel = "low" | "medium" | "high";
 type LayerKey = "fabric" | "style" | "ao" | "vignette";
 type StatusType = "idle" | "loading" | "success" | "error";
 type Status = { type: StatusType; message?: string };
+type SuitPreviewRenderDebug = {
+  renderMode: "transparent" | "photoVariant" | "fabricSpecific";
+  requestedRenderMode: "photoVariant" | "fabricSpecific";
+  photoVariant: "blue" | "black" | "light";
+  forcedPhotoVariant: "blue" | "black" | "light" | null;
+  renderBasePath: string | null;
+  usePhotoBase: boolean;
+  isStripeFabric: boolean;
+  hasTextureStripes: boolean;
+  jacketPhotoLayerCount: number;
+  pantsPhotoLayerCount: number;
+};
 
 type TuningDraft = {
   textureScale: string;
