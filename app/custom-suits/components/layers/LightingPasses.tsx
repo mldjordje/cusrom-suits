@@ -105,8 +105,8 @@ export const LightingPasses: React.FC<Props> = ({
         ctx.fillRect(-lapelWidth / 2, -lapelHeight / 2, lapelWidth, lapelHeight);
         ctx.restore();
       };
-      drawLapel(w * 0.5 - lapelOffset, -lapelAngle, 0.035 * intensity);
-      drawLapel(w * 0.5 + lapelOffset, lapelAngle, 0.03 * intensity);
+      drawLapel(w * 0.5 - lapelOffset, -lapelAngle, 0.048 * intensity);
+      drawLapel(w * 0.5 + lapelOffset, lapelAngle, 0.043 * intensity);
 
       // Sleeve cylindrical shading.
       const sleeveWidth = w * 0.26;

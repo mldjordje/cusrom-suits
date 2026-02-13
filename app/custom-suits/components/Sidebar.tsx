@@ -4,7 +4,7 @@ import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useSt
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { suits, fabrics as fallbackFabrics } from "../data/options";
+import { suits, vestStyles, fabrics as fallbackFabrics } from "../data/options";
 import { computePrice } from "../utils/price";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { buildBackendUrl } from "../utils/backend";
@@ -47,6 +47,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
   const [activeTab, setActiveTab] = useState<(typeof tabs)[number]>("FABRIC");
   const [detailFabric, setDetailFabric] = useState<FabricDetail | null>(null);
   const currentSuit = suits.find((s) => s.id === config.styleId);
+  const isAccentsTab = activeTab === "ACCENTS";
   const [savingCart, setSavingCart] = useState(false);
   const storeOrderId = (orderId: string) => {
     localStorage.setItem("lastOrderId", orderId);
@@ -70,8 +71,10 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
     sort: "created_at",
     order: sort === "date_desc" ? "desc" : "asc",
   });
-  const { buttons, loading: buttonsLoading, error: buttonsError } = useButtons();
-  const { linings, loading: liningsLoading, error: liningsError } = useLinings(config.styleId);
+  const { buttons, loading: buttonsLoading, error: buttonsError } = useButtons({ enabled: isAccentsTab });
+  const { linings, loading: liningsLoading, error: liningsError } = useLinings(config.styleId, {
+    enabled: isAccentsTab,
+  });
 
   const price = computePrice(config, suits);
   const fabricsNormalized = useMemo(
@@ -214,6 +217,9 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
     if (breast?.id) dispatch({ type: "SET_BREAST_POCKET", payload: breast.id });
     const cuff = currentSuit.cuffs?.[0];
     if (cuff?.id) dispatch({ type: "SET_CUFF", payload: cuff.id });
+    dispatch({ type: "SET_VEST_ENABLED", payload: false });
+    const defaultVestStyle = vestStyles[0]?.id;
+    if (defaultVestStyle) dispatch({ type: "SET_VEST_STYLE", payload: defaultVestStyle });
   };
   const resetAccents = () => {
     const defaultButton = buttons?.[0];
@@ -495,6 +501,46 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
                     selectedId={config.styleId}
                     onSelect={(id) => dispatch({ type: "SET_STYLE", payload: id })}
                   />
+                  <ChipGroup
+                    title="Sastav odela"
+                    options={[
+                      { id: "two_piece", label: "Dvodijelno" },
+                      { id: "three_piece", label: "Trodelno" },
+                    ]}
+                    selectedId={config.vestEnabled ? "three_piece" : "two_piece"}
+                    onSelect={(id) => {
+                      const enabled = id === "three_piece";
+                      dispatch({ type: "SET_VEST_ENABLED", payload: enabled });
+                      dispatch({ type: "SET_PREVIEW_GARMENT", payload: enabled ? "vest" : "jacket" });
+                      if (enabled && !config.vestStyleId && vestStyles[0]?.id) {
+                        dispatch({ type: "SET_VEST_STYLE", payload: vestStyles[0].id });
+                      }
+                    }}
+                  />
+                  {config.vestEnabled && vestStyles.length > 0 ? (
+                    <>
+                      <ChipGroup
+                        title="Stil prsluka"
+                        options={vestStyles.map((style) => ({ id: style.id, label: style.name }))}
+                        selectedId={config.vestStyleId || vestStyles[0]?.id}
+                        onSelect={(id) => dispatch({ type: "SET_VEST_STYLE", payload: id })}
+                      />
+                      <ChipGroup
+                        title="Prikaz preview-a"
+                        options={[
+                          { id: "jacket", label: "Sako" },
+                          { id: "vest", label: "Prsluk" },
+                        ]}
+                        selectedId={config.previewGarment || "vest"}
+                        onSelect={(id) =>
+                          dispatch({
+                            type: "SET_PREVIEW_GARMENT",
+                            payload: id as "jacket" | "vest",
+                          })
+                        }
+                      />
+                    </>
+                  ) : null}
 
                   <ChipGroup
                     title="Tip revera"
@@ -511,6 +557,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
                       onSelect={(id) => dispatch({ type: "SET_LAPEL_WIDTH", payload: id })}
                     />
                   ) : null}
+
                 </>
               )}
             </section>

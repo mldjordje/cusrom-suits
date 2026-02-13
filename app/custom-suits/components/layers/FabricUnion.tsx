@@ -19,6 +19,7 @@ type Props = {
   textureScale?: number;
   textureTileSizePx?: number;
   textureRotationDeg?: number;
+  rotationScaleMode?: "fit" | "none";
   maskSize?: string;
   maskPosition?: string;
   maskRepeat?: React.CSSProperties["maskRepeat"];
@@ -81,6 +82,7 @@ const FabricUnionComponent: React.FC<Props> = ({
   textureScale = 1,
   textureTileSizePx,
   textureRotationDeg = 0,
+  rotationScaleMode = "fit",
   maskSize = "contain",
   maskPosition = "center",
   maskRepeat = "no-repeat",
@@ -89,8 +91,14 @@ const FabricUnionComponent: React.FC<Props> = ({
   backgroundOffset,
 }) => {
   const baseScale = panZoom.scale * textureScale;
-  const rotationScale = textureRotationDeg ? computeRotationScale(canvas, textureRotationDeg) : 1;
-  const rotationCompensation = rotationScale ? 1 / rotationScale : 1;
+  const rotationScale =
+    textureRotationDeg && rotationScaleMode === "fit"
+      ? computeRotationScale(canvas, textureRotationDeg)
+      : 1;
+  const rotationRenderScale = rotationScaleMode === "none" ? 1.18 : rotationScale;
+  const hasRotation = Math.abs(textureRotationDeg) > 0.0001;
+  const useTransformLayer = hasRotation || (rotationScaleMode === "none" && rotationRenderScale !== 1);
+  const rotationCompensation = rotationScaleMode === "fit" && rotationScale ? 1 / rotationScale : 1;
   const offsetX = panZoom.offset.x + (backgroundOffset?.x ?? 0);
   const offsetY = panZoom.offset.y + (backgroundOffset?.y ?? 0);
   const buildBgSize = (scale: number) =>
@@ -178,7 +186,7 @@ const FabricUnionComponent: React.FC<Props> = ({
       (textureStyle.mixBlendMode as React.CSSProperties["mixBlendMode"]) ?? "soft-light";
     const opacityRaw = Number(textureStyle.opacity ?? 0.26);
     const opacity = Math.min(Math.max(opacityRaw, 0), 0.88);
-    const filter = textureStyle.filter ?? "brightness(0.98) contrast(1.12) saturate(1.04)";
+    const filter = textureStyle.filter ?? "brightness(1.00) contrast(1.08) saturate(1.02)";
 
     const baseStyle: React.CSSProperties = {
       backgroundImage: `url(${fabricTexture})`,
@@ -194,15 +202,15 @@ const FabricUnionComponent: React.FC<Props> = ({
 
     if (mask) {
       const maskImage = buildMask(mask);
-      if (textureRotationDeg) {
+      if (useTransformLayer) {
         const rotatedStyle: React.CSSProperties = {
           ...baseStyle,
           backgroundSize: rotatedBgSize,
           backgroundPosition: rotatedBgPos,
         };
         const transform =
-          rotationScale !== 1
-            ? `rotate(${textureRotationDeg}deg) scale(${rotationScale})`
+          rotationRenderScale !== 1
+            ? `rotate(${textureRotationDeg}deg) scale(${rotationRenderScale})`
             : `rotate(${textureRotationDeg}deg)`;
         return (
           <div
@@ -251,15 +259,15 @@ const FabricUnionComponent: React.FC<Props> = ({
       const sprite = resolve(layer);
       if (!sprite) return null;
       const maskImage = buildMask(undefined, sprite);
-      if (textureRotationDeg) {
+      if (useTransformLayer) {
         const rotatedStyle: React.CSSProperties = {
           ...baseStyle,
           backgroundSize: rotatedBgSize,
           backgroundPosition: rotatedBgPos,
         };
         const transform =
-          rotationScale !== 1
-            ? `rotate(${textureRotationDeg}deg) scale(${rotationScale})`
+          rotationRenderScale !== 1
+            ? `rotate(${textureRotationDeg}deg) scale(${rotationRenderScale})`
             : `rotate(${textureRotationDeg}deg)`;
         return (
           <div

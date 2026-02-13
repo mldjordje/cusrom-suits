@@ -1,4 +1,4 @@
-import { SuitModel } from "../data/options";
+import { SuitModel, vestStyles } from "../data/options";
 import { SuitState } from "../hooks/useSuitConfigurator";
 
 export type PriceResult = { total: number; items: { label: string; price: number }[] };
@@ -63,7 +63,16 @@ export function computePrice(config: SuitState, suits: SuitModel[]): PriceResult
     if (cp) items.push({ label: `Cuffs ${c?.name}`, price: cp });
   }
 
+  // Vest (3-piece)
+  if (config.vestEnabled) {
+    const selectedVest = vestStyles.find((style) => style.id === config.vestStyleId) ?? vestStyles[0] ?? null;
+    const vestPrice = 80;
+    items.push({
+      label: selectedVest ? `Prsluk ${selectedVest.name}` : "Prsluk",
+      price: vestPrice,
+    });
+  }
+
   const total = items.reduce((s, x) => s + x.price, 0);
   return { total, items };
 }
-

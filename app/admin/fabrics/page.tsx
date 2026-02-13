@@ -16,7 +16,6 @@ type Fabric = {
   textureStrength?: number | null;
   textureContrast?: number | null;
   textureBrightness?: number | null;
-  pantsTextureRotation?: number | null;
   stripeSpacing?: number | null;
   stripeSpacingJacket?: number | null;
   stripeSpacingPants?: number | null;
@@ -93,7 +92,6 @@ export default function FabricsAdminPage() {
     textureStrength: "",
     textureContrast: "",
     textureBrightness: "",
-    pantsTextureRotation: "",
     stripeSpacing: "",
     stripeSpacingJacket: "",
     stripeSpacingPants: "",
@@ -269,8 +267,6 @@ export default function FabricsAdminPage() {
         tone === "dark" ? "1.05" : tone === "medium" ? "1.04" : "1.02";
       const textureContrast =
         tone === "dark" ? "1.45" : tone === "medium" ? "1.32" : "1.18";
-      const pantsTextureRotation = stripe.orientation === "vertical" ? "90" : "0";
-
       setForm((s) => ({
         ...s,
         pattern,
@@ -278,7 +274,6 @@ export default function FabricsAdminPage() {
         textureStrength,
         textureContrast,
         textureBrightness,
-        pantsTextureRotation,
       }));
       setSuggestStatus({ type: "success", message: "Predlozena podesavanja su postavljena." });
     } catch {
@@ -309,7 +304,6 @@ export default function FabricsAdminPage() {
     if (form.textureStrength.trim()) fd.set("textureStrength", form.textureStrength.trim());
     if (form.textureContrast.trim()) fd.set("textureContrast", form.textureContrast.trim());
     if (form.textureBrightness.trim()) fd.set("textureBrightness", form.textureBrightness.trim());
-    if (form.pantsTextureRotation.trim()) fd.set("pantsTextureRotation", form.pantsTextureRotation.trim());
     if (form.stripeSpacing.trim()) fd.set("stripeSpacing", form.stripeSpacing.trim());
     if (form.stripeSpacingJacket.trim()) fd.set("stripeSpacingJacket", form.stripeSpacingJacket.trim());
     if (form.stripeSpacingPants.trim()) fd.set("stripeSpacingPants", form.stripeSpacingPants.trim());
@@ -337,7 +331,6 @@ export default function FabricsAdminPage() {
       textureStrength: "",
       textureContrast: "",
       textureBrightness: "",
-      pantsTextureRotation: "",
       stripeSpacing: "",
       stripeSpacingJacket: "",
       stripeSpacingPants: "",
@@ -382,7 +375,6 @@ export default function FabricsAdminPage() {
       textureStrength: typeof fab.textureStrength === "number" ? String(fab.textureStrength) : "",
       textureContrast: typeof fab.textureContrast === "number" ? String(fab.textureContrast) : "",
       textureBrightness: typeof fab.textureBrightness === "number" ? String(fab.textureBrightness) : "",
-      pantsTextureRotation: typeof fab.pantsTextureRotation === "number" ? String(fab.pantsTextureRotation) : "",
       stripeSpacing: typeof fab.stripeSpacing === "number" ? String(fab.stripeSpacing) : "",
       stripeSpacingJacket:
         typeof fab.stripeSpacingJacket === "number" ? String(fab.stripeSpacingJacket) : "",
@@ -551,16 +543,6 @@ export default function FabricsAdminPage() {
                 className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
                 placeholder="1.05"
                 inputMode="decimal"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-gray-700">Rotacija pantalona (stepeni)</label>
-              <input
-                value={form.pantsTextureRotation}
-                onChange={(e) => setForm((s) => ({ ...s, pantsTextureRotation: e.target.value }))}
-                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
-                placeholder="90"
-                inputMode="numeric"
               />
             </div>
             <div className="space-y-2 sm:col-span-3">
@@ -766,7 +748,6 @@ export default function FabricsAdminPage() {
               typeof f.textureStrength === "number" ? `strength ${f.textureStrength}` : null,
               typeof f.textureContrast === "number" ? `contrast ${f.textureContrast}` : null,
               typeof f.textureBrightness === "number" ? `bright ${f.textureBrightness}` : null,
-              typeof f.pantsTextureRotation === "number" ? `pants rot ${f.pantsTextureRotation}` : null,
               typeof f.stripeSpacing === "number" ? `stripe spacing ${f.stripeSpacing}` : null,
               typeof f.stripeSpacingJacket === "number" ? `stripe jacket ${f.stripeSpacingJacket}` : null,
               typeof f.stripeSpacingPants === "number" ? `stripe pants ${f.stripeSpacingPants}` : null,

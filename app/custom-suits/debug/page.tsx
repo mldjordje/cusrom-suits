@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
-import SuitPreview from "../components/SuitPreview";
+import SuitPreview, { type SuitPreviewRenderDebug } from "../components/SuitPreview";
 import { useSuitConfigurator } from "../hooks/useSuitConfigurator";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
@@ -40,6 +40,7 @@ export default function CustomSuitDebugPage() {
     return defaults;
   });
   const [assetStatus, setAssetStatus] = useState<{ missing: string[] }>({ missing: [] });
+  const [renderDebug, setRenderDebug] = useState<SuitPreviewRenderDebug | null>(null);
 
   useEffect(() => {
     let frames = 0;
@@ -87,6 +88,7 @@ export default function CustomSuitDebugPage() {
               level={level}
               layerVisibility={layerVisibility}
               onAssetStatus={setAssetStatus}
+              onRenderDebug={setRenderDebug}
               fabrics={fabrics}
               fabricsLoading={fabricsLoading}
             />
@@ -101,6 +103,21 @@ export default function CustomSuitDebugPage() {
               <span className="text-base font-normal text-white/60">fps</span>
             </div>
             <p className="text-white/60">Realtime measurement via requestAnimationFrame.</p>
+          </section>
+
+          <section>
+            <h2 className="mb-2 text-lg font-semibold text-white">Render mode</h2>
+            <div className="space-y-1 text-xs text-white/80">
+              <div>active: {renderDebug?.renderMode ?? "n/a"}</div>
+              <div>requested: {renderDebug?.requestedRenderMode ?? "n/a"}</div>
+              <div>variant: {renderDebug?.photoVariant ?? "n/a"}</div>
+              <div>forced: {renderDebug?.forcedPhotoVariant ?? "none"}</div>
+              <div>basePath: {renderDebug?.renderBasePath || "none"}</div>
+              <div>
+                photo layers: jacket {renderDebug?.jacketPhotoLayerCount ?? 0} / pants{" "}
+                {renderDebug?.pantsPhotoLayerCount ?? 0}
+              </div>
+            </div>
           </section>
 
           <section>

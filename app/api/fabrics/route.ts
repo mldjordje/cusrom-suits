@@ -34,6 +34,21 @@ const normalizeFabric = (fabric: any) => ({
   price: fabric.price ?? 0,
   tone: fabric.tone || "medium",
   pattern: fabric.pattern ?? null,
+  photoVariant: fabric.photoVariant ?? fabric.photo_variant ?? null,
+  renderMode: fabric.renderMode ?? fabric.render_mode ?? null,
+  renderBasePath:
+    fabric.renderBasePath ??
+    fabric.render_base_path ??
+    fabric.render_path ??
+    fabric.renderPath ??
+    null,
+  colorHex:
+    fabric.colorHex ??
+    fabric.color_hex ??
+    fabric.hexColor ??
+    fabric.hex_color ??
+    fabric.hex ??
+    null,
   textureScale: fabric.textureScale ?? fabric.texture_scale ?? null,
   textureStrength: fabric.textureStrength ?? fabric.texture_strength ?? null,
   textureContrast: fabric.textureContrast ?? fabric.texture_contrast ?? null,

@@ -18,7 +18,9 @@
         "zip:transparent-pro": "node scripts/zip-transparent-pro.mjs",
         "calibrate:single1": "node scripts/calibrate-single1btn-lapel.mjs",
         "normalize:transparent:all": "node scripts/normalize-transparent-all.mjs",
-        "check:sprites": "node scripts/check-missing-sprites.mjs"
+        "check:sprites": "node scripts/check-missing-sprites.mjs",
+        "capture:parity": "node scripts/capture-parity-snapshots.mjs",
+        "test:parity": "node --experimental-strip-types --test scripts/parity.test.mjs scripts/pants-stripe-tuning.test.mjs scripts/preview-regression.test.mjs"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",

@@ -2,6 +2,9 @@ import { getPhotoCdnBase, getTransparentCdnBase } from "./backend";
 
 export type SpritePair = { webp: string; png: string };
 type LayerFolder = "shading" | "specular" | "edges";
+export type PhotoVariant = "blue" | "black" | "light";
+export type FabricRenderMode = "photoVariant" | "fabricSpecific";
+export type RenderGarment = "jacket" | "pants";
 
 let cachedBase: string | null = null;
 const transparentBase = () => {
@@ -86,7 +89,7 @@ export const edgesPair = (src: string): SpritePair | null => buildPair(src, "edg
 
 export const photoPair = (
   src: string,
-  variant: "blue" | "black" | "light" = "blue"
+  variant: PhotoVariant = "blue"
 ) => {
   const baseName = spriteFileBase(src);
   const prefix = getPhotoCdnBase(variant);
@@ -94,6 +97,104 @@ export const photoPair = (
     webp: appendVersion(`${prefix}${baseName}.webp`),
     png: appendVersion(`${prefix}${baseName}.png`),
   } as SpritePair;
+};
+
+type PairTokens = Record<string, string>;
+
+const ensureTrailingSlash = (value: string) =>
+  value.endsWith("/") ? value : `${value}/`;
+
+const applyTemplateTokens = (template: string, tokens: PairTokens) => {
+  let output = template;
+  for (const [key, raw] of Object.entries(tokens)) {
+    const safe = raw ?? "";
+    output = output
+      .replace(new RegExp(`\\{${key}\\}`, "g"), safe)
+      .replace(new RegExp(`#${key}#`, "g"), safe);
+  }
+  return output;
+};
+
+const normalizePairPath = (value: string) => value.trim();
+
+const buildPairFromResolved = (resolvedPath: string, baseName: string): SpritePair => {
+  const clean = normalizePairPath(resolvedPath);
+  if (/\.(png|webp|jpe?g)$/i.test(clean)) {
+    const webp = appendVersion(clean.replace(/\.(png|webp|jpe?g)$/i, ".webp"));
+    const png = appendVersion(clean.replace(/\.(png|webp|jpe?g)$/i, ".png"));
+    return { webp, png };
+  }
+  const prefix = ensureTrailingSlash(clean);
+  return {
+    webp: appendVersion(`${prefix}${baseName}.webp`),
+    png: appendVersion(`${prefix}${baseName}.png`),
+  };
+};
+
+const normalizeMode = (value?: string | null): FabricRenderMode | null => {
+  if (!value) return null;
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === "fabricspecific" || normalized === "fabric_specific" || normalized === "fabric-specific") {
+    return "fabricSpecific";
+  }
+  if (normalized === "photovariant" || normalized === "photo_variant" || normalized === "photo-variant") {
+    return "photoVariant";
+  }
+  return null;
+};
+
+export const fabricSpecificPair = ({
+  src,
+  renderBasePath,
+  garment,
+  fabricId,
+  variant,
+}: {
+  src: string;
+  renderBasePath?: string | null;
+  garment?: RenderGarment;
+  fabricId?: string | number | null;
+  variant?: PhotoVariant;
+}): SpritePair | null => {
+  const template = renderBasePath?.trim();
+  if (!template) return null;
+  const baseName = spriteFileBase(src);
+  const tokens: PairTokens = {
+    basename: baseName,
+    layer: baseName,
+    file: baseName,
+    fabricId: fabricId == null ? "" : String(fabricId),
+    garment: garment ?? "",
+    variant: variant ?? "blue",
+  };
+  const resolved = applyTemplateTokens(template, tokens).trim();
+  if (!resolved || /[{#].*[}#]/.test(resolved)) return null;
+  return buildPairFromResolved(resolved, baseName);
+};
+
+export const resolveFabricRenderPair = ({
+  src,
+  variant,
+  renderMode,
+  renderBasePath,
+  garment,
+  fabricId,
+}: {
+  src: string;
+  variant: PhotoVariant;
+  renderMode?: string | null;
+  renderBasePath?: string | null;
+  garment?: RenderGarment;
+  fabricId?: string | number | null;
+}): { mode: FabricRenderMode; pair: SpritePair } => {
+  const requestedMode = normalizeMode(renderMode);
+  if (requestedMode === "fabricSpecific") {
+    const pair = fabricSpecificPair({ src, renderBasePath, garment, fabricId, variant });
+    if (pair) {
+      return { mode: "fabricSpecific", pair };
+    }
+  }
+  return { mode: "photoVariant", pair: photoPair(src, variant) };
 };
 
 

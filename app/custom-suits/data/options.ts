@@ -50,6 +50,13 @@ export type CuffOption = {
   src: string;
 };
 
+//  Prsluk (vest) opcije
+export type VestStyle = {
+  id: string;
+  name: string;
+  layers: SuitLayer[];
+};
+
 //  Glavni tip modela odela
 export type SuitModel = {
   id: string;
@@ -629,6 +636,91 @@ export const suits: SuitModel[] = [
         id: "cuffed",
         name: "With Cuffs",
         src: "/assets/suits/transparent/cuffs+length_long+cut_slim.png",
+      },
+    ],
+  },
+];
+
+// ======================================================
+//  VEST (Prsluk) stilovi
+// ======================================================
+
+export const vestStyles: VestStyle[] = [
+  {
+    id: "single_4",
+    name: "Jednoredni (4 dugmeta)",
+    layers: [
+      {
+        id: "vest-neck",
+        name: "Vest Neck",
+        src: "/assets/suits/transparent/neck_single_breasted+buttons_4+style_lapel_no.png",
+      },
+      {
+        id: "vest-bottom",
+        name: "Vest Bottom",
+        src: "/assets/suits/transparent/bottom_single_breasted+edge_diagonal.png",
+      },
+      {
+        id: "vest-interior",
+        name: "Vest Interior",
+        src: "/assets/suits/transparent/interior_diagonal.png",
+      },
+      {
+        id: "vest-pockets",
+        name: "Vest Pockets",
+        src: "/assets/suits/transparent/hip_pockets_welt+single_breasted.png",
+      },
+    ],
+  },
+  {
+    id: "single_5",
+    name: "Jednoredni (5 dugmadi)",
+    layers: [
+      {
+        id: "vest-neck",
+        name: "Vest Neck",
+        src: "/assets/suits/transparent/neck_single_breasted+buttons_5+style_lapel_no.png",
+      },
+      {
+        id: "vest-bottom",
+        name: "Vest Bottom",
+        src: "/assets/suits/transparent/bottom_single_breasted+edge_diagonal.png",
+      },
+      {
+        id: "vest-interior",
+        name: "Vest Interior",
+        src: "/assets/suits/transparent/interior_diagonal.png",
+      },
+      {
+        id: "vest-pockets",
+        name: "Vest Pockets",
+        src: "/assets/suits/transparent/hip_pockets_welt+single_breasted.png",
+      },
+    ],
+  },
+  {
+    id: "double_6",
+    name: "Dvoredni (6 dugmadi)",
+    layers: [
+      {
+        id: "vest-neck",
+        name: "Vest Neck",
+        src: "/assets/suits/transparent/neck_double_breasted+buttons_6+style_lapel_no.png",
+      },
+      {
+        id: "vest-bottom",
+        name: "Vest Bottom",
+        src: "/assets/suits/transparent/bottom_double_breasted+edge_diagonal+lapel_medium.png",
+      },
+      {
+        id: "vest-interior",
+        name: "Vest Interior",
+        src: "/assets/suits/transparent/interior_diagonal.png",
+      },
+      {
+        id: "vest-pockets",
+        name: "Vest Pockets",
+        src: "/assets/suits/transparent/hip_pockets_welt+double_breasted+edge_diagonal.png",
       },
     ],
   },

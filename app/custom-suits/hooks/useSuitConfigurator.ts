@@ -14,6 +14,9 @@ export type SuitState = {
   cuffId?: string;
   showShirt?: boolean;
   pantsPleatId?: string;
+  vestEnabled?: boolean;
+  vestStyleId?: string;
+  previewGarment?: "jacket" | "vest";
 };
 
 type Action =
@@ -29,6 +32,9 @@ type Action =
   | { type: "SET_CUFF"; payload: string }
   | { type: "TOGGLE_SHIRT" }
   | { type: "SET_PANTS_PLEAT"; payload: string }
+  | { type: "SET_VEST_ENABLED"; payload: boolean }
+  | { type: "SET_VEST_STYLE"; payload: string }
+  | { type: "SET_PREVIEW_GARMENT"; payload: "jacket" | "vest" }
   | { type: "RESET" };
 
 export function useSuitConfigurator(
@@ -49,6 +55,7 @@ export function useSuitConfigurator(
           interiorId: undefined,
           breastPocketId: undefined,
           cuffId: undefined,
+          previewGarment: "jacket",
         };
 
       //  Izbor boje/tkanine
@@ -96,6 +103,28 @@ export function useSuitConfigurator(
 
       case "SET_PANTS_PLEAT":
         return { ...state, pantsPleatId: action.payload };
+
+      case "SET_VEST_ENABLED":
+        return action.payload
+          ? {
+              ...state,
+              vestEnabled: true,
+              previewGarment: state.previewGarment ?? "vest",
+            }
+          : {
+              ...state,
+              vestEnabled: false,
+              previewGarment: "jacket",
+            };
+
+      case "SET_VEST_STYLE":
+        return { ...state, vestStyleId: action.payload, previewGarment: "vest" };
+
+      case "SET_PREVIEW_GARMENT":
+        return {
+          ...state,
+          previewGarment: state.vestEnabled ? action.payload : "jacket",
+        };
 
       //  Reset na poetno stanje
       case "RESET":

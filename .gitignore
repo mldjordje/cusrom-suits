@@ -38,3 +38,15 @@ transparent-upload/
 /tmp-*.png
 /white-mask.png
 /stripe reference.png
+
+# local research/reference folders
+/hockerty-httpcopier/
+/docs/
+/golden/
+/.tmp/
+/vest/
+
+# local screenshots / comparison captures
+/preview*.png
+/pants*.png
+/pantspreview*.png
