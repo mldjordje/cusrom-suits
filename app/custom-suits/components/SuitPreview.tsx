@@ -142,8 +142,8 @@ const PREVIEW_EXPOSURE = (() => {
   const raw =
     process.env.NEXT_PUBLIC_PREVIEW_EXPOSURE_PHOTO ?? process.env.NEXT_PUBLIC_PREVIEW_EXPOSURE;
   const num = raw ? Number(raw) : NaN;
-  if (!Number.isFinite(num)) return 1.0;
-  return clamp(num, 0.92, 1.12);
+  if (!Number.isFinite(num)) return 1.06;
+  return clamp(num, 0.95, 1.18);
 })();
 const FORCE_PHOTO_VARIANT = (() => {
   const raw = process.env.NEXT_PUBLIC_FORCE_PHOTO_VARIANT;
@@ -1243,12 +1243,12 @@ const SuitPreview = ({
   const photoToneLift = useMemo(() => {
     if (!usePhotoBase) return 1;
     const rgb = hexToRgb(fabricFillColorBase);
-    if (!rgb) return 1.04;
+    if (!rgb) return 1.08;
     const hsl = rgbToHsl(rgb);
-    const base = fabricTone === "dark" ? 1.11 : fabricTone === "medium" ? 1.07 : 1.03;
-    const saturationLift = hsl.s > 0.18 ? 0.03 : hsl.s < 0.08 ? 0.01 : 0.02;
+    const base = fabricTone === "dark" ? 1.14 : fabricTone === "medium" ? 1.1 : 1.06;
+    const saturationLift = hsl.s > 0.18 ? 0.04 : hsl.s < 0.08 ? 0.02 : 0.03;
     const darknessLift = hsl.l < 0.34 ? 0.02 : 0;
-    return clamp(base + saturationLift + darknessLift, 1, 1.17);
+    return clamp(base + saturationLift + darknessLift, 1.02, 1.2);
   }, [fabricFillColorBase, fabricTone, usePhotoBase]);
   const fabricFillColor = useMemo(() => {
     const base = usePhotoBase ? fabricFillColorBase : enhanceFabricColor(fabricFillColorBase, fabricTone);
@@ -1338,13 +1338,13 @@ const SuitPreview = ({
     if (usePhotoBase) {
       // Keep photo textures neutral but avoid crushing stripe contrast on dark tones.
       const darkStripe = stripeProfile.active && fabricTone === "dark";
-      const brightnessBase = textureBrightnessOverride ?? (darkStripe ? 0.97 : 1.0);
-      const contrastBase = textureContrastOverride ?? (darkStripe ? 1.02 : 1.0);
-      const brightness = clamp(brightnessBase * PREVIEW_EXPOSURE, 0.9, 1.14);
+      const brightnessBase = textureBrightnessOverride ?? (darkStripe ? 1.01 : 1.04);
+      const contrastBase = textureContrastOverride ?? (darkStripe ? 1.0 : 0.99);
+      const brightness = clamp(brightnessBase * PREVIEW_EXPOSURE, 0.95, 1.22);
       const contrast = clamp(
         contrastBase + (stripeProfile.active ? stripeProfile.contrastBias * 0.24 : 0),
-        0.96,
-        1.16
+        0.94,
+        1.12
       );
       const saturate = clamp(
         (darkStripe ? 0.2 : 0.24) * paritySaturate * stripeSaturateMul,
@@ -1675,12 +1675,12 @@ const SuitPreview = ({
     if (!usePhotoBase) return 1;
     const lum = fabricMetrics.lightness;
     const sat = fabricMetrics.saturation;
-    const exposure = 1.0 + (lum - 0.45) * 0.22 + (sat > 0.14 ? 0.01 : 0);
-    return clamp(exposure, 0.97, 1.08);
+    const exposure = 1.04 + (lum - 0.45) * 0.18 + (sat > 0.14 ? 0.015 : 0);
+    return clamp(exposure, 1.0, 1.12);
   }, [fabricMetrics.lightness, fabricMetrics.saturation, usePhotoBase]);
   const photoFilter = useMemo(() => {
     if (usePhotoBase) {
-      return `grayscale(1) brightness(${(photoExposure * PREVIEW_EXPOSURE).toFixed(2)}) contrast(1.00)`;
+      return `grayscale(1) brightness(${(photoExposure * PREVIEW_EXPOSURE).toFixed(2)}) contrast(0.98) saturate(1.05)`;
     }
     const brightness = clamp((1 + autoTuning.photo.brightness) * PREVIEW_EXPOSURE, 0.8, 1.6).toFixed(2);
     const contrast = autoTuning.photo.contrast.toFixed(2);
@@ -1694,7 +1694,7 @@ const SuitPreview = ({
     const sat = fabricMetrics.saturation;
     const lumShift = lum > 0.62 ? -0.02 : lum < 0.24 ? 0.04 : 0.01;
     const satShift = sat < 0.2 ? 0.07 : sat > 0.55 ? 0.03 : 0.05;
-    return clamp(0.82 + lumShift + satShift, 0.78, 0.95);
+    return clamp(0.79 + lumShift + satShift, 0.74, 0.92);
   }, [fabricMetrics.lightness, fabricMetrics.saturation, usePhotoBase]);
   const structuralShadingOpacityTuned = useMemo(
     () => clamp(structuralShadingOpacity * autoTuning.shading * stripeShadingMul, 0.12, 0.6),
