@@ -23,6 +23,48 @@ const parseNumber = (value: FormDataEntryValue | null) => {
   return Number.isFinite(num) ? num : null;
 };
 
+const parseText = (value: FormDataEntryValue | null) => {
+  if (value == null) return null;
+  const raw = String(value).trim();
+  return raw ? raw : null;
+};
+
+const normalizePhotoVariant = (value: string | null) => {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "blue" || normalized === "black" || normalized === "light") {
+    return normalized;
+  }
+  return null;
+};
+
+const normalizeRenderMode = (value: string | null) => {
+  if (!value) return null;
+  const normalized = value.trim().toLowerCase();
+  if (
+    normalized === "fabricspecific" ||
+    normalized === "fabric_specific" ||
+    normalized === "fabric-specific"
+  ) {
+    return "fabricSpecific";
+  }
+  if (
+    normalized === "photovariant" ||
+    normalized === "photo_variant" ||
+    normalized === "photo-variant"
+  ) {
+    return "photoVariant";
+  }
+  return null;
+};
+
+const normalizeHex = (value: string | null) => {
+  if (!value) return null;
+  const raw = value.trim().replace(/^#/, "").toLowerCase();
+  if (!/^[0-9a-f]{6}$/.test(raw)) return null;
+  return `#${raw}`;
+};
+
 export async function POST(req: NextRequest) {
   const supabase = getServiceSupabase();
   if (!supabase) {
@@ -50,6 +92,14 @@ export async function POST(req: NextRequest) {
   const stripeSpacingPants = parseNumber(
     form.get("stripeSpacingPants") ?? form.get("stripe_spacing_pants")
   );
+  const photoVariant = normalizePhotoVariant(
+    parseText(form.get("photoVariant") ?? form.get("photo_variant"))
+  );
+  const renderMode = normalizeRenderMode(
+    parseText(form.get("renderMode") ?? form.get("render_mode"))
+  );
+  const renderBasePath = parseText(form.get("renderBasePath") ?? form.get("render_base_path"));
+  const colorHex = normalizeHex(parseText(form.get("colorHex") ?? form.get("color_hex")));
   const detailFile = form.get("detailFile") as File | null;
   const detailImageOverride = String(form.get("detailImage") ?? form.get("detail_image") ?? "").trim();
   const detailText = String(form.get("detailText") ?? form.get("detail_text") ?? "").trim();
@@ -106,6 +156,10 @@ export async function POST(req: NextRequest) {
   if (stripeSpacing !== null) payload.stripe_spacing = stripeSpacing;
   if (stripeSpacingJacket !== null) payload.stripe_spacing_jacket = stripeSpacingJacket;
   if (stripeSpacingPants !== null) payload.stripe_spacing_pants = stripeSpacingPants;
+  if (photoVariant) payload.photo_variant = photoVariant;
+  if (renderMode) payload.render_mode = renderMode;
+  if (renderBasePath) payload.render_base_path = renderBasePath;
+  if (colorHex) payload.color_hex = colorHex;
   if (detailImageUrl) payload.detail_image = detailImageUrl;
   if (detailText) payload.detail_text = detailText;
 
