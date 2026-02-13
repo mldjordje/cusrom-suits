@@ -2448,34 +2448,6 @@ const SuitPreview = ({
       };
     }
 
-    if (pantsStripeDetectedForZones) {
-      return {
-        mode: "single",
-        coverageRatio: primaryCoverageRatio,
-        zonePixelsSum: primaryZonePixelsSum,
-        unionPixels,
-        coverageOk: primaryCoverageOk,
-        keyZoneOk: primaryKeyZoneOk,
-        masks: {
-          union,
-          leftMain: null,
-          leftUnder: null,
-          rightUpper: null,
-          rightLower: null,
-          leftLeg: null,
-          rightLeg: null,
-          waist: pantsWaistMask,
-        },
-        rotations: {
-          single: pantsRightUpperZoneRotationDeg,
-          leftMain: pantsLeftZoneRotationDeg,
-          rightUpper: pantsRightUpperZoneRotationDeg,
-          rightLower: pantsRightLowerZoneRotationDeg,
-          waist: pantsWaistZoneRotationDeg,
-        },
-      };
-    }
-
     const secondaryLeftPixels = secondaryLeftPixelsRaw;
     const secondaryRightPixels = secondaryRightPixelsRaw;
     const secondaryWaistPixels = pantsMaskStats?.waist ?? 0;
@@ -2509,6 +2481,34 @@ const SuitPreview = ({
           rightLower: null,
           leftLeg: pantsLeftLegMask,
           rightLeg: pantsRightLegMask,
+          waist: pantsWaistMask,
+        },
+        rotations: {
+          single: pantsRightUpperZoneRotationDeg,
+          leftMain: pantsLeftZoneRotationDeg,
+          rightUpper: pantsRightUpperZoneRotationDeg,
+          rightLower: pantsRightLowerZoneRotationDeg,
+          waist: pantsWaistZoneRotationDeg,
+        },
+      };
+    }
+
+    if (pantsStripeDetectedForZones) {
+      return {
+        mode: "single",
+        coverageRatio: primaryCoverageRatio,
+        zonePixelsSum: primaryZonePixelsSum,
+        unionPixels,
+        coverageOk: primaryCoverageOk,
+        keyZoneOk: primaryKeyZoneOk,
+        masks: {
+          union,
+          leftMain: null,
+          leftUnder: null,
+          rightUpper: null,
+          rightLower: null,
+          leftLeg: null,
+          rightLeg: null,
           waist: pantsWaistMask,
         },
         rotations: {

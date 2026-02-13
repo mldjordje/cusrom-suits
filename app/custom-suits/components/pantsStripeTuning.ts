@@ -19,7 +19,7 @@ export const PANTS_STRIPE_TUNING = {
     coverageMinRatio: 0.96,
     primaryCoverageMinRatio: 0.96,
     minPixelThreshold: 50,
-    enablePrimarySplit: true,
+    enablePrimarySplit: false,
     texturedOverlayOpacityMul: 0.78,
     texturedOverlayBrightenMul: 0.92,
     leftMainAbsDeg: manual.directions.leftMainAbsDeg,

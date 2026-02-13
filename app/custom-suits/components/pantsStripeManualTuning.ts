@@ -7,16 +7,16 @@ export const PANTS_STRIPE_MANUAL_TUNING = {
   directions: {
     // Single-split fallback angles (used when deterministic zone masks are not available).
     singleLeftAbsDeg: -64,
-    singleFlyAbsDeg: -86,
-    singleRightAbsDeg: -86,
+    singleFlyAbsDeg: -88,
+    singleRightAbsDeg: -88,
 
     // Deterministic zone directions.
     // Negative = clockwise diagonal, 0 = native weave orientation.
     // Keep right side closer to horizontal but not too steep,
     // otherwise stripe contrast can visually collapse on dark fabrics.
     leftMainAbsDeg: -64,
-    rightUpperAbsDeg: -86,
-    rightLowerAbsDeg: -86,
+    rightUpperAbsDeg: -88,
+    rightLowerAbsDeg: -88,
     waistAbsDeg: 0,
   },
 
