@@ -5,6 +5,8 @@ import AdminNav from "./components/AdminNav";
 
 const cards = [
   { href: "/admin/fabrics", title: "Fabrics", desc: "Upravljanje tkaninama, upload i lista." },
+  { href: "/admin/stripe-tuning", title: "Stripe tuning", desc: "Brzi ulaz u stripe/pinstripe tuning preview." },
+  { href: "/admin/preview-tuning", title: "Preview tuning", desc: "Vizuelno podesi fabric preview po tkanini." },
   { href: "/admin/buttons", title: "Buttons", desc: "Upload dugmadi za prikaz u konfiguratoru." },
   { href: "/admin/linings", title: "Linings", desc: "Postave (base/left/right) za CMS." },
   { href: "/admin/orders", title: "Porudzbine", desc: "Pregled poslednjih narudzbina." },
