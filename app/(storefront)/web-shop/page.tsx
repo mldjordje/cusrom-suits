@@ -160,7 +160,7 @@ export default async function WebShopPage({
             <div className="shop-banner position-relative">
               <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
                 <Image
-                  src="/img/odela2.jpg"
+                  src="/img/hero.jpg"
                   width={1759}
                   height={420}
                   alt="Santos web shop hero"
