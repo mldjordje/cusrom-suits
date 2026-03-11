@@ -160,10 +160,10 @@ export default async function WebShopPage({
             <div className="shop-banner position-relative">
               <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
                 <Image
-                  src="/assets/images/shop/shop_banner_character1.png"
+                  src="/img/odela2.jpg"
                   width={1759}
                   height={420}
-                  alt="Shop Banner"
+                  alt="Santos web shop hero"
                   className="slideshow-bg__img object-fit-cover"
                   priority
                 />

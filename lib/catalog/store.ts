@@ -60,7 +60,23 @@ type CatalogListInput = {
   applyPromotions?: boolean;
 };
 
+type CatalogSnapshotCacheEntry = {
+  expiresAt: number;
+  items: CatalogProductView[];
+};
+
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
+const CATALOG_SNAPSHOT_TTL_MS = 60_000;
+
+const getCatalogSnapshotCache = () => {
+  const globalWithCache = globalThis as typeof globalThis & {
+    __catalogSnapshotCache?: Map<string, CatalogSnapshotCacheEntry>;
+  };
+  if (!globalWithCache.__catalogSnapshotCache) {
+    globalWithCache.__catalogSnapshotCache = new Map<string, CatalogSnapshotCacheEntry>();
+  }
+  return globalWithCache.__catalogSnapshotCache;
+};
 
 const parseCategories = (rawPayload: Record<string, unknown> | null | undefined): CatalogCategory[] => {
   const maybeCategories = rawPayload && Array.isArray(rawPayload.categories) ? rawPayload.categories : [];
@@ -260,19 +276,34 @@ const applySkuImageFallbacks = (items: CatalogProductView[]): CatalogProductView
   });
 };
 
-async function loadFromSupabase(): Promise<CatalogProductView[] | null> {
+async function loadFromSupabase(filters: {
+  activeOnly: boolean;
+  exportOnly: boolean;
+}): Promise<CatalogProductView[] | null> {
   const supabase = getServiceSupabase() || getAnonSupabase();
   if (!supabase) return null;
+
+  const cacheKey = `${filters.activeOnly ? "1" : "0"}:${filters.exportOnly ? "1" : "0"}`;
+  const cache = getCatalogSnapshotCache();
+  const cached = cache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.items;
+  }
 
   const pageSize = 1000;
   const products: Record<string, unknown>[] = [];
   for (let from = 0; ; from += pageSize) {
     const to = from + pageSize - 1;
-    const { data, error } = await supabase
+    let query = supabase
       .from("catalog_products")
-      .select("*")
+      .select(
+        "legacy_id,sku,ean,manuf_code,brand,is_active,is_exported,name_sr,name_en,description_sr,description_en,specification_sr,specification_en,price_gross,price_final_gross,tax_percent,rebate_percent,stock_warehouse_1,stock_total,raw_payload",
+      )
       .order("legacy_id", { ascending: true })
       .range(from, to);
+    if (filters.activeOnly) query = query.eq("is_active", true);
+    if (filters.exportOnly) query = query.eq("is_exported", true);
+    const { data, error } = await query;
     if (error) return null;
     const batch = (data || []) as Record<string, unknown>[];
     products.push(...batch);
@@ -307,7 +338,12 @@ async function loadFromSupabase(): Promise<CatalogProductView[] | null> {
   }
 
   const normalized = products.map((row: Record<string, unknown>) => normalizeCatalogRow(row, imagesByProductId));
-  return applySkuImageFallbacks(normalized);
+  const finalItems = applySkuImageFallbacks(normalized);
+  cache.set(cacheKey, {
+    items: finalItems,
+    expiresAt: Date.now() + CATALOG_SNAPSHOT_TTL_MS,
+  });
+  return finalItems;
 }
 
 async function loadFromFile(): Promise<CatalogProductView[]> {
@@ -326,7 +362,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const exportOnly = input.exportOnly !== false;
   const applyPromotions = input.applyPromotions !== false;
 
-  const baseItems = (await loadFromSupabase()) || (await loadFromFile());
+  const baseItems = (await loadFromSupabase({ activeOnly, exportOnly })) || (await loadFromFile());
   const promotionRules = applyPromotions ? await listPromotionRules() : [];
   const displayItems = promotionRules.length > 0 ? applyPromotionRulesToProducts(baseItems, promotionRules) : baseItems;
   const filtered = applyFilters(displayItems, { query, categoryId, inStock, onSale, activeOnly, exportOnly });

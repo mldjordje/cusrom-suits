@@ -110,11 +110,51 @@ const pickProductsForSection = <T extends { legacyId: number }>(
   return result;
 };
 
+const dedupeProductsBySku = <T extends { legacyId: number; sku?: string | null }>(items: T[]) => {
+  const result: T[] = [];
+  const seen = new Set<string>();
+  for (const item of items) {
+    const key = String(item.sku || item.legacyId).trim().toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(item);
+  }
+  return result;
+};
+
+const pickProductsForSectionDistinct = <T extends { legacyId: number; sku?: string | null }>(
+  source: T[],
+  preferredIds: number[],
+  limit: number,
+  fallback: T[],
+  usedSkuKeys: Set<string>,
+) => {
+  const primary = pickProductsForSection(source, preferredIds, Math.max(limit * 2, limit), fallback);
+  const backup = [...fallback, ...source];
+  const out: T[] = [];
+
+  const takeCandidate = (candidate: T) => {
+    const key = String(candidate.sku || candidate.legacyId).trim().toLowerCase();
+    if (!key || usedSkuKeys.has(key)) return false;
+    usedSkuKeys.add(key);
+    out.push(candidate);
+    return out.length >= limit;
+  };
+
+  for (const candidate of primary) {
+    if (takeCandidate(candidate)) return out;
+  }
+  for (const candidate of backup) {
+    if (takeCandidate(candidate)) return out;
+  }
+  return out;
+};
+
 export default async function HomePage() {
   const [catalog, posts, landingSettings] = await Promise.all([
     listCatalogProducts({
       page: 1,
-      pageSize: 16,
+      pageSize: 120,
       activeOnly: true,
       exportOnly: true,
     }),
@@ -140,17 +180,55 @@ export default async function HomePage() {
     landingFeatured.length > 0
       ? [...landingFeatured, ...catalog.items.filter((item) => !item.landingFeatured)]
       : catalog.items;
+  const landingPoolUnique = dedupeProductsBySku(landingPool);
 
-  const salePool = landingPool
+  const salePool = landingPoolUnique
     .filter((item) => item.priceGross > item.priceFinalGross || item.rebatePercent > 0)
     .slice(0, 32);
 
-  const heroProducts = pickProductsForSection(landingPool, landingSettings.highlightedProductIds, 8, landingPool.slice(0, 8));
-  const heroStripProducts = pickProductsForSection(landingPool, landingSettings.heroStripProductIds, 4, landingPool.slice(0, 4));
-  const featured = pickProductsForSection(landingPool, landingSettings.popularProductIds, 4, landingPool.slice(0, 4));
-  const arrivals = pickProductsForSection(landingPool, landingSettings.arrivalsProductIds, 4, landingPool.slice(4, 8));
-  const trending = pickProductsForSection(landingPool, landingSettings.trendingProductIds, 4, landingPool.slice(8, 12));
-  const saleItems = pickProductsForSection(salePool, landingSettings.saleProductIds, 4, salePool.slice(0, 4));
+  const usedSkuKeys = new Set<string>();
+  const heroStripProducts = pickProductsForSectionDistinct(
+    landingPoolUnique,
+    landingSettings.heroStripProductIds,
+    4,
+    landingPoolUnique.slice(0, 12),
+    usedSkuKeys,
+  );
+  const heroProducts = pickProductsForSectionDistinct(
+    landingPoolUnique,
+    landingSettings.highlightedProductIds,
+    8,
+    landingPoolUnique.slice(0, 24),
+    usedSkuKeys,
+  );
+  const featured = pickProductsForSectionDistinct(
+    landingPoolUnique,
+    landingSettings.popularProductIds,
+    4,
+    landingPoolUnique.slice(0, 24),
+    usedSkuKeys,
+  );
+  const arrivals = pickProductsForSectionDistinct(
+    landingPoolUnique,
+    landingSettings.arrivalsProductIds,
+    4,
+    landingPoolUnique.slice(8, 32),
+    usedSkuKeys,
+  );
+  const trending = pickProductsForSectionDistinct(
+    landingPoolUnique,
+    landingSettings.trendingProductIds,
+    4,
+    landingPoolUnique.slice(16, 40),
+    usedSkuKeys,
+  );
+  const saleItems = pickProductsForSectionDistinct(
+    salePool,
+    landingSettings.saleProductIds,
+    4,
+    salePool.slice(0, 16),
+    usedSkuKeys,
+  );
 
   return (
     <>
