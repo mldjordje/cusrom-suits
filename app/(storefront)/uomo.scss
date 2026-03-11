@@ -124,6 +124,22 @@
   color: #fff;
 }
 
+#header.header {
+  z-index: 1200;
+}
+
+#header .navigation,
+#header .navigation__list,
+#header .navigation__item,
+#header .navigation__link,
+#header .header-tools,
+#header .header-tools__item,
+#header .logo a {
+  pointer-events: auto;
+  position: relative;
+  z-index: 1201;
+}
+
 .onepage-pagination {
   display: none !important;
 }

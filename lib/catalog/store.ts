@@ -220,6 +220,46 @@ const collectCategories = (items: CatalogProductView[]): CatalogCategory[] => {
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "sr"));
 };
 
+const applySkuImageFallbacks = (items: CatalogProductView[]): CatalogProductView[] => {
+  const donorBySku = new Map<string, { coverImage: string; images: string[] }>();
+
+  for (const item of items) {
+    const skuKey = String(item.sku || "").trim().toLowerCase();
+    if (!skuKey || donorBySku.has(skuKey)) continue;
+    const imageList = Array.isArray(item.images) ? item.images.filter((img) => String(img || "").trim().length > 0) : [];
+    const cover = item.coverImage || imageList[0] || null;
+    if (!cover) continue;
+    donorBySku.set(skuKey, {
+      coverImage: cover,
+      images: imageList.length > 0 ? imageList : [cover],
+    });
+  }
+
+  return items.map((item) => {
+    const hasCover = Boolean(item.coverImage && item.coverImage.trim().length > 0);
+    const hasImages = Array.isArray(item.images) && item.images.some((img) => String(img || "").trim().length > 0);
+    if (hasCover || hasImages) return item;
+
+    const skuKey = String(item.sku || "").trim().toLowerCase();
+    if (!skuKey) return item;
+    const donor = donorBySku.get(skuKey);
+    if (!donor) return item;
+
+    return {
+      ...item,
+      coverImage: donor.coverImage,
+      images: [...donor.images],
+      rawPayload: {
+        ...item.rawPayload,
+        imageFallback: {
+          type: "sku",
+          sku: item.sku,
+        },
+      },
+    };
+  });
+};
+
 async function loadFromSupabase(): Promise<CatalogProductView[] | null> {
   const supabase = getServiceSupabase() || getAnonSupabase();
   if (!supabase) return null;
@@ -266,12 +306,13 @@ async function loadFromSupabase(): Promise<CatalogProductView[] | null> {
     }
   }
 
-  return products.map((row: Record<string, unknown>) => normalizeCatalogRow(row, imagesByProductId));
+  const normalized = products.map((row: Record<string, unknown>) => normalizeCatalogRow(row, imagesByProductId));
+  return applySkuImageFallbacks(normalized);
 }
 
 async function loadFromFile(): Promise<CatalogProductView[]> {
   const fileItems = await readJsonFile<LegacyCatalogProduct[]>(LEGACY_PRODUCTS_PATH, []);
-  return fileItems.map(normalizeLegacyJson);
+  return applySkuImageFallbacks(fileItems.map(normalizeLegacyJson));
 }
 
 export async function listCatalogProducts(input: CatalogListInput = {}): Promise<CatalogListResult> {
