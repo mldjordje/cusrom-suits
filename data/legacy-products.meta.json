@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-02-20T10:15:23.512Z",
+  "generatedAt": "2026-03-11T11:06:45.546Z",
   "inputSql": "agyc3416_santos_sa2025.sql",
   "outputFile": "data\\legacy-products.json",
   "options": {
-    "includeInactive": false,
-    "includeNonExport": false,
+    "includeInactive": true,
+    "includeNonExport": true,
     "onlyInStock": false,
     "limit": null,
     "baseUrl": "https://santos.rs"
@@ -27,11 +27,11 @@
       "tax": 5,
       "brend": 1
     },
-    "skippedProductsInactive": 2677,
-    "skippedProductsNonExport": 7210,
+    "skippedProductsInactive": 0,
+    "skippedProductsNonExport": 0,
     "skippedProductsOutOfStock": 0,
     "parsedProducts": 11302,
-    "finalProducts": 1415,
+    "finalProducts": 11302,
     "categories": 42,
     "brands": 1,
     "taxes": 5

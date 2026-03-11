@@ -18,6 +18,7 @@ type RunInboundOptions = {
 };
 
 type ProductCsvRow = {
+  sourceId: number;
   legacyId: number;
   category: string;
   sku: string;
@@ -119,6 +120,11 @@ const toNumber = (value: string | number | undefined, fallback = 0) => {
   return Number.isFinite(num) ? num : fallback;
 };
 
+const round = (value: number, digits = 2) => {
+  const p = 10 ** digits;
+  return Math.round(toNumber(value, 0) * p) / p;
+};
+
 const toText = (value: string | number | undefined) => String(value ?? "").trim();
 
 const normalizeName = (value: string) => value.trim().toLowerCase();
@@ -133,9 +139,14 @@ const parseMd5 = (raw: string) => {
 
 const parseProductCsvRow = (row: (string | number)[]): ProductCsvRow | null => {
   if (row.length < 10) return null;
-  const legacyId = toNumber(row[0], NaN);
+  const sourceId = toNumber(row[0], NaN);
+  const barcode = toText(row[6]);
+  const barcodeAsLegacyId = toNumber(barcode, NaN);
+  const legacyId =
+    Number.isFinite(barcodeAsLegacyId) && barcodeAsLegacyId > 0 ? barcodeAsLegacyId : sourceId;
   if (!Number.isFinite(legacyId) || legacyId <= 0) return null;
   return {
+    sourceId: Number.isFinite(sourceId) && sourceId > 0 ? sourceId : legacyId,
     legacyId,
     category: toText(row[1]),
     sku: toText(row[2]),
@@ -361,8 +372,12 @@ async function applyProductRows(rows: (string | number)[][], state: InboundState
           ? [{ id: 0, name: row.category, path: [row.category] }]
           : [];
       const taxPercent = resolveTaxPercent(row.taxCode, state);
+      const priceNet = toNumber(row.vpprice, 0);
+      const priceGrossRaw = toNumber(row.mpprice, 0);
+      const priceGross = priceGrossRaw > 0 ? priceGrossRaw : round(priceNet * (1 + taxPercent / 100), 2);
       const payload = {
         syncSource: "legacy-stock-product.csv",
+        sourceProductId: row.sourceId,
         category: row.category,
         size: row.size,
         mpprice: row.mpprice,
@@ -384,9 +399,9 @@ async function applyProductRows(rows: (string | number)[][], state: InboundState
         description_en: null,
         specification_sr: null,
         specification_en: null,
-        price_net: row.vpprice,
-        price_gross: row.vpprice,
-        price_final_gross: row.vpprice,
+        price_net: priceNet,
+        price_gross: priceGross,
+        price_final_gross: priceGross,
         tax_percent: taxPercent,
         rebate_percent: 0,
         stock_warehouse_1: row.amount,
@@ -439,6 +454,10 @@ async function applyProductRows(rows: (string | number)[][], state: InboundState
       : row.category
         ? [{ id: 0, name: row.category, path: [row.category] }]
         : [];
+    const taxPercent = resolveTaxPercent(row.taxCode, state);
+    const priceNet = toNumber(row.vpprice, 0);
+    const priceGrossRaw = toNumber(row.mpprice, 0);
+    const priceGross = priceGrossRaw > 0 ? priceGrossRaw : round(priceNet * (1 + taxPercent / 100), 2);
     const entry = byId.get(row.legacyId);
     if (entry) {
       entry.sku = row.sku || entry.sku;
@@ -446,10 +465,10 @@ async function applyProductRows(rows: (string | number)[][], state: InboundState
       entry.names = entry.names || {};
       entry.names.sr = row.name || entry.names.sr || row.sku;
       entry.price = entry.price || {};
-      entry.price.net = row.vpprice;
-      entry.price.gross = row.vpprice;
-      entry.price.finalGross = row.vpprice;
-      entry.price.taxPercent = resolveTaxPercent(row.taxCode, state);
+      entry.price.net = priceNet;
+      entry.price.gross = priceGross;
+      entry.price.finalGross = priceGross;
+      entry.price.taxPercent = taxPercent;
       entry.stock = entry.stock || {};
       entry.stock.warehouse1 = row.amount;
       entry.stock.total = row.amount;
@@ -460,6 +479,7 @@ async function applyProductRows(rows: (string | number)[][], state: InboundState
       entry.attributes.size = sizes;
       entry.raw = entry.raw || {};
       entry.raw.stockSyncTs = new Date().toISOString();
+      entry.raw.sourceProductId = row.sourceId;
       entry.raw.categories = categoryPayload;
       entry.raw.taxCode = row.taxCode;
       continue;
@@ -476,10 +496,10 @@ async function applyProductRows(rows: (string | number)[][], state: InboundState
       descriptions: { sr: null, en: null },
       specification: { sr: null, en: null },
       price: {
-        net: row.vpprice,
-        gross: row.vpprice,
-        finalGross: row.vpprice,
-        taxPercent: resolveTaxPercent(row.taxCode, state),
+        net: priceNet,
+        gross: priceGross,
+        finalGross: priceGross,
+        taxPercent,
         rebatePercent: 0,
       },
       stock: {
@@ -501,6 +521,7 @@ async function applyProductRows(rows: (string | number)[][], state: InboundState
       attributes: { size: row.size ? [row.size] : [] },
       raw: {
         taxId: row.taxCode,
+        sourceProductId: row.sourceId,
         oldProductId: row.legacyId,
         erpId: row.legacyId,
         ts: new Date().toISOString(),
@@ -846,6 +867,31 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
   let successRows = 0;
 
   if (supabase) {
+    const productIds = Array.from(new Set(parsed.map((row) => row.legacyId)));
+    const taxByProductId = new Map<number, { taxPercent: number; rebatePercent: number }>();
+    if (productIds.length) {
+      const { data: products, error: productsError } = await supabase
+        .from("catalog_products")
+        .select("legacy_id,tax_percent,rebate_percent")
+        .in("legacy_id", productIds);
+      if (productsError) {
+        failures.push({
+          rowIndex: -1,
+          reason: `Unable to load product tax/rebate metadata: ${productsError.message}`,
+        });
+      } else {
+        for (const product of products || []) {
+          const row = product as Record<string, unknown>;
+          const legacyId = toNumber(row.legacy_id as number, NaN);
+          if (!Number.isFinite(legacyId) || legacyId <= 0) continue;
+          taxByProductId.set(legacyId, {
+            taxPercent: toNumber(row.tax_percent as number, 20),
+            rebatePercent: toNumber(row.rebate_percent as number, 0),
+          });
+        }
+      }
+    }
+
     for (const row of parsed) {
       const patch: Record<string, unknown> = {
         stock_warehouse_1: row.amount,
@@ -853,8 +899,16 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
         updated_at: new Date().toISOString(),
       };
       if (row.price > 0) {
-        patch.price_gross = row.price;
-        patch.price_final_gross = row.price;
+        const taxMeta = taxByProductId.get(row.legacyId) || { taxPercent: 20, rebatePercent: 0 };
+        const priceNet = toNumber(row.price, 0);
+        const priceGross = round(priceNet * (1 + toNumber(taxMeta.taxPercent, 20) / 100), 2);
+        const priceFinalGross = round(
+          priceGross * (1 - toNumber(taxMeta.rebatePercent, 0) / 100),
+          2,
+        );
+        patch.price_net = priceNet;
+        patch.price_gross = priceGross;
+        patch.price_final_gross = priceFinalGross;
       }
 
       const { error } = await supabase
@@ -904,9 +958,15 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
     product.stock.warehouse1 = row.amount;
     product.stock.total = row.amount;
     if (row.price > 0) {
+      const taxPercent = toNumber(product.price?.taxPercent, 20);
+      const rebatePercent = toNumber(product.price?.rebatePercent, 0);
+      const priceNet = toNumber(row.price, 0);
+      const priceGross = round(priceNet * (1 + taxPercent / 100), 2);
+      const priceFinalGross = round(priceGross * (1 - rebatePercent / 100), 2);
       product.price = product.price || {};
-      product.price.gross = row.price;
-      product.price.finalGross = row.price;
+      product.price.net = priceNet;
+      product.price.gross = priceGross;
+      product.price.finalGross = priceFinalGross;
     }
     product.raw = product.raw || {};
     product.raw.stockWarehouse = {

@@ -276,6 +276,25 @@ function round(value, digits = 2) {
   return Math.round(ensureNumber(value) * p) / p;
 }
 
+function pickNetPrice(product, stockRow) {
+  const productPrice = ensureNumber(product.price, 0);
+  if (productPrice > 0) return productPrice;
+
+  const warehouseRows = Array.isArray(stockRow?.warehouses) ? stockRow.warehouses : [];
+  const warehouse1Price = warehouseRows
+    .filter((row) => ensureNumber(row.warehouseid, 0) === 1)
+    .map((row) => ensureNumber(row.price, 0))
+    .find((value) => value > 0);
+  if (warehouse1Price != null) return warehouse1Price;
+
+  const anyWarehousePrice = warehouseRows
+    .map((row) => ensureNumber(row.price, 0))
+    .find((value) => value > 0);
+  if (anyWarehousePrice != null) return anyWarehousePrice;
+
+  return 0;
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   const sqlPath = path.resolve(process.cwd(), args.sqlPath);
@@ -380,7 +399,7 @@ async function main() {
 
     const taxId = ensureNumber(product.taxid);
     const taxPercent = ensureNumber(state.taxes.get(taxId)?.value, 0);
-    const priceNet = ensureNumber(product.price, 0);
+    const priceNet = pickNetPrice(product, stockRow);
     const rebatePercent = ensureNumber(product.rebate, 0);
     const priceGross = round(priceNet * (1 + taxPercent / 100), 2);
     const priceFinalGross = round(priceGross * (1 - rebatePercent / 100), 2);

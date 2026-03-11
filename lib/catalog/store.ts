@@ -224,13 +224,21 @@ async function loadFromSupabase(): Promise<CatalogProductView[] | null> {
   const supabase = getServiceSupabase() || getAnonSupabase();
   if (!supabase) return null;
 
-  const { data: products, error } = await supabase
-    .from("catalog_products")
-    .select("*")
-    .order("updated_at", { ascending: false })
-    .limit(5000);
-
-  if (error || !products) return null;
+  const pageSize = 1000;
+  const products: Record<string, unknown>[] = [];
+  for (let from = 0; ; from += pageSize) {
+    const to = from + pageSize - 1;
+    const { data, error } = await supabase
+      .from("catalog_products")
+      .select("*")
+      .order("legacy_id", { ascending: true })
+      .range(from, to);
+    if (error) return null;
+    const batch = (data || []) as Record<string, unknown>[];
+    products.push(...batch);
+    if (batch.length < pageSize) break;
+  }
+  if (!products.length) return [];
 
   const legacyIds = products
     .map((row: Record<string, unknown>) => Number(row.legacy_id))
@@ -238,19 +246,23 @@ async function loadFromSupabase(): Promise<CatalogProductView[] | null> {
 
   const imagesByProductId = new Map<number, string[]>();
   if (legacyIds.length > 0) {
-    const { data: media } = await supabase
-      .from("catalog_product_media")
-      .select("legacy_product_id,url,sort")
-      .in("legacy_product_id", legacyIds)
-      .order("sort", { ascending: true });
+    const idChunkSize = 500;
+    for (let i = 0; i < legacyIds.length; i += idChunkSize) {
+      const idChunk = legacyIds.slice(i, i + idChunkSize);
+      const { data: media } = await supabase
+        .from("catalog_product_media")
+        .select("legacy_product_id,url,sort")
+        .in("legacy_product_id", idChunk)
+        .order("sort", { ascending: true });
 
-    for (const row of media || []) {
-      const productId = Number((row as Record<string, unknown>).legacy_product_id);
-      const url = String((row as Record<string, unknown>).url || "");
-      if (!productId || !url) continue;
-      const list = imagesByProductId.get(productId) || [];
-      list.push(url);
-      imagesByProductId.set(productId, list);
+      for (const row of media || []) {
+        const productId = Number((row as Record<string, unknown>).legacy_product_id);
+        const url = String((row as Record<string, unknown>).url || "");
+        if (!productId || !url) continue;
+        const list = imagesByProductId.get(productId) || [];
+        list.push(url);
+        imagesByProductId.set(productId, list);
+      }
     }
   }
 
