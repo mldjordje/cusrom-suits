@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import NextImage from "next/image";
-import AdminNav from "../components/AdminNav";
 
 type Fabric = {
   id: string;
@@ -390,8 +389,7 @@ export default function FabricsAdminPage() {
   };
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-8">
-      <AdminNav />
+    <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Fabrics CMS</h1>
         <p className="text-sm text-gray-600">Dodaj novu tkaninu uploadom ili unosom URL-a.</p>
@@ -794,4 +792,8 @@ export default function FabricsAdminPage() {
     </div>
   );
 }
+
+
+
+
 

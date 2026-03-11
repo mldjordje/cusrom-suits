@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import NextImage from "next/image";
-import AdminNav from "../components/AdminNav";
 
 type Lining = {
   id: string;
@@ -79,7 +78,7 @@ export default function LiningsAdminPage() {
       setStatus({ type: "error", message: json?.message || "Upload failed" });
       return;
     }
-    setStatus({ type: "success", message: "Sačuvano" });
+    setStatus({ type: "success", message: "SaÄŤuvano" });
     setForm({ id: "", name: "", base: "", left: "", right: "", texture: "", price: "" });
     setFiles({ base: null, left: null, right: null, texture: null });
     await loadLinings();
@@ -95,7 +94,7 @@ export default function LiningsAdminPage() {
     });
     const json = await res.json();
     if (!res.ok || !json?.success) {
-      setStatus({ type: "error", message: json?.message || "Brisanje neuspešno" });
+      setStatus({ type: "error", message: json?.message || "Brisanje neuspeĹˇno" });
     } else {
       setStatus({ type: "success", message: "Obrisano" });
       setLinings((prev) => prev.filter((l) => l.id !== id));
@@ -117,8 +116,7 @@ export default function LiningsAdminPage() {
   };
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-8">
-      <AdminNav />
+    <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Linings CMS</h1>
         <p className="text-sm text-gray-600">Upload postava (base/left/right slojevi) za sako.</p>
@@ -217,7 +215,7 @@ export default function LiningsAdminPage() {
             disabled={status.type === "loading"}
             className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
           >
-            {status.type === "loading" ? "Čuvam..." : "Sačuvaj postavu"}
+            {status.type === "loading" ? "ÄŚuvam..." : "SaÄŤuvaj postavu"}
           </button>
           {status.type !== "idle" && (
             <span
@@ -278,3 +276,7 @@ export default function LiningsAdminPage() {
     </div>
   );
 }
+
+
+
+

@@ -21,13 +21,12 @@ const navItems: NavItem[] = [
   {
     key: "shop",
     label: "Shop",
-    href: "https://santos.rs/Ode%C4%87a",
+    href: "/web-shop",
     isActive: (pathname) => pathname.startsWith("/web-shop"),
-    external: true,
   },
   {
     key: "home",
-    label: "Početna",
+    label: "Pocetna",
     href: "/",
     isActive: (pathname) => pathname === "/",
   },
@@ -53,7 +52,9 @@ const StickyMiniNav = ({ variant = "default" }: Props) => {
 
   return (
     <div className={`fixed z-30 w-full ${wrapperClasses}`}>
-      <nav className={`inline-flex w-full flex-wrap items-center rounded-[18px] border border-white/70 bg-white/90 shadow-[0_20px_55px_rgba(0,0,0,0.14)] backdrop-blur-lg ${navSizing}`}>
+      <nav
+        className={`inline-flex w-full flex-wrap items-center rounded-[18px] border border-white/70 bg-white/90 shadow-[0_20px_55px_rgba(0,0,0,0.14)] backdrop-blur-lg ${navSizing}`}
+      >
         {navItems.map((item) => {
           const active = item.isActive(pathname);
           const baseClasses =
@@ -83,3 +84,4 @@ const StickyMiniNav = ({ variant = "default" }: Props) => {
 };
 
 export default StickyMiniNav;
+

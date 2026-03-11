@@ -36,6 +36,9 @@
     ".next/types/**/*.ts"
   ],
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "admintemplate",
+    "public_html",
+    "Sajt kupljen novi template zip"
   ]
 }

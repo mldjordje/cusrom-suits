@@ -1,0 +1,199 @@
+.admin-template-root {
+  min-height: 100vh;
+  background: radial-gradient(1200px 800px at 0% 0%, #1f2a44 0%, #111827 40%, #0b1220 100%);
+  color: #e5e7eb;
+}
+
+.admin-template-shell {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  min-height: 100vh;
+}
+
+.admin-template-sidebar {
+  border-right: 1px solid rgba(148, 163, 184, 0.25);
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.98), rgba(9, 13, 22, 0.98));
+  padding: 1.25rem 0.9rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  max-height: 100vh;
+}
+
+.admin-template-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  text-decoration: none;
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 0.95rem;
+  padding: 0.75rem;
+  background: rgba(30, 41, 59, 0.6);
+  color: #e2e8f0;
+}
+
+.admin-template-brand-dot {
+  width: 0.85rem;
+  height: 0.85rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #60a5fa, #38bdf8);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.55);
+}
+
+.admin-template-brand-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.admin-template-brand-text strong {
+  font-size: 0.88rem;
+  letter-spacing: 0.01em;
+}
+
+.admin-template-brand-text small {
+  font-size: 0.7rem;
+  color: #94a3b8;
+}
+
+.admin-template-nav-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.admin-template-nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid transparent;
+  border-radius: 0.8rem;
+  padding: 0.5rem 0.62rem;
+  color: #cbd5e1;
+  text-decoration: none;
+  font-size: 0.81rem;
+  font-weight: 600;
+  transition: all 0.18s ease;
+}
+
+.admin-template-nav-link:hover {
+  background: rgba(51, 65, 85, 0.48);
+  border-color: rgba(148, 163, 184, 0.3);
+  color: #f8fafc;
+}
+
+.admin-template-nav-link.is-active {
+  background: linear-gradient(90deg, rgba(30, 64, 175, 0.55), rgba(30, 41, 59, 0.75));
+  border-color: rgba(96, 165, 250, 0.55);
+  color: #f8fafc;
+}
+
+.admin-template-nav-icon {
+  width: 1.65rem;
+  height: 1.65rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.55);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  color: #bfdbfe;
+}
+
+.admin-template-sidebar-foot {
+  margin-top: auto;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.8rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(15, 23, 42, 0.55);
+  color: #94a3b8;
+  font-size: 0.72rem;
+}
+
+.admin-template-main {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  background: #f1f5f9;
+}
+
+.admin-template-topbar {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  background: rgba(15, 23, 42, 0.72);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.35rem;
+}
+
+.admin-template-topbar-title p {
+  margin: 0;
+  color: #93c5fd;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.admin-template-topbar-title h1 {
+  margin: 0.15rem 0 0;
+  font-size: 1.15rem;
+  color: #f8fafc;
+  letter-spacing: 0.01em;
+}
+
+.admin-template-topbar-meta {
+  display: flex;
+  flex-direction: column;
+  text-align: right;
+  gap: 0.15rem;
+  font-size: 0.73rem;
+  color: #cbd5e1;
+}
+
+.admin-template-content {
+  padding: 1rem 1.1rem 1.6rem;
+  min-height: calc(100vh - 73px);
+}
+
+.admin-template-content input:not([type="checkbox"]):not([type="radio"]),
+.admin-template-content textarea,
+.admin-template-content select {
+  color: #0f172a;
+}
+
+.admin-template-content input:not([type="checkbox"]):not([type="radio"])::placeholder,
+.admin-template-content textarea::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+@media (max-width: 1024px) {
+  .admin-template-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-template-sidebar {
+    position: static;
+    max-height: none;
+    border-right: 0;
+    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+  }
+
+  .admin-template-nav-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+
+  .admin-template-nav-link {
+    font-size: 0.75rem;
+  }
+}

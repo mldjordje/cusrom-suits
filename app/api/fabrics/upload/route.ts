@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { randomUUID } from "crypto";
+import sharp from "sharp";
 
 const bucketName = process.env.SUPABASE_FABRICS_BUCKET || "fabrics";
+type ServiceSupabase = NonNullable<ReturnType<typeof getServiceSupabase>>;
 
 const ensureBucket = async (supabase: ReturnType<typeof getServiceSupabase>) => {
   if (!supabase) return;
@@ -63,6 +65,55 @@ const normalizeHex = (value: string | null) => {
   const raw = value.trim().replace(/^#/, "").toLowerCase();
   if (!/^[0-9a-f]{6}$/.test(raw)) return null;
   return `#${raw}`;
+};
+
+const buildAutoDetailBuffer = async (input: Buffer) => {
+  const pipeline = sharp(input, { failOn: "none" }).rotate();
+  const meta = await pipeline.metadata();
+  const width = meta.width ?? 0;
+  const height = meta.height ?? 0;
+  const side = Math.max(1, Math.min(width || 1, height || 1));
+  const size = side < 900 ? 1400 : 1200;
+  return pipeline
+    .resize(size, size, { fit: "cover", position: "attention", kernel: sharp.kernel.lanczos3 })
+    .normalize({ lower: 1, upper: 99 })
+    .modulate({ brightness: 1.015, saturation: 1 })
+    .sharpen(1.3, 1.7, 2.3)
+    .jpeg({ quality: 92, chromaSubsampling: "4:4:4" })
+    .toBuffer();
+};
+
+const tryBuildAndUploadAutoDetail = async ({
+  supabase,
+  textureUrl,
+  id,
+}: {
+  supabase: ServiceSupabase;
+  textureUrl: string;
+  id: string;
+}) => {
+  try {
+    const upstream = await fetch(textureUrl, {
+      cache: "no-store",
+      signal: AbortSignal.timeout(12_000),
+    });
+    if (!upstream.ok) return null;
+    const src = Buffer.from(await upstream.arrayBuffer());
+    const detailBuffer = await buildAutoDetailBuffer(src);
+    await ensureBucket(supabase);
+    const detailPath = `fabrics/details/auto-${id}-${Date.now()}.jpg`;
+    const { error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(detailPath, detailBuffer, {
+        upsert: true,
+        contentType: "image/jpeg",
+      });
+    if (uploadError) return null;
+    const { data } = supabase.storage.from(bucketName).getPublicUrl(detailPath);
+    return data?.publicUrl || null;
+  } catch {
+    return null;
+  }
 };
 
 export async function POST(req: NextRequest) {
@@ -135,6 +186,14 @@ export async function POST(req: NextRequest) {
     }
     const { data: detailPublic } = supabase.storage.from(bucketName).getPublicUrl(detailPath);
     detailImageUrl = detailPublic?.publicUrl || "";
+  }
+  if (!detailImageUrl && textureUrl) {
+    const autoDetailUrl = await tryBuildAndUploadAutoDetail({
+      supabase,
+      textureUrl,
+      id,
+    });
+    if (autoDetailUrl) detailImageUrl = autoDetailUrl;
   }
 
   const price = priceRaw ? Number(priceRaw) : null;

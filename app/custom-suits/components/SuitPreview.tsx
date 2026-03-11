@@ -31,7 +31,13 @@ import { FabricUnion } from "./layers/FabricUnion";
 import { GlobalOverlay } from "./layers/GlobalOverlay";
 import { LightingPasses } from "./layers/LightingPasses";
 import { spriteBackground } from "./layers/types";
-import { buildDeterministicPantsStripeZones } from "./pantsStripeZones";
+import { getJacketStripeTuning } from "./jacketStripeTuning";
+import { buildJacketStripeZones, type JacketStripeZones } from "./jacketStripeZones";
+import {
+  buildDeterministicPantsStripeZones,
+  computePantsStripeAutoPhaseOffsets,
+  type PantsStripeZoneBounds,
+} from "./pantsStripeZones";
 import { PANTS_STRIPE_TUNING } from "./pantsStripeTuning";
 
 /* =====================================================================================
@@ -72,6 +78,7 @@ const FABRIC_AVG_CACHE = new Map<string, string | null>();
 const FABRIC_TILE_CACHE = new Map<string, string>();
 const FABRIC_STRIPE_CACHE = new Map<string, StripeHint>();
 const JACKET_MASK_CACHE = new Map<string, string>();
+const JACKET_STRIPE_ZONES_CACHE = new Map<string, JacketStripeZones>();
 const VEST_MASK_CACHE = new Map<string, string>();
 const PANTS_MASK_CACHE = new Map<string, string>();
 const PANTS_LEG_MASK_CACHE = new Map<string, { left: string; right: string }>();
@@ -80,6 +87,8 @@ const PANTS_RIGHT_SPLIT_CACHE = new Map<string, { upper: string; lower: string |
 const PANTS_WAIST_MASK_CACHE = new Map<string, string>();
 const PANTS_AXIS_CACHE = new Map<string, number>();
 const PANTS_MASK_STATS_CACHE = new Map<string, PantsMaskStats>();
+const PANTS_ZONE_BOUNDS_CACHE = new Map<string, PantsStripeZoneBounds | null>();
+const PANTS_SEAM_DATA_CACHE = new Map<string, ImageData | null>();
 
 type RGB = { r: number; g: number; b: number };
 type StripeOrientation = "vertical" | "horizontal" | "none";
@@ -163,6 +172,15 @@ const parseNumber = (value: unknown) => {
   }
   return null;
 };
+
+const loadCrossOriginImage = (url: string) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = url;
+  });
 
 const normalizeHex = (value?: string | null) => {
   if (!value) return null;
@@ -598,6 +616,30 @@ export type SuitPreviewRenderDebug = {
   usePhotoBase: boolean;
   isStripeFabric: boolean;
   hasTextureStripes: boolean;
+  pantsStripeZoneEligible?: boolean;
+  pantsStripeZoneActive?: boolean;
+  pantsStripeZoneMode?: "single" | "secondary" | "primary";
+  pantsStripeDebug?: {
+    mode: "single" | "secondary" | "primary";
+    active: boolean;
+    coverage: number;
+    angles: {
+      leftMain: number;
+      rightUpper: number;
+      rightLower: number;
+      waist: number;
+    };
+  };
+  jacketStripeDebug?: {
+    mode: "single" | "zoned";
+    active: boolean;
+    coverage: number;
+    angles: {
+      body: number;
+      lapelLeft: number;
+      lapelRight: number;
+    };
+  };
   jacketPhotoLayerCount: number;
   pantsPhotoLayerCount: number;
 };
@@ -859,8 +901,10 @@ const SuitPreview = ({
     lower: string | null;
   } | null>(null);
   const [pantsWaistMask, setPantsWaistMask] = useState<string | null>(null);
+  const [pantsZoneBounds, setPantsZoneBounds] = useState<PantsStripeZoneBounds | null>(null);
   const [vestUnionMask, setVestUnionMask] = useState<string | null>(null);
   const [pantsMaskStats, setPantsMaskStats] = useState<PantsMaskStats | null>(null);
+  const [jacketStripeZones, setJacketStripeZones] = useState<JacketStripeZones | null>(null);
   const fabricTextureSourceRaw = fabricTileTexture || fabricTexture;
   const cmsPatternRaw = useMemo(() => getFabricPatternRaw(selectedFabric), [selectedFabric]);
   const cmsPatternNorm = useMemo(() => normalizePattern(cmsPatternRaw), [cmsPatternRaw]);
@@ -1331,8 +1375,12 @@ const SuitPreview = ({
   }, [pantsAxisAngle, stripeOrientation, stripeRotationActive]);
   const pantsTextureRotationResolved = useMemo(
     () => {
-      const base = stripeRotationActive ? pantsStripeRotationDeg : 0;
-      const manual = typeof pantsTextureRotationOverride === "number" ? pantsTextureRotationOverride : 0;
+      const stripeLocked = pantsStripeZoneEligible && isStripeFabric;
+      const base = stripeLocked ? 0 : stripeRotationActive ? pantsStripeRotationDeg : 0;
+      const manual =
+        stripeLocked || typeof pantsTextureRotationOverride !== "number"
+          ? 0
+          : pantsTextureRotationOverride;
       if (parityModeEnabled && parityPreset) {
         return normalizeRotation(base + manual + parityPreset.pantsTextureRotation);
       }
@@ -1343,7 +1391,9 @@ const SuitPreview = ({
       pantsTextureRotationOverride,
       parityModeEnabled,
       parityPreset,
+      pantsStripeZoneEligible,
       stripeRotationActive,
+      isStripeFabric,
     ]
   );
   const pantsTextureRotation = useMemo(
@@ -1853,6 +1903,17 @@ const SuitPreview = ({
     () => fabricMaskLayers.map((layer) => layer.src).filter(Boolean).join("|"),
     [fabricMaskLayers]
   );
+  const jacketLapelMaskSrc = useMemo(() => selectedLapelWidth?.src ?? null, [selectedLapelWidth?.src]);
+  const jacketStripeTuning = useMemo(
+    () => getJacketStripeTuning(selectedLapel?.id, selectedLapelWidth?.id),
+    [selectedLapel?.id, selectedLapelWidth?.id]
+  );
+  const jacketStripeZonesKey = useMemo(() => {
+    if (!jacketMaskKey || !jacketLapelMaskSrc) return null;
+    return `${jacketMaskKey}|${jacketLapelMaskSrc}|${selectedLapel?.id ?? "notch"}|${
+      selectedLapelWidth?.id ?? "medium"
+    }`;
+  }, [jacketLapelMaskSrc, jacketMaskKey, selectedLapel?.id, selectedLapelWidth?.id]);
   const pantsMaskLayers = useMemo(() => pantsFabricLayers, [pantsFabricLayers]);
   const vestMaskKey = useMemo(
     () => vestFabricLayers.map((layer) => layer.src).filter(Boolean).join("|"),
@@ -1940,6 +2001,38 @@ const SuitPreview = ({
             setFabricTileTexture(null);
           }
 
+          const shouldFetchStripeTile =
+            (isStripeFabric || patternStripe || pantsStripeZoneEligible) &&
+            /^https?:\/\//i.test(fabricTexture);
+          if (shouldFetchStripeTile) {
+            const profile = "stripe";
+            const quality = lowPowerMode ? "medium" : "high";
+            const tileSize = clamp(Math.round(tilePx * 1.2), 72, 192);
+            const endpoint = `/api/fabric-tile?url=${encodeURIComponent(
+              fabricTexture
+            )}&size=${tileSize}&profile=${profile}&quality=${quality}`;
+            fetch(endpoint, { cache: "force-cache" })
+              .then(async (res) => {
+                if (!res.ok) return null;
+                return await res.blob();
+              })
+              .then((blob) => {
+                if (!blob || cancelled) return;
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                  const dataUrl =
+                    typeof reader.result === "string" && reader.result.startsWith("data:")
+                      ? reader.result
+                      : null;
+                  if (!dataUrl || cancelled) return;
+                  setFabricTileTexture(dataUrl);
+                  FABRIC_TILE_CACHE.set(fabricTexture, dataUrl);
+                };
+                reader.readAsDataURL(blob);
+              })
+              .catch(() => {});
+          }
+
         } catch {}
       };
       if (requestIdle) {
@@ -1959,7 +2052,7 @@ const SuitPreview = ({
       if (idleId !== null && cancelIdle) cancelIdle(idleId);
       if (timeoutId !== null) window.clearTimeout(timeoutId);
     };
-  }, [fabricTexture, lowPowerMode, patternStripe]);
+  }, [fabricTexture, isStripeFabric, lowPowerMode, pantsStripeZoneEligible, patternStripe]);
 
   useEffect(() => {
     if (onAssetStatus) {
@@ -2164,6 +2257,130 @@ const SuitPreview = ({
   }, [fabricMaskLayers, jacketMaskKey]);
 
   useEffect(() => {
+    if (!isStripeFabric || !jacketStripeZonesKey || !jacketLapelMaskSrc) {
+      setJacketStripeZones(null);
+      return;
+    }
+    const cached = JACKET_STRIPE_ZONES_CACHE.get(jacketStripeZonesKey);
+    if (cached) {
+      setJacketStripeZones(cached);
+      return;
+    }
+
+    let cancelled = false;
+    let idleId: number | null = null;
+    let timeoutId: number | null = null;
+    const requestIdle = (typeof window !== "undefined" ? (window as any).requestIdleCallback : undefined) as
+      | ((cb: () => void, options?: { timeout: number }) => number)
+      | undefined;
+    const cancelIdle = (typeof window !== "undefined" ? (window as any).cancelIdleCallback : undefined) as
+      | ((id: number) => void)
+      | undefined;
+
+    const run = () => {
+      if (cancelled) return;
+      (async () => {
+        try {
+          const canvas = document.createElement("canvas");
+          canvas.width = JACKET_CANVAS.w;
+          canvas.height = JACKET_CANVAS.h;
+          const ctx = canvas.getContext("2d");
+          if (!ctx) return;
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          for (const layer of fabricMaskLayers) {
+            const pair = cdnPair(layer.src);
+            let img: HTMLImageElement | null = null;
+            try {
+              img = await loadCrossOriginImage(pair.webp);
+            } catch {
+              try {
+                img = await loadCrossOriginImage(pair.png);
+              } catch {
+                img = null;
+              }
+            }
+            if (!img) continue;
+            const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+            const w = Math.round(img.width * scale);
+            const h = Math.round(img.height * scale);
+            const dx = Math.round((canvas.width - w) / 2);
+            const dy = Math.round((canvas.height - h) / 2);
+            ctx.drawImage(img, dx, dy, w, h);
+          }
+          const unionData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+          const lapelCanvas = document.createElement("canvas");
+          lapelCanvas.width = JACKET_CANVAS.w;
+          lapelCanvas.height = JACKET_CANVAS.h;
+          const lapelCtx = lapelCanvas.getContext("2d");
+          if (!lapelCtx) return;
+          lapelCtx.clearRect(0, 0, lapelCanvas.width, lapelCanvas.height);
+          const lapelPair = cdnPair(jacketLapelMaskSrc);
+          let lapelImg: HTMLImageElement | null = null;
+          try {
+            lapelImg = await loadCrossOriginImage(lapelPair.webp);
+          } catch {
+            try {
+              lapelImg = await loadCrossOriginImage(lapelPair.png);
+            } catch {
+              lapelImg = null;
+            }
+          }
+          if (!lapelImg) {
+            if (!cancelled) setJacketStripeZones(null);
+            return;
+          }
+          const lapelScale = Math.min(
+            lapelCanvas.width / lapelImg.width,
+            lapelCanvas.height / lapelImg.height
+          );
+          const lapelW = Math.round(lapelImg.width * lapelScale);
+          const lapelH = Math.round(lapelImg.height * lapelScale);
+          const lapelDx = Math.round((lapelCanvas.width - lapelW) / 2);
+          const lapelDy = Math.round((lapelCanvas.height - lapelH) / 2);
+          lapelCtx.drawImage(lapelImg, lapelDx, lapelDy, lapelW, lapelH);
+          const lapelData = lapelCtx.getImageData(0, 0, lapelCanvas.width, lapelCanvas.height);
+
+          const zones = buildJacketStripeZones({
+            ctx,
+            unionData,
+            lapelData,
+            width: canvas.width,
+            height: canvas.height,
+            config: jacketStripeTuning.boundaries,
+          });
+
+          if (!cancelled) {
+            setJacketStripeZones(zones);
+            if (zones) JACKET_STRIPE_ZONES_CACHE.set(jacketStripeZonesKey, zones);
+          }
+        } catch {
+          if (!cancelled) setJacketStripeZones(null);
+        }
+      })();
+    };
+
+    if (requestIdle) {
+      idleId = requestIdle(run, { timeout: 350 });
+    } else {
+      timeoutId = window.setTimeout(run, 0);
+    }
+
+    return () => {
+      cancelled = true;
+      if (idleId !== null && cancelIdle) cancelIdle(idleId);
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+    };
+  }, [
+    fabricMaskLayers,
+    isStripeFabric,
+    jacketLapelMaskSrc,
+    jacketStripeTuning.boundaries,
+    jacketStripeZonesKey,
+  ]);
+
+  useEffect(() => {
     if (!detailLayers.length && !pantsLayer) {
       setAssetWarnings([]);
       return;
@@ -2280,32 +2497,6 @@ const SuitPreview = ({
     () => (usePhotoBase ? [...pantsBaseLayers, ...pantsPhotoDetailLayers] : []),
     [pantsBaseLayers, pantsPhotoDetailLayers, usePhotoBase]
   );
-  useEffect(() => {
-    if (!onRenderDebug) return;
-    onRenderDebug({
-      renderMode: activeRenderMode,
-      requestedRenderMode,
-      photoVariant,
-      forcedPhotoVariant: FORCE_PHOTO_VARIANT,
-      renderBasePath: fabricRenderBasePath,
-      usePhotoBase,
-      isStripeFabric,
-      hasTextureStripes,
-      jacketPhotoLayerCount: jacketPhotoLayers.length,
-      pantsPhotoLayerCount: pantsPhotoLayers.length,
-    });
-  }, [
-    activeRenderMode,
-    fabricRenderBasePath,
-    hasTextureStripes,
-    isStripeFabric,
-    jacketPhotoLayers.length,
-    onRenderDebug,
-    pantsPhotoLayers.length,
-    photoVariant,
-    requestedRenderMode,
-    usePhotoBase,
-  ]);
   const pantsZoneTuningSignature = JSON.stringify({
     diagAbsDeg: PANTS_STRIPE_TUNING.diagAbsDeg,
     flyAbsDeg: PANTS_STRIPE_TUNING.flyAbsDeg,
@@ -2394,7 +2585,8 @@ const SuitPreview = ({
   const pantsZoneTextureRequested = Boolean(
     pantsZoneOverlayReady && pantsStripeDetectedForZones && usePantsTexture
   );
-  const pantsZoneRotationBaseDeg = pantsTextureRotationResolved;
+  const pantsZoneRotationBaseDeg =
+    pantsStripeDetectedForZones && isStripeFabric ? 0 : pantsTextureRotationResolved;
   const pantsLeftZoneRotationDeg = normalizeRotation(
     pantsZoneRotationBaseDeg + (PANTS_STRIPE_TUNING.zone?.leftMainAbsDeg ?? PANTS_STRIPE_TUNING.diagAbsDeg)
   );
@@ -2605,21 +2797,47 @@ const SuitPreview = ({
     pantsStripeDetectedForZones && !pantsZoneTextureActive
       ? pantsRightUpperZoneRotationDeg
       : pantsStripeZoneConfig.rotations.single;
+  const pantsAutoStripeOffsets = useMemo(() => {
+    if (!pantsStripeDetectedForZones || !pantsZoneBounds) return null;
+    return computePantsStripeAutoPhaseOffsets({
+      zoneBounds: pantsZoneBounds,
+      rotations: {
+        leftMain: pantsLeftZoneRotationDeg,
+        rightUpper: pantsRightUpperZoneRotationDeg,
+        rightLower: pantsRightLowerZoneRotationDeg,
+        waist: pantsWaistZoneRotationDeg,
+      },
+      tileSizePx: stripeTileSizePx,
+    });
+  }, [
+    pantsLeftZoneRotationDeg,
+    pantsRightLowerZoneRotationDeg,
+    pantsRightUpperZoneRotationDeg,
+    pantsStripeDetectedForZones,
+    pantsWaistZoneRotationDeg,
+    pantsZoneBounds,
+    stripeTileSizePx,
+  ]);
   const getZoneTextureOffset = useCallback(
     (zone: "leftMain" | "leftUnderlap" | "rightFly" | "rightUnder" | "waist") => {
       if (!pantsStripeDetectedForZones) return undefined;
-      const base = PANTS_STRIPE_TUNING.stripeOffsets?.[zone];
-      if (!base) return undefined;
-      return base;
+      const manual = PANTS_STRIPE_TUNING.stripeOffsets?.[zone];
+      const auto = pantsAutoStripeOffsets?.[zone];
+      if (!manual && !auto) return undefined;
+      return {
+        x: (manual?.x ?? 0) + (auto?.x ?? 0),
+        y: (manual?.y ?? 0) + (auto?.y ?? 0),
+      };
     },
-    [pantsStripeDetectedForZones]
+    [pantsAutoStripeOffsets, pantsStripeDetectedForZones]
   );
   const jacketTextureStyleReal = useMemo<React.CSSProperties>(() => {
     const baseOpacity = Number(fabricTextureStyle.opacity ?? tunedTextureOpacity);
     if (usePhotoBase) {
       const blend: React.CSSProperties["mixBlendMode"] =
-        isStripeFabric ? "overlay" : "soft-light";
-      const opacity = clamp(baseOpacity * (isStripeFabric ? 0.68 : 0.72), 0.1, 0.3);
+        isStripeFabric ? (fabricTone === "dark" ? "soft-light" : "overlay") : "soft-light";
+      const preserveMul = isStripeFabric ? (fabricTone === "dark" ? 0.88 : 0.8) : 0.72;
+      const opacity = clamp(baseOpacity * preserveMul, 0.12, isStripeFabric ? 0.4 : 0.3);
       return {
         ...fabricTextureStyle,
         mixBlendMode: blend,
@@ -2635,6 +2853,15 @@ const SuitPreview = ({
       opacity,
     };
   }, [fabricTextureStyle, fabricTone, isStripeFabric, tunedTextureOpacity, usePhotoBase]);
+  const jacketStripeRotations = useMemo(
+    () => ({
+      body: normalizeRotation(jacketStripeTuning.angles.bodyAbsDeg),
+      lapelLeft: normalizeRotation(jacketStripeTuning.angles.lapelLeftAbsDeg),
+      lapelRight: normalizeRotation(jacketStripeTuning.angles.lapelRightAbsDeg),
+    }),
+    [jacketStripeTuning.angles.bodyAbsDeg, jacketStripeTuning.angles.lapelLeftAbsDeg, jacketStripeTuning.angles.lapelRightAbsDeg]
+  );
+  const jacketStripeZoneActive = Boolean(isStripeFabric && jacketStripeZones?.stats.valid);
   const pantsTextureStyleReal = useMemo<React.CSSProperties>(() => {
     const baseOpacity = Number(pantsZoneTextureStyle.opacity ?? tunedTextureOpacity);
     const stripeZoneEnhanced = pantsZoneTextureActive && (hasTextureStripes || isStripeFabric);
@@ -2683,6 +2910,70 @@ const SuitPreview = ({
       opacity: clamp(baseOpacity * preserveMul, minOpacity, maxOpacity),
     };
   }, [hasTextureStripes, isStripeFabric, pantsTextureStyleReal, usePhotoBase]);
+  const jacketStripeCoverage = jacketStripeZones?.stats.coverageRatio ?? 0;
+  useEffect(() => {
+    if (!onRenderDebug) return;
+    onRenderDebug({
+      renderMode: activeRenderMode,
+      requestedRenderMode,
+      photoVariant,
+      forcedPhotoVariant: FORCE_PHOTO_VARIANT,
+      renderBasePath: fabricRenderBasePath,
+      usePhotoBase,
+      isStripeFabric,
+      hasTextureStripes,
+      pantsStripeZoneEligible: pantsStripeDetectedForZones,
+      pantsStripeZoneActive: pantsZoneTextureActive,
+      pantsStripeZoneMode: pantsStripeZoneConfig.mode,
+      pantsStripeDebug: {
+        mode: pantsStripeZoneConfig.mode,
+        active: pantsZoneTextureActive,
+        coverage: Number(pantsStripeZoneConfig.coverageRatio.toFixed(5)),
+        angles: {
+          leftMain: pantsStripeZoneConfig.rotations.leftMain,
+          rightUpper: pantsStripeZoneConfig.rotations.rightUpper,
+          rightLower: pantsStripeZoneConfig.rotations.rightLower,
+          waist: pantsStripeZoneConfig.rotations.waist,
+        },
+      },
+      jacketStripeDebug: {
+        mode: jacketStripeZoneActive ? "zoned" : "single",
+        active: jacketStripeZoneActive,
+        coverage: Number(jacketStripeCoverage.toFixed(5)),
+        angles: {
+          body: jacketStripeRotations.body,
+          lapelLeft: jacketStripeRotations.lapelLeft,
+          lapelRight: jacketStripeRotations.lapelRight,
+        },
+      },
+      jacketPhotoLayerCount: jacketPhotoLayers.length,
+      pantsPhotoLayerCount: pantsPhotoLayers.length,
+    });
+  }, [
+    activeRenderMode,
+    fabricRenderBasePath,
+    hasTextureStripes,
+    isStripeFabric,
+    jacketPhotoLayers.length,
+    jacketStripeRotations.body,
+    jacketStripeRotations.lapelLeft,
+    jacketStripeRotations.lapelRight,
+    jacketStripeCoverage,
+    jacketStripeZoneActive,
+    onRenderDebug,
+    pantsPhotoLayers.length,
+    pantsStripeDetectedForZones,
+    pantsStripeZoneConfig.coverageRatio,
+    pantsStripeZoneConfig.mode,
+    pantsStripeZoneConfig.rotations.leftMain,
+    pantsStripeZoneConfig.rotations.rightLower,
+    pantsStripeZoneConfig.rotations.rightUpper,
+    pantsStripeZoneConfig.rotations.waist,
+    pantsZoneTextureActive,
+    photoVariant,
+    requestedRenderMode,
+    usePhotoBase,
+  ]);
   const pantsStripeShadingMul = 1;
   const pantsStripeEdgeMul = 1;
   const pantsRightZoneMask =
@@ -2950,6 +3241,7 @@ const SuitPreview = ({
     const cachedLeftSplit = PANTS_LEFT_SPLIT_CACHE.get(pantsMaskKey) ?? null;
     const cachedRightSplit = PANTS_RIGHT_SPLIT_CACHE.get(pantsMaskKey) ?? null;
     const cachedWaist = PANTS_WAIST_MASK_CACHE.get(pantsMaskKey) ?? null;
+    const cachedBounds = PANTS_ZONE_BOUNDS_CACHE.get(pantsMaskKey) ?? null;
     const cachedAxis = PANTS_AXIS_CACHE.get(pantsMaskKey);
     const cachedStats = PANTS_MASK_STATS_CACHE.get(pantsMaskKey) ?? null;
 
@@ -2959,6 +3251,7 @@ const SuitPreview = ({
       setPantsLeftSplitMasks(cachedLeftSplit);
       setPantsRightSplitMasks(cachedRightSplit);
       setPantsWaistMask(cachedWaist);
+      setPantsZoneBounds(cachedBounds);
       setPantsAxisAngle(typeof cachedAxis === "number" ? cachedAxis : null);
       setPantsMaskStats(cachedStats);
       return;
@@ -2979,10 +3272,12 @@ const SuitPreview = ({
       setPantsLeftSplitMasks(null);
       setPantsRightSplitMasks(null);
       setPantsWaistMask(null);
+      setPantsZoneBounds(null);
       PANTS_LEG_MASK_CACHE.delete(pantsMaskKey);
       PANTS_LEFT_SPLIT_CACHE.delete(pantsMaskKey);
       PANTS_RIGHT_SPLIT_CACHE.delete(pantsMaskKey);
       PANTS_WAIST_MASK_CACHE.delete(pantsMaskKey);
+      PANTS_ZONE_BOUNDS_CACHE.delete(pantsMaskKey);
     };
 
     const run = () => {
@@ -3049,10 +3344,40 @@ const SuitPreview = ({
 
           if (ENABLE_PANTS_ZONE_MASKS) {
             if (pantsStripeDetectedForZones) {
+              const seamCacheKey = `${c.width}x${c.height}`;
+              let seamData: ImageData | null = null;
+              if (PANTS_SEAM_DATA_CACHE.has(seamCacheKey)) {
+                seamData = PANTS_SEAM_DATA_CACHE.get(seamCacheKey) ?? null;
+              } else {
+                try {
+                  const seamImg = await loadCrossOriginImage(PANTS_SEAM_MASK_SRC);
+                  const seamCanvas = document.createElement("canvas");
+                  seamCanvas.width = c.width;
+                  seamCanvas.height = c.height;
+                  const seamCtx = seamCanvas.getContext("2d");
+                  if (seamCtx) {
+                    seamCtx.clearRect(0, 0, seamCanvas.width, seamCanvas.height);
+                    const seamScale = Math.min(
+                      seamCanvas.width / seamImg.width,
+                      seamCanvas.height / seamImg.height
+                    );
+                    const seamW = Math.round(seamImg.width * seamScale);
+                    const seamH = Math.round(seamImg.height * seamScale);
+                    const seamDx = Math.round((seamCanvas.width - seamW) / 2);
+                    const seamDy = Math.round((seamCanvas.height - seamH) / 2);
+                    seamCtx.drawImage(seamImg, seamDx, seamDy, seamW, seamH);
+                    seamData = seamCtx.getImageData(0, 0, seamCanvas.width, seamCanvas.height);
+                  }
+                } catch {
+                  seamData = null;
+                }
+                PANTS_SEAM_DATA_CACHE.set(seamCacheKey, seamData);
+              }
               const deterministicConfig = PANTS_STRIPE_TUNING.deterministic;
               const deterministicZones = buildDeterministicPantsStripeZones({
                 ctx,
                 unionData,
+                seamData,
                 width: c.width,
                 height: c.height,
                 config: {
@@ -3082,6 +3407,9 @@ const SuitPreview = ({
                   beltTopYRatio: deterministicConfig?.beltTopYRatio ?? 0.02,
                   beltBottomYRatio: deterministicConfig?.beltBottomYRatio ?? 0.98,
                   boundaryFeatherPx: deterministicConfig?.boundaryFeatherPx ?? 1.2,
+                  seamGuidanceWeight: deterministicConfig?.seamGuidanceWeight ?? 1,
+                  seamGuidanceBlendPx: deterministicConfig?.seamGuidanceBlendPx ?? 16,
+                  seamFallbackWeight: deterministicConfig?.seamFallbackWeight ?? 0.2,
                 },
               });
 
@@ -3103,6 +3431,7 @@ const SuitPreview = ({
                 setPantsLeftSplitMasks(leftSplit);
                 setPantsRightSplitMasks(splitMasks);
                 setPantsWaistMask(deterministicZones.waistMaskUrl);
+                setPantsZoneBounds(deterministicZones.zoneBounds ?? null);
                 setPantsMaskStats(stats);
                 PANTS_LEG_MASK_CACHE.set(pantsMaskKey, masks);
                 PANTS_LEFT_SPLIT_CACHE.set(pantsMaskKey, leftSplit);
@@ -3112,6 +3441,7 @@ const SuitPreview = ({
                 } else {
                   PANTS_WAIST_MASK_CACHE.delete(pantsMaskKey);
                 }
+                PANTS_ZONE_BOUNDS_CACHE.set(pantsMaskKey, deterministicZones.zoneBounds ?? null);
                 PANTS_MASK_STATS_CACHE.set(pantsMaskKey, stats);
               } else if (!cancelled) {
                 const fallbackStats: PantsMaskStats = deterministicZones?.maskStats ?? {
@@ -3186,11 +3516,13 @@ const SuitPreview = ({
                   setPantsLeftSplitMasks(null);
                   setPantsRightSplitMasks(null);
                   setPantsWaistMask(null);
+                  setPantsZoneBounds(null);
                   setPantsMaskStats(stats);
                   PANTS_LEG_MASK_CACHE.set(pantsMaskKey, masks);
                   PANTS_LEFT_SPLIT_CACHE.delete(pantsMaskKey);
                   PANTS_RIGHT_SPLIT_CACHE.delete(pantsMaskKey);
                   PANTS_WAIST_MASK_CACHE.delete(pantsMaskKey);
+                  PANTS_ZONE_BOUNDS_CACHE.delete(pantsMaskKey);
                   PANTS_MASK_STATS_CACHE.set(pantsMaskKey, stats);
                 } else {
                   clearZoneMasks();
@@ -3242,9 +3574,11 @@ const SuitPreview = ({
             clearZoneMasks();
             setPantsAxisAngle(null);
             setPantsMaskStats(null);
+            setPantsZoneBounds(null);
             PANTS_MASK_CACHE.delete(pantsMaskKey);
             PANTS_AXIS_CACHE.delete(pantsMaskKey);
             PANTS_MASK_STATS_CACHE.delete(pantsMaskKey);
+            PANTS_ZONE_BOUNDS_CACHE.delete(pantsMaskKey);
           }
         } finally {
           if (!cancelled) setPantsMaskBuilding(false);
@@ -3503,28 +3837,92 @@ const SuitPreview = ({
                 mask={jacketMask}
               />
             )}
-            {showLayer("fabric") && (
-              <FabricUnion
-                layers={fabricMaskLayers}
-                resolve={resolveCdn}
-                fabricTexture={useTexture ? fabricTextureSource : undefined}
-                textureStyle={jacketTextureStyleReal}
-                baseColor={tunedFabricFill || toneBaseColor}
-                fabricAvgColor={tunedFabricFill}
-                baseBlendMode="color"
-                baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
-                panZoom={panZoom}
-                canvas={JACKET_CANVAS}
-                mask={jacketMask}
-                textureScale={jacketTextureScale}
-                textureTileSizePx={stripeTileSizePx}
-                textureRotationDeg={0}
-                rotationScaleMode="none"
-                backgroundAnchor="top-left"
-                rotationOrigin="top left"
-                backgroundOffset={ZERO_OFFSET}
-              />
-            )}
+            {showLayer("fabric") &&
+              (jacketStripeZoneActive && jacketStripeZones ? (
+                <>
+                  <FabricUnion
+                    layers={fabricMaskLayers}
+                    resolve={resolveCdn}
+                    fabricTexture={useTexture ? fabricTextureSource : undefined}
+                    textureStyle={jacketTextureStyleReal}
+                    baseColor={tunedFabricFill || toneBaseColor}
+                    fabricAvgColor={tunedFabricFill}
+                    baseBlendMode="color"
+                    baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+                    panZoom={panZoom}
+                    canvas={JACKET_CANVAS}
+                    mask={jacketStripeZones.bodyNoLapelUrl}
+                    textureScale={jacketTextureScale}
+                    textureTileSizePx={stripeTileSizePx}
+                    textureRotationDeg={jacketStripeRotations.body}
+                    rotationScaleMode="none"
+                    backgroundAnchor="top-left"
+                    rotationOrigin="top left"
+                    backgroundOffset={ZERO_OFFSET}
+                  />
+                  <FabricUnion
+                    layers={fabricMaskLayers}
+                    resolve={resolveCdn}
+                    fabricTexture={useTexture ? fabricTextureSource : undefined}
+                    textureStyle={jacketTextureStyleReal}
+                    baseColor={tunedFabricFill || toneBaseColor}
+                    fabricAvgColor={tunedFabricFill}
+                    baseBlendMode="color"
+                    baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+                    panZoom={panZoom}
+                    canvas={JACKET_CANVAS}
+                    mask={jacketStripeZones.lapelLeftUrl}
+                    textureScale={jacketTextureScale}
+                    textureTileSizePx={stripeTileSizePx}
+                    textureRotationDeg={jacketStripeRotations.lapelLeft}
+                    rotationScaleMode="none"
+                    backgroundAnchor="top-left"
+                    rotationOrigin="top left"
+                    backgroundOffset={ZERO_OFFSET}
+                  />
+                  <FabricUnion
+                    layers={fabricMaskLayers}
+                    resolve={resolveCdn}
+                    fabricTexture={useTexture ? fabricTextureSource : undefined}
+                    textureStyle={jacketTextureStyleReal}
+                    baseColor={tunedFabricFill || toneBaseColor}
+                    fabricAvgColor={tunedFabricFill}
+                    baseBlendMode="color"
+                    baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+                    panZoom={panZoom}
+                    canvas={JACKET_CANVAS}
+                    mask={jacketStripeZones.lapelRightUrl}
+                    textureScale={jacketTextureScale}
+                    textureTileSizePx={stripeTileSizePx}
+                    textureRotationDeg={jacketStripeRotations.lapelRight}
+                    rotationScaleMode="none"
+                    backgroundAnchor="top-left"
+                    rotationOrigin="top left"
+                    backgroundOffset={ZERO_OFFSET}
+                  />
+                </>
+              ) : (
+                <FabricUnion
+                  layers={fabricMaskLayers}
+                  resolve={resolveCdn}
+                  fabricTexture={useTexture ? fabricTextureSource : undefined}
+                  textureStyle={jacketTextureStyleReal}
+                  baseColor={tunedFabricFill || toneBaseColor}
+                  fabricAvgColor={tunedFabricFill}
+                  baseBlendMode="color"
+                  baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+                  panZoom={panZoom}
+                  canvas={JACKET_CANVAS}
+                  mask={jacketMask}
+                  textureScale={jacketTextureScale}
+                  textureTileSizePx={stripeTileSizePx}
+                  textureRotationDeg={0}
+                  rotationScaleMode="none"
+                  backgroundAnchor="top-left"
+                  rotationOrigin="top left"
+                  backgroundOffset={ZERO_OFFSET}
+                />
+              ))}
             {showLayer("fabric") && renderJacketPatternOverlay && jacketPatternOverlayStyle && (
               <FabricUnion
                 layers={fabricMaskLayers}
@@ -4408,5 +4806,3 @@ const SuitPreview = ({
 };
 
 export default React.memo(SuitPreview);
-
-

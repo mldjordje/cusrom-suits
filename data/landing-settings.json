@@ -1,0 +1,20 @@
+{
+  "showSaleSection": true,
+  "saleSectionTitle": "Aktuelne Akcije",
+  "saleSectionSubtitle": "Sekcija i proizvodi se kontrolisu kroz admin.",
+  "heroEyebrow": "Santos and Santorini video",
+  "heroTitleLine1": "Nova kolekcija",
+  "heroTitleLine2": "2026",
+  "heroPrimaryCtaLabel": "Shop now",
+  "heroPrimaryCtaHref": "/web-shop",
+  "heroSecondaryCtaLabel": "Custom suits",
+  "heroSecondaryCtaHref": "/custom-suits",
+  "bannerLeftTitle": "Ready to Wear",
+  "bannerLeftButtonLabel": "Shop now",
+  "bannerLeftHref": "/web-shop",
+  "bannerLeftImage": "/assets/images/home/legacy/hero-1.jpg",
+  "bannerRightTitle": "Custom Suits",
+  "bannerRightButtonLabel": "Start Design",
+  "bannerRightHref": "/custom-suits",
+  "bannerRightImage": "/assets/images/home/legacy/hero-3.jpg"
+}

@@ -4,13 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { href: "/admin", label: "Admin" },
-  { href: "/admin/fabrics", label: "Fabrics" },
-  { href: "/admin/stripe-tuning", label: "Stripe tuning" },
-  { href: "/admin/preview-tuning", label: "Preview tuning" },
-  { href: "/admin/buttons", label: "Buttons" },
-  { href: "/admin/linings", label: "Linings" },
-  { href: "/admin/orders", label: "Porudzbine" },
+  { href: "/admin", label: "Overview", icon: "OV" },
+  { href: "/admin/webshop", label: "Web Shop Hub", icon: "WS" },
+  { href: "/admin/integrations", label: "Integrations", icon: "IN" },
+  { href: "/admin/fabrics", label: "Fabrics", icon: "FB" },
+  { href: "/admin/linings", label: "Linings", icon: "LN" },
+  { href: "/admin/buttons", label: "Buttons", icon: "BT" },
+  { href: "/admin/orders", label: "Orders", icon: "OR" },
+  { href: "/admin/contact-messages", label: "Kontakt", icon: "CT" },
+  { href: "/admin/blog-posts", label: "Blog", icon: "BL" },
+  { href: "/admin/preview-tuning", label: "Preview Tuning", icon: "PT" },
+  { href: "/admin/stripe-tuning", label: "Stripe Tuning", icon: "ST" },
 ];
 
 const isActive = (pathname: string, href: string) => {
@@ -21,22 +25,26 @@ const isActive = (pathname: string, href: string) => {
 export default function AdminNav() {
   const pathname = usePathname() || "";
   return (
-    <nav className="flex flex-wrap items-center gap-2 rounded-2xl border border-gray-200 bg-white p-3 shadow-sm">
-      {navItems.map((item) => {
-        const active = isActive(pathname, item.href);
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={active ? "page" : undefined}
-            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-              active ? "border-gray-900 bg-gray-900 text-white" : "border-gray-200 text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav className="admin-template-nav" aria-label="Admin navigation">
+      <ul className="admin-template-nav-list">
+        {navItems.map((item) => {
+          const active = isActive(pathname, item.href);
+          return (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`admin-template-nav-link ${active ? "is-active" : ""}`}
+              >
+                <span className="admin-template-nav-icon" aria-hidden="true">
+                  {item.icon}
+                </span>
+                <span>{item.label}</span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </nav>
   );
 }

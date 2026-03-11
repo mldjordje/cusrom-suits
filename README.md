@@ -1,50 +1,65 @@
-﻿This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Santos & Santorini
 
-## Getting Started
+Next.js app za:
 
-First, run the development server:
+- storefront (`/`, `/web-shop`, `/blog`, `/kontakt`)
+- admin (`/admin/*`) za webshop/CMS/integrations operacije
+- legacy migraciju i sync pipeline (Ananas + stock inbound/outbound)
+
+## Quick Start
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+App: `http://localhost:3000`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Admin access (ako je ukljucen token):
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- postavi `ADMIN_ACCESS_TOKEN` u `.env.local`
+- otvori jednom `/admin?token=YOUR_TOKEN` da se cookie upise
 
-## Learn More
+## Key Routes
 
-To learn more about Next.js, take a look at the following resources:
+- Storefront: `/`, `/web-shop`, `/web-shop/[legacyId]`, `/akcije`, `/blog`, `/kontakt`
+- Admin: `/admin`, `/admin/webshop`, `/admin/landing`, `/admin/akcije`, `/admin/blog-posts`, `/admin/integrations`
+- APIs: `/api/admin/webshop/*`, `/api/admin/integrations/*`, `/api/blog/*`, `/api/contact`, `/api/legacy/products`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Scripts
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+- `npm run dev` - local development
+- `npm run build` - production build
+- `npm run lint` - lint checks
+- `npm run test:integrations` - core integrations tests
+- `npm run smoke:webshop-admin` - HTTP smoke check za storefront + admin rute
 
-## Deploy on Vercel
+Smoke command koristi:
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-
-## Custom Suits CMS and Features
-
-- Fabrics CMS: visit `/admin/fabrics` to add fabrics with price, description, tone and two zoom images. API: `GET/POST/PUT /api/fabrics` (file-backed at `data/fabrics.json`).
-- Linings CMS: visit `/admin/linings` to manage lining names and prices. API: `GET/POST/PUT /api/linings` (file-backed at `data/linings.json`).
-- Configurator: `/custom-suits` uses the local fabrics API; Sidebar shows CMS za tkanine link.
-- Preview: pinch/scroll (wheel) to zoom, drag to pan. Shirt overlay toggle and pants pleats option added under Style.
-- Measurements: continue to `/custom-suits/measure` to input height/weight/age and see auto recommendations.
+- `SMOKE_BASE_URL` (optional, default `http://localhost:3000`)
+- `ADMIN_ACCESS_TOKEN` (optional; ako postoji proverava i admin API rute)
 
 ## Environment
 
-- Copy `.env.example` to `.env.local` and set Supabase keys for live CMS/orders.
-- Optional: set `ADMIN_ACCESS_TOKEN` to protect `/admin` (open `/admin?token=...` once to set the cookie).
-- If Supabase keys are missing, fabrics/linings read from `data/*.json` and orders go to `data/orders.json`.
+Kopiraj `.env.example` u `.env.local` i popuni po potrebi.
+
+Najbitnije varijable:
+
+- `ADMIN_ACCESS_TOKEN`
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `CRON_SECRET`
+- `ANANAS_*`
+- `STOCK_*`
+
+Ako Supabase nije podesen, deo modula radi preko lokalnih `data/*.json` fallback fajlova.
+
+## Integrations Notes
+
+Runbook fajlovi:
+
+- `docs/integrations-runbook.md`
+- `docs/legacy-migration-runbook.md`
+- `docs/legacy-ananas-sync-map.md`
+- `docs/legacy-stock-compatibility-matrix.md`

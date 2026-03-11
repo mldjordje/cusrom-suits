@@ -3,6 +3,9 @@ export type SuitLayer = {
   id: string;
   name: string;
   src: string;
+  png?: string;
+  webp?: string;
+  avif?: string;
 };
 
 //  irina revera

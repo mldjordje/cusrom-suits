@@ -24,17 +24,29 @@ const CACHE_TTL_MS = 5 * 60 * 1000;
 let LININGS_CACHE: CacheEntry | null = null;
 let LININGS_INFLIGHT: Promise<{ data: Lining[]; error: string | null; cache: boolean }> | null = null;
 
+const normalizeOptional = (value: unknown): string | undefined => {
+  if (typeof value !== "string") return undefined;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : undefined;
+};
+
+const normalizeTexture = (value: unknown): string | null => {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed.length ? trimmed : null;
+};
+
 export function useLinings(styleId?: string, options?: UseLiningsOptions) {
   const enabled = options?.enabled ?? true;
   const fallback: Lining[] = useMemo(() => {
     const current = suits.find((s) => s.id === styleId);
     const interiors = current?.interiors || suits[0]?.interiors || [];
     return interiors.map((int) => ({
-      id: int.id,
+      id: String(int.id),
       name: int.name,
-      base: int.layers?.find((l) => l.id.includes("base"))?.src,
-      left: int.layers?.find((l) => l.id.includes("left"))?.src,
-      right: int.layers?.find((l) => l.id.includes("right"))?.src,
+      base: normalizeOptional(int.layers?.find((l) => l.id.includes("base"))?.src),
+      left: normalizeOptional(int.layers?.find((l) => l.id.includes("left"))?.src),
+      right: normalizeOptional(int.layers?.find((l) => l.id.includes("right"))?.src),
       texture: null,
     }));
   }, [styleId]);
@@ -70,10 +82,29 @@ export function useLinings(styleId?: string, options?: UseLiningsOptions) {
         .then((json) => {
           const list = Array.isArray(json?.data) ? json.data : [];
           if (json?.success && list.length) {
-            const mapped = list.map((l: any) => ({
-              ...l,
-              texture: l.texture || l.texture_url || null,
-            })) as Lining[];
+            const mapped = list.map((l: any, index: number) => {
+              const id = String(l?.id ?? l?.uuid ?? l?.name ?? index);
+              const fallbackMatch =
+                fallback.find((item) => String(item.id) === id) ??
+                fallback.find((item) => String(item.id).toLowerCase() === id.toLowerCase()) ??
+                fallback[index];
+              const base = normalizeOptional(l?.base ?? l?.base_url) ?? fallbackMatch?.base;
+              const left = normalizeOptional(l?.left ?? l?.left_url) ?? fallbackMatch?.left;
+              const right = normalizeOptional(l?.right ?? l?.right_url) ?? fallbackMatch?.right;
+              const texture =
+                normalizeTexture(l?.texture ?? l?.texture_url) ??
+                normalizeTexture((fallbackMatch as any)?.texture) ??
+                null;
+              return {
+                id,
+                name: normalizeOptional(l?.name) ?? fallbackMatch?.name ?? `Lining ${index + 1}`,
+                base,
+                left,
+                right,
+                texture,
+                price: l?.price ?? fallbackMatch?.price ?? null,
+              } as Lining;
+            });
             return { data: mapped, error: null, cache: true };
           }
           return { data: fallback, error: json?.message || "Fallback na lokalne postave.", cache: false };

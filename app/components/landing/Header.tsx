@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 const navLinks = [
   { href: "/", label: "Početna" },
   { href: "#o-nama", label: "O nama" },
-  { href: "https://santos.rs/Ode%C4%87a", label: "Web Shop" },
+  { href: "/web-shop", label: "Web Shop" },
   { href: "/custom-suits", label: "Custom Suits" },
   { href: "#kontakt", label: "Kontakt" },
 ];
@@ -137,3 +137,4 @@ const Header = () => {
 };
 
 export default Header;
+

@@ -20,7 +20,14 @@
         "normalize:transparent:all": "node scripts/normalize-transparent-all.mjs",
         "check:sprites": "node scripts/check-missing-sprites.mjs",
         "capture:parity": "node scripts/capture-parity-snapshots.mjs",
-        "test:parity": "node --experimental-strip-types --test scripts/parity.test.mjs scripts/pants-stripe-tuning.test.mjs scripts/preview-regression.test.mjs"
+        "test:parity": "node --experimental-strip-types --test scripts/parity.test.mjs scripts/pants-stripe-tuning.test.mjs scripts/preview-regression.test.mjs",
+        "test:preview-reference": "node --test scripts/preview-reference.test.mjs",
+        "test:preview-lining": "node --test scripts/preview-lining.test.mjs",
+        "test:integrations": "node --experimental-strip-types --test scripts/integrations-core.test.mjs",
+        "smoke:webshop-admin": "node scripts/smoke-webshop-admin.mjs",
+        "extract:legacy-catalog": "node scripts/extract-legacy-catalog.mjs",
+        "import:legacy-catalog": "node scripts/import-legacy-catalog-to-supabase.mjs",
+        "extract:legacy-content": "node scripts/extract-legacy-content.mjs"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",
@@ -28,26 +35,29 @@
         "@headlessui/react": "^2.2.9",
         "@heroicons/react": "^2.2.0",
         "@mui/material": "^7.3.4",
-    "@supabase/supabase-js": "^2.47.2",
-    "framer-motion": "^12.23.24",
-    "next": "15.5.7",
-    "react": "19.1.0",
-    "react-dom": "19.1.0",
-    "sharp": "^0.33.5"
-  },
-  "devDependencies": {
+        "@supabase/supabase-js": "^2.47.2",
+        "adm-zip": "^0.5.16",
+        "framer-motion": "^12.23.24",
+        "next": "15.5.7",
+        "react": "19.1.0",
+        "react-dom": "19.1.0",
+        "sharp": "^0.33.5"
+    },
+    "devDependencies": {
         "@eslint/eslintrc": "^3",
         "@rushstack/eslint-patch": "^1.14.1",
         "@tailwindcss/postcss": "^4.1.14",
+        "@types/adm-zip": "^0.5.7",
         "@types/node": "^20",
         "@types/react": "^19.2.2",
         "@types/react-dom": "^19.2.2",
         "autoprefixer": "^10.4.21",
         "eslint": "^9",
-    "eslint-config-next": "15.5.7",
-    "playwright": "^1.47.0",
-    "postcss": "^8.5.6",
-    "tailwindcss": "^4.1.14",
-    "typescript": "^5"
-  }
+        "eslint-config-next": "15.5.7",
+        "playwright": "^1.47.0",
+        "postcss": "^8.5.6",
+        "sass": "^1.97.3",
+        "tailwindcss": "^4.1.14",
+        "typescript": "^5"
+    }
 }

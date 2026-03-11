@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import NextImage from "next/image";
-import AdminNav from "../components/AdminNav";
 
 type Button = {
   id: string;
@@ -58,7 +57,7 @@ export default function ButtonsAdminPage() {
       setStatus({ type: "error", message: json?.message || "Upload failed" });
       return;
     }
-    setStatus({ type: "success", message: "Sačuvano" });
+    setStatus({ type: "success", message: "SaÄŤuvano" });
     setForm({ id: "", name: "", image_url: "", color_hex: "", diameter: "" });
     setFile(null);
     await loadButtons();
@@ -74,7 +73,7 @@ export default function ButtonsAdminPage() {
     });
     const json = await res.json();
     if (!res.ok || !json?.success) {
-      setStatus({ type: "error", message: json?.message || "Brisanje neuspešno" });
+      setStatus({ type: "error", message: json?.message || "Brisanje neuspeĹˇno" });
     } else {
       setStatus({ type: "success", message: "Obrisano" });
       setButtons((prev) => prev.filter((b) => b.id !== id));
@@ -94,11 +93,10 @@ export default function ButtonsAdminPage() {
   };
 
   return (
-    <div className="mx-auto flex min-h-screen max-w-5xl flex-col gap-6 px-4 py-8">
-      <AdminNav />
+    <div className="flex flex-col gap-6">
       <div>
         <h1 className="text-2xl font-bold text-gray-900">Buttons CMS</h1>
-        <p className="text-sm text-gray-600">Upload dugmeta za sako. Jedna slika, više pozicija u renderu.</p>
+        <p className="text-sm text-gray-600">Upload dugmeta za sako. Jedna slika, viĹˇe pozicija u renderu.</p>
       </div>
       <div className="rounded-2xl border border-amber-200 bg-amber-50/60 p-4 text-sm text-amber-900 shadow-sm">
         <p className="font-semibold">Kratak tutorial za dugmad</p>
@@ -151,7 +149,7 @@ export default function ButtonsAdminPage() {
             />
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-semibold text-gray-700">Prečnik (mm, opcionalno)</label>
+            <label className="text-xs font-semibold text-gray-700">PreÄŤnik (mm, opcionalno)</label>
             <input
               value={form.diameter}
               onChange={(e) => setForm((s) => ({ ...s, diameter: e.target.value }))}
@@ -195,7 +193,7 @@ export default function ButtonsAdminPage() {
             disabled={status.type === "loading"}
             className="rounded-full bg-gray-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-gray-800 disabled:opacity-60"
           >
-            {status.type === "loading" ? "Čuvam..." : "Sačuvaj dugme"}
+            {status.type === "loading" ? "ÄŚuvam..." : "SaÄŤuvaj dugme"}
           </button>
           {status.type !== "idle" && (
             <span
@@ -231,7 +229,7 @@ export default function ButtonsAdminPage() {
                 <p className="text-sm font-semibold text-gray-900">{btn.name}</p>
                 <p className="text-xs text-gray-500">{btn.id}</p>
                 {btn.color_hex && <p className="text-[11px] text-gray-500">Boja: {btn.color_hex}</p>}
-                {btn.diameter && <p className="text-[11px] text-gray-500">Prečnik: {btn.diameter} mm</p>}
+                {btn.diameter && <p className="text-[11px] text-gray-500">PreÄŤnik: {btn.diameter} mm</p>}
                 <div className="mt-2 flex gap-2">
                   <button
                     onClick={() => onEdit(btn)}
@@ -255,3 +253,7 @@ export default function ButtonsAdminPage() {
     </div>
   );
 }
+
+
+
+
