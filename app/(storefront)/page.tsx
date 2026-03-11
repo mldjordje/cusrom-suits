@@ -20,6 +20,48 @@ export const metadata = {
   description: "Home 18 storefront layout mapped to Santos catalog and blog.",
 };
 
+const legacyCampaignBlocks = [
+  {
+    id: "legacy-black-friday",
+    badge: "Black Friday Event",
+    title: "Do 30% popusta na bespoke.",
+    copy: "Limitirane cene na premium vunu i lan. Izaberi fit, tkaninu i akcente, a tim finalizuje kroj po meri.",
+    image: "/img/hero.jpg",
+    ctaLabel: "Muskarci i zene",
+    ctaHref: "/web-shop",
+  },
+  {
+    id: "legacy-holiday-capsule",
+    badge: "Holiday Capsule",
+    title: "Praznicni tailor-made",
+    copy: "Jednoredni, dvoredni ili tux. Dizajniraj izgled i nastavi merenje online ili u showroom-u.",
+    image: "/img/hero2.jpg",
+    ctaLabel: "Otvori custom suits",
+    ctaHref: "/custom-suits",
+  },
+  {
+    id: "legacy-gift-edit",
+    badge: "Gift Edit",
+    title: "Poklon koji traje",
+    copy: "Kravate od svile, kozne galanterije i poklon vaucer za odelo po meri kao premium poklon set.",
+    image: "/img/obuca.jpg",
+    ctaLabel: "Pogledaj poklone",
+    ctaHref: "/web-shop",
+  },
+];
+
+const atelierStoryParagraphs = [
+  "Sa idejom da muskarac treba da uziva u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nisu.",
+  "Od 2013. brend postaje prepoznatljiv po modernim krojevima, biranim tkaninama i detaljima koji se doradjuju rucno.",
+  "Nasi modeli spajaju tradiciju krojenja i savremeni dizajn, od prvog sava do finalne siluete.",
+];
+
+const atelierContactPoints = [
+  { label: "Telefon", value: "+381 18 250 250" },
+  { label: "Email", value: "atelier@santos.rs" },
+  { label: "Adresa", value: "Obrenoviceva 10, Nis" },
+];
+
 const BrandStrip = () => (
   <section className="brands-carousel container">
     <div className="row row-cols-2 row-cols-md-4 row-cols-xl-7 g-3 align-items-center">
@@ -95,6 +137,44 @@ export default async function HomePage() {
             heroSecondaryCtaHref: landingSettings.heroSecondaryCtaHref,
           }}
         />
+
+        <section className="container pb-5">
+          <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
+            <h2 className="section-title text-uppercase">
+              Brend <strong>Story</strong>
+            </h2>
+            <Link href="/custom-suits" className="btn-link default-underline text-uppercase fw-medium">
+              Otvori konfigurator
+            </Link>
+          </div>
+          <div className="row g-4">
+            {legacyCampaignBlocks.map((block) => (
+              <article key={block.id} className="col-12 col-md-6 col-lg-4">
+                <div className="position-relative overflow-hidden h-100" style={{ minHeight: 420, borderRadius: 24 }}>
+                  <Image src={block.image} alt={block.title} fill sizes="(max-width: 991px) 100vw, 33vw" style={{ objectFit: "cover" }} />
+                  <div
+                    className="position-absolute top-0 start-0 w-100 h-100"
+                    style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.78) 100%)" }}
+                  />
+                  <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-between p-4 text-white">
+                    <span className="text-uppercase fw-medium" style={{ letterSpacing: "0.14em", fontSize: "0.68rem" }}>
+                      {block.badge}
+                    </span>
+                    <div>
+                      <h3 className="h4 text-white text-uppercase mb-2">{block.title}</h3>
+                      <p className="mb-3">{block.copy}</p>
+                      <Link href={block.ctaHref} className="btn btn-light btn-sm text-uppercase fw-medium">
+                        {block.ctaLabel}
+                      </Link>
+                    </div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <div className="mb-2 mb-xl-3 pt-xl-1 pb-3" />
 
         <section className="container pb-5">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
@@ -328,6 +408,69 @@ export default async function HomePage() {
                 </div>
               </div>
             ))}
+          </div>
+        </section>
+
+        <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
+
+        <section id="o-nama" className="container pb-5">
+          <div className="row g-4 align-items-stretch">
+            <div className="col-12 col-lg-7">
+              <div className="h-100 border bg-white p-4 p-md-5" style={{ borderRadius: 24 }}>
+                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#8d6f60" }}>
+                  O nama
+                </p>
+                <h2 className="section-title text-uppercase mb-4">
+                  Brend nastao iz <strong>porodicne radionice</strong>
+                </h2>
+                <div className="row g-3">
+                  {atelierStoryParagraphs.map((paragraph) => (
+                    <div key={paragraph} className="col-12 col-md-6">
+                      <p className="text-secondary mb-0">{paragraph}</p>
+                    </div>
+                  ))}
+                </div>
+                <div className="d-flex flex-wrap gap-2 mt-4">
+                  <Link href="/custom-suits" className="btn btn-dark btn-sm text-uppercase fw-medium">
+                    Dizajniraj odelo
+                  </Link>
+                  <Link href="/web-shop" className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
+                    Poseti web shop
+                  </Link>
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-lg-5">
+              <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column" style={{ borderRadius: 24 }}>
+                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#8d6f60" }}>
+                  Kontakt
+                </p>
+                <h3 className="h4 text-uppercase mb-3">
+                  Podrska i licne <strong>preporuke</strong>
+                </h3>
+                <p className="text-secondary mb-4">
+                  Tim vas vodi kroz izbor tkanina, krojeva i detalja u showroom-u ili online. Odgovaramo u roku od jednog radnog dana.
+                </p>
+                <div className="d-grid gap-2">
+                  {atelierContactPoints.map((point) => (
+                    <div key={point.label} className="border px-3 py-2" style={{ borderRadius: 14 }}>
+                      <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#8d6f60" }}>
+                        {point.label}
+                      </div>
+                      <div>{point.value}</div>
+                    </div>
+                  ))}
+                </div>
+                <div className="d-flex flex-wrap gap-2 mt-4">
+                  <Link href="/kontakt" className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
+                    Kontakt forma
+                  </Link>
+                  <a href="mailto:atelier@santos.rs" className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
+                    Posalji email
+                  </a>
+                </div>
+              </div>
+            </div>
           </div>
         </section>
 
