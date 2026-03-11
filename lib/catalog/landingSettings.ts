@@ -2,6 +2,14 @@ import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 
 const LANDING_SETTINGS_PATH = "data/landing-settings.json";
 
+export type LandingProductSectionKey =
+  | "heroStripProductIds"
+  | "highlightedProductIds"
+  | "popularProductIds"
+  | "arrivalsProductIds"
+  | "saleProductIds"
+  | "trendingProductIds";
+
 export type LandingSettings = {
   showSaleSection: boolean;
   saleSectionTitle: string;
@@ -21,6 +29,12 @@ export type LandingSettings = {
   bannerRightButtonLabel: string;
   bannerRightHref: string;
   bannerRightImage: string;
+  heroStripProductIds: number[];
+  highlightedProductIds: number[];
+  popularProductIds: number[];
+  arrivalsProductIds: number[];
+  saleProductIds: number[];
+  trendingProductIds: number[];
 };
 
 const DEFAULT_SETTINGS: LandingSettings = {
@@ -42,6 +56,30 @@ const DEFAULT_SETTINGS: LandingSettings = {
   bannerRightButtonLabel: "Start Design",
   bannerRightHref: "/custom-suits",
   bannerRightImage: "/assets/images/home/legacy/hero-3.jpg",
+  heroStripProductIds: [],
+  highlightedProductIds: [],
+  popularProductIds: [],
+  arrivalsProductIds: [],
+  saleProductIds: [],
+  trendingProductIds: [],
+};
+
+const normalizeLegacyIdList = (value: unknown, max = 24): number[] => {
+  const source = Array.isArray(value)
+    ? value
+    : String(value || "")
+        .split(",")
+        .map((token) => token.trim())
+        .filter(Boolean);
+
+  const unique = new Set<number>();
+  for (const item of source) {
+    const n = Number(item);
+    if (!Number.isFinite(n) || n <= 0) continue;
+    unique.add(Math.floor(n));
+    if (unique.size >= max) break;
+  }
+  return Array.from(unique);
 };
 
 export async function getLandingSettings(): Promise<LandingSettings> {
@@ -65,6 +103,12 @@ export async function getLandingSettings(): Promise<LandingSettings> {
     bannerRightButtonLabel: String(settings.bannerRightButtonLabel || DEFAULT_SETTINGS.bannerRightButtonLabel),
     bannerRightHref: String(settings.bannerRightHref || DEFAULT_SETTINGS.bannerRightHref),
     bannerRightImage: String(settings.bannerRightImage || DEFAULT_SETTINGS.bannerRightImage),
+    heroStripProductIds: normalizeLegacyIdList(settings.heroStripProductIds),
+    highlightedProductIds: normalizeLegacyIdList(settings.highlightedProductIds),
+    popularProductIds: normalizeLegacyIdList(settings.popularProductIds),
+    arrivalsProductIds: normalizeLegacyIdList(settings.arrivalsProductIds),
+    saleProductIds: normalizeLegacyIdList(settings.saleProductIds),
+    trendingProductIds: normalizeLegacyIdList(settings.trendingProductIds),
   };
 }
 
@@ -125,6 +169,17 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
       patch.bannerRightImage == null
         ? current.bannerRightImage
         : String(patch.bannerRightImage).trim() || DEFAULT_SETTINGS.bannerRightImage,
+    heroStripProductIds:
+      patch.heroStripProductIds == null ? current.heroStripProductIds : normalizeLegacyIdList(patch.heroStripProductIds),
+    highlightedProductIds:
+      patch.highlightedProductIds == null ? current.highlightedProductIds : normalizeLegacyIdList(patch.highlightedProductIds),
+    popularProductIds:
+      patch.popularProductIds == null ? current.popularProductIds : normalizeLegacyIdList(patch.popularProductIds),
+    arrivalsProductIds:
+      patch.arrivalsProductIds == null ? current.arrivalsProductIds : normalizeLegacyIdList(patch.arrivalsProductIds),
+    saleProductIds: patch.saleProductIds == null ? current.saleProductIds : normalizeLegacyIdList(patch.saleProductIds),
+    trendingProductIds:
+      patch.trendingProductIds == null ? current.trendingProductIds : normalizeLegacyIdList(patch.trendingProductIds),
   };
   await writeJsonFile(LANDING_SETTINGS_PATH, next);
   return next;

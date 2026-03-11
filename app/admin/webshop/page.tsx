@@ -55,6 +55,13 @@ type CreateDraft = {
   landingFeatured: boolean;
   landingPriority: string;
 };
+type LandingProductSectionKey =
+  | "heroStripProductIds"
+  | "highlightedProductIds"
+  | "popularProductIds"
+  | "arrivalsProductIds"
+  | "saleProductIds"
+  | "trendingProductIds";
 type LandingSettings = {
   showSaleSection: boolean;
   saleSectionTitle: string;
@@ -74,6 +81,12 @@ type LandingSettings = {
   bannerRightButtonLabel: string;
   bannerRightHref: string;
   bannerRightImage: string;
+  heroStripProductIds: number[];
+  highlightedProductIds: number[];
+  popularProductIds: number[];
+  arrivalsProductIds: number[];
+  saleProductIds: number[];
+  trendingProductIds: number[];
 };
 type PromotionScopeType = "all" | "category" | "brand" | "product";
 type PromotionDiscountType = "percent" | "fixed";
@@ -105,9 +118,32 @@ type PromotionDraft = {
 
 const tabs: Array<{ key: TabKey; label: string; desc: string }> = [
   { key: "products", label: "Proizvodi", desc: "Katalog, cene, lager" },
-  { key: "landing", label: "Landing", desc: "Hero + banneri" },
+  { key: "landing", label: "Landing", desc: "Hero + banneri + sekcije proizvoda" },
   { key: "akcije", label: "Akcije", desc: "Popusti i cene" },
 ];
+
+const landingSectionConfig: Array<{
+  key: LandingProductSectionKey;
+  label: string;
+  description: string;
+  limit: number;
+}> = [
+  { key: "heroStripProductIds", label: "Hero traka", description: "Proizvodi ispod hero videa.", limit: 4 },
+  { key: "highlightedProductIds", label: "Izdvojeni modeli", description: "Prva velika produkt sekcija.", limit: 8 },
+  { key: "popularProductIds", label: "Popular products", description: "Popular proizvodi.", limit: 4 },
+  { key: "arrivalsProductIds", label: "New arrivals", description: "Nova kolekcija sekcija.", limit: 4 },
+  { key: "saleProductIds", label: "Sale sekcija", description: "Akcijski proizvodi na landing-u.", limit: 4 },
+  { key: "trendingProductIds", label: "Trending now", description: "Trending proizvodi sekcija.", limit: 4 },
+];
+
+const defaultLandingPickerValue: Record<LandingProductSectionKey, string> = {
+  heroStripProductIds: "",
+  highlightedProductIds: "",
+  popularProductIds: "",
+  arrivalsProductIds: "",
+  saleProductIds: "",
+  trendingProductIds: "",
+};
 
 const defaultCreateDraft: CreateDraft = {
   sku: "",
@@ -145,6 +181,12 @@ const defaultLandingSettings: LandingSettings = {
   bannerRightButtonLabel: "Start Design",
   bannerRightHref: "/custom-suits",
   bannerRightImage: "/assets/images/home/legacy/hero-3.jpg",
+  heroStripProductIds: [],
+  highlightedProductIds: [],
+  popularProductIds: [],
+  arrivalsProductIds: [],
+  saleProductIds: [],
+  trendingProductIds: [],
 };
 
 const defaultPromotionDraft: PromotionDraft = {
@@ -160,6 +202,26 @@ const defaultPromotionDraft: PromotionDraft = {
 };
 
 const parseNumericInput = (value: string) => Number(String(value).replace(",", ".").trim());
+
+const normalizeLegacyIdList = (value: unknown, max = 24): number[] => {
+  const source = Array.isArray(value)
+    ? value
+    : String(value || "")
+        .split(",")
+        .map((token) => token.trim())
+        .filter(Boolean);
+
+  const unique = new Set<number>();
+  for (const raw of source) {
+    const id = Number(raw);
+    if (!Number.isFinite(id) || id <= 0) continue;
+    unique.add(Math.floor(id));
+    if (unique.size >= max) break;
+  }
+  return Array.from(unique);
+};
+
+const parseLegacyIdCsv = (value: string, max: number) => normalizeLegacyIdList(value, max);
 
 const toNumberOrNull = (value: string) => {
   const n = parseNumericInput(value);
@@ -283,6 +345,11 @@ export default function AdminWebshopPage() {
   const [loadingLanding, setLoadingLanding] = useState(false);
   const [savingLanding, setSavingLanding] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState<"left" | "right" | null>(null);
+  const [landingProductQuery, setLandingProductQuery] = useState("");
+  const [landingProductResults, setLandingProductResults] = useState<CatalogProduct[]>([]);
+  const [landingProductsLoading, setLandingProductsLoading] = useState(false);
+  const [landingPickerValues, setLandingPickerValues] =
+    useState<Record<LandingProductSectionKey, string>>(defaultLandingPickerValue);
 
   const [loading, setLoading] = useState(false);
   const [loadingSales, setLoadingSales] = useState(false);
@@ -293,6 +360,13 @@ export default function AdminWebshopPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const selectedIds = useMemo(() => Object.keys(selected).filter((id) => selected[Number(id)]).map(Number), [selected]);
+  const landingProductMap = useMemo(() => {
+    const map = new Map<number, CatalogProduct>();
+    for (const item of [...landingProductResults, ...items]) {
+      if (!map.has(item.legacyId)) map.set(item.legacyId, item);
+    }
+    return map;
+  }, [items, landingProductResults]);
 
   useEffect(() => {
     const sync = () => {
@@ -560,12 +634,79 @@ export default function AdminWebshopPage() {
         setError(json?.message || "Load failed");
         return;
       }
-      setLandingSettings({ ...defaultLandingSettings, ...(json.settings as LandingSettings) });
+      const loaded = { ...defaultLandingSettings, ...(json.settings as LandingSettings) };
+      setLandingSettings({
+        ...loaded,
+        heroStripProductIds: normalizeLegacyIdList(loaded.heroStripProductIds, limitForLandingSection("heroStripProductIds")),
+        highlightedProductIds: normalizeLegacyIdList(loaded.highlightedProductIds, limitForLandingSection("highlightedProductIds")),
+        popularProductIds: normalizeLegacyIdList(loaded.popularProductIds, limitForLandingSection("popularProductIds")),
+        arrivalsProductIds: normalizeLegacyIdList(loaded.arrivalsProductIds, limitForLandingSection("arrivalsProductIds")),
+        saleProductIds: normalizeLegacyIdList(loaded.saleProductIds, limitForLandingSection("saleProductIds")),
+        trendingProductIds: normalizeLegacyIdList(loaded.trendingProductIds, limitForLandingSection("trendingProductIds")),
+      });
     } catch (e: any) {
       setError(e?.message || "Load failed");
     } finally {
       setLoadingLanding(false);
     }
+  };
+
+  const loadLandingProducts = async (queryValue = landingProductQuery) => {
+    setLandingProductsLoading(true);
+    try {
+      const params = new URLSearchParams();
+      params.set("page", "1");
+      params.set("pageSize", "60");
+      params.set("activeOnly", "1");
+      params.set("exportOnly", "1");
+      const qValue = queryValue.trim();
+      if (qValue) params.set("q", qValue);
+
+      const res = await fetch(`/api/admin/webshop/products?${params.toString()}`);
+      const json = await res.json();
+      if (!json?.success) return;
+      setLandingProductResults((json.data || []) as CatalogProduct[]);
+    } catch {
+      // Intentionally silent to avoid blocking landing form edits.
+    } finally {
+      setLandingProductsLoading(false);
+    }
+  };
+
+  const limitForLandingSection = (key: LandingProductSectionKey) =>
+    landingSectionConfig.find((section) => section.key === key)?.limit ?? 24;
+
+  const replaceLandingSectionIds = (key: LandingProductSectionKey, nextIds: unknown) => {
+    const limit = limitForLandingSection(key);
+    const normalized = normalizeLegacyIdList(nextIds, limit);
+    setLandingSettings((prev) => ({ ...prev, [key]: normalized }));
+  };
+
+  const moveLandingSectionId = (key: LandingProductSectionKey, from: number, to: number) => {
+    if (from < 0 || to < 0) return;
+    setLandingSettings((prev) => {
+      const current = [...prev[key]];
+      if (from >= current.length || to >= current.length) return prev;
+      const [picked] = current.splice(from, 1);
+      current.splice(to, 0, picked);
+      return { ...prev, [key]: current };
+    });
+  };
+
+  const removeLandingSectionId = (key: LandingProductSectionKey, id: number) => {
+    setLandingSettings((prev) => ({ ...prev, [key]: prev[key].filter((value) => value !== id) }));
+  };
+
+  const addLandingSectionId = (key: LandingProductSectionKey, idValue: string) => {
+    const id = Number(idValue);
+    if (!Number.isFinite(id) || id <= 0) return;
+    const limit = limitForLandingSection(key);
+    setLandingSettings((prev) => {
+      const current = prev[key];
+      if (current.includes(id) || current.length >= limit) return prev;
+      return { ...prev, [key]: [...current, id] };
+    });
+    setLandingPickerValues((prev) => ({ ...prev, [key]: "" }));
   };
 
   useEffect(() => {
@@ -574,7 +715,10 @@ export default function AdminWebshopPage() {
   }, []);
 
   useEffect(() => {
-    if (activeTab === "landing") void loadLanding();
+    if (activeTab === "landing") {
+      void loadLanding();
+      void loadLandingProducts("");
+    }
     if (activeTab === "akcije") {
       void loadSales();
       void loadPromotionRules();
@@ -1145,9 +1289,125 @@ export default function AdminWebshopPage() {
             </div>
           </div>
 
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Select proizvoda po sekcijama</p>
+              <p className="text-xs text-slate-500">Ako je sekcija prazna, home koristi automatski fallback redosled.</p>
+            </div>
+
+            <div className="mt-3 grid gap-3 md:grid-cols-5">
+              <input
+                value={landingProductQuery}
+                onChange={(e) => setLandingProductQuery(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    void loadLandingProducts(landingProductQuery);
+                  }
+                }}
+                placeholder="Pretraga po SKU / nazivu / ID"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-4"
+              />
+              <button
+                onClick={() => void loadLandingProducts(landingProductQuery)}
+                disabled={landingProductsLoading}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
+              >
+                {landingProductsLoading ? "Ucitavanje..." : "Pronadji proizvode"}
+              </button>
+            </div>
+
+            <div className="mt-4 grid gap-4">
+              {landingSectionConfig.map((section) => {
+                const sectionIds = landingSettings[section.key];
+                const csvValue = sectionIds.join(",");
+                const candidates = landingProductResults.filter((item) => !sectionIds.includes(item.legacyId));
+                return (
+                  <div key={section.key} className="rounded-xl border border-slate-200 p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{section.label}</p>
+                        <p className="text-xs text-slate-500">{section.description}</p>
+                      </div>
+                      <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600">
+                        {sectionIds.length}/{section.limit}
+                      </span>
+                    </div>
+
+                    <div className="mt-3 grid gap-2 md:grid-cols-3">
+                      <input
+                        value={csvValue}
+                        onChange={(e) => replaceLandingSectionIds(section.key, parseLegacyIdCsv(e.target.value, section.limit))}
+                        placeholder="Legacy ID lista: 101,205,333"
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
+                      />
+                      <select
+                        value={landingPickerValues[section.key]}
+                        onChange={(e) => {
+                          const value = e.target.value;
+                          setLandingPickerValues((prev) => ({ ...prev, [section.key]: value }));
+                          if (value) addLandingSectionId(section.key, value);
+                        }}
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      >
+                        <option value="">Dodaj iz pretrage...</option>
+                        {candidates.map((item) => (
+                          <option key={`${section.key}-${item.legacyId}`} value={item.legacyId}>
+                            #{item.legacyId} / {item.sku} - {item.name}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {sectionIds.length === 0 ? (
+                        <p className="text-xs text-slate-500">Nema manuelno odabranih proizvoda.</p>
+                      ) : null}
+                      {sectionIds.map((id, index) => {
+                        const product = landingProductMap.get(id);
+                        return (
+                          <div key={`${section.key}-${id}`} className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs">
+                            <span className="font-semibold text-slate-700">
+                              #{id}
+                              {product ? ` / ${product.sku}` : ""}
+                            </span>
+                            <span className="max-w-[220px] truncate text-slate-500">{product?.name || "Nepoznat proizvod"}</span>
+                            <button
+                              type="button"
+                              onClick={() => moveLandingSectionId(section.key, index, index - 1)}
+                              disabled={index === 0}
+                              className="rounded border border-slate-200 px-1 text-[10px] text-slate-700 disabled:opacity-40"
+                            >
+                              UP
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveLandingSectionId(section.key, index, index + 1)}
+                              disabled={index === sectionIds.length - 1}
+                              className="rounded border border-slate-200 px-1 text-[10px] text-slate-700 disabled:opacity-40"
+                            >
+                              DOWN
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeLandingSectionId(section.key, id)}
+                              className="rounded border border-rose-200 px-1 text-[10px] text-rose-700"
+                            >
+                              x
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="sticky bottom-3 z-10 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-slate-600">Landing autosave nije ukljucen. Klikni sacuvaj posle izmena.</p>
+              <p className="text-xs text-slate-600">Landing autosave nije ukljucen. Hero, baneri i sekcije proizvoda se cuvaju na klik.</p>
               <div className="flex gap-2">
                 <button onClick={loadLanding} disabled={loadingLanding || savingLanding} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">Osvezi</button>
                 <button onClick={() => saveLanding()} disabled={savingLanding || loadingLanding} className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">{savingLanding ? "Cuvanje..." : "Sacuvaj landing"}</button>

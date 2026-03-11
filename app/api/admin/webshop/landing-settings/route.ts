@@ -21,6 +21,28 @@ type PatchPayload = {
   bannerRightButtonLabel?: string;
   bannerRightHref?: string;
   bannerRightImage?: string;
+  heroStripProductIds?: number[];
+  highlightedProductIds?: number[];
+  popularProductIds?: number[];
+  arrivalsProductIds?: number[];
+  saleProductIds?: number[];
+  trendingProductIds?: number[];
+};
+
+const parseIdList = (value: unknown): number[] => {
+  const source = Array.isArray(value)
+    ? value
+    : String(value || "")
+        .split(",")
+        .map((token) => token.trim())
+        .filter(Boolean);
+  const unique = new Set<number>();
+  for (const item of source) {
+    const n = Number(item);
+    if (!Number.isFinite(n) || n <= 0) continue;
+    unique.add(Math.floor(n));
+  }
+  return Array.from(unique);
 };
 
 export async function GET(req: NextRequest) {
@@ -61,6 +83,12 @@ export async function PATCH(req: NextRequest) {
   if ("bannerRightButtonLabel" in row) patch.bannerRightButtonLabel = String(row.bannerRightButtonLabel || "");
   if ("bannerRightHref" in row) patch.bannerRightHref = String(row.bannerRightHref || "");
   if ("bannerRightImage" in row) patch.bannerRightImage = String(row.bannerRightImage || "");
+  if ("heroStripProductIds" in row) patch.heroStripProductIds = parseIdList(row.heroStripProductIds);
+  if ("highlightedProductIds" in row) patch.highlightedProductIds = parseIdList(row.highlightedProductIds);
+  if ("popularProductIds" in row) patch.popularProductIds = parseIdList(row.popularProductIds);
+  if ("arrivalsProductIds" in row) patch.arrivalsProductIds = parseIdList(row.arrivalsProductIds);
+  if ("saleProductIds" in row) patch.saleProductIds = parseIdList(row.saleProductIds);
+  if ("trendingProductIds" in row) patch.trendingProductIds = parseIdList(row.trendingProductIds);
 
   const settings = await updateLandingSettings(patch);
   return NextResponse.json({ success: true, settings });

@@ -80,6 +80,36 @@ const BrandStrip = () => (
   </section>
 );
 
+const pickProductsForSection = <T extends { legacyId: number }>(
+  source: T[],
+  preferredIds: number[],
+  limit: number,
+  fallback: T[],
+): T[] => {
+  const byId = new Map<number, T>(source.map((item) => [item.legacyId, item]));
+  const result: T[] = [];
+  const seen = new Set<number>();
+
+  for (const rawId of preferredIds || []) {
+    const id = Number(rawId);
+    if (!Number.isFinite(id) || seen.has(id)) continue;
+    const found = byId.get(id);
+    if (!found) continue;
+    result.push(found);
+    seen.add(id);
+    if (result.length >= limit) return result;
+  }
+
+  for (const item of fallback) {
+    if (seen.has(item.legacyId)) continue;
+    result.push(item);
+    seen.add(item.legacyId);
+    if (result.length >= limit) break;
+  }
+
+  return result;
+};
+
 export default async function HomePage() {
   const [catalog, posts, landingSettings] = await Promise.all([
     listCatalogProducts({
@@ -111,14 +141,16 @@ export default async function HomePage() {
       ? [...landingFeatured, ...catalog.items.filter((item) => !item.landingFeatured)]
       : catalog.items;
 
-  const heroProducts = landingPool.slice(0, 8);
-  const heroStripProducts = landingPool.slice(0, 4);
-  const featured = landingPool.slice(0, 4);
-  const arrivals = landingPool.slice(4, 8);
-  const trending = landingPool.slice(8, 12);
-  const saleItems = landingPool
+  const salePool = landingPool
     .filter((item) => item.priceGross > item.priceFinalGross || item.rebatePercent > 0)
-    .slice(0, 4);
+    .slice(0, 32);
+
+  const heroProducts = pickProductsForSection(landingPool, landingSettings.highlightedProductIds, 8, landingPool.slice(0, 8));
+  const heroStripProducts = pickProductsForSection(landingPool, landingSettings.heroStripProductIds, 4, landingPool.slice(0, 4));
+  const featured = pickProductsForSection(landingPool, landingSettings.popularProductIds, 4, landingPool.slice(0, 4));
+  const arrivals = pickProductsForSection(landingPool, landingSettings.arrivalsProductIds, 4, landingPool.slice(4, 8));
+  const trending = pickProductsForSection(landingPool, landingSettings.trendingProductIds, 4, landingPool.slice(8, 12));
+  const saleItems = pickProductsForSection(salePool, landingSettings.saleProductIds, 4, salePool.slice(0, 4));
 
   return (
     <>
