@@ -3,6 +3,7 @@ import Link from "next/link";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import Reveal from "@/app/components/motion/Reveal";
+import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -146,14 +147,16 @@ export default async function WebShopPage({
       imageWidth?: number;
       imageHeight?: number;
       fallbackImage?: string;
+      motionIndex?: number;
     },
   ) => {
     const wrapperClassName = options?.wrapperClassName || "product-card-wrapper";
-    const cardClassName = options?.cardClassName || "product-card ss-card-hover h-100 mb-2 pb-1 pb-md-0";
+    const cardClassName = options?.cardClassName || "product-card ss-card-hover ss-product-card h-100 mb-2 pb-1 pb-md-0";
     const imageWrapperClassName = options?.imageWrapperClassName || "pc__img-wrapper hover-container p-lg-0";
     const imageWidth = options?.imageWidth || 690;
     const imageHeight = options?.imageHeight || 714;
     const fallbackImage = options?.fallbackImage || "/assets/images/search-result-2.jpg";
+    const motionIndex = options?.motionIndex || 0;
     const coverImage = item.coverImage || fallbackImage;
     const imageSizes =
       imageWidth >= 600
@@ -161,7 +164,7 @@ export default async function WebShopPage({
         : "(max-width: 575px) 50vw, (max-width: 991px) 33vw, 25vw";
 
     return (
-      <div key={key} className={wrapperClassName}>
+      <ProductItemMotion key={key} className={wrapperClassName} index={motionIndex}>
         <div className={cardClassName}>
           <div className={imageWrapperClassName}>
             <Link href={`/web-shop/${item.legacyId}`}>
@@ -212,7 +215,7 @@ export default async function WebShopPage({
             </div>
           </div>
         </div>
-      </div>
+      </ProductItemMotion>
     );
   };
 
@@ -416,16 +419,17 @@ export default async function WebShopPage({
             </form>
           </Reveal>
 
-          <Reveal as="div" className="products-grid d-none d-md-block" id="products-grid-desktop" delay={0.04}>
+          <div className="products-grid d-none d-md-block" id="products-grid-desktop">
             {masonryA.length > 0 ? (
               <div className="products-masonry row row-cols-md-2 mb-2 mb-md-3 pb-1 pb-md-3">
-                {masonryA[0] ? renderOverlayCard(masonryA[0], `masonry-a-${masonryA[0].legacyId}`) : null}
+                {masonryA[0] ? renderOverlayCard(masonryA[0], `masonry-a-${masonryA[0].legacyId}`, { motionIndex: 0 }) : null}
 
                 <div className="d-flex flex-column">
                   <div className="row row-cols-2 flex-grow-1 mb-lg-4">
-                    {masonryA.slice(1, 3).map((item) =>
+                    {masonryA.slice(1, 3).map((item, index) =>
                       renderOverlayCard(item, `masonry-a-side-${item.legacyId}`, {
-                        cardClassName: "product-card ss-card-hover h-100 mb-2",
+                        cardClassName: "product-card ss-card-hover ss-product-card h-100 mb-2",
+                        motionIndex: index + 1,
                       }),
                     )}
                   </div>
@@ -433,6 +437,7 @@ export default async function WebShopPage({
                     ? renderOverlayCard(masonryA[3], `masonry-a-wide-${masonryA[3].legacyId}`, {
                         wrapperClassName: "product-card-wrapper flex-grow-1 pt-1",
                         imageWrapperClassName: "pc__img-wrapper pc-wide__img-wrapper hover-container p-lg-0",
+                        motionIndex: 3,
                       })
                     : null}
                 </div>
@@ -444,48 +449,52 @@ export default async function WebShopPage({
                 <div className="mb-2 pb-1 mb-md-0 pb-md-0">
                   <div className="row row-cols-2 h-100">
                     <div className="d-flex flex-column">
-                      {masonryB.slice(0, 2).map((item) =>
+                      {masonryB.slice(0, 2).map((item, index) =>
                         renderOverlayCard(item, `masonry-b-left-${item.legacyId}`, {
                           wrapperClassName: "product-card-wrapper flex-grow-1 mb-md-4",
+                          motionIndex: index + 4,
                         }),
                       )}
                     </div>
                     {masonryB[2]
                       ? renderOverlayCard(masonryB[2], `masonry-b-mid-${masonryB[2].legacyId}`, {
                           wrapperClassName: "product-card-wrapper flex-grow-1 mb-md-4",
+                          motionIndex: 6,
                         })
                       : null}
                   </div>
                 </div>
-                {masonryB[3] ? renderOverlayCard(masonryB[3], `masonry-b-right-${masonryB[3].legacyId}`) : null}
+                {masonryB[3] ? renderOverlayCard(masonryB[3], `masonry-b-right-${masonryB[3].legacyId}`, { motionIndex: 7 }) : null}
               </div>
             ) : null}
 
             <div className="products-grid row row-cols-2 row-cols-md-3 row-cols-lg-4">
-              {gridItems.map((item) =>
+              {gridItems.map((item, index) =>
                 renderOverlayCard(item, `grid-${item.legacyId}`, {
-                  cardClassName: "product-card ss-card-hover mb-3 mb-md-4 mb-xxl-5",
+                  cardClassName: "product-card ss-card-hover ss-product-card mb-3 mb-md-4 mb-xxl-5",
                   imageWrapperClassName: "pc__img-wrapper hover-container",
                   imageWidth: 330,
                   imageHeight: 400,
+                  motionIndex: index + 8,
                 }),
               )}
             </div>
-          </Reveal>
+          </div>
 
-          <Reveal as="div" className="products-grid ss-mobile-grid d-md-none" id="products-grid-mobile" delay={0.04}>
+          <div className="products-grid ss-mobile-grid d-md-none" id="products-grid-mobile">
             <div className="row row-cols-2 g-2">
-              {items.map((item) =>
+              {items.map((item, index) =>
                 renderOverlayCard(item, `mobile-${item.legacyId}`, {
                   wrapperClassName: "product-card-wrapper ss-mobile-grid__item",
-                  cardClassName: "product-card ss-card-hover ss-mobile-grid__card",
+                  cardClassName: "product-card ss-card-hover ss-product-card ss-mobile-grid__card",
                   imageWrapperClassName: "pc__img-wrapper ss-mobile-grid__img-wrapper",
                   imageWidth: 330,
                   imageHeight: 400,
+                  motionIndex: index,
                 }),
               )}
             </div>
-          </Reveal>
+          </div>
 
           <p className="mb-5 text-center fw-medium">
             SHOWING {items.length} of {result.total} products

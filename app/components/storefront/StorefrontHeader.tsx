@@ -49,8 +49,8 @@ export default function StorefrontHeader() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const desktopFloating = false;
-  const mobileFloating = false;
+  const desktopFloating = isHome;
+  const mobileFloating = isHome;
   const headerClass = [
     "header",
     "header-fullwidth",

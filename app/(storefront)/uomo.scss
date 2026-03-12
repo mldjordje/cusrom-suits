@@ -11,6 +11,15 @@
   background: #0f141b;
 }
 
+.ss-home-page {
+  padding-top: 0 !important;
+  margin-top: 0 !important;
+}
+
+.ss-home-page .ss-home18-hero {
+  margin-top: 0 !important;
+}
+
 .ss-home18-hero__media {
   overflow: hidden;
   pointer-events: none;
@@ -201,6 +210,18 @@
 
 .mobile-nav-activator {
   border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 0;
+  padding: 0;
+}
+
+.mobile-nav-activator .nav-icon {
+  display: block;
+  width: 1.35rem;
+  height: 1rem;
+  margin: 0 auto;
 }
 
 .mobile-nav-activator:not(.is-open) .nav-icon {
@@ -284,6 +305,18 @@
   background: rgba(255, 255, 255, 0.92) !important;
   border-bottom: 1px solid rgba(24, 20, 20, 0.08);
   box-shadow: 0 10px 24px rgba(7, 9, 14, 0.1);
+}
+
+.ss-header-home-floating.ss-header-scrolled {
+  background: rgba(10, 15, 24, 0.82) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 26px rgba(4, 6, 11, 0.28);
+}
+
+.ss-mobile-home.ss-mobile-header-scrolled {
+  background: rgba(10, 15, 24, 0.88) !important;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.14);
+  box-shadow: 0 10px 26px rgba(4, 6, 11, 0.28) !important;
 }
 
 .navigation__item.is-active .navigation__link,
@@ -492,16 +525,50 @@
   transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
+.ss-product-card .pc__img-wrapper {
+  position: relative;
+  overflow: hidden;
+}
+
+.ss-product-card .pc__img {
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ss-product-card .pc__img-wrapper::after {
+  content: "";
+  position: absolute;
+  top: -20%;
+  left: -180%;
+  width: 120%;
+  height: 140%;
+  pointer-events: none;
+  background: linear-gradient(120deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.24) 46%, rgba(255, 255, 255, 0) 100%);
+  transform: translateX(0) rotate(10deg);
+  transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 @media (hover: hover) and (pointer: fine) {
   .ss-card-hover:hover {
     transform: translateY(-6px);
     box-shadow: 0 16px 30px rgba(8, 11, 16, 0.14);
+  }
+
+  .ss-product-card:hover .pc__img {
+    transform: scale(1.06);
+  }
+
+  .ss-product-card:hover .pc__img-wrapper::after {
+    transform: translateX(290%) rotate(10deg);
   }
 }
 
 @media (hover: none) {
   .ss-card-hover:active {
     transform: scale(0.985);
+  }
+
+  .ss-product-card:active .pc__img {
+    transform: scale(1.02);
   }
 }
 
@@ -577,7 +644,7 @@
 
   .ss-home18-hero__content {
     min-height: 96svh;
-    padding-top: 5.25rem;
+    padding-top: 4.35rem;
     padding-bottom: 1rem;
   }
 

@@ -4,6 +4,7 @@ import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import HomeHeroVideo from "@/app/components/storefront/HomeHeroVideo";
 import Reveal from "@/app/components/motion/Reveal";
+import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import { listCatalogProducts } from "@/lib/catalog/store";
 import { formatCatalogProductName } from "@/lib/catalog/presentation";
 import { listPosts } from "@/lib/blog/store";
@@ -235,7 +236,7 @@ export default async function HomePage() {
   return (
     <>
       <StorefrontHeader />
-      <main className="page-wrapper theme-18">
+      <main className="page-wrapper theme-18 ss-home-page">
         <HomeHeroVideo
           categories={catalog.categories}
           featuredProducts={heroStripProducts}
@@ -288,7 +289,7 @@ export default async function HomePage() {
 
         <div className="mb-2 mb-xl-3 pt-xl-1 pb-3" />
 
-        <Reveal as="section" className="container pb-5" delay={0.04}>
+        <section className="container pb-5">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
               Izdvojeni <strong>Modeli</strong>
@@ -298,8 +299,8 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="row row-cols-2 row-cols-md-4 g-3">
-            {heroProducts.map((item) => (
-              <div key={item.legacyId}>
+            {heroProducts.map((item, index) => (
+              <ProductItemMotion key={item.legacyId} index={index}>
                 <Link href={`/web-shop/${item.legacyId}`} className="d-block">
                   <Image
                     src={item.coverImage || "/assets/images/home/demo19/product-1.jpg"}
@@ -310,14 +311,14 @@ export default async function HomePage() {
                   />
                   <span className="menu-link menu-link_us-s fw-semi-bold fs-16 text-uppercase">{formatCatalogProductName(item.name, item.sku)}</span>
                 </Link>
-              </div>
+              </ProductItemMotion>
             ))}
           </div>
-        </Reveal>
+        </section>
 
         <div className="mb-2 mb-xl-3 pt-xl-1 pb-3" />
 
-        <Reveal as="section" className="products-grid container" delay={0.06}>
+        <section className="products-grid container">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
               Popular <strong>Products</strong>
@@ -327,9 +328,9 @@ export default async function HomePage() {
             </Link>
           </div>
           <div className="row row-cols-2 row-cols-lg-4">
-            {featured.map((item) => (
-              <div key={item.legacyId} className="product-card-wrapper">
-                <div className="product-card ss-card-hover mb-3 mb-md-4">
+            {featured.map((item, index) => (
+              <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
+                <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                   <div className="pc__img-wrapper">
                     <Link href={`/web-shop/${item.legacyId}`}>
                       <Image
@@ -358,10 +359,10 @@ export default async function HomePage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </ProductItemMotion>
             ))}
           </div>
-        </Reveal>
+        </section>
 
         <div className="mb-3 mb-xl-4 pt-xl-1 pb-4" />
 
@@ -394,16 +395,16 @@ export default async function HomePage() {
 
         <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
 
-        <Reveal as="section" className="products-grid container" delay={0.1}>
+        <section className="products-grid container">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
               New <strong>Arrivals</strong>
             </h2>
           </div>
           <div className="row row-cols-2 row-cols-lg-4">
-            {arrivals.map((item) => (
-              <div key={item.legacyId} className="product-card-wrapper">
-                <div className="product-card ss-card-hover mb-3 mb-md-4">
+            {arrivals.map((item, index) => (
+              <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
+                <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                   <div className="pc__img-wrapper">
                     <Link href={`/web-shop/${item.legacyId}`}>
                       <Image
@@ -431,16 +432,16 @@ export default async function HomePage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </ProductItemMotion>
             ))}
           </div>
-        </Reveal>
+        </section>
 
         <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
 
         {landingSettings.showSaleSection && saleItems.length > 0 ? (
           <>
-            <Reveal as="section" className="products-grid container" delay={0.12}>
+            <section className="products-grid container">
               <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
                 <h2 className="section-title text-uppercase">{landingSettings.saleSectionTitle}</h2>
                 <Link href="/akcije" className="btn-link default-underline text-uppercase fw-medium">
@@ -449,9 +450,9 @@ export default async function HomePage() {
               </div>
               {landingSettings.saleSectionSubtitle ? <p className="text-secondary mb-4">{landingSettings.saleSectionSubtitle}</p> : null}
               <div className="row row-cols-2 row-cols-lg-4">
-                {saleItems.map((item) => (
-                  <div key={`sale-${item.legacyId}`} className="product-card-wrapper">
-                    <div className="product-card ss-card-hover mb-3 mb-md-4">
+                {saleItems.map((item, index) => (
+                  <ProductItemMotion key={`sale-${item.legacyId}`} className="product-card-wrapper" index={index}>
+                    <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                       <div className="pc__img-wrapper">
                         <Link href={`/web-shop/${item.legacyId}`}>
                           <Image
@@ -473,24 +474,24 @@ export default async function HomePage() {
                         </div>
                       </div>
                     </div>
-                  </div>
+                  </ProductItemMotion>
                 ))}
               </div>
-            </Reveal>
+            </section>
             <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
           </>
         ) : null}
 
-        <Reveal as="section" className="products-grid container" delay={0.14}>
+        <section className="products-grid container">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
               Trending <strong>Now</strong>
             </h2>
           </div>
           <div className="row row-cols-2 row-cols-lg-4">
-            {trending.map((item) => (
-              <div key={item.legacyId} className="product-card-wrapper">
-                <div className="product-card ss-card-hover mb-3 mb-md-4">
+            {trending.map((item, index) => (
+              <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
+                <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                   <div className="pc__img-wrapper">
                     <Link href={`/web-shop/${item.legacyId}`}>
                       <Image
@@ -518,10 +519,10 @@ export default async function HomePage() {
                     </div>
                   </div>
                 </div>
-              </div>
+              </ProductItemMotion>
             ))}
           </div>
-        </Reveal>
+        </section>
 
         <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
 
