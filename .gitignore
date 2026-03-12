@@ -41,7 +41,9 @@ transparent-upload/
 
 # local research/reference folders
 /hockerty-httpcopier/
-/docs/
+!/docs/
+/docs/*
+!/docs/NEXT16_MIGRATION_CHECKLIST.md
 /golden/
 /.tmp/
 /vest/
