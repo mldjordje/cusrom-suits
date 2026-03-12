@@ -15,16 +15,13 @@ create index if not exists idx_catalog_products_active_exported_price_final
 create index if not exists idx_catalog_products_search_trgm
   on public.catalog_products
   using gin (
-    lower(
-      concat_ws(
-        ' ',
-        coalesce(sku, ''),
-        coalesce(manuf_code, ''),
-        coalesce(ean, ''),
-        coalesce(name_sr, ''),
-        coalesce(name_en, ''),
-        coalesce(brand, '')
-      )
+    (
+      coalesce(sku, '') || ' ' ||
+      coalesce(manuf_code, '') || ' ' ||
+      coalesce(ean, '') || ' ' ||
+      coalesce(name_sr, '') || ' ' ||
+      coalesce(name_en, '') || ' ' ||
+      coalesce(brand, '')
     ) gin_trgm_ops
   );
 
