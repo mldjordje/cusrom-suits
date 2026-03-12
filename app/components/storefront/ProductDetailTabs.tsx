@@ -1,7 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
+import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
 type Props = {
   description: string | null;
@@ -17,7 +18,7 @@ const safeHtml = (value: string | null) => ({
 
 export default function ProductDetailTabs({ description, specification, attributes }: Props) {
   const [tab, setTab] = useState<TabKey>("description");
-  const reduceMotion = useReducedMotion();
+  const { reduceMotion } = useAnimationBudget();
 
   const additionalItems = useMemo(() => attributes.slice(0, 8), [attributes]);
 
@@ -56,7 +57,7 @@ export default function ProductDetailTabs({ description, specification, attribut
       <div className="tab-content">
         <AnimatePresence mode="wait">
           {tab === "description" ? (
-            <motion.div
+            <m.div
               key="description"
               className="tab-pane fade show active"
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
@@ -70,11 +71,11 @@ export default function ProductDetailTabs({ description, specification, attribut
                 <h3 className="block-title mb-0">Specification</h3>
                 <div className="content" dangerouslySetInnerHTML={safeHtml(specification)} />
               </div>
-            </motion.div>
+            </m.div>
           ) : null}
 
           {tab === "additional" ? (
-            <motion.div
+            <m.div
               key="additional"
               className="tab-pane fade show active"
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
@@ -96,11 +97,11 @@ export default function ProductDetailTabs({ description, specification, attribut
                   <p>No additional attributes available.</p>
                 )}
               </div>
-            </motion.div>
+            </m.div>
           ) : null}
 
           {tab === "reviews" ? (
-            <motion.div
+            <m.div
               key="reviews"
               className="tab-pane fade show active"
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
@@ -112,7 +113,7 @@ export default function ProductDetailTabs({ description, specification, attribut
                 <h3 className="block-title mb-3">Reviews</h3>
                 <p>No reviews yet for this item.</p>
               </div>
-            </motion.div>
+            </m.div>
           ) : null}
         </AnimatePresence>
       </div>

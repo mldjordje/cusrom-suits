@@ -1,7 +1,9 @@
 import Image from "next/image";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { formatCatalogProductName } from "@/lib/catalog/presentation";
-import HeroParallaxFx from "@/app/components/storefront/HeroParallaxFx";
+
+const HeroParallaxFx = dynamic(() => import("@/app/components/storefront/HeroParallaxFx"));
 
 type HomeCategory = {
   id: number;

@@ -1,6 +1,7 @@
 "use client";
 
 import { m, useReducedMotion } from "framer-motion";
+import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
 type RevealProps = {
   children: React.ReactNode;
@@ -27,7 +28,9 @@ export default function Reveal({
   y = 18,
   as = "div",
 }: RevealProps) {
-  const reduceMotion = useReducedMotion();
+  const prefersReduced = useReducedMotion();
+  const { reduceMotion: budgetReduce } = useAnimationBudget();
+  const reduceMotion = Boolean(prefersReduced || budgetReduce);
   const Tag = tagMap[as];
 
   if (reduceMotion) {

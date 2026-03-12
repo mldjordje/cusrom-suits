@@ -1,22 +1,23 @@
 "use client";
 
 import { useEffect } from "react";
-import { useReducedMotion } from "framer-motion";
+import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
 type HeroParallaxFxProps = {
   targetId: string;
 };
 
 export default function HeroParallaxFx({ targetId }: HeroParallaxFxProps) {
-  const reduceMotion = useReducedMotion();
+  const { allowParallax } = useAnimationBudget();
 
   useEffect(() => {
-    if (reduceMotion) return;
+    if (!allowParallax) return;
     if (typeof window === "undefined") return;
     if (window.matchMedia("(max-width: 767px)").matches) return;
 
     let mounted = true;
     let cleanup: (() => void) | null = null;
+    let idleHandle: number | null = null;
 
     const boot = async () => {
       const [gsapModule, scrollTriggerModule] = await Promise.all([import("gsap"), import("gsap/dist/ScrollTrigger")]);
@@ -65,14 +66,24 @@ export default function HeroParallaxFx({ targetId }: HeroParallaxFxProps) {
       cleanup = () => context.revert();
     };
 
-    boot().catch(() => {});
+    const runBoot = () => {
+      boot().catch(() => {});
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      idleHandle = window.requestIdleCallback(runBoot, { timeout: 900 });
+    } else {
+      window.setTimeout(runBoot, 180);
+    }
 
     return () => {
       mounted = false;
+      if (idleHandle !== null && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleHandle);
+      }
       if (cleanup) cleanup();
     };
-  }, [reduceMotion, targetId]);
+  }, [allowParallax, targetId]);
 
   return null;
 }
-

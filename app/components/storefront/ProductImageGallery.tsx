@@ -2,7 +2,8 @@
 
 import { useMemo, useState } from "react";
 import Image from "next/image";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
+import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
 type ProductImageGalleryProps = {
   images: string[];
@@ -16,7 +17,7 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
   }, [images]);
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const reduceMotion = useReducedMotion();
+  const { reduceMotion } = useAnimationBudget();
   const activeImage = gallery[activeIndex] || gallery[0];
   if (!activeImage) return null;
 
@@ -24,7 +25,7 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
     <div className="ss-product-gallery">
       <div className="ss-product-gallery__main">
         <AnimatePresence mode="wait">
-          <motion.div
+          <m.div
             key={activeImage}
             className="w-100 h-100"
             initial={reduceMotion ? false : { opacity: 0, scale: 1.01 }}
@@ -42,14 +43,14 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
               quality={78}
               sizes="(max-width: 575px) 100vw, (max-width: 991px) 92vw, 58vw"
             />
-          </motion.div>
+          </m.div>
         </AnimatePresence>
       </div>
 
       {gallery.length > 1 ? (
         <div className="ss-product-gallery__thumbs" role="listbox" aria-label="Product image thumbnails">
           {gallery.map((image, index) => (
-            <motion.button
+            <m.button
               key={`${image}-${index}`}
               type="button"
               className={`ss-product-gallery__thumb ${activeIndex === index ? "is-active" : ""}`}
@@ -67,7 +68,7 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
                 quality={64}
                 sizes="96px"
               />
-            </motion.button>
+            </m.button>
           ))}
         </div>
       ) : null}

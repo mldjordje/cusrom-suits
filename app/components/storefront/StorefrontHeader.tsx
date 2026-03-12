@@ -4,7 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { AnimatePresence, m } from "framer-motion";
+import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -21,7 +22,7 @@ export default function StorefrontHeader() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const reduceMotion = useReducedMotion();
+  const { reduceMotion } = useAnimationBudget();
   const normalizedPath = pathname ?? "";
   const isHome = normalizedPath === "/" || normalizedPath === "";
 
@@ -176,7 +177,7 @@ export default function StorefrontHeader() {
         <div className="ss-mobile-nav-layer">
           <AnimatePresence>
             {mobileOpen ? (
-              <motion.button
+              <m.button
                 type="button"
                 className="ss-mobile-nav-backdrop"
                 aria-label="Close menu"
@@ -191,7 +192,7 @@ export default function StorefrontHeader() {
 
           <AnimatePresence initial={false}>
             {mobileOpen ? (
-              <motion.nav
+              <m.nav
                 className="header-mobile__navigation navigation d-flex flex-column w-100 position-absolute top-100 bg-body overflow-auto ss-mobile-nav-panel"
                 initial={reduceMotion ? false : { y: -12, opacity: 0 }}
                 animate={reduceMotion ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
@@ -201,7 +202,7 @@ export default function StorefrontHeader() {
                 <div className="container pt-3 pb-4">
                   <ul className="navigation__list list-unstyled position-relative">
                     {navItems.map((item, index) => (
-                      <motion.li
+                      <m.li
                         key={`mobile-${item.href}`}
                         className={`navigation__item border-bottom ${isItemActive(item.href) ? "is-active" : ""}`}
                         initial={reduceMotion ? false : { y: 10, opacity: 0 }}
@@ -216,11 +217,11 @@ export default function StorefrontHeader() {
                         <Link href={item.href} className={`navigation__link d-block text-uppercase ${isItemActive(item.href) ? "is-active" : ""}`}>
                           {item.label}
                         </Link>
-                      </motion.li>
+                      </m.li>
                     ))}
                   </ul>
                 </div>
-              </motion.nav>
+              </m.nav>
             ) : null}
           </AnimatePresence>
         </div>
