@@ -5,6 +5,7 @@ import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
 
 type SearchParams = Record<string, string | string[] | undefined>;
+type ActiveFilterChip = { key: string; label: string; href: string };
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -62,6 +63,13 @@ export default async function WebShopPage({
   const masonryA = items.slice(0, 4);
   const masonryB = items.slice(4, 8);
   const gridItems = items.slice(8);
+  const sortLabelMap: Record<string, string> = {
+    featured: "Featured",
+    price_asc: "Price: Low to High",
+    price_desc: "Price: High to Low",
+    name_asc: "Name: A-Z",
+    stock_desc: "Stock: High to Low",
+  };
 
   const makeHref = (patch: Record<string, string | number | null>) => {
     const url = new URLSearchParams();
@@ -87,6 +95,45 @@ export default async function WebShopPage({
     const queryString = url.toString();
     return queryString ? `/web-shop?${queryString}` : "/web-shop";
   };
+
+  const categoryNameById = new Map(result.categories.map((category) => [category.id, category.name]));
+  const selectedCategoryName = categoryId > 0 ? categoryNameById.get(categoryId) || `Category ${categoryId}` : "";
+  const activeFilterChips: ActiveFilterChip[] = [];
+  if (q.trim()) {
+    activeFilterChips.push({
+      key: "q",
+      label: `Search: ${q.trim()}`,
+      href: makeHref({ q: null, page: 1 }),
+    });
+  }
+  if (categoryId > 0) {
+    activeFilterChips.push({
+      key: "category",
+      label: `Category: ${selectedCategoryName}`,
+      href: makeHref({ categoryId: null, page: 1 }),
+    });
+  }
+  if (sort !== "featured") {
+    activeFilterChips.push({
+      key: "sort",
+      label: `Sort: ${sortLabelMap[sort] || sort}`,
+      href: makeHref({ sort: null, page: 1 }),
+    });
+  }
+  if (inStock) {
+    activeFilterChips.push({
+      key: "stock",
+      label: "In stock",
+      href: makeHref({ inStock: null, page: 1 }),
+    });
+  }
+  if (onSale) {
+    activeFilterChips.push({
+      key: "sale",
+      label: "On sale",
+      href: makeHref({ onSale: null, page: 1 }),
+    });
+  }
 
   const renderOverlayCard = (
     item: CatalogProductView,
@@ -127,7 +174,7 @@ export default async function WebShopPage({
                 quality={68}
               />
             </Link>
-            <div className="pc__info hover__content text-center top-0 left-0 w-100 d-flex flex-column justify-content-center align-items-center">
+            <div className="pc__info hover__content text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
               <p className="pc__category">{item.categories[0]?.name || item.sku}</p>
               <h6 className="pc__title">
                 <Link href={`/web-shop/${item.legacyId}`}>{item.name}</Link>
@@ -145,6 +192,22 @@ export default async function WebShopPage({
               <Link href={`/web-shop/${item.legacyId}`} className="pc__atc anim_appear-bottom btn mt-3 border-0 text-uppercase fw-medium">
                 View Product
               </Link>
+            </div>
+          </div>
+          <div className="pc__info ss-card-mobile-info d-md-none">
+            <p className="pc__category">{item.categories[0]?.name || item.sku}</p>
+            <h6 className="pc__title mb-1">
+              <Link href={`/web-shop/${item.legacyId}`}>{item.name}</Link>
+            </h6>
+            <div className="product-card__price d-flex">
+              {item.priceGross > item.priceFinalGross ? (
+                <>
+                  <span className="money price price-old">{formatRsd(item.priceGross)}</span>
+                  <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
+                </>
+              ) : (
+                <span className="money price">{formatRsd(item.priceFinalGross)}</span>
+              )}
             </div>
           </div>
         </div>
@@ -180,7 +243,7 @@ export default async function WebShopPage({
                   {topCategories.map((category) => (
                     <li key={category.id} className="me-3 me-xl-4 pe-1">
                       <Link
-                        href={makeHref({ categoryId: category.id, page: 1 })}
+                        href={makeHref({ categoryId: categoryId === category.id ? null : category.id, page: 1 })}
                         className={`menu-link menu-link_us-s ${categoryId === category.id ? "menu-link_active" : ""}`}
                       >
                         {category.name}
@@ -196,98 +259,163 @@ export default async function WebShopPage({
         <div className="mb-4 pb-lg-3" />
 
         <section className="shop-main container">
-          <div className="d-flex flex-wrap align-items-center gap-3 mb-3 pb-md-2">
-            <span className="text-uppercase fw-medium me-1 d-none d-lg-inline">Filter</span>
-            {topCategories.slice(0, 5).map((category, index) => (
-              <div key={category.id} className="d-flex align-items-center">
-                <Link
-                  href={makeHref({ categoryId: category.id, page: 1 })}
-                  className={`menu-link menu-link_us-s text-uppercase ${categoryId === category.id ? "menu-link_active" : ""}`}
-                >
-                  {category.name}
-                </Link>
-                {index < Math.min(topCategories.length, 5) - 1 ? (
-                  <div className="shop-asc__seprator ms-2 me-3 bg-light d-none d-lg-block" />
+          <div className="ss-filter-panel mb-4 pb-md-2">
+            <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+              <div className="d-flex flex-wrap align-items-center gap-2">
+                <span className="text-uppercase fw-medium me-1">Filter</span>
+                {activeFilterChips.length > 0 ? (
+                  <span className="ss-filter-active-count">{activeFilterChips.length} active</span>
                 ) : null}
               </div>
-            ))}
-          </div>
+              <Link
+                href="/web-shop"
+                className={`ss-filter-reset-link text-uppercase ${activeFilterChips.length === 0 ? "disabled pe-none opacity-50" : ""}`}
+              >
+                Reset all
+              </Link>
+            </div>
 
-          <form action="/web-shop" method="get" id="shop-filters" className="ss-shop9-filters mb-4 pb-md-2">
-            <input type="hidden" name="page" value="1" />
-            <div className="row g-2 align-items-end">
-              <div className="col-12 col-lg-5">
-                <label className="form-label text-uppercase fw-medium fs-13 mb-1">Search</label>
-                <input
-                  type="search"
-                  name="q"
-                  defaultValue={q}
-                  className="form-control"
-                  placeholder="Search by code, name, SKU, EAN..."
-                />
+            {activeFilterChips.length > 0 ? (
+              <div className="ss-filter-chip-list mb-3">
+                {activeFilterChips.map((chip) => (
+                  <Link key={chip.key} href={chip.href} className="ss-filter-chip" aria-label={`Remove ${chip.label}`}>
+                    <span>{chip.label}</span>
+                    <span className="ss-filter-chip__x">x</span>
+                  </Link>
+                ))}
               </div>
+            ) : (
+              <p className="ss-filter-empty mb-3">No active filters yet.</p>
+            )}
 
-              <div className="col-6 col-md-4 col-lg-2">
-                <label className="form-label text-uppercase fw-medium fs-13 mb-1">Sort</label>
-                <select className="form-select fw-medium" aria-label="Sort Items" name="sort" defaultValue={sort}>
-                  <option value="featured">Featured</option>
-                  <option value="price_asc">Price: Low to High</option>
-                  <option value="price_desc">Price: High to Low</option>
-                  <option value="name_asc">Name: A-Z</option>
-                  <option value="stock_desc">Stock: High to Low</option>
-                </select>
-              </div>
+            <div className="d-flex flex-wrap align-items-center gap-3 mb-3 pb-md-2">
+              {topCategories.slice(0, 6).map((category, index) => (
+                <div key={category.id} className="d-flex align-items-center">
+                  <Link
+                    href={makeHref({ categoryId: categoryId === category.id ? null : category.id, page: 1 })}
+                    className={`menu-link menu-link_us-s text-uppercase ${categoryId === category.id ? "menu-link_active" : ""}`}
+                  >
+                    {category.name}
+                  </Link>
+                  {index < Math.min(topCategories.length, 6) - 1 ? (
+                    <div className="shop-asc__seprator ms-2 me-3 bg-light d-none d-lg-block" />
+                  ) : null}
+                </div>
+              ))}
+            </div>
 
-              <div className="col-6 col-md-4 col-lg-2">
-                <label className="form-label text-uppercase fw-medium fs-13 mb-1">Category</label>
-                <select
-                  className="form-select fw-medium"
-                  aria-label="Category"
-                  name="categoryId"
-                  defaultValue={categoryId > 0 ? String(categoryId) : ""}
-                >
-                  <option value="">All</option>
-                  {result.categories.map((category) => (
-                    <option key={category.id} value={category.id}>
-                      {category.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
+            <form action="/web-shop" method="get" id="shop-filters" className="ss-shop9-filters">
+              <input type="hidden" name="page" value="1" />
+              <div className="row g-2 align-items-end">
+                <div className="col-12 col-lg-5">
+                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">Search</label>
+                  <div className="ss-filter-field">
+                    <input
+                      type="search"
+                      name="q"
+                      defaultValue={q}
+                      className="form-control"
+                      placeholder="Search by code, name, SKU, EAN..."
+                    />
+                    {q.trim() ? (
+                      <Link href={makeHref({ q: null, page: 1 })} className="ss-filter-field__clear">
+                        Clear
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
 
-              <div className="col-6 col-md-2 col-lg-1">
-                <label className="form-label text-uppercase fw-medium fs-13 mb-1">Stock</label>
-                <label className="d-flex align-items-center gap-2 border rounded px-2 py-2">
-                  <input type="checkbox" name="inStock" value="1" defaultChecked={inStock} />
-                  <span className="fs-13">In</span>
-                </label>
-              </div>
+                <div className="col-6 col-md-4 col-lg-2">
+                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">Sort</label>
+                  <div className="ss-filter-field">
+                    <select className="form-select fw-medium" aria-label="Sort Items" name="sort" defaultValue={sort}>
+                      <option value="featured">Featured</option>
+                      <option value="price_asc">Price: Low to High</option>
+                      <option value="price_desc">Price: High to Low</option>
+                      <option value="name_asc">Name: A-Z</option>
+                      <option value="stock_desc">Stock: High to Low</option>
+                    </select>
+                    {sort !== "featured" ? (
+                      <Link href={makeHref({ sort: null, page: 1 })} className="ss-filter-field__clear">
+                        Clear
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
 
-              <div className="col-6 col-md-2 col-lg-1">
-                <label className="form-label text-uppercase fw-medium fs-13 mb-1">Sale</label>
-                <label className="d-flex align-items-center gap-2 border rounded px-2 py-2">
-                  <input type="checkbox" name="onSale" value="1" defaultChecked={onSale} />
-                  <span className="fs-13">On</span>
-                </label>
-              </div>
+                <div className="col-6 col-md-4 col-lg-2">
+                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">Category</label>
+                  <div className="ss-filter-field">
+                    <select
+                      className="form-select fw-medium"
+                      aria-label="Category"
+                      name="categoryId"
+                      defaultValue={categoryId > 0 ? String(categoryId) : ""}
+                    >
+                      <option value="">All</option>
+                      {result.categories.map((category) => (
+                        <option key={category.id} value={category.id}>
+                          {category.name}
+                        </option>
+                      ))}
+                    </select>
+                    {categoryId > 0 ? (
+                      <Link href={makeHref({ categoryId: null, page: 1 })} className="ss-filter-field__clear">
+                        Clear
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
 
-              <div className="col-12 col-lg-1 d-grid d-lg-block">
-                <button type="submit" className="btn btn-primary text-uppercase fw-medium w-100">
-                  Apply
-                </button>
-              </div>
+                <div className="col-6 col-md-2 col-lg-1">
+                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">Stock</label>
+                  <div className="ss-filter-field">
+                    <label className="d-flex align-items-center gap-2 border rounded px-2 py-2 mb-0">
+                      <input type="checkbox" name="inStock" value="1" defaultChecked={inStock} />
+                      <span className="fs-13">In stock</span>
+                    </label>
+                    {inStock ? (
+                      <Link href={makeHref({ inStock: null, page: 1 })} className="ss-filter-field__clear">
+                        Clear
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
 
-              {(q || inStock || onSale || categoryId > 0 || sort !== "featured") ? (
-                <div className="col-12">
-                  <Link href="/web-shop" className="btn btn-link text-uppercase fw-medium p-0">
-                    Reset filters
+                <div className="col-6 col-md-2 col-lg-1">
+                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">Sale</label>
+                  <div className="ss-filter-field">
+                    <label className="d-flex align-items-center gap-2 border rounded px-2 py-2 mb-0">
+                      <input type="checkbox" name="onSale" value="1" defaultChecked={onSale} />
+                      <span className="fs-13">On sale</span>
+                    </label>
+                    {onSale ? (
+                      <Link href={makeHref({ onSale: null, page: 1 })} className="ss-filter-field__clear">
+                        Clear
+                      </Link>
+                    ) : null}
+                  </div>
+                </div>
+
+                <div className="col-6 col-lg-1 d-grid d-lg-block">
+                  <button type="submit" className="btn btn-primary text-uppercase fw-medium w-100">
+                    Apply
+                  </button>
+                </div>
+
+                <div className="col-6 col-lg-1 d-grid d-lg-block">
+                  <Link
+                    href="/web-shop"
+                    className={`btn btn-outline-dark text-uppercase fw-medium w-100 ${activeFilterChips.length === 0 ? "disabled pe-none opacity-50" : ""}`}
+                  >
+                    Reset
                   </Link>
                 </div>
-              ) : null}
-            </div>
-          </form>
+              </div>
+            </form>
+          </div>
 
-          <div className="products-grid" id="products-grid">
+          <div className="products-grid d-none d-md-block" id="products-grid-desktop">
             {masonryA.length > 0 ? (
               <div className="products-masonry row row-cols-md-2 mb-2 mb-md-3 pb-1 pb-md-3">
                 {masonryA[0] ? renderOverlayCard(masonryA[0], `masonry-a-${masonryA[0].legacyId}`) : null}
@@ -337,6 +465,20 @@ export default async function WebShopPage({
                 renderOverlayCard(item, `grid-${item.legacyId}`, {
                   cardClassName: "product-card mb-3 mb-md-4 mb-xxl-5",
                   imageWrapperClassName: "pc__img-wrapper hover-container",
+                  imageWidth: 330,
+                  imageHeight: 400,
+                }),
+              )}
+            </div>
+          </div>
+
+          <div className="products-grid ss-mobile-grid d-md-none" id="products-grid-mobile">
+            <div className="row row-cols-2 g-2">
+              {items.map((item) =>
+                renderOverlayCard(item, `mobile-${item.legacyId}`, {
+                  wrapperClassName: "product-card-wrapper ss-mobile-grid__item",
+                  cardClassName: "product-card ss-mobile-grid__card",
+                  imageWrapperClassName: "pc__img-wrapper ss-mobile-grid__img-wrapper",
                   imageWidth: 330,
                   imageHeight: 400,
                 }),
