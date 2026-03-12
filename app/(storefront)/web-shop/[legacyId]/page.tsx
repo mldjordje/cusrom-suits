@@ -46,7 +46,10 @@ export default async function WebShopProductPage({
   const related = await getRelatedCatalogProducts(product, 4);
 
   const discountAmount = Math.max(0, product.priceGross - product.priceFinalGross);
-  const stockValue = Math.max(0, Math.floor(product.stockWarehouse1));
+  const stockValue = Math.max(
+    0,
+    Math.floor(product.stockTotal > 0 ? product.stockTotal : product.stockWarehouse1),
+  );
   const gallery = product.images.length > 0 ? product.images : [product.coverImage || "/assets/images/search-result-3.jpg"];
   const categoryLabel = product.categories[0]?.path.join(" / ") || "Santos Selection";
   const shortDescription = stripHtml(product.description).slice(0, 280);

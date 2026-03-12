@@ -23,10 +23,12 @@ export const metadata = {
 
 function sortItems(items: CatalogProductView[], sort: string): CatalogProductView[] {
   const next = [...items];
+  const stockRank = (item: CatalogProductView) =>
+    Math.max(Number(item.stockTotal || 0), Number(item.stockWarehouse1 || 0));
   if (sort === "price_asc") return next.sort((a, b) => a.priceFinalGross - b.priceFinalGross);
   if (sort === "price_desc") return next.sort((a, b) => b.priceFinalGross - a.priceFinalGross);
   if (sort === "name_asc") return next.sort((a, b) => a.name.localeCompare(b.name, "sr"));
-  if (sort === "stock_desc") return next.sort((a, b) => b.stockWarehouse1 - a.stockWarehouse1);
+  if (sort === "stock_desc") return next.sort((a, b) => stockRank(b) - stockRank(a));
   return next;
 }
 

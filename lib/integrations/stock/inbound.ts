@@ -94,6 +94,7 @@ const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
 const CATEGORY_MAP_PATH = "data/integrations/stock-category-map.json";
 const TAX_MAP_PATH = "data/integrations/stock-tax-map.json";
 const MAX_ROW_FAILURE_LOGS_PER_FILE = 200;
+const PRIMARY_WAREHOUSE_ID = Math.max(1, Number(process.env.STOCK_SYNC_PRIMARY_WAREHOUSE_ID || 1) || 1);
 
 const NOOP_COMPATIBILITY_FILES = new Set([
   "document",
@@ -845,10 +846,6 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
       failures.push({ rowIndex, reason: "Invalid productwarehouse row.", row });
       return;
     }
-    if (value.warehouseId !== 1) {
-      skippedRows += 1;
-      return;
-    }
     parsed.push(value);
   });
 
@@ -858,16 +855,48 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
       successRows: 0,
       failedRows: failures.length,
       skippedRows,
-      warnings: ["No warehouse #1 rows to apply."],
+      warnings: ["No valid productwarehouse rows to apply."],
       rowFailures: failures,
     } satisfies HandlerResult;
   }
+
+  const grouped = new Map<
+    number,
+    {
+      legacyId: number;
+      stockWarehouse1: number;
+      stockTotal: number;
+      priceNet: number;
+      warehouseRows: WarehouseCsvRow[];
+    }
+  >();
+
+  for (const row of parsed) {
+    const current = grouped.get(row.legacyId) || {
+      legacyId: row.legacyId,
+      stockWarehouse1: 0,
+      stockTotal: 0,
+      priceNet: 0,
+      warehouseRows: [],
+    };
+    current.stockTotal += toNumber(row.amount, 0);
+    if (row.warehouseId === PRIMARY_WAREHOUSE_ID) {
+      current.stockWarehouse1 += toNumber(row.amount, 0);
+      if (toNumber(row.price, 0) > 0) current.priceNet = toNumber(row.price, 0);
+    } else if (current.priceNet <= 0 && toNumber(row.price, 0) > 0) {
+      current.priceNet = toNumber(row.price, 0);
+    }
+    current.warehouseRows.push(row);
+    grouped.set(row.legacyId, current);
+  }
+
+  const aggregatedRows = Array.from(grouped.values());
 
   const supabase = getServiceSupabase();
   let successRows = 0;
 
   if (supabase) {
-    const productIds = Array.from(new Set(parsed.map((row) => row.legacyId)));
+    const productIds = aggregatedRows.map((row) => row.legacyId);
     const taxByProductId = new Map<number, { taxPercent: number; rebatePercent: number }>();
     if (productIds.length) {
       const { data: products, error: productsError } = await supabase
@@ -892,15 +921,15 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
       }
     }
 
-    for (const row of parsed) {
+    for (const row of aggregatedRows) {
       const patch: Record<string, unknown> = {
-        stock_warehouse_1: row.amount,
-        stock_total: row.amount,
+        stock_warehouse_1: round(row.stockWarehouse1, 3),
+        stock_total: round(row.stockTotal, 3),
         updated_at: new Date().toISOString(),
       };
-      if (row.price > 0) {
+      if (row.priceNet > 0) {
         const taxMeta = taxByProductId.get(row.legacyId) || { taxPercent: 20, rebatePercent: 0 };
-        const priceNet = toNumber(row.price, 0);
+        const priceNet = toNumber(row.priceNet, 0);
         const priceGross = round(priceNet * (1 + toNumber(taxMeta.taxPercent, 20) / 100), 2);
         const priceFinalGross = round(
           priceGross * (1 - toNumber(taxMeta.rebatePercent, 0) / 100),
@@ -920,7 +949,7 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
         failures.push({
           rowIndex: row.legacyId,
           reason: `Warehouse update failed for product ${row.legacyId}: ${error.message}`,
-          row: [row.legacyId, row.warehouseId],
+          row: [row.legacyId, PRIMARY_WAREHOUSE_ID],
         });
         continue;
       }
@@ -944,7 +973,7 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
     byId.set(Number(item.legacyId || 0), item);
   }
 
-  for (const row of parsed) {
+  for (const row of aggregatedRows) {
     const product = byId.get(row.legacyId);
     if (!product) {
       failures.push({
@@ -955,12 +984,12 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
       continue;
     }
     product.stock = product.stock || {};
-    product.stock.warehouse1 = row.amount;
-    product.stock.total = row.amount;
-    if (row.price > 0) {
+    product.stock.warehouse1 = round(row.stockWarehouse1, 3);
+    product.stock.total = round(row.stockTotal, 3);
+    if (row.priceNet > 0) {
       const taxPercent = toNumber(product.price?.taxPercent, 20);
       const rebatePercent = toNumber(product.price?.rebatePercent, 0);
-      const priceNet = toNumber(row.price, 0);
+      const priceNet = toNumber(row.priceNet, 0);
       const priceGross = round(priceNet * (1 + taxPercent / 100), 2);
       const priceFinalGross = round(priceGross * (1 - rebatePercent / 100), 2);
       product.price = product.price || {};
@@ -970,13 +999,20 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
     }
     product.raw = product.raw || {};
     product.raw.stockWarehouse = {
-      warehouseId: row.warehouseId,
-      amount: row.amount,
-      price: row.price,
-      reservedAmount: row.reservedAmount,
-      orderedAmount: row.orderedAmount,
+      warehouseId: PRIMARY_WAREHOUSE_ID,
+      amount: round(row.stockWarehouse1, 3),
+      price: row.priceNet,
+      reservedAmount: 0,
+      orderedAmount: 0,
       ts: new Date().toISOString(),
     };
+    product.raw.stockWarehouses = row.warehouseRows.map((warehouseRow) => ({
+      warehouseId: warehouseRow.warehouseId,
+      amount: round(warehouseRow.amount, 3),
+      reservedAmount: round(warehouseRow.reservedAmount, 3),
+      orderedAmount: round(warehouseRow.orderedAmount, 3),
+      priceNet: round(warehouseRow.price, 6),
+    }));
     successRows += 1;
   }
 

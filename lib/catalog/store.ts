@@ -2,6 +2,7 @@ import { readJsonFile } from "@/lib/storage/jsonStore";
 import { getAnonSupabase, getServiceSupabase } from "@/lib/supabase/server";
 import type { LegacyCatalogProduct } from "@/lib/legacy/types";
 import { applyPromotionRulesToProduct, applyPromotionRulesToProducts, listPromotionRules } from "@/lib/catalog/promotions";
+import { unstable_cache } from "next/cache";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
 
@@ -66,7 +67,7 @@ type CatalogSnapshotCacheEntry = {
 };
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-const CATALOG_SNAPSHOT_TTL_MS = 60_000;
+const CATALOG_SNAPSHOT_TTL_MS = 300_000;
 
 const getCatalogSnapshotCache = () => {
   const globalWithCache = globalThis as typeof globalThis & {
@@ -76,6 +77,18 @@ const getCatalogSnapshotCache = () => {
     globalWithCache.__catalogSnapshotCache = new Map<string, CatalogSnapshotCacheEntry>();
   }
   return globalWithCache.__catalogSnapshotCache;
+};
+
+const listPromotionRulesCached = unstable_cache(
+  async () => listPromotionRules(),
+  ["catalog-promotion-rules-v1"],
+  { revalidate: 60 },
+);
+
+const getAvailableStockValue = (item: Pick<CatalogProductView, "stockWarehouse1" | "stockTotal">) => {
+  const total = Number(item.stockTotal || 0);
+  const warehouse1 = Number(item.stockWarehouse1 || 0);
+  return total > 0 ? total : warehouse1;
 };
 
 const parseCategories = (rawPayload: Record<string, unknown> | null | undefined): CatalogCategory[] => {
@@ -192,7 +205,7 @@ const applyFilters = (
   let filtered = [...items];
   if (input.activeOnly) filtered = filtered.filter((item) => item.isActive);
   if (input.exportOnly) filtered = filtered.filter((item) => item.isExported);
-  if (input.inStock) filtered = filtered.filter((item) => item.stockWarehouse1 > 0);
+  if (input.inStock) filtered = filtered.filter((item) => getAvailableStockValue(item) > 0);
   if (input.onSale) filtered = filtered.filter((item) => item.priceGross > item.priceFinalGross || item.rebatePercent > 0);
   if (input.categoryId > 0) {
     filtered = filtered.filter((item) => item.categories.some((cat) => cat.id === input.categoryId));
@@ -276,19 +289,12 @@ const applySkuImageFallbacks = (items: CatalogProductView[]): CatalogProductView
   });
 };
 
-async function loadFromSupabase(filters: {
+async function fetchCatalogSnapshotFromSupabase(filters: {
   activeOnly: boolean;
   exportOnly: boolean;
 }): Promise<CatalogProductView[] | null> {
   const supabase = getServiceSupabase() || getAnonSupabase();
   if (!supabase) return null;
-
-  const cacheKey = `${filters.activeOnly ? "1" : "0"}:${filters.exportOnly ? "1" : "0"}`;
-  const cache = getCatalogSnapshotCache();
-  const cached = cache.get(cacheKey);
-  if (cached && cached.expiresAt > Date.now()) {
-    return cached.items;
-  }
 
   const pageSize = 1000;
   const products: Record<string, unknown>[] = [];
@@ -338,12 +344,45 @@ async function loadFromSupabase(filters: {
   }
 
   const normalized = products.map((row: Record<string, unknown>) => normalizeCatalogRow(row, imagesByProductId));
-  const finalItems = applySkuImageFallbacks(normalized);
-  cache.set(cacheKey, {
-    items: finalItems,
-    expiresAt: Date.now() + CATALOG_SNAPSHOT_TTL_MS,
-  });
-  return finalItems;
+  return applySkuImageFallbacks(normalized);
+}
+
+const loadCatalogSnapshotCached = unstable_cache(
+  async (activeOnly: boolean, exportOnly: boolean) => {
+    const snapshot = await fetchCatalogSnapshotFromSupabase({ activeOnly, exportOnly });
+    if (!snapshot) {
+      throw new Error("Catalog snapshot unavailable");
+    }
+    return snapshot;
+  },
+  ["catalog-snapshot-v2"],
+  { revalidate: 300 },
+);
+
+async function loadFromSupabase(filters: {
+  activeOnly: boolean;
+  exportOnly: boolean;
+}): Promise<CatalogProductView[] | null> {
+  const supabase = getServiceSupabase() || getAnonSupabase();
+  if (!supabase) return null;
+
+  const cacheKey = `${filters.activeOnly ? "1" : "0"}:${filters.exportOnly ? "1" : "0"}`;
+  const cache = getCatalogSnapshotCache();
+  const cached = cache.get(cacheKey);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.items;
+  }
+
+  try {
+    const items = await loadCatalogSnapshotCached(filters.activeOnly, filters.exportOnly);
+    cache.set(cacheKey, {
+      items,
+      expiresAt: Date.now() + CATALOG_SNAPSHOT_TTL_MS,
+    });
+    return items;
+  } catch {
+    return null;
+  }
 }
 
 async function loadFromFile(): Promise<CatalogProductView[]> {
@@ -363,7 +402,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const applyPromotions = input.applyPromotions !== false;
 
   const baseItems = (await loadFromSupabase({ activeOnly, exportOnly })) || (await loadFromFile());
-  const promotionRules = applyPromotions ? await listPromotionRules() : [];
+  const promotionRules = applyPromotions ? await listPromotionRulesCached() : [];
   const displayItems = promotionRules.length > 0 ? applyPromotionRulesToProducts(baseItems, promotionRules) : baseItems;
   const filtered = applyFilters(displayItems, { query, categoryId, inStock, onSale, activeOnly, exportOnly });
   const total = filtered.length;
@@ -392,28 +431,10 @@ export async function getCatalogProductByLegacyId(
 
   const supabase = getServiceSupabase() || getAnonSupabase();
   if (supabase) {
-    const { data: row } = await supabase
-      .from("catalog_products")
-      .select("*")
-      .eq("legacy_id", id)
-      .maybeSingle();
-
-    if (row) {
-      const { data: media } = await supabase
-        .from("catalog_product_media")
-        .select("legacy_product_id,url,sort")
-        .eq("legacy_product_id", id)
-        .order("sort", { ascending: true });
-      const imagesByProductId = new Map<number, string[]>();
-      imagesByProductId.set(
-        id,
-        (media || [])
-          .map((m) => String((m as Record<string, unknown>).url || ""))
-          .filter((value) => value.length > 0),
-      );
-      const normalized = normalizeCatalogRow(row as Record<string, unknown>, imagesByProductId);
+    const normalized = await getCatalogProductByLegacyIdCached(id);
+    if (normalized) {
       if (!applyPromotions) return normalized;
-      const rules = await listPromotionRules();
+      const rules = await listPromotionRulesCached();
       return rules.length ? applyPromotionRulesToProduct(normalized, rules) : normalized;
     }
   }
@@ -421,9 +442,48 @@ export async function getCatalogProductByLegacyId(
   const items = await loadFromFile();
   const found = items.find((item) => item.legacyId === id) || null;
   if (!found || !applyPromotions) return found;
-  const rules = await listPromotionRules();
+  const rules = await listPromotionRulesCached();
   return rules.length ? applyPromotionRulesToProduct(found, rules) : found;
 }
+
+async function fetchCatalogProductByLegacyIdFromSupabase(
+  legacyId: number,
+): Promise<CatalogProductView | null> {
+  const supabase = getServiceSupabase() || getAnonSupabase();
+  if (!supabase) return null;
+
+  const { data: row } = await supabase
+    .from("catalog_products")
+    .select(
+      "legacy_id,sku,ean,manuf_code,brand,is_active,is_exported,name_sr,name_en,description_sr,description_en,specification_sr,specification_en,price_gross,price_final_gross,tax_percent,rebate_percent,stock_warehouse_1,stock_total,raw_payload",
+    )
+    .eq("legacy_id", legacyId)
+    .maybeSingle();
+
+  if (!row) return null;
+
+  const { data: media } = await supabase
+    .from("catalog_product_media")
+    .select("legacy_product_id,url,sort")
+    .eq("legacy_product_id", legacyId)
+    .order("sort", { ascending: true });
+
+  const imagesByProductId = new Map<number, string[]>();
+  imagesByProductId.set(
+    legacyId,
+    (media || [])
+      .map((m) => String((m as Record<string, unknown>).url || ""))
+      .filter((value) => value.length > 0),
+  );
+  const normalized = normalizeCatalogRow(row as Record<string, unknown>, imagesByProductId);
+  return applySkuImageFallbacks([normalized])[0] || null;
+}
+
+const getCatalogProductByLegacyIdCached = unstable_cache(
+  async (legacyId: number) => fetchCatalogProductByLegacyIdFromSupabase(legacyId),
+  ["catalog-product-by-id-v1"],
+  { revalidate: 180 },
+);
 
 export async function getRelatedCatalogProducts(
   item: CatalogProductView,
