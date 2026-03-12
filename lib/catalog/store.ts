@@ -67,8 +67,22 @@ type CatalogSnapshotCacheEntry = {
   items: CatalogProductView[];
 };
 
+type CatalogListCacheEntry = {
+  expiresAt: number;
+  value: CatalogListResult;
+  source: "supabase" | "file";
+};
+
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const CATALOG_SNAPSHOT_TTL_MS = 300_000;
+const CATALOG_LIST_TTL_MS = 45_000;
+const CATALOG_LIST_CACHE_MAX_ENTRIES = 220;
+const CATALOG_LIST_CACHE_VERSION = "v1";
+const CATALOG_PERF_LOG_THRESHOLD_MS = Math.max(
+  0,
+  Number(process.env.CATALOG_PERF_LOG_THRESHOLD_MS || 350),
+);
+const CATALOG_DEBUG_PERF = process.env.CATALOG_DEBUG_PERF === "1";
 
 const getCatalogSnapshotCache = () => {
   const globalWithCache = globalThis as typeof globalThis & {
@@ -78,6 +92,69 @@ const getCatalogSnapshotCache = () => {
     globalWithCache.__catalogSnapshotCache = new Map<string, CatalogSnapshotCacheEntry>();
   }
   return globalWithCache.__catalogSnapshotCache;
+};
+
+const getCatalogListCache = () => {
+  const globalWithCache = globalThis as typeof globalThis & {
+    __catalogListCache?: Map<string, CatalogListCacheEntry>;
+  };
+  if (!globalWithCache.__catalogListCache) {
+    globalWithCache.__catalogListCache = new Map<string, CatalogListCacheEntry>();
+  }
+  return globalWithCache.__catalogListCache;
+};
+
+const makeCatalogListCacheKey = (input: {
+  page: number;
+  pageSize: number;
+  query: string;
+  categoryId: number;
+  inStock: boolean;
+  onSale: boolean;
+  activeOnly: boolean;
+  exportOnly: boolean;
+  collapseBySku: boolean;
+  applyPromotions: boolean;
+}) =>
+  [
+    CATALOG_LIST_CACHE_VERSION,
+    input.page,
+    input.pageSize,
+    input.query.trim().toLowerCase(),
+    input.categoryId,
+    input.inStock ? 1 : 0,
+    input.onSale ? 1 : 0,
+    input.activeOnly ? 1 : 0,
+    input.exportOnly ? 1 : 0,
+    input.collapseBySku ? 1 : 0,
+    input.applyPromotions ? 1 : 0,
+  ].join("|");
+
+const maybeLogCatalogPerformance = (payload: {
+  source: "supabase" | "file";
+  cache: "hit" | "miss";
+  totalMs: number;
+  loadMs: number;
+  promoMs: number;
+  filterMs: number;
+  collapseMs: number;
+  paginateMs: number;
+  totalItems: number;
+  filteredItems: number;
+  pageItems: number;
+  page: number;
+  pageSize: number;
+  query: string;
+  categoryId: number;
+  inStock: boolean;
+  onSale: boolean;
+}) => {
+  if (!CATALOG_DEBUG_PERF && payload.totalMs < CATALOG_PERF_LOG_THRESHOLD_MS) {
+    return;
+  }
+  console.info(
+    `[catalog.perf] source=${payload.source} cache=${payload.cache} total=${payload.totalMs}ms load=${payload.loadMs}ms promotions=${payload.promoMs}ms filter=${payload.filterMs}ms collapse=${payload.collapseMs}ms paginate=${payload.paginateMs}ms items=${payload.pageItems}/${payload.filteredItems}/${payload.totalItems} page=${payload.page} size=${payload.pageSize} query="${payload.query}" category=${payload.categoryId} inStock=${payload.inStock ? 1 : 0} onSale=${payload.onSale ? 1 : 0}`,
+  );
 };
 
 const listPromotionRulesCached = unstable_cache(
@@ -109,15 +186,32 @@ const parseCategories = (rawPayload: Record<string, unknown> | null | undefined)
     .filter((cat): cat is CatalogCategory => Boolean(cat));
 };
 
+const compactRawPayload = (
+  rawPayload: Record<string, unknown> | null | undefined,
+): Record<string, unknown> => {
+  const source = rawPayload && typeof rawPayload === "object" ? rawPayload : {};
+  const compact: Record<string, unknown> = {};
+
+  if (Array.isArray(source.categories)) compact.categories = source.categories;
+  if (source.landing && typeof source.landing === "object") compact.landing = source.landing;
+  if (source.attributes && typeof source.attributes === "object") compact.attributes = source.attributes;
+  if (source.imageFallback && typeof source.imageFallback === "object") {
+    compact.imageFallback = source.imageFallback;
+  }
+
+  return compact;
+};
+
 const normalizeCatalogRow = (
   row: Record<string, unknown>,
   imagesByProductId: Map<number, string[]>,
 ): CatalogProductView => {
   const legacyId = Number(row.legacy_id);
-  const rawPayload =
+  const rawPayloadSource =
     row.raw_payload && typeof row.raw_payload === "object"
       ? (row.raw_payload as Record<string, unknown>)
       : {};
+  const rawPayload = compactRawPayload(rawPayloadSource);
   const categories = parseCategories(rawPayload);
   const landing =
     rawPayload && typeof rawPayload.landing === "object"
@@ -191,11 +285,11 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
   coverImage: item.coverImage,
   images: Array.isArray(item.images) ? item.images : [],
   attributes: item.attributes as unknown as Record<string, unknown>,
-  rawPayload: {
-    raw: item.raw,
+  rawPayload: compactRawPayload({
     categories: item.categories,
     attributes: item.attributes,
-  },
+    landing: item.raw?.landing,
+  }),
 });
 
 const applyFilters = (
@@ -460,6 +554,7 @@ async function loadFromFile(): Promise<CatalogProductView[]> {
 }
 
 export async function listCatalogProducts(input: CatalogListInput = {}): Promise<CatalogListResult> {
+  const startedAt = Date.now();
   const page = Math.max(1, Number(input.page || 1));
   const pageSize = clamp(Number(input.pageSize || 24), 1, 120);
   const query = String(input.query || "");
@@ -471,25 +566,114 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const collapseBySku = Boolean(input.collapseBySku);
   const applyPromotions = input.applyPromotions !== false;
 
-  const baseItems = (await loadFromSupabase({ activeOnly, exportOnly })) || (await loadFromFile());
+  const cacheKey = makeCatalogListCacheKey({
+    page,
+    pageSize,
+    query,
+    categoryId,
+    inStock,
+    onSale,
+    activeOnly,
+    exportOnly,
+    collapseBySku,
+    applyPromotions,
+  });
+  const listCache = getCatalogListCache();
+  const cached = listCache.get(cacheKey);
+  if (cached && cached.expiresAt > startedAt) {
+    const ageMs = Date.now() - startedAt;
+    maybeLogCatalogPerformance({
+      source: cached.source,
+      cache: "hit",
+      totalMs: ageMs,
+      loadMs: 0,
+      promoMs: 0,
+      filterMs: 0,
+      collapseMs: 0,
+      paginateMs: 0,
+      totalItems: cached.value.total,
+      filteredItems: cached.value.total,
+      pageItems: cached.value.items.length,
+      page: cached.value.page,
+      pageSize: cached.value.pageSize,
+      query,
+      categoryId,
+      inStock,
+      onSale,
+    });
+    return cached.value;
+  }
+
+  const loadStart = Date.now();
+  const supabaseItems = await loadFromSupabase({ activeOnly, exportOnly });
+  const baseItems = supabaseItems || (await loadFromFile());
+  const loadMs = Date.now() - loadStart;
+  const source: "supabase" | "file" = supabaseItems ? "supabase" : "file";
+
+  const promoStart = Date.now();
   const promotionRules = applyPromotions ? await listPromotionRulesCached() : [];
   const displayItems = promotionRules.length > 0 ? applyPromotionRulesToProducts(baseItems, promotionRules) : baseItems;
+  const promoMs = Date.now() - promoStart;
+
+  const filterStart = Date.now();
   const filteredSource = applyFilters(displayItems, { query, categoryId, inStock, onSale, activeOnly, exportOnly });
+  const filterMs = Date.now() - filterStart;
+
+  const collapseStart = Date.now();
   const filtered = collapseBySku ? collapseCatalogProductsBySku(filteredSource) : filteredSource;
+  const collapseMs = Date.now() - collapseStart;
+
+  const paginateStart = Date.now();
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const clampedPage = Math.min(page, totalPages);
   const start = (clampedPage - 1) * pageSize;
   const paged = filtered.slice(start, start + pageSize);
+  const categories = collectCategories(filtered);
+  const paginateMs = Date.now() - paginateStart;
 
-  return {
+  const result: CatalogListResult = {
     items: paged,
     total,
     page: clampedPage,
     pageSize,
     totalPages,
-    categories: collectCategories(filtered),
+    categories,
   };
+
+  listCache.set(cacheKey, {
+    value: result,
+    expiresAt: Date.now() + CATALOG_LIST_TTL_MS,
+    source,
+  });
+  while (listCache.size > CATALOG_LIST_CACHE_MAX_ENTRIES) {
+    const firstKey = listCache.keys().next().value as string | undefined;
+    if (!firstKey) break;
+    listCache.delete(firstKey);
+  }
+
+  const totalMs = Date.now() - startedAt;
+  maybeLogCatalogPerformance({
+    source,
+    cache: "miss",
+    totalMs,
+    loadMs,
+    promoMs,
+    filterMs,
+    collapseMs,
+    paginateMs,
+    totalItems: displayItems.length,
+    filteredItems: total,
+    pageItems: paged.length,
+    page: clampedPage,
+    pageSize,
+    query,
+    categoryId,
+    inStock,
+    onSale,
+  });
+
+  return result;
 }
 
 export async function getCatalogProductByLegacyId(

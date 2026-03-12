@@ -10,6 +10,7 @@ import {
   setDeltaState,
 } from "@/lib/integrations/core/store";
 import type { IntegrationContext, SyncCounters } from "@/lib/integrations/core/types";
+import { aggregateWarehouseRows, type WarehouseCsvRow } from "@/lib/integrations/stock/warehouseAggregation";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 import { getServiceSupabase } from "@/lib/supabase/server";
 
@@ -45,15 +46,6 @@ type CategoryCsvRow = {
 type TaxCsvRow = {
   id: number;
   value: number;
-};
-
-type WarehouseCsvRow = {
-  legacyId: number;
-  warehouseId: number;
-  amount: number;
-  price: number;
-  reservedAmount: number;
-  orderedAmount: number;
 };
 
 type ProductDetailCsvRow = {
@@ -860,37 +852,7 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
     } satisfies HandlerResult;
   }
 
-  const grouped = new Map<
-    number,
-    {
-      legacyId: number;
-      stockWarehouse1: number;
-      stockTotal: number;
-      priceNet: number;
-      warehouseRows: WarehouseCsvRow[];
-    }
-  >();
-
-  for (const row of parsed) {
-    const current = grouped.get(row.legacyId) || {
-      legacyId: row.legacyId,
-      stockWarehouse1: 0,
-      stockTotal: 0,
-      priceNet: 0,
-      warehouseRows: [],
-    };
-    current.stockTotal += toNumber(row.amount, 0);
-    if (row.warehouseId === PRIMARY_WAREHOUSE_ID) {
-      current.stockWarehouse1 += toNumber(row.amount, 0);
-      if (toNumber(row.price, 0) > 0) current.priceNet = toNumber(row.price, 0);
-    } else if (current.priceNet <= 0 && toNumber(row.price, 0) > 0) {
-      current.priceNet = toNumber(row.price, 0);
-    }
-    current.warehouseRows.push(row);
-    grouped.set(row.legacyId, current);
-  }
-
-  const aggregatedRows = Array.from(grouped.values());
+  const aggregatedRows = aggregateWarehouseRows(parsed, PRIMARY_WAREHOUSE_ID);
 
   const supabase = getServiceSupabase();
   let successRows = 0;

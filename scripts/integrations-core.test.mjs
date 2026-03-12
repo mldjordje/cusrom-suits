@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { parseLegacyCsv, toLegacyCsv } from "../lib/integrations/core/csv.ts";
 import { createPayloadHash } from "../lib/integrations/core/hash.ts";
+import { aggregateWarehouseRows } from "../lib/integrations/stock/warehouseAggregation.ts";
 
 test("legacy csv parser handles quoted fields and decimals", () => {
   const source = `"1","M. Kosulja","109211","M. Kosulja C23A/2","S","2,0000","011155882","1990,0000","1658,3333","20,0000"\r\n`;
@@ -33,3 +34,28 @@ test("payload hash is stable regardless of key order", () => {
   assert.equal(createPayloadHash(a), createPayloadHash(b));
 });
 
+test("warehouse aggregation keeps unique product rows and sums stock correctly", () => {
+  const aggregated = aggregateWarehouseRows(
+    [
+      { legacyId: 1001, warehouseId: 2, amount: 2, price: 1350, reservedAmount: 0, orderedAmount: 0 },
+      { legacyId: 1001, warehouseId: 1, amount: 3, price: 1400, reservedAmount: 0, orderedAmount: 0 },
+      { legacyId: 1001, warehouseId: 1, amount: 4, price: 1450, reservedAmount: 0, orderedAmount: 0 },
+      { legacyId: 2002, warehouseId: 3, amount: 5, price: 0, reservedAmount: 0, orderedAmount: 0 },
+      { legacyId: 2002, warehouseId: 5, amount: 1, price: 980, reservedAmount: 0, orderedAmount: 0 },
+    ],
+    1,
+  );
+
+  assert.equal(aggregated.length, 2);
+  assert.equal(aggregated[0].legacyId, 1001);
+  assert.equal(aggregated[0].stockWarehouse1, 7);
+  assert.equal(aggregated[0].stockTotal, 9);
+  assert.equal(aggregated[0].priceNet, 1450);
+  assert.equal(aggregated[0].warehouseRows.length, 3);
+
+  assert.equal(aggregated[1].legacyId, 2002);
+  assert.equal(aggregated[1].stockWarehouse1, 0);
+  assert.equal(aggregated[1].stockTotal, 6);
+  assert.equal(aggregated[1].priceNet, 980);
+  assert.equal(aggregated[1].warehouseRows.length, 2);
+});
