@@ -54,6 +54,7 @@ export default async function WebShopPage({
     onSale,
     activeOnly: true,
     exportOnly: true,
+    collapseBySku: true,
   });
 
   const items = sortItems(result.items, sort);

@@ -56,6 +56,7 @@ type CatalogListInput = {
   onSale?: boolean;
   activeOnly?: boolean;
   exportOnly?: boolean;
+  collapseBySku?: boolean;
   page?: number;
   pageSize?: number;
   applyPromotions?: boolean;
@@ -289,6 +290,74 @@ const applySkuImageFallbacks = (items: CatalogProductView[]): CatalogProductView
   });
 };
 
+const collapseCatalogProductsBySku = (items: CatalogProductView[]): CatalogProductView[] => {
+  const map = new Map<string, CatalogProductView>();
+
+  for (const item of items) {
+    const skuKey = String(item.sku || "").trim().toLowerCase();
+    const key = skuKey.length > 0 ? `sku:${skuKey}` : `legacy:${item.legacyId}`;
+    const current = map.get(key);
+    if (!current) {
+      map.set(key, {
+        ...item,
+        categories: [...item.categories],
+        images: [...item.images],
+        attributes: { ...item.attributes },
+        rawPayload: { ...item.rawPayload, collapsedVariantIds: [item.legacyId] },
+      });
+      continue;
+    }
+
+    const categoriesById = new Map<number, CatalogCategory>();
+    for (const cat of current.categories) categoriesById.set(cat.id, cat);
+    for (const cat of item.categories) {
+      if (!categoriesById.has(cat.id)) categoriesById.set(cat.id, cat);
+    }
+
+    const images = Array.from(new Set([...current.images, ...item.images].filter((img) => img.trim().length > 0)));
+
+    const mergedAttributes: Record<string, unknown> = { ...current.attributes };
+    for (const [attrKey, attrValue] of Object.entries(item.attributes || {})) {
+      if (!Object.prototype.hasOwnProperty.call(mergedAttributes, attrKey)) {
+        mergedAttributes[attrKey] = attrValue;
+        continue;
+      }
+      const existingValue = mergedAttributes[attrKey];
+      if (Array.isArray(existingValue) || Array.isArray(attrValue)) {
+        const mergedList = Array.from(
+          new Set([...(Array.isArray(existingValue) ? existingValue : [existingValue]), ...(Array.isArray(attrValue) ? attrValue : [attrValue])]),
+        );
+        mergedAttributes[attrKey] = mergedList;
+      }
+    }
+
+    const collapsedVariantIds = new Set<number>([
+      ...((current.rawPayload?.collapsedVariantIds as number[] | undefined) || [current.legacyId]),
+      ...((item.rawPayload?.collapsedVariantIds as number[] | undefined) || [item.legacyId]),
+    ]);
+
+    map.set(key, {
+      ...current,
+      isActive: current.isActive || item.isActive,
+      isExported: current.isExported || item.isExported,
+      landingFeatured: current.landingFeatured || item.landingFeatured,
+      stockWarehouse1: current.stockWarehouse1 + item.stockWarehouse1,
+      stockTotal: current.stockTotal + item.stockTotal,
+      categories: Array.from(categoriesById.values()),
+      coverImage: current.coverImage || item.coverImage,
+      images,
+      attributes: mergedAttributes,
+      rawPayload: {
+        ...current.rawPayload,
+        collapsedVariantIds: Array.from(collapsedVariantIds).sort((a, b) => a - b),
+        collapsedVariantCount: collapsedVariantIds.size,
+      },
+    });
+  }
+
+  return Array.from(map.values());
+};
+
 async function fetchCatalogSnapshotFromSupabase(filters: {
   activeOnly: boolean;
   exportOnly: boolean;
@@ -399,12 +468,14 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const onSale = Boolean(input.onSale);
   const activeOnly = input.activeOnly !== false;
   const exportOnly = input.exportOnly !== false;
+  const collapseBySku = Boolean(input.collapseBySku);
   const applyPromotions = input.applyPromotions !== false;
 
   const baseItems = (await loadFromSupabase({ activeOnly, exportOnly })) || (await loadFromFile());
   const promotionRules = applyPromotions ? await listPromotionRulesCached() : [];
   const displayItems = promotionRules.length > 0 ? applyPromotionRulesToProducts(baseItems, promotionRules) : baseItems;
-  const filtered = applyFilters(displayItems, { query, categoryId, inStock, onSale, activeOnly, exportOnly });
+  const filteredSource = applyFilters(displayItems, { query, categoryId, inStock, onSale, activeOnly, exportOnly });
+  const filtered = collapseBySku ? collapseCatalogProductsBySku(filteredSource) : filteredSource;
   const total = filtered.length;
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const clampedPage = Math.min(page, totalPages);
@@ -495,6 +566,7 @@ export async function getRelatedCatalogProducts(
     inStock: false,
     page: 1,
     pageSize: Math.max(limit + 8, 24),
+    collapseBySku: true,
   });
   return result.items.filter((candidate) => candidate.legacyId !== item.legacyId).slice(0, limit);
 }

@@ -157,6 +157,7 @@ export default async function HomePage() {
       pageSize: 120,
       activeOnly: true,
       exportOnly: true,
+      collapseBySku: true,
     }),
     listPosts({
       type: "all",
