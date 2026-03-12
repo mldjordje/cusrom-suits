@@ -106,7 +106,10 @@ export default async function WebShopPage({
     const imageHeight = options?.imageHeight || 714;
     const fallbackImage = options?.fallbackImage || "/assets/images/search-result-2.jpg";
     const coverImage = item.coverImage || fallbackImage;
-    const secondImage = item.images[1] || coverImage;
+    const imageSizes =
+      imageWidth >= 600
+        ? "(max-width: 991px) 100vw, (max-width: 1399px) 50vw, 42vw"
+        : "(max-width: 575px) 50vw, (max-width: 991px) 33vw, 25vw";
 
     return (
       <div key={key} className={wrapperClassName}>
@@ -119,13 +122,8 @@ export default async function WebShopPage({
                 height={imageHeight}
                 alt={item.name}
                 className="pc__img object-position-top"
-              />
-              <Image
-                src={secondImage}
-                width={imageWidth}
-                height={imageHeight}
-                alt={`${item.name} preview`}
-                className="pc__img pc__img-second object-position-top"
+                sizes={imageSizes}
+                quality={68}
               />
             </Link>
             <div className="pc__info hover__content text-center top-0 left-0 w-100 d-flex flex-column justify-content-center align-items-center">

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
+import ProductImageGallery from "@/app/components/storefront/ProductImageGallery";
 import { getCatalogProductByLegacyId, getRelatedCatalogProducts } from "@/lib/catalog/store";
 
 const formatRsd = (value: number) =>
@@ -64,24 +65,11 @@ export default async function WebShopProductPage({
           <div className="row">
             <div className="col-lg-7">
               <div className="product-single__media" data-media-type="scroll-snap">
-                <div className="product-single__image">
-                  {gallery.map((image, index) => (
-                    <div key={`${image}-${index}`} className="product-single__image-item">
-                      <Image
-                        src={image}
-                        width={798}
-                        height={845}
-                        alt={`${product.name} ${index + 1}`}
-                        priority={index === 0}
-                        className="h-auto w-100"
-                      />
-                    </div>
-                  ))}
-                </div>
+                <ProductImageGallery images={gallery} name={product.name} />
               </div>
             </div>
 
-            <div className="col-lg-5">
+            <div className="col-lg-5 ss-product-single-info">
               <div className="d-flex justify-content-between mb-4 pb-md-2">
                 <div className="breadcrumb mb-0 d-none d-md-block flex-grow-1">
                   <Link href="/" className="menu-link menu-link_us-s text-uppercase fw-medium">
@@ -211,8 +199,24 @@ export default async function WebShopProductPage({
                     <div className="product-card mb-3 mb-md-4">
                       <div className="pc__img-wrapper hover-container">
                         <Link href={`/web-shop/${item.legacyId}`}>
-                          <Image src={coverImage} width={330} height={400} alt={item.name} className="pc__img" />
-                          <Image src={secondImage} width={330} height={400} alt={`${item.name} preview`} className="pc__img pc__img-second" />
+                          <Image
+                            src={coverImage}
+                            width={330}
+                            height={400}
+                            alt={item.name}
+                            className="pc__img"
+                            sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
+                            quality={70}
+                          />
+                          <Image
+                            src={secondImage}
+                            width={330}
+                            height={400}
+                            alt={`${item.name} preview`}
+                            className="pc__img pc__img-second"
+                            sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
+                            quality={60}
+                          />
                         </Link>
                         <Link href={`/web-shop/${item.legacyId}`} className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium">
                           View Product
