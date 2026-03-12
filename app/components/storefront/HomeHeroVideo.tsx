@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { formatCatalogProductName } from "@/lib/catalog/presentation";
+import HeroParallaxFx from "@/app/components/storefront/HeroParallaxFx";
 
 type HomeCategory = {
   id: number;
@@ -87,7 +88,7 @@ export default function HomeHeroVideo({ categories, featuredProducts, content }:
         ];
 
   return (
-    <section className="ss-home18-hero position-relative overflow-hidden">
+    <section id="ss-home-hero" className="ss-home18-hero position-relative overflow-hidden">
       <div className="ss-home18-hero__media position-absolute top-0 start-0 w-100 h-100">
         <iframe
           title="Santos and Santorini hero desktop video"
@@ -113,7 +114,7 @@ export default function HomeHeroVideo({ categories, featuredProducts, content }:
       <div className="ss-home18-hero__overlay position-absolute top-0 start-0 w-100 h-100" />
 
       <div className="container position-relative ss-home18-hero__content">
-        <div className="ss-home18-hero__intro text-center text-white">
+        <div className="ss-home18-hero__intro text-center text-white" data-hero-intro>
           <p className="text-uppercase fs-13 fw-normal mb-2 text-white">{content.heroEyebrow}</p>
           <h2 className="text-uppercase h1 fw-semi-bold lh-1 mb-4 text-white">
             {content.heroTitleLine1}
@@ -132,7 +133,7 @@ export default function HomeHeroVideo({ categories, featuredProducts, content }:
 
         <div className="ss-home18-hero__cards">
           {cards.map((card) => (
-            <article key={card.id} className="ss-home18-hero__card-item">
+            <article key={card.id} className="ss-home18-hero__card-item" data-hero-card>
               <Link href={card.href} className="d-block">
                 <Image src={card.image} width={330} height={400} alt={card.title} className="w-100 h-auto d-block ss-home18-hero__card-image" />
                 <span className="menu-link menu-link_us-s fw-semi-bold fs-18 text-white text-uppercase d-block mt-2 ss-home18-hero__card-title">
@@ -143,6 +144,7 @@ export default function HomeHeroVideo({ categories, featuredProducts, content }:
           ))}
         </div>
       </div>
+      <HeroParallaxFx targetId="ss-home-hero" />
     </section>
   );
 }

@@ -269,6 +269,78 @@
   filter: drop-shadow(0 1px 4px rgba(0, 0, 0, 0.35));
 }
 
+.ss-header-scrolled,
+.ss-mobile-header-scrolled {
+  backdrop-filter: blur(12px);
+}
+
+.ss-header-scrolled {
+  background: rgba(255, 255, 255, 0.88) !important;
+  border-bottom: 1px solid rgba(24, 20, 20, 0.08);
+  box-shadow: 0 12px 30px rgba(7, 9, 14, 0.08);
+}
+
+.ss-mobile-header-scrolled {
+  background: rgba(255, 255, 255, 0.92) !important;
+  border-bottom: 1px solid rgba(24, 20, 20, 0.08);
+  box-shadow: 0 10px 24px rgba(7, 9, 14, 0.1);
+}
+
+.navigation__item.is-active .navigation__link,
+.navigation__link.is-active {
+  color: #b58f49 !important;
+}
+
+.navigation__link {
+  position: relative;
+}
+
+.navigation__link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -0.2rem;
+  width: 100%;
+  height: 1px;
+  transform: scaleX(0);
+  transform-origin: left center;
+  background: currentColor;
+  opacity: 0.5;
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.navigation__link:hover::after,
+.navigation__link.is-active::after {
+  transform: scaleX(1);
+}
+
+.ss-mobile-nav-layer {
+  position: relative;
+}
+
+.ss-mobile-nav-backdrop {
+  position: fixed;
+  inset: 0;
+  border: 0;
+  background: rgba(7, 9, 14, 0.44);
+  backdrop-filter: blur(3px);
+  z-index: 1038;
+}
+
+.ss-mobile-nav-panel {
+  z-index: 1039;
+  border-bottom: 1px solid rgba(24, 20, 20, 0.08);
+  box-shadow: 0 14px 36px rgba(7, 9, 14, 0.15);
+}
+
+.ss-home18-hero__card-item {
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ss-home18-hero__card-item:hover {
+  transform: translateY(-6px);
+}
+
 .header-mobile:not(.ss-mobile-home):not(.ss-mobile-home-solid) .mobile-nav-activator {
   color: #181414;
   background: rgba(0, 0, 0, 0.08);
@@ -406,6 +478,30 @@
   height: 100%;
   object-fit: cover;
   object-position: center top;
+}
+
+.ss-uniform-tile {
+  width: 100%;
+  aspect-ratio: 0.78;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.ss-card-hover {
+  transition: transform 0.35s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ss-card-hover:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 16px 30px rgba(8, 11, 16, 0.14);
+  }
+}
+
+@media (hover: none) {
+  .ss-card-hover:active {
+    transform: scale(0.985);
+  }
 }
 
 .product-single__details-tab .nav-link {
@@ -559,6 +655,14 @@
 
   .ss-card-mobile-info .pc__title {
     font-size: 0.74rem;
+  }
+
+  .ss-home18-hero__card-item:hover {
+    transform: none;
+  }
+
+  .ss-home18-hero__card-item:active {
+    transform: scale(0.985);
   }
 
   .product-single__details-tab .nav-tabs {

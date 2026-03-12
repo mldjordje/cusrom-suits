@@ -2,6 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import Reveal from "@/app/components/motion/Reveal";
 import { listPosts } from "@/lib/blog/store";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -47,7 +48,7 @@ export default async function BlogPage({
     <>
       <StorefrontHeader />
       <main className="page-wrapper">
-        <section className="blog-page-title mb-4 mb-xl-5">
+        <Reveal as="section" className="blog-page-title mb-4 mb-xl-5">
           <div className="title-bg">
             <Image
               src="/assets/images/blog_title_bg.jpg"
@@ -93,13 +94,13 @@ export default async function BlogPage({
               </div>
             </form>
           </div>
-        </section>
+        </Reveal>
 
-        <section className="blog-page container">
+        <Reveal as="section" className="blog-page container" delay={0.04}>
           <h2 className="d-none">The Blog</h2>
           <div className="blog-grid row row-cols-1 row-cols-md-2">
             {result.items.map((post) => (
-              <div key={post.id} className="blog-grid__item">
+              <div key={post.id} className="blog-grid__item ss-card-hover">
                 <div className="blog-grid__item-image">
                   <Link href={`/blog/${post.slug}`}>
                     <Image
@@ -147,7 +148,7 @@ export default async function BlogPage({
               Show More
             </Link>
           </div>
-        </section>
+        </Reveal>
       </main>
       <StorefrontFooter />
     </>

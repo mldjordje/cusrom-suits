@@ -5,6 +5,7 @@ import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
 import ProductImageGallery from "@/app/components/storefront/ProductImageGallery";
+import Reveal from "@/app/components/motion/Reveal";
 import { getCatalogProductByLegacyId, getRelatedCatalogProducts } from "@/lib/catalog/store";
 
 const formatRsd = (value: number) =>
@@ -61,7 +62,7 @@ export default async function WebShopProductPage({
       <StorefrontHeader />
       <main className="page-wrapper">
         <div className="mb-md-1 pb-md-3" />
-        <section className="product-single container">
+        <Reveal as="section" className="product-single container">
           <div className="row">
             <div className="col-lg-7">
               <div className="product-single__media" data-media-type="scroll-snap">
@@ -183,10 +184,10 @@ export default async function WebShopProductPage({
             specification={product.specification}
             attributes={attributeItems}
           />
-        </section>
+        </Reveal>
 
         {related.length > 0 ? (
-          <section className="products-carousel container mt-5 pt-4">
+          <Reveal as="section" className="products-carousel container mt-5 pt-4" delay={0.06}>
             <h2 className="h3 text-uppercase mb-4 pb-xl-2 mb-xl-4">
               Related <strong>Products</strong>
             </h2>
@@ -196,7 +197,7 @@ export default async function WebShopProductPage({
                 const secondImage = item.images[1] || coverImage;
                 return (
                   <div key={item.legacyId} className="product-card-wrapper">
-                    <div className="product-card mb-3 mb-md-4">
+                    <div className="product-card ss-card-hover mb-3 mb-md-4">
                       <div className="pc__img-wrapper hover-container">
                         <Link href={`/web-shop/${item.legacyId}`}>
                           <Image
@@ -236,7 +237,7 @@ export default async function WebShopProductPage({
                 );
               })}
             </div>
-          </section>
+          </Reveal>
         ) : null}
 
         <div className="mb-5 pb-xl-5" />

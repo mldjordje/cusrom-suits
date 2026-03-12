@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import Reveal from "@/app/components/motion/Reveal";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -148,7 +149,7 @@ export default async function WebShopPage({
     },
   ) => {
     const wrapperClassName = options?.wrapperClassName || "product-card-wrapper";
-    const cardClassName = options?.cardClassName || "product-card h-100 mb-2 pb-1 pb-md-0";
+    const cardClassName = options?.cardClassName || "product-card ss-card-hover h-100 mb-2 pb-1 pb-md-0";
     const imageWrapperClassName = options?.imageWrapperClassName || "pc__img-wrapper hover-container p-lg-0";
     const imageWidth = options?.imageWidth || 690;
     const imageHeight = options?.imageHeight || 714;
@@ -219,7 +220,7 @@ export default async function WebShopPage({
     <>
       <StorefrontHeader />
       <main className="page-wrapper">
-        <section className="full-width_padding">
+        <Reveal as="section" className="full-width_padding">
           <div className="full-width_border border-2" style={{ borderColor: "#eeeeee" }}>
             <div className="shop-banner position-relative">
               <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
@@ -254,12 +255,12 @@ export default async function WebShopPage({
               </div>
             </div>
           </div>
-        </section>
+        </Reveal>
 
         <div className="mb-4 pb-lg-3" />
 
         <section className="shop-main container">
-          <div className="ss-filter-panel mb-4 pb-md-2">
+          <Reveal as="div" className="ss-filter-panel mb-4 pb-md-2" delay={0.02}>
             <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
               <div className="d-flex flex-wrap align-items-center gap-2">
                 <span className="text-uppercase fw-medium me-1">Filter</span>
@@ -413,9 +414,9 @@ export default async function WebShopPage({
                 </div>
               </div>
             </form>
-          </div>
+          </Reveal>
 
-          <div className="products-grid d-none d-md-block" id="products-grid-desktop">
+          <Reveal as="div" className="products-grid d-none d-md-block" id="products-grid-desktop" delay={0.04}>
             {masonryA.length > 0 ? (
               <div className="products-masonry row row-cols-md-2 mb-2 mb-md-3 pb-1 pb-md-3">
                 {masonryA[0] ? renderOverlayCard(masonryA[0], `masonry-a-${masonryA[0].legacyId}`) : null}
@@ -424,7 +425,7 @@ export default async function WebShopPage({
                   <div className="row row-cols-2 flex-grow-1 mb-lg-4">
                     {masonryA.slice(1, 3).map((item) =>
                       renderOverlayCard(item, `masonry-a-side-${item.legacyId}`, {
-                        cardClassName: "product-card h-100 mb-2",
+                        cardClassName: "product-card ss-card-hover h-100 mb-2",
                       }),
                     )}
                   </div>
@@ -463,28 +464,28 @@ export default async function WebShopPage({
             <div className="products-grid row row-cols-2 row-cols-md-3 row-cols-lg-4">
               {gridItems.map((item) =>
                 renderOverlayCard(item, `grid-${item.legacyId}`, {
-                  cardClassName: "product-card mb-3 mb-md-4 mb-xxl-5",
+                  cardClassName: "product-card ss-card-hover mb-3 mb-md-4 mb-xxl-5",
                   imageWrapperClassName: "pc__img-wrapper hover-container",
                   imageWidth: 330,
                   imageHeight: 400,
                 }),
               )}
             </div>
-          </div>
+          </Reveal>
 
-          <div className="products-grid ss-mobile-grid d-md-none" id="products-grid-mobile">
+          <Reveal as="div" className="products-grid ss-mobile-grid d-md-none" id="products-grid-mobile" delay={0.04}>
             <div className="row row-cols-2 g-2">
               {items.map((item) =>
                 renderOverlayCard(item, `mobile-${item.legacyId}`, {
                   wrapperClassName: "product-card-wrapper ss-mobile-grid__item",
-                  cardClassName: "product-card ss-mobile-grid__card",
+                  cardClassName: "product-card ss-card-hover ss-mobile-grid__card",
                   imageWrapperClassName: "pc__img-wrapper ss-mobile-grid__img-wrapper",
                   imageWidth: 330,
                   imageHeight: 400,
                 }),
               )}
             </div>
-          </div>
+          </Reveal>
 
           <p className="mb-5 text-center fw-medium">
             SHOWING {items.length} of {result.total} products

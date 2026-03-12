@@ -1,7 +1,8 @@
-﻿import Image from "next/image";
+import Image from "next/image";
 import Link from "next/link";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import Reveal from "@/app/components/motion/Reveal";
 
 export const metadata = {
   title: "O nama | Santos & Santorini",
@@ -13,7 +14,7 @@ export default function AboutPage() {
     <>
       <StorefrontHeader />
       <main className="page-wrapper">
-        <section className="position-relative">
+        <Reveal as="section" className="position-relative">
           <Image
             src="/assets/images/home/legacy/hero-1.jpg"
             width={1920}
@@ -26,9 +27,9 @@ export default function AboutPage() {
             <h1 className="text-uppercase mb-2">O nama</h1>
             <p className="mb-0">Santos & Santorini atelier, Nis</p>
           </div>
-        </section>
+        </Reveal>
 
-        <section className="container py-5">
+        <Reveal as="section" className="container py-5" delay={0.06}>
           <div className="row g-4">
             <div className="col-lg-6">
               <h2 className="text-uppercase">Santos & Santorini</h2>
@@ -59,7 +60,7 @@ export default function AboutPage() {
               />
             </div>
           </div>
-        </section>
+        </Reveal>
       </main>
       <StorefrontFooter />
     </>

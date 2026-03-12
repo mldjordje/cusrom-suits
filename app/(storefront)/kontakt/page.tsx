@@ -1,5 +1,6 @@
-﻿import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
+import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import Reveal from "@/app/components/motion/Reveal";
 
 export const metadata = {
   title: "Kontakt | Santos & Santorini",
@@ -18,7 +19,7 @@ export default async function ContactPage({
     <>
       <StorefrontHeader />
       <main className="page-wrapper">
-        <section className="container py-5">
+        <Reveal as="section" className="container py-5">
           <div className="text-center mb-4">
             <h1 className="text-uppercase">Kontakt</h1>
             <p className="text-secondary mb-0">Javite nam se za porudzbine, savete i custom-suits upite.</p>
@@ -32,7 +33,7 @@ export default async function ContactPage({
 
           <div className="row g-4">
             <div className="col-lg-5">
-              <div className="p-4 border rounded-3 h-100 bg-white">
+              <div className="p-4 border rounded-3 h-100 bg-white ss-card-hover">
                 <h5 className="text-uppercase mb-3">Kontakt podaci</h5>
                 <p className="mb-2"><strong>Adresa:</strong> Obrenoviceva 9, 18000 Nis, Srbija</p>
                 <p className="mb-2"><strong>Telefon:</strong> +381 69 445 5106</p>
@@ -41,7 +42,7 @@ export default async function ContactPage({
               </div>
             </div>
             <div className="col-lg-7">
-              <form action="/api/contact" method="post" className="p-4 border rounded-3 bg-white">
+              <form action="/api/contact" method="post" className="p-4 border rounded-3 bg-white ss-card-hover">
                 <h5 className="text-uppercase mb-3">Posaljite upit</h5>
                 <div className="row g-3">
                   <div className="col-md-6">
@@ -68,10 +69,10 @@ export default async function ContactPage({
               </form>
             </div>
           </div>
-        </section>
+        </Reveal>
 
-        <section className="container pb-5">
-          <div className="ratio ratio-21x9 border rounded-3 overflow-hidden">
+        <Reveal as="section" className="container pb-5" delay={0.06}>
+          <div className="ratio ratio-21x9 border rounded-3 overflow-hidden ss-card-hover">
             <iframe
               src="https://www.google.com/maps?q=43.3201002,21.9037988&z=15&output=embed"
               title="Santos location"
@@ -79,7 +80,7 @@ export default async function ContactPage({
               referrerPolicy="no-referrer-when-downgrade"
             />
           </div>
-        </section>
+        </Reveal>
       </main>
       <StorefrontFooter />
     </>

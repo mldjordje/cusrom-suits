@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 
 const navItems = [
   { href: "/", label: "Home" },
@@ -19,8 +20,15 @@ const navItems = [
 export default function StorefrontHeader() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const reduceMotion = useReducedMotion();
   const normalizedPath = pathname ?? "";
   const isHome = normalizedPath === "/" || normalizedPath === "";
+
+  const isItemActive = (href: string) => {
+    if (href === "/") return normalizedPath === "/" || normalizedPath === "";
+    return normalizedPath === href || normalizedPath.startsWith(`${href}/`);
+  };
 
   useEffect(() => {
     document.body.classList.toggle("mobile-menu-opened", mobileOpen);
@@ -33,6 +41,13 @@ export default function StorefrontHeader() {
     setMobileOpen(false);
   }, [pathname]);
 
+  useEffect(() => {
+    const onScroll = () => setIsScrolled(window.scrollY > 26);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const desktopFloating = false;
   const mobileFloating = false;
   const headerClass = [
@@ -41,6 +56,7 @@ export default function StorefrontHeader() {
     "header_sticky",
     isHome ? "header-transparent-bg header_sticky-bg_dark" : "",
     desktopFloating ? "position-absolute ss-header-home-floating" : "header_sticky-active",
+    isScrolled ? "ss-header-scrolled" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -50,6 +66,7 @@ export default function StorefrontHeader() {
     isHome ? "" : "header_sticky-active",
     mobileFloating ? "position-absolute ss-mobile-home" : "position-relative",
     isHome && !mobileFloating ? "ss-mobile-home-solid header_sticky-active" : "",
+    isScrolled ? "ss-mobile-header-scrolled" : "",
   ]
     .filter(Boolean)
     .join(" ");
@@ -77,8 +94,8 @@ export default function StorefrontHeader() {
             <nav className="navigation">
               <ul className="navigation__list list-unstyled d-flex">
                 {navItems.map((item) => (
-                  <li key={item.href} className="navigation__item">
-                    <Link href={item.href} className="navigation__link">
+                  <li key={item.href} className={`navigation__item ${isItemActive(item.href) ? "is-active" : ""}`}>
+                    <Link href={item.href} className={`navigation__link ${isItemActive(item.href) ? "is-active" : ""}`}>
                       {item.label}
                     </Link>
                   </li>
@@ -156,19 +173,57 @@ export default function StorefrontHeader() {
           </div>
         </div>
 
-        <nav className="header-mobile__navigation navigation d-flex flex-column w-100 position-absolute top-100 bg-body overflow-auto">
-          <div className="container pt-3 pb-4">
-            <ul className="navigation__list list-unstyled position-relative">
-              {navItems.map((item) => (
-                <li key={`mobile-${item.href}`} className="navigation__item border-bottom">
-                  <Link href={item.href} className="navigation__link d-block text-uppercase">
-                    {item.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </nav>
+        <div className="ss-mobile-nav-layer">
+          <AnimatePresence>
+            {mobileOpen ? (
+              <motion.button
+                type="button"
+                className="ss-mobile-nav-backdrop"
+                aria-label="Close menu"
+                onClick={() => setMobileOpen(false)}
+                initial={reduceMotion ? false : { opacity: 0 }}
+                animate={reduceMotion ? { opacity: 1 } : { opacity: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+              />
+            ) : null}
+          </AnimatePresence>
+
+          <AnimatePresence initial={false}>
+            {mobileOpen ? (
+              <motion.nav
+                className="header-mobile__navigation navigation d-flex flex-column w-100 position-absolute top-100 bg-body overflow-auto ss-mobile-nav-panel"
+                initial={reduceMotion ? false : { y: -12, opacity: 0 }}
+                animate={reduceMotion ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
+                exit={reduceMotion ? { y: -8, opacity: 0 } : { y: -8, opacity: 0 }}
+                transition={{ duration: reduceMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
+              >
+                <div className="container pt-3 pb-4">
+                  <ul className="navigation__list list-unstyled position-relative">
+                    {navItems.map((item, index) => (
+                      <motion.li
+                        key={`mobile-${item.href}`}
+                        className={`navigation__item border-bottom ${isItemActive(item.href) ? "is-active" : ""}`}
+                        initial={reduceMotion ? false : { y: 10, opacity: 0 }}
+                        animate={reduceMotion ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
+                        exit={reduceMotion ? { y: 0, opacity: 0 } : { y: 0, opacity: 0 }}
+                        transition={{
+                          duration: reduceMotion ? 0 : 0.24,
+                          delay: reduceMotion ? 0 : 0.025 * index,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                      >
+                        <Link href={item.href} className={`navigation__link d-block text-uppercase ${isItemActive(item.href) ? "is-active" : ""}`}>
+                          {item.label}
+                        </Link>
+                      </motion.li>
+                    ))}
+                  </ul>
+                </div>
+              </motion.nav>
+            ) : null}
+          </AnimatePresence>
+        </div>
       </div>
     </>
   );

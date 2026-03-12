@@ -3,6 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import Reveal from "@/app/components/motion/Reveal";
 import { getPostBySlug, listPosts } from "@/lib/blog/store";
 
 export async function generateMetadata({
@@ -50,7 +51,7 @@ export default async function BlogDetailPage({
     <>
       <StorefrontHeader />
       <main className="page-wrapper">
-        <section className="blog-page blog-single container pt-4 pb-5">
+        <Reveal as="section" className="blog-page blog-single container pt-4 pb-5">
           <div className="mw-930">
             <div className="breadcrumb mb-3">
               <Link href="/" className="menu-link menu-link_us-s text-uppercase fw-medium">
@@ -132,7 +133,7 @@ export default async function BlogDetailPage({
               </div>
             </div>
           </div>
-        </section>
+        </Reveal>
       </main>
       <StorefrontFooter />
     </>
