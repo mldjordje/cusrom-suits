@@ -170,19 +170,7 @@ export default async function HomePage() {
     getLandingSettings(),
   ]);
 
-  const landingFeatured = catalog.items
-    .filter((item) => item.landingFeatured)
-    .sort((a, b) => {
-      const priorityA = Number.isFinite(Number(a.landingPriority)) ? Number(a.landingPriority) : Number.MAX_SAFE_INTEGER;
-      const priorityB = Number.isFinite(Number(b.landingPriority)) ? Number(b.landingPriority) : Number.MAX_SAFE_INTEGER;
-      if (priorityA !== priorityB) return priorityA - priorityB;
-      return b.legacyId - a.legacyId;
-    });
-
-  const landingPool =
-    landingFeatured.length > 0
-      ? [...landingFeatured, ...catalog.items.filter((item) => !item.landingFeatured)]
-      : catalog.items;
+  const landingPool = catalog.items;
   const landingPoolUnique = dedupeProductsBySku(landingPool);
 
   const salePool = landingPoolUnique
@@ -303,7 +291,7 @@ export default async function HomePage() {
               <ProductItemMotion key={item.legacyId} index={index}>
                 <Link href={`/web-shop/${item.legacyId}`} className="d-block">
                   <Image
-                    src={item.coverImage || "/assets/images/home/demo19/product-1.jpg"}
+                        src={item.coverImage || "/img/odela.jpg"}
                     width={330}
                     height={400}
                     alt={formatCatalogProductName(item.name, item.sku)}
@@ -334,7 +322,7 @@ export default async function HomePage() {
                   <div className="pc__img-wrapper">
                     <Link href={`/web-shop/${item.legacyId}`}>
                       <Image
-                        src={item.coverImage || "/assets/images/home/demo19/product-2.jpg"}
+                        src={item.coverImage || "/img/odela2.jpg"}
                         width={330}
                         height={400}
                         alt={formatCatalogProductName(item.name, item.sku)}
@@ -408,7 +396,7 @@ export default async function HomePage() {
                   <div className="pc__img-wrapper">
                     <Link href={`/web-shop/${item.legacyId}`}>
                       <Image
-                        src={item.coverImage || "/assets/images/home/demo19/product-3.jpg"}
+                        src={item.coverImage || "/img/hero2.jpg"}
                         width={330}
                         height={400}
                         alt={formatCatalogProductName(item.name, item.sku)}
@@ -456,7 +444,7 @@ export default async function HomePage() {
                       <div className="pc__img-wrapper">
                         <Link href={`/web-shop/${item.legacyId}`}>
                           <Image
-                            src={item.coverImage || "/assets/images/home/demo19/product-5.jpg"}
+                            src={item.coverImage || "/img/odela.jpg"}
                             width={330}
                             height={400}
                             alt={formatCatalogProductName(item.name, item.sku)}
@@ -495,7 +483,7 @@ export default async function HomePage() {
                   <div className="pc__img-wrapper">
                     <Link href={`/web-shop/${item.legacyId}`}>
                       <Image
-                        src={item.coverImage || "/assets/images/home/demo19/product-4.jpg"}
+                        src={item.coverImage || "/img/hero2.jpg"}
                         width={330}
                         height={400}
                         alt={formatCatalogProductName(item.name, item.sku)}
@@ -605,7 +593,7 @@ export default async function HomePage() {
                   <div className="blog-grid__item-image-wrap">
                     <Link href={`/blog/${post.slug}`}>
                       <Image
-                        src={post.coverImage || `/assets/images/home/demo19/blog-${Math.min(index + 1, 4)}.jpg`}
+                        src={post.coverImage || "/img/hero.jpg"}
                         width={330}
                         height={230}
                         alt={post.title}

@@ -6,9 +6,10 @@ import { listNewsletterSubscribers } from "@/lib/newsletter/store";
 import { readJsonFile } from "@/lib/storage/jsonStore";
 
 const cards = [
-  { href: "/admin/webshop", title: "Web Shop Hub", desc: "Proizvodi + landing + akcije.", tag: "CORE" },
-  { href: "/admin/webshop?tab=landing", title: "Landing CMS", desc: "Hero, baneri i produkt sekcije.", tag: "CONTENT" },
-  { href: "/admin/webshop?tab=akcije", title: "Akcije", desc: "Upravljanje popustima i akcijskim cenama.", tag: "SALES" },
+  { href: "/admin/webshop", title: "Web Shop Hub", desc: "Proizvodi, lager i centralni workflow.", tag: "CORE" },
+  { href: "/admin/webshop?tab=landing", title: "Pocetna i sekcije", desc: "Hero, baneri i raspored proizvoda na home.", tag: "CONTENT" },
+  { href: "/admin/webshop?tab=akcije", title: "Akcije i snizenja", desc: "Rucne akcije i automatska promo pravila.", tag: "SALES" },
+  { href: "/admin/tutorial", title: "Tutorial", desc: "Objasnjenje kako rade web shop, lager, porudzbine i Ananas.", tag: "GUIDE" },
   { href: "/admin/integrations", title: "Integracije", desc: "Ananas + lager sync, logovi i retry.", tag: "SYNC" },
   { href: "/admin/orders", title: "Porudzbine", desc: "Pregled porudzbina i statusa.", tag: "SALES" },
   { href: "/admin/contact-messages", title: "Kontakt poruke", desc: "Inbox poruka sa landing i kontakt forme.", tag: "CRM" },
@@ -50,6 +51,20 @@ export default async function AdminHome() {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Dashboard</p>
         <h1 className="mt-1 text-3xl font-bold text-slate-900">Admin pregled</h1>
         <p className="mt-1 text-sm text-slate-600">Stanje sadrzaja, poruka, porudzbina i integracija na jednom mestu.</p>
+        <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Brzi start</p>
+          <p className="mt-1 text-sm text-blue-900">
+            Ako je timu nejasno gde se podesi akcija, pocetna ili lager, krenite od tutorial strane pa zatim u Web Shop Hub.
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Link href="/admin/tutorial" className="rounded-full border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+              Otvori tutorial
+            </Link>
+            <Link href="/admin/webshop" className="rounded-full border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+              Otvori web shop hub
+            </Link>
+          </div>
+        </div>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">

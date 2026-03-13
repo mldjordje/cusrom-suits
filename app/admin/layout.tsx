@@ -24,11 +24,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         <div className="admin-template-main">
           <header className="admin-template-topbar">
             <div className="admin-template-topbar-title">
-              <p>Control Panel</p>
-              <h1>Santos Operations</h1>
+              <p>Admin panel</p>
+              <h1>Santos operacije</h1>
             </div>
             <div className="admin-template-topbar-meta">
               <span>Status: Online</span>
+              <Link href="/admin/tutorial">Tutorial</Link>
               <span>{generatedAt}</span>
             </div>
           </header>

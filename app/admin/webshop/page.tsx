@@ -117,9 +117,27 @@ type PromotionDraft = {
 };
 
 const tabs: Array<{ key: TabKey; label: string; desc: string }> = [
-  { key: "products", label: "Proizvodi", desc: "Katalog, cene, lager" },
-  { key: "landing", label: "Landing", desc: "Hero + banneri + sekcije proizvoda" },
-  { key: "akcije", label: "Akcije", desc: "Popusti i cene" },
+  { key: "products", label: "1. Proizvodi i lager", desc: "Dodavanje, izmene, kategorije i dostupnost" },
+  { key: "landing", label: "2. Pocetna i sekcije", desc: "Jedino mesto za raspored proizvoda na home" },
+  { key: "akcije", label: "3. Akcije i snizenja", desc: "Rucne akcije i automatska promo pravila" },
+];
+
+const workflowCards = [
+  {
+    title: "Proizvod i lager",
+    desc: "Dodaj ili izmeni proizvod, cenu i lager. Pocetna se vise ne bira ovde.",
+    tab: "products" as TabKey,
+  },
+  {
+    title: "Pocetna strana",
+    desc: "Sve sekcije pocetne strane biras samo u delu `Pocetna i sekcije`.",
+    tab: "landing" as TabKey,
+  },
+  {
+    title: "Akcije",
+    desc: "Za snizenje idi u `Akcije i snizenja` i menjaj akcijsku cenu ili promo pravilo.",
+    tab: "akcije" as TabKey,
+  },
 ];
 
 const landingSectionConfig: Array<{
@@ -130,10 +148,10 @@ const landingSectionConfig: Array<{
 }> = [
   { key: "heroStripProductIds", label: "Hero traka", description: "Proizvodi ispod hero videa.", limit: 4 },
   { key: "highlightedProductIds", label: "Izdvojeni modeli", description: "Prva velika produkt sekcija.", limit: 8 },
-  { key: "popularProductIds", label: "Popular products", description: "Popular proizvodi.", limit: 4 },
-  { key: "arrivalsProductIds", label: "New arrivals", description: "Nova kolekcija sekcija.", limit: 4 },
-  { key: "saleProductIds", label: "Sale sekcija", description: "Akcijski proizvodi na landing-u.", limit: 4 },
-  { key: "trendingProductIds", label: "Trending now", description: "Trending proizvodi sekcija.", limit: 4 },
+  { key: "popularProductIds", label: "Popularni proizvodi", description: "Sekcija popularnih proizvoda.", limit: 4 },
+  { key: "arrivalsProductIds", label: "Nova kolekcija", description: "Sekcija novih modela.", limit: 4 },
+  { key: "saleProductIds", label: "Akcije na pocetnoj", description: "Akcijski proizvodi prikazani na home.", limit: 4 },
+  { key: "trendingProductIds", label: "Trendinzi", description: "Sekcija trendova i preporuka.", limit: 4 },
 ];
 
 const defaultLandingPickerValue: Record<LandingProductSectionKey, string> = {
@@ -323,8 +341,6 @@ export default function AdminWebshopPage() {
   const [activeOnly, setActiveOnly] = useState(false);
   const [exportOnly, setExportOnly] = useState(false);
   const [onSaleOnly, setOnSaleOnly] = useState(false);
-  const [landingOnly, setLandingOnly] = useState(false);
-
   const [saleQ, setSaleQ] = useState("");
   const [saleOnSaleOnly, setSaleOnSaleOnly] = useState(true);
   const [promotionRules, setPromotionRules] = useState<PromotionRule[]>([]);
@@ -379,6 +395,17 @@ export default function AdminWebshopPage() {
     }
     return map;
   }, [items, landingProductResults]);
+  const landingSectionSummaries = useMemo(
+    () =>
+      landingSectionConfig.map((section) => ({
+        ...section,
+        ids: landingSettings[section.key],
+        names: landingSettings[section.key]
+          .map((id) => landingProductMap.get(id)?.name || `#${id}`)
+          .slice(0, 3),
+      })),
+    [landingProductMap, landingSettings],
+  );
 
   useEffect(() => {
     const sync = () => {
@@ -457,7 +484,7 @@ export default function AdminWebshopPage() {
       }
 
       const nextItems = (json.data || []) as CatalogProduct[];
-      setItems(landingOnly ? nextItems.filter((item) => item.landingFeatured) : nextItems);
+      setItems(nextItems);
       setCatalogCategories((json.categories || []) as CatalogCategory[]);
       setPagination((json.pagination || pagination) as Pagination);
       setSelected({});
@@ -1002,8 +1029,42 @@ export default function AdminWebshopPage() {
     <div className="flex flex-col gap-5">
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Web Shop Hub</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900">Catalog + Landing + Akcije</h1>
-        <p className="mt-1 text-sm text-slate-600">Mobile-first upravljanje, desktop power view i centralizovan workflow.</p>
+        <h1 className="mt-1 text-2xl font-bold text-slate-900">Jasan tok za proizvode, akcije i pocetnu</h1>
+        <p className="mt-1 text-sm text-slate-600">
+          Proizvod se uredjuje u `Proizvodi i lager`, akcija u `Akcije i snizenja`, a pocetna strana samo u `Pocetna i sekcije`.
+        </p>
+        <div className="mt-4 grid gap-3 lg:grid-cols-[1.3fr,1fr]">
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Brzi vodic</p>
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              {workflowCards.map((card) => (
+                <button
+                  key={card.title}
+                  type="button"
+                  onClick={() => changeTab(card.tab)}
+                  className="rounded-xl border border-blue-200 bg-white px-4 py-3 text-left"
+                >
+                  <p className="text-sm font-semibold text-slate-900">{card.title}</p>
+                  <p className="mt-1 text-xs text-slate-600">{card.desc}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pomoc i dokumentacija</p>
+            <p className="mt-1 text-sm text-slate-700">
+              Ako timu nesto nije jasno oko lagera, Ananas toka, sekcija na pocetnoj ili akcija, otvorite tutorial stranu.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <Link href="/admin/tutorial" className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                Otvori tutorial
+              </Link>
+              <Link href="/admin/integrations" className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                Integracije / Ananas
+              </Link>
+            </div>
+          </div>
+        </div>
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
@@ -1038,7 +1099,7 @@ export default function AdminWebshopPage() {
             <p className="mt-1">
               `Regularna cena` je puna cena proizvoda. `Prodajna cena` je trenutna cena koju kupac vidi.
               `Popust %` je informativni procenat akcije. `Lager magacin 1` i `Ukupan lager` su kolicine.
-              `Landing featured` i `Landing prioritet` odredjuju redosled na home stranici.
+              Pocetna strana se vise ne podesava ovde, vec samo u tabu `Pocetna i sekcije`.
             </p>
           </div>
 
@@ -1121,8 +1182,6 @@ export default function AdminWebshopPage() {
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={createDraft.isActive} onChange={(e) => setCreateDraft((p) => ({ ...p, isActive: e.target.checked }))} />Aktivan (vidljiv na sajtu)</label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={createDraft.isExported} onChange={(e) => setCreateDraft((p) => ({ ...p, isExported: e.target.checked }))} />Export (sinhronizacija)</label>
-              <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={createDraft.landingFeatured} onChange={(e) => setCreateDraft((p) => ({ ...p, landingFeatured: e.target.checked }))} />Istakni na landing-u</label>
-              <input value={createDraft.landingPriority} onChange={(e) => setCreateDraft((p) => ({ ...p, landingPriority: e.target.value }))} placeholder="Landing prioritet (1,2,3...)" className="w-56 rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <button onClick={createProduct} disabled={creating} className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">{creating ? "Kreiranje..." : "Kreiraj proizvod"}</button>
             </div>
           </div>
@@ -1142,7 +1201,6 @@ export default function AdminWebshopPage() {
               <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={onSaleOnly} onChange={(e) => setOnSaleOnly(e.target.checked)} />Samo akcija</label>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
-              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={landingOnly} onChange={(e) => setLandingOnly(e.target.checked)} />Samo landing featured</label>
               <button onClick={() => loadProducts(1)} className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Primeni filtere</button>
               <button onClick={() => loadProducts(pagination.page)} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">Osvezi</button>
             </div>
@@ -1177,7 +1235,6 @@ export default function AdminWebshopPage() {
                       <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
                         <span className="rounded-full border border-slate-200 px-2 py-1">{formatRsd(item.priceFinalGross)}</span>
                         <span className="rounded-full border border-slate-200 px-2 py-1">Lager {item.stockWarehouse1}</span>
-                        {item.landingFeatured ? <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-1 text-blue-700">Landing</span> : null}
                       </div>
                     </div>
                   </div>
@@ -1207,7 +1264,7 @@ export default function AdminWebshopPage() {
                     <th className="px-2 py-2">Kategorija</th>
                     <th className="px-2 py-2">Prodajna / Regularna</th>
                     <th className="px-2 py-2">Lager</th>
-                    <th className="px-2 py-2">Flags</th>
+                    <th className="px-2 py-2">Status</th>
                     <th className="px-2 py-2">Akcije</th>
                   </tr>
                 </thead>
@@ -1222,7 +1279,7 @@ export default function AdminWebshopPage() {
                         <td className="px-2 py-2 text-xs">{item.categories[0]?.path.join(" / ") || "-"}</td>
                         <td className="px-2 py-2"><input value={draft?.priceFinalGross || ""} onChange={(e) => updateDraft(item.legacyId, { priceFinalGross: e.target.value })} className="mb-1 w-28 rounded border border-slate-200 px-2 py-1 text-xs" /><input value={draft?.priceGross || ""} onChange={(e) => updateDraft(item.legacyId, { priceGross: e.target.value })} className="w-28 rounded border border-slate-200 px-2 py-1 text-xs" /></td>
                         <td className="px-2 py-2"><input value={draft?.stockWarehouse1 || ""} onChange={(e) => updateDraft(item.legacyId, { stockWarehouse1: e.target.value })} className="mb-1 w-24 rounded border border-slate-200 px-2 py-1 text-xs" /><input value={draft?.stockTotal || ""} onChange={(e) => updateDraft(item.legacyId, { stockTotal: e.target.value })} className="w-24 rounded border border-slate-200 px-2 py-1 text-xs" /></td>
-                        <td className="px-2 py-2 text-xs"><label className="mb-1 flex items-center gap-2"><input type="checkbox" checked={Boolean(draft?.isActive)} onChange={(e) => updateDraft(item.legacyId, { isActive: e.target.checked })} />Aktivan</label><label className="mb-1 flex items-center gap-2"><input type="checkbox" checked={Boolean(draft?.isExported)} onChange={(e) => updateDraft(item.legacyId, { isExported: e.target.checked })} />Export</label><label className="mb-1 flex items-center gap-2"><input type="checkbox" checked={Boolean(draft?.landingFeatured)} onChange={(e) => updateDraft(item.legacyId, { landingFeatured: e.target.checked })} />Landing</label></td>
+                        <td className="px-2 py-2 text-xs"><label className="mb-1 flex items-center gap-2"><input type="checkbox" checked={Boolean(draft?.isActive)} onChange={(e) => updateDraft(item.legacyId, { isActive: e.target.checked })} />Aktivan</label><label className="mb-1 flex items-center gap-2"><input type="checkbox" checked={Boolean(draft?.isExported)} onChange={(e) => updateDraft(item.legacyId, { isExported: e.target.checked })} />Export</label></td>
                         <td className="px-2 py-2"><div className="flex flex-col gap-1"><button onClick={() => saveProduct(item.legacyId)} disabled={savingId === item.legacyId || !draft} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">{savingId === item.legacyId ? "Cuvanje..." : "Sacuvaj"}</button><button onClick={() => setEditorId(item.legacyId)} className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">Otvori editor</button><Link href={`/web-shop/${item.legacyId}`} target="_blank" className="rounded border border-slate-200 px-2 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Pregled</Link></div></td>
                       </tr>
                     );
@@ -1244,6 +1301,37 @@ export default function AdminWebshopPage() {
 
       {activeTab === "landing" ? (
         <>
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-900">
+            <p className="font-semibold uppercase tracking-[0.12em]">Kako koristiti - Pocetna i sekcije</p>
+            <p className="mt-1">
+              Ovo je jedino mesto gde se bira koji proizvod ide na pocetnu i u koju sekciju. Proizvode prvo pripremis u
+              `Proizvodi i lager`, a zatim ih ovde rasporedis po sekcijama i kliknes `Sacuvaj landing`.
+            </p>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+            {landingSectionSummaries.map((section) => (
+              <a
+                key={`summary-${section.key}`}
+                href={`#section-${section.key}`}
+                className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{section.label}</p>
+                    <p className="mt-1 text-xs text-slate-500">{section.description}</p>
+                  </div>
+                  <span className="rounded-full border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-700">
+                    {section.ids.length}/{section.limit}
+                  </span>
+                </div>
+                <p className="mt-3 text-xs text-slate-600">
+                  {section.names.length ? section.names.join(", ") : "Jos nema rucno dodatih proizvoda."}
+                </p>
+              </a>
+            ))}
+          </div>
+
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Hero</p>
             <div className="grid gap-3 md:grid-cols-2">
@@ -1326,8 +1414,8 @@ export default function AdminWebshopPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Select proizvoda po sekcijama</p>
-              <p className="text-xs text-slate-500">Ako je sekcija prazna, home koristi automatski fallback redosled.</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Raspored proizvoda po sekcijama</p>
+              <p className="text-xs text-slate-500">Ako sekcija ostane prazna, home koristi automatski fallback prikaz.</p>
             </div>
 
             <div className="mt-3 grid gap-3 md:grid-cols-5">
@@ -1358,7 +1446,7 @@ export default function AdminWebshopPage() {
                 const csvValue = sectionIds.join(",");
                 const candidates = landingProductResults.filter((item) => !sectionIds.includes(item.legacyId));
                 return (
-                  <div key={section.key} className="rounded-xl border border-slate-200 p-3">
+                  <div id={`section-${section.key}`} key={section.key} className="rounded-xl border border-slate-200 p-3 scroll-mt-24">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{section.label}</p>
@@ -1442,7 +1530,7 @@ export default function AdminWebshopPage() {
 
           <div className="sticky bottom-3 z-10 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-lg backdrop-blur">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs text-slate-600">Landing autosave nije ukljucen. Hero, baneri i sekcije proizvoda se cuvaju na klik.</p>
+              <p className="text-xs text-slate-600">Promene se ne cuvaju automatski. Hero, baneri i sekcije proizvoda ulaze na sajt tek kada kliknes `Sacuvaj landing`.</p>
               <div className="flex gap-2">
                 <button onClick={loadLanding} disabled={loadingLanding || savingLanding} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">Osvezi</button>
                 <button onClick={() => saveLanding()} disabled={savingLanding || loadingLanding} className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">{savingLanding ? "Cuvanje..." : "Sacuvaj landing"}</button>
@@ -1458,8 +1546,26 @@ export default function AdminWebshopPage() {
             <p className="font-semibold uppercase tracking-[0.12em]">Kako koristiti - Akcije</p>
             <p className="mt-1">
               `Stara cena` je redovna cena. Unesi ili `Akcijsku cenu` ili `Popust %`, drugo polje se racuna automatski.
-              Posle izmene klikni `Sacuvaj` da bi se cena prikazala na webshop-u.
+              Posle izmene klikni `Sacuvaj` da bi se cena prikazala na webshop-u. Ovaj tab je jedino mesto za snizenja,
+              dok se raspored proizvoda na pocetnoj vodi odvojeno u `Pocetna i sekcije`.
             </p>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Brzi nacin</p>
+              <p className="mt-1 text-sm text-slate-700">
+                Ako hoces samo da jedan proizvod bude na akciji, pronadji ga u tabeli ispod, unesi akcijsku cenu ili
+                popust i klikni `Sacuvaj`.
+              </p>
+            </div>
+            <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Napredni nacin</p>
+              <p className="mt-1 text-sm text-slate-700">
+                Ako hoces pravilo za vise proizvoda odjednom, koristi `Smart pravila akcija` po kategoriji, brendu,
+                proizvodu ili za ceo shop.
+              </p>
+            </div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -1689,14 +1795,13 @@ export default function AdminWebshopPage() {
             </div>
 
             <p className="mb-3 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-              `Regularna cena` je puna cena, `Prodajna cena` je cena na sajtu. Ako je `Istakni na landing-u` ukljuceno,
-              `Landing prioritet` odredjuje redosled prikaza (manji broj = pre).
+              `Regularna cena` je puna cena, `Prodajna cena` je cena na sajtu. Za prikaz na pocetnoj koristi poseban tab
+              `Pocetna i sekcije`, kako raspored na home ne bi bio pomesan sa osnovnim uredjivanjem proizvoda.
             </p>
 
             <div className="grid gap-3 md:grid-cols-2">
               <input value={drafts[currentEditorItem.legacyId]?.name || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { name: e.target.value })} placeholder="Naziv" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
               <input value={drafts[currentEditorItem.legacyId]?.brand || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { brand: e.target.value })} placeholder="Brend (opciono)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={drafts[currentEditorItem.legacyId]?.landingPriority || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { landingPriority: e.target.value })} placeholder="Landing prioritet (1,2,3...)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={drafts[currentEditorItem.legacyId]?.priceGross || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceGross: e.target.value })} placeholder="Regularna cena (RSD)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={drafts[currentEditorItem.legacyId]?.priceFinalGross || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceFinalGross: e.target.value })} placeholder="Prodajna cena (RSD)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={drafts[currentEditorItem.legacyId]?.rebatePercent || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { rebatePercent: e.target.value })} placeholder="Popust % (0-100)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
@@ -1707,7 +1812,6 @@ export default function AdminWebshopPage() {
             <div className="mt-4 flex flex-wrap gap-3">
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(drafts[currentEditorItem.legacyId]?.isActive)} onChange={(e) => updateDraft(currentEditorItem.legacyId, { isActive: e.target.checked })} />Aktivan (vidljiv na sajtu)</label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(drafts[currentEditorItem.legacyId]?.isExported)} onChange={(e) => updateDraft(currentEditorItem.legacyId, { isExported: e.target.checked })} />Export (sinhronizacija)</label>
-              <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(drafts[currentEditorItem.legacyId]?.landingFeatured)} onChange={(e) => updateDraft(currentEditorItem.legacyId, { landingFeatured: e.target.checked })} />Istakni na landing-u</label>
             </div>
 
             <div className="mt-5 flex flex-wrap justify-end gap-2">
