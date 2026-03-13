@@ -6,16 +6,15 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
+import StorefrontCartLink from "@/app/components/storefront/cart/StorefrontCartLink";
 
 const navItems = [
-  { href: "/", label: "Home" },
-  { href: "/web-shop", label: "Shop" },
+  { href: "/", label: "Pocetna" },
+  { href: "/web-shop", label: "Web Shop" },
   { href: "/akcije", label: "Akcije" },
   { href: "/o-nama", label: "O nama" },
   { href: "/blog", label: "Blog" },
   { href: "/kontakt", label: "Kontakt" },
-  { href: "/custom-suits", label: "Custom Suits" },
-  { href: "/admin", label: "Admin" },
 ];
 
 export default function StorefrontHeader() {
@@ -105,21 +104,18 @@ export default function StorefrontHeader() {
             </nav>
 
             <div className="header-tools d-flex align-items-center gap-2">
-              <Link href="/web-shop" className="header-tools__item d-none d-md-inline-flex" aria-label="Search">
+              <Link href="/web-shop" className="header-tools__item d-none d-md-inline-flex" aria-label="Pretraga">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.5" />
                   <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </Link>
-              <Link href="/web-shop" className="header-tools__item header-tools__cart position-relative d-none d-md-inline-flex" aria-label="Cart">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M6.5 7.2V5.8a3.5 3.5 0 1 1 7 0v1.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M4.4 7.2h11.2l-.9 8.6a1 1 0 0 1-1 .9H6.3a1 1 0 0 1-1-.9l-.9-8.6Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-                </svg>
-                <span className="cart-amount d-block position-absolute">0</span>
-              </Link>
-              <Link href="/custom-suits" className="btn-link btn-link_lg default-underline text-uppercase fw-medium">
-                Start Design
+              <StorefrontCartLink
+                className="header-tools__item d-none d-md-inline-flex"
+                ariaLabel="Korpa"
+              />
+              <Link href="/kontakt" className="btn-link btn-link_lg default-underline text-uppercase fw-medium">
+                Kontakt
               </Link>
             </div>
           </div>
@@ -163,12 +159,12 @@ export default function StorefrontHeader() {
                   <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </Link>
-              <Link href="/web-shop" className="ss-mobile-slot ss-mobile-link ss-mobile-link--cart position-relative" aria-label="Korpa">
+              <StorefrontCartLink className="ss-mobile-slot ss-mobile-link" ariaLabel="Korpa" />
+              <Link href="/kontakt" className="ss-mobile-slot ss-mobile-link" aria-label="Kontakt">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M6.5 7.2V5.8a3.5 3.5 0 1 1 7 0v1.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                  <path d="M4.4 7.2h11.2l-.9 8.6a1 1 0 0 1-1 .9H6.3a1 1 0 0 1-1-.9l-.9-8.6Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                  <path d="M3.75 5.75a2 2 0 0 1 2-2h8.5a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-8.5a2 2 0 0 1-2-2v-8.5Z" stroke="currentColor" strokeWidth="1.5" />
+                  <path d="M4.5 5l5.5 5 5.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
-                <span className="cart-amount d-block position-absolute">0</span>
               </Link>
             </div>
           </div>

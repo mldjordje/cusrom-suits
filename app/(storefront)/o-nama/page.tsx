@@ -16,10 +16,10 @@ export default function AboutPage() {
       <main className="page-wrapper">
         <Reveal as="section" className="position-relative">
           <Image
-            src="/assets/images/home/legacy/hero-1.jpg"
+            src="/img/hero.jpg"
             width={1920}
             height={900}
-            alt="Santos legacy visual"
+            alt="Santos & Santorini hero"
             className="w-100 h-auto object-fit-cover"
             priority
           />
@@ -34,25 +34,25 @@ export default function AboutPage() {
             <div className="col-lg-6">
               <h2 className="text-uppercase">Santos & Santorini</h2>
               <p>
-                Brend je posvecen elegantnom muskom stilu, krojenju po meri i pazljivo odabranim materijalima.
+                Brend je posvecen elegantnom muskom stilu, savremenim krojevima i pazljivo odabranim materijalima.
                 Fokus je na balansu izmedju klasicnog izgleda i modernog komfora.
               </p>
               <p>
-                U okviru web shop ponude dostupni su ready-to-wear artikli, dok je kroz Custom Suits modul moguce
-                konfigurisati odelo po licnim merama i preferencijama.
+                U okviru web shop ponude dostupni su ready-to-wear artikli, izdvojene akcije i blog sadrzaj koji prati
+                kolekcije, stil i novosti iz brenda.
               </p>
               <div className="d-flex gap-2">
                 <Link href="/web-shop" className="btn btn-primary text-uppercase fw-medium">
                   Web Shop
                 </Link>
-                <Link href="/custom-suits" className="btn btn-outline-secondary text-uppercase fw-medium">
-                  Custom Suits
+                <Link href="/kontakt" className="btn btn-outline-secondary text-uppercase fw-medium">
+                  Kontakt
                 </Link>
               </div>
             </div>
             <div className="col-lg-6">
               <Image
-                src="/assets/images/home/legacy/hero-2.jpg"
+                src="/img/hero2.jpg"
                 width={900}
                 height={620}
                 alt="Atelier visual"

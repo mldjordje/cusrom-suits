@@ -83,9 +83,9 @@ export default function HomeHeroVideo({ categories, featuredProducts, content }:
           },
           {
             id: "fallback-4",
-            title: "Custom suits",
+            title: "Aktuelne akcije",
             image: "/img/hero2.jpg",
-            href: "/custom-suits",
+            href: "/akcije",
           },
         ];
 

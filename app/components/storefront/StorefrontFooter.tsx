@@ -1,4 +1,5 @@
 import Link from "next/link";
+import NewsletterSignupForm from "@/app/components/storefront/NewsletterSignupForm";
 
 export default function StorefrontFooter() {
   return (
@@ -11,21 +12,21 @@ export default function StorefrontFooter() {
                 SANTOS & SANTORINI
               </Link>
             </div>
-            <p className="footer-address">Obrenoviceva 10, Nis, Serbia</p>
+            <p className="footer-address">Obrenoviceva 9, Nis, Serbia</p>
             <p className="m-0">
-              <strong className="fw-medium">atelier@santos.rs</strong>
+              <strong className="fw-medium">prodaja@santos.rs</strong>
             </p>
             <p>
-              <strong className="fw-medium">+381 18 250 250</strong>
+              <strong className="fw-medium">+381 69 445 5106</strong>
             </p>
           </div>
 
           <div className="footer-column footer-menu mb-4 mb-lg-0">
-            <h5 className="sub-menu__title text-uppercase">Company</h5>
+            <h5 className="sub-menu__title text-uppercase">Kompanija</h5>
             <ul className="sub-menu__list list-unstyled">
               <li className="sub-menu__item">
                 <Link href="/" className="menu-link menu-link_us-s">
-                  Home
+                  Pocetna
                 </Link>
               </li>
               <li className="sub-menu__item">
@@ -43,11 +44,6 @@ export default function StorefrontFooter() {
                   Kontakt
                 </Link>
               </li>
-              <li className="sub-menu__item">
-                <Link href="/custom-suits" className="menu-link menu-link_us-s">
-                  Custom Suits
-                </Link>
-              </li>
             </ul>
           </div>
 
@@ -61,7 +57,7 @@ export default function StorefrontFooter() {
               </li>
               <li className="sub-menu__item">
                 <Link href="/web-shop?inStock=1" className="menu-link menu-link_us-s">
-                  In Stock
+                  Na stanju
                 </Link>
               </li>
               <li className="sub-menu__item">
@@ -78,33 +74,30 @@ export default function StorefrontFooter() {
           </div>
 
           <div className="footer-column footer-menu mb-4 mb-lg-0">
-            <h5 className="sub-menu__title text-uppercase">Support</h5>
+            <h5 className="sub-menu__title text-uppercase">Podrska</h5>
             <ul className="sub-menu__list list-unstyled">
-              <li className="sub-menu__item">
-                <Link href="/admin" className="menu-link menu-link_us-s">
-                  Admin
-                </Link>
-              </li>
-              <li className="sub-menu__item">
-                <Link href="/custom-suits/measure" className="menu-link menu-link_us-s">
-                  Measure
-                </Link>
-              </li>
               <li className="sub-menu__item">
                 <Link href="/kontakt" className="menu-link menu-link_us-s">
                   Kontakt
                 </Link>
               </li>
+              <li className="sub-menu__item">
+                <Link href="/akcije" className="menu-link menu-link_us-s">
+                  Akcije
+                </Link>
+              </li>
+              <li className="sub-menu__item">
+                <Link href="/o-nama" className="menu-link menu-link_us-s">
+                  O nama
+                </Link>
+              </li>
             </ul>
           </div>
 
-          <div className="footer-column footer-newsletter col-12 mb-4 mb-lg-0">
+          <div className="footer-column footer-newsletter col-12 mb-4 mb-lg-0" id="footer-newsletter">
             <h5 className="sub-menu__title text-uppercase">Newsletter</h5>
-            <p>Get updates for new arrivals, tailoring events, and campaigns.</p>
-            <form className="footer-newsletter__form position-relative bg-body" action="#" method="post">
-              <input className="form-control border-white" type="email" name="email" placeholder="Your email address" />
-              <input className="btn-link fw-medium bg-white position-absolute top-0 end-0 h-100" type="submit" value="JOIN" />
-            </form>
+            <p>Saznajte prvi za nove kolekcije, akcije i kampanje.</p>
+            <NewsletterSignupForm />
           </div>
         </div>
       </div>

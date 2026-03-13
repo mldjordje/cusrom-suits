@@ -12,7 +12,7 @@ const toString = (value: string | string[] | undefined) =>
 
 export const metadata = {
   title: "Blog | Santos & Santorini",
-  description: "Santos journal, tailoring notes and legacy news updates.",
+  description: "Santos blog i novosti iz kolekcije, stila i brenda.",
 };
 
 export default async function BlogPage({
@@ -51,25 +51,25 @@ export default async function BlogPage({
         <Reveal as="section" className="blog-page-title mb-4 mb-xl-5">
           <div className="title-bg">
             <Image
-              src="/assets/images/blog_title_bg.jpg"
+              src="/img/hero.jpg"
               width={1780}
               height={420}
-              alt="The Blog"
-              className="h-auto w-100"
+              alt="Santos blog"
+              className="h-auto w-100 object-fit-cover"
               priority
             />
           </div>
           <div className="container">
-            <h2 className="page-title">The Blog</h2>
+            <h2 className="page-title">Blog</h2>
             <div className="blog__filter">
               <Link href={makeHref(1, "all")} className={`menu-link menu-link_us-s ${type === "all" ? "menu-link_active" : ""}`}>
-                ALL
+                SVE
               </Link>
               <Link href={makeHref(1, "blog")} className={`menu-link menu-link_us-s ${type === "blog" ? "menu-link_active" : ""}`}>
                 BLOG
               </Link>
               <Link href={makeHref(1, "news")} className={`menu-link menu-link_us-s ${type === "news" ? "menu-link_active" : ""}`}>
-                NEWS
+                VESTI
               </Link>
             </div>
             <form action="/blog" method="get" className="ss-blog1-search mt-3">
@@ -80,15 +80,15 @@ export default async function BlogPage({
                   name="q"
                   defaultValue={q}
                   className="form-control"
-                  placeholder="Search blog/news..."
+                  placeholder="Pretrazi blog i vesti..."
                   style={{ maxWidth: "360px" }}
                 />
                 <button type="submit" className="btn btn-primary text-uppercase fw-medium">
-                  Search
+                  Pretrazi
                 </button>
                 {q ? (
                   <Link href={type === "all" ? "/blog" : `/blog?type=${type}`} className="btn btn-link text-uppercase fw-medium">
-                    Reset
+                    Resetuj
                   </Link>
                 ) : null}
               </div>
@@ -104,7 +104,7 @@ export default async function BlogPage({
                 <div className="blog-grid__item-image">
                   <Link href={`/blog/${post.slug}`}>
                     <Image
-                      src={post.coverImage || "/assets/images/blog/blog-1.jpg"}
+                      src={post.coverImage || "/img/hero2.jpg"}
                       width={690}
                       height={500}
                       alt={post.title}
@@ -115,7 +115,7 @@ export default async function BlogPage({
                   <div className="blog-grid__item-detail">
                     <div className="blog-grid__item-meta">
                       <span className="blog-grid__item-meta__author">
-                        By Santos Editorial
+                        Santos Editorial
                       </span>
                       <span className="blog-grid__item-meta__date">
                         {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("sr-RS") : ""}
@@ -126,9 +126,9 @@ export default async function BlogPage({
                       <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                     </div>
                   <div className="blog-grid__item-content">
-                    <p>{(post.excerpt || "").slice(0, 160) || "Read the full article for more details."}</p>
+                    <p>{(post.excerpt || "").slice(0, 160) || "Procitajte ceo tekst za vise detalja."}</p>
                     <Link href={`/blog/${post.slug}`} className="readmore-link">
-                      Continue Reading
+                      Procitaj vise
                     </Link>
                   </div>
                 </div>
@@ -137,7 +137,7 @@ export default async function BlogPage({
           </div>
 
           <p className="mb-5 text-center fw-medium">
-            SHOWING {result.items.length} of {result.total} items
+            Prikazano {result.items.length} od {result.total} objava
           </p>
 
           <div className="text-center pb-5">
@@ -145,7 +145,7 @@ export default async function BlogPage({
               href={makeHref(Math.min(totalPages, result.page + 1), type)}
               className={`btn-link btn-link_lg text-uppercase fw-medium ${result.page >= totalPages ? "disabled pe-none text-secondary" : ""}`}
             >
-              Show More
+              Ucitaj jos
             </Link>
           </div>
         </Reveal>

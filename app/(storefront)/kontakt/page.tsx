@@ -14,6 +14,8 @@ export default async function ContactPage({
 }) {
   const params = await searchParams;
   const sent = (Array.isArray(params.sent) ? params.sent[0] : params.sent) === "1";
+  const productParam = Array.isArray(params.product) ? params.product[0] : params.product;
+  const productSubject = productParam ? `Upit za proizvod #${productParam}` : "";
 
   return (
     <>
@@ -22,7 +24,7 @@ export default async function ContactPage({
         <Reveal as="section" className="container py-5">
           <div className="text-center mb-4">
             <h1 className="text-uppercase">Kontakt</h1>
-            <p className="text-secondary mb-0">Javite nam se za porudzbine, savete i custom-suits upite.</p>
+            <p className="text-secondary mb-0">Javite nam se za porudzbine, savete i informacije o artiklima.</p>
           </div>
 
           {sent ? (
@@ -55,7 +57,7 @@ export default async function ContactPage({
                     <input name="phone" className="form-control" placeholder="Telefon" />
                   </div>
                   <div className="col-md-6">
-                    <input name="subject" className="form-control" placeholder="Tema" />
+                    <input name="subject" className="form-control" placeholder="Tema" defaultValue={productSubject} />
                   </div>
                   <div className="col-12">
                     <textarea name="message" required className="form-control" rows={5} placeholder="Poruka" />

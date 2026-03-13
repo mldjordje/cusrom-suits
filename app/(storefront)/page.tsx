@@ -19,33 +19,33 @@ const formatRsd = (value: number) =>
 
 export const metadata = {
   title: "Santos & Santorini",
-  description: "Home 18 storefront layout mapped to Santos catalog and blog.",
+  description: "Santos & Santorini web shop sa aktuelnom kolekcijom, akcijama i blog sadrzajem.",
 };
 
 const legacyCampaignBlocks = [
   {
     id: "legacy-black-friday",
-    badge: "Black Friday Event",
-    title: "Do 30% popusta na bespoke.",
-    copy: "Limitirane cene na premium vunu i lan. Izaberi fit, tkaninu i akcente, a tim finalizuje kroj po meri.",
+    badge: "Aktuelne akcije",
+    title: "Do 30% popusta na izdvojene modele.",
+    copy: "Izdvojili smo modele iz aktuelne kolekcije sa snizenim cenama i dostupnim velicinama.",
     image: "/img/hero.jpg",
-    ctaLabel: "Muskarci i zene",
-    ctaHref: "/web-shop",
+    ctaLabel: "Pogledaj akcije",
+    ctaHref: "/akcije",
   },
   {
     id: "legacy-holiday-capsule",
-    badge: "Holiday Capsule",
-    title: "Praznicni tailor-made",
-    copy: "Jednoredni, dvoredni ili tux. Dizajniraj izgled i nastavi merenje online ili u showroom-u.",
+    badge: "Nova kolekcija",
+    title: "Ready-to-wear komadi za svaku priliku",
+    copy: "Od odela i sakoa do kosulja i aksesoara, webshop donosi izbor modela spremnih za porudzbinu.",
     image: "/img/hero2.jpg",
-    ctaLabel: "Otvori custom suits",
-    ctaHref: "/custom-suits",
+    ctaLabel: "Otvori web shop",
+    ctaHref: "/web-shop",
   },
   {
     id: "legacy-gift-edit",
     badge: "Gift Edit",
     title: "Poklon koji traje",
-    copy: "Kravate od svile, kozne galanterije i poklon vaucer za odelo po meri kao premium poklon set.",
+    copy: "Kravate od svile, kozna galanterija i pazljivo birani detalji kao premium poklon izbor.",
     image: "/img/obuca.jpg",
     ctaLabel: "Pogledaj poklone",
     ctaHref: "/web-shop",
@@ -59,9 +59,9 @@ const atelierStoryParagraphs = [
 ];
 
 const atelierContactPoints = [
-  { label: "Telefon", value: "+381 18 250 250" },
-  { label: "Email", value: "atelier@santos.rs" },
-  { label: "Adresa", value: "Obrenoviceva 10, Nis" },
+  { label: "Telefon", value: "+381 69 445 5106" },
+  { label: "Email", value: "prodaja@santos.rs" },
+  { label: "Adresa", value: "Obrenoviceva 9, Nis" },
 ];
 
 const BrandStrip = () => (
@@ -256,8 +256,8 @@ export default async function HomePage() {
             <h2 className="section-title text-uppercase">
               Brend <strong>Story</strong>
             </h2>
-            <Link href="/custom-suits" className="btn-link default-underline text-uppercase fw-medium">
-              Otvori konfigurator
+            <Link href="/web-shop" className="btn-link default-underline text-uppercase fw-medium">
+              Pogledaj kolekciju
             </Link>
           </div>
           <div className="row g-4">
@@ -544,8 +544,8 @@ export default async function HomePage() {
                   ))}
                 </div>
                 <div className="d-flex flex-wrap gap-2 mt-4">
-                  <Link href="/custom-suits" className="btn btn-dark btn-sm text-uppercase fw-medium">
-                    Dizajniraj odelo
+                  <Link href="/kontakt" className="btn btn-dark btn-sm text-uppercase fw-medium">
+                    Kontaktirajte nas
                   </Link>
                   <Link href="/web-shop" className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
                     Poseti web shop

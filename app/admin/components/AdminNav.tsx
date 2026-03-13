@@ -4,14 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const navItems = [
-  { href: "/admin", label: "Overview", icon: "OV" },
+  { href: "/admin", label: "Pregled", icon: "OV" },
   { href: "/admin/webshop", label: "Web Shop Hub", icon: "WS" },
-  { href: "/admin/integrations", label: "Integrations", icon: "IN" },
+  { href: "/admin/integrations", label: "Integracije", icon: "IN" },
   { href: "/admin/fabrics", label: "Fabrics", icon: "FB" },
   { href: "/admin/linings", label: "Linings", icon: "LN" },
   { href: "/admin/buttons", label: "Buttons", icon: "BT" },
-  { href: "/admin/orders", label: "Orders", icon: "OR" },
+  { href: "/admin/orders", label: "Porudzbine", icon: "OR" },
+  { href: "/admin/categories", label: "Kategorije", icon: "CT" },
   { href: "/admin/contact-messages", label: "Kontakt", icon: "CT" },
+  { href: "/admin/newsletter", label: "Newsletter", icon: "NW" },
   { href: "/admin/blog-posts", label: "Blog", icon: "BL" },
   { href: "/admin/preview-tuning", label: "Preview Tuning", icon: "PT" },
   { href: "/admin/stripe-tuning", label: "Stripe Tuning", icon: "ST" },

@@ -9,6 +9,10 @@ type Order = {
   status?: string | null;
   created_at?: string | null;
   contact?: any;
+  note?: string | null;
+  config?: any;
+  source?: string | null;
+  type?: string | null;
 };
 
 const STATUS_OPTIONS = ["draft", "pending", "confirmed", "completed", "cancelled"];
@@ -35,8 +39,25 @@ const getContactValue = (contact: any, key: string) => {
   return contact[key] || contact?.contact?.[key] || "";
 };
 
+const getOrderSource = (order: Order) =>
+  String(order.source || order.type || order?.config?.source || order?.config?.type || "custom").toLowerCase();
+
+const getOrderItems = (order: Order) => {
+  const items = order?.config?.items;
+  return Array.isArray(items) ? items : [];
+};
+
+const formatPrice = (value?: number | null) => {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "";
+  return new Intl.NumberFormat("sr-RS", {
+    style: "currency",
+    currency: "RSD",
+    maximumFractionDigits: 0,
+  }).format(value);
+};
+
 const buildCsv = (rows: Order[]) => {
-  const headers = ["id", "status", "price", "fabric_id", "created_at", "name", "email", "phone"];
+  const headers = ["id", "source", "status", "price", "items", "fabric_id", "created_at", "name", "email", "phone"];
   const escape = (value: any) => `"${String(value ?? "").replace(/"/g, '""')}"`;
   const lines = rows.map((row) => {
     const name = getContactValue(row.contact, "ime");
@@ -44,8 +65,10 @@ const buildCsv = (rows: Order[]) => {
     const phone = getContactValue(row.contact, "telefon");
     return [
       row.id,
+      getOrderSource(row),
       row.status || "draft",
       typeof row.price === "number" ? row.price : "",
+      getOrderItems(row).length,
       row.fabric_id || "",
       row.created_at || "",
       name,
@@ -110,10 +133,13 @@ export default function OrdersAdminPage() {
       if (statusFilter !== "all" && status !== statusFilter) return false;
       if (!q) return true;
       const contact = order.contact || {};
+      const items = getOrderItems(order);
       const haystack = [
         order.id,
         order.fabric_id,
         status,
+        getOrderSource(order),
+        ...items.map((item: any) => `${item?.name || ""} ${item?.sku || ""}`),
         getContactValue(contact, "ime"),
         getContactValue(contact, "email"),
         getContactValue(contact, "telefon"),
@@ -198,22 +224,42 @@ export default function OrdersAdminPage() {
           const contactName = getContactValue(o.contact, "ime");
           const contactEmail = getContactValue(o.contact, "email");
           const contactPhone = getContactValue(o.contact, "telefon");
-          const contactLine = [contactName, contactEmail, contactPhone].filter(Boolean).join(" • ");
+          const contactLine = [contactName, contactEmail, contactPhone].filter(Boolean).join(" | ");
+          const source = getOrderSource(o);
+          const items = getOrderItems(o);
           return (
             <div key={o.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <p className="text-sm font-semibold text-gray-900">{o.id}</p>
-                  <p className="text-xs text-gray-500">Fabric: {o.fabric_id || "n/a"}</p>
+                  <p className="text-xs text-gray-500">
+                    Izvor: {source === "storefront" || source === "webshop" ? "web shop" : "custom"} | Fabric: {o.fabric_id || "n/a"}
+                  </p>
                 </div>
                 <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold uppercase ${statusBadge(o.status)}`}>
                   {o.status || "draft"}
                 </span>
               </div>
               {typeof o.price === "number" && (
-                <p className="mt-2 text-sm font-semibold text-gray-900">{o.price} EUR</p>
+                <p className="mt-2 text-sm font-semibold text-gray-900">{formatPrice(o.price)}</p>
               )}
               {contactLine && <p className="mt-2 text-xs text-gray-500">{contactLine}</p>}
+              {items.length > 0 ? (
+                <div className="mt-3 rounded-lg bg-gray-50 p-3">
+                  <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
+                    Artikli ({items.length})
+                  </p>
+                  <div className="space-y-1 text-xs text-gray-600">
+                    {items.slice(0, 5).map((item: any) => (
+                      <p key={`${o.id}-${item?.legacyId || item?.sku}`}>
+                        {item?.quantity || 1}x {item?.name || "Proizvod"} {item?.sku ? `(${item.sku})` : ""}
+                      </p>
+                    ))}
+                    {items.length > 5 ? <p>+ jos {items.length - 5} artikala</p> : null}
+                  </div>
+                </div>
+              ) : null}
+              {o.note ? <p className="mt-2 text-xs text-gray-500">Napomena: {o.note}</p> : null}
 
               <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">
                 <span>Status:</span>

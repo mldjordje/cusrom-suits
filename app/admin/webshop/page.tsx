@@ -166,21 +166,21 @@ const defaultLandingSettings: LandingSettings = {
   showSaleSection: true,
   saleSectionTitle: "Aktuelne Akcije",
   saleSectionSubtitle: "",
-  heroEyebrow: "Santos and Santorini video",
+  heroEyebrow: "Santos & Santorini",
   heroTitleLine1: "Nova kolekcija",
   heroTitleLine2: "2026",
-  heroPrimaryCtaLabel: "Shop now",
+  heroPrimaryCtaLabel: "Web shop",
   heroPrimaryCtaHref: "/web-shop",
-  heroSecondaryCtaLabel: "Custom suits",
-  heroSecondaryCtaHref: "/custom-suits",
+  heroSecondaryCtaLabel: "Kontakt",
+  heroSecondaryCtaHref: "/kontakt",
   bannerLeftTitle: "Ready to Wear",
-  bannerLeftButtonLabel: "Shop now",
+  bannerLeftButtonLabel: "Kupi odmah",
   bannerLeftHref: "/web-shop",
-  bannerLeftImage: "/assets/images/home/legacy/hero-1.jpg",
-  bannerRightTitle: "Custom Suits",
-  bannerRightButtonLabel: "Start Design",
-  bannerRightHref: "/custom-suits",
-  bannerRightImage: "/assets/images/home/legacy/hero-3.jpg",
+  bannerLeftImage: "/img/hero2.jpg",
+  bannerRightTitle: "Aktuelne akcije",
+  bannerRightButtonLabel: "Pogledaj akcije",
+  bannerRightHref: "/akcije",
+  bannerRightImage: "/img/hero.jpg",
   heroStripProductIds: [],
   highlightedProductIds: [],
   popularProductIds: [],
@@ -297,7 +297,7 @@ const formatRsd = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
-const cardImage = (item: CatalogProduct) => item.coverImage || item.images?.[0] || "/assets/images/search-result-2.jpg";
+const cardImage = (item: CatalogProduct) => item.coverImage || item.images?.[0] || "/img/odela2.jpg";
 
 export default function AdminWebshopPage() {
   const pathname = usePathname();
@@ -307,7 +307,8 @@ export default function AdminWebshopPage() {
 
   const [items, setItems] = useState<CatalogProduct[]>([]);
   const [saleItems, setSaleItems] = useState<CatalogProduct[]>([]);
-  const [categories, setCategories] = useState<CatalogCategory[]>([]);
+  const [catalogCategories, setCatalogCategories] = useState<CatalogCategory[]>([]);
+  const [categoryRegistry, setCategoryRegistry] = useState<CatalogCategory[]>([]);
   const [drafts, setDrafts] = useState<Record<number, ProductDraft>>({});
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [pagination, setPagination] = useState<Pagination>({ page: 1, pageSize: 30, total: 0, totalPages: 1 });
@@ -360,6 +361,17 @@ export default function AdminWebshopPage() {
   const [notice, setNotice] = useState<string | null>(null);
 
   const selectedIds = useMemo(() => Object.keys(selected).filter((id) => selected[Number(id)]).map(Number), [selected]);
+  const categories = useMemo(() => {
+    const merged = new Map<number, CatalogCategory>();
+    for (const category of [...catalogCategories, ...categoryRegistry]) {
+      merged.set(category.id, {
+        id: category.id,
+        name: category.name,
+        path: category.path || [category.name],
+      });
+    }
+    return Array.from(merged.values()).sort((a, b) => a.path.join(" / ").localeCompare(b.path.join(" / "), "sr"));
+  }, [catalogCategories, categoryRegistry]);
   const landingProductMap = useMemo(() => {
     const map = new Map<number, CatalogProduct>();
     for (const item of [...landingProductResults, ...items]) {
@@ -446,7 +458,7 @@ export default function AdminWebshopPage() {
 
       const nextItems = (json.data || []) as CatalogProduct[];
       setItems(landingOnly ? nextItems.filter((item) => item.landingFeatured) : nextItems);
-      setCategories((json.categories || []) as CatalogCategory[]);
+      setCatalogCategories((json.categories || []) as CatalogCategory[]);
       setPagination((json.pagination || pagination) as Pagination);
       setSelected({});
       setDrafts((prev) => {
@@ -458,6 +470,23 @@ export default function AdminWebshopPage() {
       setError(e?.message || "Load failed");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadCategoryRegistry = async () => {
+    try {
+      const res = await fetch("/api/admin/webshop/categories");
+      const json = await res.json();
+      if (!json?.success) return;
+      setCategoryRegistry(
+        ((json.data || []) as Array<{ id: number; name: string; path: string[] }>).map((item) => ({
+          id: item.id,
+          name: item.name,
+          path: item.path || [item.name],
+        })),
+      );
+    } catch {
+      // Best-effort helper data for category dropdowns.
     }
   };
 
@@ -711,6 +740,7 @@ export default function AdminWebshopPage() {
 
   useEffect(() => {
     void loadProducts(1);
+    void loadCategoryRegistry();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -1012,9 +1042,14 @@ export default function AdminWebshopPage() {
             </p>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dodavanje proizvoda</p>
-            <div className="grid gap-3 md:grid-cols-6">
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <p className="mb-0 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dodavanje proizvoda</p>
+            <Link href="/admin/categories" className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+              Upravljaj kategorijama
+            </Link>
+          </div>
+          <div className="grid gap-3 md:grid-cols-6">
               <input value={createDraft.sku} onChange={(e) => setCreateDraft((p) => ({ ...p, sku: e.target.value }))} placeholder="SKU*" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={createDraft.name} onChange={(e) => setCreateDraft((p) => ({ ...p, name: e.target.value }))} placeholder="Naziv proizvoda*" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
               <select value={createDraft.categoryId} onChange={(e) => setCreateDraft((p) => ({ ...p, categoryId: e.target.value }))} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">

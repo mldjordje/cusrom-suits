@@ -7,6 +7,7 @@ import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
 import ProductImageGallery from "@/app/components/storefront/ProductImageGallery";
 import Reveal from "@/app/components/motion/Reveal";
 import { getCatalogProductByLegacyId, getRelatedCatalogProducts } from "@/lib/catalog/store";
+import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -52,7 +53,7 @@ export default async function WebShopProductPage({
     0,
     Math.floor(product.stockTotal > 0 ? product.stockTotal : product.stockWarehouse1),
   );
-  const gallery = product.images.length > 0 ? product.images : [product.coverImage || "/assets/images/search-result-3.jpg"];
+  const gallery = product.images.length > 0 ? product.images : [product.coverImage || "/img/odela.jpg"];
   const categoryLabel = product.categories[0]?.path.join(" / ") || "Santos Selection";
   const shortDescription = stripHtml(product.description).slice(0, 280);
   const attributeItems = Object.entries(product.attributes || {}).slice(0, 6);
@@ -89,8 +90,8 @@ export default async function WebShopProductPage({
                     </svg>
                     <span className="menu-link menu-link_us-s">Shop</span>
                   </Link>
-                  <Link href="/custom-suits" className="text-uppercase fw-medium">
-                    <span className="menu-link menu-link_us-s">Custom Suit</span>
+                  <Link href="/kontakt" className="text-uppercase fw-medium">
+                    <span className="menu-link menu-link_us-s">Kontakt</span>
                     <svg className="mb-1px" width="10" height="10" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
                       <use href="#icon_next_md" />
                     </svg>
@@ -115,7 +116,7 @@ export default async function WebShopProductPage({
 
               <div className="product-single__swatches">
                 <div className="product-swatch text-swatches">
-                  <label>Category</label>
+                  <label>Kategorija</label>
                   <div className="swatch-list">
                     {product.categories.slice(0, 2).map((category) => (
                       <span key={category.id} className="swatch text-uppercase">
@@ -128,29 +129,37 @@ export default async function WebShopProductPage({
                   <label>Status</label>
                   <div className="swatch-list">
                     <span className={`swatch ${stockValue > 0 ? "bg-success" : "bg-secondary"} text-white`}>
-                      {stockValue > 0 ? "Available" : "On Request"}
+                      {stockValue > 0 ? "Na stanju" : "Na upit"}
                     </span>
                   </div>
                 </div>
               </div>
 
               <div className="product-single__addtocart">
-                <div className="qty-control position-relative">
-                  <input type="number" name="quantity" value={1} min={1} readOnly className="qty-control__number text-center" />
-                  <div className="qty-control__reduce">-</div>
-                  <div className="qty-control__increase">+</div>
+                <div className="d-flex flex-wrap gap-2">
+                  <AddToCartButton
+                    item={{
+                      legacyId: product.legacyId,
+                      sku: product.sku,
+                      name: product.name,
+                      price: product.priceFinalGross,
+                      image: product.coverImage || gallery[0] || null,
+                      maxQuantity: stockValue > 0 ? stockValue : null,
+                      categoryLabel: product.categories[0]?.name || null,
+                    }}
+                  />
+                  <Link href="/checkout" className="btn btn-outline-dark btn-addtocart">
+                    Checkout
+                  </Link>
                 </div>
-                <Link href="/kontakt" className="btn btn-primary btn-addtocart">
-                  Contact For Order
-                </Link>
               </div>
 
               <div className="product-single__addtolinks">
                 <Link href="/web-shop" className="menu-link menu-link_us-s add-to-wishlist">
-                  <span>Back to Shop</span>
+                  <span>Nazad na shop</span>
                 </Link>
                 <Link href="/blog" className="menu-link menu-link_us-s add-to-wishlist">
-                  <span>Read Journal</span>
+                  <span>Procitaj blog</span>
                 </Link>
               </div>
 
@@ -160,11 +169,11 @@ export default async function WebShopProductPage({
                   <span>{product.sku}</span>
                 </div>
                 <div className="meta-item">
-                  <label>Categories:</label>
+                  <label>Kategorije:</label>
                   <span>{categoryLabel}</span>
                 </div>
                 <div className="meta-item">
-                  <label>Brand:</label>
+                  <label>Brend:</label>
                   <span>{product.brand || "Santos"}</span>
                 </div>
                 <div className="meta-item">
@@ -172,8 +181,8 @@ export default async function WebShopProductPage({
                   <span>{product.ean || "N/A"}</span>
                 </div>
                 <div className="meta-item">
-                  <label>VAT:</label>
-                  <span>{product.taxPercent}% included</span>
+                  <label>PDV:</label>
+                  <span>{product.taxPercent}% uracunat</span>
                 </div>
               </div>
             </div>
@@ -189,11 +198,11 @@ export default async function WebShopProductPage({
         {related.length > 0 ? (
           <Reveal as="section" className="products-carousel container mt-5 pt-4" delay={0.06}>
             <h2 className="h3 text-uppercase mb-4 pb-xl-2 mb-xl-4">
-              Related <strong>Products</strong>
+              Povezani <strong>Proizvodi</strong>
             </h2>
             <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4">
               {related.map((item) => {
-                const coverImage = item.coverImage || "/assets/images/search-result-4.jpg";
+                const coverImage = item.coverImage || "/img/odela2.jpg";
                 const secondImage = item.images[1] || coverImage;
                 return (
                   <div key={item.legacyId} className="product-card-wrapper">
@@ -220,7 +229,7 @@ export default async function WebShopProductPage({
                           />
                         </Link>
                         <Link href={`/web-shop/${item.legacyId}`} className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium">
-                          View Product
+                          Detaljnije
                         </Link>
                       </div>
                       <div className="pc__info position-relative">

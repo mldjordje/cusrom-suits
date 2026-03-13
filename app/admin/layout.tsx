@@ -14,11 +14,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             <span className="admin-template-brand-dot" aria-hidden="true" />
             <span className="admin-template-brand-text">
               <strong>Santos Admin</strong>
-              <small>admintemplate layout</small>
+              <small>web shop operations</small>
             </span>
           </Link>
           <AdminNav />
-          <p className="admin-template-sidebar-foot">Custom Suits + Web Shop ops</p>
+          <p className="admin-template-sidebar-foot">Web shop, sadrzaj i operacije</p>
         </aside>
 
         <div className="admin-template-main">

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import type { StorefrontCartItem } from "@/lib/cart/types";
 
 const ORDERS_PATH = "data/orders.json";
 const ADMIN_ACCESS_TOKEN = process.env.ADMIN_ACCESS_TOKEN;
@@ -23,10 +24,123 @@ const writeOrdersFile = async (orders: any[]) => {
   await writeJsonFile(ORDERS_PATH, orders);
 };
 
+const isStorefrontPayload = (payload: any): payload is {
+  source?: string;
+  items: StorefrontCartItem[];
+  customer?: Record<string, unknown> | null;
+  totals?: Record<string, unknown> | null;
+  note?: string | null;
+} => Array.isArray(payload?.items) && payload.items.length > 0;
+
 export async function POST(req: NextRequest) {
   const supabase = getServiceSupabase();
   const payload = await req.json().catch(() => null);
-  if (!payload || !payload.config) {
+  if (!payload) {
+    return NextResponse.json({ success: false, message: "Invalid payload" }, { status: 400 });
+  }
+
+  if (isStorefrontPayload(payload)) {
+    const items = payload.items
+      .map((item) => ({
+        legacyId: Number(item.legacyId),
+        sku: String(item.sku || ""),
+        name: String(item.name || ""),
+        price: Number(item.price || 0),
+        quantity: Math.max(1, Number(item.quantity || 1)),
+        image: item.image ? String(item.image) : null,
+        categoryLabel: item.categoryLabel ? String(item.categoryLabel) : null,
+      }))
+      .filter((item) => Number.isFinite(item.legacyId) && item.legacyId > 0 && item.name.length > 0);
+
+    if (!items.length) {
+      return NextResponse.json({ success: false, message: "Korpa je prazna." }, { status: 400 });
+    }
+
+    const customer = payload.customer && typeof payload.customer === "object"
+      ? (payload.customer as Record<string, unknown>)
+      : {};
+    const fullName = String(customer.fullName || "").trim();
+    const email = String(customer.email || "").trim();
+    const phone = String(customer.phone || "").trim();
+    if (!fullName || !email || !phone) {
+      return NextResponse.json(
+        { success: false, message: "Ime, email i telefon su obavezni." },
+        { status: 400 },
+      );
+    }
+
+    const subtotal = Number(payload?.totals?.subtotal || items.reduce((sum, item) => sum + item.price * item.quantity, 0));
+    const quantity = Number(payload?.totals?.quantity || items.reduce((sum, item) => sum + item.quantity, 0));
+    const contact = {
+      ime: fullName,
+      email,
+      telefon: phone,
+      adresa: String(customer.address || "").trim(),
+      grad: String(customer.city || "").trim(),
+      postanski_broj: String(customer.postalCode || "").trim(),
+      napomena: String(customer.note || payload.note || "").trim(),
+    };
+
+    const config = {
+      source: "storefront",
+      type: "webshop",
+      items,
+      totals: {
+        subtotal,
+        quantity,
+      },
+      customer: {
+        fullName,
+        email,
+        phone,
+        address: contact.adresa,
+        city: contact.grad,
+        postalCode: contact.postanski_broj,
+      },
+    };
+
+    const entry = {
+      id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+      source: "storefront",
+      type: "webshop",
+      config,
+      items,
+      price: subtotal,
+      fabric_id: null,
+      contact,
+      note: contact.napomena || null,
+      status: "pending",
+      created_at: new Date().toISOString(),
+    };
+
+    if (!supabase) {
+      const orders = await readOrdersFile();
+      orders.unshift(entry);
+      await writeOrdersFile(orders);
+      return NextResponse.json({ success: true, orderId: entry.id, storage: "file" });
+    }
+
+    const { data, error } = await supabase
+      .from("orders")
+      .insert({
+        config,
+        price: subtotal,
+        fabric_id: null,
+        contact,
+        note: contact.napomena || null,
+        status: "pending",
+      })
+      .select("id")
+      .single();
+
+    if (error) {
+      return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, orderId: data?.id });
+  }
+
+  if (!payload.config) {
     return NextResponse.json({ success: false, message: "Invalid payload" }, { status: 400 });
   }
 

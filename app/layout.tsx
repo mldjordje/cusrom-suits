@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     default: "Santos & Santorini",
     template: "%s | Santos & Santorini",
   },
-  description: "Santos & Santorini web shop, admin CMS and integrations platform.",
+  description: "Santos & Santorini web shop sa CMS administracijom i integracijama.",
 };
 
 export default function RootLayout({

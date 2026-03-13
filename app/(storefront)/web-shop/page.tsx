@@ -155,7 +155,7 @@ export default async function WebShopPage({
     const imageWrapperClassName = options?.imageWrapperClassName || "pc__img-wrapper hover-container p-lg-0";
     const imageWidth = options?.imageWidth || 690;
     const imageHeight = options?.imageHeight || 714;
-    const fallbackImage = options?.fallbackImage || "/assets/images/search-result-2.jpg";
+    const fallbackImage = options?.fallbackImage || "/img/odela2.jpg";
     const motionIndex = options?.motionIndex || 0;
     const coverImage = item.coverImage || fallbackImage;
     const imageSizes =
