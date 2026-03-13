@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 import type { StorefrontCartItem } from "@/lib/cart/types";
+import type { LegacyCatalogProduct } from "@/lib/legacy/types";
 
 const ORDERS_PATH = "data/orders.json";
+const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
 const ADMIN_ACCESS_TOKEN = process.env.ADMIN_ACCESS_TOKEN;
 
 const hasAdminToken = (req: NextRequest) => {
@@ -22,6 +24,58 @@ const readOrdersFile = async () => readJsonFile<any[]>(ORDERS_PATH, []);
 
 const writeOrdersFile = async (orders: any[]) => {
   await writeJsonFile(ORDERS_PATH, orders);
+};
+
+const decrementStockForItems = async (
+  items: Array<{ legacyId: number; quantity: number }>,
+  supabase: NonNullable<ReturnType<typeof getServiceSupabase>> | null,
+) => {
+  if (!items.length) return;
+
+  if (!supabase) {
+    const products = await readJsonFile<LegacyCatalogProduct[]>(LEGACY_PRODUCTS_PATH, []);
+    const byId = new Map(products.map((product) => [Number(product.legacyId), product]));
+
+    for (const item of items) {
+      const product = byId.get(Number(item.legacyId));
+      if (!product) continue;
+      const qty = Math.max(1, Number(item.quantity || 1));
+      product.stock = {
+        ...product.stock,
+        warehouse1: Math.max(0, Number(product.stock?.warehouse1 || 0) - qty),
+        total: Math.max(0, Number(product.stock?.total || 0) - qty),
+      };
+    }
+
+    await writeJsonFile(LEGACY_PRODUCTS_PATH, products);
+    return;
+  }
+
+  for (const item of items) {
+    const legacyId = Number(item.legacyId);
+    const qty = Math.max(1, Number(item.quantity || 1));
+    if (!legacyId || !qty) continue;
+
+    const { data: row, error: fetchError } = await supabase
+      .from("catalog_products")
+      .select("stock_warehouse_1, stock_total")
+      .eq("legacy_id", legacyId)
+      .maybeSingle();
+
+    if (fetchError || !row) continue;
+
+    const nextWarehouse1 = Math.max(0, Number((row as Record<string, unknown>).stock_warehouse_1 || 0) - qty);
+    const nextTotal = Math.max(0, Number((row as Record<string, unknown>).stock_total || 0) - qty);
+
+    await supabase
+      .from("catalog_products")
+      .update({
+        stock_warehouse_1: nextWarehouse1,
+        stock_total: nextTotal,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("legacy_id", legacyId);
+  }
 };
 
 const isStorefrontPayload = (payload: any): payload is {
@@ -117,6 +171,7 @@ export async function POST(req: NextRequest) {
       const orders = await readOrdersFile();
       orders.unshift(entry);
       await writeOrdersFile(orders);
+      await decrementStockForItems(items, null);
       return NextResponse.json({ success: true, orderId: entry.id, storage: "file" });
     }
 
@@ -137,6 +192,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
 
+    await decrementStockForItems(items, supabase);
     return NextResponse.json({ success: true, orderId: data?.id });
   }
 

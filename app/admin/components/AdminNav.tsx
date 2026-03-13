@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 const navItems = [
   { href: "/admin", label: "Pregled", icon: "OV" },
@@ -27,9 +28,28 @@ const isActive = (pathname: string, href: string) => {
 
 export default function AdminNav() {
   const pathname = usePathname() || "";
+  const [isOpen, setIsOpen] = useState(false);
+
+  useEffect(() => {
+    setIsOpen(false);
+  }, [pathname]);
+
   return (
     <nav className="admin-template-nav" aria-label="Admin navigation">
-      <ul className="admin-template-nav-list">
+      <button
+        type="button"
+        className="admin-template-nav-toggle"
+        aria-expanded={isOpen}
+        aria-controls="admin-nav-list"
+        onClick={() => setIsOpen((current) => !current)}
+      >
+        <span className="admin-template-nav-toggle-icon" aria-hidden="true">
+          ☰
+        </span>
+        <span>Meni</span>
+      </button>
+
+      <ul id="admin-nav-list" className={`admin-template-nav-list ${isOpen ? "is-open" : ""}`}>
         {navItems.map((item) => {
           const active = isActive(pathname, item.href);
           return (
