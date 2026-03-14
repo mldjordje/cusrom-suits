@@ -67,7 +67,7 @@ export default function StorefrontHeader({
   }, []);
 
   const desktopFloating = isHome;
-  const mobileFloating = isHome;
+  const mobileFloating = false;
   const headerClass = [
     "header",
     "header-fullwidth",

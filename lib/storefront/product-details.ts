@@ -1,4 +1,4 @@
-import { formatCatalogProductName } from "@/lib/catalog/presentation";
+import { getCatalogProductDisplayName } from "@/lib/catalog/presentation";
 import type { CatalogProductView } from "@/lib/catalog/store";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
@@ -121,7 +121,16 @@ export const productSupportsSizeGuide = (product: CatalogProductView) =>
 export const getLocalizedCatalogProductName = (
   product: CatalogProductView,
   lang: StorefrontLanguage,
-) => formatCatalogProductName(productText(product, lang).name, product.sku);
+) =>
+  getCatalogProductDisplayName(
+    {
+      name: productText(product, lang).name,
+      sku: product.sku,
+      categories: product.categories,
+      brand: product.brand,
+    },
+    lang,
+  );
 
 export const getLocalizedCatalogDescription = (
   product: CatalogProductView,

@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Montserrat } from "next/font/google";
 import AppMotionShell from "@/app/components/motion/AppMotionShell";
@@ -25,6 +25,12 @@ export const metadata: Metadata = {
     template: "%s | Santos & Santorini",
   },
   description: "Santos & Santorini web shop sa CMS administracijom i integracijama.",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({

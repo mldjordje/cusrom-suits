@@ -5,8 +5,12 @@ import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import HomeHeroVideo from "@/app/components/storefront/HomeHeroVideo";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
-import { listCatalogProducts } from "@/lib/catalog/store";
-import { formatCatalogProductName } from "@/lib/catalog/presentation";
+import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
+import {
+  getCatalogProductCategoryLabel,
+  getCatalogProductDisplayName,
+  isCatalogProductNameSuspicious,
+} from "@/lib/catalog/presentation";
 import { listPosts } from "@/lib/blog/store";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
@@ -138,6 +142,52 @@ const dedupeProductsBySku = <T extends { legacyId: number; sku?: string | null }
   return result;
 };
 
+const getProductDisplayName = (item: CatalogProductView, lang: "sr" | "en") =>
+  getCatalogProductDisplayName(
+    {
+      name: item.name,
+      sku: item.sku,
+      categories: item.categories,
+      brand: item.brand,
+    },
+    lang,
+  );
+
+const getProductCategoryLabel = (item: CatalogProductView, lang: "sr" | "en") =>
+  getCatalogProductCategoryLabel(
+    {
+      name: item.name,
+      sku: item.sku,
+      categories: item.categories,
+      brand: item.brand,
+    },
+    lang,
+  );
+
+const scoreLandingProduct = (item: CatalogProductView, lang: "sr" | "en") => {
+  const displayName = getProductDisplayName(item, lang);
+  const suspicious = isCatalogProductNameSuspicious(displayName);
+  const stock = Math.max(Number(item.stockTotal || 0), Number(item.stockWarehouse1 || 0));
+
+  let score = 0;
+  if (item.coverImage) score += 30;
+  if (item.categories.length > 0) score += 22;
+  if (!suspicious) score += 42;
+  if (displayName !== getProductCategoryLabel(item, lang)) score += 12;
+  if (stock > 0) score += Math.min(stock, 12);
+  if (item.priceFinalGross > 0) score += 6;
+  if (item.priceGross > item.priceFinalGross || item.rebatePercent > 0) score += 4;
+
+  return score;
+};
+
+const sortLandingProducts = (items: CatalogProductView[], lang: "sr" | "en") =>
+  [...items].sort((left, right) => {
+    const scoreDiff = scoreLandingProduct(right, lang) - scoreLandingProduct(left, lang);
+    if (scoreDiff !== 0) return scoreDiff;
+    return right.legacyId - left.legacyId;
+  });
+
 const pickProductsForSectionDistinct = <T extends { legacyId: number; sku?: string | null }>(
   source: T[],
   preferredIds: number[],
@@ -199,13 +249,16 @@ export default async function HomePage({
   const legacyCampaignBlocks = getLegacyCampaignBlocks(isEn);
   const atelierStoryParagraphs = getAtelierStoryParagraphs(isEn);
   const atelierContactPoints = getAtelierContactPoints(isEn);
+  const contentLang: "sr" | "en" = isEn ? "en" : "sr";
 
-  const landingPool = catalog.items;
-  const landingPoolUnique = dedupeProductsBySku(landingPool);
+  const landingPoolUnique = sortLandingProducts(dedupeProductsBySku(catalog.items), contentLang);
 
-  const salePool = landingPoolUnique
+  const salePool = sortLandingProducts(
+    landingPoolUnique
     .filter((item) => item.priceGross > item.priceFinalGross || item.rebatePercent > 0)
-    .slice(0, 32);
+    .slice(0, 40),
+    contentLang,
+  );
 
   const usedSkuKeys = new Set<string>();
   const heroStripProducts = pickProductsForSectionDistinct(
@@ -317,7 +370,7 @@ export default async function HomePage({
               {isEn ? "View all" : "Pogledaj sve"}
             </Link>
           </div>
-          <div className="row row-cols-2 row-cols-md-4 g-3 ss-feature-strip">
+          <div className="row row-cols-2 row-cols-md-4 g-2 g-md-3 ss-feature-strip">
             {heroProducts.map((item, index) => (
               <ProductItemMotion key={item.legacyId} index={index}>
                 <Link href={withLang(`/web-shop/${item.legacyId}`)} className="d-block ss-featured-tile">
@@ -325,10 +378,12 @@ export default async function HomePage({
                     src={item.coverImage || "/img/odela.jpg"}
                     width={330}
                     height={400}
-                    alt={formatCatalogProductName(item.name, item.sku)}
+                    alt={getProductDisplayName(item, contentLang)}
                     className="w-100 mb-2 ss-uniform-tile"
                   />
-                  <span className="menu-link menu-link_us-s fw-semi-bold fs-16 text-uppercase">{formatCatalogProductName(item.name, item.sku)}</span>
+                  <span className="menu-link menu-link_us-s fw-semi-bold fs-16 text-uppercase">
+                    {getProductDisplayName(item, contentLang)}
+                  </span>
                 </Link>
               </ProductItemMotion>
             ))}
@@ -346,7 +401,7 @@ export default async function HomePage({
               {isEn ? "View all" : "Pogledaj sve"}
             </Link>
           </div>
-          <div className="row row-cols-2 row-cols-lg-4">
+          <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
             {featured.map((item, index) => (
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
                 <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
@@ -356,15 +411,15 @@ export default async function HomePage({
                         src={item.coverImage || "/img/odela2.jpg"}
                         width={330}
                         height={400}
-                        alt={formatCatalogProductName(item.name, item.sku)}
+                        alt={getProductDisplayName(item, contentLang)}
                         className="pc__img"
                       />
                     </Link>
                   </div>
                   <div className="pc__info position-relative">
-                    <p className="pc__category">{item.categories[0]?.name || "Santos"}</p>
+                    <p className="pc__category">{getProductCategoryLabel(item, contentLang)}</p>
                     <h6 className="pc__title">
-                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{formatCatalogProductName(item.name, item.sku)}</Link>
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{getProductDisplayName(item, contentLang)}</Link>
                     </h6>
                     <div className="product-card__price d-flex">
                       {item.priceGross > item.priceFinalGross ? (
@@ -420,7 +475,7 @@ export default async function HomePage({
               {isEn ? "New " : "Novi "}<strong>{isEn ? "Arrivals" : "Modeli"}</strong>
             </h2>
           </div>
-          <div className="row row-cols-2 row-cols-lg-4">
+          <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
             {arrivals.map((item, index) => (
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
                 <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
@@ -430,14 +485,14 @@ export default async function HomePage({
                         src={item.coverImage || "/img/hero2.jpg"}
                         width={330}
                         height={400}
-                        alt={formatCatalogProductName(item.name, item.sku)}
+                        alt={getProductDisplayName(item, contentLang)}
                         className="pc__img"
                       />
                     </Link>
                   </div>
                   <div className="pc__info position-relative">
                     <h6 className="pc__title">
-                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{formatCatalogProductName(item.name, item.sku)}</Link>
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{getProductDisplayName(item, contentLang)}</Link>
                     </h6>
                     <div className="product-card__price d-flex">
                       {item.priceGross > item.priceFinalGross ? (
@@ -468,7 +523,7 @@ export default async function HomePage({
                 </Link>
               </div>
               {landingSettings.saleSectionSubtitle ? <p className="text-secondary mb-4">{landingSettings.saleSectionSubtitle}</p> : null}
-              <div className="row row-cols-2 row-cols-lg-4">
+              <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
                 {saleItems.map((item, index) => (
                   <ProductItemMotion key={`sale-${item.legacyId}`} className="product-card-wrapper" index={index}>
                     <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
@@ -478,14 +533,14 @@ export default async function HomePage({
                             src={item.coverImage || "/img/odela.jpg"}
                             width={330}
                             height={400}
-                            alt={formatCatalogProductName(item.name, item.sku)}
+                            alt={getProductDisplayName(item, contentLang)}
                             className="pc__img"
                           />
                         </Link>
                       </div>
                       <div className="pc__info position-relative">
                         <h6 className="pc__title">
-                          <Link href={withLang(`/web-shop/${item.legacyId}`)}>{formatCatalogProductName(item.name, item.sku)}</Link>
+                          <Link href={withLang(`/web-shop/${item.legacyId}`)}>{getProductDisplayName(item, contentLang)}</Link>
                         </h6>
                         <div className="product-card__price d-flex">
                           <span className="money price price-old">{formatRsd(item.priceGross)}</span>
@@ -507,7 +562,7 @@ export default async function HomePage({
               {isEn ? "Trending " : "Aktuelno "}<strong>{isEn ? "Now" : "Sada"}</strong>
             </h2>
           </div>
-          <div className="row row-cols-2 row-cols-lg-4">
+          <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
             {trending.map((item, index) => (
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
                 <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
@@ -517,14 +572,14 @@ export default async function HomePage({
                         src={item.coverImage || "/img/hero2.jpg"}
                         width={330}
                         height={400}
-                        alt={formatCatalogProductName(item.name, item.sku)}
+                        alt={getProductDisplayName(item, contentLang)}
                         className="pc__img"
                       />
                     </Link>
                   </div>
                   <div className="pc__info position-relative">
                     <h6 className="pc__title">
-                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{formatCatalogProductName(item.name, item.sku)}</Link>
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{getProductDisplayName(item, contentLang)}</Link>
                     </h6>
                     <div className="product-card__price d-flex">
                       {item.priceGross > item.priceFinalGross ? (

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
 const SELECTOR = [
   ".page-wrapper .btn",
@@ -25,7 +26,25 @@ const SELECTOR = [
 ].join(", ");
 
 export default function StorefrontViewportEffects() {
+  const { reduceMotion } = useAnimationBudget();
+
   useEffect(() => {
+    const scan = () => {
+      const elements = Array.from(document.querySelectorAll<HTMLElement>(SELECTOR));
+      for (const element of elements) {
+        element.classList.add("ss-viewfx");
+        if (reduceMotion) {
+          element.classList.add("is-inview");
+        }
+      }
+      return elements;
+    };
+
+    if (reduceMotion) {
+      scan();
+      return;
+    }
+
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
@@ -39,20 +58,19 @@ export default function StorefrontViewportEffects() {
     );
 
     const observed = new WeakSet<Element>();
-    const scan = () => {
-      const elements = Array.from(document.querySelectorAll<HTMLElement>(SELECTOR));
+    const observeElements = () => {
+      const elements = scan();
       for (const element of elements) {
-        element.classList.add("ss-viewfx");
         if (observed.has(element)) continue;
         observed.add(element);
         observer.observe(element);
       }
     };
 
-    scan();
+    observeElements();
 
     const mutationObserver = new MutationObserver(() => {
-      scan();
+      observeElements();
     });
     mutationObserver.observe(document.body, {
       childList: true,
@@ -63,7 +81,7 @@ export default function StorefrontViewportEffects() {
       mutationObserver.disconnect();
       observer.disconnect();
     };
-  }, []);
+  }, [reduceMotion]);
 
   return null;
 }

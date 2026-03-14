@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
@@ -30,10 +31,15 @@ export default function Reveal({
 }: RevealProps) {
   const prefersReduced = useReducedMotion();
   const { reduceMotion: budgetReduce } = useAnimationBudget();
+  const [mounted, setMounted] = useState(false);
   const reduceMotion = Boolean(prefersReduced || budgetReduce);
   const Tag = tagMap[as];
 
-  if (reduceMotion) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (reduceMotion || !mounted) {
     return (
       <Tag className={className} id={id}>
         {children}
@@ -45,8 +51,8 @@ export default function Reveal({
     <Tag
       className={className}
       id={id}
-      initial={{ opacity: 0, y, scale: 0.985, filter: "blur(8px)" }}
-      whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
+      initial={{ opacity: 0, y, scale: 0.992 }}
+      whileInView={{ opacity: 1, y: 0, scale: 1 }}
       viewport={{ once: true, amount }}
       transition={{ duration: 0.72, delay, ease: [0.16, 1, 0.3, 1] }}
     >

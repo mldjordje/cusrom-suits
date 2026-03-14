@@ -19,7 +19,7 @@ const readConnection = (): ConnectionLike | null => {
 };
 
 const isLowPowerDevice = () => {
-  if (typeof navigator === "undefined") return false;
+  if (typeof navigator === "undefined" || typeof window === "undefined") return false;
 
   const nav = navigator as Navigator & {
     deviceMemory?: number;
@@ -32,13 +32,16 @@ const isLowPowerDevice = () => {
   const effectiveType = String(connection?.effectiveType || "").toLowerCase();
   const saveData = Boolean(connection?.saveData);
   const weakNetwork = effectiveType.includes("2g") || effectiveType.includes("slow-2g");
+  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
+  const compactViewport = window.matchMedia("(max-width: 820px)").matches;
+  const appleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-  return saveData || weakNetwork || deviceMemory <= 4 || cpuCores <= 4;
+  return saveData || weakNetwork || deviceMemory <= 4 || cpuCores <= 4 || coarsePointer || compactViewport || appleMobile;
 };
 
 export default function useAnimationBudget() {
   const prefersReducedMotion = useReducedMotion();
-  const [lowPower, setLowPower] = useState(false);
+  const [lowPower, setLowPower] = useState(() => isLowPowerDevice());
 
   useEffect(() => {
     setLowPower(isLowPowerDevice());
@@ -64,4 +67,3 @@ export default function useAnimationBudget() {
     [lowPower, reduceMotion],
   );
 }
-

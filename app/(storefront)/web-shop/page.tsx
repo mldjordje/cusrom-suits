@@ -5,6 +5,7 @@ import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
+import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getLocalizedCatalogProductName } from "@/lib/storefront/product-details";
 
@@ -63,6 +64,17 @@ export default async function WebShopPage({
     exportOnly: true,
     collapseBySku: true,
   });
+
+  const getCategoryLabel = (item: CatalogProductView) =>
+    getCatalogProductCategoryLabel(
+      {
+        name: item.name,
+        sku: item.sku,
+        categories: item.categories,
+        brand: item.brand,
+      },
+      lang,
+    );
 
   const items = sortItems(result.items, sort);
   const topCategories = result.categories.slice(0, 7);
@@ -184,7 +196,7 @@ export default async function WebShopPage({
               />
             </Link>
             <div className="pc__info hover__content text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
-              <p className="pc__category">{item.categories[0]?.name || item.sku}</p>
+              <p className="pc__category">{getCategoryLabel(item)}</p>
               <h6 className="pc__title">
                 <Link href={`/web-shop/${item.legacyId}`}>{displayName}</Link>
               </h6>
@@ -204,7 +216,7 @@ export default async function WebShopPage({
             </div>
           </div>
           <div className="pc__info ss-card-mobile-info d-md-none">
-            <p className="pc__category">{item.categories[0]?.name || item.sku}</p>
+            <p className="pc__category">{getCategoryLabel(item)}</p>
             <h6 className="pc__title mb-1">
               <Link href={`/web-shop/${item.legacyId}`}>{displayName}</Link>
             </h6>

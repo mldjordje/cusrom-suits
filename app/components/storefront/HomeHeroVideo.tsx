@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { formatCatalogProductName } from "@/lib/catalog/presentation";
+import { getCatalogProductDisplayName } from "@/lib/catalog/presentation";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 const HeroParallaxFx = dynamic(() => import("@/app/components/storefront/HeroParallaxFx"));
@@ -19,6 +19,7 @@ type Props = {
     sku: string;
     name: string;
     coverImage: string | null;
+    categories: HomeCategory[];
   }[];
   content: {
     heroEyebrow: string;
@@ -65,7 +66,14 @@ export default function HomeHeroVideo({ categories, featuredProducts, content, l
     featuredProducts.length > 0
       ? featuredProducts.slice(0, 4).map((product) => ({
           id: String(product.legacyId),
-          title: formatCatalogProductName(product.name, product.sku),
+          title: getCatalogProductDisplayName(
+            {
+              name: product.name,
+              sku: product.sku,
+              categories: product.categories,
+            },
+            lang,
+          ),
           image: product.coverImage || "/img/hero.jpg",
           href: withLang(`/web-shop/${product.legacyId}`),
         }))
