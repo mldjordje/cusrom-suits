@@ -4,6 +4,10 @@
 .theme-18 {
   --font-heading: "Montserrat", sans-serif;
   --font-family-base: "Montserrat", sans-serif;
+  --ss-brand-red-700: #d6001c;
+  --ss-brand-red-800: #c32929;
+  --ss-brand-red-900: #ab3331;
+  --ss-brand-red-deep: #5f1421;
 }
 
 .ss-home18-hero {
@@ -33,7 +37,7 @@
 .ss-home-page--cinematic::before {
   top: 7rem;
   right: -9rem;
-  background: radial-gradient(circle, rgba(210, 159, 93, 0.26), rgba(210, 159, 93, 0));
+  background: radial-gradient(circle, rgba(171, 51, 49, 0.24), rgba(171, 51, 49, 0));
 }
 
 .ss-home-page--cinematic::after {
@@ -96,7 +100,7 @@
   height: min(34rem, 62vw);
   top: -9rem;
   right: -7rem;
-  background: radial-gradient(circle, rgba(227, 171, 102, 0.34), rgba(227, 171, 102, 0));
+  background: radial-gradient(circle, rgba(214, 0, 28, 0.3), rgba(214, 0, 28, 0));
   animation: ss-orbit-drift 13s ease-in-out infinite;
 }
 
@@ -250,7 +254,7 @@
 }
 
 .ss-header-home-floating .header-tools__cart .cart-amount {
-  background: #b6975d;
+  background: var(--ss-brand-red-800);
   color: #fff;
 }
 
@@ -318,7 +322,7 @@
   width: 0.9rem;
   height: 0.9rem;
   border-radius: 50%;
-  background: #b6975d;
+  background: var(--ss-brand-red-800);
   color: #fff;
   font-size: 0.56rem;
   line-height: 0.9rem;
@@ -580,7 +584,7 @@
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(circle at top right, rgba(222, 173, 108, 0.2), rgba(222, 173, 108, 0) 34%),
+    radial-gradient(circle at top right, rgba(195, 41, 41, 0.18), rgba(195, 41, 41, 0) 34%),
     radial-gradient(circle at bottom left, rgba(89, 120, 160, 0.12), rgba(89, 120, 160, 0) 38%);
   opacity: 0.9;
 }
@@ -594,7 +598,7 @@
   inset: auto -12% -28% -12%;
   height: 46%;
   pointer-events: none;
-  background: radial-gradient(circle at center, rgba(223, 172, 105, 0.24), rgba(223, 172, 105, 0));
+  background: radial-gradient(circle at center, rgba(214, 0, 28, 0.2), rgba(214, 0, 28, 0));
   filter: blur(26px);
   opacity: 0.4;
   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
@@ -853,7 +857,7 @@
   position: absolute;
   inset: auto -0.5rem -1.25rem -0.5rem;
   height: 3.5rem;
-  background: radial-gradient(circle at center, rgba(214, 164, 98, 0.16), rgba(214, 164, 98, 0));
+  background: radial-gradient(circle at center, rgba(195, 41, 41, 0.16), rgba(195, 41, 41, 0));
   filter: blur(20px);
   opacity: 0;
   transition: opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1);
@@ -868,7 +872,7 @@
   padding: 0 0.7rem;
   border-radius: 999px;
   background: rgba(17, 24, 39, 0.04);
-  color: #6d5d4f;
+  color: var(--ss-brand-red-900);
   font-size: 0.63rem;
   font-weight: 700;
   letter-spacing: 0.16em;
@@ -1300,7 +1304,7 @@ body.mobile-menu-opened {
   inset: auto 16% -30% 16%;
   height: 56%;
   border-radius: 999px;
-  background: radial-gradient(circle at center, rgba(223, 172, 105, 0.5), rgba(223, 172, 105, 0));
+  background: radial-gradient(circle at center, rgba(214, 0, 28, 0.42), rgba(214, 0, 28, 0));
   filter: blur(16px);
   opacity: 0.36;
   pointer-events: none;
@@ -1339,7 +1343,7 @@ body.mobile-menu-opened {
   inset: 0;
   border: 0;
   background:
-    radial-gradient(circle at top, rgba(117, 79, 44, 0.22), rgba(8, 10, 14, 0) 36%),
+    radial-gradient(circle at top, rgba(171, 51, 49, 0.22), rgba(8, 10, 14, 0) 36%),
     rgba(3, 5, 9, 0.58);
   backdrop-filter: blur(10px);
 }
@@ -1379,7 +1383,7 @@ body.mobile-menu-opened {
   height: 14rem;
   top: -3rem;
   right: -2rem;
-  background: radial-gradient(circle, rgba(214, 164, 98, 0.42), rgba(214, 164, 98, 0));
+  background: radial-gradient(circle, rgba(195, 41, 41, 0.38), rgba(195, 41, 41, 0));
 }
 
 .ss-mobile-nav-panel__glow--two {
@@ -1501,13 +1505,13 @@ body.mobile-menu-opened {
 }
 
 .ss-mobile-nav-link.is-active {
-  border-color: rgba(225, 184, 121, 0.34);
+  border-color: rgba(214, 0, 28, 0.34);
   background:
-    linear-gradient(140deg, rgba(187, 139, 82, 0.26), rgba(255, 255, 255, 0.06)),
+    linear-gradient(140deg, rgba(171, 51, 49, 0.24), rgba(255, 255, 255, 0.06)),
     rgba(255, 255, 255, 0.04);
   box-shadow:
     0 16px 38px rgba(0, 0, 0, 0.22),
-    0 0 0 1px rgba(225, 184, 121, 0.08),
+    0 0 0 1px rgba(214, 0, 28, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.14);
 }
 
@@ -1540,7 +1544,7 @@ body.mobile-menu-opened {
 .ss-cta-btn:not(.ss-cta-btn--ghost) {
   color: #fff;
   background:
-    linear-gradient(135deg, #121922 0%, #3a2a1b 45%, #b88a4d 100%) !important;
+    linear-gradient(135deg, #120f16 0%, #5f1421 48%, #d6001c 100%) !important;
 }
 
 .page-wrapper .btn.btn-outline-dark,
@@ -1587,7 +1591,7 @@ body.mobile-menu-opened {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at top right, rgba(218, 171, 105, 0.2), rgba(218, 171, 105, 0) 32%),
+    radial-gradient(circle at top right, rgba(195, 41, 41, 0.18), rgba(195, 41, 41, 0) 32%),
     radial-gradient(circle at bottom left, rgba(92, 125, 164, 0.12), rgba(92, 125, 164, 0) 36%);
   pointer-events: none;
 }
@@ -1626,7 +1630,7 @@ body.mobile-menu-opened {
   padding-top: 3.25rem;
   padding-bottom: 1.6rem;
   background:
-    radial-gradient(circle at top, rgba(214, 164, 98, 0.14), rgba(214, 164, 98, 0) 26%),
+    radial-gradient(circle at top, rgba(171, 51, 49, 0.16), rgba(171, 51, 49, 0) 26%),
     linear-gradient(180deg, #0d121a 0%, #0a0f16 100%);
   color: rgba(255, 255, 255, 0.88);
 }
@@ -1656,7 +1660,7 @@ body.mobile-menu-opened {
 
 .ss-footer__group--newsletter {
   background:
-    linear-gradient(150deg, rgba(188, 140, 83, 0.18), rgba(255, 255, 255, 0.05)),
+    linear-gradient(150deg, rgba(171, 51, 49, 0.18), rgba(255, 255, 255, 0.05)),
     rgba(255, 255, 255, 0.04);
 }
 
@@ -1751,7 +1755,7 @@ body.mobile-menu-opened {
   min-width: 7rem;
   border-radius: 999px;
   color: #fff;
-  background: linear-gradient(135deg, #121922, #b88a4d);
+  background: linear-gradient(135deg, #120f16, #d6001c);
 }
 
 .ss-footer__bottom {
@@ -1830,7 +1834,7 @@ body.mobile-menu-opened {
 .page-wrapper .ss-banner-panel.ss-viewfx.is-inview {
   box-shadow:
     0 22px 44px rgba(8, 11, 16, 0.18),
-    0 0 0 1px rgba(215, 168, 105, 0.08),
+    0 0 0 1px rgba(214, 0, 28, 0.08),
     inset 0 1px 0 rgba(255, 255, 255, 0.28);
   filter: saturate(1.06);
 }

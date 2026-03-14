@@ -549,7 +549,7 @@ export default async function HomePage({
           <div className="row g-4 align-items-stretch">
             <div className="col-12 col-lg-7">
               <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#8d6f60" }}>
+                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
                   {isEn ? "About us" : "O nama"}
                 </p>
                 <h2 className="section-title text-uppercase mb-4">
@@ -574,7 +574,7 @@ export default async function HomePage({
             </div>
             <div className="col-12 col-lg-5">
               <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#8d6f60" }}>
+                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
                   {isEn ? "Contact" : "Kontakt"}
                 </p>
                 <h3 className="h4 text-uppercase mb-3">
@@ -588,7 +588,7 @@ export default async function HomePage({
                 <div className="d-grid gap-2">
                   {atelierContactPoints.map((point) => (
                     <div key={point.label} className="border px-3 py-2" style={{ borderRadius: 14 }}>
-                      <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#8d6f60" }}>
+                      <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
                         {point.label}
                       </div>
                       <div>{point.value}</div>
