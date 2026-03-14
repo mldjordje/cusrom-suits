@@ -247,7 +247,7 @@ export default async function HomePage({
   return (
     <>
       <StorefrontHeader lang={lang} />
-      <main className="page-wrapper theme-18 ss-home-page">
+      <main className="page-wrapper theme-18 ss-home-page ss-home-page--cinematic">
         <HomeHeroVideo
           categories={catalog.categories}
           featuredProducts={heroStripProducts}
@@ -262,7 +262,7 @@ export default async function HomePage({
           }}
         />
 
-        <Reveal as="section" className="container pb-5" delay={0.02}>
+        <Reveal as="section" className="container pb-5 ss-editorial-section ss-editorial-section--story" delay={0.02}>
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
               {isEn ? "Brand " : "Brend "}<strong>{isEn ? "Story" : "Priča"}</strong>
@@ -300,7 +300,7 @@ export default async function HomePage({
 
         <div className="mb-2 mb-xl-3 pt-xl-1 pb-3" />
 
-        <section className="container pb-5">
+        <section className="container pb-5 ss-editorial-section ss-editorial-section--featured">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
               {isEn ? "Featured " : "Izdvojeni "}<strong>{isEn ? "Pieces" : "Modeli"}</strong>
@@ -309,7 +309,7 @@ export default async function HomePage({
               {isEn ? "View all" : "Pogledaj sve"}
             </Link>
           </div>
-          <div className="row row-cols-2 row-cols-md-4 g-3">
+          <div className="row row-cols-2 row-cols-md-4 g-3 ss-feature-strip">
             {heroProducts.map((item, index) => (
               <ProductItemMotion key={item.legacyId} index={index}>
                 <Link href={`/web-shop/${item.legacyId}`} className="d-block">
@@ -329,7 +329,7 @@ export default async function HomePage({
 
         <div className="mb-2 mb-xl-3 pt-xl-1 pb-3" />
 
-        <section className="products-grid container">
+        <section className="products-grid container ss-editorial-section ss-editorial-section--products">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
               {isEn ? "Popular " : "Popularni "}<strong>{isEn ? "Products" : "Proizvodi"}</strong>
@@ -377,7 +377,7 @@ export default async function HomePage({
 
         <div className="mb-3 mb-xl-4 pt-xl-1 pb-4" />
 
-        <Reveal as="section" className="banner-grid container" delay={0.08}>
+        <Reveal as="section" className="banner-grid container ss-editorial-banners" delay={0.08}>
           <div className="row g-4">
             <div className="col-md-6">
               <div className="position-relative overflow-hidden">
@@ -406,7 +406,7 @@ export default async function HomePage({
 
         <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
 
-        <section className="products-grid container">
+        <section className="products-grid container ss-editorial-section ss-editorial-section--arrivals">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
               {isEn ? "New " : "Novi "}<strong>{isEn ? "Arrivals" : "Modeli"}</strong>
@@ -452,7 +452,7 @@ export default async function HomePage({
 
         {landingSettings.showSaleSection && saleItems.length > 0 ? (
           <>
-            <section className="products-grid container">
+            <section className="products-grid container ss-editorial-section ss-editorial-section--sale">
               <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
                 <h2 className="section-title text-uppercase">{landingSettings.saleSectionTitle}</h2>
                 <Link href="/akcije" className="btn-link default-underline text-uppercase fw-medium">
@@ -493,7 +493,7 @@ export default async function HomePage({
           </>
         ) : null}
 
-        <section className="products-grid container">
+        <section className="products-grid container ss-editorial-section ss-editorial-section--trending">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
               {isEn ? "Trending " : "Aktuelno "}<strong>{isEn ? "Now" : "Sada"}</strong>
@@ -537,10 +537,10 @@ export default async function HomePage({
 
         <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
 
-        <Reveal as="section" id="o-nama" className="container pb-5" delay={0.16}>
+        <Reveal as="section" id="o-nama" className="container pb-5 ss-editorial-section ss-atelier-section" delay={0.16}>
           <div className="row g-4 align-items-stretch">
             <div className="col-12 col-lg-7">
-              <div className="h-100 border bg-white p-4 p-md-5" style={{ borderRadius: 24 }}>
+              <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
                 <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#8d6f60" }}>
                   {isEn ? "About us" : "O nama"}
                 </p>
@@ -565,7 +565,7 @@ export default async function HomePage({
               </div>
             </div>
             <div className="col-12 col-lg-5">
-              <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column" style={{ borderRadius: 24 }}>
+              <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
                 <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#8d6f60" }}>
                   {isEn ? "Contact" : "Kontakt"}
                 </p>
@@ -602,7 +602,7 @@ export default async function HomePage({
 
         <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
 
-        <Reveal as="section" className="blog-grid container" delay={0.18}>
+        <Reveal as="section" className="blog-grid container ss-editorial-section ss-editorial-section--blog" delay={0.18}>
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
               {isEn ? "Latest " : "Najnoviji "}<strong>Blog</strong>

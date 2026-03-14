@@ -33,6 +33,7 @@ export default function HeroParallaxFx({ targetId }: HeroParallaxFxProps) {
       const context = gsap.context(() => {
         const intro = root.querySelector("[data-hero-intro]");
         const cards = root.querySelectorAll("[data-hero-card]");
+        const glows = root.querySelectorAll("[data-hero-glow]");
 
         if (intro) {
           gsap.to(intro, {
@@ -51,7 +52,24 @@ export default function HeroParallaxFx({ targetId }: HeroParallaxFxProps) {
         if (cards.length > 0) {
           gsap.to(cards, {
             yPercent: -10,
+            rotateZ: (index: number) => (index % 2 === 0 ? -1.2 : 1.2),
             stagger: 0.06,
+            ease: "none",
+            scrollTrigger: {
+              trigger: root,
+              start: "top top",
+              end: "bottom top",
+              scrub: 0.9,
+            },
+          });
+        }
+
+        if (glows.length > 0) {
+          gsap.to(glows, {
+            yPercent: (index: number) => (index === 0 ? -18 : 16),
+            xPercent: (index: number) => (index === 0 ? -8 : 10),
+            scale: (index: number) => (index === 0 ? 1.08 : 0.94),
+            stagger: 0.04,
             ease: "none",
             scrollTrigger: {
               trigger: root,

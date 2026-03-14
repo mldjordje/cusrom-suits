@@ -9,6 +9,8 @@ const SELECTOR = [
   ".page-wrapper .ss-filter-panel",
   ".page-wrapper .product-single__details-tab",
   ".page-wrapper .ss-product-glass-card",
+  ".page-wrapper .ss-editorial-card",
+  ".page-wrapper .ss-home18-hero__card-item",
   ".ss-mobile-nav-panel__hero",
   ".ss-mobile-nav-quicklink",
   ".ss-mobile-nav-link",
