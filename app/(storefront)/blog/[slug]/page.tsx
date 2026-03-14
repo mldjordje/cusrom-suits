@@ -5,6 +5,7 @@ import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import Reveal from "@/app/components/motion/Reveal";
 import { getPostBySlug, listPosts } from "@/lib/blog/store";
+import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 
 export async function generateMetadata({
   params,
@@ -27,10 +28,14 @@ export async function generateMetadata({
 
 export default async function BlogDetailPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { slug } = await params;
+  const lang = await resolveStorefrontLanguage(await searchParams);
+  const isEn = lang === "en";
   const post = await getPostBySlug(slug);
   if (!post || !post.isPublished) notFound();
 
@@ -49,13 +54,13 @@ export default async function BlogDetailPage({
 
   return (
     <>
-      <StorefrontHeader />
+      <StorefrontHeader lang={lang} />
       <main className="page-wrapper">
         <Reveal as="section" className="blog-page blog-single container pt-4 pb-5">
           <div className="mw-930">
             <div className="breadcrumb mb-3">
               <Link href="/" className="menu-link menu-link_us-s text-uppercase fw-medium">
-                Home
+                {isEn ? "Home" : "Početna"}
               </Link>
               <span className="breadcrumb-separator menu-link fw-medium ps-1 pe-1">/</span>
               <Link href="/blog" className="menu-link menu-link_us-s text-uppercase fw-medium">
@@ -66,7 +71,7 @@ export default async function BlogDetailPage({
             </div>
             <h1 className="page-title">{post.title}</h1>
             <div className="blog-single__item-meta">
-              <span className="blog-single__item-meta__author">By Santos Editorial</span>
+              <span className="blog-single__item-meta__author">{isEn ? "By Santos Editorial" : "Santos Editorial"}</span>
               <span className="blog-single__item-meta__date">
                 {post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("sr-RS") : ""}
               </span>
@@ -91,7 +96,7 @@ export default async function BlogDetailPage({
                 dangerouslySetInnerHTML={{
                   __html:
                     post.bodyHtml ||
-                    `<p>${post.excerpt || "No content available for this post."}</p>`,
+                    `<p>${post.excerpt || (isEn ? "No content available for this post." : "Sadržaj trenutno nije dostupan.")}</p>`,
                 }}
               />
             </div>
@@ -99,13 +104,13 @@ export default async function BlogDetailPage({
 
           <div className="blog-single__item-share mw-930">
             <a href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`} className="btn btn-share btn-facebook" target="_blank" rel="noreferrer">
-              <span>Share on Facebook</span>
+              <span>{isEn ? "Share on Facebook" : "Podeli na Facebook-u"}</span>
             </a>
             <a href={`https://twitter.com/share?text=${encodedTitle}&url=${encodedUrl}`} className="btn btn-share btn-twitter" target="_blank" rel="noreferrer">
-              <span>Share on Twitter</span>
+              <span>{isEn ? "Share on Twitter" : "Podeli na X/Twitter-u"}</span>
             </a>
             <a href={`https://pinterest.com/pin/create/button/?url=${encodedUrl}&description=${encodedTitle}`} className="btn btn-share btn-pinterest" target="_blank" rel="noreferrer">
-              <span>Share on Pinterest</span>
+              <span>{isEn ? "Share on Pinterest" : "Podeli na Pinterest-u"}</span>
             </a>
           </div>
 
@@ -115,7 +120,7 @@ export default async function BlogDetailPage({
                 {prevPost ? (
                   <>
                     <Link href={`/blog/${prevPost.slug}`} className="btn-link d-inline-flex align-items-center">
-                      <span className="fw-medium">PREVIOUS POST</span>
+                      <span className="fw-medium">{isEn ? "PREVIOUS POST" : "PRETHODNA OBJAVA"}</span>
                     </Link>
                     <p>{prevPost.title}</p>
                   </>
@@ -125,7 +130,7 @@ export default async function BlogDetailPage({
                 {nextPost ? (
                   <>
                     <Link href={`/blog/${nextPost.slug}`} className="btn-link d-inline-flex align-items-center">
-                      <span className="fw-medium me-1">NEXT POST</span>
+                      <span className="fw-medium me-1">{isEn ? "NEXT POST" : "SLEDEĆA OBJAVA"}</span>
                     </Link>
                     <p>{nextPost.title}</p>
                   </>
@@ -135,7 +140,7 @@ export default async function BlogDetailPage({
           </div>
         </Reveal>
       </main>
-      <StorefrontFooter />
+      <StorefrontFooter lang={lang} />
     </>
   );
 }

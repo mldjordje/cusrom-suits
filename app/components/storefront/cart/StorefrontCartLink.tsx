@@ -6,14 +6,16 @@ import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider
 export default function StorefrontCartLink({
   className,
   ariaLabel,
+  href,
 }: {
   className?: string;
   ariaLabel?: string;
+  href?: string;
 }) {
   const { itemCount } = useCart();
 
   return (
-    <Link href="/cart" className={className} aria-label={ariaLabel || "Korpa"}>
+    <Link href={href || "/cart"} className={className} aria-label={ariaLabel || "Korpa"}>
       <span className="position-relative d-inline-flex align-items-center">
         <svg width="21" height="21" viewBox="0 0 21 21" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M3.5 4.75H17.5L16.25 12.75H5L3.5 4.75Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
@@ -33,4 +35,3 @@ export default function StorefrontCartLink({
     </Link>
   );
 }
-

@@ -1,7 +1,13 @@
 import Link from "next/link";
 import NewsletterSignupForm from "@/app/components/storefront/NewsletterSignupForm";
+import type { StorefrontLanguage } from "@/lib/storefront/language";
 
-export default function StorefrontFooter() {
+export default function StorefrontFooter({
+  lang = "sr",
+}: {
+  lang?: StorefrontLanguage;
+}) {
+  const isEn = lang === "en";
   return (
     <footer className="footer footer_type_1">
       <div className="footer-middle container">
@@ -22,11 +28,11 @@ export default function StorefrontFooter() {
           </div>
 
           <div className="footer-column footer-menu mb-4 mb-lg-0">
-            <h5 className="sub-menu__title text-uppercase">Kompanija</h5>
+            <h5 className="sub-menu__title text-uppercase">{isEn ? "Company" : "Kompanija"}</h5>
             <ul className="sub-menu__list list-unstyled">
               <li className="sub-menu__item">
                 <Link href="/" className="menu-link menu-link_us-s">
-                  Pocetna
+                  {isEn ? "Home" : "Početna"}
                 </Link>
               </li>
               <li className="sub-menu__item">
@@ -36,12 +42,12 @@ export default function StorefrontFooter() {
               </li>
               <li className="sub-menu__item">
                 <Link href="/o-nama" className="menu-link menu-link_us-s">
-                  O nama
+                  {isEn ? "About" : "O nama"}
                 </Link>
               </li>
               <li className="sub-menu__item">
                 <Link href="/kontakt" className="menu-link menu-link_us-s">
-                  Kontakt
+                  {isEn ? "Contact" : "Kontakt"}
                 </Link>
               </li>
             </ul>
@@ -57,7 +63,7 @@ export default function StorefrontFooter() {
               </li>
               <li className="sub-menu__item">
                 <Link href="/web-shop?inStock=1" className="menu-link menu-link_us-s">
-                  Na stanju
+                  {isEn ? "In stock" : "Na stanju"}
                 </Link>
               </li>
               <li className="sub-menu__item">
@@ -67,28 +73,28 @@ export default function StorefrontFooter() {
               </li>
               <li className="sub-menu__item">
                 <Link href="/akcije" className="menu-link menu-link_us-s">
-                  Akcije
+                  {isEn ? "Sale" : "Akcije"}
                 </Link>
               </li>
             </ul>
           </div>
 
           <div className="footer-column footer-menu mb-4 mb-lg-0">
-            <h5 className="sub-menu__title text-uppercase">Podrska</h5>
+            <h5 className="sub-menu__title text-uppercase">{isEn ? "Support" : "Podrška"}</h5>
             <ul className="sub-menu__list list-unstyled">
               <li className="sub-menu__item">
                 <Link href="/kontakt" className="menu-link menu-link_us-s">
-                  Kontakt
+                  {isEn ? "Contact" : "Kontakt"}
                 </Link>
               </li>
               <li className="sub-menu__item">
                 <Link href="/akcije" className="menu-link menu-link_us-s">
-                  Akcije
+                  {isEn ? "Sale" : "Akcije"}
                 </Link>
               </li>
               <li className="sub-menu__item">
                 <Link href="/o-nama" className="menu-link menu-link_us-s">
-                  O nama
+                  {isEn ? "About" : "O nama"}
                 </Link>
               </li>
             </ul>
@@ -96,8 +102,8 @@ export default function StorefrontFooter() {
 
           <div className="footer-column footer-newsletter col-12 mb-4 mb-lg-0" id="footer-newsletter">
             <h5 className="sub-menu__title text-uppercase">Newsletter</h5>
-            <p>Saznajte prvi za nove kolekcije, akcije i kampanje.</p>
-            <NewsletterSignupForm />
+            <p>{isEn ? "Be the first to hear about new collections, campaigns and promotions." : "Saznajte prvi za nove kolekcije, akcije i kampanje."}</p>
+            <NewsletterSignupForm lang={lang} />
           </div>
         </div>
       </div>

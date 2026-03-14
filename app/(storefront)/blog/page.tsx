@@ -4,6 +4,7 @@ import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import Reveal from "@/app/components/motion/Reveal";
 import { listPosts } from "@/lib/blog/store";
+import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -21,6 +22,8 @@ export default async function BlogPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
+  const lang = await resolveStorefrontLanguage(params);
+  const isEn = lang === "en";
   const page = Number.parseInt(toString(params.page), 10) || 1;
   const q = toString(params.q);
   const rawType = toString(params.type);
@@ -46,7 +49,7 @@ export default async function BlogPage({
 
   return (
     <>
-      <StorefrontHeader />
+      <StorefrontHeader lang={lang} />
       <main className="page-wrapper">
         <Reveal as="section" className="blog-page-title mb-4 mb-xl-5">
           <div className="title-bg">
@@ -69,7 +72,7 @@ export default async function BlogPage({
                 BLOG
               </Link>
               <Link href={makeHref(1, "news")} className={`menu-link menu-link_us-s ${type === "news" ? "menu-link_active" : ""}`}>
-                VESTI
+                {isEn ? "NEWS" : "VESTI"}
               </Link>
             </div>
             <form action="/blog" method="get" className="ss-blog1-search mt-3">
@@ -80,15 +83,15 @@ export default async function BlogPage({
                   name="q"
                   defaultValue={q}
                   className="form-control"
-                  placeholder="Pretrazi blog i vesti..."
+                  placeholder={isEn ? "Search blog and news..." : "Pretraži blog i vesti..."}
                   style={{ maxWidth: "360px" }}
                 />
                 <button type="submit" className="btn btn-primary text-uppercase fw-medium">
-                  Pretrazi
+                  {isEn ? "Search" : "Pretraži"}
                 </button>
                 {q ? (
                   <Link href={type === "all" ? "/blog" : `/blog?type=${type}`} className="btn btn-link text-uppercase fw-medium">
-                    Resetuj
+                    {isEn ? "Reset" : "Resetuj"}
                   </Link>
                 ) : null}
               </div>
@@ -97,7 +100,7 @@ export default async function BlogPage({
         </Reveal>
 
         <Reveal as="section" className="blog-page container" delay={0.04}>
-          <h2 className="d-none">The Blog</h2>
+          <h2 className="d-none">{isEn ? "The Blog" : "Blog"}</h2>
           <div className="blog-grid row row-cols-1 row-cols-md-2">
             {result.items.map((post) => (
               <div key={post.id} className="blog-grid__item ss-card-hover">
@@ -126,9 +129,9 @@ export default async function BlogPage({
                       <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                     </div>
                   <div className="blog-grid__item-content">
-                    <p>{(post.excerpt || "").slice(0, 160) || "Procitajte ceo tekst za vise detalja."}</p>
+                    <p>{(post.excerpt || "").slice(0, 160) || (isEn ? "Read the full article for more details." : "Pročitajte ceo tekst za više detalja.")}</p>
                     <Link href={`/blog/${post.slug}`} className="readmore-link">
-                      Procitaj vise
+                      {isEn ? "Read more" : "Pročitaj više"}
                     </Link>
                   </div>
                 </div>
@@ -137,7 +140,7 @@ export default async function BlogPage({
           </div>
 
           <p className="mb-5 text-center fw-medium">
-            Prikazano {result.items.length} od {result.total} objava
+            {isEn ? `Showing ${result.items.length} of ${result.total} posts` : `Prikazano ${result.items.length} od ${result.total} objava`}
           </p>
 
           <div className="text-center pb-5">
@@ -145,12 +148,12 @@ export default async function BlogPage({
               href={makeHref(Math.min(totalPages, result.page + 1), type)}
               className={`btn-link btn-link_lg text-uppercase fw-medium ${result.page >= totalPages ? "disabled pe-none text-secondary" : ""}`}
             >
-              Ucitaj jos
+              {isEn ? "Load more" : "Učitaj još"}
             </Link>
           </div>
         </Reveal>
       </main>
-      <StorefrontFooter />
+      <StorefrontFooter lang={lang} />
     </>
   );
 }

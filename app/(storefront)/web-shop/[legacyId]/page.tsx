@@ -6,8 +6,24 @@ import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
 import ProductImageGallery from "@/app/components/storefront/ProductImageGallery";
 import Reveal from "@/app/components/motion/Reveal";
-import { getCatalogProductByLegacyId, getRelatedCatalogProducts } from "@/lib/catalog/store";
+import {
+  getCatalogProductByLegacyId,
+  getCatalogProductVariantsBySku,
+  getRelatedCatalogProducts,
+} from "@/lib/catalog/store";
 import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
+import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
+import {
+  getLocalizedCatalogDescription,
+  getLocalizedCatalogProductName,
+  getLocalizedCatalogSpecification,
+  getProductDeclaration,
+  getProductMaterial,
+  getProductSizeGuide,
+  getProductSizeOptions,
+  getProductWashCare,
+  getSelectedProductSize,
+} from "@/lib/storefront/product-details";
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -37,16 +53,45 @@ export async function generateMetadata({ params }: { params: Promise<{ legacyId:
 
 export default async function WebShopProductPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ legacyId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { legacyId } = await params;
+  const pageSearchParams = await searchParams;
+  const lang = await resolveStorefrontLanguage(pageSearchParams);
+  const isEn = lang === "en";
   const id = Number.parseInt(legacyId, 10);
   if (!Number.isFinite(id)) notFound();
 
   const product = await getCatalogProductByLegacyId(id);
   if (!product) notFound();
-  const related = await getRelatedCatalogProducts(product, 4);
+
+  const [related, variants] = await Promise.all([
+    getRelatedCatalogProducts(product, 4),
+    getCatalogProductVariantsBySku(product.sku, {
+      applyPromotions: true,
+      activeOnly: true,
+      exportOnly: true,
+    }),
+  ]);
+
+  const displayName = getLocalizedCatalogProductName(product, lang);
+  const displayDescription = getLocalizedCatalogDescription(product, lang);
+  const displaySpecification = getLocalizedCatalogSpecification(product, lang);
+  const material = getProductMaterial(product, lang);
+  const sizeOptions = getProductSizeOptions(product, variants);
+  const selectedSize = getSelectedProductSize(product);
+  const sizeGuide = getProductSizeGuide(product, lang, sizeOptions);
+  const declaration = getProductDeclaration(
+    product,
+    lang,
+    selectedSize,
+    material,
+    sizeOptions,
+  );
+  const washCare = getProductWashCare(product, lang);
 
   const discountAmount = Math.max(0, product.priceGross - product.priceFinalGross);
   const stockValue = Math.max(
@@ -54,44 +99,48 @@ export default async function WebShopProductPage({
     Math.floor(product.stockTotal > 0 ? product.stockTotal : product.stockWarehouse1),
   );
   const gallery = product.images.length > 0 ? product.images : [product.coverImage || "/img/odela.jpg"];
-  const categoryLabel = product.categories[0]?.path.join(" / ") || "Santos Selection";
-  const shortDescription = stripHtml(product.description).slice(0, 280);
-  const attributeItems = Object.entries(product.attributes || {}).slice(0, 6);
+  const categoryLabel = product.categories[0]?.path.join(" / ") || (isEn ? "Santos selection" : "Santos izbor");
+  const shortDescription = stripHtml(displayDescription).slice(0, 280);
+  const attributeItems = Object.entries(product.attributes || {})
+    .filter(([key]) => key !== "size")
+    .slice(0, 6);
+  const variantHref = (variantId: number) =>
+    isEn ? `/web-shop/${variantId}?lang=en` : `/web-shop/${variantId}`;
 
   return (
     <>
-      <StorefrontHeader />
+      <StorefrontHeader lang={lang} />
       <main className="page-wrapper">
         <div className="mb-md-1 pb-md-3" />
         <Reveal as="section" className="product-single container">
           <div className="row">
             <div className="col-lg-7">
               <div className="product-single__media" data-media-type="scroll-snap">
-                <ProductImageGallery images={gallery} name={product.name} />
+                <ProductImageGallery images={gallery} name={displayName} />
               </div>
             </div>
 
             <div className="col-lg-5 ss-product-single-info">
               <div className="d-flex justify-content-between mb-4 pb-md-2">
                 <div className="breadcrumb mb-0 d-none d-md-block flex-grow-1">
-                  <Link href="/" className="menu-link menu-link_us-s text-uppercase fw-medium">
-                    Home
+                  <Link href={isEn ? "/?lang=en" : "/"} className="menu-link menu-link_us-s text-uppercase fw-medium">
+                    {isEn ? "Home" : "Početna"}
                   </Link>
                   <span className="breadcrumb-separator menu-link fw-medium ps-1 pe-1">/</span>
-                  <Link href="/web-shop" className="menu-link menu-link_us-s text-uppercase fw-medium">
-                    The Shop
+                  <Link href={isEn ? "/web-shop?lang=en" : "/web-shop"} className="menu-link menu-link_us-s text-uppercase fw-medium">
+                    {isEn ? "Web shop" : "Web shop"}
                   </Link>
                 </div>
 
                 <div className="product-single__prev-next d-flex align-items-center justify-content-between justify-content-md-end flex-grow-1">
-                  <Link href="/web-shop" className="text-uppercase fw-medium">
+                  <Link href={isEn ? "/web-shop?lang=en" : "/web-shop"} className="text-uppercase fw-medium">
                     <svg className="mb-1px" width="10" height="10" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
                       <use href="#icon_prev_md" />
                     </svg>
-                    <span className="menu-link menu-link_us-s">Shop</span>
+                    <span className="menu-link menu-link_us-s">{isEn ? "Back to shop" : "Nazad na shop"}</span>
                   </Link>
-                  <Link href="/kontakt" className="text-uppercase fw-medium">
-                    <span className="menu-link menu-link_us-s">Kontakt</span>
+                  <Link href={isEn ? "/kontakt?lang=en" : "/kontakt"} className="text-uppercase fw-medium">
+                    <span className="menu-link menu-link_us-s">{isEn ? "Contact" : "Kontakt"}</span>
                     <svg className="mb-1px" width="10" height="10" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
                       <use href="#icon_next_md" />
                     </svg>
@@ -99,24 +148,31 @@ export default async function WebShopProductPage({
                 </div>
               </div>
 
-              <h1 className="product-single__name">{product.name}</h1>
+              <h1 className="product-single__name">{displayName}</h1>
               <div className="product-single__rating">
                 <div className="reviews-group d-flex text-warning" aria-hidden="true">
                   <span>*****</span>
                 </div>
-                <span className="reviews-note text-lowercase text-secondary ms-1">{stockValue} in stock</span>
+                <span className="reviews-note text-lowercase text-secondary ms-1">
+                  {stockValue} {isEn ? "in stock" : "na stanju"}
+                </span>
               </div>
               <div className="product-single__price">
                 <span className="current-price">{formatRsd(product.priceFinalGross)}</span>
                 {discountAmount > 0 ? <span className="old-price ms-2">{formatRsd(product.priceGross)}</span> : null}
               </div>
               <div className="product-single__short-desc">
-                <p>{shortDescription || "Premium tailoring selection with refined materials and fit."}</p>
+                <p>
+                  {shortDescription ||
+                    (isEn
+                      ? "Selected ready-to-wear piece with refined fit, declaration details and available sizes."
+                      : "Izdvojen ready-to-wear model sa preciznim krojem, deklaracijom i dostupnim veličinama.")}
+                </p>
               </div>
 
               <div className="product-single__swatches">
                 <div className="product-swatch text-swatches">
-                  <label>Kategorija</label>
+                  <label>{isEn ? "Category" : "Kategorija"}</label>
                   <div className="swatch-list">
                     {product.categories.slice(0, 2).map((category) => (
                       <span key={category.id} className="swatch text-uppercase">
@@ -125,41 +181,78 @@ export default async function WebShopProductPage({
                     ))}
                   </div>
                 </div>
+                <div className="product-swatch text-swatches">
+                  <label>{isEn ? "Material" : "Materijal"}</label>
+                  <div className="swatch-list">
+                    <span className="swatch">{material}</span>
+                  </div>
+                </div>
                 <div className="product-swatch color-swatches">
-                  <label>Status</label>
+                  <label>{isEn ? "Status" : "Status"}</label>
                   <div className="swatch-list">
                     <span className={`swatch ${stockValue > 0 ? "bg-success" : "bg-secondary"} text-white`}>
-                      {stockValue > 0 ? "Na stanju" : "Na upit"}
+                      {stockValue > 0 ? (isEn ? "In stock" : "Na stanju") : (isEn ? "On request" : "Na upit")}
                     </span>
                   </div>
                 </div>
               </div>
 
+              {sizeOptions.length > 0 ? (
+                <div className="product-single__swatches mt-3">
+                  <div className="product-swatch text-swatches">
+                    <label>{isEn ? "Available sizes" : "Ponuđene veličine"}</label>
+                    <div className="swatch-list d-flex flex-wrap gap-2">
+                      {sizeOptions.map((option) => {
+                        const active = option.legacyId === product.legacyId;
+                        return (
+                          <Link
+                            key={`${option.label}-${option.legacyId}`}
+                            href={variantHref(option.legacyId)}
+                            className={`swatch text-uppercase ${active ? "bg-dark text-white" : ""} ${!option.inStock ? "opacity-50" : ""}`}
+                            aria-current={active ? "page" : undefined}
+                          >
+                            {option.label}
+                          </Link>
+                        );
+                      })}
+                    </div>
+                    <p className="small text-secondary mt-2 mb-0">
+                      {selectedSize
+                        ? `${isEn ? "Selected size" : "Odabrana veličina"}: ${selectedSize}`
+                        : sizeGuide.intro}
+                    </p>
+                  </div>
+                </div>
+              ) : null}
+
               <div className="product-single__addtocart">
                 <div className="d-flex flex-wrap gap-2">
                   <AddToCartButton
+                    lang={lang}
                     item={{
                       legacyId: product.legacyId,
                       sku: product.sku,
-                      name: product.name,
+                      name: displayName,
+                      size: selectedSize,
+                      material,
                       price: product.priceFinalGross,
                       image: product.coverImage || gallery[0] || null,
                       maxQuantity: stockValue > 0 ? stockValue : null,
                       categoryLabel: product.categories[0]?.name || null,
                     }}
                   />
-                  <Link href="/checkout" className="btn btn-outline-dark btn-addtocart">
-                    Checkout
+                  <Link href={isEn ? "/checkout?lang=en" : "/checkout"} className="btn btn-outline-dark btn-addtocart">
+                    {isEn ? "Checkout" : "Checkout"}
                   </Link>
                 </div>
               </div>
 
               <div className="product-single__addtolinks">
-                <Link href="/web-shop" className="menu-link menu-link_us-s add-to-wishlist">
-                  <span>Nazad na shop</span>
+                <Link href={isEn ? "/web-shop?lang=en" : "/web-shop"} className="menu-link menu-link_us-s add-to-wishlist">
+                  <span>{isEn ? "Back to shop" : "Nazad na shop"}</span>
                 </Link>
-                <Link href="/blog" className="menu-link menu-link_us-s add-to-wishlist">
-                  <span>Procitaj blog</span>
+                <Link href={isEn ? `/kontakt?lang=en&product=${product.legacyId}` : `/kontakt?product=${product.legacyId}`} className="menu-link menu-link_us-s add-to-wishlist">
+                  <span>{isEn ? "Ask about this item" : "Pitajte za ovaj model"}</span>
                 </Link>
               </div>
 
@@ -169,51 +262,73 @@ export default async function WebShopProductPage({
                   <span>{product.sku}</span>
                 </div>
                 <div className="meta-item">
-                  <label>Kategorije:</label>
+                  <label>{isEn ? "Categories" : "Kategorije"}:</label>
                   <span>{categoryLabel}</span>
                 </div>
                 <div className="meta-item">
-                  <label>Brend:</label>
+                  <label>{isEn ? "Brand" : "Brend"}:</label>
                   <span>{product.brand || "Santos"}</span>
                 </div>
                 <div className="meta-item">
-                  <label>EAN:</label>
-                  <span>{product.ean || "N/A"}</span>
+                  <label>{isEn ? "Material" : "Materijal"}:</label>
+                  <span>{material}</span>
+                </div>
+                <div className="meta-item">
+                  <label>{isEn ? "Size" : "Veličina"}:</label>
+                  <span>{selectedSize || (isEn ? "Check size selector" : "Pogledajte selektor veličina")}</span>
                 </div>
                 <div className="meta-item">
                   <label>PDV:</label>
-                  <span>{product.taxPercent}% uracunat</span>
+                  <span>{product.taxPercent}% {isEn ? "included" : "uračunat"}</span>
                 </div>
+              </div>
+
+              <div className="rounded-4 border p-3 mt-4 bg-white">
+                <p className="text-uppercase fw-medium text-secondary mb-2">
+                  {isEn ? "How to determine your size" : "Kako da odredite veličinu"}
+                </p>
+                <ul className="mb-0 ps-3">
+                  {sizeGuide.bullets.slice(0, 2).map((bullet) => (
+                    <li key={bullet} className="mb-1">
+                      {bullet}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </div>
           </div>
 
           <ProductDetailTabs
-            description={product.description}
-            specification={product.specification}
+            lang={lang}
+            description={displayDescription}
+            specification={displaySpecification}
             attributes={attributeItems}
+            declaration={declaration}
+            sizeGuide={sizeGuide}
+            washCare={washCare}
           />
         </Reveal>
 
         {related.length > 0 ? (
           <Reveal as="section" className="products-carousel container mt-5 pt-4" delay={0.06}>
             <h2 className="h3 text-uppercase mb-4 pb-xl-2 mb-xl-4">
-              Povezani <strong>Proizvodi</strong>
+              {isEn ? "Related " : "Povezani "}<strong>{isEn ? "Products" : "Proizvodi"}</strong>
             </h2>
             <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4">
               {related.map((item) => {
                 const coverImage = item.coverImage || "/img/odela2.jpg";
                 const secondImage = item.images[1] || coverImage;
+                const relatedName = getLocalizedCatalogProductName(item, lang);
                 return (
                   <div key={item.legacyId} className="product-card-wrapper">
                     <div className="product-card ss-card-hover mb-3 mb-md-4">
                       <div className="pc__img-wrapper hover-container">
-                        <Link href={`/web-shop/${item.legacyId}`}>
+                        <Link href={variantHref(item.legacyId)}>
                           <Image
                             src={coverImage}
                             width={330}
                             height={400}
-                            alt={item.name}
+                            alt={relatedName}
                             className="pc__img"
                             sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
                             quality={70}
@@ -222,20 +337,20 @@ export default async function WebShopProductPage({
                             src={secondImage}
                             width={330}
                             height={400}
-                            alt={`${item.name} preview`}
+                            alt={`${relatedName} preview`}
                             className="pc__img pc__img-second"
                             sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
                             quality={60}
                           />
                         </Link>
-                        <Link href={`/web-shop/${item.legacyId}`} className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium">
-                          Detaljnije
+                        <Link href={variantHref(item.legacyId)} className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium">
+                          {isEn ? "Details" : "Detaljnije"}
                         </Link>
                       </div>
                       <div className="pc__info position-relative">
                         <p className="pc__category">{item.categories[0]?.name || item.sku}</p>
                         <h6 className="pc__title">
-                          <Link href={`/web-shop/${item.legacyId}`}>{item.name}</Link>
+                          <Link href={variantHref(item.legacyId)}>{relatedName}</Link>
                         </h6>
                         <div className="product-card__price d-flex">
                           <span className="money price">{formatRsd(item.priceFinalGross)}</span>
@@ -251,7 +366,7 @@ export default async function WebShopProductPage({
 
         <div className="mb-5 pb-xl-5" />
       </main>
-      <StorefrontFooter />
+      <StorefrontFooter lang={lang} />
     </>
   );
 }

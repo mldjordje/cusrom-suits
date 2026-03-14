@@ -22,6 +22,7 @@ export type CatalogProductView = {
   description: string | null;
   descriptionEn: string | null;
   specification: string | null;
+  specificationEn: string | null;
   priceGross: number;
   priceFinalGross: number;
   taxPercent: number;
@@ -232,6 +233,7 @@ const normalizeCatalogRow = (
     description: row.description_sr ? String(row.description_sr) : null,
     descriptionEn: row.description_en ? String(row.description_en) : null,
     specification: row.specification_sr ? String(row.specification_sr) : null,
+    specificationEn: row.specification_en ? String(row.specification_en) : null,
     priceGross: Number(row.price_gross || 0),
     priceFinalGross: Number(row.price_final_gross || 0),
     taxPercent: Number(row.tax_percent || 0),
@@ -264,6 +266,7 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
   description: item.descriptions.sr || null,
   descriptionEn: item.descriptions.en || null,
   specification: item.specification.sr || null,
+  specificationEn: item.specification.en || null,
   priceGross: Number(item.price.gross || 0),
   priceFinalGross: Number(item.price.finalGross || 0),
   taxPercent: Number(item.price.taxPercent || 0),
@@ -699,6 +702,34 @@ export async function getCatalogProductByLegacyId(
   if (!found || !applyPromotions) return found;
   const rules = await listPromotionRulesCached();
   return rules.length ? applyPromotionRulesToProduct(found, rules) : found;
+}
+
+export async function getCatalogProductVariantsBySku(
+  sku: string,
+  options?: {
+    applyPromotions?: boolean;
+    activeOnly?: boolean;
+    exportOnly?: boolean;
+  },
+): Promise<CatalogProductView[]> {
+  const normalizedSku = String(sku || "").trim().toLowerCase();
+  if (!normalizedSku) return [];
+
+  const activeOnly = options?.activeOnly !== false;
+  const exportOnly = options?.exportOnly !== false;
+  const applyPromotions = options?.applyPromotions !== false;
+
+  const supabaseItems = await loadFromSupabase({ activeOnly, exportOnly });
+  const baseItems = supabaseItems || (await loadFromFile());
+  const promotionRules = applyPromotions ? await listPromotionRulesCached() : [];
+  const displayItems =
+    promotionRules.length > 0
+      ? applyPromotionRulesToProducts(baseItems, promotionRules)
+      : baseItems;
+
+  return displayItems
+    .filter((item) => String(item.sku || "").trim().toLowerCase() === normalizedSku)
+    .sort((left, right) => left.legacyId - right.legacyId);
 }
 
 async function fetchCatalogProductByLegacyIdFromSupabase(

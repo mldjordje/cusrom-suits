@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
         legacyId: Number(item.legacyId),
         sku: String(item.sku || ""),
         name: String(item.name || ""),
+        size: item.size ? String(item.size) : null,
+        material: item.material ? String(item.material) : null,
         price: Number(item.price || 0),
         quantity: Math.max(1, Number(item.quantity || 1)),
         image: item.image ? String(item.image) : null,

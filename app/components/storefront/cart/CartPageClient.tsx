@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
+import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -11,21 +12,26 @@ const formatRsd = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
-export default function CartPageClient() {
+export default function CartPageClient({
+  lang = "sr",
+}: {
+  lang?: StorefrontLanguage;
+}) {
   const { items, itemCount, subtotal, updateQuantity, removeItem, clearCart, isReady } = useCart();
+  const isEn = lang === "en";
 
   if (!isReady) {
-    return <p className="text-center text-secondary">Ucitavam korpu...</p>;
+    return <p className="text-center text-secondary">{isEn ? "Loading cart..." : "Učitavam korpu..."}</p>;
   }
 
   if (items.length === 0) {
     return (
       <div className="rounded-4 border bg-white p-4 p-lg-5 text-center shadow-sm">
-        <p className="text-uppercase fw-medium text-secondary mb-2">Korpa je prazna</p>
-        <h1 className="h3 mb-3">Izaberi proizvode iz web shop-a</h1>
-        <p className="text-secondary mb-4">Kada dodas artikle, ovde ces videti pregled i sledeci korak ka checkout-u.</p>
+        <p className="text-uppercase fw-medium text-secondary mb-2">{isEn ? "Your cart is empty" : "Korpa je prazna"}</p>
+        <h1 className="h3 mb-3">{isEn ? "Choose products from the web shop" : "Izaberi proizvode iz web shop-a"}</h1>
+        <p className="text-secondary mb-4">{isEn ? "Once you add items, this page will show your summary and next step to checkout." : "Kada dodaš artikle, ovde ćeš videti pregled i sledeći korak ka checkout-u."}</p>
         <Link href="/web-shop" className="btn btn-primary text-uppercase fw-medium">
-          Nazad na shop
+          {isEn ? "Back to shop" : "Nazad na shop"}
         </Link>
       </div>
     );
@@ -37,11 +43,11 @@ export default function CartPageClient() {
         <div className="rounded-4 border bg-white p-3 p-md-4 shadow-sm">
           <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <div>
-              <p className="text-uppercase fw-medium text-secondary mb-1">Korpa</p>
-              <h1 className="h4 mb-0">{itemCount} artikala u korpi</h1>
+              <p className="text-uppercase fw-medium text-secondary mb-1">{isEn ? "Cart" : "Korpa"}</p>
+              <h1 className="h4 mb-0">{isEn ? `${itemCount} items in cart` : `${itemCount} artikala u korpi`}</h1>
             </div>
             <button type="button" onClick={clearCart} className="btn btn-outline-dark text-uppercase fw-medium">
-              Isprazni korpu
+              {isEn ? "Clear cart" : "Isprazni korpu"}
             </button>
           </div>
 
@@ -65,10 +71,12 @@ export default function CartPageClient() {
                     <h2 className="h6 mb-2">
                       <Link href={`/web-shop/${item.legacyId}`}>{item.name}</Link>
                     </h2>
+                    {item.size ? <p className="small text-secondary mb-1">{isEn ? "Size" : "Veličina"}: {item.size}</p> : null}
+                    {item.material ? <p className="small text-secondary mb-2">{isEn ? "Material" : "Materijal"}: {item.material}</p> : null}
                     <p className="mb-0 fw-medium">{formatRsd(item.price)}</p>
                   </div>
                   <div className="col-7 col-md-3">
-                    <label className="form-label text-uppercase small text-secondary">Kolicina</label>
+                    <label className="form-label text-uppercase small text-secondary">{isEn ? "Quantity" : "Količina"}</label>
                     <input
                       type="number"
                       min={1}
@@ -78,7 +86,7 @@ export default function CartPageClient() {
                       className="form-control"
                     />
                     {item.maxQuantity && item.maxQuantity > 0 ? (
-                      <p className="small text-secondary mt-1 mb-0">Dostupno: {item.maxQuantity}</p>
+                      <p className="small text-secondary mt-1 mb-0">{isEn ? "Available" : "Dostupno"}: {item.maxQuantity}</p>
                     ) : null}
                   </div>
                   <div className="col-5 col-md-2 text-md-end">
@@ -88,7 +96,7 @@ export default function CartPageClient() {
                       onClick={() => removeItem(item.legacyId)}
                       className="btn btn-link text-uppercase p-0 text-decoration-none"
                     >
-                      Ukloni
+                      {isEn ? "Remove" : "Ukloni"}
                     </button>
                   </div>
                 </div>
@@ -100,26 +108,26 @@ export default function CartPageClient() {
 
       <div className="col-lg-4">
         <div className="rounded-4 border bg-white p-4 shadow-sm">
-          <p className="text-uppercase fw-medium text-secondary mb-1">Pregled</p>
-          <h2 className="h5 mb-4">Ukupno za naplatu kasnije</h2>
+          <p className="text-uppercase fw-medium text-secondary mb-1">{isEn ? "Summary" : "Pregled"}</p>
+          <h2 className="h5 mb-4">{isEn ? "Total to be confirmed later" : "Ukupno za naplatu kasnije"}</h2>
           <div className="d-flex justify-content-between mb-2">
-            <span>Proizvodi</span>
+            <span>{isEn ? "Products" : "Proizvodi"}</span>
             <span>{formatRsd(subtotal)}</span>
           </div>
           <div className="d-flex justify-content-between mb-2">
-            <span>Dostava</span>
-            <span>Po dogovoru</span>
+            <span>{isEn ? "Delivery" : "Dostava"}</span>
+            <span>{isEn ? "To be agreed" : "Po dogovoru"}</span>
           </div>
           <hr />
           <div className="d-flex justify-content-between fw-semibold fs-5 mb-4">
-            <span>Ukupno</span>
+            <span>{isEn ? "Total" : "Ukupno"}</span>
             <span>{formatRsd(subtotal)}</span>
           </div>
           <p className="small text-secondary mb-4">
-            Slanjem checkout forme porudzbina ide u admin kao upit za finalnu potvrdu i obradu.
+            {isEn ? "Submitting checkout sends the order to admin as an inquiry for final confirmation and processing." : "Slanjem checkout forme porudžbina ide u admin kao upit za finalnu potvrdu i obradu."}
           </p>
           <Link href="/checkout" className="btn btn-primary w-100 text-uppercase fw-medium">
-            Nastavi na checkout
+            {isEn ? "Continue to checkout" : "Nastavi na checkout"}
           </Link>
         </div>
       </div>

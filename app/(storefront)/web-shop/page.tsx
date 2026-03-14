@@ -5,6 +5,8 @@ import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
+import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
+import { getLocalizedCatalogProductName } from "@/lib/storefront/product-details";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type ActiveFilterChip = { key: string; label: string; href: string };
@@ -41,6 +43,8 @@ export default async function WebShopPage({
   searchParams: Promise<SearchParams>;
 }) {
   const params = await searchParams;
+  const lang = await resolveStorefrontLanguage(params);
+  const isEn = lang === "en";
   const page = Number.parseInt(toStringParam(params.page), 10) || 1;
   const q = toStringParam(params.q);
   const categoryId = Number.parseInt(toStringParam(params.categoryId), 10) || 0;
@@ -66,11 +70,11 @@ export default async function WebShopPage({
   const masonryB = items.slice(4, 8);
   const gridItems = items.slice(8);
   const sortLabelMap: Record<string, string> = {
-    featured: "Featured",
-    price_asc: "Price: Low to High",
-    price_desc: "Price: High to Low",
-    name_asc: "Name: A-Z",
-    stock_desc: "Stock: High to Low",
+    featured: isEn ? "Featured" : "Izdvojeno",
+    price_asc: isEn ? "Price: Low to High" : "Cena: od niže ka višoj",
+    price_desc: isEn ? "Price: High to Low" : "Cena: od više ka nižoj",
+    name_asc: isEn ? "Name: A-Z" : "Naziv: A-Š",
+    stock_desc: isEn ? "Stock: High to Low" : "Stanje: od većeg ka manjem",
   };
 
   const makeHref = (patch: Record<string, string | number | null>) => {
@@ -104,35 +108,35 @@ export default async function WebShopPage({
   if (q.trim()) {
     activeFilterChips.push({
       key: "q",
-      label: `Search: ${q.trim()}`,
+      label: `${isEn ? "Search" : "Pretraga"}: ${q.trim()}`,
       href: makeHref({ q: null, page: 1 }),
     });
   }
   if (categoryId > 0) {
     activeFilterChips.push({
       key: "category",
-      label: `Category: ${selectedCategoryName}`,
+      label: `${isEn ? "Category" : "Kategorija"}: ${selectedCategoryName}`,
       href: makeHref({ categoryId: null, page: 1 }),
     });
   }
   if (sort !== "featured") {
     activeFilterChips.push({
       key: "sort",
-      label: `Sort: ${sortLabelMap[sort] || sort}`,
+      label: `${isEn ? "Sort" : "Sortiranje"}: ${sortLabelMap[sort] || sort}`,
       href: makeHref({ sort: null, page: 1 }),
     });
   }
   if (inStock) {
     activeFilterChips.push({
       key: "stock",
-      label: "In stock",
+      label: isEn ? "In stock" : "Na stanju",
       href: makeHref({ inStock: null, page: 1 }),
     });
   }
   if (onSale) {
     activeFilterChips.push({
       key: "sale",
-      label: "On sale",
+      label: isEn ? "On sale" : "Na akciji",
       href: makeHref({ onSale: null, page: 1 }),
     });
   }
@@ -158,6 +162,7 @@ export default async function WebShopPage({
     const fallbackImage = options?.fallbackImage || "/img/odela2.jpg";
     const motionIndex = options?.motionIndex || 0;
     const coverImage = item.coverImage || fallbackImage;
+    const displayName = getLocalizedCatalogProductName(item, lang);
     const imageSizes =
       imageWidth >= 600
         ? "(max-width: 991px) 100vw, (max-width: 1399px) 50vw, 42vw"
@@ -172,7 +177,7 @@ export default async function WebShopPage({
                 src={coverImage}
                 width={imageWidth}
                 height={imageHeight}
-                alt={item.name}
+                alt={displayName}
                 className="pc__img object-position-top"
                 sizes={imageSizes}
                 quality={68}
@@ -181,7 +186,7 @@ export default async function WebShopPage({
             <div className="pc__info hover__content text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
               <p className="pc__category">{item.categories[0]?.name || item.sku}</p>
               <h6 className="pc__title">
-                <Link href={`/web-shop/${item.legacyId}`}>{item.name}</Link>
+                <Link href={`/web-shop/${item.legacyId}`}>{displayName}</Link>
               </h6>
               <div className="product-card__price d-flex justify-content-center">
                 {item.priceGross > item.priceFinalGross ? (
@@ -194,14 +199,14 @@ export default async function WebShopPage({
                 )}
               </div>
               <Link href={`/web-shop/${item.legacyId}`} className="pc__atc anim_appear-bottom btn mt-3 border-0 text-uppercase fw-medium">
-                View Product
+                {isEn ? "View product" : "Pogledaj proizvod"}
               </Link>
             </div>
           </div>
           <div className="pc__info ss-card-mobile-info d-md-none">
             <p className="pc__category">{item.categories[0]?.name || item.sku}</p>
             <h6 className="pc__title mb-1">
-              <Link href={`/web-shop/${item.legacyId}`}>{item.name}</Link>
+              <Link href={`/web-shop/${item.legacyId}`}>{displayName}</Link>
             </h6>
             <div className="product-card__price d-flex">
               {item.priceGross > item.priceFinalGross ? (
@@ -221,7 +226,7 @@ export default async function WebShopPage({
 
   return (
     <>
-      <StorefrontHeader />
+      <StorefrontHeader lang={lang} />
       <main className="page-wrapper">
         <Reveal as="section" className="full-width_padding">
           <div className="full-width_border border-2" style={{ borderColor: "#eeeeee" }}>
@@ -241,7 +246,7 @@ export default async function WebShopPage({
                 <ul className="d-flex flex-wrap list-unstyled text-uppercase h6">
                   <li className="me-3 me-xl-4 pe-1">
                     <Link href={makeHref({ categoryId: null, page: 1 })} className={`menu-link menu-link_us-s ${categoryId <= 0 ? "menu-link_active" : ""}`}>
-                      All
+                      {isEn ? "All" : "Sve"}
                     </Link>
                   </li>
                   {topCategories.map((category) => (
@@ -266,30 +271,32 @@ export default async function WebShopPage({
           <Reveal as="div" className="ss-filter-panel mb-4 pb-md-2" delay={0.02}>
             <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
               <div className="d-flex flex-wrap align-items-center gap-2">
-                <span className="text-uppercase fw-medium me-1">Filter</span>
+                <span className="text-uppercase fw-medium me-1">{isEn ? "Filter" : "Filter"}</span>
                 {activeFilterChips.length > 0 ? (
-                  <span className="ss-filter-active-count">{activeFilterChips.length} active</span>
+                  <span className="ss-filter-active-count">
+                    {activeFilterChips.length} {isEn ? "active" : "aktivno"}
+                  </span>
                 ) : null}
               </div>
               <Link
                 href="/web-shop"
                 className={`ss-filter-reset-link text-uppercase ${activeFilterChips.length === 0 ? "disabled pe-none opacity-50" : ""}`}
               >
-                Reset all
+                {isEn ? "Reset all" : "Resetuj sve"}
               </Link>
             </div>
 
             {activeFilterChips.length > 0 ? (
               <div className="ss-filter-chip-list mb-3">
                 {activeFilterChips.map((chip) => (
-                  <Link key={chip.key} href={chip.href} className="ss-filter-chip" aria-label={`Remove ${chip.label}`}>
+                  <Link key={chip.key} href={chip.href} className="ss-filter-chip" aria-label={`${isEn ? "Remove" : "Ukloni"} ${chip.label}`}>
                     <span>{chip.label}</span>
                     <span className="ss-filter-chip__x">x</span>
                   </Link>
                 ))}
               </div>
             ) : (
-              <p className="ss-filter-empty mb-3">No active filters yet.</p>
+              <p className="ss-filter-empty mb-3">{isEn ? "No active filters yet." : "Još nema aktivnih filtera."}</p>
             )}
 
             <div className="d-flex flex-wrap align-items-center gap-3 mb-3 pb-md-2">
@@ -312,51 +319,51 @@ export default async function WebShopPage({
               <input type="hidden" name="page" value="1" />
               <div className="row g-2 align-items-end">
                 <div className="col-12 col-lg-5">
-                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">Search</label>
+                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">{isEn ? "Search" : "Pretraga"}</label>
                   <div className="ss-filter-field">
                     <input
                       type="search"
                       name="q"
                       defaultValue={q}
                       className="form-control"
-                      placeholder="Search by code, name, SKU, EAN..."
+                      placeholder={isEn ? "Search by code, name, SKU, EAN..." : "Pretraži po šifri, nazivu, SKU ili EAN-u..."}
                     />
                     {q.trim() ? (
                       <Link href={makeHref({ q: null, page: 1 })} className="ss-filter-field__clear">
-                        Clear
+                        {isEn ? "Clear" : "Obriši"}
                       </Link>
                     ) : null}
                   </div>
                 </div>
 
                 <div className="col-6 col-md-4 col-lg-2">
-                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">Sort</label>
+                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">{isEn ? "Sort" : "Sortiranje"}</label>
                   <div className="ss-filter-field">
-                    <select className="form-select fw-medium" aria-label="Sort Items" name="sort" defaultValue={sort}>
-                      <option value="featured">Featured</option>
-                      <option value="price_asc">Price: Low to High</option>
-                      <option value="price_desc">Price: High to Low</option>
-                      <option value="name_asc">Name: A-Z</option>
-                      <option value="stock_desc">Stock: High to Low</option>
+                    <select className="form-select fw-medium" aria-label={isEn ? "Sort items" : "Sortiraj proizvode"} name="sort" defaultValue={sort}>
+                      <option value="featured">{sortLabelMap.featured}</option>
+                      <option value="price_asc">{sortLabelMap.price_asc}</option>
+                      <option value="price_desc">{sortLabelMap.price_desc}</option>
+                      <option value="name_asc">{sortLabelMap.name_asc}</option>
+                      <option value="stock_desc">{sortLabelMap.stock_desc}</option>
                     </select>
                     {sort !== "featured" ? (
                       <Link href={makeHref({ sort: null, page: 1 })} className="ss-filter-field__clear">
-                        Clear
+                        {isEn ? "Clear" : "Obriši"}
                       </Link>
                     ) : null}
                   </div>
                 </div>
 
                 <div className="col-6 col-md-4 col-lg-2">
-                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">Category</label>
+                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">{isEn ? "Category" : "Kategorija"}</label>
                   <div className="ss-filter-field">
                     <select
                       className="form-select fw-medium"
-                      aria-label="Category"
+                      aria-label={isEn ? "Category" : "Kategorija"}
                       name="categoryId"
                       defaultValue={categoryId > 0 ? String(categoryId) : ""}
                     >
-                      <option value="">All</option>
+                      <option value="">{isEn ? "All" : "Sve"}</option>
                       {result.categories.map((category) => (
                         <option key={category.id} value={category.id}>
                           {category.name}
@@ -365,37 +372,37 @@ export default async function WebShopPage({
                     </select>
                     {categoryId > 0 ? (
                       <Link href={makeHref({ categoryId: null, page: 1 })} className="ss-filter-field__clear">
-                        Clear
+                        {isEn ? "Clear" : "Obriši"}
                       </Link>
                     ) : null}
                   </div>
                 </div>
 
                 <div className="col-6 col-md-2 col-lg-1">
-                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">Stock</label>
+                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">{isEn ? "Stock" : "Stanje"}</label>
                   <div className="ss-filter-field">
                     <label className="d-flex align-items-center gap-2 border rounded px-2 py-2 mb-0">
                       <input type="checkbox" name="inStock" value="1" defaultChecked={inStock} />
-                      <span className="fs-13">In stock</span>
+                      <span className="fs-13">{isEn ? "In stock" : "Na stanju"}</span>
                     </label>
                     {inStock ? (
                       <Link href={makeHref({ inStock: null, page: 1 })} className="ss-filter-field__clear">
-                        Clear
+                        {isEn ? "Clear" : "Obriši"}
                       </Link>
                     ) : null}
                   </div>
                 </div>
 
                 <div className="col-6 col-md-2 col-lg-1">
-                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">Sale</label>
+                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">{isEn ? "Sale" : "Akcija"}</label>
                   <div className="ss-filter-field">
                     <label className="d-flex align-items-center gap-2 border rounded px-2 py-2 mb-0">
                       <input type="checkbox" name="onSale" value="1" defaultChecked={onSale} />
-                      <span className="fs-13">On sale</span>
+                      <span className="fs-13">{isEn ? "On sale" : "Na akciji"}</span>
                     </label>
                     {onSale ? (
                       <Link href={makeHref({ onSale: null, page: 1 })} className="ss-filter-field__clear">
-                        Clear
+                        {isEn ? "Clear" : "Obriši"}
                       </Link>
                     ) : null}
                   </div>
@@ -403,7 +410,7 @@ export default async function WebShopPage({
 
                 <div className="col-6 col-lg-1 d-grid d-lg-block">
                   <button type="submit" className="btn btn-primary text-uppercase fw-medium w-100">
-                    Apply
+                    {isEn ? "Apply" : "Primeni"}
                   </button>
                 </div>
 
@@ -412,7 +419,7 @@ export default async function WebShopPage({
                     href="/web-shop"
                     className={`btn btn-outline-dark text-uppercase fw-medium w-100 ${activeFilterChips.length === 0 ? "disabled pe-none opacity-50" : ""}`}
                   >
-                    Reset
+                    {isEn ? "Reset" : "Resetuj"}
                   </Link>
                 </div>
               </div>
@@ -497,7 +504,7 @@ export default async function WebShopPage({
           </div>
 
           <p className="mb-5 text-center fw-medium">
-            SHOWING {items.length} of {result.total} products
+            {isEn ? "SHOWING" : "PRIKAZANO"} {items.length} {isEn ? "OF" : "OD"} {result.total} {isEn ? "PRODUCTS" : "PROIZVODA"}
             <span className="ms-2 text-secondary">
               ({result.page}/{result.totalPages})
             </span>
@@ -508,7 +515,7 @@ export default async function WebShopPage({
               href={makeHref({ page: Math.min(result.totalPages, result.page + 1) })}
               className={`btn btn-primary text-uppercase fw-medium fs-base ${result.page >= result.totalPages ? "disabled pe-none opacity-50" : ""}`}
             >
-              Show More
+              {isEn ? "Show more" : "Prikaži još"}
             </Link>
           </div>
 
@@ -516,7 +523,7 @@ export default async function WebShopPage({
 
         <div className="mb-5 pb-xl-5" />
       </main>
-      <StorefrontFooter />
+      <StorefrontFooter lang={lang} />
     </>
   );
 }

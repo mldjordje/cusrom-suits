@@ -1,14 +1,20 @@
 "use client";
 
 import { useState } from "react";
+import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 type SubmitState = "idle" | "success" | "duplicate" | "error";
 
-export default function NewsletterSignupForm() {
+export default function NewsletterSignupForm({
+  lang = "sr",
+}: {
+  lang?: StorefrontLanguage;
+}) {
   const [email, setEmail] = useState("");
   const [state, setState] = useState<SubmitState>("idle");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
+  const isEn = lang === "en";
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -29,18 +35,18 @@ export default function NewsletterSignupForm() {
       const json = await res.json().catch(() => null);
       if (!res.ok || !json?.success) {
         setState("error");
-        setMessage(json?.message || "Doslo je do greske. Pokusajte ponovo.");
+        setMessage(json?.message || (isEn ? "Something went wrong. Please try again." : "Došlo je do greške. Pokušajte ponovo."));
         return;
       }
 
       setState(json.duplicate ? "duplicate" : "success");
-      setMessage(json?.message || "Uspesno ste prijavljeni.");
+      setMessage(json?.message || (isEn ? "You have successfully subscribed." : "Uspešno ste prijavljeni."));
       if (!json.duplicate) {
         setEmail("");
       }
     } catch {
       setState("error");
-      setMessage("Doslo je do greske. Pokusajte ponovo.");
+      setMessage(isEn ? "Something went wrong. Please try again." : "Došlo je do greške. Pokušajte ponovo.");
     } finally {
       setLoading(false);
     }
@@ -61,7 +67,7 @@ export default function NewsletterSignupForm() {
         name="email"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
-        placeholder="Vasa email adresa"
+        placeholder={isEn ? "Your email address" : "Vaša email adresa"}
         autoComplete="email"
         required
       />
@@ -70,7 +76,7 @@ export default function NewsletterSignupForm() {
         type="submit"
         disabled={loading}
       >
-        {loading ? "..." : "POSALJI"}
+        {loading ? "..." : isEn ? "SUBMIT" : "POŠALJI"}
       </button>
       {message ? <p className={`mt-2 mb-0 small ${messageClass}`}>{message}</p> : null}
     </form>

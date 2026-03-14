@@ -52,6 +52,8 @@ export default function StorefrontCartProvider({ children }: { children: ReactNo
               legacyId,
               sku: String(row.sku || ""),
               name: String(row.name || ""),
+              size: row.size ? String(row.size) : null,
+              material: row.material ? String(row.material) : null,
               price: Number(row.price || 0),
               image: row.image ? String(row.image) : null,
               quantity: clampQuantity(Number(row.quantity || 1), row.maxQuantity ?? null),
@@ -129,4 +131,3 @@ export function useCart() {
   }
   return context;
 }
-

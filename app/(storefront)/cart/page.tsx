@@ -1,23 +1,28 @@
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import CartPageClient from "@/app/components/storefront/cart/CartPageClient";
+import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 
 export const metadata = {
   title: "Korpa",
   description: "Pregled odabranih proizvoda i nastavak na checkout.",
 };
 
-export default function CartPage() {
+export default async function CartPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const lang = await resolveStorefrontLanguage(await searchParams);
   return (
     <>
-      <StorefrontHeader />
+      <StorefrontHeader lang={lang} />
       <main className="page-wrapper">
         <section className="container" style={{ paddingTop: 160, paddingBottom: 72 }}>
-          <CartPageClient />
+          <CartPageClient lang={lang} />
         </section>
       </main>
-      <StorefrontFooter />
+      <StorefrontFooter lang={lang} />
     </>
   );
 }
-

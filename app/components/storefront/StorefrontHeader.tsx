@@ -6,24 +6,30 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
+import StorefrontLanguageSwitcher from "@/app/components/storefront/StorefrontLanguageSwitcher";
 import StorefrontCartLink from "@/app/components/storefront/cart/StorefrontCartLink";
+import type { StorefrontLanguage } from "@/lib/storefront/language";
 
-const navItems = [
-  { href: "/", label: "Pocetna" },
-  { href: "/web-shop", label: "Web Shop" },
-  { href: "/akcije", label: "Akcije" },
-  { href: "/o-nama", label: "O nama" },
-  { href: "/blog", label: "Blog" },
-  { href: "/kontakt", label: "Kontakt" },
-];
-
-export default function StorefrontHeader() {
+export default function StorefrontHeader({
+  lang = "sr",
+}: {
+  lang?: StorefrontLanguage;
+}) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { reduceMotion } = useAnimationBudget();
   const normalizedPath = pathname ?? "";
   const isHome = normalizedPath === "/" || normalizedPath === "";
+  const isEn = lang === "en";
+  const navItems = [
+    { href: "/", label: isEn ? "Home" : "Početna" },
+    { href: "/web-shop", label: "Web Shop" },
+    { href: "/akcije", label: isEn ? "Sale" : "Akcije" },
+    { href: "/o-nama", label: isEn ? "About" : "O nama" },
+    { href: "/blog", label: "Blog" },
+    { href: "/kontakt", label: isEn ? "Contact" : "Kontakt" },
+  ];
 
   const isItemActive = (href: string) => {
     if (href === "/") return normalizedPath === "/" || normalizedPath === "";
@@ -104,7 +110,8 @@ export default function StorefrontHeader() {
             </nav>
 
             <div className="header-tools d-flex align-items-center gap-2">
-              <Link href="/web-shop" className="header-tools__item d-none d-md-inline-flex" aria-label="Pretraga">
+              <StorefrontLanguageSwitcher lang={lang} className="d-none d-md-inline-flex me-1" />
+              <Link href="/web-shop" className="header-tools__item d-none d-md-inline-flex" aria-label={isEn ? "Search" : "Pretraga"}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.5" />
                   <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
@@ -112,10 +119,10 @@ export default function StorefrontHeader() {
               </Link>
               <StorefrontCartLink
                 className="header-tools__item d-none d-md-inline-flex"
-                ariaLabel="Korpa"
+                ariaLabel={isEn ? "Cart" : "Korpa"}
               />
               <Link href="/kontakt" className="btn-link btn-link_lg default-underline text-uppercase fw-medium">
-                Kontakt
+                {isEn ? "Contact" : "Kontakt"}
               </Link>
             </div>
           </div>
@@ -128,7 +135,7 @@ export default function StorefrontHeader() {
             <button
               type="button"
               className={`ss-mobile-slot mobile-nav-activator d-block position-relative btn-icon ${mobileOpen ? "is-open" : ""}`}
-              aria-label={mobileOpen ? "Zatvori navigaciju" : "Otvori navigaciju"}
+              aria-label={mobileOpen ? (isEn ? "Close navigation" : "Zatvori navigaciju") : (isEn ? "Open navigation" : "Otvori navigaciju")}
               onClick={() => setMobileOpen((prev) => !prev)}
             >
               <svg className="nav-icon" width="25" height="18" viewBox="0 0 25 18" xmlns="http://www.w3.org/2000/svg">
@@ -153,14 +160,15 @@ export default function StorefrontHeader() {
             </div>
 
             <div className="ss-mobile-tools">
-              <Link href="/web-shop" className="ss-mobile-slot ss-mobile-link" aria-label="Pretraga">
+              <StorefrontLanguageSwitcher lang={lang} className="align-items-center" />
+              <Link href="/web-shop" className="ss-mobile-slot ss-mobile-link" aria-label={isEn ? "Search" : "Pretraga"}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.5" />
                   <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </Link>
-              <StorefrontCartLink className="ss-mobile-slot ss-mobile-link" ariaLabel="Korpa" />
-              <Link href="/kontakt" className="ss-mobile-slot ss-mobile-link" aria-label="Kontakt">
+              <StorefrontCartLink className="ss-mobile-slot ss-mobile-link" ariaLabel={isEn ? "Cart" : "Korpa"} />
+              <Link href="/kontakt" className="ss-mobile-slot ss-mobile-link" aria-label={isEn ? "Contact" : "Kontakt"}>
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <path d="M3.75 5.75a2 2 0 0 1 2-2h8.5a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-8.5a2 2 0 0 1-2-2v-8.5Z" stroke="currentColor" strokeWidth="1.5" />
                   <path d="M4.5 5l5.5 5 5.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -176,7 +184,7 @@ export default function StorefrontHeader() {
               <m.button
                 type="button"
                 className="ss-mobile-nav-backdrop"
-                aria-label="Close menu"
+                aria-label={isEn ? "Close menu" : "Zatvori meni"}
                 onClick={() => setMobileOpen(false)}
                 initial={reduceMotion ? false : { opacity: 0 }}
                 animate={reduceMotion ? { opacity: 1 } : { opacity: 1 }}

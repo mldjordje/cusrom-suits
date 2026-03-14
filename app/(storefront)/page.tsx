@@ -9,6 +9,7 @@ import { listCatalogProducts } from "@/lib/catalog/store";
 import { formatCatalogProductName } from "@/lib/catalog/presentation";
 import { listPosts } from "@/lib/blog/store";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
+import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -22,46 +23,59 @@ export const metadata = {
   description: "Santos & Santorini web shop sa aktuelnom kolekcijom, akcijama i blog sadrzajem.",
 };
 
-const legacyCampaignBlocks = [
+const getLegacyCampaignBlocks = (isEn: boolean) => [
   {
     id: "legacy-black-friday",
-    badge: "Aktuelne akcije",
-    title: "Do 30% popusta na izdvojene modele.",
-    copy: "Izdvojili smo modele iz aktuelne kolekcije sa snizenim cenama i dostupnim velicinama.",
+    badge: isEn ? "Current offers" : "Aktuelne akcije",
+    title: isEn ? "Up to 30% off selected pieces." : "Do 30% popusta na izdvojene modele.",
+    copy: isEn
+      ? "We selected pieces from the current collection with reduced prices and available sizes."
+      : "Izdvojili smo modele iz aktuelne kolekcije sa sniženim cenama i dostupnim veličinama.",
     image: "/img/hero.jpg",
-    ctaLabel: "Pogledaj akcije",
+    ctaLabel: isEn ? "View sale" : "Pogledaj akcije",
     ctaHref: "/akcije",
   },
   {
     id: "legacy-holiday-capsule",
-    badge: "Nova kolekcija",
-    title: "Ready-to-wear komadi za svaku priliku",
-    copy: "Od odela i sakoa do kosulja i aksesoara, webshop donosi izbor modela spremnih za porudzbinu.",
+    badge: isEn ? "New collection" : "Nova kolekcija",
+    title: isEn ? "Ready-to-wear pieces for every occasion" : "Ready-to-wear komadi za svaku priliku",
+    copy: isEn
+      ? "From suits and blazers to shirts and accessories, the webshop brings styles ready to order."
+      : "Od odela i sakoa do košulja i aksesoara, webshop donosi izbor modela spremnih za porudžbinu.",
     image: "/img/hero2.jpg",
-    ctaLabel: "Otvori web shop",
+    ctaLabel: isEn ? "Open web shop" : "Otvori web shop",
     ctaHref: "/web-shop",
   },
   {
     id: "legacy-gift-edit",
-    badge: "Gift Edit",
-    title: "Poklon koji traje",
-    copy: "Kravate od svile, kozna galanterija i pazljivo birani detalji kao premium poklon izbor.",
+    badge: isEn ? "Gift edit" : "Gift Edit",
+    title: isEn ? "A gift that lasts" : "Poklon koji traje",
+    copy: isEn
+      ? "Silk ties, leather goods and carefully selected details for a premium gift choice."
+      : "Kravate od svile, kožna galanterija i pažljivo birani detalji kao premium poklon izbor.",
     image: "/img/obuca.jpg",
-    ctaLabel: "Pogledaj poklone",
+    ctaLabel: isEn ? "View gifts" : "Pogledaj poklone",
     ctaHref: "/web-shop",
   },
 ];
 
-const atelierStoryParagraphs = [
-  "Sa idejom da muskarac treba da uziva u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nisu.",
-  "Od 2013. brend postaje prepoznatljiv po modernim krojevima, biranim tkaninama i detaljima koji se doradjuju rucno.",
-  "Nasi modeli spajaju tradiciju krojenja i savremeni dizajn, od prvog sava do finalne siluete.",
-];
+const getAtelierStoryParagraphs = (isEn: boolean) =>
+  isEn
+    ? [
+        "Built on the idea that a man should enjoy the wardrobe he wears, Santos & Santorini was founded in Nis in 2007.",
+        "Since 2013 the brand has become known for modern cuts, selected fabrics and details finished by hand.",
+        "Our pieces connect tailoring tradition with contemporary design, from the first seam to the final silhouette.",
+      ]
+    : [
+        "Sa idejom da muškarac treba da uživa u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nišu.",
+        "Od 2013. brend postaje prepoznatljiv po modernim krojevima, biranim tkaninama i detaljima koji se dorađuju ručno.",
+        "Naši modeli spajaju tradiciju krojenja i savremeni dizajn, od prvog sava do finalne siluete.",
+      ];
 
-const atelierContactPoints = [
-  { label: "Telefon", value: "+381 69 445 5106" },
+const getAtelierContactPoints = (isEn: boolean) => [
+  { label: isEn ? "Phone" : "Telefon", value: "+381 69 445 5106" },
   { label: "Email", value: "prodaja@santos.rs" },
-  { label: "Adresa", value: "Obrenoviceva 9, Nis" },
+  { label: isEn ? "Address" : "Adresa", value: "Obrenoviceva 9, Nis" },
 ];
 
 const BrandStrip = () => (
@@ -152,7 +166,13 @@ const pickProductsForSectionDistinct = <T extends { legacyId: number; sku?: stri
   return out;
 };
 
-export default async function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const lang = await resolveStorefrontLanguage(await searchParams);
+  const isEn = lang === "en";
   const [catalog, posts, landingSettings] = await Promise.all([
     listCatalogProducts({
       page: 1,
@@ -169,6 +189,9 @@ export default async function HomePage() {
     }),
     getLandingSettings(),
   ]);
+  const legacyCampaignBlocks = getLegacyCampaignBlocks(isEn);
+  const atelierStoryParagraphs = getAtelierStoryParagraphs(isEn);
+  const atelierContactPoints = getAtelierContactPoints(isEn);
 
   const landingPool = catalog.items;
   const landingPoolUnique = dedupeProductsBySku(landingPool);
@@ -223,7 +246,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <StorefrontHeader />
+      <StorefrontHeader lang={lang} />
       <main className="page-wrapper theme-18 ss-home-page">
         <HomeHeroVideo
           categories={catalog.categories}
@@ -242,10 +265,10 @@ export default async function HomePage() {
         <Reveal as="section" className="container pb-5" delay={0.02}>
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
-              Brend <strong>Story</strong>
+              {isEn ? "Brand " : "Brend "}<strong>{isEn ? "Story" : "Priča"}</strong>
             </h2>
             <Link href="/web-shop" className="btn-link default-underline text-uppercase fw-medium">
-              Pogledaj kolekciju
+              {isEn ? "View collection" : "Pogledaj kolekciju"}
             </Link>
           </div>
           <div className="row g-4">
@@ -280,10 +303,10 @@ export default async function HomePage() {
         <section className="container pb-5">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
-              Izdvojeni <strong>Modeli</strong>
+              {isEn ? "Featured " : "Izdvojeni "}<strong>{isEn ? "Pieces" : "Modeli"}</strong>
             </h2>
             <Link href="/web-shop" className="btn-link default-underline text-uppercase fw-medium">
-              View all
+              {isEn ? "View all" : "Pogledaj sve"}
             </Link>
           </div>
           <div className="row row-cols-2 row-cols-md-4 g-3">
@@ -309,10 +332,10 @@ export default async function HomePage() {
         <section className="products-grid container">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
-              Popular <strong>Products</strong>
+              {isEn ? "Popular " : "Popularni "}<strong>{isEn ? "Products" : "Proizvodi"}</strong>
             </h2>
             <Link href="/web-shop" className="btn-link default-underline text-uppercase fw-medium">
-              View all
+              {isEn ? "View all" : "Pogledaj sve"}
             </Link>
           </div>
           <div className="row row-cols-2 row-cols-lg-4">
@@ -386,7 +409,7 @@ export default async function HomePage() {
         <section className="products-grid container">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
-              New <strong>Arrivals</strong>
+              {isEn ? "New " : "Novi "}<strong>{isEn ? "Arrivals" : "Modeli"}</strong>
             </h2>
           </div>
           <div className="row row-cols-2 row-cols-lg-4">
@@ -433,7 +456,7 @@ export default async function HomePage() {
               <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
                 <h2 className="section-title text-uppercase">{landingSettings.saleSectionTitle}</h2>
                 <Link href="/akcije" className="btn-link default-underline text-uppercase fw-medium">
-                  View all
+                  {isEn ? "View all" : "Pogledaj sve"}
                 </Link>
               </div>
               {landingSettings.saleSectionSubtitle ? <p className="text-secondary mb-4">{landingSettings.saleSectionSubtitle}</p> : null}
@@ -473,7 +496,7 @@ export default async function HomePage() {
         <section className="products-grid container">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
-              Trending <strong>Now</strong>
+              {isEn ? "Trending " : "Aktuelno "}<strong>{isEn ? "Now" : "Sada"}</strong>
             </h2>
           </div>
           <div className="row row-cols-2 row-cols-lg-4">
@@ -519,10 +542,10 @@ export default async function HomePage() {
             <div className="col-12 col-lg-7">
               <div className="h-100 border bg-white p-4 p-md-5" style={{ borderRadius: 24 }}>
                 <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#8d6f60" }}>
-                  O nama
+                  {isEn ? "About us" : "O nama"}
                 </p>
                 <h2 className="section-title text-uppercase mb-4">
-                  Brend nastao iz <strong>porodicne radionice</strong>
+                  {isEn ? "A brand born from a " : "Brend nastao iz "}<strong>{isEn ? "family workshop" : "porodične radionice"}</strong>
                 </h2>
                 <div className="row g-3">
                   {atelierStoryParagraphs.map((paragraph) => (
@@ -533,10 +556,10 @@ export default async function HomePage() {
                 </div>
                 <div className="d-flex flex-wrap gap-2 mt-4">
                   <Link href="/kontakt" className="btn btn-dark btn-sm text-uppercase fw-medium">
-                    Kontaktirajte nas
+                    {isEn ? "Contact us" : "Kontaktirajte nas"}
                   </Link>
                   <Link href="/web-shop" className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                    Poseti web shop
+                    {isEn ? "Visit web shop" : "Poseti web shop"}
                   </Link>
                 </div>
               </div>
@@ -544,13 +567,15 @@ export default async function HomePage() {
             <div className="col-12 col-lg-5">
               <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column" style={{ borderRadius: 24 }}>
                 <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#8d6f60" }}>
-                  Kontakt
+                  {isEn ? "Contact" : "Kontakt"}
                 </p>
                 <h3 className="h4 text-uppercase mb-3">
-                  Podrska i licne <strong>preporuke</strong>
+                  {isEn ? "Support and personal " : "Podrška i lične "}<strong>{isEn ? "recommendations" : "preporuke"}</strong>
                 </h3>
                 <p className="text-secondary mb-4">
-                  Tim vas vodi kroz izbor tkanina, krojeva i detalja u showroom-u ili online. Odgovaramo u roku od jednog radnog dana.
+                  {isEn
+                    ? "Our team guides you through fabrics, fits and details in the showroom or online. We reply within one business day."
+                    : "Tim vas vodi kroz izbor tkanina, krojeva i detalja u showroom-u ili online. Odgovaramo u roku od jednog radnog dana."}
                 </p>
                 <div className="d-grid gap-2">
                   {atelierContactPoints.map((point) => (
@@ -564,10 +589,10 @@ export default async function HomePage() {
                 </div>
                 <div className="d-flex flex-wrap gap-2 mt-4">
                   <Link href="/kontakt" className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                    Kontakt forma
+                    {isEn ? "Contact form" : "Kontakt forma"}
                   </Link>
                   <a href="mailto:atelier@santos.rs" className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                    Posalji email
+                    {isEn ? "Send email" : "Pošalji email"}
                   </a>
                 </div>
               </div>
@@ -580,10 +605,10 @@ export default async function HomePage() {
         <Reveal as="section" className="blog-grid container" delay={0.18}>
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
-              Latest <strong>Blog</strong>
+              {isEn ? "Latest " : "Najnoviji "}<strong>Blog</strong>
             </h2>
             <Link href="/blog" className="btn-link default-underline text-uppercase fw-medium">
-              View all
+              {isEn ? "View all" : "Pogledaj sve"}
             </Link>
           </div>
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4">
@@ -605,7 +630,7 @@ export default async function HomePage() {
                     <h6 className="blog-grid__item-title">
                       <Link href={`/blog/${post.slug}`}>{post.title}</Link>
                     </h6>
-                    <p className="text-secondary">{(post.excerpt || "").slice(0, 85) || "Continue reading."}</p>
+                    <p className="text-secondary">{(post.excerpt || "").slice(0, 85) || (isEn ? "Continue reading." : "Nastavite sa čitanjem.")}</p>
                   </div>
                 </div>
               </article>
@@ -620,7 +645,7 @@ export default async function HomePage() {
         </Reveal>
         <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
       </main>
-      <StorefrontFooter />
+      <StorefrontFooter lang={lang} />
     </>
   );
 }
