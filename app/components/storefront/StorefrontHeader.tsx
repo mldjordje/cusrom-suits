@@ -174,7 +174,10 @@ export default function StorefrontHeader({
                 <rect width="25" height="2" y="8" />
                 <rect width="25" height="2" y="16" />
               </svg>
-              <span className="btn-close-lg position-absolute top-0 start-0 w-100" />
+              <svg className="close-icon" width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                <path d="M4 4L14 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                <path d="M14 4L4 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
             </button>
 
             <div className="logo ss-mobile-logo">
@@ -238,17 +241,30 @@ export default function StorefrontHeader({
                 <div className="ss-mobile-nav-panel__inner">
                   <div className="ss-mobile-nav-panel__top">
                     <StorefrontLanguageSwitcher lang={lang} compact />
-                    <Link href={withLang("/kontakt")} className="ss-mobile-nav-pill">
-                      {isEn ? "Contact" : "Kontakt"}
-                    </Link>
+                    <div className="ss-mobile-nav-panel__actions">
+                      <Link href={withLang("/kontakt")} className="ss-mobile-nav-pill">
+                        {isEn ? "Contact" : "Kontakt"}
+                      </Link>
+                      <button
+                        type="button"
+                        className="ss-mobile-nav-close"
+                        aria-label={isEn ? "Close menu" : "Zatvori meni"}
+                        onClick={() => setMobileOpen(false)}
+                      >
+                        <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <path d="M4 4L14 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                          <path d="M14 4L4 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
 
                   <div className="ss-mobile-nav-panel__hero">
                     <p className="ss-mobile-nav-panel__eyebrow">
-                      {isEn ? "Modern tailoring" : "Modern tailoring"}
+                      {isEn ? "Modern tailoring" : "Savremeno krojenje"}
                     </p>
                     <h2 className="ss-mobile-nav-panel__title">
-                      {isEn ? "Move through the collection with a cleaner mobile flow." : "Kreci se kroz kolekciju sa cistijim mobile iskustvom."}
+                      {isEn ? "Move through the collection with a cleaner mobile flow." : "Kreci se kroz kolekciju uz cistije i jasnije mobile iskustvo."}
                     </h2>
                   </div>
 

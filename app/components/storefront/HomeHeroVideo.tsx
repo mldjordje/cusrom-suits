@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { formatCatalogProductName } from "@/lib/catalog/presentation";
+import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 const HeroParallaxFx = dynamic(() => import("@/app/components/storefront/HeroParallaxFx"));
 
@@ -28,6 +29,7 @@ type Props = {
     heroSecondaryCtaLabel: string;
     heroSecondaryCtaHref: string;
   };
+  lang?: StorefrontLanguage;
 };
 
 const buildEmbed = (id: string) =>
@@ -51,7 +53,12 @@ const findCategoryId = (categories: HomeCategory[], terms: string[]) => {
 
 const hrefForCategory = (categoryId?: number) => (categoryId ? `/web-shop?categoryId=${categoryId}` : "/web-shop");
 
-export default function HomeHeroVideo({ categories, featuredProducts, content }: Props) {
+export default function HomeHeroVideo({ categories, featuredProducts, content, lang = "sr" }: Props) {
+  const withLang = (href: string) => {
+    if (lang !== "en" || !href.startsWith("/")) return href;
+    if (href.includes("?")) return `${href}&lang=en`;
+    return `${href}?lang=en`;
+  };
   const suitsCategoryId = findCategoryId(categories, ["odel", "suit"]);
   const shoesCategoryId = findCategoryId(categories, ["obuc", "cipel", "shoe"]);
   const cards =
@@ -60,32 +67,32 @@ export default function HomeHeroVideo({ categories, featuredProducts, content }:
           id: String(product.legacyId),
           title: formatCatalogProductName(product.name, product.sku),
           image: product.coverImage || "/img/hero.jpg",
-          href: `/web-shop/${product.legacyId}`,
+          href: withLang(`/web-shop/${product.legacyId}`),
         }))
       : [
           {
             id: "fallback-1",
             title: "Kolekcija odela",
             image: "/img/odela2.jpg",
-            href: hrefForCategory(suitsCategoryId),
+            href: withLang(hrefForCategory(suitsCategoryId)),
           },
           {
             id: "fallback-2",
             title: "Premium obuca",
             image: "/img/obuca.jpg",
-            href: hrefForCategory(shoesCategoryId),
+            href: withLang(hrefForCategory(shoesCategoryId)),
           },
           {
             id: "fallback-3",
             title: "Nova kolekcija",
             image: "/img/hero.jpg",
-            href: "/web-shop",
+            href: withLang("/web-shop"),
           },
           {
             id: "fallback-4",
             title: "Aktuelne akcije",
             image: "/img/hero2.jpg",
-            href: "/akcije",
+            href: withLang("/akcije"),
           },
         ];
 
@@ -127,10 +134,10 @@ export default function HomeHeroVideo({ categories, featuredProducts, content }:
             {content.heroTitleLine2}
           </h2>
           <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap ss-home18-hero__cta">
-            <Link href={content.heroPrimaryCtaHref} className="btn btn-light border-0 fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn">
+            <Link href={withLang(content.heroPrimaryCtaHref)} className="btn btn-light border-0 fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn">
               {content.heroPrimaryCtaLabel}
             </Link>
-            <Link href={content.heroSecondaryCtaHref} className="btn btn-outline-light fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn ss-cta-btn--ghost-light">
+            <Link href={withLang(content.heroSecondaryCtaHref)} className="btn btn-outline-light fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn ss-cta-btn--ghost-light">
               {content.heroSecondaryCtaLabel}
             </Link>
           </div>

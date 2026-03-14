@@ -30,7 +30,7 @@ const getLegacyCampaignBlocks = (isEn: boolean) => [
     title: isEn ? "Up to 30% off selected pieces." : "Do 30% popusta na izdvojene modele.",
     copy: isEn
       ? "We selected pieces from the current collection with reduced prices and available sizes."
-      : "Izdvojili smo modele iz aktuelne kolekcije sa sniženim cenama i dostupnim veličinama.",
+      : "Izdvojili smo modele iz aktuelne kolekcije sa snizenim cenama i dostupnim velicinama.",
     image: "/img/hero.jpg",
     ctaLabel: isEn ? "View sale" : "Pogledaj akcije",
     ctaHref: "/akcije",
@@ -41,7 +41,7 @@ const getLegacyCampaignBlocks = (isEn: boolean) => [
     title: isEn ? "Ready-to-wear pieces for every occasion" : "Ready-to-wear komadi za svaku priliku",
     copy: isEn
       ? "From suits and blazers to shirts and accessories, the webshop brings styles ready to order."
-      : "Od odela i sakoa do košulja i aksesoara, webshop donosi izbor modela spremnih za porudžbinu.",
+      : "Od odela i sakoa do kosulja i aksesoara, webshop donosi izbor modela spremnih za porudzbinu.",
     image: "/img/hero2.jpg",
     ctaLabel: isEn ? "Open web shop" : "Otvori web shop",
     ctaHref: "/web-shop",
@@ -52,7 +52,7 @@ const getLegacyCampaignBlocks = (isEn: boolean) => [
     title: isEn ? "A gift that lasts" : "Poklon koji traje",
     copy: isEn
       ? "Silk ties, leather goods and carefully selected details for a premium gift choice."
-      : "Kravate od svile, kožna galanterija i pažljivo birani detalji kao premium poklon izbor.",
+      : "Kravate od svile, kozna galanterija i pazljivo birani detalji kao premium poklon izbor.",
     image: "/img/obuca.jpg",
     ctaLabel: isEn ? "View gifts" : "Pogledaj poklone",
     ctaHref: "/web-shop",
@@ -67,9 +67,9 @@ const getAtelierStoryParagraphs = (isEn: boolean) =>
         "Our pieces connect tailoring tradition with contemporary design, from the first seam to the final silhouette.",
       ]
     : [
-        "Sa idejom da muškarac treba da uživa u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nišu.",
-        "Od 2013. brend postaje prepoznatljiv po modernim krojevima, biranim tkaninama i detaljima koji se dorađuju ručno.",
-        "Naši modeli spajaju tradiciju krojenja i savremeni dizajn, od prvog sava do finalne siluete.",
+        "Sa idejom da muskarac treba da uziva u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nisu.",
+        "Od 2013. brend postaje prepoznatljiv po modernim krojevima, biranim tkaninama i detaljima koji se doradjuju rucno.",
+        "Nasi modeli spajaju tradiciju krojenja i savremeni dizajn, od prvog sava do finalne siluete.",
       ];
 
 const getAtelierContactPoints = (isEn: boolean) => [
@@ -173,6 +173,12 @@ export default async function HomePage({
 }) {
   const lang = await resolveStorefrontLanguage(await searchParams);
   const isEn = lang === "en";
+  const withLang = (href: string) => {
+    if (!isEn || !href.startsWith("/")) return href;
+    if (href.includes("?")) return `${href}&lang=en`;
+    return `${href}?lang=en`;
+  };
+
   const [catalog, posts, landingSettings] = await Promise.all([
     listCatalogProducts({
       page: 1,
@@ -189,6 +195,7 @@ export default async function HomePage({
     }),
     getLandingSettings(),
   ]);
+
   const legacyCampaignBlocks = getLegacyCampaignBlocks(isEn);
   const atelierStoryParagraphs = getAtelierStoryParagraphs(isEn);
   const atelierContactPoints = getAtelierContactPoints(isEn);
@@ -249,6 +256,7 @@ export default async function HomePage({
       <StorefrontHeader lang={lang} />
       <main className="page-wrapper theme-18 ss-home-page ss-home-page--cinematic">
         <HomeHeroVideo
+          lang={lang}
           categories={catalog.categories}
           featuredProducts={heroStripProducts}
           content={{
@@ -265,29 +273,29 @@ export default async function HomePage({
         <Reveal as="section" className="container pb-5 ss-editorial-section ss-editorial-section--story" delay={0.02}>
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <h2 className="section-title text-uppercase">
-              {isEn ? "Brand " : "Brend "}<strong>{isEn ? "Story" : "Priča"}</strong>
+              {isEn ? "Brand " : "Brend "}<strong>{isEn ? "Story" : "Prica"}</strong>
             </h2>
-            <Link href="/web-shop" className="btn-link default-underline text-uppercase fw-medium">
+            <Link href={withLang("/web-shop")} className="btn-link default-underline text-uppercase fw-medium">
               {isEn ? "View collection" : "Pogledaj kolekciju"}
             </Link>
           </div>
           <div className="row g-4">
             {legacyCampaignBlocks.map((block) => (
               <article key={block.id} className="col-12 col-md-6 col-lg-4">
-                <div className="position-relative overflow-hidden h-100" style={{ minHeight: 420, borderRadius: 24 }}>
+                <div className="position-relative overflow-hidden h-100 ss-story-card" style={{ minHeight: 420, borderRadius: 24 }}>
                   <Image src={block.image} alt={block.title} fill sizes="(max-width: 991px) 100vw, 33vw" style={{ objectFit: "cover" }} />
                   <div
                     className="position-absolute top-0 start-0 w-100 h-100"
                     style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.78) 100%)" }}
                   />
-                  <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-between p-4 text-white">
+                  <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-between p-4 text-white ss-story-card__body">
                     <span className="text-uppercase fw-medium" style={{ letterSpacing: "0.14em", fontSize: "0.68rem" }}>
                       {block.badge}
                     </span>
                     <div>
                       <h3 className="h4 text-white text-uppercase mb-2">{block.title}</h3>
                       <p className="mb-3">{block.copy}</p>
-                      <Link href={block.ctaHref} className="btn btn-light btn-sm text-uppercase fw-medium">
+                      <Link href={withLang(block.ctaHref)} className="btn btn-light btn-sm text-uppercase fw-medium">
                         {block.ctaLabel}
                       </Link>
                     </div>
@@ -305,16 +313,16 @@ export default async function HomePage({
             <h2 className="section-title text-uppercase">
               {isEn ? "Featured " : "Izdvojeni "}<strong>{isEn ? "Pieces" : "Modeli"}</strong>
             </h2>
-            <Link href="/web-shop" className="btn-link default-underline text-uppercase fw-medium">
+            <Link href={withLang("/web-shop")} className="btn-link default-underline text-uppercase fw-medium">
               {isEn ? "View all" : "Pogledaj sve"}
             </Link>
           </div>
           <div className="row row-cols-2 row-cols-md-4 g-3 ss-feature-strip">
             {heroProducts.map((item, index) => (
               <ProductItemMotion key={item.legacyId} index={index}>
-                <Link href={`/web-shop/${item.legacyId}`} className="d-block">
+                <Link href={withLang(`/web-shop/${item.legacyId}`)} className="d-block ss-featured-tile">
                   <Image
-                        src={item.coverImage || "/img/odela.jpg"}
+                    src={item.coverImage || "/img/odela.jpg"}
                     width={330}
                     height={400}
                     alt={formatCatalogProductName(item.name, item.sku)}
@@ -334,7 +342,7 @@ export default async function HomePage({
             <h2 className="section-title text-uppercase">
               {isEn ? "Popular " : "Popularni "}<strong>{isEn ? "Products" : "Proizvodi"}</strong>
             </h2>
-            <Link href="/web-shop" className="btn-link default-underline text-uppercase fw-medium">
+            <Link href={withLang("/web-shop")} className="btn-link default-underline text-uppercase fw-medium">
               {isEn ? "View all" : "Pogledaj sve"}
             </Link>
           </div>
@@ -343,7 +351,7 @@ export default async function HomePage({
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
                 <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                   <div className="pc__img-wrapper">
-                    <Link href={`/web-shop/${item.legacyId}`}>
+                    <Link href={withLang(`/web-shop/${item.legacyId}`)}>
                       <Image
                         src={item.coverImage || "/img/odela2.jpg"}
                         width={330}
@@ -356,7 +364,7 @@ export default async function HomePage({
                   <div className="pc__info position-relative">
                     <p className="pc__category">{item.categories[0]?.name || "Santos"}</p>
                     <h6 className="pc__title">
-                      <Link href={`/web-shop/${item.legacyId}`}>{formatCatalogProductName(item.name, item.sku)}</Link>
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{formatCatalogProductName(item.name, item.sku)}</Link>
                     </h6>
                     <div className="product-card__price d-flex">
                       {item.priceGross > item.priceFinalGross ? (
@@ -380,22 +388,22 @@ export default async function HomePage({
         <Reveal as="section" className="banner-grid container ss-editorial-banners" delay={0.08}>
           <div className="row g-4">
             <div className="col-md-6">
-              <div className="position-relative overflow-hidden">
+              <div className="position-relative overflow-hidden ss-banner-panel">
                 <Image src={landingSettings.bannerLeftImage} width={690} height={330} alt={landingSettings.bannerLeftTitle} className="w-100 h-auto" />
                 <div className="position-absolute top-50 start-50 translate-middle text-center">
                   <h4 className="text-uppercase text-white">{landingSettings.bannerLeftTitle}</h4>
-                  <Link href={landingSettings.bannerLeftHref} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">
+                  <Link href={withLang(landingSettings.bannerLeftHref)} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">
                     {landingSettings.bannerLeftButtonLabel}
                   </Link>
                 </div>
               </div>
             </div>
             <div className="col-md-6">
-              <div className="position-relative overflow-hidden">
+              <div className="position-relative overflow-hidden ss-banner-panel">
                 <Image src={landingSettings.bannerRightImage} width={690} height={330} alt={landingSettings.bannerRightTitle} className="w-100 h-auto" />
                 <div className="position-absolute top-50 start-50 translate-middle text-center">
                   <h4 className="text-uppercase text-white">{landingSettings.bannerRightTitle}</h4>
-                  <Link href={landingSettings.bannerRightHref} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">
+                  <Link href={withLang(landingSettings.bannerRightHref)} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">
                     {landingSettings.bannerRightButtonLabel}
                   </Link>
                 </div>
@@ -417,7 +425,7 @@ export default async function HomePage({
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
                 <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                   <div className="pc__img-wrapper">
-                    <Link href={`/web-shop/${item.legacyId}`}>
+                    <Link href={withLang(`/web-shop/${item.legacyId}`)}>
                       <Image
                         src={item.coverImage || "/img/hero2.jpg"}
                         width={330}
@@ -429,7 +437,7 @@ export default async function HomePage({
                   </div>
                   <div className="pc__info position-relative">
                     <h6 className="pc__title">
-                      <Link href={`/web-shop/${item.legacyId}`}>{formatCatalogProductName(item.name, item.sku)}</Link>
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{formatCatalogProductName(item.name, item.sku)}</Link>
                     </h6>
                     <div className="product-card__price d-flex">
                       {item.priceGross > item.priceFinalGross ? (
@@ -455,7 +463,7 @@ export default async function HomePage({
             <section className="products-grid container ss-editorial-section ss-editorial-section--sale">
               <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
                 <h2 className="section-title text-uppercase">{landingSettings.saleSectionTitle}</h2>
-                <Link href="/akcije" className="btn-link default-underline text-uppercase fw-medium">
+                <Link href={withLang("/akcije")} className="btn-link default-underline text-uppercase fw-medium">
                   {isEn ? "View all" : "Pogledaj sve"}
                 </Link>
               </div>
@@ -465,7 +473,7 @@ export default async function HomePage({
                   <ProductItemMotion key={`sale-${item.legacyId}`} className="product-card-wrapper" index={index}>
                     <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                       <div className="pc__img-wrapper">
-                        <Link href={`/web-shop/${item.legacyId}`}>
+                        <Link href={withLang(`/web-shop/${item.legacyId}`)}>
                           <Image
                             src={item.coverImage || "/img/odela.jpg"}
                             width={330}
@@ -477,7 +485,7 @@ export default async function HomePage({
                       </div>
                       <div className="pc__info position-relative">
                         <h6 className="pc__title">
-                          <Link href={`/web-shop/${item.legacyId}`}>{formatCatalogProductName(item.name, item.sku)}</Link>
+                          <Link href={withLang(`/web-shop/${item.legacyId}`)}>{formatCatalogProductName(item.name, item.sku)}</Link>
                         </h6>
                         <div className="product-card__price d-flex">
                           <span className="money price price-old">{formatRsd(item.priceGross)}</span>
@@ -504,7 +512,7 @@ export default async function HomePage({
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
                 <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                   <div className="pc__img-wrapper">
-                    <Link href={`/web-shop/${item.legacyId}`}>
+                    <Link href={withLang(`/web-shop/${item.legacyId}`)}>
                       <Image
                         src={item.coverImage || "/img/hero2.jpg"}
                         width={330}
@@ -516,7 +524,7 @@ export default async function HomePage({
                   </div>
                   <div className="pc__info position-relative">
                     <h6 className="pc__title">
-                      <Link href={`/web-shop/${item.legacyId}`}>{formatCatalogProductName(item.name, item.sku)}</Link>
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{formatCatalogProductName(item.name, item.sku)}</Link>
                     </h6>
                     <div className="product-card__price d-flex">
                       {item.priceGross > item.priceFinalGross ? (
@@ -545,7 +553,7 @@ export default async function HomePage({
                   {isEn ? "About us" : "O nama"}
                 </p>
                 <h2 className="section-title text-uppercase mb-4">
-                  {isEn ? "A brand born from a " : "Brend nastao iz "}<strong>{isEn ? "family workshop" : "porodične radionice"}</strong>
+                  {isEn ? "A brand born from a " : "Brend nastao iz "}<strong>{isEn ? "family workshop" : "porodicne radionice"}</strong>
                 </h2>
                 <div className="row g-3">
                   {atelierStoryParagraphs.map((paragraph) => (
@@ -555,10 +563,10 @@ export default async function HomePage({
                   ))}
                 </div>
                 <div className="d-flex flex-wrap gap-2 mt-4">
-                  <Link href="/kontakt" className="btn btn-dark btn-sm text-uppercase fw-medium">
+                  <Link href={withLang("/kontakt")} className="btn btn-dark btn-sm text-uppercase fw-medium">
                     {isEn ? "Contact us" : "Kontaktirajte nas"}
                   </Link>
-                  <Link href="/web-shop" className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
+                  <Link href={withLang("/web-shop")} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
                     {isEn ? "Visit web shop" : "Poseti web shop"}
                   </Link>
                 </div>
@@ -570,7 +578,7 @@ export default async function HomePage({
                   {isEn ? "Contact" : "Kontakt"}
                 </p>
                 <h3 className="h4 text-uppercase mb-3">
-                  {isEn ? "Support and personal " : "Podrška i lične "}<strong>{isEn ? "recommendations" : "preporuke"}</strong>
+                  {isEn ? "Support and personal " : "Podrska i licne "}<strong>{isEn ? "recommendations" : "preporuke"}</strong>
                 </h3>
                 <p className="text-secondary mb-4">
                   {isEn
@@ -588,11 +596,11 @@ export default async function HomePage({
                   ))}
                 </div>
                 <div className="d-flex flex-wrap gap-2 mt-4">
-                  <Link href="/kontakt" className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
+                  <Link href={withLang("/kontakt")} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
                     {isEn ? "Contact form" : "Kontakt forma"}
                   </Link>
                   <a href="mailto:atelier@santos.rs" className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                    {isEn ? "Send email" : "Pošalji email"}
+                    {isEn ? "Send email" : "Posalji email"}
                   </a>
                 </div>
               </div>
@@ -607,16 +615,16 @@ export default async function HomePage({
             <h2 className="section-title text-uppercase">
               {isEn ? "Latest " : "Najnoviji "}<strong>Blog</strong>
             </h2>
-            <Link href="/blog" className="btn-link default-underline text-uppercase fw-medium">
+            <Link href={withLang("/blog")} className="btn-link default-underline text-uppercase fw-medium">
               {isEn ? "View all" : "Pogledaj sve"}
             </Link>
           </div>
           <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4">
-            {posts.items.map((post, index) => (
+            {posts.items.map((post) => (
               <article key={post.id} className="mb-4">
-                <div className="blog-grid__item">
+                <div className="blog-grid__item ss-blog-card">
                   <div className="blog-grid__item-image-wrap">
-                    <Link href={`/blog/${post.slug}`}>
+                    <Link href={withLang(`/blog/${post.slug}`)}>
                       <Image
                         src={post.coverImage || "/img/hero.jpg"}
                         width={330}
@@ -628,9 +636,9 @@ export default async function HomePage({
                   </div>
                   <div className="blog-grid__item-detail">
                     <h6 className="blog-grid__item-title">
-                      <Link href={`/blog/${post.slug}`}>{post.title}</Link>
+                      <Link href={withLang(`/blog/${post.slug}`)}>{post.title}</Link>
                     </h6>
-                    <p className="text-secondary">{(post.excerpt || "").slice(0, 85) || (isEn ? "Continue reading." : "Nastavite sa čitanjem.")}</p>
+                    <p className="text-secondary">{(post.excerpt || "").slice(0, 85) || (isEn ? "Continue reading." : "Nastavite sa citanjem.")}</p>
                   </div>
                 </div>
               </article>
