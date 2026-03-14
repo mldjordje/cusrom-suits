@@ -16,7 +16,7 @@ type Props = {
   specification: string | null;
   attributes: Array<[string, unknown]>;
   declaration: ProductDetailField[];
-  sizeGuide: ProductSizeGuide;
+  sizeGuide: ProductSizeGuide | null;
   washCare: {
     title: string;
     note: string;
@@ -26,11 +26,16 @@ type Props = {
 
 type TabKey = "description" | "declaration" | "care";
 
-const safeHtml = (value: string | null) => ({
+const fallbackHtml = {
+  sr: "<p>Detaljan opis trenutno nije dostupan.</p>",
+  en: "<p>Detailed description is currently unavailable.</p>",
+};
+
+const safeHtml = (value: string | null, lang: StorefrontLanguage) => ({
   __html:
     value && value.trim().length > 0
       ? value
-      : "<p>Detaljan opis trenutno nije dostupan.</p>",
+      : fallbackHtml[lang],
 });
 
 export default function ProductDetailTabs({
@@ -49,7 +54,7 @@ export default function ProductDetailTabs({
   const additionalItems = useMemo(() => attributes.slice(0, 8), [attributes]);
 
   return (
-    <div className="product-single__details-tab">
+    <div className="product-single__details-tab ss-product-glass-card">
       <ul className="nav nav-tabs" role="tablist">
         <li className="nav-item" role="presentation">
           <button
@@ -66,7 +71,7 @@ export default function ProductDetailTabs({
             className={`nav-link nav-link_underscore ${tab === "declaration" ? "active" : ""}`}
             onClick={() => setTab("declaration")}
           >
-            {isEn ? "Declaration & size guide" : "Deklaracija i veličine"}
+            {isEn ? "Declaration & sizing" : "Deklaracija i velicine"}
           </button>
         </li>
         <li className="nav-item" role="presentation">
@@ -75,7 +80,7 @@ export default function ProductDetailTabs({
             className={`nav-link nav-link_underscore ${tab === "care" ? "active" : ""}`}
             onClick={() => setTab("care")}
           >
-            {isEn ? "Wash care" : "Održavanje"}
+            {isEn ? "Wash care" : "Odrzavanje"}
           </button>
         </li>
       </ul>
@@ -93,9 +98,9 @@ export default function ProductDetailTabs({
             >
               <div className="product-single__description">
                 <h3 className="block-title mb-4">{isEn ? "Product details" : "Detalji proizvoda"}</h3>
-                <div className="content" dangerouslySetInnerHTML={safeHtml(description)} />
+                <div className="content" dangerouslySetInnerHTML={safeHtml(description, lang)} />
                 <h3 className="block-title mb-0">{isEn ? "Material and specification" : "Materijal i specifikacija"}</h3>
-                <div className="content" dangerouslySetInnerHTML={safeHtml(specification)} />
+                <div className="content" dangerouslySetInnerHTML={safeHtml(specification, lang)} />
               </div>
             </m.div>
           ) : null}
@@ -127,13 +132,28 @@ export default function ProductDetailTabs({
                     </ul>
                   </div>
                   <div className="col-lg-6">
-                    <h4 className="h6 text-uppercase mb-3">{sizeGuide.title}</h4>
-                    <p>{sizeGuide.intro}</p>
-                    <ul className="list text-list mb-0">
-                      {sizeGuide.bullets.map((bullet) => (
-                        <li key={bullet}>{bullet}</li>
-                      ))}
-                    </ul>
+                    {sizeGuide ? (
+                      <>
+                        <h4 className="h6 text-uppercase mb-3">{sizeGuide.title}</h4>
+                        <p>{sizeGuide.intro}</p>
+                        <ul className="list text-list mb-0">
+                          {sizeGuide.bullets.map((bullet) => (
+                            <li key={bullet}>{bullet}</li>
+                          ))}
+                        </ul>
+                      </>
+                    ) : (
+                      <div className="ss-meta-note">
+                        <h4 className="h6 text-uppercase mb-3">
+                          {isEn ? "Size note" : "Napomena o velicini"}
+                        </h4>
+                        <p className="mb-0">
+                          {isEn
+                            ? "Available sizes are shown above the add-to-cart area. Detailed measuring guidance is reserved for tailored garments."
+                            : "Dostupne velicine prikazane su iznad dugmeta za kupovinu. Detaljan vodic za merenje prikazujemo samo kod krojenih modela."}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -154,7 +174,7 @@ export default function ProductDetailTabs({
                 <div className="row g-3 mb-3">
                   {washCare.items.map((item) => (
                     <div key={item.title} className="col-sm-6 col-xl-3">
-                      <div className="border rounded-4 h-100 p-3 text-center">
+                      <div className="border rounded-4 h-100 p-3 text-center ss-product-glass-card">
                         <div
                           className="d-inline-flex align-items-center justify-content-center rounded-circle border mb-3 fw-semibold"
                           style={{ width: 64, height: 64, fontSize: 16 }}

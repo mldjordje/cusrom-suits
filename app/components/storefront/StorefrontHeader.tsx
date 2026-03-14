@@ -22,13 +22,25 @@ export default function StorefrontHeader({
   const normalizedPath = pathname ?? "";
   const isHome = normalizedPath === "/" || normalizedPath === "";
   const isEn = lang === "en";
+
+  const withLang = (href: string) => {
+    if (!isEn) return href;
+    if (href.includes("?")) return `${href}&lang=en`;
+    return `${href}?lang=en`;
+  };
+
   const navItems = [
-    { href: "/", label: isEn ? "Home" : "Početna" },
+    { href: "/", label: isEn ? "Home" : "Pocetna" },
     { href: "/web-shop", label: "Web Shop" },
     { href: "/akcije", label: isEn ? "Sale" : "Akcije" },
     { href: "/o-nama", label: isEn ? "About" : "O nama" },
     { href: "/blog", label: "Blog" },
     { href: "/kontakt", label: isEn ? "Contact" : "Kontakt" },
+  ];
+
+  const quickLinks = [
+    { href: "/web-shop", label: isEn ? "Open shop" : "Otvori shop" },
+    { href: "/kontakt", label: isEn ? "Ask stylist" : "Pitaj stilistu" },
   ];
 
   const isItemActive = (href: string) => {
@@ -85,7 +97,7 @@ export default function StorefrontHeader({
         <div className="container">
           <div className="header-desk header-desk_type_1">
             <div className="logo">
-              <Link href="/">
+              <Link href={withLang("/")}>
                 <Image
                   src={desktopLogoSrc}
                   alt="Santos and Santorini"
@@ -100,8 +112,14 @@ export default function StorefrontHeader({
             <nav className="navigation">
               <ul className="navigation__list list-unstyled d-flex">
                 {navItems.map((item) => (
-                  <li key={item.href} className={`navigation__item ${isItemActive(item.href) ? "is-active" : ""}`}>
-                    <Link href={item.href} className={`navigation__link ${isItemActive(item.href) ? "is-active" : ""}`}>
+                  <li
+                    key={item.href}
+                    className={`navigation__item ${isItemActive(item.href) ? "is-active" : ""}`}
+                  >
+                    <Link
+                      href={withLang(item.href)}
+                      className={`navigation__link ${isItemActive(item.href) ? "is-active" : ""}`}
+                    >
                       {item.label}
                     </Link>
                   </li>
@@ -111,17 +129,22 @@ export default function StorefrontHeader({
 
             <div className="header-tools d-flex align-items-center gap-2">
               <StorefrontLanguageSwitcher lang={lang} className="d-none d-md-inline-flex me-1" />
-              <Link href="/web-shop" className="header-tools__item d-none d-md-inline-flex" aria-label={isEn ? "Search" : "Pretraga"}>
+              <Link
+                href={withLang("/web-shop")}
+                className="header-tools__item d-none d-md-inline-flex"
+                aria-label={isEn ? "Search" : "Pretraga"}
+              >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.5" />
                   <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </Link>
               <StorefrontCartLink
+                href={withLang("/cart")}
                 className="header-tools__item d-none d-md-inline-flex"
                 ariaLabel={isEn ? "Cart" : "Korpa"}
               />
-              <Link href="/kontakt" className="btn-link btn-link_lg default-underline text-uppercase fw-medium">
+              <Link href={withLang("/kontakt")} className="ss-inline-link text-uppercase fw-medium">
                 {isEn ? "Contact" : "Kontakt"}
               </Link>
             </div>
@@ -135,7 +158,15 @@ export default function StorefrontHeader({
             <button
               type="button"
               className={`ss-mobile-slot mobile-nav-activator d-block position-relative btn-icon ${mobileOpen ? "is-open" : ""}`}
-              aria-label={mobileOpen ? (isEn ? "Close navigation" : "Zatvori navigaciju") : (isEn ? "Open navigation" : "Otvori navigaciju")}
+              aria-label={
+                mobileOpen
+                  ? isEn
+                    ? "Close navigation"
+                    : "Zatvori navigaciju"
+                  : isEn
+                    ? "Open navigation"
+                    : "Otvori navigaciju"
+              }
               onClick={() => setMobileOpen((prev) => !prev)}
             >
               <svg className="nav-icon" width="25" height="18" viewBox="0 0 25 18" xmlns="http://www.w3.org/2000/svg">
@@ -147,7 +178,7 @@ export default function StorefrontHeader({
             </button>
 
             <div className="logo ss-mobile-logo">
-              <Link href="/">
+              <Link href={withLang("/")}>
                 <Image
                   src={mobileLogoSrc}
                   alt="Santos and Santorini"
@@ -160,75 +191,118 @@ export default function StorefrontHeader({
             </div>
 
             <div className="ss-mobile-tools">
-              <StorefrontLanguageSwitcher lang={lang} className="align-items-center" />
-              <Link href="/web-shop" className="ss-mobile-slot ss-mobile-link" aria-label={isEn ? "Search" : "Pretraga"}>
+              <Link
+                href={withLang("/web-shop")}
+                className="ss-mobile-slot ss-mobile-link"
+                aria-label={isEn ? "Search" : "Pretraga"}
+              >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.5" />
                   <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
               </Link>
-              <StorefrontCartLink className="ss-mobile-slot ss-mobile-link" ariaLabel={isEn ? "Cart" : "Korpa"} />
-              <Link href="/kontakt" className="ss-mobile-slot ss-mobile-link" aria-label={isEn ? "Contact" : "Kontakt"}>
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                  <path d="M3.75 5.75a2 2 0 0 1 2-2h8.5a2 2 0 0 1 2 2v8.5a2 2 0 0 1-2 2h-8.5a2 2 0 0 1-2-2v-8.5Z" stroke="currentColor" strokeWidth="1.5" />
-                  <path d="M4.5 5l5.5 5 5.5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </Link>
+              <StorefrontCartLink
+                href={withLang("/cart")}
+                className="ss-mobile-slot ss-mobile-link"
+                ariaLabel={isEn ? "Cart" : "Korpa"}
+              />
             </div>
           </div>
         </div>
 
-        <div className="ss-mobile-nav-layer">
-          <AnimatePresence>
-            {mobileOpen ? (
+        <AnimatePresence initial={false}>
+          {mobileOpen ? (
+            <m.div
+              className="ss-mobile-nav-layer"
+              initial={reduceMotion ? false : { opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
+            >
               <m.button
                 type="button"
                 className="ss-mobile-nav-backdrop"
                 aria-label={isEn ? "Close menu" : "Zatvori meni"}
                 onClick={() => setMobileOpen(false)}
-                initial={reduceMotion ? false : { opacity: 0 }}
-                animate={reduceMotion ? { opacity: 1 } : { opacity: 1 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0 }}
-                transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
               />
-            ) : null}
-          </AnimatePresence>
 
-          <AnimatePresence initial={false}>
-            {mobileOpen ? (
               <m.nav
-                className="header-mobile__navigation navigation d-flex flex-column w-100 position-absolute top-100 bg-body overflow-auto ss-mobile-nav-panel"
-                initial={reduceMotion ? false : { y: -12, opacity: 0 }}
-                animate={reduceMotion ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
-                exit={reduceMotion ? { y: -8, opacity: 0 } : { y: -8, opacity: 0 }}
-                transition={{ duration: reduceMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }}
+                className="ss-mobile-nav-panel"
+                initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.985 }}
+                transition={{ duration: reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="container pt-3 pb-4">
-                  <ul className="navigation__list list-unstyled position-relative">
-                    {navItems.map((item, index) => (
-                      <m.li
-                        key={`mobile-${item.href}`}
-                        className={`navigation__item border-bottom ${isItemActive(item.href) ? "is-active" : ""}`}
-                        initial={reduceMotion ? false : { y: 10, opacity: 0 }}
-                        animate={reduceMotion ? { y: 0, opacity: 1 } : { y: 0, opacity: 1 }}
-                        exit={reduceMotion ? { y: 0, opacity: 0 } : { y: 0, opacity: 0 }}
+                <div className="ss-mobile-nav-panel__glow ss-mobile-nav-panel__glow--one" />
+                <div className="ss-mobile-nav-panel__glow ss-mobile-nav-panel__glow--two" />
+                <div className="ss-mobile-nav-panel__inner">
+                  <div className="ss-mobile-nav-panel__top">
+                    <StorefrontLanguageSwitcher lang={lang} compact />
+                    <Link href={withLang("/kontakt")} className="ss-mobile-nav-pill">
+                      {isEn ? "Contact" : "Kontakt"}
+                    </Link>
+                  </div>
+
+                  <div className="ss-mobile-nav-panel__hero">
+                    <p className="ss-mobile-nav-panel__eyebrow">
+                      {isEn ? "Modern tailoring" : "Modern tailoring"}
+                    </p>
+                    <h2 className="ss-mobile-nav-panel__title">
+                      {isEn ? "Move through the collection with a cleaner mobile flow." : "Kreci se kroz kolekciju sa cistijim mobile iskustvom."}
+                    </h2>
+                  </div>
+
+                  <div className="ss-mobile-nav-panel__quick">
+                    {quickLinks.map((item, index) => (
+                      <m.div
+                        key={item.href}
+                        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
                         transition={{
-                          duration: reduceMotion ? 0 : 0.24,
-                          delay: reduceMotion ? 0 : 0.025 * index,
+                          duration: reduceMotion ? 0 : 0.22,
+                          delay: reduceMotion ? 0 : 0.03 * index,
                           ease: [0.22, 1, 0.36, 1],
                         }}
                       >
-                        <Link href={item.href} className={`navigation__link d-block text-uppercase ${isItemActive(item.href) ? "is-active" : ""}`}>
+                        <Link href={withLang(item.href)} className="ss-mobile-nav-quicklink">
                           {item.label}
+                        </Link>
+                      </m.div>
+                    ))}
+                  </div>
+
+                  <ul className="navigation__list list-unstyled position-relative ss-mobile-nav-list">
+                    {navItems.map((item, index) => (
+                      <m.li
+                        key={`mobile-${item.href}`}
+                        className={`navigation__item ${isItemActive(item.href) ? "is-active" : ""}`}
+                        initial={reduceMotion ? false : { y: 14, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        exit={{ y: 0, opacity: 0 }}
+                        transition={{
+                          duration: reduceMotion ? 0 : 0.28,
+                          delay: reduceMotion ? 0 : 0.05 * index,
+                          ease: [0.22, 1, 0.36, 1],
+                        }}
+                      >
+                        <Link
+                          href={withLang(item.href)}
+                          className={`ss-mobile-nav-link ${isItemActive(item.href) ? "is-active" : ""}`}
+                        >
+                          <span>{item.label}</span>
+                          <span className="ss-mobile-nav-link__index">
+                            {String(index + 1).padStart(2, "0")}
+                          </span>
                         </Link>
                       </m.li>
                     ))}
                   </ul>
                 </div>
               </m.nav>
-            ) : null}
-          </AnimatePresence>
-        </div>
+            </m.div>
+          ) : null}
+        </AnimatePresence>
       </div>
     </>
   );

@@ -23,6 +23,7 @@ import {
   getProductSizeOptions,
   getProductWashCare,
   getSelectedProductSize,
+  productSupportsSizeGuide,
 } from "@/lib/storefront/product-details";
 
 const formatRsd = (value: number) =>
@@ -35,7 +36,11 @@ const formatRsd = (value: number) =>
 const stripHtml = (value: string | null) =>
   (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
 
-export async function generateMetadata({ params }: { params: Promise<{ legacyId: string }> }) {
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ legacyId: string }>;
+}) {
   const { legacyId } = await params;
   const id = Number.parseInt(legacyId, 10);
   if (!Number.isFinite(id)) {
@@ -77,6 +82,12 @@ export default async function WebShopProductPage({
     }),
   ]);
 
+  const withLang = (href: string) => {
+    if (!isEn) return href;
+    if (href.includes("?")) return `${href}&lang=en`;
+    return `${href}?lang=en`;
+  };
+
   const displayName = getLocalizedCatalogProductName(product, lang);
   const displayDescription = getLocalizedCatalogDescription(product, lang);
   const displaySpecification = getLocalizedCatalogSpecification(product, lang);
@@ -84,6 +95,7 @@ export default async function WebShopProductPage({
   const sizeOptions = getProductSizeOptions(product, variants);
   const selectedSize = getSelectedProductSize(product);
   const sizeGuide = getProductSizeGuide(product, lang, sizeOptions);
+  const showSizeGuide = productSupportsSizeGuide(product) && Boolean(sizeGuide);
   const declaration = getProductDeclaration(
     product,
     lang,
@@ -98,8 +110,13 @@ export default async function WebShopProductPage({
     0,
     Math.floor(product.stockTotal > 0 ? product.stockTotal : product.stockWarehouse1),
   );
-  const gallery = product.images.length > 0 ? product.images : [product.coverImage || "/img/odela.jpg"];
-  const categoryLabel = product.categories[0]?.path.join(" / ") || (isEn ? "Santos selection" : "Santos izbor");
+  const gallery =
+    product.images.length > 0
+      ? product.images
+      : [product.coverImage || "/img/odela.jpg"];
+  const categoryLabel =
+    product.categories[0]?.path.join(" / ") ||
+    (isEn ? "Santos selection" : "Santos izbor");
   const shortDescription = stripHtml(displayDescription).slice(0, 280);
   const attributeItems = Object.entries(product.attributes || {})
     .filter(([key]) => key !== "size")
@@ -123,23 +140,23 @@ export default async function WebShopProductPage({
             <div className="col-lg-5 ss-product-single-info">
               <div className="d-flex justify-content-between mb-4 pb-md-2">
                 <div className="breadcrumb mb-0 d-none d-md-block flex-grow-1">
-                  <Link href={isEn ? "/?lang=en" : "/"} className="menu-link menu-link_us-s text-uppercase fw-medium">
-                    {isEn ? "Home" : "Početna"}
+                  <Link href={withLang("/")} className="menu-link menu-link_us-s text-uppercase fw-medium">
+                    {isEn ? "Home" : "Pocetna"}
                   </Link>
                   <span className="breadcrumb-separator menu-link fw-medium ps-1 pe-1">/</span>
-                  <Link href={isEn ? "/web-shop?lang=en" : "/web-shop"} className="menu-link menu-link_us-s text-uppercase fw-medium">
-                    {isEn ? "Web shop" : "Web shop"}
+                  <Link href={withLang("/web-shop")} className="menu-link menu-link_us-s text-uppercase fw-medium">
+                    Web shop
                   </Link>
                 </div>
 
                 <div className="product-single__prev-next d-flex align-items-center justify-content-between justify-content-md-end flex-grow-1">
-                  <Link href={isEn ? "/web-shop?lang=en" : "/web-shop"} className="text-uppercase fw-medium">
+                  <Link href={withLang("/web-shop")} className="text-uppercase fw-medium">
                     <svg className="mb-1px" width="10" height="10" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
                       <use href="#icon_prev_md" />
                     </svg>
                     <span className="menu-link menu-link_us-s">{isEn ? "Back to shop" : "Nazad na shop"}</span>
                   </Link>
-                  <Link href={isEn ? "/kontakt?lang=en" : "/kontakt"} className="text-uppercase fw-medium">
+                  <Link href={withLang("/kontakt")} className="text-uppercase fw-medium">
                     <span className="menu-link menu-link_us-s">{isEn ? "Contact" : "Kontakt"}</span>
                     <svg className="mb-1px" width="10" height="10" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
                       <use href="#icon_next_md" />
@@ -148,115 +165,122 @@ export default async function WebShopProductPage({
                 </div>
               </div>
 
-              <h1 className="product-single__name">{displayName}</h1>
-              <div className="product-single__rating">
-                <div className="reviews-group d-flex text-warning" aria-hidden="true">
-                  <span>*****</span>
+              <div className="ss-product-glass-card ss-product-hero-card">
+                <h1 className="product-single__name">{displayName}</h1>
+                <div className="product-single__rating">
+                  <div className="reviews-group d-flex text-warning" aria-hidden="true">
+                    <span>*****</span>
+                  </div>
+                  <span className="reviews-note text-lowercase text-secondary ms-1">
+                    {stockValue} {isEn ? "in stock" : "na stanju"}
+                  </span>
                 </div>
-                <span className="reviews-note text-lowercase text-secondary ms-1">
-                  {stockValue} {isEn ? "in stock" : "na stanju"}
-                </span>
-              </div>
-              <div className="product-single__price">
-                <span className="current-price">{formatRsd(product.priceFinalGross)}</span>
-                {discountAmount > 0 ? <span className="old-price ms-2">{formatRsd(product.priceGross)}</span> : null}
-              </div>
-              <div className="product-single__short-desc">
-                <p>
-                  {shortDescription ||
-                    (isEn
-                      ? "Selected ready-to-wear piece with refined fit, declaration details and available sizes."
-                      : "Izdvojen ready-to-wear model sa preciznim krojem, deklaracijom i dostupnim veličinama.")}
-                </p>
-              </div>
+                <div className="product-single__price">
+                  <span className="current-price">{formatRsd(product.priceFinalGross)}</span>
+                  {discountAmount > 0 ? (
+                    <span className="old-price ms-2">{formatRsd(product.priceGross)}</span>
+                  ) : null}
+                </div>
+                <div className="product-single__short-desc">
+                  <p>
+                    {shortDescription ||
+                      (isEn
+                        ? "Selected ready-to-wear piece with refined fit, declaration details and available sizes."
+                        : "Izdvojen ready-to-wear model sa preciznim krojem, deklaracijom i dostupnim velicinama.")}
+                  </p>
+                </div>
 
-              <div className="product-single__swatches">
-                <div className="product-swatch text-swatches">
-                  <label>{isEn ? "Category" : "Kategorija"}</label>
-                  <div className="swatch-list">
-                    {product.categories.slice(0, 2).map((category) => (
-                      <span key={category.id} className="swatch text-uppercase">
-                        {category.name}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div className="product-swatch text-swatches">
-                  <label>{isEn ? "Material" : "Materijal"}</label>
-                  <div className="swatch-list">
-                    <span className="swatch">{material}</span>
-                  </div>
-                </div>
-                <div className="product-swatch color-swatches">
-                  <label>{isEn ? "Status" : "Status"}</label>
-                  <div className="swatch-list">
-                    <span className={`swatch ${stockValue > 0 ? "bg-success" : "bg-secondary"} text-white`}>
-                      {stockValue > 0 ? (isEn ? "In stock" : "Na stanju") : (isEn ? "On request" : "Na upit")}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {sizeOptions.length > 0 ? (
-                <div className="product-single__swatches mt-3">
+                <div className="product-single__swatches">
                   <div className="product-swatch text-swatches">
-                    <label>{isEn ? "Available sizes" : "Ponuđene veličine"}</label>
-                    <div className="swatch-list d-flex flex-wrap gap-2">
-                      {sizeOptions.map((option) => {
-                        const active = option.legacyId === product.legacyId;
-                        return (
-                          <Link
-                            key={`${option.label}-${option.legacyId}`}
-                            href={variantHref(option.legacyId)}
-                            className={`swatch text-uppercase ${active ? "bg-dark text-white" : ""} ${!option.inStock ? "opacity-50" : ""}`}
-                            aria-current={active ? "page" : undefined}
-                          >
-                            {option.label}
-                          </Link>
-                        );
-                      })}
+                    <label>{isEn ? "Category" : "Kategorija"}</label>
+                    <div className="swatch-list">
+                      {product.categories.slice(0, 2).map((category) => (
+                        <span key={category.id} className="swatch text-uppercase">
+                          {category.name}
+                        </span>
+                      ))}
                     </div>
-                    <p className="small text-secondary mt-2 mb-0">
-                      {selectedSize
-                        ? `${isEn ? "Selected size" : "Odabrana veličina"}: ${selectedSize}`
-                        : sizeGuide.intro}
-                    </p>
+                  </div>
+                  <div className="product-swatch text-swatches">
+                    <label>{isEn ? "Material" : "Materijal"}</label>
+                    <div className="swatch-list">
+                      <span className="swatch">{material}</span>
+                    </div>
+                  </div>
+                  <div className="product-swatch color-swatches">
+                    <label>Status</label>
+                    <div className="swatch-list">
+                      <span className={`swatch ${stockValue > 0 ? "bg-success" : "bg-secondary"} text-white`}>
+                        {stockValue > 0 ? (isEn ? "In stock" : "Na stanju") : (isEn ? "On request" : "Na upit")}
+                      </span>
+                    </div>
                   </div>
                 </div>
-              ) : null}
 
-              <div className="product-single__addtocart">
-                <div className="d-flex flex-wrap gap-2">
-                  <AddToCartButton
-                    lang={lang}
-                    item={{
-                      legacyId: product.legacyId,
-                      sku: product.sku,
-                      name: displayName,
-                      size: selectedSize,
-                      material,
-                      price: product.priceFinalGross,
-                      image: product.coverImage || gallery[0] || null,
-                      maxQuantity: stockValue > 0 ? stockValue : null,
-                      categoryLabel: product.categories[0]?.name || null,
-                    }}
-                  />
-                  <Link href={isEn ? "/checkout?lang=en" : "/checkout"} className="btn btn-outline-dark btn-addtocart">
-                    {isEn ? "Checkout" : "Checkout"}
+                {sizeOptions.length > 0 ? (
+                  <div className="product-single__swatches mt-3">
+                    <div className="product-swatch text-swatches">
+                      <label>{isEn ? "Available sizes" : "Ponudjene velicine"}</label>
+                      <div className="swatch-list d-flex flex-wrap gap-2">
+                        {sizeOptions.map((option) => {
+                          const active = option.legacyId === product.legacyId;
+                          return (
+                            <Link
+                              key={`${option.label}-${option.legacyId}`}
+                              href={variantHref(option.legacyId)}
+                              className={`swatch text-uppercase ${active ? "bg-dark text-white" : ""} ${!option.inStock ? "opacity-50" : ""}`}
+                              aria-current={active ? "page" : undefined}
+                            >
+                              {option.label}
+                            </Link>
+                          );
+                        })}
+                      </div>
+                      <p className="small text-secondary mt-2 mb-0">
+                        {selectedSize
+                          ? `${isEn ? "Selected size" : "Odabrana velicina"}: ${selectedSize}`
+                          : isEn
+                            ? "Choose your preferred available size."
+                            : "Odaberite zeljenu dostupnu velicinu."}
+                      </p>
+                    </div>
+                  </div>
+                ) : null}
+
+                <div className="product-single__addtocart">
+                  <div className="d-flex flex-wrap gap-2">
+                    <AddToCartButton
+                      lang={lang}
+                      className="btn btn-primary btn-addtocart ss-cta-btn"
+                      item={{
+                        legacyId: product.legacyId,
+                        sku: product.sku,
+                        name: displayName,
+                        size: selectedSize,
+                        material,
+                        price: product.priceFinalGross,
+                        image: product.coverImage || gallery[0] || null,
+                        maxQuantity: stockValue > 0 ? stockValue : null,
+                        categoryLabel: product.categories[0]?.name || null,
+                      }}
+                    />
+                    <Link href={withLang("/checkout")} className="btn btn-outline-dark btn-addtocart ss-cta-btn ss-cta-btn--ghost">
+                      Checkout
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="product-single__addtolinks">
+                  <Link href={withLang("/web-shop")} className="menu-link menu-link_us-s add-to-wishlist">
+                    <span>{isEn ? "Back to shop" : "Nazad na shop"}</span>
+                  </Link>
+                  <Link href={withLang(`/kontakt?product=${product.legacyId}`)} className="menu-link menu-link_us-s add-to-wishlist">
+                    <span>{isEn ? "Ask about this item" : "Pitajte za ovaj model"}</span>
                   </Link>
                 </div>
               </div>
 
-              <div className="product-single__addtolinks">
-                <Link href={isEn ? "/web-shop?lang=en" : "/web-shop"} className="menu-link menu-link_us-s add-to-wishlist">
-                  <span>{isEn ? "Back to shop" : "Nazad na shop"}</span>
-                </Link>
-                <Link href={isEn ? `/kontakt?lang=en&product=${product.legacyId}` : `/kontakt?product=${product.legacyId}`} className="menu-link menu-link_us-s add-to-wishlist">
-                  <span>{isEn ? "Ask about this item" : "Pitajte za ovaj model"}</span>
-                </Link>
-              </div>
-
-              <div className="product-single__meta-info">
+              <div className="product-single__meta-info ss-product-glass-card mt-3">
                 <div className="meta-item">
                   <label>SKU:</label>
                   <span>{product.sku}</span>
@@ -274,27 +298,29 @@ export default async function WebShopProductPage({
                   <span>{material}</span>
                 </div>
                 <div className="meta-item">
-                  <label>{isEn ? "Size" : "Veličina"}:</label>
-                  <span>{selectedSize || (isEn ? "Check size selector" : "Pogledajte selektor veličina")}</span>
+                  <label>{isEn ? "Size" : "Velicina"}:</label>
+                  <span>{selectedSize || (isEn ? "Check size selector" : "Pogledajte selektor velicina")}</span>
                 </div>
                 <div className="meta-item">
                   <label>PDV:</label>
-                  <span>{product.taxPercent}% {isEn ? "included" : "uračunat"}</span>
+                  <span>{product.taxPercent}% {isEn ? "included" : "uracunat"}</span>
                 </div>
               </div>
 
-              <div className="rounded-4 border p-3 mt-4 bg-white">
-                <p className="text-uppercase fw-medium text-secondary mb-2">
-                  {isEn ? "How to determine your size" : "Kako da odredite veličinu"}
-                </p>
-                <ul className="mb-0 ps-3">
-                  {sizeGuide.bullets.slice(0, 2).map((bullet) => (
-                    <li key={bullet} className="mb-1">
-                      {bullet}
-                    </li>
-                  ))}
-                </ul>
-              </div>
+              {showSizeGuide && sizeGuide ? (
+                <div className="rounded-4 border p-3 mt-3 bg-white ss-product-glass-card">
+                  <p className="text-uppercase fw-medium text-secondary mb-2">
+                    {sizeGuide.title}
+                  </p>
+                  <ul className="mb-0 ps-3">
+                    {sizeGuide.bullets.slice(0, 2).map((bullet) => (
+                      <li key={bullet} className="mb-1">
+                        {bullet}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -312,7 +338,8 @@ export default async function WebShopProductPage({
         {related.length > 0 ? (
           <Reveal as="section" className="products-carousel container mt-5 pt-4" delay={0.06}>
             <h2 className="h3 text-uppercase mb-4 pb-xl-2 mb-xl-4">
-              {isEn ? "Related " : "Povezani "}<strong>{isEn ? "Products" : "Proizvodi"}</strong>
+              {isEn ? "Related " : "Povezani "}
+              <strong>{isEn ? "Products" : "Proizvodi"}</strong>
             </h2>
             <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4">
               {related.map((item) => {
@@ -343,7 +370,7 @@ export default async function WebShopProductPage({
                             quality={60}
                           />
                         </Link>
-                        <Link href={variantHref(item.legacyId)} className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium">
+                        <Link href={variantHref(item.legacyId)} className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium ss-cta-btn">
                           {isEn ? "Details" : "Detaljnije"}
                         </Link>
                       </div>

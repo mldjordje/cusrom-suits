@@ -1,14 +1,19 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { STOREFRONT_LANGUAGE_COOKIE, type StorefrontLanguage } from "@/lib/storefront/language";
+import {
+  STOREFRONT_LANGUAGE_COOKIE,
+  type StorefrontLanguage,
+} from "@/lib/storefront/language";
 
 export default function StorefrontLanguageSwitcher({
   lang,
   className,
+  compact = false,
 }: {
   lang: StorefrontLanguage;
   className?: string;
+  compact?: boolean;
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -28,8 +33,11 @@ export default function StorefrontLanguageSwitcher({
   };
 
   return (
-    <div className={className ? `d-inline-flex ${className}` : "d-inline-flex"} aria-label="Language switcher">
-      <div className="d-inline-flex border rounded-pill overflow-hidden">
+    <div
+      className={className ? `d-inline-flex ${className}` : "d-inline-flex"}
+      aria-label="Language switcher"
+    >
+      <div className={`ss-lang-switch ${compact ? "ss-lang-switch--compact" : ""}`}>
         {(["sr", "en"] as StorefrontLanguage[]).map((code) => {
           const active = lang === code;
           return (
@@ -37,10 +45,10 @@ export default function StorefrontLanguageSwitcher({
               key={code}
               type="button"
               onClick={() => setLanguage(code)}
-              className={`btn btn-sm border-0 rounded-0 px-3 py-1 text-uppercase fw-medium ${active ? "btn-dark text-white" : "btn-link text-decoration-none text-body"}`}
+              className={`ss-lang-switch__button ${active ? "is-active" : ""}`}
               aria-pressed={active}
             >
-              {code}
+              {code.toUpperCase()}
             </button>
           );
         })}

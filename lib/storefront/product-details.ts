@@ -108,12 +108,15 @@ const getProductFamily = (product: CatalogProductView) => {
     return "tailored";
   }
 
-  if (/ko[šs]ulj|shirt|polo|majic|t-?shirt|sweater|d[žz]emper|knit/.test(haystack)) {
+  if (/kosulj|shirt|polo|majic|t-?shirt|sweater|dzemper|knit/.test(haystack)) {
     return "soft";
   }
 
   return "general";
 };
+
+export const productSupportsSizeGuide = (product: CatalogProductView) =>
+  getProductFamily(product) === "tailored";
 
 export const getLocalizedCatalogProductName = (
   product: CatalogProductView,
@@ -141,7 +144,7 @@ export const getProductMaterial = (
 
   return lang === "en"
     ? "Material details are confirmed on the original product declaration."
-    : "Detalji materijala potvrđeni su na originalnoj deklaraciji proizvoda.";
+    : "Detalji materijala potvrdjeni su na originalnoj deklaraciji proizvoda.";
 };
 
 export const getProductSizeOptions = (
@@ -218,10 +221,13 @@ export const getProductSizeGuide = (
   product: CatalogProductView,
   lang: StorefrontLanguage,
   sizeOptions: ProductSizeOption[],
-): ProductSizeGuide => {
+): ProductSizeGuide | null => {
+  if (!productSupportsSizeGuide(product)) {
+    return null;
+  }
+
   const joined = sizeOptions.map((option) => option.label).join(", ");
   const hasNumericSizes = sizeOptions.some((option) => /^\d/.test(option.label));
-  const family = getProductFamily(product);
 
   if (lang === "en") {
     return {
@@ -233,27 +239,23 @@ export const getProductSizeGuide = (
         hasNumericSizes
           ? "Measure chest and waist over a light shirt, then compare with your usual EU suit or trouser size."
           : "Measure chest around the fullest part and compare with the size you usually wear in shirts or knitwear.",
-        family === "tailored"
-          ? "If you are between two sizes, choose the larger size for tailored garments and adjust in atelier if needed."
-          : "If you are between two sizes, choose the larger size for a more comfortable fit.",
+        "If you are between two sizes, choose the larger size for tailored garments and adjust in atelier if needed.",
         "If you need help, contact our team and we will recommend the best size before ordering.",
       ],
     };
   }
 
   return {
-    title: "Kako da odredite veličinu",
+    title: "Kako da odredite velicinu",
     intro: hasNumericSizes
-      ? `Dostupne veličine: ${joined || "pogledajte iznad"} . Brojčane veličine prate evropski konfekcijski sistem.`
-      : `Dostupne veličine: ${joined || "pogledajte iznad"} . Slovne veličine prate standardnu internacionalnu skalu.`,
+      ? `Dostupne velicine: ${joined || "pogledajte iznad"}. Brojcane velicine prate evropski konfekcijski sistem.`
+      : `Dostupne velicine: ${joined || "pogledajte iznad"}. Slovne velicine prate standardnu internacionalnu skalu.`,
     bullets: [
       hasNumericSizes
-        ? "Izmerite obim grudi i struka preko lagane košulje i uporedite sa veličinom koju inače nosite."
-        : "Izmerite obim grudi preko najšireg dela i uporedite sa veličinom koju obično nosite u košuljama ili trikotaži.",
-      family === "tailored"
-        ? "Ako ste između dve veličine, za odela i sakoa preporuka je veća veličina uz naknadno korigovanje."
-        : "Ako ste između dve veličine, uzmite veću veličinu radi udobnijeg pada.",
-      "Ako želite potvrdu pre poručivanja, kontaktirajte naš tim i preporučićemo odgovarajući broj.",
+        ? "Izmerite obim grudi i struka preko lagane kosulje i uporedite sa velicinom koju inace nosite."
+        : "Izmerite obim grudi preko najsireg dela i uporedite sa velicinom koju obicno nosite u kosuljama ili trikotazi.",
+      "Ako ste izmedju dve velicine, za odela i sakoa preporuka je veca velicina uz naknadno korigovanje.",
+      "Ako zelite potvrdu pre porucivanja, kontaktirajte nas tim i preporucicemo odgovarajuci broj.",
     ],
   };
 };
@@ -287,10 +289,10 @@ export const getProductDeclaration = (
     { label: "SKU", value: product.sku || "-" },
     { label: "Brend", value: product.brand || "Santos & Santorini" },
     { label: "Materijal", value: material },
-    { label: "Dostupne veličine", value: sizes },
+    { label: "Dostupne velicine", value: sizes },
     {
       label: "Deklaracija",
-      value: "Santos & Santorini, Obrenovićeva 9, Niš, Srbija",
+      value: "Santos & Santorini, Obrenoviceva 9, Nis, Srbija",
     },
   ];
 };
@@ -299,8 +301,7 @@ export const getProductWashCare = (
   product: CatalogProductView,
   lang: StorefrontLanguage,
 ) => {
-  const family = getProductFamily(product);
-  const tailored = family === "tailored";
+  const tailored = productSupportsSizeGuide(product);
 
   if (lang === "en") {
     return {
@@ -331,9 +332,9 @@ export const getProductWashCare = (
           ]
         : [
             {
-              symbol: "30°",
+              symbol: "30",
               title: "Gentle wash",
-              description: "Wash at up to 30°C on a gentle program.",
+              description: "Wash at up to 30C on a gentle program.",
             },
             {
               symbol: "No Cl",
@@ -355,51 +356,51 @@ export const getProductWashCare = (
   }
 
   return {
-    title: "Wash care simboli i značenje",
-    note: "Ako se originalna etiketa razlikuje od ovog vodiča, pratite ušivenu deklaraciju na proizvodu.",
+    title: "Wash care simboli i znacenje",
+    note: "Ako se originalna etiketa razlikuje od ovog vodica, pratite usivenu deklaraciju na proizvodu.",
     items: tailored
       ? [
           {
             symbol: "P",
-            title: "Hemijsko čišćenje",
-            description: "Za odela, sakoe i slične krojene modele preporučuje se profesionalno čišćenje.",
+            title: "Hemijsko ciscenje",
+            description: "Za odela, sakoe i slicne krojene modele preporucuje se profesionalno ciscenje.",
           },
           {
             symbol: "No Cl",
-            title: "Bez izbeljivača",
-            description: "Izbeljivači mogu oštetiti vlakna, boju i konstrukciju materijala.",
+            title: "Bez izbeljivaca",
+            description: "Izbeljivaci mogu ostetiti vlakna, boju i konstrukciju materijala.",
           },
           {
             symbol: "Low",
-            title: "Peglanje na nižoj temperaturi",
-            description: "Peglajte pažljivo, najbolje preko pamučne krpe ili sa naličja.",
+            title: "Peglanje na nizoj temperaturi",
+            description: "Peglajte pazljivo, najbolje preko pamučne krpe ili sa nalicja.",
           },
           {
             symbol: "No TD",
-            title: "Bez mašinskog sušenja",
-            description: "Sušite prirodno, na ofingeru ili ravnoj podlozi.",
+            title: "Bez masinskog susenja",
+            description: "Susite prirodno, na ofingeru ili ravnoj podlozi.",
           },
         ]
       : [
           {
-            symbol: "30°",
-            title: "Pranje do 30°C",
-            description: "Koristite nežan program pranja i blagi deterdžent.",
+            symbol: "30",
+            title: "Pranje do 30C",
+            description: "Koristite nezan program pranja i blagi deterdzent.",
           },
           {
             symbol: "No Cl",
-            title: "Bez izbeljivača",
+            title: "Bez izbeljivaca",
             description: "Ne koristiti varikinu i jaka sredstva za beljenje.",
           },
           {
             symbol: "Low",
-            title: "Peglanje na nižoj temperaturi",
-            description: "Po potrebi peglati sa naličja kako bi se sačuvala struktura tkanine.",
+            title: "Peglanje na nizoj temperaturi",
+            description: "Po potrebi peglati sa nalicja kako bi se sacuvala struktura tkanine.",
           },
           {
             symbol: "No TD",
-            title: "Bez sušilice",
-            description: "Prirodno sušenje čuva oblik i završnu obradu proizvoda.",
+            title: "Bez susilice",
+            description: "Prirodno susenje cuva oblik i zavrsnu obradu proizvoda.",
           },
         ],
   };
