@@ -1,12 +1,14 @@
 import Link from "next/link";
 import NewsletterSignupForm from "@/app/components/storefront/NewsletterSignupForm";
+import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
-export default function StorefrontFooter({
+export default async function StorefrontFooter({
   lang = "sr",
 }: {
   lang?: StorefrontLanguage;
 }) {
+  const landingSettings = await getLandingSettings();
   const isEn = lang === "en";
   const withLang = (href: string) => {
     if (!isEn) return href;
@@ -43,6 +45,12 @@ export default function StorefrontFooter({
                   <span className="ss-footer__contact-chip">
                     Obrenoviceva 9, Nis
                   </span>
+                  <span className="ss-footer__contact-chip">
+                    PIB {landingSettings.companyPib}
+                  </span>
+                  <span className="ss-footer__contact-chip">
+                    MB {landingSettings.companyMb}
+                  </span>
                 </div>
               </div>
             </div>
@@ -55,6 +63,7 @@ export default function StorefrontFooter({
                 <ul className="ss-footer__list list-unstyled">
                   <li><Link href={withLang("/")}>{isEn ? "Home" : "Pocetna"}</Link></li>
                   <li><Link href={withLang("/o-nama")}>{isEn ? "About" : "O nama"}</Link></li>
+                  <li><Link href={withLang("/poslovne-uniforme")}>{isEn ? "Business uniforms" : "Poslovne uniforme"}</Link></li>
                   <li><Link href={withLang("/blog")}>Blog</Link></li>
                   <li><Link href={withLang("/kontakt")}>{isEn ? "Contact" : "Kontakt"}</Link></li>
                 </ul>
@@ -68,6 +77,7 @@ export default function StorefrontFooter({
                   <li><Link href={withLang("/web-shop")}>Web Shop</Link></li>
                   <li><Link href={withLang("/akcije")}>{isEn ? "Sale" : "Akcije"}</Link></li>
                   <li><Link href={withLang("/web-shop?inStock=1")}>{isEn ? "In stock" : "Na stanju"}</Link></li>
+                  <li><Link href={withLang("/dokumenta")}>{isEn ? "Documents" : "Dokumenta"}</Link></li>
                   <li><Link href={withLang("/checkout")}>Checkout</Link></li>
                 </ul>
               </div>

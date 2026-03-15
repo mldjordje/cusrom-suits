@@ -16,5 +16,46 @@
   "bannerRightTitle": "Aktuelne akcije",
   "bannerRightButtonLabel": "Pogledaj akcije",
   "bannerRightHref": "/akcije",
-  "bannerRightImage": "/img/hero.jpg"
+  "bannerRightImage": "/img/hero.jpg",
+  "companyMb": "20967021",
+  "companyPib": "108278726",
+  "customerRightsTitle": "Prava potrosaca",
+  "customerRightsText": "Kupac ima pravo na jasne informacije o proizvodu, ceni, nacinu porucivanja, isporuci i reklamaciji. Santos & Santorini postupa po vazecim propisima i reklamacije resava kroz direktnu komunikaciju sa kupcem.",
+  "purchaseGuideTitle": "Uputstvo za kupovinu",
+  "purchaseGuideText": "Izaberite proizvod i velicinu, dodajte artikal u korpu, zatim na checkout strani unesite kontakt podatke i posaljite porudzbinu kao upit. Nas tim potom potvrdjuje dostupnost, rok i sve detalje isporuke.",
+  "documentsTitle": "Dokumenta za preuzimanje",
+  "documentsSubtitle": "Ovde mozete dodati obrasce i dokumenta koja kupci mogu odmah da preuzmu.",
+  "documents": [],
+  "uniformsEyebrow": "Poslovne uniforme",
+  "uniformsTitle": "Uniforme za timove, hotele, restorane i klinike",
+  "uniformsText": "Santos & Santorini priprema poslovne uniforme prilagodjene identitetu brenda, delatnosti i potrebama tima. U ponudi su muske i zenske kombinacije, mantili, kosulje i kompletne capsule kolekcije za kompanije.",
+  "uniformsCtaLabel": "Pogledaj uniforme",
+  "uniformsCtaHref": "/poslovne-uniforme",
+  "uniformsImages": [
+    {
+      "title": "Hospitality kolekcija",
+      "image": "https://santos.rs/fajlovi/uniforme/BRI04849.jpg",
+      "alt": "Santos poslovna uniforma za hospitality tim"
+    },
+    {
+      "title": "Recepcija i menadzment",
+      "image": "https://santos.rs/fajlovi/uniforme/BRI04875.jpg",
+      "alt": "Santos poslovna uniforma za recepciju"
+    },
+    {
+      "title": "Timski setovi",
+      "image": "https://santos.rs/fajlovi/uniforme/BRI04963.jpg",
+      "alt": "Santos poslovne uniforme za kompanijske timove"
+    }
+  ],
+  "shopHeroEyebrow": "Kurirani izbor krojeva",
+  "shopHeroTitle": "Web shop kolekcija spremna za porucivanje",
+  "shopHeroLead": "Pregledaj kolekciju uz citljiviju navigaciju, pretragu po proizvodu i filtere koji sada rade pregledno i na desktopu i na telefonu.",
+  "shopHeroImage": "/img/hero2.jpg",
+  "heroStripProductIds": [],
+  "highlightedProductIds": [],
+  "popularProductIds": [],
+  "arrivalsProductIds": [],
+  "saleProductIds": [],
+  "trendingProductIds": []
 }

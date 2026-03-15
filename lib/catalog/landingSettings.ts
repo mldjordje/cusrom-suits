@@ -10,6 +10,18 @@ export type LandingProductSectionKey =
   | "saleProductIds"
   | "trendingProductIds";
 
+export type LandingDocument = {
+  title: string;
+  description: string;
+  url: string;
+};
+
+export type LandingUniformImage = {
+  title: string;
+  image: string;
+  alt: string;
+};
+
 export type LandingSettings = {
   showSaleSection: boolean;
   saleSectionTitle: string;
@@ -29,6 +41,25 @@ export type LandingSettings = {
   bannerRightButtonLabel: string;
   bannerRightHref: string;
   bannerRightImage: string;
+  companyMb: string;
+  companyPib: string;
+  customerRightsTitle: string;
+  customerRightsText: string;
+  purchaseGuideTitle: string;
+  purchaseGuideText: string;
+  documentsTitle: string;
+  documentsSubtitle: string;
+  documents: LandingDocument[];
+  uniformsEyebrow: string;
+  uniformsTitle: string;
+  uniformsText: string;
+  uniformsCtaLabel: string;
+  uniformsCtaHref: string;
+  uniformsImages: LandingUniformImage[];
+  shopHeroEyebrow: string;
+  shopHeroTitle: string;
+  shopHeroLead: string;
+  shopHeroImage: string;
   heroStripProductIds: number[];
   highlightedProductIds: number[];
   popularProductIds: number[];
@@ -56,12 +87,84 @@ const DEFAULT_SETTINGS: LandingSettings = {
   bannerRightButtonLabel: "Pogledaj akcije",
   bannerRightHref: "/akcije",
   bannerRightImage: "/img/hero.jpg",
+  companyMb: "20967021",
+  companyPib: "108278726",
+  customerRightsTitle: "Prava potrosaca",
+  customerRightsText:
+    "Kupac ima pravo na jasne informacije o proizvodu, ceni, nacinu porucivanja, isporuci i reklamaciji. Santos & Santorini postupa po vazecim propisima i reklamacije resava kroz direktnu komunikaciju sa kupcem.",
+  purchaseGuideTitle: "Uputstvo za kupovinu",
+  purchaseGuideText:
+    "Izaberite proizvod i velicinu, dodajte artikal u korpu, zatim na checkout strani unesite kontakt podatke i posaljite porudzbinu kao upit. Nas tim potom potvrdjuje dostupnost, rok i sve detalje isporuke.",
+  documentsTitle: "Dokumenta za preuzimanje",
+  documentsSubtitle: "Ovde mozete dodati obrasce i dokumenta koja kupci mogu odmah da preuzmu.",
+  documents: [],
+  uniformsEyebrow: "Poslovne uniforme",
+  uniformsTitle: "Uniforme za timove, hotele, restorane i klinike",
+  uniformsText:
+    "Santos & Santorini priprema poslovne uniforme prilagodjene identitetu brenda, delatnosti i potrebama tima. U ponudi su muske i zenske kombinacije, radne kecelje, mantili, kosulje i kompletne capsule kolekcije za kompanije.",
+  uniformsCtaLabel: "Pogledaj uniforme",
+  uniformsCtaHref: "/poslovne-uniforme",
+  uniformsImages: [
+    {
+      title: "Hospitality kolekcija",
+      image: "https://santos.rs/fajlovi/uniforme/BRI04849.jpg",
+      alt: "Santos poslovna uniforma za hospitality tim",
+    },
+    {
+      title: "Recepcija i menadzment",
+      image: "https://santos.rs/fajlovi/uniforme/BRI04875.jpg",
+      alt: "Santos poslovna uniforma za recepciju",
+    },
+    {
+      title: "Timski setovi",
+      image: "https://santos.rs/fajlovi/uniforme/BRI04963.jpg",
+      alt: "Santos poslovne uniforme za kompanijske timove",
+    },
+  ],
+  shopHeroEyebrow: "Kurirani izbor krojeva",
+  shopHeroTitle: "Web shop kolekcija spremna za porucivanje",
+  shopHeroLead:
+    "Pregledaj kolekciju uz citljiviju navigaciju, pretragu po proizvodu i filtere koji sada rade pregledno i na desktopu i na telefonu.",
+  shopHeroImage: "/img/hero2.jpg",
   heroStripProductIds: [],
   highlightedProductIds: [],
   popularProductIds: [],
   arrivalsProductIds: [],
   saleProductIds: [],
   trendingProductIds: [],
+};
+
+const normalizeLandingDocument = (value: unknown): LandingDocument | null => {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const title = String(row.title || "").trim();
+  const description = String(row.description || "").trim();
+  const url = String(row.url || "").trim();
+  if (!title && !description && !url) return null;
+  return { title, description, url };
+};
+
+const normalizeLandingDocuments = (value: unknown, max = 24) => {
+  if (!Array.isArray(value)) return [] as LandingDocument[];
+  return value.map(normalizeLandingDocument).filter((item): item is LandingDocument => Boolean(item)).slice(0, max);
+};
+
+const normalizeLandingUniformImage = (value: unknown): LandingUniformImage | null => {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const title = String(row.title || "").trim();
+  const image = String(row.image || "").trim();
+  const alt = String(row.alt || "").trim();
+  if (!title && !image && !alt) return null;
+  return { title, image, alt };
+};
+
+const normalizeLandingUniformImages = (value: unknown, max = 24) => {
+  if (!Array.isArray(value)) return [] as LandingUniformImage[];
+  return value
+    .map(normalizeLandingUniformImage)
+    .filter((item): item is LandingUniformImage => Boolean(item))
+    .slice(0, max);
 };
 
 const normalizeLegacyIdList = (value: unknown, max = 24): number[] => {
@@ -103,6 +206,25 @@ export async function getLandingSettings(): Promise<LandingSettings> {
     bannerRightButtonLabel: String(settings.bannerRightButtonLabel || DEFAULT_SETTINGS.bannerRightButtonLabel),
     bannerRightHref: String(settings.bannerRightHref || DEFAULT_SETTINGS.bannerRightHref),
     bannerRightImage: String(settings.bannerRightImage || DEFAULT_SETTINGS.bannerRightImage),
+    companyMb: String(settings.companyMb || DEFAULT_SETTINGS.companyMb),
+    companyPib: String(settings.companyPib || DEFAULT_SETTINGS.companyPib),
+    customerRightsTitle: String(settings.customerRightsTitle || DEFAULT_SETTINGS.customerRightsTitle),
+    customerRightsText: String(settings.customerRightsText || DEFAULT_SETTINGS.customerRightsText),
+    purchaseGuideTitle: String(settings.purchaseGuideTitle || DEFAULT_SETTINGS.purchaseGuideTitle),
+    purchaseGuideText: String(settings.purchaseGuideText || DEFAULT_SETTINGS.purchaseGuideText),
+    documentsTitle: String(settings.documentsTitle || DEFAULT_SETTINGS.documentsTitle),
+    documentsSubtitle: String(settings.documentsSubtitle || DEFAULT_SETTINGS.documentsSubtitle),
+    documents: normalizeLandingDocuments(settings.documents ?? DEFAULT_SETTINGS.documents),
+    uniformsEyebrow: String(settings.uniformsEyebrow || DEFAULT_SETTINGS.uniformsEyebrow),
+    uniformsTitle: String(settings.uniformsTitle || DEFAULT_SETTINGS.uniformsTitle),
+    uniformsText: String(settings.uniformsText || DEFAULT_SETTINGS.uniformsText),
+    uniformsCtaLabel: String(settings.uniformsCtaLabel || DEFAULT_SETTINGS.uniformsCtaLabel),
+    uniformsCtaHref: String(settings.uniformsCtaHref || DEFAULT_SETTINGS.uniformsCtaHref),
+    uniformsImages: normalizeLandingUniformImages(settings.uniformsImages ?? DEFAULT_SETTINGS.uniformsImages),
+    shopHeroEyebrow: String(settings.shopHeroEyebrow || DEFAULT_SETTINGS.shopHeroEyebrow),
+    shopHeroTitle: String(settings.shopHeroTitle || DEFAULT_SETTINGS.shopHeroTitle),
+    shopHeroLead: String(settings.shopHeroLead || DEFAULT_SETTINGS.shopHeroLead),
+    shopHeroImage: String(settings.shopHeroImage || DEFAULT_SETTINGS.shopHeroImage),
     heroStripProductIds: normalizeLegacyIdList(settings.heroStripProductIds),
     highlightedProductIds: normalizeLegacyIdList(settings.highlightedProductIds),
     popularProductIds: normalizeLegacyIdList(settings.popularProductIds),
@@ -169,6 +291,72 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
       patch.bannerRightImage == null
         ? current.bannerRightImage
         : String(patch.bannerRightImage).trim() || DEFAULT_SETTINGS.bannerRightImage,
+    companyMb: patch.companyMb == null ? current.companyMb : String(patch.companyMb).trim() || DEFAULT_SETTINGS.companyMb,
+    companyPib: patch.companyPib == null ? current.companyPib : String(patch.companyPib).trim() || DEFAULT_SETTINGS.companyPib,
+    customerRightsTitle:
+      patch.customerRightsTitle == null
+        ? current.customerRightsTitle
+        : String(patch.customerRightsTitle).trim() || DEFAULT_SETTINGS.customerRightsTitle,
+    customerRightsText:
+      patch.customerRightsText == null
+        ? current.customerRightsText
+        : String(patch.customerRightsText).trim() || DEFAULT_SETTINGS.customerRightsText,
+    purchaseGuideTitle:
+      patch.purchaseGuideTitle == null
+        ? current.purchaseGuideTitle
+        : String(patch.purchaseGuideTitle).trim() || DEFAULT_SETTINGS.purchaseGuideTitle,
+    purchaseGuideText:
+      patch.purchaseGuideText == null
+        ? current.purchaseGuideText
+        : String(patch.purchaseGuideText).trim() || DEFAULT_SETTINGS.purchaseGuideText,
+    documentsTitle:
+      patch.documentsTitle == null
+        ? current.documentsTitle
+        : String(patch.documentsTitle).trim() || DEFAULT_SETTINGS.documentsTitle,
+    documentsSubtitle:
+      patch.documentsSubtitle == null
+        ? current.documentsSubtitle
+        : String(patch.documentsSubtitle).trim() || DEFAULT_SETTINGS.documentsSubtitle,
+    documents:
+      patch.documents == null ? current.documents : normalizeLandingDocuments(patch.documents, 24),
+    uniformsEyebrow:
+      patch.uniformsEyebrow == null
+        ? current.uniformsEyebrow
+        : String(patch.uniformsEyebrow).trim() || DEFAULT_SETTINGS.uniformsEyebrow,
+    uniformsTitle:
+      patch.uniformsTitle == null
+        ? current.uniformsTitle
+        : String(patch.uniformsTitle).trim() || DEFAULT_SETTINGS.uniformsTitle,
+    uniformsText:
+      patch.uniformsText == null
+        ? current.uniformsText
+        : String(patch.uniformsText).trim() || DEFAULT_SETTINGS.uniformsText,
+    uniformsCtaLabel:
+      patch.uniformsCtaLabel == null
+        ? current.uniformsCtaLabel
+        : String(patch.uniformsCtaLabel).trim() || DEFAULT_SETTINGS.uniformsCtaLabel,
+    uniformsCtaHref:
+      patch.uniformsCtaHref == null
+        ? current.uniformsCtaHref
+        : String(patch.uniformsCtaHref).trim() || DEFAULT_SETTINGS.uniformsCtaHref,
+    uniformsImages:
+      patch.uniformsImages == null ? current.uniformsImages : normalizeLandingUniformImages(patch.uniformsImages, 24),
+    shopHeroEyebrow:
+      patch.shopHeroEyebrow == null
+        ? current.shopHeroEyebrow
+        : String(patch.shopHeroEyebrow).trim() || DEFAULT_SETTINGS.shopHeroEyebrow,
+    shopHeroTitle:
+      patch.shopHeroTitle == null
+        ? current.shopHeroTitle
+        : String(patch.shopHeroTitle).trim() || DEFAULT_SETTINGS.shopHeroTitle,
+    shopHeroLead:
+      patch.shopHeroLead == null
+        ? current.shopHeroLead
+        : String(patch.shopHeroLead).trim() || DEFAULT_SETTINGS.shopHeroLead,
+    shopHeroImage:
+      patch.shopHeroImage == null
+        ? current.shopHeroImage
+        : String(patch.shopHeroImage).trim() || DEFAULT_SETTINGS.shopHeroImage,
     heroStripProductIds:
       patch.heroStripProductIds == null ? current.heroStripProductIds : normalizeLegacyIdList(patch.heroStripProductIds),
     highlightedProductIds:

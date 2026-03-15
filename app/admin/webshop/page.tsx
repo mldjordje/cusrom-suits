@@ -62,6 +62,16 @@ type LandingProductSectionKey =
   | "arrivalsProductIds"
   | "saleProductIds"
   | "trendingProductIds";
+type LandingDocument = {
+  title: string;
+  description: string;
+  url: string;
+};
+type LandingUniformImage = {
+  title: string;
+  image: string;
+  alt: string;
+};
 type LandingSettings = {
   showSaleSection: boolean;
   saleSectionTitle: string;
@@ -81,6 +91,25 @@ type LandingSettings = {
   bannerRightButtonLabel: string;
   bannerRightHref: string;
   bannerRightImage: string;
+  companyMb: string;
+  companyPib: string;
+  customerRightsTitle: string;
+  customerRightsText: string;
+  purchaseGuideTitle: string;
+  purchaseGuideText: string;
+  documentsTitle: string;
+  documentsSubtitle: string;
+  documents: LandingDocument[];
+  uniformsEyebrow: string;
+  uniformsTitle: string;
+  uniformsText: string;
+  uniformsCtaLabel: string;
+  uniformsCtaHref: string;
+  uniformsImages: LandingUniformImage[];
+  shopHeroEyebrow: string;
+  shopHeroTitle: string;
+  shopHeroLead: string;
+  shopHeroImage: string;
   heroStripProductIds: number[];
   highlightedProductIds: number[];
   popularProductIds: number[];
@@ -199,6 +228,29 @@ const defaultLandingSettings: LandingSettings = {
   bannerRightButtonLabel: "Pogledaj akcije",
   bannerRightHref: "/akcije",
   bannerRightImage: "/img/hero.jpg",
+  companyMb: "20967021",
+  companyPib: "108278726",
+  customerRightsTitle: "Prava potrosaca",
+  customerRightsText:
+    "Kupac ima pravo na jasne informacije o proizvodu, ceni, nacinu porucivanja, isporuci i reklamaciji. Santos & Santorini postupa po vazecim propisima i reklamacije resava kroz direktnu komunikaciju sa kupcem.",
+  purchaseGuideTitle: "Uputstvo za kupovinu",
+  purchaseGuideText:
+    "Izaberite proizvod i velicinu, dodajte artikal u korpu, zatim na checkout strani unesite kontakt podatke i posaljite porudzbinu kao upit. Nas tim potom potvrdjuje dostupnost, rok i sve detalje isporuke.",
+  documentsTitle: "Dokumenta za preuzimanje",
+  documentsSubtitle: "Ovde mozete dodati obrasce i dokumenta koja kupci mogu odmah da preuzmu.",
+  documents: [],
+  uniformsEyebrow: "Poslovne uniforme",
+  uniformsTitle: "Uniforme za timove, hotele, restorane i klinike",
+  uniformsText:
+    "Santos & Santorini priprema poslovne uniforme prilagodjene identitetu brenda, delatnosti i potrebama tima.",
+  uniformsCtaLabel: "Pogledaj uniforme",
+  uniformsCtaHref: "/poslovne-uniforme",
+  uniformsImages: [],
+  shopHeroEyebrow: "Kurirani izbor krojeva",
+  shopHeroTitle: "Web shop kolekcija spremna za porucivanje",
+  shopHeroLead:
+    "Pregledaj kolekciju uz citljiviju navigaciju, pretragu po proizvodu i filtere koji sada rade pregledno i na desktopu i na telefonu.",
+  shopHeroImage: "/img/hero2.jpg",
   heroStripProductIds: [],
   highlightedProductIds: [],
   popularProductIds: [],
@@ -240,6 +292,45 @@ const normalizeLegacyIdList = (value: unknown, max = 24): number[] => {
 };
 
 const parseLegacyIdCsv = (value: string, max: number) => normalizeLegacyIdList(value, max);
+
+const normalizeLandingDocuments = (value: unknown, max = 24): LandingDocument[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const entry = row as Record<string, unknown>;
+      const title = String(entry.title || "").trim();
+      const description = String(entry.description || "").trim();
+      const url = String(entry.url || "").trim();
+      if (!title && !description && !url) return null;
+      return { title, description, url };
+    })
+    .filter((item): item is LandingDocument => Boolean(item))
+    .slice(0, max);
+};
+
+const normalizeLandingUniformImages = (value: unknown, max = 24): LandingUniformImage[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const entry = row as Record<string, unknown>;
+      const title = String(entry.title || "").trim();
+      const image = String(entry.image || "").trim();
+      const alt = String(entry.alt || "").trim();
+      if (!title && !image && !alt) return null;
+      return { title, image, alt };
+    })
+    .filter((item): item is LandingUniformImage => Boolean(item))
+    .slice(0, max);
+};
+
+const humanizeAssetName = (value: string) =>
+  String(value || "")
+    .replace(/\.[^.]+$/, "")
+    .replace(/[-_]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 
 const toNumberOrNull = (value: string) => {
   const n = parseNumericInput(value);
@@ -362,6 +453,8 @@ export default function AdminWebshopPage() {
   const [loadingLanding, setLoadingLanding] = useState(false);
   const [savingLanding, setSavingLanding] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState<"left" | "right" | null>(null);
+  const [uploadingAssetKind, setUploadingAssetKind] =
+    useState<"shopHero" | "documents" | "uniforms" | null>(null);
   const [landingProductQuery, setLandingProductQuery] = useState("");
   const [landingProductResults, setLandingProductResults] = useState<CatalogProduct[]>([]);
   const [landingProductsLoading, setLandingProductsLoading] = useState(false);
@@ -693,6 +786,8 @@ export default function AdminWebshopPage() {
       const loaded = { ...defaultLandingSettings, ...(json.settings as LandingSettings) };
       setLandingSettings({
         ...loaded,
+        documents: normalizeLandingDocuments(loaded.documents),
+        uniformsImages: normalizeLandingUniformImages(loaded.uniformsImages),
         heroStripProductIds: normalizeLegacyIdList(loaded.heroStripProductIds, limitForLandingSection("heroStripProductIds")),
         highlightedProductIds: normalizeLegacyIdList(loaded.highlightedProductIds, limitForLandingSection("highlightedProductIds")),
         popularProductIds: normalizeLegacyIdList(loaded.popularProductIds, limitForLandingSection("popularProductIds")),
@@ -763,6 +858,121 @@ export default function AdminWebshopPage() {
       return { ...prev, [key]: [...current, id] };
     });
     setLandingPickerValues((prev) => ({ ...prev, [key]: "" }));
+  };
+
+  const updateLandingDocument = (index: number, patch: Partial<LandingDocument>) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      documents: prev.documents.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+    }));
+  };
+
+  const addLandingDocument = () => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      documents: [...prev.documents, { title: "", description: "", url: "" }],
+    }));
+  };
+
+  const removeLandingDocument = (index: number) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      documents: prev.documents.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
+  const updateLandingUniformImage = (index: number, patch: Partial<LandingUniformImage>) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      uniformsImages: prev.uniformsImages.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    }));
+  };
+
+  const removeLandingUniformImage = (index: number) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      uniformsImages: prev.uniformsImages.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
+  const uploadSiteAssets = async (files: FileList | null) => {
+    const list = Array.from(files || []);
+    if (!list.length) return [] as string[];
+
+    const fd = new FormData();
+    for (const file of list) fd.append("files", file);
+
+    const res = await fetch("/api/admin/webshop/site-assets", { method: "POST", body: fd });
+    const json = await res.json();
+    if (!json?.success) {
+      throw new Error(json?.message || "Upload failed");
+    }
+
+    return Array.isArray(json.urls) ? (json.urls as string[]) : [];
+  };
+
+  const uploadShopHeroImage = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploadingAssetKind("shopHero");
+    setError(null);
+    setNotice(null);
+    try {
+      const [url] = await uploadSiteAssets(files);
+      if (!url) throw new Error("Upload nije vratio URL.");
+      const patch: Partial<LandingSettings> = { shopHeroImage: url };
+      setLandingSettings((prev) => ({ ...prev, ...patch }));
+      await saveLanding(patch, "Web shop hero slika sacuvana.");
+    } catch (e: any) {
+      setError(e?.message || "Upload hero slike nije uspeo.");
+    } finally {
+      setUploadingAssetKind(null);
+    }
+  };
+
+  const uploadLandingDocuments = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploadingAssetKind("documents");
+    setError(null);
+    setNotice(null);
+    try {
+      const urls = await uploadSiteAssets(files);
+      if (!urls.length) throw new Error("Upload nije vratio URL.");
+      const nextDocs = urls.map((url, index) => ({
+        title: humanizeAssetName(files[index]?.name || `Dokument ${index + 1}`),
+        description: "",
+        url,
+      }));
+      setLandingSettings((prev) => ({ ...prev, documents: [...prev.documents, ...nextDocs] }));
+      setNotice(`${urls.length} dokument(a) uploadovano. Sacuvaj landing da ostanu na sajtu.`);
+    } catch (e: any) {
+      setError(e?.message || "Upload dokumenata nije uspeo.");
+    } finally {
+      setUploadingAssetKind(null);
+    }
+  };
+
+  const uploadUniformImages = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploadingAssetKind("uniforms");
+    setError(null);
+    setNotice(null);
+    try {
+      const urls = await uploadSiteAssets(files);
+      if (!urls.length) throw new Error("Upload nije vratio URL.");
+      const nextItems = urls.map((url, index) => ({
+        title: humanizeAssetName(files[index]?.name || `Uniforma ${index + 1}`),
+        image: url,
+        alt: humanizeAssetName(files[index]?.name || `Uniforma ${index + 1}`),
+      }));
+      setLandingSettings((prev) => ({ ...prev, uniformsImages: [...prev.uniformsImages, ...nextItems] }));
+      setNotice(`${urls.length} fotografija uniformi uploadovano. Sacuvaj landing da ostanu na sajtu.`);
+    } catch (e: any) {
+      setError(e?.message || "Upload fotografija uniformi nije uspeo.");
+    } finally {
+      setUploadingAssetKind(null);
+    }
   };
 
   useEffect(() => {
@@ -976,7 +1186,13 @@ export default function AdminWebshopPage() {
         setError(json?.message || "Save failed");
         return;
       }
-      setLandingSettings((prev) => ({ ...prev, ...(json.settings || payload) }));
+      const nextSettings = { ...(json.settings || payload) } as LandingSettings;
+      setLandingSettings((prev) => ({
+        ...prev,
+        ...nextSettings,
+        documents: normalizeLandingDocuments(nextSettings.documents ?? prev.documents),
+        uniformsImages: normalizeLandingUniformImages(nextSettings.uniformsImages ?? prev.uniformsImages),
+      }));
       setNotice(successMessage);
     } catch (e: any) {
       setError(e?.message || "Save failed");
@@ -1397,6 +1613,131 @@ export default function AdminWebshopPage() {
                   <button onClick={() => setLandingSettings((p) => ({ ...p, bannerRightImage: defaultLandingSettings.bannerRightImage }))} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">Reset default</button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Web shop hero</p>
+            <div className="grid gap-4 lg:grid-cols-[1.3fr_1fr]">
+              <div className="rounded-xl border border-slate-200 p-3">
+                <Image src={landingSettings.shopHeroImage} alt="Web shop hero" width={1200} height={420} className="h-40 w-full rounded-lg object-cover" />
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <label className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        void uploadShopHeroImage(e.target.files);
+                        e.currentTarget.value = "";
+                      }}
+                    />
+                    {uploadingAssetKind === "shopHero" ? "Uploading..." : "Upload / replace"}
+                  </label>
+                  <button
+                    onClick={() => setLandingSettings((p) => ({ ...p, shopHeroImage: defaultLandingSettings.shopHeroImage }))}
+                    className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700"
+                  >
+                    Reset default
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-3">
+                <input value={landingSettings.shopHeroEyebrow} onChange={(e) => setLandingSettings((p) => ({ ...p, shopHeroEyebrow: e.target.value }))} placeholder="Eyebrow" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                <input value={landingSettings.shopHeroTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, shopHeroTitle: e.target.value }))} placeholder="Naslov hero sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                <textarea value={landingSettings.shopHeroLead} onChange={(e) => setLandingSettings((p) => ({ ...p, shopHeroLead: e.target.value }))} rows={5} placeholder="Lead tekst za web shop stranu" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Prava potrosaca i kupovina na pocetnoj</p>
+            <div className="grid gap-3 md:grid-cols-2">
+              <input value={landingSettings.companyPib} onChange={(e) => setLandingSettings((p) => ({ ...p, companyPib: e.target.value }))} placeholder="PIB" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.companyMb} onChange={(e) => setLandingSettings((p) => ({ ...p, companyMb: e.target.value }))} placeholder="MB" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.customerRightsTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, customerRightsTitle: e.target.value }))} placeholder="Naslov prava potrosaca" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.purchaseGuideTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, purchaseGuideTitle: e.target.value }))} placeholder="Naslov uputstva za kupovinu" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <textarea value={landingSettings.customerRightsText} onChange={(e) => setLandingSettings((p) => ({ ...p, customerRightsText: e.target.value }))} rows={6} placeholder="Tekst prava potrosaca" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <textarea value={landingSettings.purchaseGuideText} onChange={(e) => setLandingSettings((p) => ({ ...p, purchaseGuideText: e.target.value }))} rows={6} placeholder="Tekst uputstva za kupovinu" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dokumenta za preuzimanje</p>
+              <div className="flex flex-wrap gap-2">
+                <label className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                  <input
+                    type="file"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      void uploadLandingDocuments(e.target.files);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                  {uploadingAssetKind === "documents" ? "Uploading..." : "Upload dokumenta"}
+                </label>
+                <button onClick={addLandingDocument} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">Dodaj rucno</button>
+              </div>
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <input value={landingSettings.documentsTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, documentsTitle: e.target.value }))} placeholder="Naslov sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.documentsSubtitle} onChange={(e) => setLandingSettings((p) => ({ ...p, documentsSubtitle: e.target.value }))} placeholder="Podnaslov sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            </div>
+            <div className="mt-4 grid gap-3">
+              {landingSettings.documents.length === 0 ? <p className="text-xs text-slate-500">Jos nema dodatih dokumenata.</p> : null}
+              {landingSettings.documents.map((document, index) => (
+                <div key={`document-${index}`} className="rounded-xl border border-slate-200 p-3">
+                  <div className="grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+                    <input value={document.title} onChange={(e) => updateLandingDocument(index, { title: e.target.value })} placeholder="Naziv dokumenta" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <input value={document.url} onChange={(e) => updateLandingDocument(index, { url: e.target.value })} placeholder="URL dokumenta" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <button onClick={() => removeLandingDocument(index)} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700">Ukloni</button>
+                  </div>
+                  <textarea value={document.description} onChange={(e) => updateLandingDocument(index, { description: e.target.value })} rows={3} placeholder="Opis dokumenta" className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Poslovne uniforme</p>
+              <label className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={(e) => {
+                    void uploadUniformImages(e.target.files);
+                    e.currentTarget.value = "";
+                  }}
+                />
+                {uploadingAssetKind === "uniforms" ? "Uploading..." : "Upload fotografije"}
+              </label>
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-2">
+              <input value={landingSettings.uniformsEyebrow} onChange={(e) => setLandingSettings((p) => ({ ...p, uniformsEyebrow: e.target.value }))} placeholder="Eyebrow sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.uniformsTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, uniformsTitle: e.target.value }))} placeholder="Naslov sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.uniformsCtaLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, uniformsCtaLabel: e.target.value }))} placeholder="CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.uniformsCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, uniformsCtaHref: e.target.value }))} placeholder="CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <textarea value={landingSettings.uniformsText} onChange={(e) => setLandingSettings((p) => ({ ...p, uniformsText: e.target.value }))} rows={5} placeholder="Opis poslovnih uniformi" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {landingSettings.uniformsImages.length === 0 ? <p className="text-xs text-slate-500">Jos nema dodatih fotografija uniformi.</p> : null}
+              {landingSettings.uniformsImages.map((item, index) => (
+                <div key={`uniform-${index}`} className="rounded-xl border border-slate-200 p-3">
+                  <Image src={item.image} alt={item.alt || item.title || `Uniforma ${index + 1}`} width={420} height={320} className="h-44 w-full rounded-lg object-cover" />
+                  <div className="mt-3 grid gap-2">
+                    <input value={item.title} onChange={(e) => updateLandingUniformImage(index, { title: e.target.value })} placeholder="Naziv kartice" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <input value={item.image} onChange={(e) => updateLandingUniformImage(index, { image: e.target.value })} placeholder="URL slike" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <input value={item.alt} onChange={(e) => updateLandingUniformImage(index, { alt: e.target.value })} placeholder="Alt tekst" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <button onClick={() => removeLandingUniformImage(index)} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700">Ukloni</button>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
 

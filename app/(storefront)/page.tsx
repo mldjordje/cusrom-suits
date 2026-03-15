@@ -228,6 +228,7 @@ export default async function HomePage({
     if (href.includes("?")) return `${href}&lang=en`;
     return `${href}?lang=en`;
   };
+  const withOptionalLang = (href: string) => (href.startsWith("/") ? withLang(href) : href);
 
   const [catalog, posts, landingSettings] = await Promise.all([
     listCatalogProducts({
@@ -250,6 +251,8 @@ export default async function HomePage({
   const atelierStoryParagraphs = getAtelierStoryParagraphs(isEn);
   const atelierContactPoints = getAtelierContactPoints(isEn);
   const contentLang: "sr" | "en" = isEn ? "en" : "sr";
+  const landingDocuments = landingSettings.documents.filter((item) => item.title && item.url);
+  const landingUniformImages = landingSettings.uniformsImages.filter((item) => item.image);
 
   const landingPoolUnique = sortLandingProducts(dedupeProductsBySku(catalog.items), contentLang);
 
@@ -658,6 +661,136 @@ export default async function HomePage({
                     {isEn ? "Send email" : "Posalji email"}
                   </a>
                 </div>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
+        <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
+
+        <Reveal as="section" className="container pb-5 ss-editorial-section" delay={0.17}>
+          <div className="row g-4">
+            <div className="col-12 col-lg-7">
+              <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
+                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+                  {isEn ? "Customer info" : "Informacije za kupce"}
+                </p>
+                <h2 className="section-title text-uppercase mb-4">
+                  {isEn ? "Consumer rights and " : "Prava potrosaca i "}
+                  <strong>{isEn ? "shopping guide" : "uputstvo za kupovinu"}</strong>
+                </h2>
+                <div className="row g-3">
+                  <div className="col-12 col-md-6">
+                    <div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}>
+                      <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
+                        {landingSettings.customerRightsTitle}
+                      </p>
+                      <p className="text-secondary mb-0">{landingSettings.customerRightsText}</p>
+                    </div>
+                  </div>
+                  <div className="col-12 col-md-6">
+                    <div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}>
+                      <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
+                        {landingSettings.purchaseGuideTitle}
+                      </p>
+                      <p className="text-secondary mb-0">{landingSettings.purchaseGuideText}</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="d-flex flex-wrap gap-2 mt-4">
+                  <Link href={withLang("/checkout")} className="btn btn-dark btn-sm text-uppercase fw-medium">
+                    {isEn ? "Open checkout" : "Otvori checkout"}
+                  </Link>
+                  <Link href={withLang("/dokumenta")} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
+                    {isEn ? "Documents" : "Dokumenta"}
+                  </Link>
+                </div>
+              </div>
+            </div>
+            <div className="col-12 col-lg-5">
+              <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
+                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+                  {isEn ? "Company details" : "Podaci o firmi"}
+                </p>
+                <div className="d-grid gap-2">
+                  <div className="border px-3 py-2" style={{ borderRadius: 14 }}>
+                    <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>PIB</div>
+                    <div>{landingSettings.companyPib}</div>
+                  </div>
+                  <div className="border px-3 py-2" style={{ borderRadius: 14 }}>
+                    <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>MB</div>
+                    <div>{landingSettings.companyMb}</div>
+                  </div>
+                </div>
+                <div className="mt-4">
+                  <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
+                    {landingSettings.documentsTitle}
+                  </p>
+                  <p className="text-secondary mb-3">{landingSettings.documentsSubtitle}</p>
+                  <div className="d-grid gap-2">
+                    {landingDocuments.length > 0 ? (
+                      landingDocuments.slice(0, 3).map((item) => (
+                        <a
+                          key={`${item.title}-${item.url}`}
+                          href={item.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="border px-3 py-2 text-decoration-none text-dark"
+                          style={{ borderRadius: 14 }}
+                        >
+                          <div className="fw-medium">{item.title}</div>
+                          {item.description ? <div className="text-secondary small">{item.description}</div> : null}
+                        </a>
+                      ))
+                    ) : (
+                      <div className="border px-3 py-3 text-secondary" style={{ borderRadius: 14 }}>
+                        {isEn ? "Documents will be available here soon." : "Dokumenta ce ovde biti dostupna cim budu dodata."}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Reveal>
+
+        <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
+
+        <Reveal as="section" className="container pb-5 ss-editorial-section" delay={0.175}>
+          <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+            <div>
+              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+                {landingSettings.uniformsEyebrow}
+              </p>
+              <h2 className="section-title text-uppercase mb-0">{landingSettings.uniformsTitle}</h2>
+            </div>
+            <Link href={withOptionalLang(landingSettings.uniformsCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
+              {landingSettings.uniformsCtaLabel}
+            </Link>
+          </div>
+          <div className="row g-4 align-items-stretch">
+            <div className="col-12 col-lg-5">
+              <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
+                <p className="text-secondary mb-0">{landingSettings.uniformsText}</p>
+              </div>
+            </div>
+            <div className="col-12 col-lg-7">
+              <div className="row g-3">
+                {landingUniformImages.slice(0, 3).map((item) => (
+                  <div key={`${item.image}-${item.title}`} className="col-12 col-md-4">
+                    <div className="border bg-white h-100 p-2 ss-editorial-card" style={{ borderRadius: 20 }}>
+                      <Image
+                        src={item.image}
+                        alt={item.alt || item.title || landingSettings.uniformsTitle}
+                        width={420}
+                        height={520}
+                        className="w-100 h-auto"
+                        style={{ borderRadius: 16, objectFit: "cover" }}
+                      />
+                      {item.title ? <p className="mt-3 mb-1 fw-medium text-uppercase small">{item.title}</p> : null}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>

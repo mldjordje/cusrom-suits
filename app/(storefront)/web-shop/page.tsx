@@ -5,6 +5,7 @@ import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import WebShopFilters from "@/app/components/storefront/WebShopFilters";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
+import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
 import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
@@ -67,6 +68,7 @@ export default async function WebShopPage({
     exportOnly: true,
     collapseBySku: true,
   });
+  const landingSettings = await getLandingSettings();
 
   const getCategoryLabel = (item: CatalogProductView) =>
     getCatalogProductCategoryLabel(
@@ -264,7 +266,7 @@ export default async function WebShopPage({
             <div className="ss-shop-hero__media">
               <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
                 <Image
-                  src="/img/hero.jpg"
+                  src={landingSettings.shopHeroImage || "/img/hero2.jpg"}
                   width={1759}
                   height={420}
                   alt="Santos web shop hero"
@@ -275,12 +277,10 @@ export default async function WebShopPage({
               <div className="ss-shop-hero__overlay" />
               <div className="container ss-shop-hero__content">
                 <div className="ss-shop-hero__card">
-                  <p className="ss-shop-hero__eyebrow">{isEn ? "Curated tailoring" : "Kurirani izbor krojeva"}</p>
-                  <h1>{isEn ? "Web Shop" : "Web Shop"}</h1>
+                  <p className="ss-shop-hero__eyebrow">{landingSettings.shopHeroEyebrow}</p>
+                  <h1>{landingSettings.shopHeroTitle}</h1>
                   <p className="ss-shop-hero__lead">
-                    {isEn
-                      ? "Browse the collection with cleaner navigation, product-first search and filters that finally feel right on both desktop and mobile."
-                      : "Pregledaj kolekciju uz citljiviju navigaciju, pretragu po proizvodu i filtere koji sada konacno rade pregledno i na desktopu i na telefonu."}
+                    {landingSettings.shopHeroLead}
                   </p>
                   <div className="ss-shop-hero__actions">
                     <Link href="#shop-products" className="btn btn-primary text-uppercase fw-medium">

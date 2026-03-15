@@ -1,33 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
-import { getLandingSettings, updateLandingSettings } from "@/lib/catalog/landingSettings";
+import {
+  getLandingSettings,
+  updateLandingSettings,
+  type LandingDocument,
+  type LandingSettings,
+  type LandingUniformImage,
+} from "@/lib/catalog/landingSettings";
 
-type PatchPayload = {
-  showSaleSection?: boolean;
-  saleSectionTitle?: string;
-  saleSectionSubtitle?: string;
-  heroEyebrow?: string;
-  heroTitleLine1?: string;
-  heroTitleLine2?: string;
-  heroPrimaryCtaLabel?: string;
-  heroPrimaryCtaHref?: string;
-  heroSecondaryCtaLabel?: string;
-  heroSecondaryCtaHref?: string;
-  bannerLeftTitle?: string;
-  bannerLeftButtonLabel?: string;
-  bannerLeftHref?: string;
-  bannerLeftImage?: string;
-  bannerRightTitle?: string;
-  bannerRightButtonLabel?: string;
-  bannerRightHref?: string;
-  bannerRightImage?: string;
-  heroStripProductIds?: number[];
-  highlightedProductIds?: number[];
-  popularProductIds?: number[];
-  arrivalsProductIds?: number[];
-  saleProductIds?: number[];
-  trendingProductIds?: number[];
-};
+type PatchPayload = Partial<LandingSettings>;
 
 const parseIdList = (value: unknown): number[] => {
   const source = Array.isArray(value)
@@ -43,6 +24,38 @@ const parseIdList = (value: unknown): number[] => {
     unique.add(Math.floor(n));
   }
   return Array.from(unique);
+};
+
+const parseDocuments = (value: unknown): LandingDocument[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const entry = row as Record<string, unknown>;
+      const title = String(entry.title || "").trim();
+      const description = String(entry.description || "").trim();
+      const url = String(entry.url || "").trim();
+      if (!title && !description && !url) return null;
+      return { title, description, url };
+    })
+    .filter((item): item is LandingDocument => Boolean(item))
+    .slice(0, 24);
+};
+
+const parseUniformImages = (value: unknown): LandingUniformImage[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const entry = row as Record<string, unknown>;
+      const title = String(entry.title || "").trim();
+      const image = String(entry.image || "").trim();
+      const alt = String(entry.alt || "").trim();
+      if (!title && !image && !alt) return null;
+      return { title, image, alt };
+    })
+    .filter((item): item is LandingUniformImage => Boolean(item))
+    .slice(0, 24);
 };
 
 export async function GET(req: NextRequest) {
@@ -83,6 +96,25 @@ export async function PATCH(req: NextRequest) {
   if ("bannerRightButtonLabel" in row) patch.bannerRightButtonLabel = String(row.bannerRightButtonLabel || "");
   if ("bannerRightHref" in row) patch.bannerRightHref = String(row.bannerRightHref || "");
   if ("bannerRightImage" in row) patch.bannerRightImage = String(row.bannerRightImage || "");
+  if ("companyMb" in row) patch.companyMb = String(row.companyMb || "");
+  if ("companyPib" in row) patch.companyPib = String(row.companyPib || "");
+  if ("customerRightsTitle" in row) patch.customerRightsTitle = String(row.customerRightsTitle || "");
+  if ("customerRightsText" in row) patch.customerRightsText = String(row.customerRightsText || "");
+  if ("purchaseGuideTitle" in row) patch.purchaseGuideTitle = String(row.purchaseGuideTitle || "");
+  if ("purchaseGuideText" in row) patch.purchaseGuideText = String(row.purchaseGuideText || "");
+  if ("documentsTitle" in row) patch.documentsTitle = String(row.documentsTitle || "");
+  if ("documentsSubtitle" in row) patch.documentsSubtitle = String(row.documentsSubtitle || "");
+  if ("documents" in row) patch.documents = parseDocuments(row.documents);
+  if ("uniformsEyebrow" in row) patch.uniformsEyebrow = String(row.uniformsEyebrow || "");
+  if ("uniformsTitle" in row) patch.uniformsTitle = String(row.uniformsTitle || "");
+  if ("uniformsText" in row) patch.uniformsText = String(row.uniformsText || "");
+  if ("uniformsCtaLabel" in row) patch.uniformsCtaLabel = String(row.uniformsCtaLabel || "");
+  if ("uniformsCtaHref" in row) patch.uniformsCtaHref = String(row.uniformsCtaHref || "");
+  if ("uniformsImages" in row) patch.uniformsImages = parseUniformImages(row.uniformsImages);
+  if ("shopHeroEyebrow" in row) patch.shopHeroEyebrow = String(row.shopHeroEyebrow || "");
+  if ("shopHeroTitle" in row) patch.shopHeroTitle = String(row.shopHeroTitle || "");
+  if ("shopHeroLead" in row) patch.shopHeroLead = String(row.shopHeroLead || "");
+  if ("shopHeroImage" in row) patch.shopHeroImage = String(row.shopHeroImage || "");
   if ("heroStripProductIds" in row) patch.heroStripProductIds = parseIdList(row.heroStripProductIds);
   if ("highlightedProductIds" in row) patch.highlightedProductIds = parseIdList(row.highlightedProductIds);
   if ("popularProductIds" in row) patch.popularProductIds = parseIdList(row.popularProductIds);

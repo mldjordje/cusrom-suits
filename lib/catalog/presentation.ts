@@ -183,8 +183,23 @@ export function getCatalogProductDisplayName(
   lang: CatalogDisplayLanguage = "sr",
 ) {
   const formatted = formatCatalogProductName(input.name, input.sku);
-  if (formatted && !isCatalogProductNameSuspicious(formatted)) {
-    return formatted;
+  if (formatted) {
+    if (!isCatalogProductNameSuspicious(formatted)) {
+      return formatted;
+    }
+
+    const meaningfulWords = formatted.match(/\p{L}{3,}/gu) || [];
+    const inferredType = inferProductTypeKey(input.name, input.categories);
+    const inferredTypeLabel = inferredType ? normalizeForMatch(getProductTypeLabel(inferredType, lang)) : "";
+    const normalizedFormatted = normalizeForMatch(formatted);
+
+    if (meaningfulWords.length >= 2) {
+      return formatted;
+    }
+
+    if (inferredTypeLabel && normalizedFormatted.includes(inferredTypeLabel) && normalizedFormatted.length > inferredTypeLabel.length + 3) {
+      return formatted;
+    }
   }
 
   const categoryLabel = getCatalogProductCategoryLabel(input, lang);
