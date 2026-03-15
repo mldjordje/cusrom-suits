@@ -124,6 +124,17 @@ export default async function WebShopProductPage({
     .slice(0, 6);
   const variantHref = (variantId: number) =>
     isEn ? `/web-shop/${variantId}?lang=en` : `/web-shop/${variantId}`;
+  const cartItem = {
+    legacyId: product.legacyId,
+    sku: product.sku,
+    name: displayName,
+    size: selectedSize,
+    material,
+    price: product.priceFinalGross,
+    image: product.coverImage || gallery[0] || null,
+    maxQuantity: stockValue > 0 ? stockValue : null,
+    categoryLabel: product.categories[0]?.name || null,
+  };
 
   return (
     <>
@@ -265,17 +276,7 @@ export default async function WebShopProductPage({
                     <AddToCartButton
                       lang={lang}
                       className="btn btn-primary btn-addtocart ss-cta-btn"
-                      item={{
-                        legacyId: product.legacyId,
-                        sku: product.sku,
-                        name: displayName,
-                        size: selectedSize,
-                        material,
-                        price: product.priceFinalGross,
-                        image: product.coverImage || gallery[0] || null,
-                        maxQuantity: stockValue > 0 ? stockValue : null,
-                        categoryLabel: product.categories[0]?.name || null,
-                      }}
+                      item={cartItem}
                     />
                     <Link href={withLang("/cart")} className="btn btn-outline-dark btn-addtocart ss-cta-btn ss-cta-btn--ghost">
                       {isEn ? "View cart" : "Idi na korpu"}
@@ -352,6 +353,36 @@ export default async function WebShopProductPage({
             washCare={washCare}
           />
         </Reveal>
+
+        <div className="ss-mobile-product-bar d-lg-none">
+          <div className="ss-mobile-product-bar__inner">
+            <div className="ss-mobile-product-bar__meta">
+              <div>
+                <p className="ss-mobile-product-bar__eyebrow">{isEn ? "Ready to order" : "Spremno za porucivanje"}</p>
+                <strong className="ss-mobile-product-bar__price">{formatRsd(product.priceFinalGross)}</strong>
+              </div>
+              <p className="ss-mobile-product-bar__note">
+                {selectedSize
+                  ? `${isEn ? "Size" : "Velicina"}: ${selectedSize}`
+                  : stockValue > 0
+                    ? `${stockValue} ${isEn ? "available now" : "dostupno odmah"}`
+                    : isEn
+                      ? "Availability confirmed after inquiry"
+                      : "Dostupnost se potvrdjuje nakon upita"}
+              </p>
+            </div>
+            <div className="ss-mobile-product-bar__actions">
+              <AddToCartButton
+                lang={lang}
+                className="btn btn-primary btn-addtocart ss-mobile-product-bar__btn"
+                item={cartItem}
+              />
+              <Link href={withLang("/cart")} className="btn btn-outline-dark ss-mobile-product-bar__btn">
+                {isEn ? "Cart" : "Korpa"}
+              </Link>
+            </div>
+          </div>
+        </div>
 
         {related.length > 0 ? (
           <Reveal as="section" className="products-carousel container mt-5 pt-4 ss-related-products" delay={0.06}>

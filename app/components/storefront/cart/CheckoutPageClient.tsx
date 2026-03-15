@@ -46,6 +46,7 @@ export default function CheckoutPageClient({
     if (!items.length) return false;
     return Boolean(form.fullName.trim() && form.email.trim() && form.phone.trim());
   }, [form.email, form.fullName, form.phone, items.length]);
+  const totalUnits = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -65,7 +66,7 @@ export default function CheckoutPageClient({
           items,
           totals: {
             subtotal,
-            quantity: items.reduce((sum, item) => sum + item.quantity, 0),
+            quantity: totalUnits,
           },
           customer: form,
           note: form.note || null,
@@ -154,6 +155,21 @@ export default function CheckoutPageClient({
             ? "The customer only fills in contact details and an optional address or note. There is no online payment barrier in this flow."
             : "Kupac unosi samo kontakt podatke i po zelji adresu ili napomenu. U ovom toku nema barijere online placanja."}
         </p>
+      </div>
+
+      <div className="ss-checkout-mini-summary" aria-label={isEn ? "Checkout overview" : "Pregled checkout-a"}>
+        <div className="ss-checkout-mini-summary__item">
+          <span>{isEn ? "Items" : "Artikli"}</span>
+          <strong>{totalUnits}</strong>
+        </div>
+        <div className="ss-checkout-mini-summary__item">
+          <span>{isEn ? "Total" : "Ukupno"}</span>
+          <strong>{formatRsd(subtotal)}</strong>
+        </div>
+        <div className="ss-checkout-mini-summary__item ss-checkout-mini-summary__item--wide">
+          <span>{isEn ? "Flow" : "Tok"}</span>
+          <strong>{isEn ? "Direct inquiry, no online payment" : "Direktan upit, bez online placanja"}</strong>
+        </div>
       </div>
 
       <div className="row g-4 align-items-start">
