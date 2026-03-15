@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
-import { listCatalogProducts } from "@/lib/catalog/store";
+import { invalidateCatalogCaches, listCatalogProducts } from "@/lib/catalog/store";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 import type { LegacyCatalogProduct, LegacyCategory } from "@/lib/legacy/types";
@@ -487,6 +487,7 @@ export async function PATCH(req: NextRequest) {
   if (!result.success) {
     return NextResponse.json({ success: false, message: result.message || "Update failed." }, { status: 500 });
   }
+  invalidateCatalogCaches();
   return NextResponse.json({ success: true });
 }
 
@@ -508,6 +509,7 @@ export async function POST(req: NextRequest) {
       const message = "message" in result ? result.message : "Create failed.";
       return NextResponse.json({ success: false, message }, { status: 500 });
     }
+    invalidateCatalogCaches();
     const legacyId = "legacyId" in result ? result.legacyId : null;
     return NextResponse.json({ success: true, legacyId });
   }
@@ -532,6 +534,9 @@ export async function POST(req: NextRequest) {
   }
 
   const failed = results.filter((item) => !item.success).length;
+  if (results.some((item) => item.success)) {
+    invalidateCatalogCaches();
+  }
   return NextResponse.json({
     success: failed === 0,
     partial: failed > 0,
@@ -553,5 +558,6 @@ export async function DELETE(req: NextRequest) {
   if (!result.success) {
     return NextResponse.json({ success: false, message: result.message || "Delete failed." }, { status: 500 });
   }
+  invalidateCatalogCaches();
   return NextResponse.json({ success: true });
 }

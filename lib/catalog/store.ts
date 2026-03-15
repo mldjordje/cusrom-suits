@@ -110,6 +110,26 @@ const getCatalogListCache = () => {
   return globalWithCache.__catalogListCache;
 };
 
+const getCatalogCacheBypassUntil = () => {
+  const globalWithCache = globalThis as typeof globalThis & {
+    __catalogCacheBypassUntil?: number;
+  };
+  return globalWithCache.__catalogCacheBypassUntil || 0;
+};
+
+const setCatalogCacheBypassUntil = (value: number) => {
+  const globalWithCache = globalThis as typeof globalThis & {
+    __catalogCacheBypassUntil?: number;
+  };
+  globalWithCache.__catalogCacheBypassUntil = value;
+};
+
+export const invalidateCatalogCaches = (bypassMs = 60_000) => {
+  getCatalogSnapshotCache().clear();
+  getCatalogListCache().clear();
+  setCatalogCacheBypassUntil(Date.now() + Math.max(1_000, bypassMs));
+};
+
 const makeCatalogListCacheKey = (input: {
   page: number;
   pageSize: number;
@@ -595,7 +615,11 @@ async function loadFromSupabase(filters: {
   }
 
   try {
-    const items = await loadCatalogSnapshotCached(filters.activeOnly, filters.exportOnly);
+    const shouldBypassPersistentCache = getCatalogCacheBypassUntil() > Date.now();
+    const items = shouldBypassPersistentCache
+      ? await fetchCatalogSnapshotFromSupabase(filters)
+      : await loadCatalogSnapshotCached(filters.activeOnly, filters.exportOnly);
+    if (!items) return null;
     cache.set(cacheKey, {
       items,
       expiresAt: Date.now() + CATALOG_SNAPSHOT_TTL_MS,

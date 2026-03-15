@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
-import { getCatalogProductDisplayName } from "@/lib/catalog/presentation";
+import { decodeHtmlEntities, getCatalogProductDisplayName } from "@/lib/catalog/presentation";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 const HeroParallaxFx = dynamic(() => import("@/app/components/storefront/HeroParallaxFx"));
@@ -137,18 +137,18 @@ export default function HomeHeroVideo({ categories, featuredProducts, content, l
 
       <div className="container position-relative ss-home18-hero__content">
         <div className="ss-home18-hero__intro text-center text-white" data-hero-intro>
-          <p className="text-uppercase fs-13 fw-normal mb-2 text-white ss-home18-hero__eyebrow">{content.heroEyebrow}</p>
+          <p className="text-uppercase fs-13 fw-normal mb-2 text-white ss-home18-hero__eyebrow">{decodeHtmlEntities(content.heroEyebrow)}</p>
           <h2 className="text-uppercase h1 fw-semi-bold lh-1 mb-4 text-white">
-            {content.heroTitleLine1}
+            {decodeHtmlEntities(content.heroTitleLine1)}
             <br />
-            {content.heroTitleLine2}
+            {decodeHtmlEntities(content.heroTitleLine2)}
           </h2>
           <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap ss-home18-hero__cta">
             <Link href={withLang(content.heroPrimaryCtaHref)} className="btn btn-light border-0 fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn">
-              {content.heroPrimaryCtaLabel}
+              {decodeHtmlEntities(content.heroPrimaryCtaLabel)}
             </Link>
             <Link href={withLang(content.heroSecondaryCtaHref)} className="btn btn-outline-light fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn ss-cta-btn--ghost-light">
-              {content.heroSecondaryCtaLabel}
+              {decodeHtmlEntities(content.heroSecondaryCtaLabel)}
             </Link>
           </div>
         </div>
@@ -162,7 +162,7 @@ export default function HomeHeroVideo({ categories, featuredProducts, content, l
                   {card.title}
                 </span>
                 <span className="ss-home18-hero__card-meta">
-                  {content.heroPrimaryCtaLabel}
+                  {decodeHtmlEntities(content.heroPrimaryCtaLabel)}
                 </span>
               </Link>
             </article>

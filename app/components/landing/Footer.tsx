@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 const quickLinks = [
-  { href: "/", label: "Početna" },
+  { href: "/", label: "Pocetna" },
   { href: "#o-nama", label: "O nama" },
   { href: "#kontakt", label: "Kontakt" },
   { href: "/web-shop", label: "Web Shop" },
@@ -14,7 +14,7 @@ const Footer = () => {
     <footer className="border-t border-white/10 bg-black/85 text-gray-300">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6 px-4 py-10 text-sm sm:px-6 lg:px-8">
         <div className="flex flex-wrap items-center justify-between gap-4">
-          <p className="text-base font-semibold text-white">Santos &amp; Santorini Atelier</p>
+          <p className="text-base font-semibold text-white">Santos & Santorini Atelier</p>
           <Link href="/custom-suits" className="text-[11px] uppercase tracking-[0.3em] text-white underline-offset-4 hover:underline">
             Otvori Custom Suits
           </Link>
@@ -26,7 +26,7 @@ const Footer = () => {
             </Link>
           ))}
         </div>
-        <p className="text-[11px] text-gray-500">© {year} Santos &amp; Santorini. Sva prava zadržana.</p>
+        <p className="text-[11px] text-gray-500">Copyright {year} Santos & Santorini. Sva prava zadrzana.</p>
       </div>
     </footer>
   );

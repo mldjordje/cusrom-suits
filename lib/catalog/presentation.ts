@@ -24,6 +24,41 @@ const PRODUCT_TYPE_MATCHERS = [
   { key: "tshirt", pattern: /majic|t-?shirt/u },
 ] as const;
 
+const EMBEDDED_PRODUCT_TYPE_HINTS = [
+  "odelo",
+  "odel",
+  "sako",
+  "kosulja",
+  "kosulj",
+  "kosu",
+  "pantalone",
+  "pantal",
+  "cipele",
+  "cipel",
+  "obuca",
+  "jakna",
+  "jakn",
+  "kaput",
+  "kap",
+  "dzemper",
+  "dzemp",
+  "majica",
+  "majic",
+  "polo",
+  "shirt",
+  "trousers",
+  "trouser",
+  "shoes",
+  "shoe",
+  "coat",
+  "jacket",
+  "blazer",
+  "suit",
+  "sweater",
+  "knitwear",
+  "tshirt",
+] as const;
+
 type CatalogDisplayLanguage = "sr" | "en";
 
 type CatalogCategoryLike = {
@@ -39,9 +74,6 @@ type CatalogProductNameInput = {
   brand?: string | null;
 };
 
-const EMBEDDED_PRODUCT_TYPE_PATTERN =
-  /(?:^|[\s/-])([A-Z])\.\s*(Odelo|Sako|Ko[sš]ulja|Pantalone|Cipele|Jakna|Kaput|D[zž]emper|Majica|Polo)\b/iu;
-
 const normalizeForMatch = (value: string) =>
   String(value || "")
     .trim()
@@ -49,19 +81,31 @@ const normalizeForMatch = (value: string) =>
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "");
 
-export const decodeHtmlEntities = (value: string | null | undefined) =>
-  String(value || "").replace(/&(#x?[0-9a-f]+|[a-z]+);/giu, (match, entity) => {
-    const normalized = String(entity || "").toLowerCase();
-    if (normalized.startsWith("#x")) {
-      const codePoint = Number.parseInt(normalized.slice(2), 16);
-      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+export const decodeHtmlEntities = (value: string | null | undefined) => {
+  let decoded = String(value || "");
+
+  for (let pass = 0; pass < 2; pass += 1) {
+    const next = decoded.replace(/&(#x?[0-9a-f]+|[a-z]+);/giu, (match, entity) => {
+      const normalized = String(entity || "").toLowerCase();
+      if (normalized.startsWith("#x")) {
+        const codePoint = Number.parseInt(normalized.slice(2), 16);
+        return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+      }
+      if (normalized.startsWith("#")) {
+        const codePoint = Number.parseInt(normalized.slice(1), 10);
+        return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+      }
+      return HTML_ENTITY_MAP[normalized] ?? match;
+    });
+
+    decoded = next;
+    if (!/&(#x?[0-9a-f]+|[a-z]+);/iu.test(decoded)) {
+      break;
     }
-    if (normalized.startsWith("#")) {
-      const codePoint = Number.parseInt(normalized.slice(1), 10);
-      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
-    }
-    return HTML_ENTITY_MAP[normalized] ?? match;
-  });
+  }
+
+  return decoded.replace(/\bSantos\s*&\s*Santorini\b/giu, "Santos & Santorini");
+};
 
 const titleCaseToken = (value: string) =>
   value
@@ -115,6 +159,70 @@ const maybeHumanizeColorCode = (value: string) => {
   return titleCaseToken(match[1]);
 };
 
+const normalizeProductTypeHint = (value: string) =>
+  normalizeForMatch(value).replace(/[^a-z0-9]+/g, "");
+
+const hasEmbeddedProductTypeHint = (value: string) => {
+  const normalized = normalizeForMatch(value).replace(COLLAPSE_WHITESPACE, " ").trim();
+  if (!normalized) return false;
+
+  const firstToken = normalizeProductTypeHint(normalized.split(" ")[0] || "");
+  if (!firstToken) return false;
+
+  return EMBEDDED_PRODUCT_TYPE_HINTS.some((hint) => {
+    const normalizedHint = normalizeProductTypeHint(hint);
+    return (
+      firstToken === normalizedHint ||
+      firstToken.startsWith(normalizedHint) ||
+      (firstToken.length >= 3 && normalizedHint.startsWith(firstToken))
+    );
+  });
+};
+
+const looksLikeLegacyTypeSuffix = (value: string) => {
+  const firstToken = String(value || "")
+    .trim()
+    .split(/\s+/)[0]
+    ?.replace(/[^\p{L}-]+/gu, "");
+
+  if (!firstToken) return false;
+  if (/\d/u.test(firstToken)) return false;
+
+  return firstToken.length >= 3 && firstToken.length <= 12;
+};
+
+const extractModelPrefixFromEmbeddedType = (value: string) => {
+  const match = value.match(/^(.*?)\s+[A-Z]\.\s*(.+)$/u);
+  if (!match) return null;
+
+  const prefix = String(match[1] || "")
+    .trim()
+    .replace(/[._\-+/|:]+$/u, "")
+    .trim();
+  const suffix = String(match[2] || "")
+    .trim()
+    .replace(/^[._\-+/|:]+/u, "")
+    .trim();
+
+  const acceptsSuffix =
+    hasEmbeddedProductTypeHint(suffix) ||
+    (looksLikeModelPrefix(prefix) && looksLikeLegacyTypeSuffix(suffix));
+
+  if (!prefix || !suffix || !acceptsSuffix) {
+    return null;
+  }
+
+  return { prefix, suffix };
+};
+
+const looksLikeModelPrefix = (value: string) => {
+  const normalized = String(value || "").trim();
+  if (normalized.length < 3) return false;
+  if (/\d/u.test(normalized)) return true;
+  if (/[./_-]/u.test(normalized) && /\p{L}/u.test(normalized)) return true;
+  return /^[\p{Lu}\s./_-]{3,}$/u.test(normalized);
+};
+
 export function formatCatalogProductName(name: string, sku?: string | null) {
   let value = decodeHtmlEntities(name).replace(COLLAPSE_WHITESPACE, " ").trim();
   if (!value) return value;
@@ -124,23 +232,17 @@ export function formatCatalogProductName(name: string, sku?: string | null) {
     value = value.replace(skuPattern, "").trim();
   }
 
-  const embeddedTypeMatch = EMBEDDED_PRODUCT_TYPE_PATTERN.exec(value);
-  if (embeddedTypeMatch) {
-    const embeddedType = embeddedTypeMatch[2];
-    const prefix = value.slice(0, embeddedTypeMatch.index).trim().replace(/[._\-+/|:]+$/u, "").trim();
-    const suffix = value
-      .slice(embeddedTypeMatch.index + embeddedTypeMatch[0].length)
-      .trim()
-      .replace(/^[._\-+/|:]+/u, "")
-      .trim();
+  const embeddedTypeParts = extractModelPrefixFromEmbeddedType(value);
+  if (embeddedTypeParts) {
+    const { prefix, suffix } = embeddedTypeParts;
     const prefixWords = prefix.match(/\p{L}{3,}/gu) || [];
 
     if (prefixWords.length > 0) {
       value = /^[\p{Lu}\d\s./_-]{3,}$/u.test(prefix) ? titleCaseToken(prefix) : prefix;
+    } else if (looksLikeModelPrefix(prefix)) {
+      value = /^[\p{Lu}\d\s./_-]{3,}$/u.test(prefix) ? titleCaseToken(prefix) : prefix;
     } else if (suffix) {
-      value = `${embeddedType} ${suffix}`.trim();
-    } else {
-      value = embeddedType;
+      value = suffix;
     }
   }
 
@@ -235,7 +337,11 @@ export function getCatalogProductDisplayName(
     if (normalizedFormatted !== normalizedCategoryLabel) score += 20;
     if (!genericPrefixPattern.test(normalizedFormatted)) score += 12;
     if (inferredTypeLabel && normalizedFormatted !== inferredTypeLabel) score += 10;
-    if (inferredTypeLabel && normalizedFormatted.includes(inferredTypeLabel) && normalizedFormatted.length > inferredTypeLabel.length + 3) {
+    if (
+      inferredTypeLabel &&
+      normalizedFormatted.includes(inferredTypeLabel) &&
+      normalizedFormatted.length > inferredTypeLabel.length + 3
+    ) {
       score += 10;
     }
 

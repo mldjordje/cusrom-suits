@@ -5,7 +5,7 @@ import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import HomeHeroVideo from "@/app/components/storefront/HomeHeroVideo";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
-import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
+import { getCatalogProductByLegacyId, listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
 import {
   getCatalogProductCategoryLabel,
   getCatalogProductDisplayName,
@@ -232,13 +232,21 @@ export default async function HomePage({
   };
   const withOptionalLang = (href: string) => (href.startsWith("/") ? withLang(href) : href);
 
-  const [catalog, posts, landingSettings] = await Promise.all([
+  const [catalog, saleCatalog, posts, landingSettings] = await Promise.all([
     listCatalogProducts({
       page: 1,
       pageSize: 120,
       activeOnly: true,
       exportOnly: true,
       collapseBySku: true,
+    }),
+    listCatalogProducts({
+      page: 1,
+      pageSize: 120,
+      activeOnly: true,
+      exportOnly: true,
+      collapseBySku: true,
+      onSale: true,
     }),
     listPosts({
       type: "all",
@@ -255,13 +263,36 @@ export default async function HomePage({
   const contentLang: "sr" | "en" = isEn ? "en" : "sr";
   const landingDocuments = landingSettings.documents.filter((item) => item.title && item.url);
   const landingUniformImages = landingSettings.uniformsImages.filter((item) => item.image);
+  const pinnedProductIds = Array.from(
+    new Set(
+      [
+        ...landingSettings.heroStripProductIds,
+        ...landingSettings.highlightedProductIds,
+        ...landingSettings.popularProductIds,
+        ...landingSettings.arrivalsProductIds,
+        ...landingSettings.saleProductIds,
+        ...landingSettings.trendingProductIds,
+      ]
+        .map((item) => Number(item))
+        .filter((item) => Number.isFinite(item)),
+    ),
+  );
+  const pinnedProducts = (
+    await Promise.all(pinnedProductIds.map((id) => getCatalogProductByLegacyId(id)))
+  ).filter((item): item is CatalogProductView => Boolean(item?.isActive && item?.isExported));
 
-  const landingPoolUnique = sortLandingProducts(dedupeProductsBySku(catalog.items), contentLang);
+  const landingPoolUnique = sortLandingProducts(
+    dedupeProductsBySku([...pinnedProducts, ...catalog.items]),
+    contentLang,
+  );
 
   const salePool = sortLandingProducts(
-    landingPoolUnique
-    .filter((item) => item.priceGross > item.priceFinalGross || item.rebatePercent > 0)
-    .slice(0, 40),
+    dedupeProductsBySku([...pinnedProducts, ...saleCatalog.items]).filter(
+      (item) =>
+        landingSettings.saleProductIds.includes(item.legacyId) ||
+        item.priceGross > item.priceFinalGross ||
+        item.rebatePercent > 0,
+    ),
     contentLang,
   );
 
@@ -301,12 +332,11 @@ export default async function HomePage({
     landingPoolUnique.slice(16, 40),
     usedSkuKeys,
   );
-  const saleItems = pickProductsForSectionDistinct(
+  const saleItems = pickProductsForSection(
     salePool,
     landingSettings.saleProductIds,
     4,
     salePool.slice(0, 16),
-    usedSkuKeys,
   );
 
   return (

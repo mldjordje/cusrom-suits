@@ -162,18 +162,28 @@
 .admin-template-content {
   padding: 1rem 1.1rem 1.6rem;
   min-height: calc(100vh - 73px);
+  color: #0f172a;
 }
 
 .admin-template-content input:not([type="checkbox"]):not([type="radio"]),
 .admin-template-content textarea,
 .admin-template-content select {
   color: #0f172a;
+  background: #ffffff;
+  caret-color: #0f172a;
 }
 
 .admin-template-content input:not([type="checkbox"]):not([type="radio"])::placeholder,
 .admin-template-content textarea::placeholder {
-  color: #94a3b8;
+  color: #64748b;
   opacity: 1;
+}
+
+.admin-template-content option,
+.admin-template-content table th,
+.admin-template-content table td,
+.admin-template-content label {
+  color: inherit;
 }
 
 @media (max-width: 1024px) {

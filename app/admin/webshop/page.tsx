@@ -179,7 +179,7 @@ const landingSectionConfig: Array<{
   { key: "highlightedProductIds", label: "Izdvojeni modeli", description: "Prva velika produkt sekcija.", limit: 8 },
   { key: "popularProductIds", label: "Popularni proizvodi", description: "Sekcija popularnih proizvoda.", limit: 4 },
   { key: "arrivalsProductIds", label: "Nova kolekcija", description: "Sekcija novih modela.", limit: 4 },
-  { key: "saleProductIds", label: "Akcije na pocetnoj", description: "Akcijski proizvodi prikazani na home.", limit: 4 },
+  { key: "saleProductIds", label: "Akcije na pocetnoj", description: "Ako je prazno, home sam povlaci proizvode sa akcijskom cenom. Uneti ID-jevi imaju prioritet.", limit: 4 },
   { key: "trendingProductIds", label: "Trendinzi", description: "Sekcija trendova i preporuka.", limit: 4 },
 ];
 
@@ -1751,6 +1751,10 @@ export default function AdminWebshopPage() {
               <input value={landingSettings.saleSectionTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, saleSectionTitle: e.target.value }))} placeholder="Naslov" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
               <input value={landingSettings.saleSectionSubtitle} onChange={(e) => setLandingSettings((p) => ({ ...p, saleSectionSubtitle: e.target.value }))} placeholder="Podnaslov" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
             </div>
+            <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              Ako je lista `Akcije na pocetnoj` ispod prazna, landing automatski prikazuje prve proizvode koji imaju akcijsku cenu ili popust.
+              Ako dodas konkretne ID-jeve u toj listi, oni imaju prioritet i mogu da se prikazu i kada je isti proizvod vec koriscen u drugoj home sekciji.
+            </p>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">

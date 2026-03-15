@@ -307,7 +307,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
             <img src="/img/logo.png" alt="Brand logo" className="h-9 w-auto object-contain" />
             <div>
               <p className="text-[11px] uppercase tracking-[0.25em] text-gray-500">Custom suits</p>
-              <p className="text-sm font-semibold text-gray-900">Santos &amp; Santorini</p>
+              <p className="text-sm font-semibold text-gray-900">Santos & Santorini</p>
             </div>
           </Link>
 
