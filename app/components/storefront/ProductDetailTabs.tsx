@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
+import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 import type {
   ProductDetailField,
@@ -34,7 +35,7 @@ const fallbackHtml = {
 const safeHtml = (value: string | null, lang: StorefrontLanguage) => ({
   __html:
     value && value.trim().length > 0
-      ? value
+      ? decodeHtmlEntities(value)
       : fallbackHtml[lang],
 });
 

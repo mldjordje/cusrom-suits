@@ -13,8 +13,10 @@ import {
   getRelatedCatalogProducts,
 } from "@/lib/catalog/store";
 import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
+import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import {
+  getPreferredCatalogProductForDisplay,
   getLocalizedCatalogDescription,
   getLocalizedCatalogProductName,
   getLocalizedCatalogSpecification,
@@ -35,7 +37,7 @@ const formatRsd = (value: number) =>
   }).format(Number(value || 0));
 
 const stripHtml = (value: string | null) =>
-  (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  decodeHtmlEntities((value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
 
 export async function generateMetadata({
   params,
@@ -51,9 +53,17 @@ export async function generateMetadata({
   if (!product) {
     return { title: "Product not found | Santos & Santorini" };
   }
+  const variants = await getCatalogProductVariantsBySku(product.sku, {
+    applyPromotions: true,
+    activeOnly: true,
+    exportOnly: true,
+  });
+  const displayProduct = getPreferredCatalogProductForDisplay(product, variants, "sr");
   return {
-    title: `${product.name} | Santos & Santorini`,
-    description: product.description || `Product details for ${product.sku}`,
+    title: `${getLocalizedCatalogProductName(displayProduct, "sr")} | Santos & Santorini`,
+    description:
+      stripHtml(getLocalizedCatalogDescription(displayProduct, "sr")) ||
+      `Product details for ${product.sku}`,
   };
 }
 
@@ -89,16 +99,21 @@ export default async function WebShopProductPage({
     return `${href}?lang=en`;
   };
 
-  const displayName = getLocalizedCatalogProductName(product, lang);
-  const displayDescription = getLocalizedCatalogDescription(product, lang);
-  const displaySpecification = getLocalizedCatalogSpecification(product, lang);
-  const material = getProductMaterial(product, lang);
+  const displayProduct = getPreferredCatalogProductForDisplay(product, variants, lang);
+  const displayName = getLocalizedCatalogProductName(displayProduct, lang);
+  const displayDescription = getLocalizedCatalogDescription(displayProduct, lang);
+  const displaySpecification = getLocalizedCatalogSpecification(displayProduct, lang);
+  const material = getProductMaterial(displayProduct, lang);
   const sizeOptions = getProductSizeOptions(product, variants);
-  const selectedSize = getSelectedProductSize(product);
+  const selectedSize =
+    sizeOptions.find((option) => option.legacyId === product.legacyId)?.label ||
+    getSelectedProductSize(product) ||
+    sizeOptions[0]?.label ||
+    null;
   const sizeGuide = getProductSizeGuide(product, lang, sizeOptions);
   const showSizeGuide = productSupportsSizeGuide(product) && Boolean(sizeGuide);
   const declaration = getProductDeclaration(
-    product,
+    displayProduct,
     lang,
     selectedSize,
     material,
@@ -133,7 +148,7 @@ export default async function WebShopProductPage({
     price: product.priceFinalGross,
     image: product.coverImage || gallery[0] || null,
     maxQuantity: stockValue > 0 ? stockValue : null,
-    categoryLabel: product.categories[0]?.name || null,
+    categoryLabel: displayProduct.categories[0]?.name || product.categories[0]?.name || null,
   };
 
   return (

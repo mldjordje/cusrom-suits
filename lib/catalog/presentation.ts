@@ -2,6 +2,15 @@ const COLLAPSE_WHITESPACE = /\s+/g;
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
+const HTML_ENTITY_MAP: Record<string, string> = {
+  amp: "&",
+  lt: "<",
+  gt: ">",
+  quot: '"',
+  apos: "'",
+  nbsp: " ",
+};
+
 const PRODUCT_TYPE_MATCHERS = [
   { key: "suit", pattern: /odel|suit/u },
   { key: "blazer", pattern: /sako|blazer|jacket/u },
@@ -39,6 +48,20 @@ const normalizeForMatch = (value: string) =>
     .toLowerCase()
     .normalize("NFD")
     .replace(/\p{Diacritic}/gu, "");
+
+export const decodeHtmlEntities = (value: string | null | undefined) =>
+  String(value || "").replace(/&(#x?[0-9a-f]+|[a-z]+);/giu, (match, entity) => {
+    const normalized = String(entity || "").toLowerCase();
+    if (normalized.startsWith("#x")) {
+      const codePoint = Number.parseInt(normalized.slice(2), 16);
+      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+    }
+    if (normalized.startsWith("#")) {
+      const codePoint = Number.parseInt(normalized.slice(1), 10);
+      return Number.isFinite(codePoint) ? String.fromCodePoint(codePoint) : match;
+    }
+    return HTML_ENTITY_MAP[normalized] ?? match;
+  });
 
 const titleCaseToken = (value: string) =>
   value
@@ -93,7 +116,7 @@ const maybeHumanizeColorCode = (value: string) => {
 };
 
 export function formatCatalogProductName(name: string, sku?: string | null) {
-  let value = String(name || "").replace(COLLAPSE_WHITESPACE, " ").trim();
+  let value = decodeHtmlEntities(name).replace(COLLAPSE_WHITESPACE, " ").trim();
   if (!value) return value;
 
   if (sku && sku.trim()) {

@@ -1,4 +1,4 @@
-import { getCatalogProductDisplayName } from "@/lib/catalog/presentation";
+import { decodeHtmlEntities, getCatalogProductDisplayName, isCatalogProductNameSuspicious } from "@/lib/catalog/presentation";
 import type { CatalogProductView } from "@/lib/catalog/store";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
@@ -27,7 +27,7 @@ export type ProductWashCareItem = {
 };
 
 const stripHtml = (value: string | null) =>
-  (value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim();
+  decodeHtmlEntities((value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
 
 const extractSizes = (product: CatalogProductView) =>
   Array.isArray(product.attributes?.size)
@@ -56,14 +56,14 @@ const sizeOrder = [
 
 const getSizeSortValue = (value: string) => {
   const normalized = normalizeKey(value);
-  const numeric = Number.parseFloat(normalized.replace(",", "."));
-  if (Number.isFinite(numeric) && /\d/.test(normalized)) {
-    return { bucket: 0, value: numeric };
-  }
-
   const intlIndex = sizeOrder.indexOf(normalized);
   if (intlIndex >= 0) {
     return { bucket: 1, value: intlIndex };
+  }
+
+  const numeric = Number.parseFloat(normalized.replace(",", "."));
+  if (Number.isFinite(numeric) && /\d/.test(normalized)) {
+    return { bucket: 0, value: numeric };
   }
 
   return { bucket: 2, value: normalized };
@@ -82,16 +82,16 @@ const compareSizes = (left: string, right: string) => {
 const productText = (product: CatalogProductView, lang: StorefrontLanguage) => {
   if (lang === "en") {
     return {
-      name: product.nameEn || product.name,
-      description: product.descriptionEn || product.description,
-      specification: product.specificationEn || product.specification,
+      name: decodeHtmlEntities(product.nameEn || product.name),
+      description: decodeHtmlEntities(product.descriptionEn || product.description),
+      specification: decodeHtmlEntities(product.specificationEn || product.specification),
     };
   }
 
   return {
-    name: product.name,
-    description: product.description,
-    specification: product.specification,
+    name: decodeHtmlEntities(product.name),
+    description: decodeHtmlEntities(product.description),
+    specification: decodeHtmlEntities(product.specification),
   };
 };
 
@@ -142,6 +142,41 @@ export const getLocalizedCatalogSpecification = (
   product: CatalogProductView,
   lang: StorefrontLanguage,
 ) => productText(product, lang).specification;
+
+export const getPreferredCatalogProductForDisplay = (
+  currentProduct: CatalogProductView,
+  variants: CatalogProductView[],
+  lang: StorefrontLanguage,
+) => {
+  const candidates = [currentProduct, ...variants].filter(
+    (candidate, index, array) =>
+      array.findIndex((item) => item.legacyId === candidate.legacyId) === index,
+  );
+
+  const scoreCandidate = (candidate: CatalogProductView) => {
+    const displayName = getLocalizedCatalogProductName(candidate, lang);
+    let score = 0;
+    if (!isCatalogProductNameSuspicious(displayName)) score += 30;
+    if (displayName && /\d/u.test(displayName) && /\p{L}/u.test(displayName)) score += 18;
+    if (candidate.manufCode && candidate.manufCode.trim()) score += 14;
+    if (candidate.coverImage) score += 12;
+    if (candidate.categories.length > 0) score += 10;
+    if (candidate.brand) score += 8;
+    if (candidate.description || candidate.descriptionEn) score += 6;
+    if (candidate.specification || candidate.specificationEn) score += 4;
+    score += Math.min(
+      10,
+      Math.max(Number(candidate.stockTotal || 0), Number(candidate.stockWarehouse1 || 0)),
+    );
+    return score;
+  };
+
+  return [...candidates].sort((left, right) => {
+    const scoreDiff = scoreCandidate(right) - scoreCandidate(left);
+    if (scoreDiff !== 0) return scoreDiff;
+    return right.legacyId - left.legacyId;
+  })[0] || currentProduct;
+};
 
 export const getProductMaterial = (
   product: CatalogProductView,
