@@ -2,6 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSteps";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
@@ -20,115 +21,166 @@ export default function CartPageClient({
   const { items, itemCount, subtotal, updateQuantity, removeItem, clearCart, isReady } = useCart();
   const isEn = lang === "en";
 
+  const withLang = (href: string) => {
+    if (!isEn) return href;
+    if (href.includes("?")) return `${href}&lang=en`;
+    return `${href}?lang=en`;
+  };
+
   if (!isReady) {
-    return <p className="text-center text-secondary">{isEn ? "Loading cart..." : "Učitavam korpu..."}</p>;
+    return <p className="text-center text-secondary">{isEn ? "Loading cart..." : "Ucitavam korpu..."}</p>;
   }
 
   if (items.length === 0) {
     return (
-      <div className="rounded-4 border bg-white p-4 p-lg-5 text-center shadow-sm">
-        <p className="text-uppercase fw-medium text-secondary mb-2">{isEn ? "Your cart is empty" : "Korpa je prazna"}</p>
-        <h1 className="h3 mb-3">{isEn ? "Choose products from the web shop" : "Izaberi proizvode iz web shop-a"}</h1>
-        <p className="text-secondary mb-4">{isEn ? "Once you add items, this page will show your summary and next step to checkout." : "Kada dodaš artikle, ovde ćeš videti pregled i sledeći korak ka checkout-u."}</p>
-        <Link href="/web-shop" className="btn btn-primary text-uppercase fw-medium">
-          {isEn ? "Back to shop" : "Nazad na shop"}
-        </Link>
+      <div className="ss-commerce-stack">
+        <StorefrontOrderSteps lang={lang} current="cart" />
+        <div className="ss-order-state-card text-center">
+          <p className="ss-order-state-card__eyebrow">{isEn ? "Cart is empty" : "Korpa je prazna"}</p>
+          <h1>{isEn ? "Start with the products you want to order." : "Kreni od proizvoda koje zelis da porucis."}</h1>
+          <p>
+            {isEn
+              ? "Once you add items from the web shop, this page becomes your clean review step before checkout."
+              : "Kada dodas artikle iz web shop-a, ovde dobijas pregledan review korak pre checkout-a."}
+          </p>
+          <Link href={withLang("/web-shop")} className="btn btn-primary text-uppercase fw-medium">
+            {isEn ? "Back to shop" : "Nazad na shop"}
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="row g-4 align-items-start">
-      <div className="col-lg-8">
-        <div className="rounded-4 border bg-white p-3 p-md-4 shadow-sm">
-          <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-            <div>
-              <p className="text-uppercase fw-medium text-secondary mb-1">{isEn ? "Cart" : "Korpa"}</p>
-              <h1 className="h4 mb-0">{isEn ? `${itemCount} items in cart` : `${itemCount} artikala u korpi`}</h1>
-            </div>
-            <button type="button" onClick={clearCart} className="btn btn-outline-dark text-uppercase fw-medium">
-              {isEn ? "Clear cart" : "Isprazni korpu"}
-            </button>
-          </div>
+    <div className="ss-commerce-stack">
+      <StorefrontOrderSteps lang={lang} current="cart" />
 
-          <div className="d-flex flex-column gap-3">
-            {items.map((item) => (
-              <article key={item.legacyId} className="rounded-4 border p-3">
-                <div className="row g-3 align-items-center">
-                  <div className="col-4 col-md-2">
-                    <Link href={`/web-shop/${item.legacyId}`}>
-                      <Image
-                        src={item.image || "/img/odela.jpg"}
-                        alt={item.name}
-                        width={180}
-                        height={220}
-                        className="w-100 h-auto rounded-3"
-                      />
-                    </Link>
-                  </div>
-                  <div className="col-8 col-md-5">
-                    <p className="text-uppercase text-secondary small mb-1">{item.categoryLabel || item.sku}</p>
-                    <h2 className="h6 mb-2">
-                      <Link href={`/web-shop/${item.legacyId}`}>{item.name}</Link>
-                    </h2>
-                    {item.size ? <p className="small text-secondary mb-1">{isEn ? "Size" : "Veličina"}: {item.size}</p> : null}
-                    {item.material ? <p className="small text-secondary mb-2">{isEn ? "Material" : "Materijal"}: {item.material}</p> : null}
-                    <p className="mb-0 fw-medium">{formatRsd(item.price)}</p>
-                  </div>
-                  <div className="col-7 col-md-3">
-                    <label className="form-label text-uppercase small text-secondary">{isEn ? "Quantity" : "Količina"}</label>
-                    <input
-                      type="number"
-                      min={1}
-                      max={item.maxQuantity && item.maxQuantity > 0 ? item.maxQuantity : undefined}
-                      value={item.quantity}
-                      onChange={(e) => updateQuantity(item.legacyId, Number(e.target.value))}
-                      className="form-control"
-                    />
-                    {item.maxQuantity && item.maxQuantity > 0 ? (
-                      <p className="small text-secondary mt-1 mb-0">{isEn ? "Available" : "Dostupno"}: {item.maxQuantity}</p>
-                    ) : null}
-                  </div>
-                  <div className="col-5 col-md-2 text-md-end">
-                    <p className="fw-semibold mb-2">{formatRsd(item.price * item.quantity)}</p>
-                    <button
-                      type="button"
-                      onClick={() => removeItem(item.legacyId)}
-                      className="btn btn-link text-uppercase p-0 text-decoration-none"
-                    >
-                      {isEn ? "Remove" : "Ukloni"}
-                    </button>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
+      <div className="ss-commerce-intro">
+        <div>
+          <p className="ss-commerce-intro__eyebrow">{isEn ? "Step 2" : "Korak 2"}</p>
+          <h1 className="ss-commerce-intro__title">
+            {isEn ? "Review your cart before checkout." : "Pregledaj korpu pre checkout-a."}
+          </h1>
         </div>
+        <p className="ss-commerce-intro__copy">
+          {isEn
+            ? "Check sizes, quantity and product mix here. Then continue to checkout and send the order as a direct inquiry."
+            : "Ovde proveri velicine, kolicinu i izbor modela. Zatim nastavi na checkout i posalji porudzbinu kao direktan upit."}
+        </p>
       </div>
 
-      <div className="col-lg-4">
-        <div className="rounded-4 border bg-white p-4 shadow-sm">
-          <p className="text-uppercase fw-medium text-secondary mb-1">{isEn ? "Summary" : "Pregled"}</p>
-          <h2 className="h5 mb-4">{isEn ? "Total to be confirmed later" : "Ukupno za naplatu kasnije"}</h2>
-          <div className="d-flex justify-content-between mb-2">
-            <span>{isEn ? "Products" : "Proizvodi"}</span>
-            <span>{formatRsd(subtotal)}</span>
+      <div className="row g-4 align-items-start">
+        <div className="col-lg-8">
+          <div className="ss-order-panel">
+            <div className="ss-order-panel__header">
+              <div>
+                <p className="ss-order-panel__eyebrow">{isEn ? "Cart" : "Korpa"}</p>
+                <h2>{isEn ? `${itemCount} items ready for review` : `${itemCount} artikala spremno za pregled`}</h2>
+              </div>
+              <button type="button" onClick={clearCart} className="btn btn-outline-dark text-uppercase fw-medium">
+                {isEn ? "Clear cart" : "Isprazni korpu"}
+              </button>
+            </div>
+
+            <div className="ss-cart-items">
+              {items.map((item) => (
+                <article key={item.legacyId} className="ss-cart-item">
+                  <div className="row g-3 align-items-center">
+                    <div className="col-4 col-md-3">
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)} className="ss-cart-item__image-link">
+                        <Image
+                          src={item.image || "/img/odela.jpg"}
+                          alt={item.name}
+                          width={180}
+                          height={220}
+                          className="w-100 h-auto rounded-4"
+                        />
+                      </Link>
+                    </div>
+                    <div className="col-8 col-md-5">
+                      <p className="ss-cart-item__eyebrow">{item.categoryLabel || item.sku}</p>
+                      <h3 className="ss-cart-item__title">
+                        <Link href={withLang(`/web-shop/${item.legacyId}`)}>{item.name}</Link>
+                      </h3>
+                      <div className="ss-cart-item__meta">
+                        {item.size ? <span>{isEn ? "Size" : "Velicina"}: {item.size}</span> : null}
+                        {item.material ? <span>{isEn ? "Material" : "Materijal"}: {item.material}</span> : null}
+                      </div>
+                      <p className="ss-cart-item__price mb-0">{formatRsd(item.price)}</p>
+                    </div>
+                    <div className="col-7 col-md-2">
+                      <label className="ss-cart-item__label">{isEn ? "Quantity" : "Kolicina"}</label>
+                      <input
+                        type="number"
+                        min={1}
+                        max={item.maxQuantity && item.maxQuantity > 0 ? item.maxQuantity : undefined}
+                        value={item.quantity}
+                        onChange={(e) => updateQuantity(item.legacyId, Number(e.target.value))}
+                        className="form-control"
+                      />
+                      {item.maxQuantity && item.maxQuantity > 0 ? (
+                        <p className="ss-cart-item__stock mb-0">{isEn ? "Available" : "Dostupno"}: {item.maxQuantity}</p>
+                      ) : null}
+                    </div>
+                    <div className="col-5 col-md-2 text-md-end">
+                      <p className="ss-cart-item__total">{formatRsd(item.price * item.quantity)}</p>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.legacyId)}
+                        className="btn btn-link text-uppercase p-0 text-decoration-none ss-cart-item__remove"
+                      >
+                        {isEn ? "Remove" : "Ukloni"}
+                      </button>
+                    </div>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
-          <div className="d-flex justify-content-between mb-2">
-            <span>{isEn ? "Delivery" : "Dostava"}</span>
-            <span>{isEn ? "To be agreed" : "Po dogovoru"}</span>
+        </div>
+
+        <div className="col-lg-4">
+          <div className="ss-order-summary ss-order-summary--sticky">
+            <p className="ss-order-panel__eyebrow">{isEn ? "Summary" : "Pregled"}</p>
+            <h2>{isEn ? "Everything before the final send." : "Sve pre finalnog slanja."}</h2>
+
+            <div className="ss-order-summary__rows">
+              <div className="ss-order-summary__row">
+                <span>{isEn ? "Products" : "Proizvodi"}</span>
+                <strong>{formatRsd(subtotal)}</strong>
+              </div>
+              <div className="ss-order-summary__row">
+                <span>{isEn ? "Quantity" : "Kolicina"}</span>
+                <strong>{itemCount}</strong>
+              </div>
+              <div className="ss-order-summary__row">
+                <span>{isEn ? "Delivery" : "Dostava"}</span>
+                <strong>{isEn ? "Confirmed later" : "Potvrda naknadno"}</strong>
+              </div>
+            </div>
+
+            <div className="ss-order-summary__total">
+              <span>{isEn ? "Current total" : "Trenutni ukupno"}</span>
+              <strong>{formatRsd(subtotal)}</strong>
+            </div>
+
+            <div className="ss-order-summary__note">
+              <p>
+                {isEn
+                  ? "Checkout sends the order directly to your admin as an inquiry, so the customer does not get blocked by online payment or hidden steps."
+                  : "Checkout salje porudzbinu direktno u admin kao upit, tako da kupac ne zapinje na online placanju ili skrivenim koracima."}
+              </p>
+            </div>
+
+            <div className="ss-order-summary__actions">
+              <Link href={withLang("/checkout")} className="btn btn-primary w-100 text-uppercase fw-medium">
+                {isEn ? "Continue to checkout" : "Nastavi na checkout"}
+              </Link>
+              <Link href={withLang("/web-shop")} className="btn btn-outline-dark w-100 text-uppercase fw-medium">
+                {isEn ? "Add more products" : "Dodaj jos proizvoda"}
+              </Link>
+            </div>
           </div>
-          <hr />
-          <div className="d-flex justify-content-between fw-semibold fs-5 mb-4">
-            <span>{isEn ? "Total" : "Ukupno"}</span>
-            <span>{formatRsd(subtotal)}</span>
-          </div>
-          <p className="small text-secondary mb-4">
-            {isEn ? "Submitting checkout sends the order to admin as an inquiry for final confirmation and processing." : "Slanjem checkout forme porudžbina ide u admin kao upit za finalnu potvrdu i obradu."}
-          </p>
-          <Link href="/checkout" className="btn btn-primary w-100 text-uppercase fw-medium">
-            {isEn ? "Continue to checkout" : "Nastavi na checkout"}
-          </Link>
         </div>
       </div>
     </div>

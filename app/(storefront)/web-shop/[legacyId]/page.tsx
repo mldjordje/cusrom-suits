@@ -5,6 +5,7 @@ import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
 import ProductImageGallery from "@/app/components/storefront/ProductImageGallery";
+import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSteps";
 import Reveal from "@/app/components/motion/Reveal";
 import {
   getCatalogProductByLegacyId,
@@ -126,9 +127,11 @@ export default async function WebShopProductPage({
 
   return (
     <>
-      <StorefrontHeader lang={lang} />
-      <main className="page-wrapper">
-        <div className="mb-md-1 pb-md-3" />
+      <StorefrontHeader lang={lang} variant="contrast" />
+      <main className="page-wrapper ss-commerce-page ss-product-page">
+        <section className="container ss-commerce-shell">
+          <StorefrontOrderSteps lang={lang} current="product" />
+        </section>
         <Reveal as="section" className="product-single container">
           <div className="row">
             <div className="col-lg-7">
@@ -166,6 +169,16 @@ export default async function WebShopProductPage({
               </div>
 
               <div className="ss-product-glass-card ss-product-hero-card">
+                <div className="ss-product-journey mb-3">
+                  <span className="ss-product-journey__eyebrow">
+                    {isEn ? "Simple order flow" : "Jednostavan tok porucivanja"}
+                  </span>
+                  <p className="ss-product-journey__text">
+                    {isEn
+                      ? "Choose your size, add the item to cart, then confirm the order details in checkout."
+                      : "Izaberi velicinu, dodaj model u korpu, pa potvrdi podatke u checkout-u."}
+                  </p>
+                </div>
                 <h1 className="product-single__name">{displayName}</h1>
                 <div className="product-single__rating">
                   <div className="reviews-group d-flex text-warning" aria-hidden="true">
@@ -264,10 +277,15 @@ export default async function WebShopProductPage({
                         categoryLabel: product.categories[0]?.name || null,
                       }}
                     />
-                    <Link href={withLang("/checkout")} className="btn btn-outline-dark btn-addtocart ss-cta-btn ss-cta-btn--ghost">
-                      Checkout
+                    <Link href={withLang("/cart")} className="btn btn-outline-dark btn-addtocart ss-cta-btn ss-cta-btn--ghost">
+                      {isEn ? "View cart" : "Idi na korpu"}
                     </Link>
                   </div>
+                  <p className="ss-product-cta-note mb-0">
+                    {isEn
+                      ? "The order is sent as a direct inquiry without online payment, and our team confirms availability afterward."
+                      : "Porudzbina se salje kao direktan upit bez online placanja, a nas tim potom potvrdjuje dostupnost."}
+                  </p>
                 </div>
 
                 <div className="product-single__addtolinks">

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useMemo, useState } from "react";
 import type { FormEvent } from "react";
+import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSteps";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
@@ -35,6 +36,12 @@ export default function CheckoutPageClient({
   const [orderId, setOrderId] = useState<string | null>(null);
   const isEn = lang === "en";
 
+  const withLang = (href: string) => {
+    if (!isEn) return href;
+    if (href.includes("?")) return `${href}&lang=en`;
+    return `${href}?lang=en`;
+  };
+
   const canSubmit = useMemo(() => {
     if (!items.length) return false;
     return Boolean(form.fullName.trim() && form.email.trim() && form.phone.trim());
@@ -43,7 +50,7 @@ export default function CheckoutPageClient({
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSubmit) {
-      setError(isEn ? "Enter name, email and phone before submitting the order." : "Unesi ime, email i telefon pre slanja porudžbine.");
+      setError(isEn ? "Enter name, email and phone before submitting the order." : "Unesi ime, email i telefon pre slanja porudzbine.");
       return;
     }
 
@@ -66,37 +73,46 @@ export default function CheckoutPageClient({
       });
       const json = await res.json();
       if (!json?.success) {
-        setError(json?.message || (isEn ? "Order submission failed." : "Slanje porudžbine nije uspelo."));
+        setError(json?.message || (isEn ? "Order submission failed." : "Slanje porudzbine nije uspelo."));
         return;
       }
       setOrderId(String(json.orderId || ""));
       clearCart();
       setForm(initialForm);
     } catch (e: any) {
-      setError(e?.message || (isEn ? "Order submission failed." : "Slanje porudžbine nije uspelo."));
+      setError(e?.message || (isEn ? "Order submission failed." : "Slanje porudzbine nije uspelo."));
     } finally {
       setSubmitting(false);
     }
   };
 
   if (!isReady) {
-    return <p className="text-center text-secondary">{isEn ? "Loading checkout..." : "Učitavam checkout..."}</p>;
+    return <p className="text-center text-secondary">{isEn ? "Loading checkout..." : "Ucitavam checkout..."}</p>;
   }
 
   if (orderId) {
     return (
-      <div className="rounded-4 border bg-white p-4 p-lg-5 text-center shadow-sm">
-        <p className="text-uppercase fw-medium text-secondary mb-2">{isEn ? "Order sent" : "Porudžbina je poslata"}</p>
-        <h1 className="h3 mb-3">{isEn ? "Thank you, we will contact you soon" : "Hvala, javljamo se uskoro"}</h1>
-        <p className="text-secondary mb-2">{isEn ? "Recorded order number" : "Evidentiran broj porudžbine"}: <strong>{orderId}</strong></p>
-        <p className="text-secondary mb-4">{isEn ? "Our team can confirm availability, delivery and final details directly in admin." : "Tim može da potvrdi dostupnost, dostavu i finalne detalje direktno kroz admin."}</p>
-        <div className="d-flex flex-wrap justify-content-center gap-2">
-          <Link href="/web-shop" className="btn btn-primary text-uppercase fw-medium">
-            {isEn ? "Continue shopping" : "Nastavi kupovinu"}
-          </Link>
-          <Link href="/kontakt" className="btn btn-outline-dark text-uppercase fw-medium">
-            {isEn ? "Contact" : "Kontakt"}
-          </Link>
+      <div className="ss-commerce-stack">
+        <StorefrontOrderSteps lang={lang} current="checkout" />
+        <div className="ss-order-state-card text-center">
+          <p className="ss-order-state-card__eyebrow">{isEn ? "Order sent" : "Porudzbina poslata"}</p>
+          <h1>{isEn ? "Thank you, your order request is recorded." : "Hvala, tvoj zahtev za porudzbinu je evidentiran."}</h1>
+          <p>
+            {isEn ? "Recorded order number" : "Evidentiran broj porudzbine"}: <strong>{orderId}</strong>
+          </p>
+          <p>
+            {isEn
+              ? "Our team will confirm availability, delivery and all final details directly with the customer."
+              : "Nas tim ce direktno sa kupcem potvrditi dostupnost, dostavu i sve finalne detalje."}
+          </p>
+          <div className="d-flex flex-wrap justify-content-center gap-2">
+            <Link href={withLang("/web-shop")} className="btn btn-primary text-uppercase fw-medium">
+              {isEn ? "Continue shopping" : "Nastavi kupovinu"}
+            </Link>
+            <Link href={withLang("/kontakt")} className="btn btn-outline-dark text-uppercase fw-medium">
+              {isEn ? "Contact" : "Kontakt"}
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -104,128 +120,184 @@ export default function CheckoutPageClient({
 
   if (!items.length) {
     return (
-      <div className="rounded-4 border bg-white p-4 p-lg-5 text-center shadow-sm">
-        <p className="text-uppercase fw-medium text-secondary mb-2">{isEn ? "Checkout is empty" : "Checkout je prazan"}</p>
-        <h1 className="h3 mb-3">{isEn ? "Add products to cart before checkout" : "Dodaj proizvode u korpu pre checkout-a"}</h1>
-        <Link href="/web-shop" className="btn btn-primary text-uppercase fw-medium">
-          {isEn ? "Go to web shop" : "Idi na web shop"}
-        </Link>
+      <div className="ss-commerce-stack">
+        <StorefrontOrderSteps lang={lang} current="checkout" />
+        <div className="ss-order-state-card text-center">
+          <p className="ss-order-state-card__eyebrow">{isEn ? "Checkout is empty" : "Checkout je prazan"}</p>
+          <h1>{isEn ? "Add products to the cart before sending the order." : "Dodaj proizvode u korpu pre slanja porudzbine."}</h1>
+          <p>
+            {isEn
+              ? "The simplest route is product, cart review, then this checkout form."
+              : "Najjednostavniji put je proizvod, pregled korpe, pa tek onda ova checkout forma."}
+          </p>
+          <Link href={withLang("/web-shop")} className="btn btn-primary text-uppercase fw-medium">
+            {isEn ? "Go to web shop" : "Idi na web shop"}
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="row g-4 align-items-start">
-      <div className="col-lg-7">
-        <form onSubmit={handleSubmit} className="rounded-4 border bg-white p-4 shadow-sm">
-          <p className="text-uppercase fw-medium text-secondary mb-1">Checkout</p>
-          <h1 className="h4 mb-4">{isEn ? "Order details" : "Podaci za porudžbinu"}</h1>
+    <div className="ss-commerce-stack">
+      <StorefrontOrderSteps lang={lang} current="checkout" />
 
-          <div className="row g-3">
-            <div className="col-md-6">
-              <label className="form-label">{isEn ? "Full name" : "Ime i prezime"}</label>
-              <input
-                value={form.fullName}
-                onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
-                className="form-control"
-                required
-              />
+      <div className="ss-commerce-intro">
+        <div>
+          <p className="ss-commerce-intro__eyebrow">{isEn ? "Step 3" : "Korak 3"}</p>
+          <h1 className="ss-commerce-intro__title">
+            {isEn ? "Send the order with only the essential details." : "Posalji porudzbinu uz samo neophodne podatke."}
+          </h1>
+        </div>
+        <p className="ss-commerce-intro__copy">
+          {isEn
+            ? "The customer only fills in contact details and an optional address or note. There is no online payment barrier in this flow."
+            : "Kupac unosi samo kontakt podatke i po zelji adresu ili napomenu. U ovom toku nema barijere online placanja."}
+        </p>
+      </div>
+
+      <div className="row g-4 align-items-start">
+        <div className="col-lg-7">
+          <form onSubmit={handleSubmit} className="ss-order-panel ss-order-panel--form">
+            <div className="ss-order-panel__header">
+              <div>
+                <p className="ss-order-panel__eyebrow">Checkout</p>
+                <h2>{isEn ? "Customer details" : "Podaci kupca"}</h2>
+              </div>
+              <Link href={withLang("/cart")} className="btn btn-outline-dark text-uppercase fw-medium">
+                {isEn ? "Back to cart" : "Nazad na korpu"}
+              </Link>
             </div>
-            <div className="col-md-6">
-              <label className="form-label">{isEn ? "Phone" : "Telefon"}</label>
-              <input
-                value={form.phone}
-                onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-                className="form-control"
-                required
-              />
+
+            <div className="ss-order-form-section">
+              <h3>{isEn ? "Required contact" : "Obavezni kontakt podaci"}</h3>
+              <div className="row g-3">
+                <div className="col-md-6">
+                  <label className="form-label">{isEn ? "Full name" : "Ime i prezime"}</label>
+                  <input
+                    value={form.fullName}
+                    onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
+                    className="form-control"
+                    required
+                  />
+                </div>
+                <div className="col-md-6">
+                  <label className="form-label">{isEn ? "Phone" : "Telefon"}</label>
+                  <input
+                    value={form.phone}
+                    onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
+                    className="form-control"
+                    required
+                  />
+                </div>
+                <div className="col-12">
+                  <label className="form-label">Email</label>
+                  <input
+                    type="email"
+                    value={form.email}
+                    onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
+                    className="form-control"
+                    required
+                  />
+                </div>
+              </div>
             </div>
-            <div className="col-12">
-              <label className="form-label">Email</label>
-              <input
-                type="email"
-                value={form.email}
-                onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                className="form-control"
-                required
-              />
+
+            <div className="ss-order-form-section">
+              <h3>{isEn ? "Optional delivery details" : "Opcioni podaci za dostavu"}</h3>
+              <div className="row g-3">
+                <div className="col-12">
+                  <label className="form-label">{isEn ? "Address" : "Adresa"}</label>
+                  <input
+                    value={form.address}
+                    onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
+                    className="form-control"
+                  />
+                </div>
+                <div className="col-md-7">
+                  <label className="form-label">{isEn ? "City" : "Grad"}</label>
+                  <input
+                    value={form.city}
+                    onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
+                    className="form-control"
+                  />
+                </div>
+                <div className="col-md-5">
+                  <label className="form-label">{isEn ? "Postal code" : "Postanski broj"}</label>
+                  <input
+                    value={form.postalCode}
+                    onChange={(e) => setForm((prev) => ({ ...prev, postalCode: e.target.value }))}
+                    className="form-control"
+                  />
+                </div>
+              </div>
             </div>
-            <div className="col-12">
-              <label className="form-label">{isEn ? "Address" : "Adresa"}</label>
-              <input
-                value={form.address}
-                onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
-                className="form-control"
-              />
-            </div>
-            <div className="col-md-7">
-              <label className="form-label">{isEn ? "City" : "Grad"}</label>
-              <input
-                value={form.city}
-                onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
-                className="form-control"
-              />
-            </div>
-            <div className="col-md-5">
-              <label className="form-label">{isEn ? "Postal code" : "Poštanski broj"}</label>
-              <input
-                value={form.postalCode}
-                onChange={(e) => setForm((prev) => ({ ...prev, postalCode: e.target.value }))}
-                className="form-control"
-              />
-            </div>
-            <div className="col-12">
-              <label className="form-label">{isEn ? "Note" : "Napomena"}</label>
+
+            <div className="ss-order-form-section">
+              <h3>{isEn ? "Note for the team" : "Napomena za tim"}</h3>
               <textarea
                 value={form.note}
                 onChange={(e) => setForm((prev) => ({ ...prev, note: e.target.value }))}
                 className="form-control"
                 rows={4}
-                placeholder={isEn ? "Note for the team, sizes, pickup time..." : "Napomena za tim, veličine, vreme preuzimanja..."}
+                placeholder={isEn ? "Sizes, pickup time, delivery note..." : "Velicine, vreme preuzimanja, napomena za dostavu..."}
               />
             </div>
-          </div>
 
-          {error ? <p className="text-danger mt-3 mb-0">{error}</p> : null}
+            {error ? <p className="text-danger mt-3 mb-0">{error}</p> : null}
 
-          <div className="d-flex flex-wrap gap-2 mt-4">
-            <button type="submit" disabled={!canSubmit || submitting} className="btn btn-primary text-uppercase fw-medium">
-              {submitting ? (isEn ? "Sending..." : "Slanje...") : (isEn ? "Submit order" : "Pošalji porudžbinu")}
-            </button>
-            <Link href="/cart" className="btn btn-outline-dark text-uppercase fw-medium">
-              {isEn ? "Back to cart" : "Nazad na korpu"}
-            </Link>
-          </div>
-        </form>
-      </div>
-
-      <div className="col-lg-5">
-        <div className="rounded-4 border bg-white p-4 shadow-sm">
-          <p className="text-uppercase fw-medium text-secondary mb-1">{isEn ? "Order summary" : "Pregled porudžbine"}</p>
-          <h2 className="h5 mb-4">{isEn ? "Items" : "Artikli"}</h2>
-          <div className="d-flex flex-column gap-3">
-            {items.map((item) => (
-              <div key={item.legacyId} className="d-flex justify-content-between gap-3">
-                <div>
-                  <p className="mb-1 fw-medium">{item.name}</p>
-                  {item.size ? <p className="small text-secondary mb-1">{isEn ? "Size" : "Veličina"}: {item.size}</p> : null}
-                  {item.material ? <p className="small text-secondary mb-1">{isEn ? "Material" : "Materijal"}: {item.material}</p> : null}
-                  <p className="small text-secondary mb-0">
-                    {item.quantity} x {formatRsd(item.price)}
-                  </p>
-                </div>
-                <div className="fw-medium">{formatRsd(item.price * item.quantity)}</div>
+            <div className="ss-order-panel__footer">
+              <p className="ss-order-panel__hint">
+                {isEn
+                  ? "Submitting creates an order inquiry in admin. The team confirms availability and next steps afterward."
+                  : "Slanjem kreiras upit za porudzbinu u adminu. Tim potom potvrdjuje dostupnost i sledece korake."}
+              </p>
+              <div className="d-flex flex-wrap gap-2">
+                <button type="submit" disabled={!canSubmit || submitting} className="btn btn-primary text-uppercase fw-medium">
+                  {submitting ? (isEn ? "Sending..." : "Slanje...") : (isEn ? "Send order" : "Posalji porudzbinu")}
+                </button>
+                <Link href={withLang("/cart")} className="btn btn-outline-dark text-uppercase fw-medium">
+                  {isEn ? "Edit cart" : "Izmeni korpu"}
+                </Link>
               </div>
-            ))}
+            </div>
+          </form>
+        </div>
+
+        <div className="col-lg-5">
+          <div className="ss-order-summary ss-order-summary--sticky">
+            <p className="ss-order-panel__eyebrow">{isEn ? "Order summary" : "Pregled porudzbine"}</p>
+            <h2>{isEn ? "Everything the customer is sending." : "Sve sto kupac upravo salje."}</h2>
+
+            <div className="ss-order-summary__items">
+              {items.map((item) => (
+                <div key={item.legacyId} className="ss-order-summary__item">
+                  <div>
+                    <p className="ss-order-summary__item-title">{item.name}</p>
+                    {item.size ? <p className="ss-order-summary__item-meta">{isEn ? "Size" : "Velicina"}: {item.size}</p> : null}
+                    {item.material ? <p className="ss-order-summary__item-meta">{isEn ? "Material" : "Materijal"}: {item.material}</p> : null}
+                    <p className="ss-order-summary__item-meta">
+                      {item.quantity} x {formatRsd(item.price)}
+                    </p>
+                  </div>
+                  <strong>{formatRsd(item.price * item.quantity)}</strong>
+                </div>
+              ))}
+            </div>
+
+            <div className="ss-order-summary__total">
+              <span>{isEn ? "Current total" : "Trenutni ukupno"}</span>
+              <strong>{formatRsd(subtotal)}</strong>
+            </div>
+
+            <div className="ss-order-summary__note">
+              <p>
+                {isEn
+                  ? "There is no online payment in this flow. That makes checkout simpler and keeps the focus on sending the request fast."
+                  : "U ovom toku nema online placanja. To checkout cini jednostavnijim i drzi fokus na brzom slanju zahteva."}
+              </p>
+            </div>
           </div>
-          <hr />
-          <div className="d-flex justify-content-between fw-semibold fs-5">
-            <span>{isEn ? "Total" : "Ukupno"}</span>
-            <span>{formatRsd(subtotal)}</span>
-          </div>
-          <p className="small text-secondary mt-3 mb-0">
-            {isEn ? "This is a final inquiry/order without online payment. The order status is then tracked through the admin panel." : "Ovo je finalni upit/porudžbina bez online plaćanja. Status porudžbine se dalje vodi kroz admin panel."}
-          </p>
         </div>
       </div>
     </div>

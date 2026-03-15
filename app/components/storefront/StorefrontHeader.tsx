@@ -12,8 +12,10 @@ import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 export default function StorefrontHeader({
   lang = "sr",
+  variant = "default",
 }: {
   lang?: StorefrontLanguage;
+  variant?: "default" | "contrast";
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -22,6 +24,7 @@ export default function StorefrontHeader({
   const normalizedPath = pathname ?? "";
   const isHome = normalizedPath === "/" || normalizedPath === "";
   const isEn = lang === "en";
+  const isContrast = variant === "contrast";
 
   const withLang = (href: string) => {
     if (!isEn) return href;
@@ -66,13 +69,14 @@ export default function StorefrontHeader({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const desktopFloating = isHome;
+  const desktopFloating = isHome && !isContrast;
   const mobileFloating = false;
   const headerClass = [
     "header",
     "header-fullwidth",
     "header_sticky",
-    isHome ? "header-transparent-bg header_sticky-bg_dark" : "",
+    isHome && !isContrast ? "header-transparent-bg header_sticky-bg_dark" : "",
+    isContrast ? "ss-header-contrast" : "",
     desktopFloating ? "position-absolute ss-header-home-floating" : "header_sticky-active",
     isScrolled ? "ss-header-scrolled" : "",
   ]
@@ -81,15 +85,16 @@ export default function StorefrontHeader({
   const mobileHeaderClass = [
     "header-mobile",
     "header-mobile_sticky",
-    isHome ? "" : "header_sticky-active",
+    isHome && !isContrast ? "" : "header_sticky-active",
     mobileFloating ? "position-absolute ss-mobile-home" : "position-relative",
-    isHome && !mobileFloating ? "ss-mobile-home-solid header_sticky-active" : "",
+    isHome && !mobileFloating && !isContrast ? "ss-mobile-home-solid header_sticky-active" : "",
+    isContrast ? "ss-mobile-header-contrast" : "",
     isScrolled ? "ss-mobile-header-scrolled" : "",
   ]
     .filter(Boolean)
     .join(" ");
-  const desktopLogoSrc = isHome ? "/img/logo-header-dark.png" : "/img/logo-header.png";
-  const mobileLogoSrc = isHome ? "/img/logo-header-dark-mobile.png" : "/img/logo-header-mobile.png";
+  const desktopLogoSrc = isHome && !isContrast ? "/img/logo-header-dark.png" : "/img/logo-header.png";
+  const mobileLogoSrc = isHome && !isContrast ? "/img/logo-header-dark-mobile.png" : "/img/logo-header-mobile.png";
 
   return (
     <>

@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import WebShopFilters from "@/app/components/storefront/WebShopFilters";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
@@ -31,10 +32,12 @@ function sortItems(items: CatalogProductView[], sort: string): CatalogProductVie
   const next = [...items];
   const stockRank = (item: CatalogProductView) =>
     Math.max(Number(item.stockTotal || 0), Number(item.stockWarehouse1 || 0));
+
   if (sort === "price_asc") return next.sort((a, b) => a.priceFinalGross - b.priceFinalGross);
   if (sort === "price_desc") return next.sort((a, b) => b.priceFinalGross - a.priceFinalGross);
   if (sort === "name_asc") return next.sort((a, b) => a.name.localeCompare(b.name, "sr"));
   if (sort === "stock_desc") return next.sort((a, b) => stockRank(b) - stockRank(a));
+
   return next;
 }
 
@@ -83,15 +86,23 @@ export default async function WebShopPage({
   const gridItems = items.slice(8);
   const sortLabelMap: Record<string, string> = {
     featured: isEn ? "Featured" : "Izdvojeno",
-    price_asc: isEn ? "Price: Low to High" : "Cena: od niže ka višoj",
-    price_desc: isEn ? "Price: High to Low" : "Cena: od više ka nižoj",
-    name_asc: isEn ? "Name: A-Z" : "Naziv: A-Š",
-    stock_desc: isEn ? "Stock: High to Low" : "Stanje: od većeg ka manjem",
+    price_asc: isEn ? "Price: Low to High" : "Cena: od nize ka visoj",
+    price_desc: isEn ? "Price: High to Low" : "Cena: od vise ka nizoj",
+    name_asc: isEn ? "Name: A-Z" : "Naziv: A-Z",
+    stock_desc: isEn ? "Stock: High to Low" : "Stanje: od veceg ka manjem",
   };
+  const sortOptions = [
+    { value: "featured", label: sortLabelMap.featured },
+    { value: "price_asc", label: sortLabelMap.price_asc },
+    { value: "price_desc", label: sortLabelMap.price_desc },
+    { value: "name_asc", label: sortLabelMap.name_asc },
+    { value: "stock_desc", label: sortLabelMap.stock_desc },
+  ];
 
   const makeHref = (patch: Record<string, string | number | null>) => {
     const url = new URLSearchParams();
     const current: Record<string, string> = {
+      lang: isEn ? "en" : "",
       q,
       categoryId: categoryId > 0 ? String(categoryId) : "",
       inStock: inStock ? "1" : "",
@@ -103,6 +114,7 @@ export default async function WebShopPage({
     for (const [key, value] of Object.entries(current)) {
       if (value) url.set(key, value);
     }
+
     for (const [key, value] of Object.entries(patch)) {
       if (value === null || value === "" || Number.isNaN(value)) {
         url.delete(key);
@@ -110,6 +122,7 @@ export default async function WebShopPage({
         url.set(key, String(value));
       }
     }
+
     const queryString = url.toString();
     return queryString ? `/web-shop?${queryString}` : "/web-shop";
   };
@@ -117,6 +130,7 @@ export default async function WebShopPage({
   const categoryNameById = new Map(result.categories.map((category) => [category.id, category.name]));
   const selectedCategoryName = categoryId > 0 ? categoryNameById.get(categoryId) || `Category ${categoryId}` : "";
   const activeFilterChips: ActiveFilterChip[] = [];
+
   if (q.trim()) {
     activeFilterChips.push({
       key: "q",
@@ -124,6 +138,7 @@ export default async function WebShopPage({
       href: makeHref({ q: null, page: 1 }),
     });
   }
+
   if (categoryId > 0) {
     activeFilterChips.push({
       key: "category",
@@ -131,6 +146,7 @@ export default async function WebShopPage({
       href: makeHref({ categoryId: null, page: 1 }),
     });
   }
+
   if (sort !== "featured") {
     activeFilterChips.push({
       key: "sort",
@@ -138,6 +154,7 @@ export default async function WebShopPage({
       href: makeHref({ sort: null, page: 1 }),
     });
   }
+
   if (inStock) {
     activeFilterChips.push({
       key: "stock",
@@ -145,6 +162,7 @@ export default async function WebShopPage({
       href: makeHref({ inStock: null, page: 1 }),
     });
   }
+
   if (onSale) {
     activeFilterChips.push({
       key: "sale",
@@ -175,6 +193,7 @@ export default async function WebShopPage({
     const motionIndex = options?.motionIndex || 0;
     const coverImage = item.coverImage || fallbackImage;
     const displayName = getLocalizedCatalogProductName(item, lang);
+    const detailHref = isEn ? `/web-shop/${item.legacyId}?lang=en` : `/web-shop/${item.legacyId}`;
     const imageSizes =
       imageWidth >= 600
         ? "(max-width: 991px) 100vw, (max-width: 1399px) 50vw, 42vw"
@@ -184,7 +203,7 @@ export default async function WebShopPage({
       <ProductItemMotion key={key} className={wrapperClassName} index={motionIndex}>
         <div className={cardClassName}>
           <div className={imageWrapperClassName}>
-            <Link href={`/web-shop/${item.legacyId}`}>
+            <Link href={detailHref}>
               <Image
                 src={coverImage}
                 width={imageWidth}
@@ -198,7 +217,7 @@ export default async function WebShopPage({
             <div className="pc__info hover__content text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
               <p className="pc__category">{getCategoryLabel(item)}</p>
               <h6 className="pc__title">
-                <Link href={`/web-shop/${item.legacyId}`}>{displayName}</Link>
+                <Link href={detailHref}>{displayName}</Link>
               </h6>
               <div className="product-card__price d-flex justify-content-center">
                 {item.priceGross > item.priceFinalGross ? (
@@ -210,7 +229,7 @@ export default async function WebShopPage({
                   <span className="money price">{formatRsd(item.priceFinalGross)}</span>
                 )}
               </div>
-              <Link href={`/web-shop/${item.legacyId}`} className="pc__atc anim_appear-bottom btn mt-3 border-0 text-uppercase fw-medium">
+              <Link href={detailHref} className="pc__atc anim_appear-bottom btn mt-3 border-0 text-uppercase fw-medium">
                 {isEn ? "View product" : "Pogledaj proizvod"}
               </Link>
             </div>
@@ -218,7 +237,7 @@ export default async function WebShopPage({
           <div className="pc__info ss-card-mobile-info d-md-none">
             <p className="pc__category">{getCategoryLabel(item)}</p>
             <h6 className="pc__title mb-1">
-              <Link href={`/web-shop/${item.legacyId}`}>{displayName}</Link>
+              <Link href={detailHref}>{displayName}</Link>
             </h6>
             <div className="product-card__price d-flex">
               {item.priceGross > item.priceFinalGross ? (
@@ -238,11 +257,11 @@ export default async function WebShopPage({
 
   return (
     <>
-      <StorefrontHeader lang={lang} />
-      <main className="page-wrapper">
-        <Reveal as="section" className="full-width_padding">
-          <div className="full-width_border border-2" style={{ borderColor: "#eeeeee" }}>
-            <div className="shop-banner position-relative">
+      <StorefrontHeader lang={lang} variant="contrast" />
+      <main className="page-wrapper ss-shop-page">
+        <Reveal as="section" className="ss-shop-hero-section">
+          <div className="ss-shop-hero">
+            <div className="ss-shop-hero__media">
               <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
                 <Image
                   src="/img/hero.jpg"
@@ -253,284 +272,208 @@ export default async function WebShopPage({
                   priority
                 />
               </div>
-              <div className="shop-banner__content container position-absolute start-50 top-50 translate-middle">
-                <h2 className="stroke-text h1 smooth-16 text-uppercase fw-bold mb-3 mb-xl-4 mb-xl-5">Web Shop</h2>
-                <ul className="d-flex flex-wrap list-unstyled text-uppercase h6">
-                  <li className="me-3 me-xl-4 pe-1">
-                    <Link href={makeHref({ categoryId: null, page: 1 })} className={`menu-link menu-link_us-s ${categoryId <= 0 ? "menu-link_active" : ""}`}>
-                      {isEn ? "All" : "Sve"}
+              <div className="ss-shop-hero__overlay" />
+              <div className="container ss-shop-hero__content">
+                <div className="ss-shop-hero__card">
+                  <p className="ss-shop-hero__eyebrow">{isEn ? "Curated tailoring" : "Kurirani izbor krojeva"}</p>
+                  <h1>{isEn ? "Web Shop" : "Web Shop"}</h1>
+                  <p className="ss-shop-hero__lead">
+                    {isEn
+                      ? "Browse the collection with cleaner navigation, product-first search and filters that finally feel right on both desktop and mobile."
+                      : "Pregledaj kolekciju uz citljiviju navigaciju, pretragu po proizvodu i filtere koji sada konacno rade pregledno i na desktopu i na telefonu."}
+                  </p>
+                  <div className="ss-shop-hero__actions">
+                    <Link href="#shop-products" className="btn btn-primary text-uppercase fw-medium">
+                      {isEn ? "Explore products" : "Pogledaj proizvode"}
                     </Link>
-                  </li>
-                  {topCategories.map((category) => (
-                    <li key={category.id} className="me-3 me-xl-4 pe-1">
-                      <Link
-                        href={makeHref({ categoryId: categoryId === category.id ? null : category.id, page: 1 })}
-                        className={`menu-link menu-link_us-s ${categoryId === category.id ? "menu-link_active" : ""}`}
-                      >
-                        {category.name}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+                    <Link href={makeHref({ onSale: 1, page: 1 })} className="btn btn-outline-light text-uppercase fw-medium">
+                      {isEn ? "Open sale items" : "Pogledaj akcije"}
+                    </Link>
+                  </div>
+                  <div className="ss-shop-hero__stats">
+                    <div className="ss-shop-hero__stat">
+                      <span>{isEn ? "Products" : "Proizvoda"}</span>
+                      <strong>{result.total}</strong>
+                    </div>
+                    <div className="ss-shop-hero__stat">
+                      <span>{isEn ? "Top categories" : "Top kategorije"}</span>
+                      <strong>{Math.min(topCategories.length + 1, 6)}</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="container">
+              <div className="ss-shop-hero__categories">
+                <Link
+                  href={makeHref({ categoryId: null, page: 1 })}
+                  className={`ss-shop-hero__category ${categoryId <= 0 ? "is-active" : ""}`}
+                >
+                  {isEn ? "All products" : "Svi proizvodi"}
+                </Link>
+                {topCategories.slice(0, 5).map((category) => (
+                  <Link
+                    key={category.id}
+                    href={makeHref({ categoryId: categoryId === category.id ? null : category.id, page: 1 })}
+                    className={`ss-shop-hero__category ${categoryId === category.id ? "is-active" : ""}`}
+                  >
+                    {category.name}
+                  </Link>
+                ))}
               </div>
             </div>
           </div>
         </Reveal>
 
-        <div className="mb-4 pb-lg-3" />
+        <div className="mb-4 pb-lg-2" />
 
-        <section className="shop-main container">
-          <Reveal as="div" className="ss-filter-panel mb-4 pb-md-2" delay={0.02}>
-            <div className="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
-              <div className="d-flex flex-wrap align-items-center gap-2">
-                <span className="text-uppercase fw-medium me-1">{isEn ? "Filter" : "Filter"}</span>
-                {activeFilterChips.length > 0 ? (
-                  <span className="ss-filter-active-count">
-                    {activeFilterChips.length} {isEn ? "active" : "aktivno"}
-                  </span>
-                ) : null}
+        <section className="shop-main container" id="shop-products">
+          <WebShopFilters
+            lang={lang}
+            query={q}
+            categoryId={categoryId}
+            inStock={inStock}
+            onSale={onSale}
+            sort={sort}
+            categories={result.categories}
+            featuredCategories={topCategories.slice(0, 6)}
+            activeFilterChips={activeFilterChips}
+            showingCount={items.length}
+            totalCount={result.total}
+            sortOptions={sortOptions}
+          >
+            <div className="ss-shop-gallery">
+              <div className="ss-shop-gallery__header">
+                <div>
+                  <p className="ss-shop-gallery__eyebrow">{isEn ? "Selected collection" : "Izabrana kolekcija"}</p>
+                  <h2 className="ss-shop-gallery__title">
+                    {items.length > 0
+                      ? isEn
+                        ? "Products that match your selection"
+                        : "Proizvodi koji odgovaraju tvom izboru"
+                      : isEn
+                        ? "No products found"
+                        : "Nema pronadjenih proizvoda"}
+                  </h2>
+                </div>
+                <p className="ss-shop-gallery__meta">
+                  {isEn ? "Showing" : "Prikazano"} <strong>{items.length}</strong> / {result.total}
+                </p>
               </div>
-              <Link
-                href="/web-shop"
-                className={`ss-filter-reset-link text-uppercase ${activeFilterChips.length === 0 ? "disabled pe-none opacity-50" : ""}`}
-              >
-                {isEn ? "Reset all" : "Resetuj sve"}
-              </Link>
-            </div>
 
-            {activeFilterChips.length > 0 ? (
-              <div className="ss-filter-chip-list mb-3">
-                {activeFilterChips.map((chip) => (
-                  <Link key={chip.key} href={chip.href} className="ss-filter-chip" aria-label={`${isEn ? "Remove" : "Ukloni"} ${chip.label}`}>
-                    <span>{chip.label}</span>
-                    <span className="ss-filter-chip__x">x</span>
-                  </Link>
-                ))}
-              </div>
-            ) : (
-              <p className="ss-filter-empty mb-3">{isEn ? "No active filters yet." : "Još nema aktivnih filtera."}</p>
-            )}
-
-            <div className="d-flex flex-wrap align-items-center gap-3 mb-3 pb-md-2">
-              {topCategories.slice(0, 6).map((category, index) => (
-                <div key={category.id} className="d-flex align-items-center">
-                  <Link
-                    href={makeHref({ categoryId: categoryId === category.id ? null : category.id, page: 1 })}
-                    className={`menu-link menu-link_us-s text-uppercase ${categoryId === category.id ? "menu-link_active" : ""}`}
-                  >
-                    {category.name}
-                  </Link>
-                  {index < Math.min(topCategories.length, 6) - 1 ? (
-                    <div className="shop-asc__seprator ms-2 me-3 bg-light d-none d-lg-block" />
-                  ) : null}
+              {items.length === 0 ? (
+                <div className="ss-shop-empty-state">
+                  <div className="ss-shop-empty-state__card">
+                    <p className="ss-shop-empty-state__eyebrow">{isEn ? "Try again" : "Pokusi ponovo"}</p>
+                    <h3>{isEn ? "Adjust your filters for a broader selection." : "Prilagodi filtere za siri izbor proizvoda."}</h3>
+                    <p>
+                      {isEn
+                        ? "Start with product name or category, then add stock or sale filters only if needed."
+                        : "Kreni od naziva proizvoda ili kategorije, pa tek onda dodaj stanje ili akciju ako je potrebno."}
+                    </p>
+                    <Link href={makeHref({ q: null, categoryId: null, inStock: null, onSale: null, sort: null, page: 1 })} className="btn btn-primary text-uppercase fw-medium">
+                      {isEn ? "Reset filters" : "Resetuj filtere"}
+                    </Link>
+                  </div>
                 </div>
-              ))}
-            </div>
+              ) : (
+                <>
+                  <div className="products-grid d-none d-md-block" id="products-grid-desktop">
+                    {masonryA.length > 0 ? (
+                      <div className="products-masonry row row-cols-md-2 mb-2 mb-md-3 pb-1 pb-md-3">
+                        {masonryA[0] ? renderOverlayCard(masonryA[0], `masonry-a-${masonryA[0].legacyId}`, { motionIndex: 0 }) : null}
 
-            <form action="/web-shop" method="get" id="shop-filters" className="ss-shop9-filters">
-              <input type="hidden" name="page" value="1" />
-              <div className="row g-2 align-items-end">
-                <div className="col-12 col-lg-5">
-                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">{isEn ? "Search" : "Pretraga"}</label>
-                  <div className="ss-filter-field">
-                    <input
-                      type="search"
-                      name="q"
-                      defaultValue={q}
-                      className="form-control"
-                      placeholder={isEn ? "Search by code, name, SKU, EAN..." : "Pretraži po šifri, nazivu, SKU ili EAN-u..."}
-                    />
-                    {q.trim() ? (
-                      <Link href={makeHref({ q: null, page: 1 })} className="ss-filter-field__clear">
-                        {isEn ? "Clear" : "Obriši"}
-                      </Link>
+                        <div className="d-flex flex-column">
+                          <div className="row row-cols-2 flex-grow-1 mb-lg-4">
+                            {masonryA.slice(1, 3).map((item, index) =>
+                              renderOverlayCard(item, `masonry-a-side-${item.legacyId}`, {
+                                cardClassName: "product-card ss-card-hover ss-product-card h-100 mb-2",
+                                motionIndex: index + 1,
+                              }),
+                            )}
+                          </div>
+                          {masonryA[3]
+                            ? renderOverlayCard(masonryA[3], `masonry-a-wide-${masonryA[3].legacyId}`, {
+                                wrapperClassName: "product-card-wrapper flex-grow-1 pt-1",
+                                imageWrapperClassName: "pc__img-wrapper pc-wide__img-wrapper hover-container p-lg-0",
+                                motionIndex: 3,
+                              })
+                            : null}
+                        </div>
+                      </div>
                     ) : null}
-                  </div>
-                </div>
 
-                <div className="col-6 col-md-4 col-lg-2">
-                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">{isEn ? "Sort" : "Sortiranje"}</label>
-                  <div className="ss-filter-field">
-                    <select className="form-select fw-medium" aria-label={isEn ? "Sort items" : "Sortiraj proizvode"} name="sort" defaultValue={sort}>
-                      <option value="featured">{sortLabelMap.featured}</option>
-                      <option value="price_asc">{sortLabelMap.price_asc}</option>
-                      <option value="price_desc">{sortLabelMap.price_desc}</option>
-                      <option value="name_asc">{sortLabelMap.name_asc}</option>
-                      <option value="stock_desc">{sortLabelMap.stock_desc}</option>
-                    </select>
-                    {sort !== "featured" ? (
-                      <Link href={makeHref({ sort: null, page: 1 })} className="ss-filter-field__clear">
-                        {isEn ? "Clear" : "Obriši"}
-                      </Link>
+                    {masonryB.length > 0 ? (
+                      <div className="products-masonry row row-cols-md-2 mb-2 mb-md-3 pb-1 pb-md-3">
+                        <div className="mb-2 pb-1 mb-md-0 pb-md-0">
+                          <div className="row row-cols-2 h-100">
+                            <div className="d-flex flex-column">
+                              {masonryB.slice(0, 2).map((item, index) =>
+                                renderOverlayCard(item, `masonry-b-left-${item.legacyId}`, {
+                                  wrapperClassName: "product-card-wrapper flex-grow-1 mb-md-4",
+                                  motionIndex: index + 4,
+                                }),
+                              )}
+                            </div>
+                            {masonryB[2]
+                              ? renderOverlayCard(masonryB[2], `masonry-b-mid-${masonryB[2].legacyId}`, {
+                                  wrapperClassName: "product-card-wrapper flex-grow-1 mb-md-4",
+                                  motionIndex: 6,
+                                })
+                              : null}
+                          </div>
+                        </div>
+                        {masonryB[3] ? renderOverlayCard(masonryB[3], `masonry-b-right-${masonryB[3].legacyId}`, { motionIndex: 7 }) : null}
+                      </div>
                     ) : null}
-                  </div>
-                </div>
 
-                <div className="col-6 col-md-4 col-lg-2">
-                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">{isEn ? "Category" : "Kategorija"}</label>
-                  <div className="ss-filter-field">
-                    <select
-                      className="form-select fw-medium"
-                      aria-label={isEn ? "Category" : "Kategorija"}
-                      name="categoryId"
-                      defaultValue={categoryId > 0 ? String(categoryId) : ""}
-                    >
-                      <option value="">{isEn ? "All" : "Sve"}</option>
-                      {result.categories.map((category) => (
-                        <option key={category.id} value={category.id}>
-                          {category.name}
-                        </option>
-                      ))}
-                    </select>
-                    {categoryId > 0 ? (
-                      <Link href={makeHref({ categoryId: null, page: 1 })} className="ss-filter-field__clear">
-                        {isEn ? "Clear" : "Obriši"}
-                      </Link>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="col-6 col-md-2 col-lg-1">
-                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">{isEn ? "Stock" : "Stanje"}</label>
-                  <div className="ss-filter-field">
-                    <label className="d-flex align-items-center gap-2 border rounded px-2 py-2 mb-0">
-                      <input type="checkbox" name="inStock" value="1" defaultChecked={inStock} />
-                      <span className="fs-13">{isEn ? "In stock" : "Na stanju"}</span>
-                    </label>
-                    {inStock ? (
-                      <Link href={makeHref({ inStock: null, page: 1 })} className="ss-filter-field__clear">
-                        {isEn ? "Clear" : "Obriši"}
-                      </Link>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="col-6 col-md-2 col-lg-1">
-                  <label className="form-label text-uppercase fw-medium fs-13 mb-1">{isEn ? "Sale" : "Akcija"}</label>
-                  <div className="ss-filter-field">
-                    <label className="d-flex align-items-center gap-2 border rounded px-2 py-2 mb-0">
-                      <input type="checkbox" name="onSale" value="1" defaultChecked={onSale} />
-                      <span className="fs-13">{isEn ? "On sale" : "Na akciji"}</span>
-                    </label>
-                    {onSale ? (
-                      <Link href={makeHref({ onSale: null, page: 1 })} className="ss-filter-field__clear">
-                        {isEn ? "Clear" : "Obriši"}
-                      </Link>
-                    ) : null}
-                  </div>
-                </div>
-
-                <div className="col-6 col-lg-1 d-grid d-lg-block">
-                  <button type="submit" className="btn btn-primary text-uppercase fw-medium w-100">
-                    {isEn ? "Apply" : "Primeni"}
-                  </button>
-                </div>
-
-                <div className="col-6 col-lg-1 d-grid d-lg-block">
-                  <Link
-                    href="/web-shop"
-                    className={`btn btn-outline-dark text-uppercase fw-medium w-100 ${activeFilterChips.length === 0 ? "disabled pe-none opacity-50" : ""}`}
-                  >
-                    {isEn ? "Reset" : "Resetuj"}
-                  </Link>
-                </div>
-              </div>
-            </form>
-          </Reveal>
-
-          <div className="products-grid d-none d-md-block" id="products-grid-desktop">
-            {masonryA.length > 0 ? (
-              <div className="products-masonry row row-cols-md-2 mb-2 mb-md-3 pb-1 pb-md-3">
-                {masonryA[0] ? renderOverlayCard(masonryA[0], `masonry-a-${masonryA[0].legacyId}`, { motionIndex: 0 }) : null}
-
-                <div className="d-flex flex-column">
-                  <div className="row row-cols-2 flex-grow-1 mb-lg-4">
-                    {masonryA.slice(1, 3).map((item, index) =>
-                      renderOverlayCard(item, `masonry-a-side-${item.legacyId}`, {
-                        cardClassName: "product-card ss-card-hover ss-product-card h-100 mb-2",
-                        motionIndex: index + 1,
-                      }),
-                    )}
-                  </div>
-                  {masonryA[3]
-                    ? renderOverlayCard(masonryA[3], `masonry-a-wide-${masonryA[3].legacyId}`, {
-                        wrapperClassName: "product-card-wrapper flex-grow-1 pt-1",
-                        imageWrapperClassName: "pc__img-wrapper pc-wide__img-wrapper hover-container p-lg-0",
-                        motionIndex: 3,
-                      })
-                    : null}
-                </div>
-              </div>
-            ) : null}
-
-            {masonryB.length > 0 ? (
-              <div className="products-masonry row row-cols-md-2 mb-2 mb-md-3 pb-1 pb-md-3">
-                <div className="mb-2 pb-1 mb-md-0 pb-md-0">
-                  <div className="row row-cols-2 h-100">
-                    <div className="d-flex flex-column">
-                      {masonryB.slice(0, 2).map((item, index) =>
-                        renderOverlayCard(item, `masonry-b-left-${item.legacyId}`, {
-                          wrapperClassName: "product-card-wrapper flex-grow-1 mb-md-4",
-                          motionIndex: index + 4,
+                    <div className="products-grid row row-cols-2 row-cols-md-3 row-cols-lg-4">
+                      {gridItems.map((item, index) =>
+                        renderOverlayCard(item, `grid-${item.legacyId}`, {
+                          cardClassName: "product-card ss-card-hover ss-product-card mb-3 mb-md-4 mb-xxl-5",
+                          imageWrapperClassName: "pc__img-wrapper hover-container",
+                          imageWidth: 330,
+                          imageHeight: 400,
+                          motionIndex: index + 8,
                         }),
                       )}
                     </div>
-                    {masonryB[2]
-                      ? renderOverlayCard(masonryB[2], `masonry-b-mid-${masonryB[2].legacyId}`, {
-                          wrapperClassName: "product-card-wrapper flex-grow-1 mb-md-4",
-                          motionIndex: 6,
-                        })
-                      : null}
                   </div>
-                </div>
-                {masonryB[3] ? renderOverlayCard(masonryB[3], `masonry-b-right-${masonryB[3].legacyId}`, { motionIndex: 7 }) : null}
-              </div>
-            ) : null}
 
-            <div className="products-grid row row-cols-2 row-cols-md-3 row-cols-lg-4">
-              {gridItems.map((item, index) =>
-                renderOverlayCard(item, `grid-${item.legacyId}`, {
-                  cardClassName: "product-card ss-card-hover ss-product-card mb-3 mb-md-4 mb-xxl-5",
-                  imageWrapperClassName: "pc__img-wrapper hover-container",
-                  imageWidth: 330,
-                  imageHeight: 400,
-                  motionIndex: index + 8,
-                }),
+                  <div className="products-grid ss-mobile-grid d-md-none" id="products-grid-mobile">
+                    <div className="row row-cols-2 g-2">
+                      {items.map((item, index) =>
+                        renderOverlayCard(item, `mobile-${item.legacyId}`, {
+                          wrapperClassName: "product-card-wrapper ss-mobile-grid__item",
+                          cardClassName: "product-card ss-card-hover ss-product-card ss-mobile-grid__card",
+                          imageWrapperClassName: "pc__img-wrapper ss-mobile-grid__img-wrapper",
+                          imageWidth: 330,
+                          imageHeight: 400,
+                          motionIndex: index,
+                        }),
+                      )}
+                    </div>
+                  </div>
+                </>
               )}
             </div>
-          </div>
+          </WebShopFilters>
 
-          <div className="products-grid ss-mobile-grid d-md-none" id="products-grid-mobile">
-            <div className="row row-cols-2 g-2">
-              {items.map((item, index) =>
-                renderOverlayCard(item, `mobile-${item.legacyId}`, {
-                  wrapperClassName: "product-card-wrapper ss-mobile-grid__item",
-                  cardClassName: "product-card ss-card-hover ss-product-card ss-mobile-grid__card",
-                  imageWrapperClassName: "pc__img-wrapper ss-mobile-grid__img-wrapper",
-                  imageWidth: 330,
-                  imageHeight: 400,
-                  motionIndex: index,
-                }),
-              )}
-            </div>
-          </div>
-
-          <p className="mb-5 text-center fw-medium">
-            {isEn ? "SHOWING" : "PRIKAZANO"} {items.length} {isEn ? "OF" : "OD"} {result.total} {isEn ? "PRODUCTS" : "PROIZVODA"}
-            <span className="ms-2 text-secondary">
-              ({result.page}/{result.totalPages})
-            </span>
-          </p>
-
-          <div className="text-center">
+          <div className="ss-shop-pagination">
+            <p className="ss-shop-pagination__summary">
+              {isEn ? "SHOWING" : "PRIKAZANO"} {items.length} {isEn ? "OF" : "OD"} {result.total} {isEn ? "PRODUCTS" : "PROIZVODA"}
+              <span className="ms-2 text-secondary">
+                ({result.page}/{result.totalPages})
+              </span>
+            </p>
             <Link
               href={makeHref({ page: Math.min(result.totalPages, result.page + 1) })}
-              className={`btn btn-primary text-uppercase fw-medium fs-base ${result.page >= result.totalPages ? "disabled pe-none opacity-50" : ""}`}
+              className={`btn btn-primary text-uppercase fw-medium fs-base ss-shop-pagination__cta ${result.page >= result.totalPages ? "disabled pe-none opacity-50" : ""}`}
             >
-              {isEn ? "Show more" : "Prikaži još"}
+              {isEn ? "Show more" : "Prikazi jos"}
             </Link>
           </div>
-
         </section>
 
         <div className="mb-5 pb-xl-5" />

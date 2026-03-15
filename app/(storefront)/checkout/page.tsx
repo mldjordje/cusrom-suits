@@ -16,9 +16,9 @@ export default async function CheckoutPage({
   const lang = await resolveStorefrontLanguage(await searchParams);
   return (
     <>
-      <StorefrontHeader lang={lang} />
-      <main className="page-wrapper">
-        <section className="container" style={{ paddingTop: 160, paddingBottom: 72 }}>
+      <StorefrontHeader lang={lang} variant="contrast" />
+      <main className="page-wrapper ss-commerce-page">
+        <section className="container ss-commerce-shell">
           <CheckoutPageClient lang={lang} />
         </section>
       </main>
