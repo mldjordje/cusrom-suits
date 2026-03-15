@@ -25,9 +25,13 @@ type CatalogCategoryLike = {
 type CatalogProductNameInput = {
   name: string;
   sku?: string | null;
+  manufCode?: string | null;
   categories?: CatalogCategoryLike[] | null;
   brand?: string | null;
 };
+
+const EMBEDDED_PRODUCT_TYPE_PATTERN =
+  /(?:^|[\s/-])([A-Z])\.\s*(Odelo|Sako|Ko[sš]ulja|Pantalone|Cipele|Jakna|Kaput|D[zž]emper|Majica|Polo)\b/iu;
 
 const normalizeForMatch = (value: string) =>
   String(value || "")
@@ -82,13 +86,6 @@ const inferProductTypeKey = (
   return null;
 };
 
-const extractEmbeddedProductType = (value: string) => {
-  const match = value.match(
-    /(?:^|[\s/-])[A-Z]\.\s*(Odelo|Sako|Kosulja|Pantalone|Cipele|Jakna|Kaput|Dzemper|Majica|Polo)\b/u,
-  );
-  return match?.[1] || null;
-};
-
 const maybeHumanizeColorCode = (value: string) => {
   const match = value.match(/^(?:[A-Z]?\d+(?:[./_-]\d+)*[\s/-]+)+([A-Z]{3,}(?:[\s/-][A-Z]{2,})*)$/u);
   if (!match) return value;
@@ -104,10 +101,22 @@ export function formatCatalogProductName(name: string, sku?: string | null) {
     value = value.replace(skuPattern, "").trim();
   }
 
-  const embeddedType = extractEmbeddedProductType(value);
-  if (embeddedType) {
-    const prefix = value.slice(0, value.indexOf(embeddedType)).trim();
-    if (!prefix || /[\d/._-]/.test(prefix) || /^[A-Z\s]+$/u.test(prefix)) {
+  const embeddedTypeMatch = EMBEDDED_PRODUCT_TYPE_PATTERN.exec(value);
+  if (embeddedTypeMatch) {
+    const embeddedType = embeddedTypeMatch[2];
+    const prefix = value.slice(0, embeddedTypeMatch.index).trim().replace(/[._\-+/|:]+$/u, "").trim();
+    const suffix = value
+      .slice(embeddedTypeMatch.index + embeddedTypeMatch[0].length)
+      .trim()
+      .replace(/^[._\-+/|:]+/u, "")
+      .trim();
+    const prefixWords = prefix.match(/\p{L}{3,}/gu) || [];
+
+    if (prefixWords.length > 0) {
+      value = /^[\p{Lu}\d\s./_-]{3,}$/u.test(prefix) ? titleCaseToken(prefix) : prefix;
+    } else if (suffix) {
+      value = `${embeddedType} ${suffix}`.trim();
+    } else {
       value = embeddedType;
     }
   }
@@ -182,27 +191,69 @@ export function getCatalogProductDisplayName(
   input: CatalogProductNameInput,
   lang: CatalogDisplayLanguage = "sr",
 ) {
-  const formatted = formatCatalogProductName(input.name, input.sku);
-  if (formatted) {
-    if (!isCatalogProductNameSuspicious(formatted)) {
-      return formatted;
-    }
+  const categoryLabel = getCatalogProductCategoryLabel(input, lang);
+  const normalizedCategoryLabel = normalizeForMatch(categoryLabel);
+  const genericPrefixPattern = /^(muska|zenska|decija|muski|zenski|deciji|musk[aioe]?|zensk[aioe]?)\b/u;
 
+  const evaluateCandidate = (source: string | null | undefined) => {
+    const formatted = formatCatalogProductName(String(source || ""), input.sku);
+    if (!formatted) return null;
+
+    const suspicious = isCatalogProductNameSuspicious(formatted);
     const meaningfulWords = formatted.match(/\p{L}{3,}/gu) || [];
-    const inferredType = inferProductTypeKey(input.name, input.categories);
-    const inferredTypeLabel = inferredType ? normalizeForMatch(getProductTypeLabel(inferredType, lang)) : "";
     const normalizedFormatted = normalizeForMatch(formatted);
+    const inferredType = inferProductTypeKey(String(source || input.name || ""), input.categories);
+    const inferredTypeLabel = inferredType ? normalizeForMatch(getProductTypeLabel(inferredType, lang)) : "";
 
-    if (meaningfulWords.length >= 2) {
-      return formatted;
+    let score = 0;
+    if (!suspicious) score += 40;
+    if (meaningfulWords.length >= 2) score += 30;
+    if (/\p{L}/u.test(formatted) && /\d/u.test(formatted)) score += 25;
+    if (normalizedFormatted !== normalizedCategoryLabel) score += 20;
+    if (!genericPrefixPattern.test(normalizedFormatted)) score += 12;
+    if (inferredTypeLabel && normalizedFormatted !== inferredTypeLabel) score += 10;
+    if (inferredTypeLabel && normalizedFormatted.includes(inferredTypeLabel) && normalizedFormatted.length > inferredTypeLabel.length + 3) {
+      score += 10;
     }
 
-    if (inferredTypeLabel && normalizedFormatted.includes(inferredTypeLabel) && normalizedFormatted.length > inferredTypeLabel.length + 3) {
-      return formatted;
+    return {
+      formatted,
+      suspicious,
+      meaningfulWords,
+      normalizedFormatted,
+      score,
+    };
+  };
+
+  const candidates = [evaluateCandidate(input.name), evaluateCandidate(input.manufCode)]
+    .filter((candidate): candidate is NonNullable<ReturnType<typeof evaluateCandidate>> => Boolean(candidate))
+    .sort((left, right) => right.score - left.score || right.formatted.length - left.formatted.length);
+
+  const bestCandidate = candidates[0];
+  if (bestCandidate) {
+    if (!bestCandidate.suspicious) {
+      return bestCandidate.formatted;
+    }
+
+    if (/\p{L}/u.test(bestCandidate.formatted) && /\d/u.test(bestCandidate.formatted)) {
+      return bestCandidate.formatted;
+    }
+
+    if (bestCandidate.meaningfulWords.length >= 2) {
+      return bestCandidate.formatted;
+    }
+
+    const fallbackType = inferProductTypeKey(input.name || input.manufCode || "", input.categories);
+    const fallbackTypeLabel = fallbackType ? normalizeForMatch(getProductTypeLabel(fallbackType, lang)) : "";
+    if (
+      fallbackTypeLabel &&
+      bestCandidate.normalizedFormatted.includes(fallbackTypeLabel) &&
+      bestCandidate.normalizedFormatted.length > fallbackTypeLabel.length + 3
+    ) {
+      return bestCandidate.formatted;
     }
   }
 
-  const categoryLabel = getCatalogProductCategoryLabel(input, lang);
   if (categoryLabel) return categoryLabel;
 
   return lang === "en" ? "Santos product" : "Santos proizvod";

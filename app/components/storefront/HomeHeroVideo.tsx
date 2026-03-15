@@ -18,6 +18,7 @@ type Props = {
     legacyId: number;
     sku: string;
     name: string;
+    manufCode?: string | null;
     coverImage: string | null;
     categories: HomeCategory[];
   }[];
@@ -70,6 +71,7 @@ export default function HomeHeroVideo({ categories, featuredProducts, content, l
             {
               name: product.name,
               sku: product.sku,
+              manufCode: product.manufCode,
               categories: product.categories,
             },
             lang,

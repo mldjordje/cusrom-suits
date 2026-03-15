@@ -147,6 +147,7 @@ const getProductDisplayName = (item: CatalogProductView, lang: "sr" | "en") =>
     {
       name: item.name,
       sku: item.sku,
+      manufCode: item.manufCode,
       categories: item.categories,
       brand: item.brand,
     },
@@ -158,6 +159,7 @@ const getProductCategoryLabel = (item: CatalogProductView, lang: "sr" | "en") =>
     {
       name: item.name,
       sku: item.sku,
+      manufCode: item.manufCode,
       categories: item.categories,
       brand: item.brand,
     },

@@ -1,6 +1,11 @@
 import { readJsonFile } from "@/lib/storage/jsonStore";
 import { getAnonSupabase, getServiceSupabase } from "@/lib/supabase/server";
 import type { LegacyCatalogProduct } from "@/lib/legacy/types";
+import {
+  getCatalogProductCategoryLabel,
+  getCatalogProductDisplayName,
+  isCatalogProductNameSuspicious,
+} from "@/lib/catalog/presentation";
 import { applyPromotionRulesToProduct, applyPromotionRulesToProducts, listPromotionRules } from "@/lib/catalog/promotions";
 import { unstable_cache } from "next/cache";
 
@@ -387,6 +392,45 @@ const applySkuImageFallbacks = (items: CatalogProductView[]): CatalogProductView
   });
 };
 
+const scoreCollapsedRepresentative = (item: CatalogProductView) => {
+  const displayName = getCatalogProductDisplayName({
+    name: item.name,
+    sku: item.sku,
+    manufCode: item.manufCode,
+    categories: item.categories,
+    brand: item.brand,
+  });
+  const categoryLabel = getCatalogProductCategoryLabel({
+    name: item.name,
+    sku: item.sku,
+    manufCode: item.manufCode,
+    categories: item.categories,
+    brand: item.brand,
+  });
+  const stock = getAvailableStockValue(item);
+
+  let score = 0;
+  if (item.manufCode && item.manufCode.trim()) score += 24;
+  if (displayName && !isCatalogProductNameSuspicious(displayName)) score += 26;
+  if (displayName && displayName !== categoryLabel) score += 24;
+  if (item.nameEn && item.nameEn.trim()) score += 8;
+  if (item.categories.length > 0) score += 12;
+  if (item.coverImage) score += 8;
+  if (item.brand) score += 4;
+  if (stock > 0) score += Math.min(stock, 10);
+
+  return score;
+};
+
+const pickCollapsedRepresentative = (left: CatalogProductView, right: CatalogProductView) => {
+  const leftScore = scoreCollapsedRepresentative(left);
+  const rightScore = scoreCollapsedRepresentative(right);
+  if (rightScore !== leftScore) {
+    return rightScore > leftScore ? right : left;
+  }
+  return right.legacyId > left.legacyId ? right : left;
+};
+
 const collapseCatalogProductsBySku = (items: CatalogProductView[]): CatalogProductView[] => {
   const map = new Map<string, CatalogProductView>();
 
@@ -432,9 +476,14 @@ const collapseCatalogProductsBySku = (items: CatalogProductView[]): CatalogProdu
       ...((current.rawPayload?.collapsedVariantIds as number[] | undefined) || [current.legacyId]),
       ...((item.rawPayload?.collapsedVariantIds as number[] | undefined) || [item.legacyId]),
     ]);
+    const representative = pickCollapsedRepresentative(current, item);
 
     map.set(key, {
       ...current,
+      name: representative.name || current.name || item.name,
+      nameEn: representative.nameEn || current.nameEn || item.nameEn,
+      manufCode: representative.manufCode || current.manufCode || item.manufCode,
+      brand: representative.brand || current.brand || item.brand,
       isActive: current.isActive || item.isActive,
       isExported: current.isExported || item.isExported,
       landingFeatured: current.landingFeatured || item.landingFeatured,

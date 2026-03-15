@@ -126,6 +126,7 @@ export const getLocalizedCatalogProductName = (
     {
       name: productText(product, lang).name,
       sku: product.sku,
+      manufCode: product.manufCode,
       categories: product.categories,
       brand: product.brand,
     },
