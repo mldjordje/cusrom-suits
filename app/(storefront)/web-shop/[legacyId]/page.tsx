@@ -354,11 +354,24 @@ export default async function WebShopProductPage({
         </Reveal>
 
         {related.length > 0 ? (
-          <Reveal as="section" className="products-carousel container mt-5 pt-4" delay={0.06}>
-            <h2 className="h3 text-uppercase mb-4 pb-xl-2 mb-xl-4">
-              {isEn ? "Related " : "Povezani "}
-              <strong>{isEn ? "Products" : "Proizvodi"}</strong>
-            </h2>
+          <Reveal as="section" className="products-carousel container mt-5 pt-4 ss-related-products" delay={0.06}>
+            <div className="ss-related-products__header">
+              <div>
+                <p className="ss-related-products__eyebrow">{isEn ? "Continue browsing" : "Nastavi pregled"}</p>
+                <h2 className="h3 text-uppercase mb-0">
+                  {isEn ? "Related " : "Povezani "}
+                  <strong>{isEn ? "Products" : "Proizvodi"}</strong>
+                </h2>
+              </div>
+              <p className="ss-related-products__copy">
+                {isEn
+                  ? "If this fit or category is close to what you want, these are the next products worth checking."
+                  : "Ako ti ovaj kroj ili kategorija odgovara, ovo su sledeci proizvodi koje vredi pogledati."}
+              </p>
+              <Link href={withLang("/web-shop")} className="btn btn-outline-dark text-uppercase fw-medium ss-related-products__cta">
+                {isEn ? "All products" : "Svi proizvodi"}
+              </Link>
+            </div>
             <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4">
               {related.map((item) => {
                 const coverImage = item.coverImage || "/img/odela2.jpg";
@@ -366,7 +379,7 @@ export default async function WebShopProductPage({
                 const relatedName = getLocalizedCatalogProductName(item, lang);
                 return (
                   <div key={item.legacyId} className="product-card-wrapper">
-                    <div className="product-card ss-card-hover mb-3 mb-md-4">
+                    <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                       <div className="pc__img-wrapper hover-container">
                         <Link href={variantHref(item.legacyId)}>
                           <Image
@@ -389,7 +402,7 @@ export default async function WebShopProductPage({
                           />
                         </Link>
                         <Link href={variantHref(item.legacyId)} className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium ss-cta-btn">
-                          {isEn ? "Details" : "Detaljnije"}
+                          {isEn ? "Open product" : "Otvori proizvod"}
                         </Link>
                       </div>
                       <div className="pc__info position-relative">

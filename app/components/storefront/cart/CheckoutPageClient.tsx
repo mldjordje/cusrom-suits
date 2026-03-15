@@ -171,6 +171,11 @@ export default function CheckoutPageClient({
 
             <div className="ss-order-form-section">
               <h3>{isEn ? "Required contact" : "Obavezni kontakt podaci"}</h3>
+              <p className="ss-order-form-section__copy">
+                {isEn
+                  ? "These three fields are enough for the team to confirm the order quickly."
+                  : "Ova tri polja su dovoljna da tim brzo potvrdi porudzbinu."}
+              </p>
               <div className="row g-3">
                 <div className="col-md-6">
                   <label className="form-label">{isEn ? "Full name" : "Ime i prezime"}</label>
@@ -178,15 +183,21 @@ export default function CheckoutPageClient({
                     value={form.fullName}
                     onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
                     className="form-control"
+                    placeholder={isEn ? "First and last name" : "Ime i prezime"}
+                    autoComplete="name"
                     required
                   />
                 </div>
                 <div className="col-md-6">
                   <label className="form-label">{isEn ? "Phone" : "Telefon"}</label>
                   <input
+                    type="tel"
                     value={form.phone}
                     onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
                     className="form-control"
+                    placeholder={isEn ? "Mobile or landline number" : "Mobilni ili fiksni broj"}
+                    autoComplete="tel"
+                    inputMode="tel"
                     required
                   />
                 </div>
@@ -197,6 +208,8 @@ export default function CheckoutPageClient({
                     value={form.email}
                     onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
                     className="form-control"
+                    placeholder="ime@email.com"
+                    autoComplete="email"
                     required
                   />
                 </div>
@@ -205,6 +218,11 @@ export default function CheckoutPageClient({
 
             <div className="ss-order-form-section">
               <h3>{isEn ? "Optional delivery details" : "Opcioni podaci za dostavu"}</h3>
+              <p className="ss-order-form-section__copy">
+                {isEn
+                  ? "Add address details now only if you already know them."
+                  : "Dodaj podatke za dostavu sada samo ako ih vec znas."}
+              </p>
               <div className="row g-3">
                 <div className="col-12">
                   <label className="form-label">{isEn ? "Address" : "Adresa"}</label>
@@ -212,6 +230,8 @@ export default function CheckoutPageClient({
                     value={form.address}
                     onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
                     className="form-control"
+                    placeholder={isEn ? "Street and number" : "Ulica i broj"}
+                    autoComplete="street-address"
                   />
                 </div>
                 <div className="col-md-7">
@@ -220,6 +240,8 @@ export default function CheckoutPageClient({
                     value={form.city}
                     onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
                     className="form-control"
+                    placeholder={isEn ? "City" : "Grad"}
+                    autoComplete="address-level2"
                   />
                 </div>
                 <div className="col-md-5">
@@ -228,6 +250,9 @@ export default function CheckoutPageClient({
                     value={form.postalCode}
                     onChange={(e) => setForm((prev) => ({ ...prev, postalCode: e.target.value }))}
                     className="form-control"
+                    placeholder={isEn ? "Postal code" : "Postanski broj"}
+                    autoComplete="postal-code"
+                    inputMode="numeric"
                   />
                 </div>
               </div>
@@ -235,6 +260,11 @@ export default function CheckoutPageClient({
 
             <div className="ss-order-form-section">
               <h3>{isEn ? "Note for the team" : "Napomena za tim"}</h3>
+              <p className="ss-order-form-section__copy">
+                {isEn
+                  ? "Use this for size remarks, pickup preference or anything the team should know."
+                  : "Ovde upisi napomenu o velicini, nacinu preuzimanja ili bilo sta sto tim treba da zna."}
+              </p>
               <textarea
                 value={form.note}
                 onChange={(e) => setForm((prev) => ({ ...prev, note: e.target.value }))}
