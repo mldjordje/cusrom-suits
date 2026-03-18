@@ -10,6 +10,11 @@ import StorefrontLanguageSwitcher from "@/app/components/storefront/StorefrontLa
 import StorefrontCartLink from "@/app/components/storefront/cart/StorefrontCartLink";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
+type ShopCategory = {
+  id: number;
+  name: string;
+};
+
 export default function StorefrontHeader({
   lang = "sr",
   variant = "default",
@@ -20,6 +25,7 @@ export default function StorefrontHeader({
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [shopCategories, setShopCategories] = useState<ShopCategory[]>([]);
   const { reduceMotion } = useAnimationBudget();
   const normalizedPath = pathname ?? "";
   const isHome = normalizedPath === "/" || normalizedPath === "";
@@ -69,6 +75,24 @@ export default function StorefrontHeader({
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  useEffect(() => {
+    let active = true;
+    const loadCategories = async () => {
+      try {
+        const res = await fetch("/api/storefront/categories", { cache: "force-cache" });
+        const json = await res.json();
+        if (!active || !json?.success || !Array.isArray(json.categories)) return;
+        setShopCategories(json.categories);
+      } catch {
+        if (active) setShopCategories([]);
+      }
+    };
+    void loadCategories();
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const desktopFloating = isHome && !isContrast;
   const headerClass = [
     "header",
@@ -93,6 +117,14 @@ export default function StorefrontHeader({
     .join(" ");
   const desktopLogoSrc = isHome && !isContrast ? "/img/logo-header-dark.png" : "/img/logo-header.png";
   const mobileLogoSrc = isHome && !isContrast ? "/img/logo-header-dark-mobile.png" : "/img/logo-header-mobile.png";
+  const shopMenuLinks = [
+    { href: "/web-shop", label: isEn ? "All products" : "Svi proizvodi" },
+    { href: "/web-shop?categoryId=sale", label: isEn ? "Sale" : "Akcija" },
+    ...shopCategories.map((category) => ({
+      href: `/web-shop?categoryId=${category.id}`,
+      label: category.name,
+    })),
+  ];
 
   return (
     <>
@@ -117,7 +149,7 @@ export default function StorefrontHeader({
                 {navItems.map((item) => (
                   <li
                     key={item.href}
-                    className={`navigation__item ${isItemActive(item.href) ? "is-active" : ""}`}
+                    className={`navigation__item ${isItemActive(item.href) ? "is-active" : ""} ${item.href === "/web-shop" ? "menu-item-has-children position-relative" : ""}`}
                   >
                     <Link
                       href={withLang(item.href)}
@@ -125,6 +157,17 @@ export default function StorefrontHeader({
                     >
                       {item.label}
                     </Link>
+                    {item.href === "/web-shop" && shopMenuLinks.length > 0 ? (
+                      <div className="default-menu ss-header-shop-submenu">
+                        <div className="ss-header-shop-submenu__inner">
+                          {shopMenuLinks.map((link) => (
+                            <Link key={link.href} href={withLang(link.href)} className="menu-link menu-link_us-s">
+                              {link.label}
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -262,15 +305,6 @@ export default function StorefrontHeader({
                     </div>
                   </div>
 
-                  <div className="ss-mobile-nav-panel__hero">
-                    <p className="ss-mobile-nav-panel__eyebrow">
-                      {isEn ? "Modern tailoring" : "Savremeno krojenje"}
-                    </p>
-                    <h2 className="ss-mobile-nav-panel__title">
-                      {isEn ? "Move through the collection with a cleaner mobile flow." : "Kreci se kroz kolekciju uz cistije i jasnije mobile iskustvo."}
-                    </h2>
-                  </div>
-
                   <div className="ss-mobile-nav-panel__quick">
                     {quickLinks.map((item, index) => (
                       <m.div
@@ -311,6 +345,19 @@ export default function StorefrontHeader({
                         >
                           <span>{item.label}</span>
                         </Link>
+                        {item.href === "/web-shop" && shopMenuLinks.length > 0 ? (
+                          <div className="ss-mobile-nav-submenu">
+                            {shopMenuLinks.map((link) => (
+                              <Link
+                                key={`mobile-${link.href}`}
+                                href={withLang(link.href)}
+                                className="ss-mobile-nav-submenu__link"
+                              >
+                                {link.label}
+                              </Link>
+                            ))}
+                          </div>
+                        ) : null}
                       </m.li>
                     ))}
                   </ul>

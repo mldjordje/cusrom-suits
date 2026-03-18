@@ -263,82 +263,27 @@ export default async function WebShopPage({
     <>
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-shop-page">
-        <Reveal as="section" className="ss-shop-hero-section">
-          <div className="ss-shop-hero">
-            <div className="ss-shop-hero__media">
-              <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
-                <Image
-                  src={landingSettings.shopHeroImage || "/img/hero2.jpg"}
-                  width={1759}
-                  height={420}
-                  alt="Santos web shop hero"
-                  className="slideshow-bg__img object-fit-cover"
-                  priority
-                />
-              </div>
-              <div className="ss-shop-hero__overlay" />
-              <div className="container ss-shop-hero__content">
-                <div className="ss-shop-hero__card">
-                  <p className="ss-shop-hero__eyebrow">{landingSettings.shopHeroEyebrow}</p>
-                  <h1>{landingSettings.shopHeroTitle}</h1>
-                  <p className="ss-shop-hero__lead">
-                    {landingSettings.shopHeroLead}
-                  </p>
-                  <div className="ss-shop-hero__actions">
-                    <Link href="#shop-products" className="btn btn-primary text-uppercase fw-medium">
-                      {isEn ? "Explore products" : "Pogledaj proizvode"}
-                    </Link>
-                    <Link href={makeHref({ onSale: 1, page: 1 })} className="btn btn-outline-light text-uppercase fw-medium">
-                      {isEn ? "Open sale items" : "Pogledaj akcije"}
-                    </Link>
-                  </div>
-                  <div className="ss-shop-hero__stats">
-                    <div className="ss-shop-hero__stat">
-                      <span>{isEn ? "Products" : "Proizvoda"}</span>
-                      <strong>{result.total}</strong>
-                    </div>
-                    <div className="ss-shop-hero__stat">
-                      <span>{isEn ? "Top categories" : "Top kategorije"}</span>
-                      <strong>{Math.min(topCategories.length + 1, 6)}</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="container">
-              <div className="ss-shop-hero__categories">
-                <Link
-                  href={makeHref({ categoryId: null, onSale: null, page: 1 })}
-                  className={`ss-shop-hero__category ${categoryId <= 0 && !onSale ? "is-active" : ""}`}
-                >
-                  {isEn ? "All products" : "Svi proizvodi"}
-                </Link>
-                <Link
-                  href={makeHref({ categoryId: null, onSale: onSale && categoryId <= 0 ? null : 1, page: 1 })}
-                  className={`ss-shop-hero__category ${onSale && categoryId <= 0 ? "is-active" : ""}`}
-                >
-                  {isEn ? "Sale" : "Akcija"}
-                </Link>
-                {topCategories.slice(0, 5).map((category) => (
-                  <Link
-                    key={category.id}
-                    href={makeHref({
-                      categoryId: categoryId === category.id ? null : category.id,
-                      onSale: null,
-                      page: 1,
-                    })}
-                    className={`ss-shop-hero__category ${categoryId === category.id ? "is-active" : ""}`}
-                  >
-                    {category.name}
-                  </Link>
-                ))}
-              </div>
+        <Reveal as="section" className="shop-banner position-relative">
+          <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
+            <Image
+              src={landingSettings.shopHeroImage || "/img/hero2.jpg"}
+              width={1759}
+              height={420}
+              alt="Santos web shop hero"
+              className="slideshow-bg__img object-fit-cover"
+              priority
+            />
+          </div>
+          <div className="container position-relative py-4 py-lg-5">
+            <div className="ss-shop-banner-simple">
+              <p className="ss-shop-banner-simple__eyebrow">{landingSettings.shopHeroEyebrow}</p>
+              <h1>{landingSettings.shopHeroTitle}</h1>
+              <p>{landingSettings.shopHeroLead}</p>
             </div>
           </div>
         </Reveal>
 
-        <div className="mb-4 pb-lg-2" />
+        <div className="mb-4 pb-lg-3" />
 
         <section className="shop-main container" id="shop-products">
         <WebShopFilters

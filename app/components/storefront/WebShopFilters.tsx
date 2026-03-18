@@ -213,11 +213,11 @@ export default function WebShopFilters({
         <div className="ss-filter-panel ss-shop-sidebar__panel">
           <div className="ss-shop-sidebar__intro">
             <p className="ss-shop-sidebar__eyebrow">{isEn ? "Shop filters" : "Shop filteri"}</p>
-            <h3>{isEn ? "Find the right piece faster." : "Brze pronadji pravi komad."}</h3>
+            <h3>{isEn ? "Refine the collection." : "Preciznije filtriraj kolekciju."}</h3>
             <p>
               {isEn
-                ? "Search by product name first, then narrow down by category, stock and sale status."
-                : "Kreni od naziva proizvoda, pa suzi izbor po kategoriji, stanju i akciji."}
+                ? "Use search, category, stock and sale filters in the standard shop flow."
+                : "Koristi pretragu, kategoriju, stanje i akciju kroz standardni shop pregled."}
             </p>
           </div>
 
@@ -287,7 +287,7 @@ export default function WebShopFilters({
               <div className="ss-shop-mobile-drawer__header">
                 <div>
                   <span className="ss-shop-mobile-popover__eyebrow">{isEn ? "Filter products" : "Filtriraj proizvode"}</span>
-                  <strong>{isEn ? "Cleaner mobile flow" : "Pregledniji mobile flow"}</strong>
+                  <strong>{isEn ? "Web shop filters" : "Web shop filteri"}</strong>
                 </div>
                 <label htmlFor={mobileFilterToggleId} className="ss-shop-mobile-close">
                   {isEn ? "Close" : "Zatvori"}
