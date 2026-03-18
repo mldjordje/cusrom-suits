@@ -52,9 +52,11 @@ export default async function WebShopPage({
   const isEn = lang === "en";
   const page = Number.parseInt(toStringParam(params.page), 10) || 1;
   const q = toStringParam(params.q);
-  const categoryId = Number.parseInt(toStringParam(params.categoryId), 10) || 0;
+  const rawCategoryId = toStringParam(params.categoryId);
+  const selectedCategoryValue = rawCategoryId === "sale" ? "sale" : rawCategoryId;
+  const categoryId = Number.parseInt(rawCategoryId, 10) || 0;
   const inStock = toStringParam(params.inStock) === "1";
-  const onSale = toStringParam(params.onSale) === "1";
+  const onSale = toStringParam(params.onSale) === "1" || rawCategoryId === "sale";
   const sort = toStringParam(params.sort) || "featured";
 
   const result = await listCatalogProducts({
@@ -307,15 +309,25 @@ export default async function WebShopPage({
             <div className="container">
               <div className="ss-shop-hero__categories">
                 <Link
-                  href={makeHref({ categoryId: null, page: 1 })}
-                  className={`ss-shop-hero__category ${categoryId <= 0 ? "is-active" : ""}`}
+                  href={makeHref({ categoryId: null, onSale: null, page: 1 })}
+                  className={`ss-shop-hero__category ${categoryId <= 0 && !onSale ? "is-active" : ""}`}
                 >
                   {isEn ? "All products" : "Svi proizvodi"}
+                </Link>
+                <Link
+                  href={makeHref({ categoryId: null, onSale: onSale && categoryId <= 0 ? null : 1, page: 1 })}
+                  className={`ss-shop-hero__category ${onSale && categoryId <= 0 ? "is-active" : ""}`}
+                >
+                  {isEn ? "Sale" : "Akcija"}
                 </Link>
                 {topCategories.slice(0, 5).map((category) => (
                   <Link
                     key={category.id}
-                    href={makeHref({ categoryId: categoryId === category.id ? null : category.id, page: 1 })}
+                    href={makeHref({
+                      categoryId: categoryId === category.id ? null : category.id,
+                      onSale: null,
+                      page: 1,
+                    })}
                     className={`ss-shop-hero__category ${categoryId === category.id ? "is-active" : ""}`}
                   >
                     {category.name}
@@ -329,12 +341,13 @@ export default async function WebShopPage({
         <div className="mb-4 pb-lg-2" />
 
         <section className="shop-main container" id="shop-products">
-          <WebShopFilters
-            lang={lang}
-            query={q}
-            categoryId={categoryId}
-            inStock={inStock}
-            onSale={onSale}
+        <WebShopFilters
+          lang={lang}
+          query={q}
+          categoryId={categoryId}
+          selectedCategoryValue={selectedCategoryValue || (onSale && categoryId <= 0 ? "sale" : "")}
+          inStock={inStock}
+          onSale={onSale}
             sort={sort}
             categories={result.categories}
             featuredCategories={topCategories.slice(0, 6)}

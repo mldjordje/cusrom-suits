@@ -70,7 +70,6 @@ export default function StorefrontHeader({
   }, []);
 
   const desktopFloating = isHome && !isContrast;
-  const mobileFloating = false;
   const headerClass = [
     "header",
     "header-fullwidth",
@@ -85,9 +84,8 @@ export default function StorefrontHeader({
   const mobileHeaderClass = [
     "header-mobile",
     "header-mobile_sticky",
-    isHome && !isContrast ? "" : "header_sticky-active",
-    mobileFloating ? "position-absolute ss-mobile-home" : "position-relative",
-    isHome && !mobileFloating && !isContrast ? "ss-mobile-home-solid header_sticky-active" : "",
+    "header_sticky-active",
+    isHome && !isContrast ? "ss-mobile-home" : "",
     isContrast ? "ss-mobile-header-contrast" : "",
     isScrolled ? "ss-mobile-header-scrolled" : "",
   ]
@@ -312,9 +310,6 @@ export default function StorefrontHeader({
                           className={`ss-mobile-nav-link ${isItemActive(item.href) ? "is-active" : ""}`}
                         >
                           <span>{item.label}</span>
-                          <span className="ss-mobile-nav-link__index">
-                            {String(index + 1).padStart(2, "0")}
-                          </span>
                         </Link>
                       </m.li>
                     ))}

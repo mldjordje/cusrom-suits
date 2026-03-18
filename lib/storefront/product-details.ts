@@ -1,4 +1,10 @@
 import { decodeHtmlEntities, getCatalogProductDisplayName, isCatalogProductNameSuspicious } from "@/lib/catalog/presentation";
+import {
+  getSizeGuideSettings,
+  type SizeGuideFit,
+  type SizeGuideGroup,
+  type SizeGuideTable,
+} from "@/lib/catalog/sizeGuides";
 import type { CatalogProductView } from "@/lib/catalog/store";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
@@ -18,10 +24,21 @@ export type ProductSizeGuide = {
   title: string;
   intro: string;
   bullets: string[];
+  buttonLabel: string;
+  modalTitle: string;
+  tables: SizeGuideTable[];
+  fallbackNote: string | null;
 };
 
+export type ProductWashCareIcon =
+  | "gentleWash"
+  | "dryCleaning"
+  | "doNotBleach"
+  | "lowIron"
+  | "noTumbleDry";
+
 export type ProductWashCareItem = {
-  symbol: string;
+  icon: ProductWashCareIcon;
   title: string;
   description: string;
 };
@@ -95,28 +112,82 @@ const productText = (product: CatalogProductView, lang: StorefrontLanguage) => {
   };
 };
 
-const getProductFamily = (product: CatalogProductView) => {
-  const haystack = [
+const getProductHaystack = (product: CatalogProductView) =>
+  [
     product.name,
     product.nameEn || "",
+    product.description || "",
+    product.descriptionEn || "",
+    product.specification || "",
+    product.specificationEn || "",
+    product.categories.flatMap((category) => category.path).join(" "),
     product.categories.map((category) => category.name).join(" "),
+    Object.values(product.attributes || {})
+      .flatMap((value) => (Array.isArray(value) ? value : [value]))
+      .join(" "),
   ]
     .join(" ")
     .toLowerCase();
 
-  if (/odel|suit|sako|blazer|jacket|kaput|coat|pantal|trouser/.test(haystack)) {
-    return "tailored";
+const getProductGroups = (product: CatalogProductView): SizeGuideGroup[] => {
+  const haystack = getProductHaystack(product);
+  const groups = new Set<SizeGuideGroup>();
+  const isSuit = /odel|suit/.test(haystack);
+
+  if (/cipel|shoe|loafer|mokasin|patik|sneaker|obuc/.test(haystack)) {
+    groups.add("shoes");
   }
 
-  if (/kosulj|shirt|polo|majic|t-?shirt|sweater|dzemper|knit/.test(haystack)) {
-    return "soft";
+  if (isSuit || /sako|blazer|jacket|blejzer|kaput|coat/.test(haystack)) {
+    groups.add("blazer");
   }
 
-  return "general";
+  if (isSuit || /pantal|trouser|pants/.test(haystack)) {
+    groups.add("trousers");
+  }
+
+  if (/kosulj|shirt/.test(haystack)) {
+    groups.add("shirt");
+  }
+
+  return Array.from(groups);
+};
+
+const getProductFit = (
+  product: CatalogProductView,
+  sizeOptions: ProductSizeOption[],
+): SizeGuideFit | null => {
+  const haystack = `${getProductHaystack(product)} ${sizeOptions.map((option) => option.label).join(" ").toLowerCase()}`;
+  if (/\bslim\b|slim fit|strukiran/.test(haystack)) return "slim";
+  if (/\bregular\b|regular fit|classic fit|klasic/.test(haystack)) return "regular";
+  return null;
+};
+
+const getSizeGuideBullets = (
+  lang: StorefrontLanguage,
+  hasNumericSizes: boolean,
+) => {
+  if (lang === "en") {
+    return [
+      hasNumericSizes
+        ? "Compare chest, waist and shoulder width with a garment that already fits you well."
+        : "Compare the listed shirt or shoe measurements with a model you already wear comfortably.",
+      "If you are between two sizes, choose the larger size first and adjust with tailoring if needed.",
+      "For final confirmation, contact the atelier and we will help you pick the closest size before ordering.",
+    ];
+  }
+
+  return [
+    hasNumericSizes
+      ? "Uporedite mere grudi, struka i ramena sa komadom koji vam vec dobro stoji."
+      : "Uporedite navedene mere kosulje ili obuce sa modelom koji vec nosite bez problema.",
+    "Ako ste izmedju dve velicine, sigurniji izbor je veca velicina uz eventualnu doradu.",
+    "Za finalnu potvrdu mozete nas kontaktirati pre porudzbine i pomoci cemo oko izbora broja.",
+  ];
 };
 
 export const productSupportsSizeGuide = (product: CatalogProductView) =>
-  getProductFamily(product) === "tailored";
+  getProductGroups(product).length > 0;
 
 export const getLocalizedCatalogProductName = (
   product: CatalogProductView,
@@ -262,46 +333,41 @@ export const getProductSizeOptions = (
 export const getSelectedProductSize = (product: CatalogProductView) =>
   extractSizes(product)[0] || null;
 
-export const getProductSizeGuide = (
+export const getProductSizeGuide = async (
   product: CatalogProductView,
   lang: StorefrontLanguage,
   sizeOptions: ProductSizeOption[],
-): ProductSizeGuide | null => {
-  if (!productSupportsSizeGuide(product)) {
-    return null;
-  }
-
+): Promise<ProductSizeGuide | null> => {
+  const groups = getProductGroups(product);
+  const settings = await getSizeGuideSettings();
+  const fit = getProductFit(product, sizeOptions);
   const joined = sizeOptions.map((option) => option.label).join(", ");
   const hasNumericSizes = sizeOptions.some((option) => /^\d/.test(option.label));
+  const localizedFallback =
+    lang === "en"
+      ? "This item does not have a dedicated size table yet. Use the selector above or contact us for a recommendation."
+      : "Ovaj model jos nema posebnu tabelu velicina. Iskoristite izbor velicine iznad ili nas kontaktirajte za preporuku.";
 
-  if (lang === "en") {
-    return {
-      title: "How to determine your size",
-      intro: hasNumericSizes
-        ? `Available sizes: ${joined || "check the selector above"}. Numeric sizes follow the EU ready-to-wear scale.`
-        : `Available sizes: ${joined || "check the selector above"}. Letter sizes follow the standard international scale.`,
-      bullets: [
-        hasNumericSizes
-          ? "Measure chest and waist over a light shirt, then compare with your usual EU suit or trouser size."
-          : "Measure chest around the fullest part and compare with the size you usually wear in shirts or knitwear.",
-        "If you are between two sizes, choose the larger size for tailored garments and adjust in atelier if needed.",
-        "If you need help, contact our team and we will recommend the best size before ordering.",
-      ],
-    };
-  }
+  const relevantTables = settings.tables.filter((table) => groups.includes(table.group));
+  const tables = relevantTables.filter((table) => {
+    if (!fit) return true;
+    if (table.fit === "standard") return true;
+    return table.fit === fit;
+  });
+
+  const visibleTables = tables.length ? tables : relevantTables;
 
   return {
-    title: "Kako da odredite velicinu",
-    intro: hasNumericSizes
-      ? `Dostupne velicine: ${joined || "pogledajte iznad"}. Brojcane velicine prate evropski konfekcijski sistem.`
-      : `Dostupne velicine: ${joined || "pogledajte iznad"}. Slovne velicine prate standardnu internacionalnu skalu.`,
-    bullets: [
-      hasNumericSizes
-        ? "Izmerite obim grudi i struka preko lagane kosulje i uporedite sa velicinom koju inace nosite."
-        : "Izmerite obim grudi preko najsireg dela i uporedite sa velicinom koju obicno nosite u kosuljama ili trikotazi.",
-      "Ako ste izmedju dve velicine, za odela i sakoa preporuka je veca velicina uz naknadno korigovanje.",
-      "Ako zelite potvrdu pre porucivanja, kontaktirajte nas tim i preporucicemo odgovarajuci broj.",
-    ],
+    title: lang === "en" ? "How to determine your size" : "Kako da odredite velicinu",
+    intro:
+      lang === "en"
+        ? `Available sizes: ${joined || "check the selector above"}. Use the guide below to compare the product measurements with a garment you already own.`
+        : `Dostupne velicine: ${joined || "pogledajte iznad"}. Uporedite mere iz vodica sa komadom koji vam vec odgovara.`,
+    bullets: getSizeGuideBullets(lang, hasNumericSizes),
+    buttonLabel: lang === "en" ? "Determine size" : "Odredite velicinu",
+    modalTitle: lang === "en" ? "Size guide" : "Tabela velicina",
+    tables: visibleTables,
+    fallbackNote: visibleTables.length ? null : localizedFallback,
   };
 };
 
@@ -355,44 +421,44 @@ export const getProductWashCare = (
       items: tailored
         ? [
             {
-              symbol: "P",
+              icon: "dryCleaning" as const,
               title: "Dry clean",
               description: "Professional dry cleaning is recommended for tailored garments.",
             },
             {
-              symbol: "No Cl",
+              icon: "doNotBleach" as const,
               title: "Do not bleach",
               description: "Bleach can damage fibers, color, and structure.",
             },
             {
-              symbol: "Low",
+              icon: "lowIron" as const,
               title: "Low iron",
               description: "Iron at low temperature, ideally with a pressing cloth.",
             },
             {
-              symbol: "No TD",
+              icon: "noTumbleDry" as const,
               title: "No tumble dry",
               description: "Let the garment air dry naturally on a hanger.",
             },
           ]
         : [
             {
-              symbol: "30",
+              icon: "gentleWash" as const,
               title: "Gentle wash",
               description: "Wash at up to 30C on a gentle program.",
             },
             {
-              symbol: "No Cl",
+              icon: "doNotBleach" as const,
               title: "Do not bleach",
               description: "Avoid bleach and aggressive whiteners.",
             },
             {
-              symbol: "Low",
+              icon: "lowIron" as const,
               title: "Low iron",
               description: "Iron inside out at low temperature when needed.",
             },
             {
-              symbol: "No TD",
+              icon: "noTumbleDry" as const,
               title: "No tumble dry",
               description: "Air dry to preserve shape and finish.",
             },
@@ -406,44 +472,44 @@ export const getProductWashCare = (
     items: tailored
       ? [
           {
-            symbol: "P",
+            icon: "dryCleaning" as const,
             title: "Hemijsko ciscenje",
             description: "Za odela, sakoe i slicne krojene modele preporucuje se profesionalno ciscenje.",
           },
           {
-            symbol: "No Cl",
+            icon: "doNotBleach" as const,
             title: "Bez izbeljivaca",
             description: "Izbeljivaci mogu ostetiti vlakna, boju i konstrukciju materijala.",
           },
           {
-            symbol: "Low",
+            icon: "lowIron" as const,
             title: "Peglanje na nizoj temperaturi",
-            description: "Peglajte pazljivo, najbolje preko pamučne krpe ili sa nalicja.",
+            description: "Peglajte pazljivo, najbolje preko tanke krpe ili sa nalicja.",
           },
           {
-            symbol: "No TD",
+            icon: "noTumbleDry" as const,
             title: "Bez masinskog susenja",
             description: "Susite prirodno, na ofingeru ili ravnoj podlozi.",
           },
         ]
       : [
           {
-            symbol: "30",
+            icon: "gentleWash" as const,
             title: "Pranje do 30C",
             description: "Koristite nezan program pranja i blagi deterdzent.",
           },
           {
-            symbol: "No Cl",
+            icon: "doNotBleach" as const,
             title: "Bez izbeljivaca",
             description: "Ne koristiti varikinu i jaka sredstva za beljenje.",
           },
           {
-            symbol: "Low",
+            icon: "lowIron" as const,
             title: "Peglanje na nizoj temperaturi",
             description: "Po potrebi peglati sa nalicja kako bi se sacuvala struktura tkanine.",
           },
           {
-            symbol: "No TD",
+            icon: "noTumbleDry" as const,
             title: "Bez susilice",
             description: "Prirodno susenje cuva oblik i zavrsnu obradu proizvoda.",
           },

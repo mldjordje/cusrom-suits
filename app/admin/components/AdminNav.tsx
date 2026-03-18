@@ -12,6 +12,7 @@ const navItems = [
   { href: "/admin/linings", label: "Linings", icon: "LN" },
   { href: "/admin/buttons", label: "Buttons", icon: "BT" },
   { href: "/admin/orders", label: "Porudzbine", icon: "OR" },
+  { href: "/admin/size-guides", label: "Size Guides", icon: "SZ" },
   { href: "/admin/categories", label: "Kategorije", icon: "CT" },
   { href: "/admin/contact-messages", label: "Kontakt", icon: "CT" },
   { href: "/admin/newsletter", label: "Newsletter", icon: "NW" },

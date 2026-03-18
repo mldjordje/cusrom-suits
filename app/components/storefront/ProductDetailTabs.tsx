@@ -2,12 +2,19 @@
 
 import { useMemo, useState } from "react";
 import { AnimatePresence, m } from "framer-motion";
+import BlockOutlinedIcon from "@mui/icons-material/BlockOutlined";
+import DryOutlinedIcon from "@mui/icons-material/DryOutlined";
+import DryCleaningOutlinedIcon from "@mui/icons-material/DryCleaningOutlined";
+import IronOutlinedIcon from "@mui/icons-material/IronOutlined";
+import LocalLaundryServiceOutlinedIcon from "@mui/icons-material/LocalLaundryServiceOutlined";
+import OpacityOutlinedIcon from "@mui/icons-material/OpacityOutlined";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 import type {
   ProductDetailField,
   ProductSizeGuide,
+  ProductWashCareIcon,
   ProductWashCareItem,
 } from "@/lib/storefront/product-details";
 
@@ -38,6 +45,31 @@ const safeHtml = (value: string | null, lang: StorefrontLanguage) => ({
       ? decodeHtmlEntities(value)
       : fallbackHtml[lang],
 });
+
+const renderWashCareIcon = (icon: ProductWashCareIcon) => {
+  if (icon === "dryCleaning") {
+    return <DryCleaningOutlinedIcon fontSize="inherit" />;
+  }
+
+  if (icon === "lowIron") {
+    return <IronOutlinedIcon fontSize="inherit" />;
+  }
+
+  return (
+    <span className="ss-care-icon-stack">
+      <span className="ss-care-icon-stack__base">
+        {icon === "gentleWash" ? <LocalLaundryServiceOutlinedIcon fontSize="inherit" /> : null}
+        {icon === "doNotBleach" ? <OpacityOutlinedIcon fontSize="inherit" /> : null}
+        {icon === "noTumbleDry" ? <DryOutlinedIcon fontSize="inherit" /> : null}
+      </span>
+      {(icon === "doNotBleach" || icon === "noTumbleDry") ? (
+        <span className="ss-care-icon-stack__slash">
+          <BlockOutlinedIcon fontSize="inherit" />
+        </span>
+      ) : null}
+    </span>
+  );
+};
 
 export default function ProductDetailTabs({
   lang = "sr",
@@ -176,11 +208,8 @@ export default function ProductDetailTabs({
                   {washCare.items.map((item) => (
                     <div key={item.title} className="col-sm-6 col-xl-3">
                       <div className="border rounded-4 h-100 p-3 text-center ss-product-glass-card">
-                        <div
-                          className="d-inline-flex align-items-center justify-content-center rounded-circle border mb-3 fw-semibold"
-                          style={{ width: 64, height: 64, fontSize: 16 }}
-                        >
-                          {item.symbol}
+                        <div className="ss-care-icon-wrap">
+                          {renderWashCareIcon(item.icon)}
                         </div>
                         <h4 className="h6 text-uppercase mb-2">{item.title}</h4>
                         <p className="small text-secondary mb-0">{item.description}</p>

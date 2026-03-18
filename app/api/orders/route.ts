@@ -1,20 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { isAdminRequestAuthenticated } from "@/lib/adminAuth";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 import type { StorefrontCartItem } from "@/lib/cart/types";
 
 const ORDERS_PATH = "data/orders.json";
-const ADMIN_ACCESS_TOKEN = process.env.ADMIN_ACCESS_TOKEN;
-
-const hasAdminToken = (req: NextRequest) => {
-  if (!ADMIN_ACCESS_TOKEN) return true;
-  const headerToken = req.headers.get("x-admin-token");
-  const cookieToken = req.cookies.get("admin_token")?.value;
-  return headerToken === ADMIN_ACCESS_TOKEN || cookieToken === ADMIN_ACCESS_TOKEN;
-};
 
 const requireAdmin = (req: NextRequest) => {
-  if (hasAdminToken(req)) return null;
+  if (isAdminRequestAuthenticated(req)) return null;
   return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 };
 

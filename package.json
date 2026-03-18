@@ -34,6 +34,7 @@
         "@emotion/styled": "^11.14.1",
         "@headlessui/react": "^2.2.9",
         "@heroicons/react": "^2.2.0",
+        "@mui/icons-material": "^7.3.9",
         "@mui/material": "^7.3.9",
         "@supabase/supabase-js": "^2.99.1",
         "adm-zip": "^0.5.16",

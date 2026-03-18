@@ -159,6 +159,23 @@
   color: #cbd5e1;
 }
 
+.admin-template-logout {
+  border: 1px solid rgba(248, 250, 252, 0.22);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.58);
+  color: #f8fafc;
+  padding: 0.45rem 0.9rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.admin-template-logout:hover {
+  border-color: rgba(248, 250, 252, 0.42);
+  background: rgba(30, 41, 59, 0.82);
+}
+
 .admin-template-content {
   padding: 1rem 1.1rem 1.6rem;
   min-height: calc(100vh - 73px);
@@ -205,5 +222,15 @@
 
   .admin-template-nav-link {
     font-size: 0.75rem;
+  }
+
+  .admin-template-topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .admin-template-topbar-meta {
+    width: 100%;
+    text-align: left;
   }
 }

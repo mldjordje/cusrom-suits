@@ -22,6 +22,7 @@ type WebShopFiltersProps = {
   lang: StorefrontLanguage;
   query: string;
   categoryId: number;
+  selectedCategoryValue: string;
   inStock: boolean;
   onSale: boolean;
   sort: string;
@@ -43,6 +44,7 @@ export default function WebShopFilters({
   lang,
   query,
   categoryId,
+  selectedCategoryValue,
   inStock,
   onSale,
   sort,
@@ -88,15 +90,24 @@ export default function WebShopFilters({
   const renderCategoryLinks = (className: string) => (
     <div className={className}>
       <Link
-        href={makeHref({ categoryId: null })}
-        className={`ss-shop-filter-chip ${categoryId <= 0 ? "is-active" : ""}`}
+        href={makeHref({ categoryId: null, onSale: null })}
+        className={`ss-shop-filter-chip ${categoryId <= 0 && !onSale ? "is-active" : ""}`}
       >
         {isEn ? "All products" : "Svi proizvodi"}
+      </Link>
+      <Link
+        href={makeHref({ categoryId: null, onSale: onSale && categoryId <= 0 ? null : 1 })}
+        className={`ss-shop-filter-chip ${onSale && categoryId <= 0 ? "is-active" : ""}`}
+      >
+        {isEn ? "Sale" : "Akcija"}
       </Link>
       {featuredCategories.map((category) => (
         <Link
           key={category.id}
-          href={makeHref({ categoryId: categoryId === category.id ? null : category.id })}
+          href={makeHref({
+            categoryId: categoryId === category.id ? null : category.id,
+            onSale: null,
+          })}
           className={`ss-shop-filter-chip ${categoryId === category.id ? "is-active" : ""}`}
         >
           {category.name}
@@ -150,9 +161,10 @@ export default function WebShopFilters({
         id={fieldId}
         className="form-select fw-medium"
         name="categoryId"
-        defaultValue={categoryId > 0 ? String(categoryId) : ""}
+        defaultValue={selectedCategoryValue}
       >
         <option value="">{isEn ? "All categories" : "Sve kategorije"}</option>
+        <option value="sale">{isEn ? "Sale" : "Akcija"}</option>
         {categories.map((category) => (
           <option key={category.id} value={category.id}>
             {category.name}

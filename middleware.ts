@@ -1,34 +1,51 @@
 import { NextResponse, type NextRequest } from "next/server";
-
-const ADMIN_ACCESS_TOKEN = process.env.ADMIN_ACCESS_TOKEN;
+import {
+  ADMIN_LEGACY_TOKEN_COOKIE,
+  isAdminRequestAuthenticated,
+  isValidLegacyAdminToken,
+  sanitizeAdminNextPath,
+} from "@/lib/adminAuth";
 
 export function middleware(req: NextRequest) {
-  if (!ADMIN_ACCESS_TOKEN) return NextResponse.next();
+  const pathname = req.nextUrl.pathname;
+  const isAdminApi = pathname.startsWith("/api/admin/");
 
-  const token =
-    req.cookies.get("admin_token")?.value ||
-    req.headers.get("x-admin-token") ||
-    req.nextUrl.searchParams.get("token");
-
-  if (token === ADMIN_ACCESS_TOKEN) {
-    if (req.nextUrl.searchParams.has("token")) {
-      const cleanUrl = req.nextUrl.clone();
-      cleanUrl.searchParams.delete("token");
-      const res = NextResponse.redirect(cleanUrl);
-      res.cookies.set("admin_token", token, {
-        httpOnly: true,
-        sameSite: "lax",
-        secure: req.nextUrl.protocol === "https:",
-        path: "/",
-      });
-      return res;
-    }
+  if (pathname === "/admin-login" || pathname === "/api/admin/login") {
     return NextResponse.next();
   }
 
-  return new NextResponse("Unauthorized", { status: 401 });
+  if (isValidLegacyAdminToken(req.nextUrl.searchParams.get("token"))) {
+    const token = String(req.nextUrl.searchParams.get("token") || "");
+    const cleanUrl = req.nextUrl.clone();
+    cleanUrl.searchParams.delete("token");
+    const res = NextResponse.redirect(cleanUrl);
+    res.cookies.set(ADMIN_LEGACY_TOKEN_COOKIE, token, {
+      httpOnly: true,
+      sameSite: "lax",
+      secure: req.nextUrl.protocol === "https:",
+      path: "/",
+    });
+    return res;
+  }
+
+  if (isAdminRequestAuthenticated(req)) {
+    return NextResponse.next();
+  }
+
+  if (isAdminApi) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
+
+  const loginUrl = req.nextUrl.clone();
+  loginUrl.pathname = "/admin-login";
+  loginUrl.search = "";
+  loginUrl.searchParams.set(
+    "next",
+    sanitizeAdminNextPath(`${req.nextUrl.pathname}${req.nextUrl.search}`),
+  );
+  return NextResponse.redirect(loginUrl);
 }
 
 export const config = {
-  matcher: ["/admin/:path*"],
+  matcher: ["/admin/:path*", "/api/admin/:path*"],
 };

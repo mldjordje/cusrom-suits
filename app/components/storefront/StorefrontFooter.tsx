@@ -52,6 +52,23 @@ export default async function StorefrontFooter({
                     MB {landingSettings.companyMb}
                   </span>
                 </div>
+
+                <div className="ss-footer__socials">
+                  <a
+                    href="https://www.instagram.com/santos.santorini/"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ss-footer__social-link"
+                    aria-label="Instagram"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <rect x="3.25" y="3.25" width="17.5" height="17.5" rx="5.25" stroke="currentColor" strokeWidth="1.5" />
+                      <circle cx="12" cy="12" r="4.1" stroke="currentColor" strokeWidth="1.5" />
+                      <circle cx="17.6" cy="6.5" r="1.15" fill="currentColor" />
+                    </svg>
+                    <span>Instagram</span>
+                  </a>
+                </div>
               </div>
             </div>
 

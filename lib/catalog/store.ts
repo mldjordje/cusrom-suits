@@ -616,9 +616,21 @@ async function loadFromSupabase(filters: {
 
   try {
     const shouldBypassPersistentCache = getCatalogCacheBypassUntil() > Date.now();
-    const items = shouldBypassPersistentCache
-      ? await fetchCatalogSnapshotFromSupabase(filters)
-      : await loadCatalogSnapshotCached(filters.activeOnly, filters.exportOnly);
+    let items: CatalogProductView[] | null = null;
+
+    if (shouldBypassPersistentCache) {
+      items = await fetchCatalogSnapshotFromSupabase(filters);
+    } else {
+      try {
+        items = await loadCatalogSnapshotCached(filters.activeOnly, filters.exportOnly);
+      } catch {
+        // Large catalog snapshots can exceed the persistent Next data cache limit.
+        // Fall back to a direct Supabase fetch and temporarily bypass persistent cache.
+        setCatalogCacheBypassUntil(Date.now() + CATALOG_SNAPSHOT_TTL_MS);
+        items = await fetchCatalogSnapshotFromSupabase(filters);
+      }
+    }
+
     if (!items) return null;
     cache.set(cacheKey, {
       items,

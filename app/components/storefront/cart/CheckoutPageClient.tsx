@@ -194,8 +194,9 @@ export default function CheckoutPageClient({
               </p>
               <div className="row g-3">
                 <div className="col-md-6">
-                  <label className="form-label">{isEn ? "Full name" : "Ime i prezime"}</label>
+                  <label htmlFor="checkout-full-name" className="form-label">{isEn ? "Full name" : "Ime i prezime"}</label>
                   <input
+                    id="checkout-full-name"
                     value={form.fullName}
                     onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
                     className="form-control"
@@ -205,8 +206,9 @@ export default function CheckoutPageClient({
                   />
                 </div>
                 <div className="col-md-6">
-                  <label className="form-label">{isEn ? "Phone" : "Telefon"}</label>
+                  <label htmlFor="checkout-phone" className="form-label">{isEn ? "Phone" : "Telefon"}</label>
                   <input
+                    id="checkout-phone"
                     type="tel"
                     value={form.phone}
                     onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
@@ -218,8 +220,9 @@ export default function CheckoutPageClient({
                   />
                 </div>
                 <div className="col-12">
-                  <label className="form-label">Email</label>
+                  <label htmlFor="checkout-email" className="form-label">Email</label>
                   <input
+                    id="checkout-email"
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
@@ -241,8 +244,9 @@ export default function CheckoutPageClient({
               </p>
               <div className="row g-3">
                 <div className="col-12">
-                  <label className="form-label">{isEn ? "Address" : "Adresa"}</label>
+                  <label htmlFor="checkout-address" className="form-label">{isEn ? "Address" : "Adresa"}</label>
                   <input
+                    id="checkout-address"
                     value={form.address}
                     onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
                     className="form-control"
@@ -251,8 +255,9 @@ export default function CheckoutPageClient({
                   />
                 </div>
                 <div className="col-md-7">
-                  <label className="form-label">{isEn ? "City" : "Grad"}</label>
+                  <label htmlFor="checkout-city" className="form-label">{isEn ? "City" : "Grad"}</label>
                   <input
+                    id="checkout-city"
                     value={form.city}
                     onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
                     className="form-control"
@@ -261,8 +266,9 @@ export default function CheckoutPageClient({
                   />
                 </div>
                 <div className="col-md-5">
-                  <label className="form-label">{isEn ? "Postal code" : "Postanski broj"}</label>
+                  <label htmlFor="checkout-postal-code" className="form-label">{isEn ? "Postal code" : "Postanski broj"}</label>
                   <input
+                    id="checkout-postal-code"
                     value={form.postalCode}
                     onChange={(e) => setForm((prev) => ({ ...prev, postalCode: e.target.value }))}
                     className="form-control"
@@ -281,7 +287,11 @@ export default function CheckoutPageClient({
                   ? "Use this for size remarks, pickup preference or anything the team should know."
                   : "Ovde upisi napomenu o velicini, nacinu preuzimanja ili bilo sta sto tim treba da zna."}
               </p>
+              <label htmlFor="checkout-note" className="visually-hidden">
+                {isEn ? "Note for the team" : "Napomena za tim"}
+              </label>
               <textarea
+                id="checkout-note"
                 value={form.note}
                 onChange={(e) => setForm((prev) => ({ ...prev, note: e.target.value }))}
                 className="form-control"

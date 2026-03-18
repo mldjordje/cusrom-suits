@@ -5,6 +5,7 @@ import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
 import ProductImageGallery from "@/app/components/storefront/ProductImageGallery";
+import ProductSizeGuideButton from "@/app/components/storefront/ProductSizeGuideButton";
 import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSteps";
 import Reveal from "@/app/components/motion/Reveal";
 import {
@@ -110,8 +111,8 @@ export default async function WebShopProductPage({
     getSelectedProductSize(product) ||
     sizeOptions[0]?.label ||
     null;
-  const sizeGuide = getProductSizeGuide(product, lang, sizeOptions);
-  const showSizeGuide = productSupportsSizeGuide(product) && Boolean(sizeGuide);
+  const sizeGuide = await getProductSizeGuide(product, lang, sizeOptions);
+  const showSizeGuide = productSupportsSizeGuide(product) && Boolean(sizeGuide?.tables.length);
   const declaration = getProductDeclaration(
     displayProduct,
     lang,
@@ -285,6 +286,15 @@ export default async function WebShopProductPage({
                     </div>
                   </div>
                 ) : null}
+
+                <div className="ss-product-size-guide-row">
+                  <ProductSizeGuideButton lang={lang} sizeGuide={sizeGuide} />
+                  <p className="ss-product-size-guide-row__copy">
+                    {isEn
+                      ? "Open the size table and compare measurements before adding the item to cart."
+                      : "Otvorite tabelu velicina i uporedite mere pre dodavanja artikla u korpu."}
+                  </p>
+                </div>
 
                 <div className="product-single__addtocart">
                   <div className="d-flex flex-wrap gap-2">

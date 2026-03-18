@@ -31,6 +31,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <span>Status: Online</span>
               <Link href="/admin/tutorial">Tutorial</Link>
               <span>{generatedAt}</span>
+              <form action="/api/admin/logout" method="post">
+                <button type="submit" className="admin-template-logout">
+                  Logout
+                </button>
+              </form>
             </div>
           </header>
           <section className="admin-template-content">{children}</section>

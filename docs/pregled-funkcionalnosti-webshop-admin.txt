@@ -1,0 +1,531 @@
+SANTOS & SANTORINI
+Pregled funkcionalnosti webshop-a i admin aplikacije
+
+Ovaj dokument je namenjen za pregled aplikacije bez sastanka.
+Ispod je spisak funkcija koje su uradjene, gde se nalaze u aplikaciji i cemu sluze.
+
+
+1. JAVNI DEO SAJTA / STOREFRONT
+
+1.1 Pocetna strana
+Lokacija na app:
+/
+
+Sta postoji:
+- Glavni hero sa video pozadinom
+- Transparent header preko hero sekcije
+- Navigacija ka Web Shop-u, Akcijama, O nama, Blog-u i Kontaktu
+- Sekcije sa izdvojenim proizvodima i promo blokovima
+- Newsletter prijava u footer delu
+
+Svrha:
+- Ulazna strana brenda
+- Pregled glavnih kolekcija i pravaca ka kupovini
+
+
+1.2 Glavna navigacija i header
+Lokacija na app:
+vidljivo na svim javnim stranicama
+
+Sta postoji:
+- Glavni meni
+- Meni bez numeracije 01 / 02 / 03 na desktop i mobile prikazu
+- Prebacivanje jezika SR / EN
+- Link ka korpi
+- Kontakt precice
+
+Svrha:
+- Jednostavno kretanje kroz ceo storefront
+
+
+1.2.1 Footer i Instagram link
+Lokacija na app:
+footer javnog sajta
+
+Sta postoji:
+- Kontakt podaci firme
+- Newsletter prijava
+- Instagram link sa ikonicom ka zvanicnom profilu
+
+Svrha:
+- Brz pristup komunikacionim kanalima i drustvenim mrežama
+
+
+1.3 Akcije
+Lokacija na app:
+/akcije
+
+Sta postoji:
+- Stranica sa proizvodima koji su na akciji ili snizenju
+- Promo prikaz izdvojenih artikala
+
+Svrha:
+- Poseban ulaz za korisnike koji zele da vide samo snizene artikle
+
+
+1.4 Web Shop listing
+Lokacija na app:
+/web-shop
+
+Sta postoji:
+- Lista proizvoda iz kataloga
+- Pretraga
+- Filtriranje po kategoriji
+- Dropdown kategorija sa opcijom "Akcija" na prvom mestu
+- Filtriranje po dostupnosti
+- Filtriranje po proizvodima na akciji
+- Sortiranje i paginacija
+
+Svrha:
+- Centralno mesto za pregled i pretragu svih artikala
+
+
+1.5 Detalj proizvoda
+Lokacija na app:
+/web-shop/[proizvod]
+
+Sta postoji:
+- Galerija slika proizvoda
+- Naziv, cena, stara cena i stanje lagera
+- Varijante / velicine kada postoje
+- Malo dugme "Odredite velicinu"
+- Popup sa tabelama velicina za sako, pantalone, kosulje i obucu
+- Opis, specifikacija i dodatni detalji
+- Dugme "Dodaj u korpu"
+- Dugme za odlazak na korpu
+- Wash care sekcija sa vizuelnim ikonicama za odrzavanje
+- Povezani proizvodi
+
+Svrha:
+- Pregled svih bitnih informacija o jednom artiklu pre porucivanja
+
+
+1.6 Korpa
+Lokacija na app:
+/cart
+
+Sta postoji:
+- Pregled dodatih artikala
+- Izmena kolicine
+- Uklanjanje artikla
+- Ukupan iznos
+- Dugme za nastavak na checkout
+
+Svrha:
+- Review korak pre slanja porudzbine
+
+
+1.7 Checkout
+Lokacija na app:
+/checkout
+
+Sta postoji:
+- Forma za ime i prezime
+- Telefon
+- Email
+- Opciono: adresa, grad, postanski broj
+- Polje za napomenu
+- Pregled porudzbine sa desne strane
+- Slanje porudzbine direktno u admin
+
+Vazna napomena:
+- Ovo nije klasicno online placanje karticom.
+- Trenutni checkout radi kao direktan upit / porudzbina koja stize u admin panel.
+
+Svrha:
+- Jednostavan i brz tok porucivanja bez dodatnih komplikacija
+
+
+1.8 Blog
+Lokacija na app:
+/blog
+/blog/[slug]
+
+Sta postoji:
+- Lista blog objava
+- Otvaranje pojedinacne objave
+
+Svrha:
+- Content marketing, SEO i informativni deo sajta
+
+
+1.9 Kontakt
+Lokacija na app:
+/kontakt
+
+Sta postoji:
+- Kontakt forma
+- Kontakt podaci firme
+- Slanje poruke ka admin delu
+
+Svrha:
+- Direktna komunikacija sa korisnikom
+
+
+1.10 O nama
+Lokacija na app:
+/o-nama
+
+Svrha:
+- Predstavljanje brenda i firme
+
+
+1.11 Poslovne uniforme
+Lokacija na app:
+/poslovne-uniforme
+
+Svrha:
+- Posebna ponuda za B2B / poslovne klijente
+
+
+1.12 Dokumenta
+Lokacija na app:
+/dokumenta
+
+Sta postoji:
+- Prikaz informativnih / pravnih dokumenata
+
+Svrha:
+- Transparentnost i pristup pratecoj dokumentaciji
+
+
+1.13 Newsletter prijava
+Lokacija na app:
+footer javnog sajta
+
+Sta postoji:
+- Forma za prijavu na newsletter
+
+Svrha:
+- Prikupljanje email kontakata za kampanje i novosti
+
+
+1.14 Mobilna optimizacija
+Lokacija na app:
+javni storefront
+
+Sta postoji:
+- Ispravljen gap izmedju vrha ekrana i headera na telefonu
+- Home hero i header ponasanje prilagodjeni mobilnom prikazu
+
+Svrha:
+- Bolji mobile UX na pocetnoj strani
+
+
+2. ADMIN DEO
+
+2.1 Admin login
+Lokacija na app:
+/admin-login
+
+Sta postoji:
+- Jednostavna login forma za ulazak u admin
+- Redirect na trazenu admin stranu posle prijave
+- Logout iz admin top bara
+
+Trenutni test pristup:
+- korisnicko ime: santos
+- lozinka: santorini
+
+Svrha:
+- Zatvoren pristup admin delu i porudzbinama
+
+
+2.2 Admin dashboard / pregled
+Lokacija na app:
+/admin
+
+Sta postoji:
+- Pregled osnovnih brojeva i stanja
+- Brzi linkovi ka glavnim admin sekcijama
+- Poslednji signali iz porudzbina, kontakta, newsletter-a i integracija
+
+Svrha:
+- Pocetni operativni pregled sistema
+
+
+2.3 Web Shop Hub
+Lokacija na app:
+/admin/webshop
+
+Ovo je glavni admin za webshop i ima 3 glavne celine:
+
+A) Proizvodi i lager
+- Dodavanje novog proizvoda
+- Izmena osnovnih podataka proizvoda
+- Cena i akcijska cena
+- Aktivnost proizvoda
+- Export status
+- Lager / dostupnost
+- Kategorija
+- Home prioritet i landing oznake
+
+B) Pocetna i sekcije
+- Uredjivanje home sekcija na jednom mestu
+- Hero traka
+- Izdvojeni modeli
+- Popularni proizvodi
+- Nova kolekcija
+- Akcije na pocetnoj
+- Trendinzi
+- CTA tekstovi, naslovi i sekcije za home
+
+C) Akcije i snizenja
+- Rucno snizenje po proizvodu
+- Automatska promo pravila
+- Pravila po kategoriji, brendu ili konkretnim proizvodima
+
+Svrha:
+- Centralno mesto za upravljanje webshop katalogom i home prikazom
+
+
+2.4 Tutorial
+Lokacija na app:
+/admin/tutorial
+
+Sta postoji:
+- Objasnjenje kako radi admin
+- Redosled rada: proizvod -> akcija -> pocetna -> porudzbine -> integracije
+
+Svrha:
+- Brz onboarding za osobu koja prvi put koristi admin
+
+
+2.5 Porudzbine
+Lokacija na app:
+/admin/orders
+
+Sta postoji:
+- Pregled svih porudzbina / upita iz webshop-a
+- Kontakt podaci kupca
+- Artikli iz porudzbine
+- Cena i status
+- Menjanje statusa
+- Export CSV
+
+Svrha:
+- Operativna obrada webshop porudzbina
+
+
+2.5.1 Tabele velicina
+Lokacija na app:
+/admin/size-guides
+
+Sta postoji:
+- Posebna admin strana za uredjivanje svih tabela velicina
+- Izmena naslova tabela
+- Izmena kolona i svih numeričkih vrednosti po redovima
+- Dodavanje i brisanje redova
+- Dodavanje i brisanje napomena koje se vide u popup-u na proizvodu
+
+Svrha:
+- Admin kontrola svih size guide vrednosti koje se prikazuju na storefront proizvodima
+
+
+2.6 Integracije
+Lokacija na app:
+/admin/integrations
+
+Sta postoji:
+- Run full cycle
+- Run stock inbound
+- Run stock outbound
+- Run Ananas
+- Izbor environment-a: stage / production
+- Izbor moda: delta / full
+- Istorija run-ova
+- Otvaranje detalja svakog run-a
+
+Svrha:
+- Rucno upravljanje i pracenje integracija
+
+
+2.7 Detalj jednog integration run-a
+Lokacija na app:
+/admin/integrations/[runId]
+
+Sta postoji:
+- Pregled detalja konkretnog run-a
+- Status, broj uspesnih i neuspesnih stavki
+- Stavke i greske po run-u
+
+Svrha:
+- Tacna dijagnostika integracionih problema
+
+
+2.8 Kontakt poruke
+Lokacija na app:
+/admin/contact-messages
+
+Sta postoji:
+- Pristigle poruke sa sajta
+
+Svrha:
+- Inbox za kontakt upite sa javnog dela
+
+
+2.9 Newsletter
+Lokacija na app:
+/admin/newsletter
+
+Sta postoji:
+- Pregled prijavljenih email adresa
+
+Svrha:
+- Baza za newsletter i marketing komunikaciju
+
+
+2.10 Blog posts
+Lokacija na app:
+/admin/blog-posts
+
+Sta postoji:
+- Upravljanje blog objavama
+
+Svrha:
+- Dodavanje i odrzavanje content dela sajta
+
+
+2.11 Kategorije
+Lokacija na app:
+/admin/categories
+
+Sta postoji:
+- Upravljanje kategorijama webshop-a
+
+Svrha:
+- Organizacija i filtriranje kataloga
+
+
+2.12 Buttons
+Lokacija na app:
+/admin/buttons
+
+Sta postoji:
+- Upravljanje button / asset elementima
+
+Svrha:
+- Odrzavanje vizuelnih i interaktivnih elemenata konfiguratora / sajta
+
+
+2.13 Fabrics
+Lokacija na app:
+/admin/fabrics
+
+Sta postoji:
+- Upravljanje tkaninama i pratecim podacima
+
+Svrha:
+- Administracija tkanina za custom deo aplikacije
+
+
+2.14 Linings
+Lokacija na app:
+/admin/linings
+
+Sta postoji:
+- Upravljanje postavama
+
+Svrha:
+- Administracija custom tailoring podataka
+
+
+2.15 Preview tuning
+Lokacija na app:
+/admin/preview-tuning
+
+Sta postoji:
+- Interni alat za podesavanje preview logike
+
+Svrha:
+- Fino podesavanje vizuelnog prikaza custom preview-a
+
+
+2.16 Stripe tuning
+Lokacija na app:
+/admin/stripe-tuning
+
+Sta postoji:
+- Interni alat / priprema za payment-related podesavanja
+
+Svrha:
+- Tehnicki tuning i buduci payment rad
+
+
+3. SISTEMSKE I OPERATIVNE FUNKCIONALNOSTI
+
+3.1 Admin zastita i pristup
+Sta postoji:
+- Admin vise nije otvoren javno
+- Neulogovan korisnik se salje na /admin-login
+- Orders admin pristup je zasticen
+- Logout postoji iz samog admina
+
+
+3.2 API podrska za storefront
+Sta postoji:
+- API za blog
+- API za kontakt
+- API za newsletter
+- API za orders
+- API za legacy katalog proizvoda
+
+Svrha:
+- Podrska javnom delu sajta i adminu
+
+
+3.3 Lager / stock tokovi
+Lokacija na app:
+admin integrations
+
+Sta postoji:
+- Inbound sync logika za lager
+- Outbound export logika za lager
+- Run istorija i logovi
+
+Napomena:
+- Integracioni ekran i logika postoje, ali realni produkcioni credentials i izvori moraju biti popunjeni da bi sync isao do kraja
+
+
+3.4 Ananas marketplace tok
+Lokacija na app:
+admin integrations
+
+Sta postoji:
+- Sync proizvoda prema Ananas-u
+- Sync discount / akcija prema Ananas-u
+- Stage i production mod
+- Run istorija i dijagnostika
+
+Napomena:
+- Funkcionalnost postoji, ali za pravo slanje moraju da se popune validni Ananas credentials
+
+
+4. TRENUTNI NACIN RADA U PRAKSI
+
+Ako se proverava ceo webshop tok, redosled je:
+1. Otvori /web-shop
+2. Izaberi proizvod
+3. Dodaj u korpu
+4. Idi na /cart
+5. Idi na /checkout
+6. Posalji porudzbinu
+7. Proveri unos u /admin/orders
+
+Ako se proverava admin sadrzaj:
+1. Uloguj se na /admin-login
+2. Otidji na /admin/webshop
+3. Proveri proizvode, lager, home sekcije i akcije
+4. Otidji na /admin/orders
+5. Otidji na /admin/integrations
+
+
+5. NAPOMENE ZA PREGLED
+
+- Webshop trenutno radi kao direktan inquiry/order flow bez online karticnog placanja.
+- Admin login je aktivan.
+- Integracioni panel za lager i Ananas postoji i spreman je za povezivanje sa realnim kredencijalima.
+- Storefront, korpa, checkout, blog, kontakt i admin osnovni tokovi su dostupni za pregled.
+
+
+Kraj dokumenta.

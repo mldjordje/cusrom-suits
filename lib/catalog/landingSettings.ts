@@ -1,4 +1,5 @@
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 
 const LANDING_SETTINGS_PATH = "data/landing-settings.json";
 
@@ -185,45 +186,48 @@ const normalizeLegacyIdList = (value: unknown, max = 24): number[] => {
   return Array.from(unique);
 };
 
+const decodeLandingText = (value: unknown, fallback: string) =>
+  decodeHtmlEntities(String(value || fallback || ""));
+
 export async function getLandingSettings(): Promise<LandingSettings> {
   const settings = await readJsonFile<Partial<LandingSettings>>(LANDING_SETTINGS_PATH, {});
   return {
     showSaleSection: settings.showSaleSection !== false,
-    saleSectionTitle: String(settings.saleSectionTitle || DEFAULT_SETTINGS.saleSectionTitle),
-    saleSectionSubtitle: String(settings.saleSectionSubtitle || DEFAULT_SETTINGS.saleSectionSubtitle),
-    heroEyebrow: String(settings.heroEyebrow || DEFAULT_SETTINGS.heroEyebrow),
-    heroTitleLine1: String(settings.heroTitleLine1 || DEFAULT_SETTINGS.heroTitleLine1),
-    heroTitleLine2: String(settings.heroTitleLine2 || DEFAULT_SETTINGS.heroTitleLine2),
-    heroPrimaryCtaLabel: String(settings.heroPrimaryCtaLabel || DEFAULT_SETTINGS.heroPrimaryCtaLabel),
+    saleSectionTitle: decodeLandingText(settings.saleSectionTitle, DEFAULT_SETTINGS.saleSectionTitle),
+    saleSectionSubtitle: decodeLandingText(settings.saleSectionSubtitle, DEFAULT_SETTINGS.saleSectionSubtitle),
+    heroEyebrow: decodeLandingText(settings.heroEyebrow, DEFAULT_SETTINGS.heroEyebrow),
+    heroTitleLine1: decodeLandingText(settings.heroTitleLine1, DEFAULT_SETTINGS.heroTitleLine1),
+    heroTitleLine2: decodeLandingText(settings.heroTitleLine2, DEFAULT_SETTINGS.heroTitleLine2),
+    heroPrimaryCtaLabel: decodeLandingText(settings.heroPrimaryCtaLabel, DEFAULT_SETTINGS.heroPrimaryCtaLabel),
     heroPrimaryCtaHref: String(settings.heroPrimaryCtaHref || DEFAULT_SETTINGS.heroPrimaryCtaHref),
-    heroSecondaryCtaLabel: String(settings.heroSecondaryCtaLabel || DEFAULT_SETTINGS.heroSecondaryCtaLabel),
+    heroSecondaryCtaLabel: decodeLandingText(settings.heroSecondaryCtaLabel, DEFAULT_SETTINGS.heroSecondaryCtaLabel),
     heroSecondaryCtaHref: String(settings.heroSecondaryCtaHref || DEFAULT_SETTINGS.heroSecondaryCtaHref),
-    bannerLeftTitle: String(settings.bannerLeftTitle || DEFAULT_SETTINGS.bannerLeftTitle),
-    bannerLeftButtonLabel: String(settings.bannerLeftButtonLabel || DEFAULT_SETTINGS.bannerLeftButtonLabel),
+    bannerLeftTitle: decodeLandingText(settings.bannerLeftTitle, DEFAULT_SETTINGS.bannerLeftTitle),
+    bannerLeftButtonLabel: decodeLandingText(settings.bannerLeftButtonLabel, DEFAULT_SETTINGS.bannerLeftButtonLabel),
     bannerLeftHref: String(settings.bannerLeftHref || DEFAULT_SETTINGS.bannerLeftHref),
     bannerLeftImage: String(settings.bannerLeftImage || DEFAULT_SETTINGS.bannerLeftImage),
-    bannerRightTitle: String(settings.bannerRightTitle || DEFAULT_SETTINGS.bannerRightTitle),
-    bannerRightButtonLabel: String(settings.bannerRightButtonLabel || DEFAULT_SETTINGS.bannerRightButtonLabel),
+    bannerRightTitle: decodeLandingText(settings.bannerRightTitle, DEFAULT_SETTINGS.bannerRightTitle),
+    bannerRightButtonLabel: decodeLandingText(settings.bannerRightButtonLabel, DEFAULT_SETTINGS.bannerRightButtonLabel),
     bannerRightHref: String(settings.bannerRightHref || DEFAULT_SETTINGS.bannerRightHref),
     bannerRightImage: String(settings.bannerRightImage || DEFAULT_SETTINGS.bannerRightImage),
     companyMb: String(settings.companyMb || DEFAULT_SETTINGS.companyMb),
     companyPib: String(settings.companyPib || DEFAULT_SETTINGS.companyPib),
-    customerRightsTitle: String(settings.customerRightsTitle || DEFAULT_SETTINGS.customerRightsTitle),
-    customerRightsText: String(settings.customerRightsText || DEFAULT_SETTINGS.customerRightsText),
-    purchaseGuideTitle: String(settings.purchaseGuideTitle || DEFAULT_SETTINGS.purchaseGuideTitle),
-    purchaseGuideText: String(settings.purchaseGuideText || DEFAULT_SETTINGS.purchaseGuideText),
-    documentsTitle: String(settings.documentsTitle || DEFAULT_SETTINGS.documentsTitle),
-    documentsSubtitle: String(settings.documentsSubtitle || DEFAULT_SETTINGS.documentsSubtitle),
+    customerRightsTitle: decodeLandingText(settings.customerRightsTitle, DEFAULT_SETTINGS.customerRightsTitle),
+    customerRightsText: decodeLandingText(settings.customerRightsText, DEFAULT_SETTINGS.customerRightsText),
+    purchaseGuideTitle: decodeLandingText(settings.purchaseGuideTitle, DEFAULT_SETTINGS.purchaseGuideTitle),
+    purchaseGuideText: decodeLandingText(settings.purchaseGuideText, DEFAULT_SETTINGS.purchaseGuideText),
+    documentsTitle: decodeLandingText(settings.documentsTitle, DEFAULT_SETTINGS.documentsTitle),
+    documentsSubtitle: decodeLandingText(settings.documentsSubtitle, DEFAULT_SETTINGS.documentsSubtitle),
     documents: normalizeLandingDocuments(settings.documents ?? DEFAULT_SETTINGS.documents),
-    uniformsEyebrow: String(settings.uniformsEyebrow || DEFAULT_SETTINGS.uniformsEyebrow),
-    uniformsTitle: String(settings.uniformsTitle || DEFAULT_SETTINGS.uniformsTitle),
-    uniformsText: String(settings.uniformsText || DEFAULT_SETTINGS.uniformsText),
-    uniformsCtaLabel: String(settings.uniformsCtaLabel || DEFAULT_SETTINGS.uniformsCtaLabel),
+    uniformsEyebrow: decodeLandingText(settings.uniformsEyebrow, DEFAULT_SETTINGS.uniformsEyebrow),
+    uniformsTitle: decodeLandingText(settings.uniformsTitle, DEFAULT_SETTINGS.uniformsTitle),
+    uniformsText: decodeLandingText(settings.uniformsText, DEFAULT_SETTINGS.uniformsText),
+    uniformsCtaLabel: decodeLandingText(settings.uniformsCtaLabel, DEFAULT_SETTINGS.uniformsCtaLabel),
     uniformsCtaHref: String(settings.uniformsCtaHref || DEFAULT_SETTINGS.uniformsCtaHref),
     uniformsImages: normalizeLandingUniformImages(settings.uniformsImages ?? DEFAULT_SETTINGS.uniformsImages),
-    shopHeroEyebrow: String(settings.shopHeroEyebrow || DEFAULT_SETTINGS.shopHeroEyebrow),
-    shopHeroTitle: String(settings.shopHeroTitle || DEFAULT_SETTINGS.shopHeroTitle),
-    shopHeroLead: String(settings.shopHeroLead || DEFAULT_SETTINGS.shopHeroLead),
+    shopHeroEyebrow: decodeLandingText(settings.shopHeroEyebrow, DEFAULT_SETTINGS.shopHeroEyebrow),
+    shopHeroTitle: decodeLandingText(settings.shopHeroTitle, DEFAULT_SETTINGS.shopHeroTitle),
+    shopHeroLead: decodeLandingText(settings.shopHeroLead, DEFAULT_SETTINGS.shopHeroLead),
     shopHeroImage: String(settings.shopHeroImage || DEFAULT_SETTINGS.shopHeroImage),
     heroStripProductIds: normalizeLegacyIdList(settings.heroStripProductIds),
     highlightedProductIds: normalizeLegacyIdList(settings.highlightedProductIds),
