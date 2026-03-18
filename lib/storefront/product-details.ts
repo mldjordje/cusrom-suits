@@ -53,7 +53,19 @@ const extractSizes = (product: CatalogProductView) =>
         .filter((value) => value.length > 0)
     : [];
 
-const normalizeKey = (value: string) => value.trim().toUpperCase();
+const sizeAliases: Record<string, string> = {
+  "1XL": "XL",
+  "2XL": "XXL",
+  "3XL": "XXXL",
+  "4XL": "4XL",
+  "5XL": "5XL",
+  "6XL": "6XL",
+};
+
+const normalizeKey = (value: string) => {
+  const normalized = value.trim().toUpperCase().replace(/\s+/g, "");
+  return sizeAliases[normalized] || normalized;
+};
 
 const sizeOrder = [
   "XXXS",
@@ -63,7 +75,9 @@ const sizeOrder = [
   "M",
   "L",
   "XL",
+  "1XL",
   "XXL",
+  "2XL",
   "XXXL",
   "3XL",
   "4XL",
@@ -153,6 +167,11 @@ const getProductGroups = (product: CatalogProductView): SizeGuideGroup[] => {
   return Array.from(groups);
 };
 
+const isTailoredProduct = (product: CatalogProductView) => {
+  const haystack = getProductHaystack(product);
+  return /odel|suit|sako|blazer|jacket|blejzer|kaput|coat|pantal|trouser/.test(haystack);
+};
+
 const getProductFit = (
   product: CatalogProductView,
   sizeOptions: ProductSizeOption[],
@@ -186,8 +205,7 @@ const getSizeGuideBullets = (
   ];
 };
 
-export const productSupportsSizeGuide = (product: CatalogProductView) =>
-  getProductGroups(product).length > 0;
+export const productSupportsSizeGuide = (_product: CatalogProductView) => true;
 
 export const getLocalizedCatalogProductName = (
   product: CatalogProductView,
@@ -348,7 +366,9 @@ export const getProductSizeGuide = async (
       ? "This item does not have a dedicated size table yet. Use the selector above or contact us for a recommendation."
       : "Ovaj model jos nema posebnu tabelu velicina. Iskoristite izbor velicine iznad ili nas kontaktirajte za preporuku.";
 
-  const relevantTables = settings.tables.filter((table) => groups.includes(table.group));
+  const relevantTables = groups.length
+    ? settings.tables.filter((table) => groups.includes(table.group))
+    : settings.tables;
   const tables = relevantTables.filter((table) => {
     if (!fit) return true;
     if (table.fit === "standard") return true;
@@ -412,7 +432,7 @@ export const getProductWashCare = (
   product: CatalogProductView,
   lang: StorefrontLanguage,
 ) => {
-  const tailored = productSupportsSizeGuide(product);
+  const tailored = isTailoredProduct(product);
 
   if (lang === "en") {
     return {

@@ -93,6 +93,61 @@
   color: #f8fafc;
 }
 
+.admin-template-nav-group {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.admin-template-nav-link__copy {
+  display: flex;
+  min-width: 0;
+  flex: 1 1 auto;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.admin-template-nav-link__copy small {
+  margin-top: 0.18rem;
+  color: #94a3b8;
+  font-size: 0.64rem;
+  font-weight: 500;
+}
+
+.admin-template-nav-caret {
+  margin-left: auto;
+  font-size: 0.8rem;
+  color: #93c5fd;
+}
+
+.admin-template-subnav-list {
+  margin: 0;
+  padding: 0 0 0 2.35rem;
+  list-style: none;
+  display: grid;
+  gap: 0.22rem;
+}
+
+.admin-template-subnav-link {
+  display: block;
+  border-radius: 0.7rem;
+  padding: 0.42rem 0.72rem;
+  color: #94a3b8;
+  text-decoration: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.admin-template-subnav-link:hover {
+  background: rgba(51, 65, 85, 0.38);
+  color: #f8fafc;
+}
+
+.admin-template-subnav-link.is-active {
+  background: rgba(30, 64, 175, 0.18);
+  color: #f8fafc;
+}
+
 .admin-template-nav-icon {
   width: 1.65rem;
   height: 1.65rem;
@@ -222,6 +277,10 @@
 
   .admin-template-nav-link {
     font-size: 0.75rem;
+  }
+
+  .admin-template-subnav-list {
+    padding-left: 0;
   }
 
   .admin-template-topbar {

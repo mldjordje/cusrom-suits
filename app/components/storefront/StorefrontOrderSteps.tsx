@@ -19,25 +19,21 @@ export default function StorefrontOrderSteps({
 
   const steps: Array<{
     key: StepKey;
-    index: string;
     label: string;
     href: string;
   }> = [
     {
       key: "product",
-      index: "01",
       label: isEn ? "Choose product" : "Izaberi proizvod",
       href: withLang("/web-shop"),
     },
     {
       key: "cart",
-      index: "02",
       label: isEn ? "Review cart" : "Pregledaj korpu",
       href: withLang("/cart"),
     },
     {
       key: "checkout",
-      index: "03",
       label: isEn ? "Send order" : "Posalji porudzbinu",
       href: withLang("/checkout"),
     },
@@ -54,12 +50,10 @@ export default function StorefrontOrderSteps({
 
         return isActive ? (
           <div key={step.key} className={className} aria-current="step">
-            <span className="ss-order-step__index">{step.index}</span>
             <span className="ss-order-step__label">{step.label}</span>
           </div>
         ) : (
           <Link key={step.key} href={step.href} className={className}>
-            <span className="ss-order-step__index">{step.index}</span>
             <span className="ss-order-step__label">{step.label}</span>
           </Link>
         );
