@@ -3,6 +3,7 @@ import Link from "next/link";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import HomeHeroVideo from "@/app/components/storefront/HomeHeroVideo";
+import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import { getCatalogProductByLegacyId, listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
@@ -14,6 +15,7 @@ import {
 import { listPosts } from "@/lib/blog/store";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
+import { getCatalogProductImageSources } from "@/lib/storefront/product-details";
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -389,15 +391,15 @@ export default async function HomePage({
           </div>
           <div className="row row-cols-2 row-cols-md-4 g-2 g-md-3 ss-feature-strip">
             {heroProducts.map((item, index) => (
-              <ProductItemMotion key={item.legacyId} index={index}>
-                <Link href={withLang(`/web-shop/${item.legacyId}`)} className="d-block ss-featured-tile">
-                  <Image
-                    src={item.coverImage || "/img/odela.jpg"}
-                    width={330}
-                    height={400}
-                    alt={getProductDisplayName(item, contentLang)}
-                    className="w-100 mb-2 ss-uniform-tile"
-                  />
+                <ProductItemMotion key={item.legacyId} index={index}>
+                  <Link href={withLang(`/web-shop/${item.legacyId}`)} className="d-block ss-featured-tile">
+                    <StorefrontSmartImage
+                      sources={getCatalogProductImageSources(item, [], ["/img/odela.jpg"])}
+                      width={330}
+                      height={400}
+                      alt={getProductDisplayName(item, contentLang)}
+                      className="w-100 mb-2 ss-uniform-tile"
+                    />
                   <span className="menu-link menu-link_us-s fw-semi-bold fs-16 text-uppercase">
                     {getProductDisplayName(item, contentLang)}
                   </span>
@@ -421,14 +423,14 @@ export default async function HomePage({
           <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
             {featured.map((item, index) => (
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
-                <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
-                  <div className="pc__img-wrapper">
-                    <Link href={withLang(`/web-shop/${item.legacyId}`)}>
-                      <Image
-                        src={item.coverImage || "/img/odela2.jpg"}
-                        width={330}
-                        height={400}
-                        alt={getProductDisplayName(item, contentLang)}
+                  <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
+                    <div className="pc__img-wrapper">
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>
+                        <StorefrontSmartImage
+                          sources={getCatalogProductImageSources(item, [], ["/img/odela2.jpg"])}
+                          width={330}
+                          height={400}
+                          alt={getProductDisplayName(item, contentLang)}
                         className="pc__img"
                       />
                     </Link>
@@ -495,14 +497,14 @@ export default async function HomePage({
           <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
             {arrivals.map((item, index) => (
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
-                <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
-                  <div className="pc__img-wrapper">
-                    <Link href={withLang(`/web-shop/${item.legacyId}`)}>
-                      <Image
-                        src={item.coverImage || "/img/hero2.jpg"}
-                        width={330}
-                        height={400}
-                        alt={getProductDisplayName(item, contentLang)}
+                  <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
+                    <div className="pc__img-wrapper">
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>
+                        <StorefrontSmartImage
+                          sources={getCatalogProductImageSources(item, [], ["/img/hero2.jpg"])}
+                          width={330}
+                          height={400}
+                          alt={getProductDisplayName(item, contentLang)}
                         className="pc__img"
                       />
                     </Link>
@@ -543,14 +545,14 @@ export default async function HomePage({
               <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
                 {saleItems.map((item, index) => (
                   <ProductItemMotion key={`sale-${item.legacyId}`} className="product-card-wrapper" index={index}>
-                    <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
-                      <div className="pc__img-wrapper">
-                        <Link href={withLang(`/web-shop/${item.legacyId}`)}>
-                          <Image
-                            src={item.coverImage || "/img/odela.jpg"}
-                            width={330}
-                            height={400}
-                            alt={getProductDisplayName(item, contentLang)}
+                      <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
+                        <div className="pc__img-wrapper">
+                          <Link href={withLang(`/web-shop/${item.legacyId}`)}>
+                            <StorefrontSmartImage
+                              sources={getCatalogProductImageSources(item, [], ["/img/odela.jpg"])}
+                              width={330}
+                              height={400}
+                              alt={getProductDisplayName(item, contentLang)}
                             className="pc__img"
                           />
                         </Link>
@@ -582,14 +584,14 @@ export default async function HomePage({
           <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
             {trending.map((item, index) => (
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
-                <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
-                  <div className="pc__img-wrapper">
-                    <Link href={withLang(`/web-shop/${item.legacyId}`)}>
-                      <Image
-                        src={item.coverImage || "/img/hero2.jpg"}
-                        width={330}
-                        height={400}
-                        alt={getProductDisplayName(item, contentLang)}
+                  <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
+                    <div className="pc__img-wrapper">
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>
+                        <StorefrontSmartImage
+                          sources={getCatalogProductImageSources(item, [], ["/img/hero2.jpg"])}
+                          width={330}
+                          height={400}
+                          alt={getProductDisplayName(item, contentLang)}
                         className="pc__img"
                       />
                     </Link>
@@ -827,8 +829,8 @@ export default async function HomePage({
                 <div className="blog-grid__item ss-blog-card">
                   <div className="blog-grid__item-image-wrap">
                     <Link href={withLang(`/blog/${post.slug}`)}>
-                      <Image
-                        src={post.coverImage || "/img/hero.jpg"}
+                      <StorefrontSmartImage
+                        sources={[post.coverImage || "/img/hero.jpg"]}
                         width={330}
                         height={230}
                         alt={post.title}

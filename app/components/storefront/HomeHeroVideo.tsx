@@ -3,6 +3,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { decodeHtmlEntities, getCatalogProductDisplayName } from "@/lib/catalog/presentation";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
+import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 
 const HeroParallaxFx = dynamic(() => import("@/app/components/storefront/HeroParallaxFx"));
 
@@ -157,7 +158,14 @@ export default function HomeHeroVideo({ categories, featuredProducts, content, l
           {cards.map((card) => (
             <article key={card.id} className="ss-home18-hero__card-item" data-hero-card>
               <Link href={card.href} className="d-block ss-home18-hero__card-link">
-                <Image src={card.image} width={330} height={400} alt={card.title} className="w-100 h-auto d-block ss-home18-hero__card-image" />
+                <StorefrontSmartImage
+                  sources={[card.image]}
+                  fallbackSrc="/img/hero.jpg"
+                  width={330}
+                  height={400}
+                  alt={card.title}
+                  className="w-100 h-auto d-block ss-home18-hero__card-image"
+                />
                 <span className="menu-link menu-link_us-s fw-semi-bold fs-18 text-white text-uppercase d-block mt-2 ss-home18-hero__card-title">
                   {card.title}
                 </span>
