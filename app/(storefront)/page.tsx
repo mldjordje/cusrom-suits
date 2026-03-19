@@ -82,24 +82,6 @@ const getAtelierContactPoints = (isEn: boolean) => [
   { label: isEn ? "Address" : "Adresa", value: "Obrenoviceva 9, Nis" },
 ];
 
-const BrandStrip = () => (
-  <section className="brands-carousel container">
-    <div className="row row-cols-2 row-cols-md-4 row-cols-xl-7 g-3 align-items-center">
-      {["brand1", "brand2", "brand3", "brand4", "brand5", "brand6", "brand7"].map((brand) => (
-        <div key={brand} className="text-center opacity-75">
-          <Image
-            src={`/assets/images/brands/${brand}.png`}
-            width={140}
-            height={48}
-            alt={brand}
-            className="h-auto w-auto"
-          />
-        </div>
-      ))}
-    </div>
-  </section>
-);
-
 const pickProductsForSection = <T extends { legacyId: number }>(
   source: T[],
   preferredIds: number[],
@@ -868,10 +850,6 @@ export default async function HomePage({
 
         <div className="mb-4 mb-xl-5 pt-xl-1 pb-4" />
 
-        <Reveal as="div" delay={0.2}>
-          <BrandStrip />
-        </Reveal>
-        <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
       </main>
       <StorefrontFooter lang={lang} />
     </>

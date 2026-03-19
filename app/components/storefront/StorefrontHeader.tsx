@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 import StorefrontLanguageSwitcher from "@/app/components/storefront/StorefrontLanguageSwitcher";
@@ -26,6 +26,7 @@ export default function StorefrontHeader({
   const [mobileOpen, setMobileOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [shopCategories, setShopCategories] = useState<ShopCategory[]>([]);
+  const lockedScrollY = useRef(0);
   const { reduceMotion } = useAnimationBudget();
   const normalizedPath = pathname ?? "";
   const isHome = normalizedPath === "/" || normalizedPath === "";
@@ -58,10 +59,41 @@ export default function StorefrontHeader({
   };
 
   useEffect(() => {
-    document.body.classList.toggle("mobile-menu-opened", mobileOpen);
-    return () => {
-      document.body.classList.remove("mobile-menu-opened");
+    const { body, documentElement } = document;
+
+    const unlockScroll = () => {
+      const shouldRestoreScroll =
+        body.classList.contains("mobile-menu-opened") || body.style.position === "fixed";
+
+      body.classList.remove("mobile-menu-opened");
+      documentElement.classList.remove("mobile-menu-opened");
+      body.style.overflow = "";
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+
+      if (shouldRestoreScroll) {
+        window.scrollTo(0, lockedScrollY.current);
+      }
     };
+
+    if (mobileOpen) {
+      lockedScrollY.current = window.scrollY;
+      body.classList.add("mobile-menu-opened");
+      documentElement.classList.add("mobile-menu-opened");
+      body.style.overflow = "hidden";
+      body.style.position = "fixed";
+      body.style.top = `-${lockedScrollY.current}px`;
+      body.style.left = "0";
+      body.style.right = "0";
+      body.style.width = "100%";
+    } else {
+      unlockScroll();
+    }
+
+    return unlockScroll;
   }, [mobileOpen]);
 
   useEffect(() => {
@@ -94,6 +126,7 @@ export default function StorefrontHeader({
   }, []);
 
   const desktopFloating = isHome && !isContrast;
+  const closeMobileMenu = () => setMobileOpen(false);
   const headerClass = [
     "header",
     "header-fullwidth",
@@ -204,6 +237,8 @@ export default function StorefrontHeader({
             <button
               type="button"
               className={`ss-mobile-slot mobile-nav-activator d-block position-relative btn-icon ${mobileOpen ? "is-open" : ""}`}
+              aria-controls="ss-mobile-nav-panel"
+              aria-expanded={mobileOpen}
               aria-label={
                 mobileOpen
                   ? isEn
@@ -272,10 +307,11 @@ export default function StorefrontHeader({
                 type="button"
                 className="ss-mobile-nav-backdrop"
                 aria-label={isEn ? "Close menu" : "Zatvori meni"}
-                onClick={() => setMobileOpen(false)}
+                onClick={closeMobileMenu}
               />
 
               <m.nav
+                id="ss-mobile-nav-panel"
                 className="ss-mobile-nav-panel"
                 initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -288,14 +324,14 @@ export default function StorefrontHeader({
                   <div className="ss-mobile-nav-panel__top">
                     <StorefrontLanguageSwitcher lang={lang} compact />
                     <div className="ss-mobile-nav-panel__actions">
-                      <Link href={withLang("/kontakt")} className="ss-mobile-nav-pill">
+                      <Link href={withLang("/kontakt")} className="ss-mobile-nav-pill" onClick={closeMobileMenu}>
                         {isEn ? "Contact" : "Kontakt"}
                       </Link>
                       <button
                         type="button"
                         className="ss-mobile-nav-close"
                         aria-label={isEn ? "Close menu" : "Zatvori meni"}
-                        onClick={() => setMobileOpen(false)}
+                        onClick={closeMobileMenu}
                       >
                         <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                           <path d="M4 4L14 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
@@ -318,7 +354,7 @@ export default function StorefrontHeader({
                           ease: [0.22, 1, 0.36, 1],
                         }}
                       >
-                        <Link href={withLang(item.href)} className="ss-mobile-nav-quicklink">
+                        <Link href={withLang(item.href)} className="ss-mobile-nav-quicklink" onClick={closeMobileMenu}>
                           {item.label}
                         </Link>
                       </m.div>
@@ -342,6 +378,7 @@ export default function StorefrontHeader({
                         <Link
                           href={withLang(item.href)}
                           className={`ss-mobile-nav-link ${isItemActive(item.href) ? "is-active" : ""}`}
+                          onClick={closeMobileMenu}
                         >
                           <span>{item.label}</span>
                         </Link>
@@ -352,6 +389,7 @@ export default function StorefrontHeader({
                                 key={`mobile-${link.href}`}
                                 href={withLang(link.href)}
                                 className="ss-mobile-nav-submenu__link"
+                                onClick={closeMobileMenu}
                               >
                                 {link.label}
                               </Link>

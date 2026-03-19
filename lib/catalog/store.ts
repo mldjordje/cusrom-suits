@@ -845,13 +845,40 @@ async function fetchCatalogProductByLegacyIdFromSupabase(
     .eq("legacy_product_id", legacyId)
     .order("sort", { ascending: true });
 
+  let imageUrls = (media || [])
+    .map((m) => String((m as Record<string, unknown>).url || ""))
+    .filter((value) => value.length > 0);
+
+  if (!imageUrls.length) {
+    const sku = String((row as Record<string, unknown>).sku || "").trim();
+    if (sku) {
+      const { data: siblingRows } = await supabase
+        .from("catalog_products")
+        .select("legacy_id")
+        .eq("sku", sku)
+        .neq("legacy_id", legacyId)
+        .limit(24);
+
+      const siblingIds = (siblingRows || [])
+        .map((item) => Number((item as Record<string, unknown>).legacy_id))
+        .filter((value) => Number.isFinite(value));
+
+      if (siblingIds.length > 0) {
+        const { data: siblingMedia } = await supabase
+          .from("catalog_product_media")
+          .select("legacy_product_id,url,sort")
+          .in("legacy_product_id", siblingIds)
+          .order("sort", { ascending: true });
+
+        imageUrls = (siblingMedia || [])
+          .map((item) => String((item as Record<string, unknown>).url || ""))
+          .filter((value) => value.length > 0);
+      }
+    }
+  }
+
   const imagesByProductId = new Map<number, string[]>();
-  imagesByProductId.set(
-    legacyId,
-    (media || [])
-      .map((m) => String((m as Record<string, unknown>).url || ""))
-      .filter((value) => value.length > 0),
-  );
+  imagesByProductId.set(legacyId, imageUrls);
   const normalized = normalizeCatalogRow(row as Record<string, unknown>, imagesByProductId);
   return applySkuImageFallbacks([normalized])[0] || null;
 }

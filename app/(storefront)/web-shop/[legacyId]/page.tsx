@@ -6,6 +6,7 @@ import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
 import ProductImageGallery from "@/app/components/storefront/ProductImageGallery";
 import ProductSizeGuideButton from "@/app/components/storefront/ProductSizeGuideButton";
+import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSteps";
 import Reveal from "@/app/components/motion/Reveal";
 import {
@@ -17,6 +18,7 @@ import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
 import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import {
+  getCatalogProductImageSources,
   getPreferredCatalogProductForDisplay,
   getLocalizedCatalogDescription,
   getLocalizedCatalogProductName,
@@ -105,6 +107,7 @@ export default async function WebShopProductPage({
   const displayDescription = getLocalizedCatalogDescription(displayProduct, lang);
   const displaySpecification = getLocalizedCatalogSpecification(displayProduct, lang);
   const material = getProductMaterial(displayProduct, lang);
+  const gallery = getCatalogProductImageSources(displayProduct, [product, ...variants], ["/img/odela.jpg"]);
   const sizeOptions = getProductSizeOptions(product, variants);
   const selectedSize =
     sizeOptions.find((option) => option.legacyId === product.legacyId)?.label ||
@@ -127,10 +130,6 @@ export default async function WebShopProductPage({
     0,
     Math.floor(product.stockTotal > 0 ? product.stockTotal : product.stockWarehouse1),
   );
-  const gallery =
-    product.images.length > 0
-      ? product.images
-      : [product.coverImage || "/img/odela.jpg"];
   const categoryLabel =
     product.categories[0]?.path.join(" / ") ||
     (isEn ? "Santos selection" : "Santos izbor");
@@ -147,7 +146,7 @@ export default async function WebShopProductPage({
     size: selectedSize,
     material,
     price: product.priceFinalGross,
-    image: product.coverImage || gallery[0] || null,
+    image: gallery[0] || product.coverImage || null,
     maxQuantity: stockValue > 0 ? stockValue : null,
     categoryLabel: displayProduct.categories[0]?.name || product.categories[0]?.name || null,
   };
@@ -430,16 +429,17 @@ export default async function WebShopProductPage({
             </div>
             <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4">
               {related.map((item) => {
-                const coverImage = item.coverImage || "/img/odela2.jpg";
-                const secondImage = item.images[1] || coverImage;
+                const relatedImageSources = getCatalogProductImageSources(item, [], ["/img/odela2.jpg"]);
+                const coverImage = relatedImageSources[0] || "/img/odela2.jpg";
+                const secondImage = relatedImageSources[1] || coverImage;
                 const relatedName = getLocalizedCatalogProductName(item, lang);
                 return (
                   <div key={item.legacyId} className="product-card-wrapper">
                     <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                       <div className="pc__img-wrapper hover-container">
                         <Link href={variantHref(item.legacyId)}>
-                          <Image
-                            src={coverImage}
+                          <StorefrontSmartImage
+                            sources={[coverImage]}
                             width={330}
                             height={400}
                             alt={relatedName}
@@ -447,8 +447,8 @@ export default async function WebShopProductPage({
                             sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
                             quality={70}
                           />
-                          <Image
-                            src={secondImage}
+                          <StorefrontSmartImage
+                            sources={[secondImage, coverImage]}
                             width={330}
                             height={400}
                             alt={`${relatedName} preview`}

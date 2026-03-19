@@ -5,11 +5,12 @@ import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import WebShopFilters from "@/app/components/storefront/WebShopFilters";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
+import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
 import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
-import { getLocalizedCatalogProductName } from "@/lib/storefront/product-details";
+import { getCatalogProductImageSources, getLocalizedCatalogProductName } from "@/lib/storefront/product-details";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type ActiveFilterChip = { key: string; label: string; href: string };
@@ -195,7 +196,7 @@ export default async function WebShopPage({
     const imageHeight = options?.imageHeight || 714;
     const fallbackImage = options?.fallbackImage || "/img/odela2.jpg";
     const motionIndex = options?.motionIndex || 0;
-    const coverImage = item.coverImage || fallbackImage;
+    const imageSources = getCatalogProductImageSources(item, [], [fallbackImage]);
     const displayName = getLocalizedCatalogProductName(item, lang);
     const detailHref = isEn ? `/web-shop/${item.legacyId}?lang=en` : `/web-shop/${item.legacyId}`;
     const imageSizes =
@@ -208,8 +209,8 @@ export default async function WebShopPage({
         <div className={cardClassName}>
           <div className={imageWrapperClassName}>
             <Link href={detailHref}>
-              <Image
-                src={coverImage}
+              <StorefrontSmartImage
+                sources={imageSources}
                 width={imageWidth}
                 height={imageHeight}
                 alt={displayName}

@@ -46,6 +46,8 @@ export type ProductWashCareItem = {
 const stripHtml = (value: string | null) =>
   decodeHtmlEntities((value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
 
+const normalizeImageCandidate = (value: unknown) => String(value || "").trim();
+
 const extractSizes = (product: CatalogProductView) =>
   Array.isArray(product.attributes?.size)
     ? product.attributes.size
@@ -231,6 +233,23 @@ export const getLocalizedCatalogSpecification = (
   product: CatalogProductView,
   lang: StorefrontLanguage,
 ) => productText(product, lang).specification;
+
+export const getCatalogProductImageSources = (
+  currentProduct: CatalogProductView,
+  variants: CatalogProductView[] = [],
+  fallbackImages: string[] = [],
+) => {
+  const sources = [
+    ...currentProduct.images,
+    currentProduct.coverImage,
+    ...variants.flatMap((variant) => [...variant.images, variant.coverImage]),
+    ...fallbackImages,
+  ]
+    .map(normalizeImageCandidate)
+    .filter((value) => value.length > 0);
+
+  return Array.from(new Set(sources));
+};
 
 export const getPreferredCatalogProductForDisplay = (
   currentProduct: CatalogProductView,

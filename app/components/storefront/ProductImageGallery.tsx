@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Image from "next/image";
 import { AnimatePresence, m } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
+import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 
 type ProductImageGalleryProps = {
   images: string[];
@@ -33,8 +33,8 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.995 }}
             transition={{ duration: reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
           >
-            <Image
-              src={activeImage}
+            <StorefrontSmartImage
+              sources={[activeImage, ...gallery]}
               width={900}
               height={1000}
               alt={name}
@@ -59,14 +59,15 @@ export default function ProductImageGallery({ images, name }: ProductImageGaller
               aria-pressed={activeIndex === index}
               whileTap={reduceMotion ? undefined : { scale: 0.96 }}
             >
-              <Image
-                src={image}
+              <StorefrontSmartImage
+                sources={[image]}
                 width={96}
                 height={112}
                 alt={`${name} thumbnail ${index + 1}`}
                 className="ss-product-gallery__thumb-image"
                 quality={64}
                 sizes="96px"
+                fallbackSrc="/img/odela.jpg"
               />
             </m.button>
           ))}
