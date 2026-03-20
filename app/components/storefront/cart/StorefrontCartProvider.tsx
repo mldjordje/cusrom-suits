@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 import type { StorefrontCartItem } from "@/lib/cart/types";
 
@@ -9,10 +9,14 @@ type CartContextValue = {
   itemCount: number;
   subtotal: number;
   isReady: boolean;
+  isDrawerOpen: boolean;
   addItem: (item: Omit<StorefrontCartItem, "quantity">, quantity?: number) => void;
   updateQuantity: (legacyId: number, quantity: number) => void;
   removeItem: (legacyId: number) => void;
   clearCart: () => void;
+  openCartDrawer: () => void;
+  closeCartDrawer: () => void;
+  toggleCartDrawer: () => void;
 };
 
 const STORAGE_KEY = "santos_webshop_cart_v1";
@@ -28,6 +32,16 @@ const clampQuantity = (quantity: number, maxQuantity: number | null) => {
 export default function StorefrontCartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<StorefrontCartItem[]>([]);
   const [isReady, setIsReady] = useState(false);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const openCartDrawer = useCallback(() => {
+    setIsDrawerOpen(true);
+  }, []);
+  const closeCartDrawer = useCallback(() => {
+    setIsDrawerOpen(false);
+  }, []);
+  const toggleCartDrawer = useCallback(() => {
+    setIsDrawerOpen((current) => !current);
+  }, []);
 
   useEffect(() => {
     try {
@@ -75,6 +89,21 @@ export default function StorefrontCartProvider({ children }: { children: ReactNo
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [isReady, items]);
 
+  useEffect(() => {
+    const { body } = document;
+    if (!isDrawerOpen) {
+      body.style.overflow = "";
+      return;
+    }
+
+    const previousOverflow = body.style.overflow;
+    body.style.overflow = "hidden";
+
+    return () => {
+      body.style.overflow = previousOverflow;
+    };
+  }, [isDrawerOpen]);
+
   const value = useMemo<CartContextValue>(() => {
     const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
     const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -84,6 +113,7 @@ export default function StorefrontCartProvider({ children }: { children: ReactNo
       itemCount,
       subtotal,
       isReady,
+      isDrawerOpen,
       addItem: (item, quantity = 1) => {
         setItems((current) => {
           const nextQuantity = clampQuantity(quantity, item.maxQuantity);
@@ -100,6 +130,7 @@ export default function StorefrontCartProvider({ children }: { children: ReactNo
                 },
           );
         });
+        openCartDrawer();
       },
       updateQuantity: (legacyId, quantity) => {
         setItems((current) =>
@@ -118,8 +149,11 @@ export default function StorefrontCartProvider({ children }: { children: ReactNo
       clearCart: () => {
         setItems([]);
       },
+      openCartDrawer,
+      closeCartDrawer,
+      toggleCartDrawer,
     };
-  }, [isReady, items]);
+  }, [closeCartDrawer, isDrawerOpen, isReady, items, openCartDrawer, toggleCartDrawer]);
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>;
 }

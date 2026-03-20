@@ -219,7 +219,6 @@ export default function StorefrontHeader({
                 </svg>
               </Link>
               <StorefrontCartLink
-                href={withLang("/cart")}
                 className="header-tools__item d-none d-md-inline-flex"
                 ariaLabel={isEn ? "Cart" : "Korpa"}
               />
@@ -286,7 +285,6 @@ export default function StorefrontHeader({
                 </svg>
               </Link>
               <StorefrontCartLink
-                href={withLang("/cart")}
                 className="ss-mobile-slot ss-mobile-link"
                 ariaLabel={isEn ? "Cart" : "Korpa"}
               />

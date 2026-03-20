@@ -15,6 +15,7 @@ import {
   getRelatedCatalogProducts,
 } from "@/lib/catalog/store";
 import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
+import OpenCartDrawerButton from "@/app/components/storefront/cart/OpenCartDrawerButton";
 import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import {
@@ -302,9 +303,12 @@ export default async function WebShopProductPage({
                       className="btn btn-primary btn-addtocart ss-cta-btn"
                       item={cartItem}
                     />
-                    <Link href={withLang("/cart")} className="btn btn-outline-dark btn-addtocart ss-cta-btn ss-cta-btn--ghost">
+                    <OpenCartDrawerButton
+                      className="btn btn-outline-dark btn-addtocart ss-cta-btn ss-cta-btn--ghost"
+                      ariaLabel={isEn ? "Open cart" : "Otvori korpu"}
+                    >
                       {isEn ? "View cart" : "Idi na korpu"}
-                    </Link>
+                    </OpenCartDrawerButton>
                   </div>
                   <p className="ss-product-cta-note mb-0">
                     {isEn
@@ -401,9 +405,12 @@ export default async function WebShopProductPage({
                 className="btn btn-primary btn-addtocart ss-mobile-product-bar__btn"
                 item={cartItem}
               />
-              <Link href={withLang("/cart")} className="btn btn-outline-dark ss-mobile-product-bar__btn">
+              <OpenCartDrawerButton
+                className="btn btn-outline-dark ss-mobile-product-bar__btn"
+                ariaLabel={isEn ? "Open cart" : "Otvori korpu"}
+              >
                 {isEn ? "Cart" : "Korpa"}
-              </Link>
+              </OpenCartDrawerButton>
             </div>
           </div>
         </div>

@@ -1,0 +1,181 @@
+"use client";
+
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
+import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
+import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
+import type { StorefrontLanguage } from "@/lib/storefront/language";
+
+const formatRsd = (value: number) =>
+  new Intl.NumberFormat("sr-RS", {
+    style: "currency",
+    currency: "RSD",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+
+export default function StorefrontCartDrawer({
+  lang = "sr",
+}: {
+  lang?: StorefrontLanguage;
+}) {
+  const pathname = usePathname();
+  const {
+    items,
+    subtotal,
+    isReady,
+    isDrawerOpen,
+    updateQuantity,
+    removeItem,
+    closeCartDrawer,
+  } = useCart();
+  const [effectiveLang, setEffectiveLang] = useState<StorefrontLanguage>(lang);
+  const isEn = effectiveLang === "en";
+
+  useEffect(() => {
+    const currentLang = new URLSearchParams(window.location.search).get("lang") === "en" ? "en" : lang;
+    setEffectiveLang(currentLang);
+  }, [lang, pathname]);
+
+  const withLang = (href: string) => {
+    if (!isEn) return href;
+    if (href.includes("?")) return `${href}&lang=en`;
+    return `${href}?lang=en`;
+  };
+
+  useEffect(() => {
+    closeCartDrawer();
+  }, [pathname, closeCartDrawer]);
+
+  return (
+    <>
+      <aside className={`aside aside_right overflow-hidden cart-drawer ss-cart-drawer ${isDrawerOpen ? "aside_visible" : ""}`} id="cartDrawer">
+        <div className="aside-header d-flex align-items-center">
+          <h3 className="text-uppercase fs-6 mb-0">
+            {isEn ? "Shopping bag" : "Korpa"} (
+            <span className="cart-amount js-cart-items-count">{items.length}</span>)
+          </h3>
+          <button
+            type="button"
+            onClick={closeCartDrawer}
+            className="btn-close-lg js-close-aside btn-close-aside ms-auto"
+            aria-label={isEn ? "Close cart" : "Zatvori korpu"}
+          />
+        </div>
+
+        <div className="aside-content cart-drawer-items-list">
+          {!isReady ? (
+            <div className="fs-18 mt-5 px-4">{isEn ? "Loading cart..." : "Ucitavam korpu..."}</div>
+          ) : items.length ? (
+            items.map((item) => (
+              <div key={item.legacyId}>
+                <div className="cart-drawer-item d-flex position-relative">
+                  <Link href={withLang(`/web-shop/${item.legacyId}`)} className="position-relative">
+                    <StorefrontSmartImage
+                      sources={[item.image || "/img/odela.jpg"]}
+                      className="cart-drawer-item__img"
+                      width={330}
+                      height={400}
+                      alt={item.name}
+                      sizes="110px"
+                      unoptimized
+                    />
+                  </Link>
+
+                  <div className="cart-drawer-item__info flex-grow-1">
+                    <h6 className="cart-drawer-item__title fw-normal mb-1">
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{item.name}</Link>
+                    </h6>
+                    {item.categoryLabel ? (
+                      <p className="cart-drawer-item__option text-secondary mb-1">{item.categoryLabel}</p>
+                    ) : null}
+                    {item.size ? (
+                      <p className="cart-drawer-item__option text-secondary mb-1">
+                        {isEn ? "Size" : "Velicina"}: {item.size}
+                      </p>
+                    ) : null}
+                    <div className="d-flex align-items-center justify-content-between mt-2 gap-3">
+                      <div className="qty-control position-relative">
+                        <input
+                          type="number"
+                          name={`quantity-${item.legacyId}`}
+                          value={item.quantity}
+                          min="1"
+                          max={item.maxQuantity && item.maxQuantity > 0 ? item.maxQuantity : undefined}
+                          onChange={(event) => updateQuantity(item.legacyId, Number(event.target.value))}
+                          className="qty-control__number border-0 text-center"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.legacyId, Math.max(1, item.quantity - 1))}
+                          className="qty-control__reduce text-start border-0 bg-transparent"
+                          aria-label={isEn ? "Decrease quantity" : "Smanji kolicinu"}
+                        >
+                          -
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => updateQuantity(item.legacyId, item.quantity + 1)}
+                          className="qty-control__increase text-end border-0 bg-transparent"
+                          aria-label={isEn ? "Increase quantity" : "Povecaj kolicinu"}
+                        >
+                          +
+                        </button>
+                      </div>
+
+                      <span className="cart-drawer-item__price money price">
+                        {formatRsd(item.price * item.quantity)}
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={() => removeItem(item.legacyId)}
+                    className="btn-close-xs position-absolute top-0 end-0 js-cart-item-remove"
+                    aria-label={isEn ? "Remove item" : "Ukloni artikal"}
+                  />
+                </div>
+
+                <hr className="cart-drawer-divider" />
+              </div>
+            ))
+          ) : (
+            <div className="fs-18 mt-5 px-4">
+              {isEn ? "Your cart is empty. Start shopping!" : "Korpa je prazna. Dodaj proizvode iz shop-a."}
+            </div>
+          )}
+        </div>
+
+        <div className="cart-drawer-actions position-absolute start-0 bottom-0 w-100">
+          <hr className="cart-drawer-divider" />
+          <div className="d-flex justify-content-between">
+            <h6 className="fs-base fw-medium">{isEn ? "Subtotal:" : "Medjuzbir:"}</h6>
+            <span className="cart-subtotal fw-medium">{formatRsd(subtotal)}</span>
+          </div>
+          {items.length ? (
+            <>
+              <Link href={withLang("/cart")} className="btn btn-light mt-3 d-block">
+                {isEn ? "View cart" : "Pregledaj korpu"}
+              </Link>
+              <Link href={withLang("/checkout")} className="btn btn-primary mt-3 d-block">
+                {isEn ? "Checkout" : "Nastavi na checkout"}
+              </Link>
+            </>
+          ) : (
+            <Link href={withLang("/web-shop")} className="btn btn-light mt-3 d-block">
+              {isEn ? "Explore shop" : "Otvori web shop"}
+            </Link>
+          )}
+        </div>
+      </aside>
+
+      <button
+        type="button"
+        aria-label={isEn ? "Close cart overlay" : "Zatvori overlay korpe"}
+        className={`page-overlay ss-cart-drawer-overlay ${isDrawerOpen ? "page-overlay_visible" : ""}`}
+        onClick={closeCartDrawer}
+      />
+    </>
+  );
+}
