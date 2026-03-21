@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
+import { invalidateCatalogCaches } from "@/lib/catalog/store";
 import {
   createPromotionRule,
+  invalidatePromotionRuleCaches,
   listPromotionRules,
   type PromotionDiscountType,
   type PromotionRuleInput,
@@ -70,5 +72,7 @@ export async function POST(req: NextRequest) {
   }
 
   const rule = await createPromotionRule(parsed);
+  invalidatePromotionRuleCaches();
+  invalidateCatalogCaches();
   return NextResponse.json({ success: true, rule });
 }

@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
+import { invalidateCatalogCaches } from "@/lib/catalog/store";
 import {
   deletePromotionRule,
+  invalidatePromotionRuleCaches,
   updatePromotionRule,
   type PromotionDiscountType,
   type PromotionRulePatch,
@@ -85,6 +87,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   if (!rule) {
     return NextResponse.json({ success: false, message: "Promotion rule not found." }, { status: 404 });
   }
+  invalidatePromotionRuleCaches();
+  invalidateCatalogCaches();
   return NextResponse.json({ success: true, rule });
 }
 
@@ -98,5 +102,7 @@ export async function DELETE(req: NextRequest, { params }: Params) {
   if (!removed) {
     return NextResponse.json({ success: false, message: "Promotion rule not found." }, { status: 404 });
   }
+  invalidatePromotionRuleCaches();
+  invalidateCatalogCaches();
   return NextResponse.json({ success: true });
 }

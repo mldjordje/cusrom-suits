@@ -1,7 +1,9 @@
+import { revalidateTag } from "next/cache";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 import type { CatalogProductView } from "@/lib/catalog/store";
 
 const PROMOTION_RULES_PATH = "data/webshop-promotion-rules.json";
+export const PROMOTION_RULES_CACHE_TAG = "catalog-promotion-rules";
 
 export type PromotionScopeType = "all" | "category" | "brand" | "product";
 export type PromotionDiscountType = "percent" | "fixed";
@@ -201,6 +203,10 @@ export async function deletePromotionRule(ruleId: string) {
   if (next.length === rules.length) return false;
   await writeRules(next);
   return true;
+}
+
+export function invalidatePromotionRuleCaches() {
+  revalidateTag(PROMOTION_RULES_CACHE_TAG);
 }
 
 export function isRuleActiveNow(rule: PromotionRule, at = new Date()) {

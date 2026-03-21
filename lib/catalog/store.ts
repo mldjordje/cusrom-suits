@@ -6,7 +6,12 @@ import {
   getCatalogProductDisplayName,
   isCatalogProductNameSuspicious,
 } from "@/lib/catalog/presentation";
-import { applyPromotionRulesToProduct, applyPromotionRulesToProducts, listPromotionRules } from "@/lib/catalog/promotions";
+import {
+  PROMOTION_RULES_CACHE_TAG,
+  applyPromotionRulesToProduct,
+  applyPromotionRulesToProducts,
+  listPromotionRules,
+} from "@/lib/catalog/promotions";
 import { unstable_cache } from "next/cache";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
@@ -186,7 +191,7 @@ const maybeLogCatalogPerformance = (payload: {
 const listPromotionRulesCached = unstable_cache(
   async () => listPromotionRules(),
   ["catalog-promotion-rules-v1"],
-  { revalidate: 60 },
+  { revalidate: 60, tags: [PROMOTION_RULES_CACHE_TAG] },
 );
 
 const getAvailableStockValue = (item: Pick<CatalogProductView, "stockWarehouse1" | "stockTotal">) => {

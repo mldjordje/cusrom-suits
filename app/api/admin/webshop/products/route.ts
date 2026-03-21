@@ -456,7 +456,7 @@ export async function GET(req: NextRequest) {
     onSale: onSaleOnly,
     activeOnly,
     exportOnly,
-    applyPromotions: false,
+    applyPromotions: onSaleOnly,
   });
 
   return NextResponse.json({
