@@ -1,9 +1,12 @@
 import { revalidateTag } from "next/cache";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { getAnonSupabase, getServiceSupabase } from "@/lib/supabase/server";
 import type { CatalogProductView } from "@/lib/catalog/store";
 
 const PROMOTION_RULES_PATH = "data/webshop-promotion-rules.json";
 export const PROMOTION_RULES_CACHE_TAG = "catalog-promotion-rules";
+const PROMOTION_STORAGE_BUCKET = process.env.SUPABASE_CONFIG_BUCKET || "site-config";
+const PROMOTION_STORAGE_PATH = "webshop/promotion-rules.json";
 
 export type PromotionScopeType = "all" | "category" | "brand" | "product";
 export type PromotionDiscountType = "percent" | "fixed";
@@ -38,6 +41,8 @@ export type PromotionRuleInput = {
 export type PromotionRulePatch = Partial<PromotionRuleInput>;
 
 type PromotionRuleRaw = Record<string, unknown>;
+
+type SupabaseClient = NonNullable<ReturnType<typeof getServiceSupabase>>;
 
 const isScopeType = (value: string): value is PromotionScopeType =>
   value === "all" || value === "category" || value === "brand" || value === "product";
@@ -124,13 +129,90 @@ const sortRules = (rules: PromotionRule[]) =>
     return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
   });
 
+const normalizeRulesArray = (rules: unknown) =>
+  sortRules(
+    (Array.isArray(rules) ? rules : [])
+      .map(normalizeRule)
+      .filter((rule): rule is PromotionRule => Boolean(rule)),
+  );
+
+const ensureStorageBucket = async (supabase: SupabaseClient) => {
+  try {
+    const { data } = await supabase.storage.getBucket(PROMOTION_STORAGE_BUCKET);
+    if (data) return true;
+    const { error } = await supabase.storage.createBucket(PROMOTION_STORAGE_BUCKET, {
+      public: false,
+    });
+    return !error;
+  } catch {
+    return false;
+  }
+};
+
+const readRulesFromSupabaseStorage = async (): Promise<PromotionRule[] | null> => {
+  const supabase = getServiceSupabase() || getAnonSupabase();
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase.storage
+      .from(PROMOTION_STORAGE_BUCKET)
+      .download(PROMOTION_STORAGE_PATH);
+
+    if (error || !data) return null;
+    const raw = JSON.parse(await data.text());
+    return normalizeRulesArray(raw);
+  } catch {
+    return null;
+  }
+};
+
+const writeRulesToSupabaseStorage = async (rules: PromotionRule[]) => {
+  const supabase = getServiceSupabase();
+  if (!supabase) return false;
+
+  await ensureStorageBucket(supabase);
+  try {
+    const payload = Buffer.from(JSON.stringify(sortRules(rules), null, 2), "utf8");
+    const { error } = await supabase.storage
+      .from(PROMOTION_STORAGE_BUCKET)
+      .upload(PROMOTION_STORAGE_PATH, payload, {
+        upsert: true,
+        contentType: "application/json; charset=utf-8",
+      });
+    return !error;
+  } catch {
+    return false;
+  }
+};
+
 const readRules = async () => {
-  const rules = await readJsonFile<unknown[]>(PROMOTION_RULES_PATH, []);
-  return sortRules(rules.map(normalizeRule).filter((rule): rule is PromotionRule => Boolean(rule)));
+  const storageRules = await readRulesFromSupabaseStorage();
+  if (storageRules) return storageRules;
+
+  const fileRules = normalizeRulesArray(
+    await readJsonFile<unknown[]>(PROMOTION_RULES_PATH, []),
+  );
+
+  if (fileRules.length > 0) {
+    await writeRulesToSupabaseStorage(fileRules);
+  }
+
+  return fileRules;
 };
 
 const writeRules = async (rules: PromotionRule[]) => {
-  await writeJsonFile(PROMOTION_RULES_PATH, sortRules(rules));
+  const normalizedRules = sortRules(rules);
+  const wroteToStorage = await writeRulesToSupabaseStorage(normalizedRules);
+
+  try {
+    await writeJsonFile(PROMOTION_RULES_PATH, normalizedRules);
+  } catch {
+    // Local file sync is best-effort only.
+  }
+
+  if (!wroteToStorage && normalizedRules.length >= 0) {
+    await writeJsonFile(PROMOTION_RULES_PATH, normalizedRules);
+  }
 };
 
 const createRuleId = () => `promo_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
