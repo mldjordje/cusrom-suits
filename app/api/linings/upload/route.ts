@@ -91,7 +91,7 @@ export async function POST(req: NextRequest) {
         right_url: rightUrl,
         texture_url: textureUrl,
         price,
-      },
+      } as never,
       { onConflict: "id" }
     )
     .select("*")

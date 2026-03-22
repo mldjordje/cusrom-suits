@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server";
 import { listCatalogProducts } from "@/lib/catalog/store";
+import { applyPublicCache } from "@/lib/http/cache";
+
+export const revalidate = 600;
 
 export async function GET() {
   const result = await listCatalogProducts({
@@ -14,5 +17,9 @@ export async function GET() {
     .map((category) => ({ id: category.id, name: category.name }))
     .sort((left, right) => left.name.localeCompare(right.name, "sr"));
 
-  return NextResponse.json({ success: true, categories });
+  return applyPublicCache(NextResponse.json({ success: true, categories }), {
+    maxAge: 300,
+    sMaxAge: 3600,
+    staleWhileRevalidate: 86400,
+  });
 }

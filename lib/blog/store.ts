@@ -1,5 +1,6 @@
 import { getAnonSupabase, getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 export type BlogPost = {
   id: string;
@@ -19,6 +20,15 @@ export type BlogPost = {
 };
 
 const POSTS_FILE = "data/posts.json";
+const BLOG_POSTS_CACHE_TAG = "blog-posts";
+
+type ListPostsInput = {
+  query: string;
+  type: "blog" | "news" | "all";
+  page: number;
+  pageSize: number;
+  onlyPublished: boolean;
+};
 
 const slugify = (value: string) =>
   String(value || "")
@@ -52,25 +62,21 @@ const mapRowToPost = (row: any): BlogPost => ({
   rawPayload: row.raw_payload && typeof row.raw_payload === "object" ? row.raw_payload : {},
 });
 
-export async function listPosts(input?: {
-  query?: string;
-  type?: "blog" | "news" | "all";
-  page?: number;
-  pageSize?: number;
-  onlyPublished?: boolean;
-}) {
-  const query = String(input?.query || "").trim().toLowerCase();
-  const type = input?.type || "all";
-  const page = Math.max(1, Number(input?.page || 1));
-  const pageSize = Math.max(1, Math.min(100, Number(input?.pageSize || 12)));
-  const onlyPublished = input?.onlyPublished !== false;
+async function listPostsUncached({
+  query,
+  type,
+  page,
+  pageSize,
+  onlyPublished,
+}: ListPostsInput) {
+  const normalizedQuery = query.trim().toLowerCase();
 
   const supabase = getAnonSupabase() || getServiceSupabase();
   if (supabase) {
     let builder = supabase.from("content_posts").select("*");
     if (type !== "all") builder = builder.eq("post_type", type);
     if (onlyPublished) builder = builder.eq("is_published", true);
-    if (query) builder = builder.ilike("title", `%${query}%`);
+    if (normalizedQuery) builder = builder.ilike("title", `%${normalizedQuery}%`);
     builder = builder.order("published_at", { ascending: false, nullsFirst: false });
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
@@ -89,9 +95,9 @@ export async function listPosts(input?: {
   let filtered = [...local];
   if (type !== "all") filtered = filtered.filter((item) => item.postType === type);
   if (onlyPublished) filtered = filtered.filter((item) => item.isPublished);
-  if (query) {
+  if (normalizedQuery) {
     filtered = filtered.filter((item) =>
-      `${item.title} ${item.excerpt || ""}`.toLowerCase().includes(query),
+      `${item.title} ${item.excerpt || ""}`.toLowerCase().includes(normalizedQuery),
     );
   }
   filtered.sort((a, b) => new Date(b.publishedAt || b.createdAt).getTime() - new Date(a.publishedAt || a.createdAt).getTime());
@@ -104,7 +110,26 @@ export async function listPosts(input?: {
   };
 }
 
-export async function getPostBySlug(slug: string) {
+const listPostsCached = unstable_cache(
+  async (
+    query: string,
+    type: "blog" | "news" | "all",
+    page: number,
+    pageSize: number,
+    onlyPublished: boolean,
+  ) =>
+    listPostsUncached({
+      query,
+      type,
+      page,
+      pageSize,
+      onlyPublished,
+    }),
+  ["blog-post-list-v1"],
+  { revalidate: 300, tags: [BLOG_POSTS_CACHE_TAG] },
+);
+
+async function getPostBySlugUncached(slug: string) {
   const safe = String(slug || "").trim();
   if (!safe) return null;
   const supabase = getAnonSupabase() || getServiceSupabase();
@@ -118,6 +143,34 @@ export async function getPostBySlug(slug: string) {
   }
   const local = await readJsonFile<BlogPost[]>(POSTS_FILE, []);
   return local.find((item) => item.slug === safe) || null;
+}
+
+const getPostBySlugCached = unstable_cache(
+  async (slug: string) => getPostBySlugUncached(slug),
+  ["blog-post-by-slug-v1"],
+  { revalidate: 300, tags: [BLOG_POSTS_CACHE_TAG] },
+);
+
+export async function listPosts(input?: {
+  query?: string;
+  type?: "blog" | "news" | "all";
+  page?: number;
+  pageSize?: number;
+  onlyPublished?: boolean;
+}) {
+  const query = String(input?.query || "").trim();
+  const type = input?.type || "all";
+  const page = Math.max(1, Number(input?.page || 1));
+  const pageSize = Math.max(1, Math.min(100, Number(input?.pageSize || 12)));
+  const onlyPublished = input?.onlyPublished !== false;
+
+  return listPostsCached(query, type, page, pageSize, onlyPublished);
+}
+
+export async function getPostBySlug(slug: string) {
+  const safe = String(slug || "").trim();
+  if (!safe) return null;
+  return getPostBySlugCached(safe);
 }
 
 export async function upsertPost(input: Partial<BlogPost> & { title: string }) {
@@ -145,18 +198,24 @@ export async function upsertPost(input: Partial<BlogPost> & { title: string }) {
     if (input.id) {
       const { data, error } = await supabase
         .from("content_posts")
-        .update(base)
+        .update(base as never)
         .eq("id", input.id)
         .select("*")
         .single();
-      if (!error && data) return mapRowToPost(data);
+      if (!error && data) {
+        revalidateTag(BLOG_POSTS_CACHE_TAG);
+        return mapRowToPost(data);
+      }
     } else {
       const { data, error } = await supabase
         .from("content_posts")
-        .insert({ ...base, created_at: now })
+        .insert({ ...base, created_at: now } as never)
         .select("*")
         .single();
-      if (!error && data) return mapRowToPost(data);
+      if (!error && data) {
+        revalidateTag(BLOG_POSTS_CACHE_TAG);
+        return mapRowToPost(data);
+      }
     }
   }
 
@@ -180,6 +239,7 @@ export async function upsertPost(input: Partial<BlogPost> & { title: string }) {
         updatedAt: now,
       };
       await writeJsonFile(POSTS_FILE, local);
+      revalidateTag(BLOG_POSTS_CACHE_TAG);
       return local[idx];
     }
   }
@@ -201,6 +261,7 @@ export async function upsertPost(input: Partial<BlogPost> & { title: string }) {
   };
   local.unshift(created);
   await writeJsonFile(POSTS_FILE, local);
+  revalidateTag(BLOG_POSTS_CACHE_TAG);
   return created;
 }
 
@@ -208,11 +269,14 @@ export async function deletePost(id: string) {
   const supabase = getServiceSupabase();
   if (supabase) {
     const { error } = await supabase.from("content_posts").delete().eq("id", id);
-    if (!error) return true;
+    if (!error) {
+      revalidateTag(BLOG_POSTS_CACHE_TAG);
+      return true;
+    }
   }
   const local = await readJsonFile<BlogPost[]>(POSTS_FILE, []);
   const filtered = local.filter((item) => item.id !== id);
   await writeJsonFile(POSTS_FILE, filtered);
+  revalidateTag(BLOG_POSTS_CACHE_TAG);
   return true;
 }
-

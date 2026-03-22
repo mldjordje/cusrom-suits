@@ -3,7 +3,11 @@ import type { NextConfig } from "next";
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
-    qualities: [60, 64, 68, 70, 78],
+    formats: ["image/webp"],
+    minimumCacheTTL: 86400,
+    deviceSizes: [640, 750, 828, 1080, 1200, 1600, 1920],
+    imageSizes: [48, 64, 96, 112, 120, 180, 330, 420, 690, 900],
+    qualities: [60, 75],
     remotePatterns: [
       {
         protocol: "http",

@@ -428,7 +428,13 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
                           className="w-full text-left"
                         >
                           <div className="relative h-20 w-full overflow-hidden">
-                            <Image src={fabric.texture} alt={fabric.name} fill style={{ objectFit: "cover" }} />
+                            <Image
+                              src={fabric.texture}
+                              alt={fabric.name}
+                              fill
+                              sizes="96px"
+                              style={{ objectFit: "cover" }}
+                            />
                             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 to-transparent opacity-0 transition group-hover:opacity-100" />
                           </div>
                           <div className={`px-2.5 py-2.5 text-[11px] ${isActive ? "text-gray-900" : "text-gray-600"}`}>
@@ -603,7 +609,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
                       >
                         <div className="relative h-12 w-full">
                           {btn.image_url ? (
-                            <Image src={btn.image_url} alt={btn.name} fill className="object-contain" />
+                            <Image src={btn.image_url} alt={btn.name} fill sizes="72px" className="object-contain" />
                           ) : (
                             <div className="flex h-full items-center justify-center text-[10px] text-gray-400">N/A</div>
                           )}

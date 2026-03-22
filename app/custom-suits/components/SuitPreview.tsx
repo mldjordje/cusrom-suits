@@ -1884,7 +1884,7 @@ const SuitPreview = ({
   const showVignette = showLayer("vignette") && !lowPowerMode && effectsReady && !effectiveFastPreview;
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/button-positions", { cache: "no-store" })
+    fetch("/api/button-positions", { cache: "force-cache" })
       .then((res) => res.json())
       .then((json) => {
         if (cancelled) return;

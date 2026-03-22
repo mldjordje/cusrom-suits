@@ -91,7 +91,7 @@ export function useFabrics<T = any>(query?: FabricQuery, options?: UseFabricsOpt
     const existing = FABRICS_INFLIGHT.get(cacheKey);
     const inflight =
       existing ??
-      fetch(url, { cache: "no-store" })
+      fetch(url, { cache: "force-cache" })
         .then(async (response) => {
           const contentType = response.headers.get("content-type") || "";
           if (!response.ok) {

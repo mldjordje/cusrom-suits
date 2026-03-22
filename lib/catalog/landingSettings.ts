@@ -1,7 +1,9 @@
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 import { decodeHtmlEntities } from "@/lib/catalog/presentation";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 const LANDING_SETTINGS_PATH = "data/landing-settings.json";
+const LANDING_SETTINGS_CACHE_TAG = "landing-settings";
 
 export type LandingProductSectionKey =
   | "heroStripProductIds"
@@ -189,7 +191,7 @@ const normalizeLegacyIdList = (value: unknown, max = 24): number[] => {
 const decodeLandingText = (value: unknown, fallback: string) =>
   decodeHtmlEntities(String(value || fallback || ""));
 
-export async function getLandingSettings(): Promise<LandingSettings> {
+async function readLandingSettingsUncached(): Promise<LandingSettings> {
   const settings = await readJsonFile<Partial<LandingSettings>>(LANDING_SETTINGS_PATH, {});
   return {
     showSaleSection: settings.showSaleSection !== false,
@@ -236,6 +238,16 @@ export async function getLandingSettings(): Promise<LandingSettings> {
     saleProductIds: normalizeLegacyIdList(settings.saleProductIds),
     trendingProductIds: normalizeLegacyIdList(settings.trendingProductIds),
   };
+}
+
+const getLandingSettingsCached = unstable_cache(
+  async () => readLandingSettingsUncached(),
+  ["landing-settings-v1"],
+  { revalidate: 300, tags: [LANDING_SETTINGS_CACHE_TAG] },
+);
+
+export async function getLandingSettings(): Promise<LandingSettings> {
+  return getLandingSettingsCached();
 }
 
 export async function updateLandingSettings(patch: Partial<LandingSettings>): Promise<LandingSettings> {
@@ -374,5 +386,6 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
       patch.trendingProductIds == null ? current.trendingProductIds : normalizeLegacyIdList(patch.trendingProductIds),
   };
   await writeJsonFile(LANDING_SETTINGS_PATH, next);
+  revalidateTag(LANDING_SETTINGS_CACHE_TAG);
   return next;
 }

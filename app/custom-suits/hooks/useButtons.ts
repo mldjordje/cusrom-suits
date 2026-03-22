@@ -55,7 +55,7 @@ export function useButtons(options?: { enabled?: boolean }) {
     setLoading(true);
     const inflight =
       BUTTONS_INFLIGHT ??
-      fetch(buildBackendUrl("buttons"), { cache: "no-store" })
+      fetch(buildBackendUrl("buttons"), { cache: "force-cache" })
         .then((res) => res.json())
         .then((json) => {
           const list = Array.isArray(json?.data) ? json.data : [];

@@ -239,7 +239,7 @@ export const ensureAssetAvailable = async (url: string) => {
   }
 
   try {
-    const response = await fetch(url, { method: "HEAD", cache: "no-store" });
+    const response = await fetch(url, { method: "HEAD", cache: "force-cache" });
     const ok = response.ok;
     availabilityCache.set(url, ok);
     return ok;

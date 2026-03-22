@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
         contact,
         note: contact.napomena || null,
         status: "pending",
-      })
+      } as never)
       .select("id")
       .single();
 
@@ -132,7 +132,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, orderId: data?.id });
+    return NextResponse.json({ success: true, orderId: (data as { id?: string | number } | null)?.id });
   }
 
   if (!payload.config) {
@@ -166,7 +166,7 @@ export async function POST(req: NextRequest) {
       contact: contact ?? null,
       note: note ?? null,
       status: status ?? "draft",
-    })
+    } as never)
     .select("id")
     .single();
 
@@ -174,7 +174,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, orderId: data?.id });
+  return NextResponse.json({ success: true, orderId: (data as { id?: string | number } | null)?.id });
 }
 
 export async function GET(req: NextRequest) {
@@ -239,7 +239,7 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: true, orderId: id, storage: "file" });
   }
 
-  const { error } = await supabase.from("orders").update(updates).eq("id", id);
+  const { error } = await supabase.from("orders").update(updates as never).eq("id", id);
   if (error) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }

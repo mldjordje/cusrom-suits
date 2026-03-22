@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAnonSupabase } from "@/lib/supabase/server";
 import { readJsonFile } from "@/lib/storage/jsonStore";
+import { applyPublicCache } from "@/lib/http/cache";
 
 const FALLBACK_PATH = "data/fabrics.json";
+export const revalidate = 300;
 
 const applyFilters = (list: any[], tone: string | null, sort: string, asc: boolean) => {
   let result = Array.isArray(list) ? [...list] : [];
@@ -79,7 +81,14 @@ export async function GET(req: NextRequest) {
     const fileData = await readJsonFile<any[]>(FALLBACK_PATH, []);
     const filtered = applyFilters(fileData, tone, sort, asc);
     const normalized = filtered.map((fabric: any) => normalizeFabric(fabric));
-    return NextResponse.json({ success: true, data: normalized, source: "file" }, { status: 200 });
+    return applyPublicCache(
+      NextResponse.json({ success: true, data: normalized, source: "file" }, { status: 200 }),
+      {
+        maxAge: 300,
+        sMaxAge: 1800,
+        staleWhileRevalidate: 86400,
+      },
+    );
   }
 
   const query = supabase.from("fabrics").select("*");
@@ -94,5 +103,9 @@ export async function GET(req: NextRequest) {
 
   const normalized = Array.isArray(data) ? data.map((fabric: any) => normalizeFabric(fabric)) : [];
 
-  return NextResponse.json({ success: true, data: normalized });
+  return applyPublicCache(NextResponse.json({ success: true, data: normalized }), {
+    maxAge: 300,
+    sMaxAge: 1800,
+    staleWhileRevalidate: 86400,
+  });
 }

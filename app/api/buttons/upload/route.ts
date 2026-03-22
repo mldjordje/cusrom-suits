@@ -179,7 +179,7 @@ const getReferenceVisibleRatio = async (supabase: ReturnType<typeof getServiceSu
         .maybeSingle();
       data = response.data ?? null;
     }
-    const imageUrl = data?.image_url;
+    const imageUrl = (data as { image_url?: string | null } | null)?.image_url;
     if (!imageUrl) return null;
     const buffer = await downloadImageBuffer(imageUrl);
     const ratioData = await getVisibleRatioFromBuffer(buffer);
@@ -272,7 +272,7 @@ export async function POST(req: NextRequest) {
         image_url: imageUrl,
         color_hex: colorHex,
         diameter,
-      },
+      } as never,
       { onConflict: "id" }
     )
     .select("*")

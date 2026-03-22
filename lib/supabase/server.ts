@@ -4,8 +4,29 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-export const getServiceSupabase = () =>
-  supabaseUrl && supabaseServiceKey ? createClient(supabaseUrl, supabaseServiceKey) : null;
+const getSupabaseClientCache = () => {
+  const globalWithSupabase = globalThis as typeof globalThis & {
+    __serviceSupabaseClient?: ReturnType<typeof createClient> | null;
+    __anonSupabaseClient?: ReturnType<typeof createClient> | null;
+  };
 
-export const getAnonSupabase = () =>
-  supabaseUrl && supabaseAnonKey ? createClient(supabaseUrl, supabaseAnonKey) : null;
+  return globalWithSupabase;
+};
+
+export const getServiceSupabase = () => {
+  if (!supabaseUrl || !supabaseServiceKey) return null;
+  const cache = getSupabaseClientCache();
+  if (!cache.__serviceSupabaseClient) {
+    cache.__serviceSupabaseClient = createClient(supabaseUrl, supabaseServiceKey);
+  }
+  return cache.__serviceSupabaseClient;
+};
+
+export const getAnonSupabase = () => {
+  if (!supabaseUrl || !supabaseAnonKey) return null;
+  const cache = getSupabaseClientCache();
+  if (!cache.__anonSupabaseClient) {
+    cache.__anonSupabaseClient = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return cache.__anonSupabaseClient;
+};

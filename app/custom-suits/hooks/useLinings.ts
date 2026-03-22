@@ -77,7 +77,7 @@ export function useLinings(styleId?: string, options?: UseLiningsOptions) {
     setLoading(true);
     const inflight =
       LININGS_INFLIGHT ??
-      fetch(buildBackendUrl("linings"), { cache: "no-store" })
+      fetch(buildBackendUrl("linings"), { cache: "force-cache" })
         .then((res) => res.json())
         .then((json) => {
           const list = Array.isArray(json?.data) ? json.data : [];

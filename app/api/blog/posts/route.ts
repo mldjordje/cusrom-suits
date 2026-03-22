@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listPosts } from "@/lib/blog/store";
+import { applyPublicCache } from "@/lib/http/cache";
+
+export const revalidate = 300;
 
 const toString = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] || "" : value || "";
@@ -20,6 +23,9 @@ export async function GET(req: NextRequest) {
     onlyPublished: true,
   });
 
-  return NextResponse.json({ success: true, data: result.items, pagination: result });
+  return applyPublicCache(NextResponse.json({ success: true, data: result.items, pagination: result }), {
+    maxAge: 60,
+    sMaxAge: 300,
+    staleWhileRevalidate: 600,
+  });
 }
-

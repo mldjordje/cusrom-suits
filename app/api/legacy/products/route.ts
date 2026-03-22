@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { readJsonFile } from "@/lib/storage/jsonStore";
 import type { LegacyCatalogProduct } from "@/lib/legacy/types";
+import { applyPublicCache } from "@/lib/http/cache";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
 const MAX_PAGE_SIZE = 200;
+export const revalidate = 300;
 
 const normalize = (value: string | null) => (value || "").trim().toLowerCase();
 
@@ -63,15 +65,22 @@ export async function GET(req: NextRequest) {
   const offset = (page - 1) * pageSize;
   const data = filtered.slice(offset, offset + pageSize);
 
-  return NextResponse.json({
-    success: true,
-    data,
-    pagination: {
-      page,
-      pageSize,
-      total,
-      totalPages: Math.max(1, Math.ceil(total / pageSize)),
+  return applyPublicCache(
+    NextResponse.json({
+      success: true,
+      data,
+      pagination: {
+        page,
+        pageSize,
+        total,
+        totalPages: Math.max(1, Math.ceil(total / pageSize)),
+      },
+      source: LEGACY_PRODUCTS_PATH,
+    }),
+    {
+      maxAge: 120,
+      sMaxAge: 600,
+      staleWhileRevalidate: 3600,
     },
-    source: LEGACY_PRODUCTS_PATH,
-  });
+  );
 }

@@ -222,7 +222,11 @@ export async function POST(req: NextRequest) {
   if (detailImageUrl) payload.detail_image = detailImageUrl;
   if (detailText) payload.detail_text = detailText;
 
-  const { data, error } = await supabase.from("fabrics").upsert(payload, { onConflict: "id" }).select("*").single();
+  const { data, error } = await supabase
+    .from("fabrics")
+    .upsert(payload as never, { onConflict: "id" })
+    .select("*")
+    .single();
 
   if (error) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });

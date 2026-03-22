@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getPostBySlug } from "@/lib/blog/store";
+import { applyPublicCache } from "@/lib/http/cache";
+
+export const revalidate = 300;
 
 export async function GET(
   _req: NextRequest,
@@ -10,6 +13,9 @@ export async function GET(
   if (!post || !post.isPublished) {
     return NextResponse.json({ success: false, message: "Post not found" }, { status: 404 });
   }
-  return NextResponse.json({ success: true, data: post });
+  return applyPublicCache(NextResponse.json({ success: true, data: post }), {
+    maxAge: 300,
+    sMaxAge: 900,
+    staleWhileRevalidate: 86400,
+  });
 }
-

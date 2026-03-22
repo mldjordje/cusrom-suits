@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAnonSupabase } from "@/lib/supabase/server";
+import { applyPublicCache } from "@/lib/http/cache";
+
+export const revalidate = 300;
 
 export async function GET(req: NextRequest) {
   const supabase = getAnonSupabase();
@@ -22,5 +25,9 @@ export async function GET(req: NextRequest) {
       }))
     : [];
 
-  return NextResponse.json({ success: true, data: normalized });
+  return applyPublicCache(NextResponse.json({ success: true, data: normalized }), {
+    maxAge: 300,
+    sMaxAge: 1800,
+    staleWhileRevalidate: 86400,
+  });
 }

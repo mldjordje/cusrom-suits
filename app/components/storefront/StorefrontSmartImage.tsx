@@ -25,6 +25,8 @@ export default function StorefrontSmartImage({
   }, [fallbackSrc, sources]);
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const requestedQuality = typeof props.quality === "number" ? props.quality : 75;
+  const normalizedQuality = requestedQuality <= 64 ? 60 : 75;
 
   useEffect(() => {
     setActiveIndex(0);
@@ -37,6 +39,7 @@ export default function StorefrontSmartImage({
       {...props}
       src={activeSrc}
       alt={alt}
+      quality={normalizedQuality}
       onError={(event) => {
         onError?.(event);
         setActiveIndex((current) => (current + 1 < candidates.length ? current + 1 : current));

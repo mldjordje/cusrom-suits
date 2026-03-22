@@ -258,7 +258,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
 
   const { error } = await supabase
     .from("catalog_products")
-    .update(update)
+    .update(update as never)
     .eq("legacy_id", patch.legacyId);
 
   if (error) {
@@ -383,7 +383,7 @@ const createInSupabase = async (payload: ProductCreatePayload) => {
       },
     },
     updated_at: now,
-  });
+  } as never);
   if (error) return { success: false, message: error.message };
 
   const mediaRows = images.map((url, index) => ({
@@ -405,7 +405,7 @@ const createInSupabase = async (payload: ProductCreatePayload) => {
   if (mediaRows.length > 0) {
     const { error: mediaError } = await supabase
       .from("catalog_product_media")
-      .upsert(mediaRows, { onConflict: "legacy_product_id,url" });
+      .upsert(mediaRows as never, { onConflict: "legacy_product_id,url" });
     if (mediaError) return { success: false, message: mediaError.message };
   }
 
