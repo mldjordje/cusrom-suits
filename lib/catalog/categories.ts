@@ -260,7 +260,7 @@ async function propagateCategoryUpdateInSupabase(categoryId: number, patch: Part
       .update({
         raw_payload: update.raw_payload,
         updated_at: new Date().toISOString(),
-      })
+      } as never)
       .eq("legacy_id", update.legacy_id);
     if (error) throw new Error(error.message);
   }

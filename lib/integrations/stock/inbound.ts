@@ -404,7 +404,9 @@ async function applyProductRows(rows: (string | number)[][], state: InboundState
       };
     });
 
-    const { error } = await supabase.from("catalog_products").upsert(upsertRows, { onConflict: "legacy_id" });
+    const { error } = await supabase
+      .from("catalog_products")
+      .upsert(upsertRows as never, { onConflict: "legacy_id" });
     if (error) {
       parsed.forEach((row, idx) => {
         failures.push({
@@ -564,7 +566,7 @@ async function applyDeletedRows(rows: (string | number)[][]) {
   if (supabase) {
     const { error } = await supabase
       .from("catalog_products")
-      .update({ is_active: false, updated_at: new Date().toISOString() })
+      .update({ is_active: false, updated_at: new Date().toISOString() } as never)
       .in("legacy_id", uniqueIds);
 
     if (error) {
@@ -757,7 +759,7 @@ async function applyProductCategoryRows(rows: (string | number)[][], state: Inbo
       rawPayload.categories = categories;
       const { error: updateError } = await supabase
         .from("catalog_products")
-        .update({ raw_payload: rawPayload, updated_at: new Date().toISOString() })
+        .update({ raw_payload: rawPayload, updated_at: new Date().toISOString() } as never)
         .eq("legacy_id", legacyId);
 
       if (updateError) {
@@ -904,7 +906,7 @@ async function applyProductWarehouseRows(rows: (string | number)[][]) {
 
       const { error } = await supabase
         .from("catalog_products")
-        .update(patch)
+        .update(patch as never)
         .eq("legacy_id", row.legacyId);
 
       if (error) {
@@ -1028,7 +1030,7 @@ async function applyProductDetailRows(rows: (string | number)[][]) {
 
       const { error } = await supabase
         .from("catalog_products")
-        .update(patch)
+        .update(patch as never)
         .eq("legacy_id", row.legacyId);
 
       if (error) {

@@ -133,7 +133,7 @@ export async function startSyncRun(input: StartRunInput): Promise<SyncRun> {
       counters: run.counters,
       summary: run.summary,
       meta: run.meta,
-    });
+    } as never);
     if (!error) return run;
   }
 
@@ -152,14 +152,21 @@ export async function completeSyncRun(runId: string, input: CompleteRunInput) {
       .select("started_at,counters,meta")
       .eq("id", runId)
       .maybeSingle();
+    const currentRun = current as
+      | {
+          started_at?: string | null;
+          counters?: Partial<SyncRun["counters"]> | null;
+          meta?: Record<string, unknown> | null;
+        }
+      | null;
 
-    const startedAt = current?.started_at ? new Date(current.started_at).getTime() : Date.now();
+    const startedAt = currentRun?.started_at ? new Date(currentRun.started_at).getTime() : Date.now();
     const durationMs = Math.max(0, Date.now() - startedAt);
     const nextCounters = normalizeCounters({
-      ...(current?.counters || {}),
+      ...(currentRun?.counters || {}),
       ...(input.counters || {}),
     });
-    const nextMeta = { ...(current?.meta || {}), ...(input.meta || {}) };
+    const nextMeta = { ...(currentRun?.meta || {}), ...(input.meta || {}) };
     const { error } = await supabase
       .from("integration_sync_runs")
       .update({
@@ -169,7 +176,7 @@ export async function completeSyncRun(runId: string, input: CompleteRunInput) {
         counters: nextCounters,
         summary: input.summary || null,
         meta: nextMeta,
-      })
+      } as never)
       .eq("id", runId);
     if (!error) return;
   }
@@ -224,7 +231,7 @@ export async function addSyncRunItem(runId: string, input: AddRunItemInput): Pro
       payload: item.payload,
       response: item.response,
       retry_of_item_id: item.retryOfItemId,
-    });
+    } as never);
     if (!error) return item;
   }
 
@@ -278,25 +285,27 @@ export async function getSyncRunById(runId: string): Promise<{ run: SyncRun | nu
         .limit(500),
     ]);
     if (run) {
+      const runRow = run as Record<string, any>;
+      const itemRows = (items || []) as Array<Record<string, any>>;
       return {
         run: {
-          id: run.id,
-          domain: run.domain,
-          status: run.status,
-          environment: run.environment,
-          mode: run.mode,
-          trigger: run.trigger,
-          startedAt: run.started_at,
-          finishedAt: run.finished_at,
-          durationMs: run.duration_ms,
-          counters: normalizeCounters(run.counters),
-          summary: run.summary,
-          meta: run.meta || {},
-          createdAt: run.created_at || run.started_at,
-          updatedAt: run.updated_at || run.started_at,
+          id: runRow.id,
+          domain: runRow.domain,
+          status: runRow.status,
+          environment: runRow.environment,
+          mode: runRow.mode,
+          trigger: runRow.trigger,
+          startedAt: runRow.started_at,
+          finishedAt: runRow.finished_at,
+          durationMs: runRow.duration_ms,
+          counters: normalizeCounters(runRow.counters),
+          summary: runRow.summary,
+          meta: runRow.meta || {},
+          createdAt: runRow.created_at || runRow.started_at,
+          updatedAt: runRow.updated_at || runRow.started_at,
         },
         items:
-          items?.map((item: any) => ({
+          itemRows.map((item: any) => ({
             id: item.id,
             runId: item.run_id,
             domain: item.domain,
@@ -347,7 +356,7 @@ export async function setDeltaState(
         payload_hash: payloadHash,
         updated_at: updatedAt,
         source_run_id: sourceRunId,
-      },
+      } as never,
       { onConflict: "scope,entity_type,entity_id" },
     );
     if (!error) return;
@@ -373,7 +382,8 @@ export async function getDeltaHash(scope: string, entityType: string, entityId: 
       .eq("entity_type", entityType)
       .eq("entity_id", entityId)
       .maybeSingle();
-    if (data?.payload_hash) return String(data.payload_hash);
+    const deltaRow = data as { payload_hash?: string | null } | null;
+    if (deltaRow?.payload_hash) return String(deltaRow.payload_hash);
   }
 
   const states = await readJsonFile<DeltaState[]>(DELTA_STATE_FILE, []);
@@ -403,7 +413,7 @@ export async function saveRawStockFile(meta: Omit<RawFileMeta, "id" | "createdAt
       row_count: record.rowCount,
       checksum: record.checksum,
       created_at: record.createdAt,
-    });
+    } as never);
     if (!error) return record;
   }
   const list = await readJsonFile<RawFileMeta[]>(RAW_FILE_META, []);
@@ -429,7 +439,7 @@ export async function saveRawStockRows(rawFileId: string, rows: (string | number
         raw_file_id: row.rawFileId,
         row_index: row.rowIndex,
         data: row.data,
-      })),
+      })) as never,
     );
     if (!error) return;
   }
@@ -506,7 +516,7 @@ export async function upsertAnanasProductState(input: {
         last_synced_at: row.lastSyncedAt,
         sync_error: row.syncError,
         updated_at: row.updatedAt,
-      },
+      } as never,
       { onConflict: "legacy_product_id" },
     );
     if (!error) return;
@@ -561,7 +571,7 @@ export async function upsertAnanasDiscountState(input: {
         date_to: row.dateTo,
         active: row.active,
         updated_at: row.updatedAt,
-      },
+      } as never,
       { onConflict: "merchant_inventory_id,date_from,date_to,discount_type" },
     );
     if (!error) return;
@@ -588,7 +598,7 @@ export async function deactivateAnanasDiscountStateByDiscountId(discountId: stri
   if (supabase) {
     const { error } = await supabase
       .from("integration_ananas_discount_state")
-      .update({ active: false, updated_at: nowIso() })
+      .update({ active: false, updated_at: nowIso() } as never)
       .eq("discount_id", normalized);
     if (!error) return;
   }
