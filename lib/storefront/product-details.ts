@@ -6,6 +6,7 @@ import {
   type SizeGuideTable,
 } from "@/lib/catalog/sizeGuides";
 import type { CatalogProductView } from "@/lib/catalog/store";
+import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 export type ProductDetailField = {
@@ -46,7 +47,7 @@ export type ProductWashCareItem = {
 const stripHtml = (value: string | null) =>
   decodeHtmlEntities((value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
 
-const normalizeImageCandidate = (value: unknown) => String(value || "").trim();
+const normalizeImageCandidate = (value: unknown) => sanitizeStorefrontImageSrc(value);
 
 const extractSizes = (product: CatalogProductView) =>
   Array.isArray(product.attributes?.size)
@@ -418,7 +419,6 @@ export const getProductDeclaration = (
   sizeOptions: ProductSizeOption[],
 ): ProductDetailField[] => {
   const name = getLocalizedCatalogProductName(product, lang);
-  const sizes = sizeOptions.map((option) => option.label).join(", ") || selectedSize || "-";
 
   if (lang === "en") {
     return [
@@ -426,7 +426,6 @@ export const getProductDeclaration = (
       { label: "SKU", value: product.sku || "-" },
       { label: "Brand", value: product.brand || "Santos & Santorini" },
       { label: "Material", value: material },
-      { label: "Available sizes", value: sizes },
       {
         label: "Declaration",
         value: "Santos & Santorini, Obrenoviceva 9, Nis, Serbia",
@@ -439,7 +438,6 @@ export const getProductDeclaration = (
     { label: "SKU", value: product.sku || "-" },
     { label: "Brend", value: product.brand || "Santos & Santorini" },
     { label: "Materijal", value: material },
-    { label: "Dostupne velicine", value: sizes },
     {
       label: "Deklaracija",
       value: "Santos & Santorini, Obrenoviceva 9, Nis, Srbija",

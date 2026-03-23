@@ -77,7 +77,6 @@ export default function ProductDetailTabs({
   specification,
   attributes,
   declaration,
-  sizeGuide,
   washCare,
 }: Props) {
   const [tab, setTab] = useState<TabKey>("description");
@@ -104,7 +103,7 @@ export default function ProductDetailTabs({
             className={`nav-link nav-link_underscore ${tab === "declaration" ? "active" : ""}`}
             onClick={() => setTab("declaration")}
           >
-            {isEn ? "Declaration & sizing" : "Deklaracija i velicine"}
+            {isEn ? "Declaration" : "Deklaracija"}
           </button>
         </li>
         <li className="nav-item" role="presentation">
@@ -149,46 +148,18 @@ export default function ProductDetailTabs({
             >
               <div className="product-single__description">
                 <h3 className="block-title mb-3">{isEn ? "Declaration" : "Deklaracija"}</h3>
-                <div className="row g-4">
-                  <div className="col-lg-6">
-                    <ul className="list text-list mb-0">
-                      {declaration.map((item) => (
-                        <li key={item.label}>
-                          <strong>{item.label}:</strong> {item.value}
-                        </li>
-                      ))}
-                      {additionalItems.map(([key, value]) => (
-                        <li key={key}>
-                          <strong>{key}:</strong> {String(value)}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                  <div className="col-lg-6">
-                    {sizeGuide ? (
-                      <>
-                        <h4 className="h6 text-uppercase mb-3">{sizeGuide.title}</h4>
-                        <p>{sizeGuide.intro}</p>
-                        <ul className="list text-list mb-0">
-                          {sizeGuide.bullets.map((bullet) => (
-                            <li key={bullet}>{bullet}</li>
-                          ))}
-                        </ul>
-                      </>
-                    ) : (
-                      <div className="ss-meta-note">
-                        <h4 className="h6 text-uppercase mb-3">
-                          {isEn ? "Size note" : "Napomena o velicini"}
-                        </h4>
-                        <p className="mb-0">
-                          {isEn
-                            ? "Available sizes are shown above the add-to-cart area. Detailed measuring guidance is reserved for tailored garments."
-                            : "Dostupne velicine prikazane su iznad dugmeta za kupovinu. Detaljan vodic za merenje prikazujemo samo kod krojenih modela."}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                </div>
+                <ul className="list text-list mb-0">
+                  {declaration.map((item) => (
+                    <li key={item.label}>
+                      <strong>{item.label}:</strong> {item.value}
+                    </li>
+                  ))}
+                  {additionalItems.map(([key, value]) => (
+                    <li key={key}>
+                      <strong>{key}:</strong> {String(value)}
+                    </li>
+                  ))}
+                </ul>
               </div>
             </m.div>
           ) : null}

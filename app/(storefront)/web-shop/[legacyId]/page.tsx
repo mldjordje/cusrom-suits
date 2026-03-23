@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import JsonLd from "@/app/components/seo/JsonLd";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
@@ -32,6 +33,13 @@ import {
   getSelectedProductSize,
   productSupportsSizeGuide,
 } from "@/lib/storefront/product-details";
+import {
+  COMPANY_INFO,
+  absoluteUrl,
+  buildBreadcrumbJsonLd,
+  buildSeoMetadata,
+  truncateText,
+} from "@/lib/seo";
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -45,30 +53,53 @@ const stripHtml = (value: string | null) =>
 
 export async function generateMetadata({
   params,
+  searchParams,
 }: {
   params: Promise<{ legacyId: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const { legacyId } = await params;
+  const lang = await resolveStorefrontLanguage(await searchParams);
   const id = Number.parseInt(legacyId, 10);
   if (!Number.isFinite(id)) {
-    return { title: "Product | Santos & Santorini" };
+    return buildSeoMetadata({
+      title: "Product",
+      description: "Detalji proizvoda u Santos & Santorini web shopu.",
+      path: "/web-shop",
+      lang,
+    });
   }
   const product = await getCatalogProductByLegacyId(id);
   if (!product) {
-    return { title: "Product not found | Santos & Santorini" };
+    return buildSeoMetadata({
+      title: "Product not found",
+      description: "Trazeni proizvod nije pronadjen u Santos & Santorini web shopu.",
+      path: "/web-shop",
+      lang,
+      noIndex: true,
+    });
   }
   const variants = await getCatalogProductVariantsBySku(product.sku, {
     applyPromotions: true,
     activeOnly: true,
     exportOnly: true,
   });
-  const displayProduct = getPreferredCatalogProductForDisplay(product, variants, "sr");
-  return {
-    title: `${getLocalizedCatalogProductName(displayProduct, "sr")} | Santos & Santorini`,
-    description:
-      stripHtml(getLocalizedCatalogDescription(displayProduct, "sr")) ||
-      `Product details for ${product.sku}`,
-  };
+  const displayProduct = getPreferredCatalogProductForDisplay(product, variants, lang);
+  const displayName = getLocalizedCatalogProductName(displayProduct, lang);
+  const description =
+    stripHtml(getLocalizedCatalogDescription(displayProduct, lang)) ||
+    (lang === "en"
+      ? `Product details, material information and available sizes for ${displayName}.`
+      : `Detalji proizvoda, sastav i dostupne velicine za model ${displayName}.`);
+
+  return buildSeoMetadata({
+    title: displayName,
+    description,
+    path: `/web-shop/${product.legacyId}`,
+    lang,
+    image: displayProduct.coverImage || product.coverImage || "/img/odela.jpg",
+    keywords: [product.sku, displayName, product.categories[0]?.name || "web shop proizvod"],
+  });
 }
 
 export default async function WebShopProductPage({
@@ -151,9 +182,46 @@ export default async function WebShopProductPage({
     maxQuantity: stockValue > 0 ? stockValue : null,
     categoryLabel: displayProduct.categories[0]?.name || product.categories[0]?.name || null,
   };
+  const canonicalPath = isEn ? `/web-shop/${product.legacyId}?lang=en` : `/web-shop/${product.legacyId}`;
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: isEn ? "Home" : "Pocetna", path: "/" },
+    { name: "Web Shop", path: "/web-shop" },
+    { name: displayName, path: canonicalPath },
+  ]);
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: displayName,
+    sku: product.sku,
+    image: gallery.map((image) => absoluteUrl(image)),
+    description: truncateText(shortDescription || displayName, 320),
+    brand: {
+      "@type": "Brand",
+      name: product.brand || "Santos & Santorini",
+    },
+    category: categoryLabel,
+    material,
+    size: selectedSize || undefined,
+    offers: {
+      "@type": "Offer",
+      url: absoluteUrl(canonicalPath),
+      priceCurrency: "RSD",
+      price: Number(product.priceFinalGross || 0),
+      availability:
+        stockValue > 0
+          ? "https://schema.org/InStock"
+          : "https://schema.org/PreOrder",
+      seller: {
+        "@type": "Organization",
+        name: COMPANY_INFO.name,
+      },
+    },
+  };
 
   return (
     <>
+      <JsonLd data={breadcrumbJsonLd} />
+      <JsonLd data={productJsonLd} />
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-commerce-page ss-product-page">
         <section className="container ss-commerce-shell">
@@ -260,8 +328,8 @@ export default async function WebShopProductPage({
                 {sizeOptions.length > 0 ? (
                   <div className="product-single__swatches mt-3">
                     <div className="product-swatch text-swatches">
-                      <label>{isEn ? "Available sizes" : "Ponudjene velicine"}</label>
-                      <div className="swatch-list d-flex flex-wrap gap-2">
+                      <label>{isEn ? "Choose size" : "Odaberite velicinu"}</label>
+                      <div className="swatch-list d-flex flex-wrap gap-2 ss-product-size-picker">
                         {sizeOptions.map((option) => {
                           const active = option.legacyId === product.legacyId;
                           return (
@@ -280,8 +348,8 @@ export default async function WebShopProductPage({
                         {selectedSize
                           ? `${isEn ? "Selected size" : "Odabrana velicina"}: ${selectedSize}`
                           : isEn
-                            ? "Choose your preferred available size."
-                            : "Odaberite zeljenu dostupnu velicinu."}
+                            ? "Pick the size you want before adding the item to cart."
+                            : "Izaberite zeljenu velicinu pre dodavanja artikla u korpu."}
                       </p>
                     </div>
                   </div>

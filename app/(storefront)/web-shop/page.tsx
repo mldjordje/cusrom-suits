@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import JsonLd from "@/app/components/seo/JsonLd";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import WebShopFilters from "@/app/components/storefront/WebShopFilters";
@@ -11,6 +12,7 @@ import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/stor
 import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getCatalogProductImageSources, getLocalizedCatalogProductName } from "@/lib/storefront/product-details";
+import { absoluteUrl, buildBreadcrumbJsonLd, buildSeoMetadata } from "@/lib/seo";
 
 type SearchParams = Record<string, string | string[] | undefined>;
 type ActiveFilterChip = { key: string; label: string; href: string };
@@ -25,10 +27,25 @@ const formatRsd = (value: number) =>
 const toStringParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] || "" : value || "";
 
-export const metadata = {
-  title: "Web Shop | Santos & Santorini",
-  description: "Legacy catalog migrated to the new Santos and Santorini web shop.",
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
+}) {
+  const lang = await resolveStorefrontLanguage(await searchParams);
+  const isEn = lang === "en";
+
+  return buildSeoMetadata({
+    title: "Web Shop",
+    description: isEn
+      ? "Browse ready-to-wear menswear, selected offers and available sizes in the Santos & Santorini web shop."
+      : "Pregledajte ready-to-wear musku kolekciju, aktuelne akcije i dostupne velicine u Santos & Santorini web shopu.",
+    path: "/web-shop",
+    lang,
+    image: "/img/hero2.jpg",
+    keywords: ["web shop odela", "muski sakoi", "muske kosulje", "ready to wear"],
+  });
+}
 
 function sortItems(items: CatalogProductView[], sort: string): CatalogProductView[] {
   const next = [...items];
@@ -89,6 +106,9 @@ export default async function WebShopPage({
   const masonryA = items.slice(0, 4);
   const masonryB = items.slice(4, 8);
   const gridItems = items.slice(8);
+  const heroLead = landingSettings.shopHeroLead.trim();
+  const conciseHeroLead =
+    heroLead.length > 112 ? `${heroLead.slice(0, 109).trimEnd()}...` : heroLead;
   const sortLabelMap: Record<string, string> = {
     featured: isEn ? "Featured" : "Izdvojeno",
     price_asc: isEn ? "Price: Low to High" : "Cena: od nize ka visoj",
@@ -260,8 +280,35 @@ export default async function WebShopPage({
     );
   };
 
+  const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+    { name: isEn ? "Home" : "Pocetna", path: "/" },
+    { name: "Web Shop", path: "/web-shop" },
+  ]);
+  const collectionJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name: isEn ? "Santos & Santorini Web Shop" : "Santos & Santorini Web Shop",
+    url: absoluteUrl(isEn ? "/web-shop?lang=en" : "/web-shop"),
+    description: landingSettings.shopHeroLead,
+    mainEntity: {
+      "@type": "ItemList",
+      itemListElement: items.slice(0, 12).map((item, index) => ({
+        "@type": "ListItem",
+        position: index + 1,
+        url: absoluteUrl(variantHrefFromId(item.legacyId, isEn)),
+        name: getLocalizedCatalogProductName(item, lang),
+      })),
+    },
+  };
+
+  function variantHrefFromId(legacyId: number, english: boolean) {
+    return english ? `/web-shop/${legacyId}?lang=en` : `/web-shop/${legacyId}`;
+  }
+
   return (
     <>
+      <JsonLd data={breadcrumbJsonLd} />
+      <JsonLd data={collectionJsonLd} />
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-shop-page">
         <Reveal as="section" className="shop-banner position-relative">
@@ -277,9 +324,11 @@ export default async function WebShopPage({
           </div>
           <div className="container position-relative py-4 py-lg-5">
             <div className="ss-shop-banner-simple">
-              <p className="ss-shop-banner-simple__eyebrow">{landingSettings.shopHeroEyebrow}</p>
+              {landingSettings.shopHeroEyebrow ? (
+                <p className="ss-shop-banner-simple__eyebrow">{landingSettings.shopHeroEyebrow}</p>
+              ) : null}
               <h1>{landingSettings.shopHeroTitle}</h1>
-              <p>{landingSettings.shopHeroLead}</p>
+              {conciseHeroLead ? <p>{conciseHeroLead}</p> : null}
             </div>
           </div>
         </Reveal>

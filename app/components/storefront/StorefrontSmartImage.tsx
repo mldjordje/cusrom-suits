@@ -2,6 +2,7 @@
 
 import Image, { type ImageProps } from "next/image";
 import { useEffect, useMemo, useState } from "react";
+import { isRemoteStorefrontImageSrc, sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 
 type StorefrontSmartImageProps = Omit<ImageProps, "src" | "alt"> & {
   alt: string;
@@ -18,7 +19,7 @@ export default function StorefrontSmartImage({
 }: StorefrontSmartImageProps) {
   const candidates = useMemo(() => {
     const normalized = [...sources, fallbackSrc]
-      .map((value) => String(value || "").trim())
+      .map((value) => sanitizeStorefrontImageSrc(value))
       .filter((value) => value.length > 0);
 
     return Array.from(new Set(normalized));
@@ -33,6 +34,8 @@ export default function StorefrontSmartImage({
   }, [candidates]);
 
   const activeSrc = candidates[Math.min(activeIndex, Math.max(candidates.length - 1, 0))] || fallbackSrc;
+  const shouldBypassOptimization =
+    props.unoptimized == null && isRemoteStorefrontImageSrc(activeSrc);
 
   return (
     <Image
@@ -40,6 +43,7 @@ export default function StorefrontSmartImage({
       src={activeSrc}
       alt={alt}
       quality={normalizedQuality}
+      unoptimized={shouldBypassOptimization ? true : props.unoptimized}
       onError={(event) => {
         onError?.(event);
         setActiveIndex((current) => (current + 1 < candidates.length ? current + 1 : current));

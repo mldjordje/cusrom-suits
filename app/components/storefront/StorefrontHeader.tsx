@@ -48,11 +48,6 @@ export default function StorefrontHeader({
     { href: "/kontakt", label: isEn ? "Contact" : "Kontakt" },
   ];
 
-  const quickLinks = [
-    { href: "/web-shop", label: isEn ? "Open shop" : "Otvori shop" },
-    { href: "/kontakt", label: isEn ? "Ask stylist" : "Pitaj stilistu" },
-  ];
-
   const isItemActive = (href: string) => {
     if (href === "/") return normalizedPath === "/" || normalizedPath === "";
     return normalizedPath === href || normalizedPath.startsWith(`${href}/`);
@@ -316,48 +311,49 @@ export default function StorefrontHeader({
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.985 }}
                 transition={{ duration: reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
               >
-                <div className="ss-mobile-nav-panel__glow ss-mobile-nav-panel__glow--one" />
-                <div className="ss-mobile-nav-panel__glow ss-mobile-nav-panel__glow--two" />
                 <div className="ss-mobile-nav-panel__inner">
-                  <div className="ss-mobile-nav-panel__top">
-                    <StorefrontLanguageSwitcher lang={lang} compact />
-                    <div className="ss-mobile-nav-panel__actions">
-                      <Link href={withLang("/kontakt")} className="ss-mobile-nav-pill" onClick={closeMobileMenu}>
-                        {isEn ? "Contact" : "Kontakt"}
-                      </Link>
-                      <button
-                        type="button"
-                        className="ss-mobile-nav-close"
-                        aria-label={isEn ? "Close menu" : "Zatvori meni"}
-                        onClick={closeMobileMenu}
-                      >
-                        <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                          <path d="M4 4L14 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                          <path d="M14 4L4 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-                        </svg>
-                      </button>
-                    </div>
+                  <div className="ss-mobile-nav-brand">
+                    <Link href={withLang("/")} className="ss-mobile-nav-brand__logo" onClick={closeMobileMenu}>
+                      <Image
+                        src="/img/logo-header.png"
+                        alt="Santos and Santorini"
+                        width={280}
+                        height={79}
+                        className="logo__image d-block ss-site-logo ss-site-logo--mobile"
+                        priority
+                      />
+                    </Link>
+                    <button
+                      type="button"
+                      className="ss-mobile-nav-close"
+                      aria-label={isEn ? "Close menu" : "Zatvori meni"}
+                      onClick={closeMobileMenu}
+                    >
+                      <svg width="18" height="18" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <path d="M4 4L14 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        <path d="M14 4L4 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                      </svg>
+                    </button>
                   </div>
 
-                  <div className="ss-mobile-nav-panel__quick">
-                    {quickLinks.map((item, index) => (
-                      <m.div
-                        key={item.href}
-                        initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0 }}
-                        transition={{
-                          duration: reduceMotion ? 0 : 0.22,
-                          delay: reduceMotion ? 0 : 0.03 * index,
-                          ease: [0.22, 1, 0.36, 1],
-                        }}
-                      >
-                        <Link href={withLang(item.href)} className="ss-mobile-nav-quicklink" onClick={closeMobileMenu}>
-                          {item.label}
-                        </Link>
-                      </m.div>
-                    ))}
-                  </div>
+                  <m.div
+                    className="ss-mobile-nav-panel__quick"
+                    initial={reduceMotion ? false : { opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{
+                      duration: reduceMotion ? 0 : 0.22,
+                      ease: [0.22, 1, 0.36, 1],
+                    }}
+                  >
+                    <Link href={withLang("/web-shop")} className="ss-mobile-nav-search ss-mobile-nav-quicklink" onClick={closeMobileMenu}>
+                      <span>{isEn ? "Search products" : "Pretrazi proizvode"}</span>
+                      <svg width="19" height="19" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.5" />
+                        <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                      </svg>
+                    </Link>
+                  </m.div>
 
                   <ul className="navigation__list list-unstyled position-relative ss-mobile-nav-list">
                     {navItems.map((item, index) => (
@@ -379,6 +375,9 @@ export default function StorefrontHeader({
                           onClick={closeMobileMenu}
                         >
                           <span>{item.label}</span>
+                          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                            <path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
                         </Link>
                         {item.href === "/web-shop" && shopMenuLinks.length > 0 ? (
                           <div className="ss-mobile-nav-submenu">
@@ -397,6 +396,13 @@ export default function StorefrontHeader({
                       </m.li>
                     ))}
                   </ul>
+
+                  <div className="ss-mobile-nav-footer">
+                    <Link href={withLang("/kontakt")} className="ss-mobile-nav-account ss-mobile-nav-pill" onClick={closeMobileMenu}>
+                      {isEn ? "Contact" : "Kontakt"}
+                    </Link>
+                    <StorefrontLanguageSwitcher lang={lang} compact />
+                  </div>
                 </div>
               </m.nav>
             </m.div>

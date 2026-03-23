@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Montserrat } from "next/font/google";
 import AppMotionShell from "@/app/components/motion/AppMotionShell";
+import { SITE_NAME, SITE_URL, buildSeoMetadata } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -20,11 +21,31 @@ const montserrat = Montserrat({
 });
 
 export const metadata: Metadata = {
+  ...buildSeoMetadata({
+    title: SITE_NAME,
+    description:
+      "Muska moda, ready-to-wear kolekcija, custom suits i poslovne uniforme brenda Santos & Santorini iz Nisa.",
+    path: "/",
+    keywords: ["muska odeca", "odela nis", "muska elegancija", "tailoring srbija"],
+  }),
   title: {
-    default: "Santos & Santorini",
-    template: "%s | Santos & Santorini",
+    default: SITE_NAME,
+    template: `%s | ${SITE_NAME}`,
   },
-  description: "Santos & Santorini web shop sa CMS administracijom i integracijama.",
+  applicationName: SITE_NAME,
+  category: "fashion",
+  authors: [{ name: SITE_NAME }],
+  creator: SITE_NAME,
+  publisher: SITE_NAME,
+  metadataBase: new URL(SITE_URL),
+  icons: {
+    icon: [
+      { url: "/img/logo.png", type: "image/png" },
+      { url: "/img/logo-header-mobile.png", type: "image/png", sizes: "192x192" },
+    ],
+    apple: [{ url: "/img/logo.png", type: "image/png" }],
+    shortcut: ["/img/logo.png"],
+  },
 };
 
 export const viewport: Viewport = {
