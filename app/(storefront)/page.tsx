@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import JsonLd from "@/app/components/seo/JsonLd";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import HomeHeroVideo from "@/app/components/storefront/HomeHeroVideo";
@@ -16,6 +17,12 @@ import { listPosts } from "@/lib/blog/store";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getCatalogProductImageSources } from "@/lib/storefront/product-details";
+import {
+  buildLocalBusinessJsonLd,
+  buildOrganizationJsonLd,
+  buildSeoMetadata,
+  buildWebSiteJsonLd,
+} from "@/lib/seo";
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -24,10 +31,24 @@ const formatRsd = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
-export const metadata = {
-  title: "Santos & Santorini",
-  description: "Santos & Santorini web shop sa aktuelnom kolekcijom, akcijama i blog sadrzajem.",
-};
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const lang = await resolveStorefrontLanguage(await searchParams);
+  const isEn = lang === "en";
+
+  return buildSeoMetadata({
+    title: isEn ? "Santos & Santorini Menswear" : "Santos & Santorini muska moda",
+    description: isEn
+      ? "Menswear, ready-to-wear collection, custom suits and business uniforms from Santos & Santorini in Nis."
+      : "Muska moda, ready-to-wear kolekcija, custom suits i poslovne uniforme brenda Santos & Santorini iz Nisa.",
+    path: "/",
+    lang,
+    keywords: ["ready to wear", "menswear Serbia", "odela Nis", "business uniforms"],
+  });
+}
 
 const getLegacyCampaignBlocks = (isEn: boolean) => [
   {
@@ -323,8 +344,15 @@ export default async function HomePage({
     salePool.slice(0, 16),
   );
 
+  const websiteJsonLd = buildWebSiteJsonLd();
+  const organizationJsonLd = buildOrganizationJsonLd();
+  const localBusinessJsonLd = buildLocalBusinessJsonLd();
+
   return (
     <>
+      <JsonLd data={websiteJsonLd} />
+      <JsonLd data={organizationJsonLd} />
+      <JsonLd data={localBusinessJsonLd} />
       <StorefrontHeader lang={lang} />
       <main className="page-wrapper theme-18 ss-home-page ss-home-page--cinematic">
         <HomeHeroVideo
@@ -463,7 +491,15 @@ export default async function HomePage({
           <div className="row g-4">
             <div className="col-md-6">
               <div className="position-relative overflow-hidden ss-banner-panel">
-                <Image src={landingSettings.bannerLeftImage} width={690} height={330} alt={landingSettings.bannerLeftTitle} className="w-100 h-auto" />
+                <StorefrontSmartImage
+                  sources={[landingSettings.bannerLeftImage]}
+                  fallbackSrc="/img/hero2.jpg"
+                  width={690}
+                  height={330}
+                  alt={landingSettings.bannerLeftTitle}
+                  className="w-100 h-auto"
+                  unoptimized
+                />
                 <div className="position-absolute top-50 start-50 translate-middle text-center">
                   <h4 className="text-uppercase text-white">{landingSettings.bannerLeftTitle}</h4>
                   <Link href={withLang(landingSettings.bannerLeftHref)} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">
@@ -474,7 +510,15 @@ export default async function HomePage({
             </div>
             <div className="col-md-6">
               <div className="position-relative overflow-hidden ss-banner-panel">
-                <Image src={landingSettings.bannerRightImage} width={690} height={330} alt={landingSettings.bannerRightTitle} className="w-100 h-auto" />
+                <StorefrontSmartImage
+                  sources={[landingSettings.bannerRightImage]}
+                  fallbackSrc="/img/hero.jpg"
+                  width={690}
+                  height={330}
+                  alt={landingSettings.bannerRightTitle}
+                  className="w-100 h-auto"
+                  unoptimized
+                />
                 <div className="position-absolute top-50 start-50 translate-middle text-center">
                   <h4 className="text-uppercase text-white">{landingSettings.bannerRightTitle}</h4>
                   <Link href={withLang(landingSettings.bannerRightHref)} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">
