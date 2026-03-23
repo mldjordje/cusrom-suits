@@ -166,6 +166,7 @@ export default function StorefrontHeader({
                   alt="Santos and Santorini"
                   width={340}
                   height={96}
+                  unoptimized
                   className="logo__image d-block ss-site-logo"
                   priority
                 />
@@ -262,6 +263,7 @@ export default function StorefrontHeader({
                   alt="Santos and Santorini"
                   width={280}
                   height={79}
+                  unoptimized
                   className="logo__image d-block ss-site-logo ss-site-logo--mobile"
                   priority
                 />
@@ -319,6 +321,7 @@ export default function StorefrontHeader({
                         alt="Santos and Santorini"
                         width={280}
                         height={79}
+                        unoptimized
                         className="logo__image d-block ss-site-logo ss-site-logo--mobile"
                         priority
                       />

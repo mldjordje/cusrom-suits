@@ -40,11 +40,12 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   icons: {
     icon: [
+      { url: "/favicon.ico", sizes: "any" },
       { url: "/img/logo.png", type: "image/png" },
       { url: "/img/logo-header-mobile.png", type: "image/png", sizes: "192x192" },
     ],
     apple: [{ url: "/img/logo.png", type: "image/png" }],
-    shortcut: ["/img/logo.png"],
+    shortcut: ["/favicon.ico"],
   },
 };
 
