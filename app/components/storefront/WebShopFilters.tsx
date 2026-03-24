@@ -212,12 +212,12 @@ export default function WebShopFilters({
       <aside className="ss-shop-sidebar d-none d-lg-block">
         <div className="ss-filter-panel ss-shop-sidebar__panel">
           <div className="ss-shop-sidebar__intro">
-            <p className="ss-shop-sidebar__eyebrow">{isEn ? "Shop filters" : "Shop filteri"}</p>
-            <h3>{isEn ? "Refine the collection." : "Preciznije filtriraj kolekciju."}</h3>
+            <p className="ss-shop-sidebar__eyebrow">{isEn ? "Refine" : "Precizan izbor"}</p>
+            <h3>{isEn ? "Keep the selection clean." : "Zadrzi pregled cistim."}</h3>
             <p>
               {isEn
-                ? "Use search, category, stock and sale filters in the standard shop flow."
-                : "Koristi pretragu, kategoriju, stanje i akciju kroz standardni shop pregled."}
+                ? "Search, category, stock and sale controls stay in one calm, minimal block."
+                : "Pretraga, kategorije, stanje i akcije su u jednom mirnom, preglednom bloku."}
             </p>
           </div>
 
@@ -240,7 +240,7 @@ export default function WebShopFilters({
       <div className="ss-shop-feed">
         <div className="ss-shop-mobile-toolbar d-lg-none">
           <div className="ss-shop-mobile-toolbar__summary">
-            <span className="ss-shop-mobile-toolbar__eyebrow">{isEn ? "Web shop" : "Web shop"}</span>
+            <span className="ss-shop-mobile-toolbar__eyebrow">{isEn ? "Collection" : "Kolekcija"}</span>
             <strong>
               {showingCount} / {totalCount} {isEn ? "products" : "proizvoda"}
             </strong>
@@ -302,13 +302,13 @@ export default function WebShopFilters({
 
         <div className="ss-shop-results-bar">
           <div className="ss-shop-results-bar__copy">
-            <p className="ss-shop-results-bar__eyebrow">{isEn ? "Active filters" : "Aktivni filteri"}</p>
+            <p className="ss-shop-results-bar__eyebrow">{isEn ? "Selection" : "Izbor"}</p>
             <strong>
               {activeFilterChips.length > 0
                 ? `${activeFilterChips.length} ${isEn ? "selected" : "izabrano"}`
                 : isEn
-                  ? "No filters selected"
-                  : "Nema aktivnih filtera"}
+                  ? "Clean catalog view"
+                  : "Cist prikaz kataloga"}
             </strong>
           </div>
 

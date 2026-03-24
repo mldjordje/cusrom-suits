@@ -4,7 +4,6 @@ import JsonLd from "@/app/components/seo/JsonLd";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import WebShopFilters from "@/app/components/storefront/WebShopFilters";
-import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
@@ -103,12 +102,11 @@ export default async function WebShopPage({
 
   const items = sortItems(result.items, sort);
   const topCategories = result.categories.slice(0, 7);
-  const masonryA = items.slice(0, 4);
-  const masonryB = items.slice(4, 8);
-  const gridItems = items.slice(8);
-  const heroLead = landingSettings.shopHeroLead.trim();
-  const conciseHeroLead =
-    heroLead.length > 112 ? `${heroLead.slice(0, 109).trimEnd()}...` : heroLead;
+  const heroEyebrow = landingSettings.shopHeroEyebrow?.trim() || (isEn ? "Curated ready-to-wear" : "Kurirana ready-to-wear kolekcija");
+  const heroTitle = isEn ? "Ready-to-wear collection" : "Ready-to-wear kolekcija";
+  const heroLead = isEn
+    ? "Selected menswear models with cleaner navigation and easier filtering across desktop and mobile."
+    : "Odabrani modeli muske kolekcije sa cistijom navigacijom i laksim filtriranjem na desktopu i telefonu.";
   const sortLabelMap: Record<string, string> = {
     featured: isEn ? "Featured" : "Izdvojeno",
     price_asc: isEn ? "Price: Low to High" : "Cena: od nize ka visoj",
@@ -195,6 +193,35 @@ export default async function WebShopPage({
       href: makeHref({ onSale: null, page: 1 }),
     });
   }
+
+  const heroStats = [
+    {
+      label: isEn ? "Showing" : "Prikazano",
+      value: String(items.length),
+    },
+    {
+      label: isEn ? "Categories" : "Kategorije",
+      value: String(Math.max(topCategories.length, 1)),
+    },
+  ];
+
+  const heroCategoryLinks = [
+    {
+      label: isEn ? "All products" : "Svi proizvodi",
+      href: makeHref({ categoryId: null, onSale: null, page: 1 }),
+      active: categoryId <= 0 && !onSale,
+    },
+    {
+      label: isEn ? "Sale" : "Akcija",
+      href: makeHref({ categoryId: null, onSale: 1, page: 1 }),
+      active: onSale && categoryId <= 0,
+    },
+    ...topCategories.slice(0, 5).map((category) => ({
+      label: category.name,
+      href: makeHref({ categoryId: category.id, onSale: null, page: 1 }),
+      active: categoryId === category.id,
+    })),
+  ];
 
   const renderOverlayCard = (
     item: CatalogProductView,
@@ -289,7 +316,7 @@ export default async function WebShopPage({
     "@type": "CollectionPage",
     name: isEn ? "Santos & Santorini Web Shop" : "Santos & Santorini Web Shop",
     url: absoluteUrl(isEn ? "/web-shop?lang=en" : "/web-shop"),
-    description: landingSettings.shopHeroLead,
+    description: heroLead,
     mainEntity: {
       "@type": "ItemList",
       itemListElement: items.slice(0, 12).map((item, index) => ({
@@ -311,31 +338,63 @@ export default async function WebShopPage({
       <JsonLd data={collectionJsonLd} />
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-shop-page">
-        <Reveal as="section" className="shop-banner position-relative">
-          <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
-            <Image
-              src={landingSettings.shopHeroImage || "/img/hero2.jpg"}
-              width={1759}
-              height={420}
-              alt="Santos web shop hero"
-              className="slideshow-bg__img object-fit-cover"
-              priority
-            />
-          </div>
-          <div className="container position-relative py-4 py-lg-5">
-            <div className="ss-shop-banner-simple">
-              {landingSettings.shopHeroEyebrow ? (
-                <p className="ss-shop-banner-simple__eyebrow">{landingSettings.shopHeroEyebrow}</p>
-              ) : null}
-              <h1>{landingSettings.shopHeroTitle}</h1>
-              {conciseHeroLead ? <p>{conciseHeroLead}</p> : null}
+        <section className="ss-shop-hero-section">
+          <div className="container ss-shop-hero">
+            <div className="ss-shop-hero__media">
+              <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
+                <Image
+                  src={landingSettings.shopHeroImage || "/img/hero2.jpg"}
+                  width={1759}
+                  height={620}
+                  alt="Santos web shop hero"
+                  className="slideshow-bg__img object-fit-cover"
+                  priority
+                />
+              </div>
+              <div className="ss-shop-hero__overlay" />
+              <div className="container position-relative h-100">
+                <div className="ss-shop-hero__content">
+                  <div className="ss-shop-hero__card">
+                    <p className="ss-shop-hero__eyebrow">{heroEyebrow}</p>
+                    <h1>{heroTitle}</h1>
+                    <p className="ss-shop-hero__lead">{heroLead}</p>
+
+                    <div className="ss-shop-hero__actions">
+                      <Link href="#shop-products" className="btn btn-light text-uppercase fw-medium">
+                        {isEn ? "Browse collection" : "Pogledaj kolekciju"}
+                      </Link>
+                      <Link href={makeHref({ categoryId: null, onSale: 1, page: 1 })} className="btn btn-outline-light text-uppercase fw-medium">
+                        {isEn ? "View sale" : "Pogledaj akcije"}
+                      </Link>
+                    </div>
+
+                    <div className="ss-shop-hero__stats">
+                      {heroStats.map((stat) => (
+                        <div key={stat.label} className="ss-shop-hero__stat">
+                          <span>{stat.label}</span>
+                          <strong>{stat.value}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="ss-shop-hero__categories">
+              {heroCategoryLinks.map((link) => (
+                <Link
+                  key={link.label}
+                  href={link.href}
+                  className={`ss-shop-hero__category ${link.active ? "is-active" : ""}`}
+                >
+                  {link.label}
+                </Link>
+              ))}
             </div>
           </div>
-        </Reveal>
+        </section>
 
-        <div className="mb-4 pb-lg-3" />
-
-        <section className="shop-main container" id="shop-products">
+        <section className="shop-main container ss-shop-main-section" id="shop-products">
           <WebShopFilters
             lang={lang}
             query={q}
@@ -354,12 +413,12 @@ export default async function WebShopPage({
             <div className="ss-shop-gallery">
               <div className="ss-shop-gallery__header">
                 <div>
-                  <p className="ss-shop-gallery__eyebrow">{isEn ? "Selected collection" : "Izabrana kolekcija"}</p>
+                  <p className="ss-shop-gallery__eyebrow">{isEn ? "Collection" : "Kolekcija"}</p>
                   <h2 className="ss-shop-gallery__title">
                     {items.length > 0
                       ? isEn
-                        ? "Products that match your selection"
-                        : "Proizvodi koji odgovaraju tvom izboru"
+                        ? "A cleaner catalog view for faster browsing"
+                        : "Cistiji katalog za brzi pregled modela"
                       : isEn
                         ? "No products found"
                         : "Nema pronadjenih proizvoda"}
@@ -374,11 +433,11 @@ export default async function WebShopPage({
                 <div className="ss-shop-empty-state">
                   <div className="ss-shop-empty-state__card">
                     <p className="ss-shop-empty-state__eyebrow">{isEn ? "Try again" : "Pokusi ponovo"}</p>
-                    <h3>{isEn ? "Adjust your filters for a broader selection." : "Prilagodi filtere za siri izbor proizvoda."}</h3>
+                    <h3>{isEn ? "Adjust filters for a wider selection." : "Prilagodi filtere za siri izbor proizvoda."}</h3>
                     <p>
                       {isEn
-                        ? "Start with product name or category, then add stock or sale filters only if needed."
-                        : "Kreni od naziva proizvoda ili kategorije, pa tek onda dodaj stanje ili akciju ako je potrebno."}
+                        ? "Start with product name or category, then narrow the selection only when needed."
+                        : "Kreni od naziva proizvoda ili kategorije, pa izbor suzi samo kada je potrebno."}
                     </p>
                     <Link href={makeHref({ q: null, categoryId: null, inStock: null, onSale: null, sort: null, page: 1 })} className="btn btn-primary text-uppercase fw-medium">
                       {isEn ? "Reset filters" : "Resetuj filtere"}
@@ -386,84 +445,17 @@ export default async function WebShopPage({
                   </div>
                 </div>
               ) : (
-                <>
-                  <div className="products-grid d-none d-md-block" id="products-grid-desktop">
-                    {masonryA.length > 0 ? (
-                      <div className="products-masonry row row-cols-md-2 mb-2 mb-md-3 pb-1 pb-md-3">
-                        {masonryA[0] ? renderOverlayCard(masonryA[0], `masonry-a-${masonryA[0].legacyId}`, { motionIndex: 0 }) : null}
-
-                        <div className="d-flex flex-column">
-                          <div className="row row-cols-2 flex-grow-1 mb-lg-4">
-                            {masonryA.slice(1, 3).map((item, index) =>
-                              renderOverlayCard(item, `masonry-a-side-${item.legacyId}`, {
-                                cardClassName: "product-card ss-card-hover ss-product-card h-100 mb-2",
-                                motionIndex: index + 1,
-                              }),
-                            )}
-                          </div>
-                          {masonryA[3]
-                            ? renderOverlayCard(masonryA[3], `masonry-a-wide-${masonryA[3].legacyId}`, {
-                                wrapperClassName: "product-card-wrapper flex-grow-1 pt-1",
-                                imageWrapperClassName: "pc__img-wrapper pc-wide__img-wrapper hover-container p-lg-0",
-                                motionIndex: 3,
-                              })
-                            : null}
-                        </div>
-                      </div>
-                    ) : null}
-
-                    {masonryB.length > 0 ? (
-                      <div className="products-masonry row row-cols-md-2 mb-2 mb-md-3 pb-1 pb-md-3">
-                        <div className="mb-2 pb-1 mb-md-0 pb-md-0">
-                          <div className="row row-cols-2 h-100">
-                            <div className="d-flex flex-column">
-                              {masonryB.slice(0, 2).map((item, index) =>
-                                renderOverlayCard(item, `masonry-b-left-${item.legacyId}`, {
-                                  wrapperClassName: "product-card-wrapper flex-grow-1 mb-md-4",
-                                  motionIndex: index + 4,
-                                }),
-                              )}
-                            </div>
-                            {masonryB[2]
-                              ? renderOverlayCard(masonryB[2], `masonry-b-mid-${masonryB[2].legacyId}`, {
-                                  wrapperClassName: "product-card-wrapper flex-grow-1 mb-md-4",
-                                  motionIndex: 6,
-                                })
-                              : null}
-                          </div>
-                        </div>
-                        {masonryB[3] ? renderOverlayCard(masonryB[3], `masonry-b-right-${masonryB[3].legacyId}`, { motionIndex: 7 }) : null}
-                      </div>
-                    ) : null}
-
-                    <div className="products-grid row row-cols-2 row-cols-md-3 row-cols-lg-4">
-                      {gridItems.map((item, index) =>
-                        renderOverlayCard(item, `grid-${item.legacyId}`, {
-                          cardClassName: "product-card ss-card-hover ss-product-card mb-3 mb-md-4 mb-xxl-5",
-                          imageWrapperClassName: "pc__img-wrapper hover-container",
-                          imageWidth: 330,
-                          imageHeight: 400,
-                          motionIndex: index + 8,
-                        }),
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="products-grid ss-mobile-grid d-md-none" id="products-grid-mobile">
-                    <div className="row row-cols-2 g-2">
-                      {items.map((item, index) =>
-                        renderOverlayCard(item, `mobile-${item.legacyId}`, {
-                          wrapperClassName: "product-card-wrapper ss-mobile-grid__item",
-                          cardClassName: "product-card ss-card-hover ss-product-card ss-mobile-grid__card",
-                          imageWrapperClassName: "pc__img-wrapper ss-mobile-grid__img-wrapper",
-                          imageWidth: 330,
-                          imageHeight: 400,
-                          motionIndex: index,
-                        }),
-                      )}
-                    </div>
-                  </div>
-                </>
+                <div className="products-grid row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 g-md-3">
+                  {items.map((item, index) =>
+                    renderOverlayCard(item, `grid-${item.legacyId}`, {
+                      cardClassName: "product-card ss-card-hover ss-product-card ss-shop-grid-card mb-0",
+                      imageWrapperClassName: "pc__img-wrapper hover-container",
+                      imageWidth: 330,
+                      imageHeight: 400,
+                      motionIndex: index,
+                    }),
+                  )}
+                </div>
               )}
             </div>
           </WebShopFilters>
