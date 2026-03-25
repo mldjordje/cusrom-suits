@@ -553,7 +553,7 @@ export default async function WebShopProductPage({
           </Reveal>
         ) : null}
 
-        <div className="mb-5 pb-xl-5" />
+        <div className="d-none d-lg-block mb-5 pb-xl-5" />
       </main>
       <StorefrontFooter lang={lang} />
     </>

@@ -18,8 +18,8 @@ export default function AppMotionShell({ children }: { children: React.ReactNode
           <m.div
             key={pathname || "/"}
             className="ss-page-motion"
-            initial={reduceMotion ? false : { opacity: 0, y: 16, scale: 0.995 }}
-            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, y: 0, scale: 1 }}
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={reduceMotion ? { duration: 0 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
           >
             {children}
