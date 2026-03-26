@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSteps";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
+import StorefrontQuantityControl from "@/app/components/storefront/cart/StorefrontQuantityControl";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 const formatRsd = (value: number) =>
@@ -108,29 +109,33 @@ export default function CartPageClient({
                       </div>
                       <p className="ss-cart-item__price mb-0">{formatRsd(item.price)}</p>
                     </div>
-                    <div className="col-7 col-md-2">
-                      <label className="ss-cart-item__label">{isEn ? "Quantity" : "Kolicina"}</label>
-                      <input
-                        type="number"
-                        min={1}
-                        max={item.maxQuantity && item.maxQuantity > 0 ? item.maxQuantity : undefined}
-                        value={item.quantity}
-                        onChange={(e) => updateQuantity(item.legacyId, Number(e.target.value))}
-                        className="form-control"
-                      />
-                      {item.maxQuantity && item.maxQuantity > 0 ? (
-                        <p className="ss-cart-item__stock mb-0">{isEn ? "Available" : "Dostupno"}: {item.maxQuantity}</p>
-                      ) : null}
-                    </div>
-                    <div className="col-5 col-md-2 text-md-end">
-                      <p className="ss-cart-item__total">{formatRsd(item.price * item.quantity)}</p>
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.legacyId)}
-                        className="btn btn-link text-uppercase p-0 text-decoration-none ss-cart-item__remove"
-                      >
-                        {isEn ? "Remove" : "Ukloni"}
-                      </button>
+                    <div className="col-12 col-md-4">
+                      <div className="ss-cart-item__purchase">
+                        <div className="ss-cart-item__quantity-block">
+                          <label className="ss-cart-item__label">{isEn ? "Quantity" : "Kolicina"}</label>
+                          <StorefrontQuantityControl
+                            value={item.quantity}
+                            max={item.maxQuantity}
+                            onChange={(nextValue) => updateQuantity(item.legacyId, nextValue)}
+                            decreaseLabel={isEn ? "Decrease quantity" : "Smanji kolicinu"}
+                            increaseLabel={isEn ? "Increase quantity" : "Povecaj kolicinu"}
+                          />
+                          {item.maxQuantity && item.maxQuantity > 0 ? (
+                            <p className="ss-cart-item__stock mb-0">{isEn ? "Available" : "Dostupno"}: {item.maxQuantity}</p>
+                          ) : null}
+                        </div>
+
+                        <div className="ss-cart-item__actions">
+                          <p className="ss-cart-item__total">{formatRsd(item.price * item.quantity)}</p>
+                          <button
+                            type="button"
+                            onClick={() => removeItem(item.legacyId)}
+                            className="btn btn-link text-uppercase p-0 text-decoration-none ss-cart-item__remove"
+                          >
+                            {isEn ? "Remove" : "Ukloni"}
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </article>
@@ -160,7 +165,7 @@ export default function CartPageClient({
             </div>
 
             <div className="ss-order-summary__total">
-              <span>{isEn ? "Current total" : "Trenutni ukupno"}</span>
+              <span>{isEn ? "Current total" : "Ukupno za sada"}</span>
               <strong>{formatRsd(subtotal)}</strong>
             </div>
 

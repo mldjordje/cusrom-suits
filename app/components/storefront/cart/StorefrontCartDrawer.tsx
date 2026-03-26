@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
+import StorefrontQuantityControl from "@/app/components/storefront/cart/StorefrontQuantityControl";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 const formatRsd = (value: number) =>
@@ -22,6 +23,7 @@ export default function StorefrontCartDrawer({
   const pathname = usePathname();
   const {
     items,
+    itemCount,
     subtotal,
     isReady,
     isDrawerOpen,
@@ -53,7 +55,7 @@ export default function StorefrontCartDrawer({
         <div className="aside-header d-flex align-items-center">
           <h3 className="text-uppercase fs-6 mb-0">
             {isEn ? "Shopping bag" : "Korpa"} (
-            <span className="cart-amount js-cart-items-count">{items.length}</span>)
+            <span className="cart-amount js-cart-items-count">{itemCount}</span>)
           </h3>
           <button
             type="button"
@@ -68,8 +70,8 @@ export default function StorefrontCartDrawer({
             <div className="fs-18 mt-5 px-4">{isEn ? "Loading cart..." : "Ucitavam korpu..."}</div>
           ) : items.length ? (
             items.map((item) => (
-              <div key={item.legacyId}>
-                <div className="cart-drawer-item d-flex position-relative">
+              <div key={item.legacyId} className="ss-cart-drawer__item-wrap">
+                <div className="cart-drawer-item d-flex position-relative ss-cart-drawer__item">
                   <Link href={withLang(`/web-shop/${item.legacyId}`)} className="position-relative">
                     <StorefrontSmartImage
                       sources={[item.image || "/img/odela.jpg"]}
@@ -94,38 +96,24 @@ export default function StorefrontCartDrawer({
                         {isEn ? "Size" : "Velicina"}: {item.size}
                       </p>
                     ) : null}
-                    <div className="d-flex align-items-center justify-content-between mt-2 gap-3">
-                      <div className="qty-control position-relative">
-                        <input
-                          type="number"
-                          name={`quantity-${item.legacyId}`}
-                          value={item.quantity}
-                          min="1"
-                          max={item.maxQuantity && item.maxQuantity > 0 ? item.maxQuantity : undefined}
-                          onChange={(event) => updateQuantity(item.legacyId, Number(event.target.value))}
-                          className="qty-control__number border-0 text-center"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.legacyId, Math.max(1, item.quantity - 1))}
-                          className="qty-control__reduce text-start border-0 bg-transparent"
-                          aria-label={isEn ? "Decrease quantity" : "Smanji kolicinu"}
-                        >
-                          -
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => updateQuantity(item.legacyId, item.quantity + 1)}
-                          className="qty-control__increase text-end border-0 bg-transparent"
-                          aria-label={isEn ? "Increase quantity" : "Povecaj kolicinu"}
-                        >
-                          +
-                        </button>
-                      </div>
+                    <div className="ss-cart-drawer__meta-row">
+                      <StorefrontQuantityControl
+                        value={item.quantity}
+                        max={item.maxQuantity}
+                        onChange={(nextValue) => updateQuantity(item.legacyId, nextValue)}
+                        decreaseLabel={isEn ? "Decrease quantity" : "Smanji kolicinu"}
+                        increaseLabel={isEn ? "Increase quantity" : "Povecaj kolicinu"}
+                        className="ss-cart-drawer__quantity"
+                      />
 
-                      <span className="cart-drawer-item__price money price">
-                        {formatRsd(item.price * item.quantity)}
-                      </span>
+                      <div className="ss-cart-drawer__totals">
+                        <span className="ss-cart-drawer__line-price">{formatRsd(item.price * item.quantity)}</span>
+                        {item.maxQuantity && item.maxQuantity > 0 ? (
+                          <span className="ss-cart-drawer__stock">
+                            {isEn ? "Available" : "Dostupno"} {item.maxQuantity}
+                          </span>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
 
@@ -149,8 +137,13 @@ export default function StorefrontCartDrawer({
 
         <div className="cart-drawer-actions position-absolute start-0 bottom-0 w-100">
           <hr className="cart-drawer-divider" />
-          <div className="d-flex justify-content-between">
-            <h6 className="fs-base fw-medium">{isEn ? "Subtotal:" : "Medjuzbir:"}</h6>
+          <div className="d-flex justify-content-between align-items-center gap-3">
+            <div>
+              <h6 className="fs-base fw-medium mb-1">{isEn ? "Current total" : "Ukupno za sada"}</h6>
+              <p className="ss-cart-drawer__summary-copy mb-0">
+                {isEn ? `${itemCount} item(s) ready for checkout` : `${itemCount} artikala spremno za checkout`}
+              </p>
+            </div>
             <span className="cart-subtotal fw-medium">{formatRsd(subtotal)}</span>
           </div>
           {items.length ? (
