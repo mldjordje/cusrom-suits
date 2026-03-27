@@ -593,18 +593,6 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
   return applySkuImageFallbacks(normalized);
 }
 
-const loadCatalogSnapshotCached = unstable_cache(
-  async (activeOnly: boolean, exportOnly: boolean) => {
-    const snapshot = await fetchCatalogSnapshotFromSupabase({ activeOnly, exportOnly });
-    if (!snapshot) {
-      throw new Error("Catalog snapshot unavailable");
-    }
-    return snapshot;
-  },
-  ["catalog-snapshot-v2"],
-  { revalidate: 300 },
-);
-
 async function loadFromSupabase(filters: {
   activeOnly: boolean;
   exportOnly: boolean;
@@ -623,17 +611,13 @@ async function loadFromSupabase(filters: {
     const shouldBypassPersistentCache = getCatalogCacheBypassUntil() > Date.now();
     let items: CatalogProductView[] | null = null;
 
+    // Next.js unstable_cache has a hard per-item size limit (~2MB). Our admin snapshots
+    // can exceed that significantly, which may trigger unhandled rejections in dev/prod.
+    // Use direct Supabase fetch + in-memory TTL cache for reliability.
     if (shouldBypassPersistentCache) {
       items = await fetchCatalogSnapshotFromSupabase(filters);
     } else {
-      try {
-        items = await loadCatalogSnapshotCached(filters.activeOnly, filters.exportOnly);
-      } catch {
-        // Large catalog snapshots can exceed the persistent Next data cache limit.
-        // Fall back to a direct Supabase fetch and temporarily bypass persistent cache.
-        setCatalogCacheBypassUntil(Date.now() + CATALOG_SNAPSHOT_TTL_MS);
-        items = await fetchCatalogSnapshotFromSupabase(filters);
-      }
+      items = await fetchCatalogSnapshotFromSupabase(filters);
     }
 
     if (!items) return null;

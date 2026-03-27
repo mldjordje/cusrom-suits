@@ -6,7 +6,7 @@ import {
   sanitizeAdminNextPath,
 } from "@/lib/adminAuth";
 
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
   const isAdminApi = pathname.startsWith("/api/admin/");
 
@@ -28,7 +28,7 @@ export function middleware(req: NextRequest) {
     return res;
   }
 
-  if (isAdminRequestAuthenticated(req)) {
+  if (await isAdminRequestAuthenticated(req)) {
     return NextResponse.next();
   }
 

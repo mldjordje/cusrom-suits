@@ -1,12 +1,21 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import type { Metadata } from "next";
 import {
   ADMIN_LEGACY_TOKEN_COOKIE,
   ADMIN_SESSION_COOKIE,
-  isValidAdminSession,
   isValidLegacyAdminToken,
+  getAdminViewerFromCookieStore,
   sanitizeAdminNextPath,
 } from "@/lib/adminAuth";
+import { buildSeoMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildSeoMetadata({
+  title: "Admin Login | Santos & Santorini",
+  description: "Prijava za pristup Santos administraciji.",
+  path: "/admin-login",
+  noIndex: true,
+});
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -22,7 +31,7 @@ export default async function AdminLoginPage({
   const showError = getParam(params.error) === "1";
   const cookieStore = await cookies();
   const hasSession =
-    isValidAdminSession(cookieStore.get(ADMIN_SESSION_COOKIE)?.value) ||
+    Boolean(await getAdminViewerFromCookieStore(cookieStore)) ||
     isValidLegacyAdminToken(cookieStore.get(ADMIN_LEGACY_TOKEN_COOKIE)?.value);
 
   if (hasSession) {
@@ -39,7 +48,7 @@ export default async function AdminLoginPage({
               Jednostavan pristup za katalog, porudzbine i integracije.
             </h1>
             <p className="mt-4 max-w-lg text-sm leading-7 text-slate-300">
-              Ovaj login trenutno cuva pristup admin delu sajta i koristi fiksne kredencijale dok ne uvedemo pun korisnicki sistem.
+              Santos admin sada podrzava vise korisnika i role, tako da svaki clan tima moze da dobije svoj pristup.
             </p>
             <div className="mt-10 space-y-4">
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
@@ -47,8 +56,8 @@ export default async function AdminLoginPage({
                 <p className="mt-2 text-sm text-slate-300">Admin dashboard, porudzbine, webshop kontrole i integracije vise nisu otvoreni bez prijave.</p>
               </div>
               <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                <p className="text-sm font-semibold text-white">Sledeci upgrade</p>
-                <p className="mt-2 text-sm text-slate-300">Ako pozelis, sledeci korak je hash lozinke i vise admin naloga preko baze.</p>
+                <p className="text-sm font-semibold text-white">Role i privilegije</p>
+                <p className="mt-2 text-sm text-slate-300">Owner nalog moze da otvara dodatne admine, dodeljuje role i ogranicava pristup po funkcijama.</p>
               </div>
             </div>
           </section>

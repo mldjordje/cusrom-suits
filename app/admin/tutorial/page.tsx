@@ -82,6 +82,15 @@ const quickLinks = [
   { href: "/admin/categories", label: "Kategorije" },
 ];
 
+const launchChecklist = [
+  "Proveri build i produkcione env varijable.",
+  "Potvrdi sveze katalog podatke u Supabase.",
+  "Pusti content schema i importuj blog/news u Supabase.",
+  "Prodji redirecte iz stare strukture sajta.",
+  "Proveri home, listing, product detail, checkout i kontakt tok.",
+  "Proveri admin tok za porudzbine, kontakt poruke i landing sekcije.",
+];
+
 export default function AdminTutorialPage() {
   return (
     <div className="flex flex-col gap-6">
@@ -115,6 +124,19 @@ export default function AdminTutorialPage() {
             </div>
           </section>
         ))}
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-xl font-semibold text-slate-900">8. Launch checklist za glavni domen</h2>
+          <div className="mt-3 space-y-2 text-sm text-slate-700">
+            {launchChecklist.map((line) => (
+              <p key={line}>{line}</p>
+            ))}
+            <p>
+              Detaljniji checklist je u fajlu{" "}
+              <code>docs/main-domain-launch-checklist.md</code>.
+            </p>
+          </div>
+        </section>
       </div>
     </div>
   );

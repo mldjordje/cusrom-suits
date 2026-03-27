@@ -197,12 +197,12 @@ const defaultCreateDraft: CreateDraft = {
   name: "",
   categoryId: "",
   brand: "",
-  priceGross: "0",
-  priceFinalGross: "0",
-  rebatePercent: "0",
-  taxPercent: "20",
-  stockWarehouse1: "0",
-  stockTotal: "0",
+  priceGross: "",
+  priceFinalGross: "",
+  rebatePercent: "",
+  taxPercent: "",
+  stockWarehouse1: "",
+  stockTotal: "",
   isActive: true,
   isExported: true,
   landingFeatured: false,
@@ -413,6 +413,8 @@ export default function AdminWebshopPage() {
   const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<TabKey>("products");
+  /** Na telefonu: uputstvo je skriveno dok korisnik ne otvori (manje skrola) */
+  const [hubIntroOpen, setHubIntroOpen] = useState(false);
 
   const [items, setItems] = useState<CatalogProduct[]>([]);
   const [saleItems, setSaleItems] = useState<CatalogProduct[]>([]);
@@ -1243,41 +1245,54 @@ export default function AdminWebshopPage() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Web Shop Hub</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900">Jasan tok za proizvode, akcije i pocetnu</h1>
-        <p className="mt-1 text-sm text-slate-600">
-          Proizvod se uredjuje u `Proizvodi i lager`, akcija u `Akcije i snizenja`, a pocetna strana samo u `Pocetna i sekcije`.
-        </p>
-        <div className="mt-4 grid gap-3 lg:grid-cols-[1.3fr,1fr]">
-          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Brzi vodic</p>
-            <div className="mt-3 grid gap-3 md:grid-cols-3">
-              {workflowCards.map((card) => (
-                <button
-                  key={card.title}
-                  type="button"
-                  onClick={() => changeTab(card.tab)}
-                  className="rounded-xl border border-blue-200 bg-white px-4 py-3 text-left"
-                >
-                  <p className="text-sm font-semibold text-slate-900">{card.title}</p>
-                  <p className="mt-1 text-xs text-slate-600">{card.desc}</p>
-                </button>
-              ))}
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm md:p-5">
+        <button
+          type="button"
+          className="flex w-full items-center justify-between gap-2 rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-left md:hidden"
+          onClick={() => setHubIntroOpen((v) => !v)}
+          aria-expanded={hubIntroOpen}
+        >
+          <span className="text-sm font-semibold text-slate-900">Web Shop Hub — uputstvo</span>
+          <span className="text-slate-500" aria-hidden>
+            {hubIntroOpen ? "▲" : "▼"}
+          </span>
+        </button>
+        <div className={hubIntroOpen ? "mt-3 block" : "hidden md:block"}>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Web Shop Hub</p>
+          <h1 className="mt-1 text-xl font-bold text-slate-900 md:text-2xl">Jasan tok za proizvode, akcije i pocetnu</h1>
+          <p className="mt-1 text-sm text-slate-600">
+            Proizvod se uredjuje u `Proizvodi i lager`, akcija u `Akcije i snizenja`, a pocetna strana samo u `Pocetna i sekcije`.
+          </p>
+          <div className="mt-4 grid gap-3 lg:grid-cols-[1.3fr,1fr]">
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-3 md:p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Brzi vodic</p>
+              <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                {workflowCards.map((card) => (
+                  <button
+                    key={card.title}
+                    type="button"
+                    onClick={() => changeTab(card.tab)}
+                    className="rounded-xl border border-blue-200 bg-white px-3 py-2.5 text-left md:px-4 md:py-3"
+                  >
+                    <p className="text-sm font-semibold text-slate-900">{card.title}</p>
+                    <p className="mt-1 text-xs text-slate-600">{card.desc}</p>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pomoc i dokumentacija</p>
-            <p className="mt-1 text-sm text-slate-700">
-              Ako timu nesto nije jasno oko lagera, Ananas toka, sekcija na pocetnoj ili akcija, otvorite tutorial stranu.
-            </p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              <Link href="/admin/tutorial" className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                Otvori tutorial
-              </Link>
-              <Link href="/admin/integrations" className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
-                Integracije / Ananas
-              </Link>
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 md:p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pomoc i dokumentacija</p>
+              <p className="mt-1 text-sm text-slate-700">
+                Ako timu nesto nije jasno oko lagera, Ananas toka, sekcija na pocetnoj ili akcija, otvorite tutorial stranu.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <Link href="/admin/tutorial" className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  Otvori tutorial
+                </Link>
+                <Link href="/admin/integrations" className="rounded-full border border-slate-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  Integracije / Ananas
+                </Link>
+              </div>
             </div>
           </div>
         </div>
@@ -1336,12 +1351,80 @@ export default function AdminWebshopPage() {
                 ))}
               </select>
               <input value={createDraft.brand} onChange={(e) => setCreateDraft((p) => ({ ...p, brand: e.target.value }))} placeholder="Brend (opciono)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={createDraft.priceGross} onChange={(e) => setCreateDraft((p) => ({ ...p, priceGross: e.target.value }))} placeholder="Regularna cena (RSD)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={createDraft.priceFinalGross} onChange={(e) => setCreateDraft((p) => ({ ...p, priceFinalGross: e.target.value }))} placeholder="Prodajna cena (RSD)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={createDraft.rebatePercent} onChange={(e) => setCreateDraft((p) => ({ ...p, rebatePercent: e.target.value }))} placeholder="Popust % (0-100)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={createDraft.taxPercent} onChange={(e) => setCreateDraft((p) => ({ ...p, taxPercent: e.target.value }))} placeholder="PDV % (npr 20)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={createDraft.stockWarehouse1} onChange={(e) => setCreateDraft((p) => ({ ...p, stockWarehouse1: e.target.value }))} placeholder="Lager magacin 1" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={createDraft.stockTotal} onChange={(e) => setCreateDraft((p) => ({ ...p, stockTotal: e.target.value }))} placeholder="Ukupan lager" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <label className="text-xs font-medium text-slate-600">
+                Regularna cena (RSD)
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  value={createDraft.priceGross}
+                  onChange={(e) => setCreateDraft((p) => ({ ...p, priceGross: e.target.value }))}
+                  placeholder="npr 12990"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="text-xs font-medium text-slate-600">
+                Prodajna cena (RSD)
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  value={createDraft.priceFinalGross}
+                  onChange={(e) => setCreateDraft((p) => ({ ...p, priceFinalGross: e.target.value }))}
+                  placeholder="npr 10990"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="text-xs font-medium text-slate-600">
+                Popust % (0-100)
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  max="100"
+                  value={createDraft.rebatePercent}
+                  onChange={(e) => setCreateDraft((p) => ({ ...p, rebatePercent: e.target.value }))}
+                  placeholder="npr 15"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="text-xs font-medium text-slate-600">
+                PDV % (npr 20)
+                <input
+                  type="number"
+                  inputMode="decimal"
+                  min="0"
+                  max="100"
+                  value={createDraft.taxPercent}
+                  onChange={(e) => setCreateDraft((p) => ({ ...p, taxPercent: e.target.value }))}
+                  placeholder="20"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="text-xs font-medium text-slate-600">
+                Lager magacin 1
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  value={createDraft.stockWarehouse1}
+                  onChange={(e) => setCreateDraft((p) => ({ ...p, stockWarehouse1: e.target.value }))}
+                  placeholder="npr 3"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </label>
+              <label className="text-xs font-medium text-slate-600">
+                Ukupan lager
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min="0"
+                  value={createDraft.stockTotal}
+                  onChange={(e) => setCreateDraft((p) => ({ ...p, stockTotal: e.target.value }))}
+                  placeholder="npr 8"
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+              </label>
 
               <div className="rounded-xl border border-slate-200 p-3 md:col-span-3">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Slike proizvoda</p>

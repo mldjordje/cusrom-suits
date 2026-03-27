@@ -1,6 +1,7 @@
 import Link from "next/link";
 import NewsletterSignupForm from "@/app/components/storefront/NewsletterSignupForm";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
+import { getSiteContent } from "@/lib/storefront/siteContent";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 export default async function StorefrontFooter({
@@ -8,8 +9,10 @@ export default async function StorefrontFooter({
 }: {
   lang?: StorefrontLanguage;
 }) {
-  const landingSettings = await getLandingSettings();
+  const [landingSettings, siteContent] = await Promise.all([getLandingSettings(), getSiteContent()]);
   const isEn = lang === "en";
+  const primaryStore = siteContent.stores[0];
+  const footer = siteContent.footer;
   const withLang = (href: string) => {
     if (!isEn) return href;
     if (href.includes("?")) return `${href}&lang=en`;
@@ -24,15 +27,13 @@ export default async function StorefrontFooter({
             <div className="col-12 col-lg-5">
               <div className="ss-footer__brand">
                 <p className="ss-footer__eyebrow">
-                  {isEn ? "Crafted in Nis" : "Krojeno u Nisu"}
+                  {isEn ? footer.eyebrowEn : footer.eyebrow}
                 </p>
                 <Link href={withLang("/")} className="ss-footer__logo">
                   SANTOS & SANTORINI
                 </Link>
                 <p className="ss-footer__copy">
-                  {isEn
-                    ? "Modern tailoring, ready-to-wear pieces and a cleaner mobile shopping experience."
-                    : "Modern tailoring, ready-to-wear modeli i modernije mobile iskustvo kupovine."}
+                  {isEn ? footer.brandCopyEn : footer.brandCopy}
                 </p>
 
                 <div className="ss-footer__contact-grid">
@@ -42,9 +43,7 @@ export default async function StorefrontFooter({
                   <a href="tel:+381694455106" className="ss-footer__contact-chip">
                     +381 69 445 5106
                   </a>
-                  <span className="ss-footer__contact-chip">
-                    Obrenoviceva 9, Nis
-                  </span>
+                  {primaryStore ? <span className="ss-footer__contact-chip">{primaryStore.mapLabel}</span> : null}
                   <span className="ss-footer__contact-chip">
                     PIB {landingSettings.companyPib}
                   </span>
@@ -55,7 +54,7 @@ export default async function StorefrontFooter({
 
                 <div className="ss-footer__socials">
                   <a
-                    href="https://www.instagram.com/santos.santorini/"
+                    href={footer.instagramUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="ss-footer__social-link"
@@ -72,33 +71,20 @@ export default async function StorefrontFooter({
               </div>
             </div>
 
-            <div className="col-6 col-lg-2">
-              <div className="ss-footer__group">
-                <h5 className="ss-footer__title">
-                  {isEn ? "Company" : "Kompanija"}
-                </h5>
-                <ul className="ss-footer__list list-unstyled">
-                  <li><Link href={withLang("/")}>{isEn ? "Home" : "Pocetna"}</Link></li>
-                  <li><Link href={withLang("/o-nama")}>{isEn ? "About" : "O nama"}</Link></li>
-                  <li><Link href={withLang("/poslovne-uniforme")}>{isEn ? "Business uniforms" : "Poslovne uniforme"}</Link></li>
-                  <li><Link href={withLang("/blog")}>Blog</Link></li>
-                  <li><Link href={withLang("/kontakt")}>{isEn ? "Contact" : "Kontakt"}</Link></li>
-                </ul>
+            {footer.groups.map((group) => (
+              <div key={group.title} className="col-6 col-lg-2">
+                <div className="ss-footer__group">
+                  <h5 className="ss-footer__title">{isEn ? group.titleEn : group.title}</h5>
+                  <ul className="ss-footer__list list-unstyled">
+                    {group.links.map((link) => (
+                      <li key={`${group.title}-${link.href}`}>
+                        <Link href={withLang(link.href)}>{isEn ? link.labelEn : link.label}</Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
-            </div>
-
-            <div className="col-6 col-lg-2">
-              <div className="ss-footer__group">
-                <h5 className="ss-footer__title">Shop</h5>
-                <ul className="ss-footer__list list-unstyled">
-                  <li><Link href={withLang("/web-shop")}>Web Shop</Link></li>
-                  <li><Link href={withLang("/akcije")}>{isEn ? "Sale" : "Akcije"}</Link></li>
-                  <li><Link href={withLang("/web-shop?inStock=1")}>{isEn ? "In stock" : "Na stanju"}</Link></li>
-                  <li><Link href={withLang("/dokumenta")}>{isEn ? "Documents" : "Dokumenta"}</Link></li>
-                  <li><Link href={withLang("/checkout")}>Checkout</Link></li>
-                </ul>
-              </div>
-            </div>
+            ))}
 
             <div className="col-12 col-lg-3">
               <div className="ss-footer__group ss-footer__group--newsletter">
@@ -117,9 +103,7 @@ export default async function StorefrontFooter({
         <div className="ss-footer__bottom">
           <span>Copyright {new Date().getFullYear()} Santos & Santorini</span>
           <span>
-            {isEn
-              ? "Tailoring, accessories and editorial shopping."
-              : "Krojenje, aksesoari i editorial shopping."}
+            {isEn ? footer.bottomTaglineEn : footer.bottomTagline}
           </span>
         </div>
       </div>

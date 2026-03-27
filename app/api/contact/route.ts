@@ -10,6 +10,8 @@ type ContactMessage = {
   phone: string;
   subject: string;
   message: string;
+  preferredStore: string;
+  source: string;
   createdAt: string;
 };
 
@@ -23,6 +25,8 @@ export async function POST(req: NextRequest) {
   let phone = "";
   let subject = "";
   let message = "";
+  let preferredStore = "";
+  let source = "";
 
   if (contentType.includes("application/json")) {
     const body = await req.json().catch(() => ({}));
@@ -31,6 +35,8 @@ export async function POST(req: NextRequest) {
     phone = sanitize(body?.phone ?? "");
     subject = sanitize(body?.subject ?? "");
     message = sanitize(body?.message ?? "");
+    preferredStore = sanitize(body?.preferredStore ?? "");
+    source = sanitize(body?.source ?? "");
   } else {
     const form = await req.formData();
     name = sanitize(form.get("name"));
@@ -38,6 +44,8 @@ export async function POST(req: NextRequest) {
     phone = sanitize(form.get("phone"));
     subject = sanitize(form.get("subject"));
     message = sanitize(form.get("message"));
+    preferredStore = sanitize(form.get("preferredStore"));
+    source = sanitize(form.get("source"));
   }
 
   if (!name || !email || !message) {
@@ -51,6 +59,8 @@ export async function POST(req: NextRequest) {
     phone,
     subject,
     message,
+    preferredStore,
+    source: source || "kontakt-forma",
     createdAt: new Date().toISOString(),
   };
 

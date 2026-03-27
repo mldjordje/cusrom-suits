@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import JsonLd from "@/app/components/seo/JsonLd";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import StorefrontTrustStrip from "@/app/components/storefront/StorefrontTrustStrip";
 import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
 import ProductImageGallery from "@/app/components/storefront/ProductImageGallery";
 import ProductSizeGuideButton from "@/app/components/storefront/ProductSizeGuideButton";
@@ -552,6 +553,8 @@ export default async function WebShopProductPage({
             </div>
           </Reveal>
         ) : null}
+
+        <StorefrontTrustStrip lang={lang} compact />
 
         <div className="d-none d-lg-block mb-5 pb-xl-5" />
       </main>

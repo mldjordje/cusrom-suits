@@ -1,0 +1,137 @@
+{
+  "navigation": {
+    "items": [
+      { "href": "/", "label": "Pocetna", "labelEn": "Home" },
+      { "href": "/web-shop", "label": "Web Shop", "labelEn": "Web Shop" },
+      { "href": "/akcije", "label": "Akcije", "labelEn": "Sale" },
+      { "href": "/o-nama", "label": "O nama", "labelEn": "About" },
+      { "href": "/blog", "label": "Blog", "labelEn": "Blog" },
+      { "href": "/prodajna-mesta", "label": "Prodajna mesta", "labelEn": "Stores" },
+      { "href": "/kontakt", "label": "Kontakt", "labelEn": "Contact" }
+    ]
+  },
+  "footer": {
+    "eyebrow": "Krojeno u Nisu",
+    "eyebrowEn": "Crafted in Nis",
+    "brandCopy": "Modern tailoring, ready-to-wear modeli i modernije mobile iskustvo kupovine.",
+    "brandCopyEn": "Modern tailoring, ready-to-wear pieces and a cleaner mobile shopping experience.",
+    "instagramUrl": "https://www.instagram.com/santos.santorini/",
+    "bottomTagline": "Krojenje, aksesoari i editorial shopping.",
+    "bottomTaglineEn": "Tailoring, accessories and editorial shopping.",
+    "groups": [
+      {
+        "title": "Kompanija",
+        "titleEn": "Company",
+        "links": [
+          { "href": "/", "label": "Pocetna", "labelEn": "Home" },
+          { "href": "/o-nama", "label": "O nama", "labelEn": "About" },
+          { "href": "/poslovne-uniforme", "label": "Poslovne uniforme", "labelEn": "Business uniforms" },
+          { "href": "/prodajna-mesta", "label": "Prodajna mesta", "labelEn": "Store locations" },
+          { "href": "/blog", "label": "Blog", "labelEn": "Blog" },
+          { "href": "/kontakt", "label": "Kontakt", "labelEn": "Contact" }
+        ]
+      },
+      {
+        "title": "Shop",
+        "titleEn": "Shop",
+        "links": [
+          { "href": "/web-shop", "label": "Web Shop", "labelEn": "Web Shop" },
+          { "href": "/akcije", "label": "Akcije", "labelEn": "Sale" },
+          { "href": "/web-shop?inStock=1", "label": "Na stanju", "labelEn": "In stock" },
+          { "href": "/dokumenta", "label": "Dokumenta", "labelEn": "Documents" },
+          { "href": "/checkout", "label": "Checkout", "labelEn": "Checkout" }
+        ]
+      }
+    ]
+  },
+  "contactPage": {
+    "title": "Kontakt",
+    "titleEn": "Contact",
+    "intro": "Javite nam se za porudzbine, savete, posete prodajnim mestima i informacije o artiklima.",
+    "introEn": "Reach out for orders, styling advice, showroom visits and product information.",
+    "detailsTitle": "Kontakt podaci",
+    "detailsTitleEn": "Contact details",
+    "formTitle": "Posaljite upit",
+    "formTitleEn": "Send an inquiry",
+    "preferredStorePlaceholder": "Zeljena lokacija ili online",
+    "preferredStorePlaceholderEn": "Preferred location or online",
+    "onlineOptionLabel": "Online savetovanje",
+    "onlineOptionLabelEn": "Online assistance",
+    "submitLabel": "Posalji",
+    "submitLabelEn": "Send"
+  },
+  "storesPage": {
+    "title": "Prodajna mesta",
+    "titleEn": "Store locations",
+    "intro": "Posetite prodajno mesto, isprobajte modele uzivo i dogovorite stilsku pomoc sa timom.",
+    "introEn": "Visit the showroom, try pieces in person and get styling guidance from the team.",
+    "callCtaLabel": "Pozovi radnju",
+    "callCtaLabelEn": "Call store",
+    "contactCardTitle": "Kontakt",
+    "contactCardTitleEn": "Contact",
+    "hoursCardTitle": "Radno vreme",
+    "hoursCardTitleEn": "Working hours"
+  },
+  "aboutPage": {
+    "heroImage": "/img/hero.jpg",
+    "heroAlt": "Santos & Santorini hero",
+    "heroAltEn": "Santos & Santorini hero",
+    "heroTitle": "O nama",
+    "heroTitleEn": "About us",
+    "heroSubtitle": "Santos & Santorini atelier, Nis",
+    "heroSubtitleEn": "Santos & Santorini atelier, Nis",
+    "introTitle": "Santos & Santorini",
+    "introTitleEn": "Santos & Santorini",
+    "paragraphs": [
+      "Brend je posvecen elegantnom muskom stilu, savremenim krojevima i pazljivo odabranim materijalima. Fokus je na balansu izmedju klasicnog izgleda i modernog komfora.",
+      "U okviru web shop ponude dostupni su ready-to-wear artikli, izdvojene akcije i blog sadrzaj koji prati kolekcije, stil i novosti iz brenda."
+    ],
+    "paragraphsEn": [
+      "The brand is dedicated to elegant menswear, contemporary cuts and carefully selected materials. The focus is on balancing classic appearance with modern comfort.",
+      "The web shop includes ready-to-wear pieces, selected sale offers and blog content following collections, style and brand news."
+    ],
+    "primaryCtaLabel": "Web Shop",
+    "primaryCtaLabelEn": "Web Shop",
+    "primaryCtaHref": "/web-shop",
+    "secondaryCtaLabel": "Kontakt",
+    "secondaryCtaLabelEn": "Contact",
+    "secondaryCtaHref": "/kontakt",
+    "secondaryImage": "/img/hero2.jpg",
+    "secondaryImageAlt": "Atelier visual",
+    "secondaryImageAltEn": "Atelier visual"
+  },
+  "stores": [
+    {
+      "slug": "nis",
+      "city": "Nis",
+      "cityEn": "Nis",
+      "title": "Santos & Santorini Nis",
+      "titleEn": "Santos & Santorini Nis",
+      "address": "Obrenoviceva 9, 18000 Nis, Srbija",
+      "addressEn": "Obrenoviceva 9, 18000 Nis, Serbia",
+      "mapLabel": "Obrenoviceva 9 Nis, Srbija",
+      "phone": "+381 69 445 5106",
+      "landline": "+381 18 514 276",
+      "email": "santos.pobedina@gmail.com",
+      "hours": ["Pon-Pet: 09:00 - 21:00", "Subota: 09:00 - 20:00", "Nedelja: 10:00 - 17:00"],
+      "hoursEn": ["Mon-Fri: 09:00 - 21:00", "Saturday: 09:00 - 20:00", "Sunday: 10:00 - 17:00"],
+      "mapEmbedUrl": "https://www.google.com/maps?q=43.3201002,21.9037988&z=15&output=embed"
+    },
+    {
+      "slug": "krusevac",
+      "city": "Krusevac",
+      "cityEn": "Krusevac",
+      "title": "Santos & Santorini Krusevac",
+      "titleEn": "Santos & Santorini Krusevac",
+      "address": "Trg Fontana 16, Krusevac, Srbija",
+      "addressEn": "Trg Fontana 16, Krusevac, Serbia",
+      "mapLabel": "Trg Fontana 16 Krusevac, Srbija",
+      "phone": "+381 69 44 55 104",
+      "landline": "+381 37 443 960",
+      "email": "santos.krusevac@gmail.com",
+      "hours": ["Pon-Pet: 09:00 - 21:00", "Subota: 09:00 - 18:00", "Nedelja: Ne radimo"],
+      "hoursEn": ["Mon-Fri: 09:00 - 21:00", "Saturday: 09:00 - 18:00", "Sunday: Closed"],
+      "mapEmbedUrl": "https://www.google.com/maps?q=43.5805506,21.3256574&z=15&output=embed"
+    }
+  ]
+}

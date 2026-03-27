@@ -25,7 +25,23 @@
   "purchaseGuideText": "Izaberite proizvod i velicinu, dodajte artikal u korpu, zatim na checkout strani unesite kontakt podatke i posaljite porudzbinu kao upit. Nas tim potom potvrdjuje dostupnost, rok i sve detalje isporuke.",
   "documentsTitle": "Dokumenta za preuzimanje",
   "documentsSubtitle": "Ovde mozete dodati obrasce i dokumenta koja kupci mogu odmah da preuzmu.",
-  "documents": [],
+  "documents": [
+    {
+      "title": "Reklamacioni list",
+      "description": "Obrazac za podnosenje reklamacije.",
+      "url": "https://santos.rs/fajlovi/uputstvo/REKLAMACIONI%20LIST%281%29.pdf"
+    },
+    {
+      "title": "Formular za raskid ugovora",
+      "description": "Obrazac za odustanak od kupovine na daljinu.",
+      "url": "https://santos.rs/fajlovi/uputstvo/formular_za_raskid_ugovora.pdf"
+    },
+    {
+      "title": "Dokumenta i uputstva",
+      "description": "Pregled svih dostupnih dokumenata i korisnih informacija za kupce.",
+      "url": "https://santos.rs/dokumenta"
+    }
+  ],
   "uniformsEyebrow": "Poslovne uniforme",
   "uniformsTitle": "Uniforme za timove, hotele, restorane i klinike",
   "uniformsText": "Santos & Santorini priprema poslovne uniforme prilagodjene identitetu brenda, delatnosti i potrebama tima. U ponudi su muske i zenske kombinacije, mantili, kosulje i kompletne capsule kolekcije za kompanije.",

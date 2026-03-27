@@ -8,8 +8,8 @@ import {
   type SizeGuideTable,
 } from "@/lib/catalog/sizeGuides";
 
-const requireAdmin = (req: NextRequest) => {
-  if (isAdminRequestAuthenticated(req)) return null;
+const requireAdmin = async (req: NextRequest) => {
+  if (await isAdminRequestAuthenticated(req)) return null;
   return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 };
 
@@ -65,7 +65,7 @@ const parseTables = (value: unknown): SizeGuideTable[] => {
 };
 
 export async function GET(req: NextRequest) {
-  const authError = requireAdmin(req);
+  const authError = await requireAdmin(req);
   if (authError) return authError;
 
   const settings = await getSizeGuideSettings();
@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const authError = requireAdmin(req);
+  const authError = await requireAdmin(req);
   if (authError) return authError;
 
   const payload = await req.json().catch(() => null);

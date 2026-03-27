@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequestAuthenticated } from "@/lib/adminAuth";
+import { evaluateVoucher, getFulfillmentSettings, redeemVoucher } from "@/lib/storefront/fulfillment";
+import { getSiteContent } from "@/lib/storefront/siteContent";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 import type { StorefrontCartItem } from "@/lib/cart/types";
 
 const ORDERS_PATH = "data/orders.json";
 
-const requireAdmin = (req: NextRequest) => {
-  if (isAdminRequestAuthenticated(req)) return null;
+const requireAdmin = async (req: NextRequest) => {
+  if (await isAdminRequestAuthenticated(req)) return null;
   return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 };
 
@@ -22,6 +24,7 @@ const isStorefrontPayload = (payload: any): payload is {
   items: StorefrontCartItem[];
   customer?: Record<string, unknown> | null;
   totals?: Record<string, unknown> | null;
+  fulfillment?: Record<string, unknown> | null;
   note?: string | null;
 } => Array.isArray(payload?.items) && payload.items.length > 0;
 
@@ -66,6 +69,46 @@ export async function POST(req: NextRequest) {
 
     const subtotal = Number(payload?.totals?.subtotal || items.reduce((sum, item) => sum + item.price * item.quantity, 0));
     const quantity = Number(payload?.totals?.quantity || items.reduce((sum, item) => sum + item.quantity, 0));
+    const fulfillmentPayload =
+      payload.fulfillment && typeof payload.fulfillment === "object"
+        ? (payload.fulfillment as Record<string, unknown>)
+        : {};
+    const deliveryMethod = fulfillmentPayload.method === "pickup" ? "pickup" : "delivery";
+    const deliveryServiceId = String(fulfillmentPayload.deliveryServiceId || "").trim();
+    const pickupStoreSlug = String(fulfillmentPayload.pickupStoreSlug || "").trim();
+    const voucherCode = String(fulfillmentPayload.voucherCode || "").trim().toUpperCase();
+    const [fulfillmentSettings, siteContent] = await Promise.all([getFulfillmentSettings(), getSiteContent()]);
+    const selectedDeliveryService =
+      deliveryMethod === "delivery"
+        ? fulfillmentSettings.deliveryServices.find((service) => service.isActive && service.id === deliveryServiceId) || null
+        : null;
+    const selectedPickupStore =
+      deliveryMethod === "pickup"
+        ? siteContent.stores.find((store) => store.slug === pickupStoreSlug) || null
+        : null;
+
+    if (deliveryMethod === "pickup" && !selectedPickupStore) {
+      return NextResponse.json({ success: false, message: "Izaberi radnju za preuzimanje." }, { status: 400 });
+    }
+    if (deliveryMethod === "delivery" && !selectedDeliveryService) {
+      return NextResponse.json({ success: false, message: "Izaberi kurirsku sluzbu." }, { status: 400 });
+    }
+
+    const deliveryCost = deliveryMethod === "delivery" ? Number(selectedDeliveryService?.price || 0) : 0;
+    let voucherDiscount = 0;
+    if (voucherCode) {
+      const voucherResult = await evaluateVoucher({
+        code: voucherCode,
+        email,
+        subtotal,
+        deliveryCost,
+      });
+      if (!voucherResult.ok) {
+        return NextResponse.json({ success: false, message: voucherResult.message }, { status: 400 });
+      }
+      voucherDiscount = voucherResult.discountAmount;
+    }
+    const finalTotal = Math.max(0, subtotal + deliveryCost - voucherDiscount);
     const contact = {
       ime: fullName,
       email,
@@ -74,6 +117,12 @@ export async function POST(req: NextRequest) {
       grad: String(customer.city || "").trim(),
       postanski_broj: String(customer.postalCode || "").trim(),
       napomena: String(customer.note || payload.note || "").trim(),
+      delivery_method: deliveryMethod,
+      pickup_store_slug: selectedPickupStore?.slug || null,
+      pickup_store_label: selectedPickupStore?.title || null,
+      delivery_service_id: selectedDeliveryService?.id || null,
+      delivery_service_name: selectedDeliveryService?.name || null,
+      voucher_code: voucherCode || null,
     };
 
     const config = {
@@ -82,6 +131,9 @@ export async function POST(req: NextRequest) {
       items,
       totals: {
         subtotal,
+        deliveryCost,
+        voucherDiscount,
+        finalTotal,
         quantity,
       },
       customer: {
@@ -92,6 +144,17 @@ export async function POST(req: NextRequest) {
         city: contact.grad,
         postalCode: contact.postanski_broj,
       },
+      fulfillment: {
+        method: deliveryMethod,
+        pickupStoreSlug: selectedPickupStore?.slug || null,
+        pickupStoreLabel: selectedPickupStore?.title || null,
+        deliveryServiceId: selectedDeliveryService?.id || null,
+        deliveryServiceName: selectedDeliveryService?.name || null,
+        deliveryCost,
+        voucherCode: voucherCode || null,
+        voucherDiscount,
+        finalTotal,
+      },
     };
 
     const entry = {
@@ -100,7 +163,7 @@ export async function POST(req: NextRequest) {
       type: "webshop",
       config,
       items,
-      price: subtotal,
+      price: finalTotal,
       fabric_id: null,
       contact,
       note: contact.napomena || null,
@@ -112,14 +175,17 @@ export async function POST(req: NextRequest) {
       const orders = await readOrdersFile();
       orders.unshift(entry);
       await writeOrdersFile(orders);
-      return NextResponse.json({ success: true, orderId: entry.id, storage: "file" });
+      if (voucherCode) {
+        await redeemVoucher(voucherCode, String(entry.id));
+      }
+      return NextResponse.json({ success: true, orderId: entry.id, storage: "file", finalTotal, voucherCode: voucherCode || null });
     }
 
     const { data, error } = await supabase
       .from("orders")
       .insert({
         config,
-        price: subtotal,
+        price: finalTotal,
         fabric_id: null,
         contact,
         note: contact.napomena || null,
@@ -132,7 +198,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: error.message }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true, orderId: (data as { id?: string | number } | null)?.id });
+    const orderId = String((data as { id?: string | number } | null)?.id || "");
+    if (voucherCode && orderId) {
+      await redeemVoucher(voucherCode, orderId);
+    }
+    return NextResponse.json({ success: true, orderId, finalTotal, voucherCode: voucherCode || null });
   }
 
   if (!payload.config) {
@@ -178,7 +248,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
-  const authError = requireAdmin(req);
+  const authError = await requireAdmin(req);
   if (authError) return authError;
 
   const supabase = getServiceSupabase();
@@ -208,7 +278,7 @@ export async function PATCH(req: NextRequest) {
   const payload = await req.json().catch(() => null);
   const isPublicUpdate = payload?.status === "pending" && payload?.contact;
   if (!isPublicUpdate) {
-    const authError = requireAdmin(req);
+    const authError = await requireAdmin(req);
     if (authError) return authError;
   }
   const id = payload?.id;

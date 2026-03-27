@@ -3,6 +3,7 @@ import Link from "next/link";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import Reveal from "@/app/components/motion/Reveal";
+import { getSiteContent } from "@/lib/storefront/siteContent";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 
 export const metadata = {
@@ -17,54 +18,49 @@ export default async function AboutPage({
 }) {
   const lang = await resolveStorefrontLanguage(await searchParams);
   const isEn = lang === "en";
+  const aboutPage = (await getSiteContent()).aboutPage;
+
   return (
     <>
       <StorefrontHeader lang={lang} />
       <main className="page-wrapper">
         <Reveal as="section" className="position-relative">
           <Image
-            src="/img/hero.jpg"
+            src={aboutPage.heroImage}
             width={1920}
             height={900}
-            alt="Santos & Santorini hero"
+            alt={isEn ? aboutPage.heroAltEn : aboutPage.heroAlt}
             className="w-100 h-auto object-fit-cover"
             priority
           />
           <div className="position-absolute top-50 start-50 translate-middle text-center text-white px-3">
-            <h1 className="text-uppercase mb-2">{isEn ? "About us" : "O nama"}</h1>
-            <p className="mb-0">Santos & Santorini atelier, Nis</p>
+            <h1 className="text-uppercase mb-2">{isEn ? aboutPage.heroTitleEn : aboutPage.heroTitle}</h1>
+            <p className="mb-0">{isEn ? aboutPage.heroSubtitleEn : aboutPage.heroSubtitle}</p>
           </div>
         </Reveal>
 
         <Reveal as="section" className="container py-5" delay={0.06}>
           <div className="row g-4">
             <div className="col-lg-6">
-              <h2 className="text-uppercase">Santos & Santorini</h2>
-              <p>
-                {isEn
-                  ? "The brand is dedicated to elegant menswear, contemporary cuts and carefully selected materials. The focus is on balancing classic appearance with modern comfort."
-                  : "Brend je posvećen elegantnom muškom stilu, savremenim krojevima i pažljivo odabranim materijalima. Fokus je na balansu između klasičnog izgleda i modernog komfora."}
-              </p>
-              <p>
-                {isEn
-                  ? "The web shop includes ready-to-wear pieces, selected sale offers and blog content following collections, style and brand news."
-                  : "U okviru web shop ponude dostupni su ready-to-wear artikli, izdvojene akcije i blog sadržaj koji prati kolekcije, stil i novosti iz brenda."}
-              </p>
+              <h2 className="text-uppercase">{isEn ? aboutPage.introTitleEn : aboutPage.introTitle}</h2>
+              {(isEn ? aboutPage.paragraphsEn : aboutPage.paragraphs).map((paragraph) => (
+                <p key={paragraph}>{paragraph}</p>
+              ))}
               <div className="d-flex gap-2">
-                <Link href="/web-shop" className="btn btn-primary text-uppercase fw-medium">
-                  Web Shop
+                <Link href={aboutPage.primaryCtaHref} className="btn btn-primary text-uppercase fw-medium">
+                  {isEn ? aboutPage.primaryCtaLabelEn : aboutPage.primaryCtaLabel}
                 </Link>
-                <Link href="/kontakt" className="btn btn-outline-secondary text-uppercase fw-medium">
-                  {isEn ? "Contact" : "Kontakt"}
+                <Link href={aboutPage.secondaryCtaHref} className="btn btn-outline-secondary text-uppercase fw-medium">
+                  {isEn ? aboutPage.secondaryCtaLabelEn : aboutPage.secondaryCtaLabel}
                 </Link>
               </div>
             </div>
             <div className="col-lg-6">
               <Image
-                src="/img/hero2.jpg"
+                src={aboutPage.secondaryImage}
                 width={900}
                 height={620}
-                alt="Atelier visual"
+                alt={isEn ? aboutPage.secondaryImageAltEn : aboutPage.secondaryImageAlt}
                 className="w-100 h-auto"
               />
             </div>

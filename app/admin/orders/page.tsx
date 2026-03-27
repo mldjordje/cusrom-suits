@@ -47,6 +47,17 @@ const getOrderItems = (order: Order) => {
   return Array.isArray(items) ? items : [];
 };
 
+const getOrderFulfillmentSummary = (order: Order) => {
+  const fulfillment = order?.config?.fulfillment;
+  if (!fulfillment || typeof fulfillment !== "object") return "";
+  const row = fulfillment as Record<string, unknown>;
+  const method = row.method === "pickup" ? "preuzimanje" : "dostava";
+  const pickup = String(row.pickupStoreLabel || row.pickupStoreSlug || "").trim();
+  const service = String(row.deliveryServiceName || row.deliveryServiceId || "").trim();
+  const voucher = String(row.voucherCode || "").trim();
+  return [method, pickup, service, voucher ? `vaucer ${voucher}` : ""].filter(Boolean).join(" | ");
+};
+
 const formatPrice = (value?: number | null) => {
   if (typeof value !== "number" || !Number.isFinite(value)) return "";
   return new Intl.NumberFormat("sr-RS", {
@@ -227,6 +238,7 @@ export default function OrdersAdminPage() {
           const contactLine = [contactName, contactEmail, contactPhone].filter(Boolean).join(" | ");
           const source = getOrderSource(o);
           const items = getOrderItems(o);
+          const fulfillmentSummary = getOrderFulfillmentSummary(o);
           return (
             <div key={o.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-2">
@@ -259,6 +271,7 @@ export default function OrdersAdminPage() {
                   </div>
                 </div>
               ) : null}
+              {fulfillmentSummary ? <p className="mt-2 text-xs text-gray-500">Fulfillment: {fulfillmentSummary}</p> : null}
               {o.note ? <p className="mt-2 text-xs text-gray-500">Napomena: {o.note}</p> : null}
 
               <div className="mt-3 flex items-center gap-2 text-xs text-gray-500">

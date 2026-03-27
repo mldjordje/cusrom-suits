@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-03-11T11:06:45.546Z",
+  "generatedAt": "2026-03-27T17:36:49.621Z",
   "inputSql": "agyc3416_santos_sa2025.sql",
   "outputFile": "data\\legacy-products.json",
   "options": {
@@ -10,28 +10,28 @@
     "baseUrl": "https://santos.rs"
   },
   "counters": {
-    "insertStatements": 192,
-    "rowCount": 67239,
+    "insertStatements": 196,
+    "rowCount": 68599,
     "tableRows": {
-      "product": 11302,
+      "product": 11642,
       "productdetail": 2133,
       "productdetail_tr": 4251,
-      "product_tr": 13121,
-      "productwarehouse": 12075,
+      "product_tr": 13461,
+      "productwarehouse": 12415,
       "productcategory": 2628,
       "category": 42,
       "product_file": 11223,
       "attr": 7,
       "attrval": 93,
-      "attrprodval": 10358,
+      "attrprodval": 10698,
       "tax": 5,
       "brend": 1
     },
     "skippedProductsInactive": 0,
     "skippedProductsNonExport": 0,
     "skippedProductsOutOfStock": 0,
-    "parsedProducts": 11302,
-    "finalProducts": 11302,
+    "parsedProducts": 11642,
+    "finalProducts": 11642,
     "categories": 42,
     "brands": 1,
     "taxes": 5

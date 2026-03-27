@@ -1,0 +1,28 @@
+{
+  "pickupEnabled": true,
+  "deliveryEnabled": true,
+  "pickupLabel": "Preuzimanje u radnji",
+  "pickupLabelEn": "Store pickup",
+  "deliveryLabel": "Dostava kurirskom sluzbom",
+  "deliveryLabelEn": "Courier delivery",
+  "pickupNote": "Tim potvrdjuje radnju i vreme preuzimanja nakon porudzbine.",
+  "pickupNoteEn": "The team confirms the store and pickup timing after the order is sent.",
+  "deliveryNote": "Dostava i konacan trosak se potvrdjuju direktno sa kupcem.",
+  "deliveryNoteEn": "Delivery details and the final shipping cost are confirmed directly with the customer.",
+  "deliveryServices": [
+    {
+      "id": "city-express",
+      "code": "CITY EXPRESS",
+      "name": "CITY EXPRESS",
+      "description": "Kurirska sluzba iz starog webshop sistema.",
+      "phone": "+381 11 30 93 000",
+      "email": "",
+      "website": "https://www.cityexpress.rs/",
+      "trackingUrl": "",
+      "price": 0,
+      "sortOrder": 0,
+      "isActive": true
+    }
+  ],
+  "vouchers": []
+}

@@ -7,6 +7,8 @@ type ContactMessage = {
   phone: string;
   subject: string;
   message: string;
+  preferredStore?: string;
+  source?: string;
   createdAt: string;
 };
 
@@ -47,6 +49,12 @@ export default async function ContactMessagesAdminPage() {
               </p>
               <p className="mb-1 text-sm text-slate-700">
                 <strong>Tema:</strong> {message.subject || "-"}
+              </p>
+              <p className="mb-1 text-sm text-slate-700">
+                <strong>Kanal:</strong> {message.source || "kontakt-forma"}
+              </p>
+              <p className="mb-1 text-sm text-slate-700">
+                <strong>Lokacija:</strong> {message.preferredStore || "nije izabrano"}
               </p>
               <p className="mb-0 text-sm text-slate-700 whitespace-pre-wrap">{message.message}</p>
             </article>

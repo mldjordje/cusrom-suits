@@ -1,15 +1,31 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import AdminNav from "./components/AdminNav";
+import AdminShell from "./components/AdminShell";
+import { buildSeoMetadata } from "@/lib/seo";
+import { getAdminViewerFromCookieStore } from "@/lib/adminAuth";
 import "./admin-template.css";
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
+export const metadata: Metadata = buildSeoMetadata({
+  title: "Admin | Santos & Santorini",
+  description: "Administracija za Santos & Santorini web shop i operacije.",
+  path: "/admin",
+  noIndex: true,
+});
+
+export default async function AdminLayout({ children }: { children: ReactNode }) {
   const generatedAt = new Date().toLocaleString("sr-RS");
+  const viewer = await getAdminViewerFromCookieStore(await cookies());
 
   return (
-    <div className="admin-template-root">
-      <div className="admin-template-shell">
-        <aside className="admin-template-sidebar">
+    <AdminShell
+      generatedAt={generatedAt}
+      viewerName={viewer?.displayName || viewer?.username || "Admin"}
+      viewerRoles={viewer?.roleIds || []}
+      sidebar={(
+        <>
           <Link href="/admin" className="admin-template-brand">
             <span className="admin-template-brand-dot" aria-hidden="true" />
             <span className="admin-template-brand-text">
@@ -17,30 +33,12 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
               <small>web shop operations</small>
             </span>
           </Link>
-          <AdminNav />
+          <AdminNav permissions={viewer?.permissions || []} />
           <p className="admin-template-sidebar-foot">Web shop, sadrzaj i operacije</p>
-        </aside>
-
-        <div className="admin-template-main">
-          <header className="admin-template-topbar">
-            <div className="admin-template-topbar-title">
-              <p>Admin panel</p>
-              <h1>Santos operacije</h1>
-            </div>
-            <div className="admin-template-topbar-meta">
-              <span>Status: Online</span>
-              <Link href="/admin/tutorial">Tutorial</Link>
-              <span>{generatedAt}</span>
-              <form action="/api/admin/logout" method="post">
-                <button type="submit" className="admin-template-logout">
-                  Logout
-                </button>
-              </form>
-            </div>
-          </header>
-          <section className="admin-template-content">{children}</section>
-        </div>
-      </div>
-    </div>
+        </>
+      )}
+    >
+      {children}
+    </AdminShell>
   );
 }

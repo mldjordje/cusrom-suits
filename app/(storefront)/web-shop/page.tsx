@@ -3,6 +3,7 @@ import Link from "next/link";
 import JsonLd from "@/app/components/seo/JsonLd";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import StorefrontTrustStrip from "@/app/components/storefront/StorefrontTrustStrip";
 import WebShopFilters from "@/app/components/storefront/WebShopFilters";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
@@ -475,6 +476,8 @@ export default async function WebShopPage({
             </Link>
           </div>
         </section>
+
+        <StorefrontTrustStrip lang={lang} compact />
 
         <div className="mb-5 pb-xl-5" />
       </main>

@@ -36,6 +36,14 @@ const normalizeFabric = (fabric: any) => ({
   price: fabric.price ?? 0,
   tone: fabric.tone || "medium",
   pattern: fabric.pattern ?? null,
+  // Resolve texture image URL across common column name variants
+  texture:
+    fabric.texture ??
+    fabric.texture_url ??
+    fabric.image_url ??
+    fabric.image ??
+    fabric.textureUrl ??
+    null,
   photoVariant: fabric.photoVariant ?? fabric.photo_variant ?? null,
   renderMode: fabric.renderMode ?? fabric.render_mode ?? null,
   renderBasePath:

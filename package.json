@@ -27,7 +27,9 @@
         "smoke:webshop-admin": "node scripts/smoke-webshop-admin.mjs",
         "extract:legacy-catalog": "node scripts/extract-legacy-catalog.mjs",
         "import:legacy-catalog": "node scripts/import-legacy-catalog-to-supabase.mjs",
-        "extract:legacy-content": "node scripts/extract-legacy-content.mjs"
+        "extract:legacy-content": "node scripts/extract-legacy-content.mjs",
+        "import:legacy-content": "node scripts/import-legacy-content-to-supabase.mjs",
+        "check:supabase-content": "node scripts/check-supabase-content-schema.mjs"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",

@@ -7,6 +7,28 @@ import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSte
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
+type PickupStoreOption = {
+  slug: string;
+  label: string;
+  address: string;
+};
+
+type DeliveryServiceOption = {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+};
+
+type FulfillmentCopy = {
+  pickupEnabled: boolean;
+  deliveryEnabled: boolean;
+  pickupLabel: string;
+  deliveryLabel: string;
+  pickupNote: string;
+  deliveryNote: string;
+};
+
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
     style: "currency",
@@ -22,18 +44,35 @@ const initialForm = {
   city: "",
   postalCode: "",
   note: "",
+  deliveryMethod: "delivery" as "pickup" | "delivery",
+  pickupStoreSlug: "",
+  deliveryServiceId: "",
+  voucherCode: "",
 };
 
 export default function CheckoutPageClient({
   lang = "sr",
+  pickupStores,
+  deliveryServices,
+  fulfillmentCopy,
 }: {
   lang?: StorefrontLanguage;
+  pickupStores: PickupStoreOption[];
+  deliveryServices: DeliveryServiceOption[];
+  fulfillmentCopy: FulfillmentCopy;
 }) {
   const { items, subtotal, clearCart, isReady } = useCart();
-  const [form, setForm] = useState(initialForm);
+  const [form, setForm] = useState(() => ({
+    ...initialForm,
+    deliveryMethod: fulfillmentCopy.deliveryEnabled ? "delivery" : "pickup",
+    pickupStoreSlug: pickupStores[0]?.slug || "",
+    deliveryServiceId: deliveryServices[0]?.id || "",
+  }));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [submittedTotal, setSubmittedTotal] = useState<number | null>(null);
+  const [appliedVoucherCode, setAppliedVoucherCode] = useState<string | null>(null);
   const isEn = lang === "en";
 
   const withLang = (href: string) => {
@@ -44,14 +83,30 @@ export default function CheckoutPageClient({
 
   const canSubmit = useMemo(() => {
     if (!items.length) return false;
-    return Boolean(form.fullName.trim() && form.email.trim() && form.phone.trim());
-  }, [form.email, form.fullName, form.phone, items.length]);
+    if (!form.fullName.trim() || !form.email.trim() || !form.phone.trim()) return false;
+    if (form.deliveryMethod === "pickup") return Boolean(form.pickupStoreSlug);
+    return Boolean(form.deliveryServiceId);
+  }, [form.deliveryMethod, form.deliveryServiceId, form.email, form.fullName, form.phone, form.pickupStoreSlug, items.length]);
   const totalUnits = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
+  const selectedDeliveryService = useMemo(
+    () => deliveryServices.find((service) => service.id === form.deliveryServiceId) || deliveryServices[0] || null,
+    [deliveryServices, form.deliveryServiceId],
+  );
+  const deliveryCost = form.deliveryMethod === "delivery" ? Number(selectedDeliveryService?.price || 0) : 0;
+  const checkoutTotal = subtotal + deliveryCost;
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSubmit) {
       setError(isEn ? "Enter name, email and phone before submitting the order." : "Unesi ime, email i telefon pre slanja porudzbine.");
+      return;
+    }
+    if (form.deliveryMethod === "pickup" && !form.pickupStoreSlug) {
+      setError(isEn ? "Select a pickup store before sending the order." : "Izaberi radnju za preuzimanje pre slanja porudzbine.");
+      return;
+    }
+    if (form.deliveryMethod === "delivery" && !selectedDeliveryService) {
+      setError(isEn ? "Select a delivery service before sending the order." : "Izaberi kurirsku sluzbu pre slanja porudzbine.");
       return;
     }
 
@@ -67,9 +122,17 @@ export default function CheckoutPageClient({
           totals: {
             subtotal,
             quantity: totalUnits,
+            deliveryCost,
+            total: checkoutTotal,
           },
           customer: form,
           note: form.note || null,
+          fulfillment: {
+            method: form.deliveryMethod,
+            pickupStoreSlug: form.deliveryMethod === "pickup" ? form.pickupStoreSlug : null,
+            deliveryServiceId: form.deliveryMethod === "delivery" ? selectedDeliveryService?.id || null : null,
+            voucherCode: form.voucherCode || null,
+          },
         }),
       });
       const json = await res.json();
@@ -78,8 +141,15 @@ export default function CheckoutPageClient({
         return;
       }
       setOrderId(String(json.orderId || ""));
+      setSubmittedTotal(Number(json.finalTotal || checkoutTotal));
+      setAppliedVoucherCode(json.voucherCode ? String(json.voucherCode) : null);
       clearCart();
-      setForm(initialForm);
+      setForm({
+        ...initialForm,
+        deliveryMethod: fulfillmentCopy.deliveryEnabled ? "delivery" : "pickup",
+        pickupStoreSlug: pickupStores[0]?.slug || "",
+        deliveryServiceId: deliveryServices[0]?.id || "",
+      });
     } catch (e: any) {
       setError(e?.message || (isEn ? "Order submission failed." : "Slanje porudzbine nije uspelo."));
     } finally {
@@ -101,6 +171,16 @@ export default function CheckoutPageClient({
           <p>
             {isEn ? "Recorded order number" : "Evidentiran broj porudzbine"}: <strong>{orderId}</strong>
           </p>
+          {submittedTotal != null ? (
+            <p>
+              {isEn ? "Recorded total" : "Evidentiran ukupno"}: <strong>{formatRsd(submittedTotal)}</strong>
+            </p>
+          ) : null}
+          {appliedVoucherCode ? (
+            <p>
+              {isEn ? "Voucher applied" : "Primenjen vaucer"}: <strong>{appliedVoucherCode}</strong>
+            </p>
+          ) : null}
           <p>
             {isEn
               ? "Our team will confirm availability, delivery and all final details directly with the customer."
@@ -163,12 +243,16 @@ export default function CheckoutPageClient({
           <strong>{totalUnits}</strong>
         </div>
         <div className="ss-checkout-mini-summary__item">
-          <span>{isEn ? "Total" : "Ukupno"}</span>
+          <span>{isEn ? "Products" : "Proizvodi"}</span>
           <strong>{formatRsd(subtotal)}</strong>
         </div>
+        <div className="ss-checkout-mini-summary__item">
+          <span>{isEn ? "Delivery" : "Dostava"}</span>
+          <strong>{formatRsd(deliveryCost)}</strong>
+        </div>
         <div className="ss-checkout-mini-summary__item ss-checkout-mini-summary__item--wide">
-          <span>{isEn ? "Flow" : "Tok"}</span>
-          <strong>{isEn ? "Direct inquiry, no online payment" : "Direktan upit, bez online placanja"}</strong>
+          <span>{isEn ? "Current total" : "Trenutni ukupno"}</span>
+          <strong>{formatRsd(checkoutTotal)}</strong>
         </div>
       </div>
 
@@ -232,6 +316,84 @@ export default function CheckoutPageClient({
                     required
                   />
                 </div>
+              </div>
+            </div>
+
+            <div className="ss-order-form-section">
+              <h3>{isEn ? "Delivery or pickup" : "Dostava ili preuzimanje"}</h3>
+              <p className="ss-order-form-section__copy">
+                {form.deliveryMethod === "pickup" ? fulfillmentCopy.pickupNote : fulfillmentCopy.deliveryNote}
+              </p>
+              <div className="row g-3">
+                {fulfillmentCopy.pickupEnabled ? (
+                  <div className="col-md-6">
+                    <label className="form-label d-block">{isEn ? "Option" : "Opcija"}</label>
+                    <label className="d-flex gap-2 align-items-center">
+                      <input
+                        type="radio"
+                        checked={form.deliveryMethod === "pickup"}
+                        onChange={() => setForm((prev) => ({ ...prev, deliveryMethod: "pickup" }))}
+                      />
+                      <span>{fulfillmentCopy.pickupLabel}</span>
+                    </label>
+                  </div>
+                ) : null}
+                {fulfillmentCopy.deliveryEnabled ? (
+                  <div className="col-md-6">
+                    <label className="form-label d-block">{isEn ? "Option" : "Opcija"}</label>
+                    <label className="d-flex gap-2 align-items-center">
+                      <input
+                        type="radio"
+                        checked={form.deliveryMethod === "delivery"}
+                        onChange={() => setForm((prev) => ({ ...prev, deliveryMethod: "delivery" }))}
+                      />
+                      <span>{fulfillmentCopy.deliveryLabel}</span>
+                    </label>
+                  </div>
+                ) : null}
+
+                {form.deliveryMethod === "pickup" ? (
+                  <div className="col-12">
+                    <label htmlFor="checkout-pickup-store" className="form-label">
+                      {isEn ? "Pickup store" : "Radnja za preuzimanje"}
+                    </label>
+                    <select
+                      id="checkout-pickup-store"
+                      value={form.pickupStoreSlug}
+                      onChange={(e) => setForm((prev) => ({ ...prev, pickupStoreSlug: e.target.value }))}
+                      className="form-control"
+                    >
+                      {pickupStores.map((store) => (
+                        <option key={store.slug} value={store.slug}>
+                          {store.label} - {store.address}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                ) : null}
+
+                {form.deliveryMethod === "delivery" ? (
+                  <div className="col-12">
+                    <label htmlFor="checkout-delivery-service" className="form-label">
+                      {isEn ? "Delivery service" : "Kurirska sluzba"}
+                    </label>
+                    <select
+                      id="checkout-delivery-service"
+                      value={form.deliveryServiceId}
+                      onChange={(e) => setForm((prev) => ({ ...prev, deliveryServiceId: e.target.value }))}
+                      className="form-control"
+                    >
+                      {deliveryServices.map((service) => (
+                        <option key={service.id} value={service.id}>
+                          {service.name} {service.price > 0 ? `- ${formatRsd(service.price)}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {selectedDeliveryService?.description ? (
+                      <p className="mt-2 mb-0 text-secondary small">{selectedDeliveryService.description}</p>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             </div>
 
@@ -300,6 +462,25 @@ export default function CheckoutPageClient({
               />
             </div>
 
+            <div className="ss-order-form-section">
+              <h3>{isEn ? "Voucher" : "Vaucer"}</h3>
+              <p className="ss-order-form-section__copy">
+                {isEn
+                  ? "If you have a code, enter it here. It will be validated during order creation."
+                  : "Ako imas kod, unesi ga ovde. Validacija se radi prilikom kreiranja porudzbine."}
+              </p>
+              <label htmlFor="checkout-voucher" className="visually-hidden">
+                {isEn ? "Voucher code" : "Vaucer kod"}
+              </label>
+              <input
+                id="checkout-voucher"
+                value={form.voucherCode}
+                onChange={(e) => setForm((prev) => ({ ...prev, voucherCode: e.target.value.toUpperCase() }))}
+                className="form-control"
+                placeholder={isEn ? "Voucher code" : "Vaucer kod"}
+              />
+            </div>
+
             {error ? <p className="text-danger mt-3 mb-0">{error}</p> : null}
 
             <div className="ss-order-panel__footer">
@@ -343,7 +524,7 @@ export default function CheckoutPageClient({
 
             <div className="ss-order-summary__total">
               <span>{isEn ? "Current total" : "Trenutni ukupno"}</span>
-              <strong>{formatRsd(subtotal)}</strong>
+              <strong>{formatRsd(checkoutTotal)}</strong>
             </div>
 
             <div className="ss-order-summary__note">
@@ -352,6 +533,11 @@ export default function CheckoutPageClient({
                   ? "There is no online payment in this flow. That makes checkout simpler and keeps the focus on sending the request fast."
                   : "U ovom toku nema online placanja. To checkout cini jednostavnijim i drzi fokus na brzom slanju zahteva."}
               </p>
+              {form.voucherCode ? (
+                <p className="mt-2 mb-0">
+                  {isEn ? "Voucher to validate:" : "Vaucer za proveru:"} <strong>{form.voucherCode}</strong>
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
