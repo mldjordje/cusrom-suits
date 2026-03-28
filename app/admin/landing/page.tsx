@@ -1,5 +1,5 @@
-import { redirect } from "next/navigation";
+import AdminLandingSectionsPage from "../components/AdminLandingSectionsPage";
 
-export default function AdminLandingRedirect() {
-  redirect("/admin/webshop?tab=landing");
+export default function AdminLandingPage() {
+  return <AdminLandingSectionsPage />;
 }

@@ -1,5 +1,38 @@
 {
   "showSaleSection": true,
+  "productSections": [
+    {
+      "key": "heroStripProductIds",
+      "enabled": true,
+      "order": 0
+    },
+    {
+      "key": "highlightedProductIds",
+      "enabled": true,
+      "order": 1
+    },
+    {
+      "key": "popularProductIds",
+      "enabled": true,
+      "order": 2
+    },
+    {
+      "key": "arrivalsProductIds",
+      "enabled": true,
+      "order": 3
+    },
+    {
+      "key": "saleProductIds",
+      "enabled": true,
+      "order": 4
+    },
+    {
+      "key": "trendingProductIds",
+      "enabled": true,
+      "order": 5
+    }
+  ],
+  "customSections": [],
   "saleSectionTitle": "Aktuelne Akcije",
   "saleSectionSubtitle": "Sekcija i proizvodi se kontrolisu kroz admin.",
   "heroEyebrow": "Santos & Santorini",

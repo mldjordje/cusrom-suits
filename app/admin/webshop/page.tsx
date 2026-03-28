@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { normalizeLandingProductSectionContent, type LandingProductSectionContent } from "@/lib/catalog/landingSections";
 
 type TabKey = "products" | "landing" | "akcije";
 type CatalogCategory = { id: number; name: string; path: string[] };
@@ -72,8 +73,22 @@ type LandingUniformImage = {
   image: string;
   alt: string;
 };
+type LandingStoryCard = {
+  id: string;
+  badge: string;
+  title: string;
+  copy: string;
+  image: string;
+  ctaLabel: string;
+  ctaHref: string;
+};
+type LandingContactPoint = {
+  label: string;
+  value: string;
+};
 type LandingSettings = {
   showSaleSection: boolean;
+  productSectionContent: LandingProductSectionContent[];
   saleSectionTitle: string;
   saleSectionSubtitle: string;
   heroEyebrow: string;
@@ -110,6 +125,38 @@ type LandingSettings = {
   shopHeroTitle: string;
   shopHeroLead: string;
   shopHeroImage: string;
+  storySectionTitle: string;
+  storySectionCtaLabel: string;
+  storySectionCtaHref: string;
+  storyCards: LandingStoryCard[];
+  aboutEyebrow: string;
+  aboutTitle: string;
+  aboutParagraphs: string[];
+  aboutPrimaryCtaLabel: string;
+  aboutPrimaryCtaHref: string;
+  aboutSecondaryCtaLabel: string;
+  aboutSecondaryCtaHref: string;
+  contactEyebrow: string;
+  contactTitle: string;
+  contactText: string;
+  contactPoints: LandingContactPoint[];
+  contactPrimaryCtaLabel: string;
+  contactPrimaryCtaHref: string;
+  contactSecondaryCtaLabel: string;
+  contactSecondaryCtaHref: string;
+  customerInfoEyebrow: string;
+  customerInfoTitle: string;
+  customerInfoPrimaryCtaLabel: string;
+  customerInfoPrimaryCtaHref: string;
+  customerInfoSecondaryCtaLabel: string;
+  customerInfoSecondaryCtaHref: string;
+  companyDetailsEyebrow: string;
+  companyPibLabel: string;
+  companyMbLabel: string;
+  documentsEmptyText: string;
+  blogSectionTitle: string;
+  blogSectionCtaLabel: string;
+  blogSectionCtaHref: string;
   heroStripProductIds: number[];
   highlightedProductIds: number[];
   popularProductIds: number[];
@@ -211,6 +258,7 @@ const defaultCreateDraft: CreateDraft = {
 
 const defaultLandingSettings: LandingSettings = {
   showSaleSection: true,
+  productSectionContent: normalizeLandingProductSectionContent([]),
   saleSectionTitle: "Aktuelne Akcije",
   saleSectionSubtitle: "",
   heroEyebrow: "Santos & Santorini",
@@ -251,6 +299,74 @@ const defaultLandingSettings: LandingSettings = {
   shopHeroLead:
     "Pregledaj kolekciju uz citljiviju navigaciju, pretragu po proizvodu i filtere koji sada rade pregledno i na desktopu i na telefonu.",
   shopHeroImage: "/img/hero2.jpg",
+  storySectionTitle: "Brend Prica",
+  storySectionCtaLabel: "Pogledaj kolekciju",
+  storySectionCtaHref: "/web-shop",
+  storyCards: [
+    {
+      id: "story-1",
+      badge: "Aktuelne akcije",
+      title: "Do 30% popusta na izdvojene modele.",
+      copy: "Izdvojili smo modele iz aktuelne kolekcije sa snizenim cenama i dostupnim velicinama.",
+      image: "/img/hero.jpg",
+      ctaLabel: "Pogledaj akcije",
+      ctaHref: "/akcije",
+    },
+    {
+      id: "story-2",
+      badge: "Nova kolekcija",
+      title: "Ready-to-wear komadi za svaku priliku",
+      copy: "Od odela i sakoa do kosulja i aksesoara, webshop donosi izbor modela spremnih za porudzbinu.",
+      image: "/img/hero2.jpg",
+      ctaLabel: "Otvori web shop",
+      ctaHref: "/web-shop",
+    },
+    {
+      id: "story-3",
+      badge: "Gift Edit",
+      title: "Poklon koji traje",
+      copy: "Kravate od svile, kozna galanterija i pazljivo birani detalji kao premium poklon izbor.",
+      image: "/img/obuca.jpg",
+      ctaLabel: "Pogledaj poklone",
+      ctaHref: "/web-shop",
+    },
+  ],
+  aboutEyebrow: "O nama",
+  aboutTitle: "Brend nastao iz porodicne radionice",
+  aboutParagraphs: [
+    "Sa idejom da muskarac treba da uziva u garderobi koju nosi, Santos & Santorini nastaje 2007. u Nisu.",
+    "Od 2013. brend postaje prepoznatljiv po modernim krojevima, biranim tkaninama i detaljima koji se doradjuju rucno.",
+    "Nasi modeli spajaju tradiciju krojenja i savremeni dizajn, od prvog sava do finalne siluete.",
+  ],
+  aboutPrimaryCtaLabel: "Kontaktirajte nas",
+  aboutPrimaryCtaHref: "/kontakt",
+  aboutSecondaryCtaLabel: "Poseti web shop",
+  aboutSecondaryCtaHref: "/web-shop",
+  contactEyebrow: "Kontakt",
+  contactTitle: "Podrska i licne preporuke",
+  contactText: "Tim vas vodi kroz izbor tkanina, krojeva i detalja u showroom-u ili online. Odgovaramo u roku od jednog radnog dana.",
+  contactPoints: [
+    { label: "Telefon", value: "+381 69 445 5106" },
+    { label: "Email", value: "prodaja@santos.rs" },
+    { label: "Adresa", value: "Obrenoviceva 9, Nis" },
+  ],
+  contactPrimaryCtaLabel: "Kontakt forma",
+  contactPrimaryCtaHref: "/kontakt",
+  contactSecondaryCtaLabel: "Posalji email",
+  contactSecondaryCtaHref: "mailto:atelier@santos.rs",
+  customerInfoEyebrow: "Informacije za kupce",
+  customerInfoTitle: "Prava potrosaca i uputstvo za kupovinu",
+  customerInfoPrimaryCtaLabel: "Otvori checkout",
+  customerInfoPrimaryCtaHref: "/checkout",
+  customerInfoSecondaryCtaLabel: "Dokumenta",
+  customerInfoSecondaryCtaHref: "/dokumenta",
+  companyDetailsEyebrow: "Podaci o firmi",
+  companyPibLabel: "PIB",
+  companyMbLabel: "MB",
+  documentsEmptyText: "Dokumenta ce ovde biti dostupna cim budu dodata.",
+  blogSectionTitle: "Najnoviji Blog",
+  blogSectionCtaLabel: "Pogledaj sve",
+  blogSectionCtaHref: "/blog",
   heroStripProductIds: [],
   highlightedProductIds: [],
   popularProductIds: [],
@@ -322,6 +438,53 @@ const normalizeLandingUniformImages = (value: unknown, max = 24): LandingUniform
       return { title, image, alt };
     })
     .filter((item): item is LandingUniformImage => Boolean(item))
+    .slice(0, max);
+};
+
+const normalizeStringList = (value: unknown, fallback: string[], max = 12) => {
+  if (!Array.isArray(value)) {
+    return fallback.slice(0, max);
+  }
+  return value
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .slice(0, max);
+};
+
+const normalizeLandingStoryCards = (value: unknown, max = 6): LandingStoryCard[] => {
+  if (!Array.isArray(value)) return defaultLandingSettings.storyCards.slice(0, max);
+  return value
+    .map((item, index) => {
+      if (!item || typeof item !== "object") return null;
+      const row = item as Record<string, unknown>;
+      const fallback = defaultLandingSettings.storyCards[index] || defaultLandingSettings.storyCards[0];
+      return {
+        id: String(row.id || fallback.id || `story-${index + 1}`).trim() || `story-${index + 1}`,
+        badge: String(row.badge ?? fallback.badge ?? "").trim(),
+        title: String(row.title ?? fallback.title ?? "").trim(),
+        copy: String(row.copy ?? fallback.copy ?? "").trim(),
+        image: String(row.image ?? fallback.image ?? "").trim() || fallback.image,
+        ctaLabel: String(row.ctaLabel ?? fallback.ctaLabel ?? "").trim(),
+        ctaHref: String(row.ctaHref ?? fallback.ctaHref ?? "").trim() || fallback.ctaHref,
+      };
+    })
+    .filter((item): item is LandingStoryCard => Boolean(item))
+    .slice(0, max);
+};
+
+const normalizeLandingContactPoints = (value: unknown, max = 12): LandingContactPoint[] => {
+  if (!Array.isArray(value)) return defaultLandingSettings.contactPoints.slice(0, max);
+  return value
+    .map((item, index) => {
+      if (!item || typeof item !== "object") return null;
+      const row = item as Record<string, unknown>;
+      const fallback = defaultLandingSettings.contactPoints[index] || defaultLandingSettings.contactPoints[0];
+      const label = String(row.label ?? fallback.label ?? "").trim();
+      const valueText = String(row.value ?? fallback.value ?? "").trim();
+      if (!label && !valueText) return null;
+      return { label, value: valueText };
+    })
+    .filter((item): item is LandingContactPoint => Boolean(item))
     .slice(0, max);
 };
 
@@ -456,7 +619,7 @@ export default function AdminWebshopPage() {
   const [savingLanding, setSavingLanding] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState<"left" | "right" | null>(null);
   const [uploadingAssetKind, setUploadingAssetKind] =
-    useState<"shopHero" | "documents" | "uniforms" | null>(null);
+    useState<"shopHero" | "documents" | "uniforms" | "storyCard" | null>(null);
   const [landingProductQuery, setLandingProductQuery] = useState("");
   const [landingProductResults, setLandingProductResults] = useState<CatalogProduct[]>([]);
   const [landingProductsLoading, setLandingProductsLoading] = useState(false);
@@ -788,8 +951,12 @@ export default function AdminWebshopPage() {
       const loaded = { ...defaultLandingSettings, ...(json.settings as LandingSettings) };
       setLandingSettings({
         ...loaded,
+        productSectionContent: normalizeLandingProductSectionContent(loaded.productSectionContent),
         documents: normalizeLandingDocuments(loaded.documents),
         uniformsImages: normalizeLandingUniformImages(loaded.uniformsImages),
+        storyCards: normalizeLandingStoryCards(loaded.storyCards),
+        aboutParagraphs: normalizeStringList(loaded.aboutParagraphs, defaultLandingSettings.aboutParagraphs, 6),
+        contactPoints: normalizeLandingContactPoints(loaded.contactPoints, 8),
         heroStripProductIds: normalizeLegacyIdList(loaded.heroStripProductIds, limitForLandingSection("heroStripProductIds")),
         highlightedProductIds: normalizeLegacyIdList(loaded.highlightedProductIds, limitForLandingSection("highlightedProductIds")),
         popularProductIds: normalizeLegacyIdList(loaded.popularProductIds, limitForLandingSection("popularProductIds")),
@@ -899,6 +1066,47 @@ export default function AdminWebshopPage() {
     }));
   };
 
+  const updateStoryCard = (index: number, patch: Partial<LandingStoryCard>) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      storyCards: prev.storyCards.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+    }));
+  };
+
+  const addStoryCard = () => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      storyCards: [
+        ...prev.storyCards,
+        {
+          id: `story-${Date.now()}`,
+          badge: "",
+          title: "",
+          copy: "",
+          image: "/img/hero.jpg",
+          ctaLabel: "",
+          ctaHref: "/web-shop",
+        },
+      ],
+    }));
+  };
+
+  const removeStoryCard = (index: number) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      storyCards: prev.storyCards.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
+  const updateProductSectionContent = (key: LandingProductSectionKey, patch: Partial<LandingProductSectionContent>) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      productSectionContent: normalizeLandingProductSectionContent(
+        prev.productSectionContent.map((item) => (item.key === key ? { ...item, ...patch } : item)),
+      ),
+    }));
+  };
+
   const uploadSiteAssets = async (files: FileList | null) => {
     const list = Array.from(files || []);
     if (!list.length) return [] as string[];
@@ -972,6 +1180,26 @@ export default function AdminWebshopPage() {
       setNotice(`${urls.length} fotografija uniformi uploadovano. Sacuvaj landing da ostanu na sajtu.`);
     } catch (e: any) {
       setError(e?.message || "Upload fotografija uniformi nije uspeo.");
+    } finally {
+      setUploadingAssetKind(null);
+    }
+  };
+
+  const uploadStoryCardImage = async (index: number, files: FileList | null) => {
+    if (!files?.length) return;
+    setUploadingAssetKind("storyCard");
+    setError(null);
+    setNotice(null);
+    try {
+      const [url] = await uploadSiteAssets(files);
+      if (!url) throw new Error("Upload nije vratio URL.");
+      setLandingSettings((prev) => ({
+        ...prev,
+        storyCards: prev.storyCards.map((item, itemIndex) => (itemIndex === index ? { ...item, image: url } : item)),
+      }));
+      setNotice("Story slika uploadovana. Sacuvaj landing da ostane na sajtu.");
+    } catch (e: any) {
+      setError(e?.message || "Upload story slike nije uspeo.");
     } finally {
       setUploadingAssetKind(null);
     }
@@ -1192,8 +1420,12 @@ export default function AdminWebshopPage() {
       setLandingSettings((prev) => ({
         ...prev,
         ...nextSettings,
+        productSectionContent: normalizeLandingProductSectionContent(nextSettings.productSectionContent ?? prev.productSectionContent),
         documents: normalizeLandingDocuments(nextSettings.documents ?? prev.documents),
         uniformsImages: normalizeLandingUniformImages(nextSettings.uniformsImages ?? prev.uniformsImages),
+        storyCards: normalizeLandingStoryCards(nextSettings.storyCards ?? prev.storyCards),
+        aboutParagraphs: normalizeStringList(nextSettings.aboutParagraphs ?? prev.aboutParagraphs, prev.aboutParagraphs, 6),
+        contactPoints: normalizeLandingContactPoints(nextSettings.contactPoints ?? prev.contactPoints, 8),
       }));
       setNotice(successMessage);
     } catch (e: any) {
@@ -1645,6 +1877,72 @@ export default function AdminWebshopPage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Naslovi i CTA produkt sekcija</p>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {landingSettings.productSectionContent
+                .filter((section) => section.key !== "heroStripProductIds" && section.key !== "saleProductIds")
+                .map((section) => {
+                  const meta = landingSectionConfig.find((item) => item.key === section.key);
+                  return (
+                    <div key={`content-${section.key}`} className="rounded-xl border border-slate-200 p-3">
+                      <p className="text-sm font-semibold text-slate-900">{meta?.label || section.key}</p>
+                      <div className="mt-3 grid gap-2">
+                        <input value={section.title} onChange={(e) => updateProductSectionContent(section.key, { title: e.target.value })} placeholder="Naslov sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                        <input value={section.subtitle} onChange={(e) => updateProductSectionContent(section.key, { subtitle: e.target.value })} placeholder="Podnaslov sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                        <input value={section.ctaLabel} onChange={(e) => updateProductSectionContent(section.key, { ctaLabel: e.target.value })} placeholder="CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                        <input value={section.ctaHref} onChange={(e) => updateProductSectionContent(section.key, { ctaHref: e.target.value })} placeholder="CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Brand story kartice</p>
+              <button onClick={addStoryCard} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">Dodaj karticu</button>
+            </div>
+            <div className="mt-3 grid gap-3 md:grid-cols-3">
+              <input value={landingSettings.storySectionTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, storySectionTitle: e.target.value }))} placeholder="Naslov sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.storySectionCtaLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, storySectionCtaLabel: e.target.value }))} placeholder="CTA label sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.storySectionCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, storySectionCtaHref: e.target.value }))} placeholder="CTA href sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+            </div>
+            <div className="mt-4 grid gap-4">
+              {landingSettings.storyCards.map((card, index) => (
+                <div key={card.id} className="rounded-xl border border-slate-200 p-3">
+                  <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
+                    <div>
+                      <Image src={card.image || "/img/hero.jpg"} alt={card.title || `Story ${index + 1}`} width={420} height={320} className="h-40 w-full rounded-lg object-cover" />
+                      <label className="mt-3 inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            void uploadStoryCardImage(index, e.target.files);
+                            e.currentTarget.value = "";
+                          }}
+                        />
+                        {uploadingAssetKind === "storyCard" ? "Uploading..." : "Upload slike"}
+                      </label>
+                    </div>
+                    <div className="grid gap-2">
+                      <input value={card.badge} onChange={(e) => updateStoryCard(index, { badge: e.target.value })} placeholder="Badge" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                      <input value={card.title} onChange={(e) => updateStoryCard(index, { title: e.target.value })} placeholder="Naslov kartice" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                      <textarea value={card.copy} onChange={(e) => updateStoryCard(index, { copy: e.target.value })} rows={3} placeholder="Tekst kartice" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                      <input value={card.image} onChange={(e) => updateStoryCard(index, { image: e.target.value })} placeholder="URL slike" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                      <input value={card.ctaLabel} onChange={(e) => updateStoryCard(index, { ctaLabel: e.target.value })} placeholder="CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                      <input value={card.ctaHref} onChange={(e) => updateStoryCard(index, { ctaHref: e.target.value })} placeholder="CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                      <button onClick={() => removeStoryCard(index)} className="justify-self-start rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700">Ukloni</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Banneri (upload only)</p>
             <div className="grid gap-4 lg:grid-cols-2">
               <div className="rounded-xl border border-slate-200 p-3">
@@ -1734,14 +2032,64 @@ export default function AdminWebshopPage() {
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">About i kontakt sekcija</p>
+            <div className="grid gap-4 lg:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">About card</p>
+                <div className="mt-3 grid gap-2">
+                  <input value={landingSettings.aboutEyebrow} onChange={(e) => setLandingSettings((p) => ({ ...p, aboutEyebrow: e.target.value }))} placeholder="Eyebrow" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input value={landingSettings.aboutTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, aboutTitle: e.target.value }))} placeholder="Naslov" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <textarea value={landingSettings.aboutParagraphs.join("\n")} onChange={(e) => setLandingSettings((p) => ({ ...p, aboutParagraphs: normalizeStringList(e.target.value.split("\n"), p.aboutParagraphs, 6) }))} rows={6} placeholder="Jedan pasus po redu" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input value={landingSettings.aboutPrimaryCtaLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, aboutPrimaryCtaLabel: e.target.value }))} placeholder="Primary CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input value={landingSettings.aboutPrimaryCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, aboutPrimaryCtaHref: e.target.value }))} placeholder="Primary CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input value={landingSettings.aboutSecondaryCtaLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, aboutSecondaryCtaLabel: e.target.value }))} placeholder="Secondary CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input value={landingSettings.aboutSecondaryCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, aboutSecondaryCtaHref: e.target.value }))} placeholder="Secondary CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </div>
+              </div>
+              <div className="rounded-xl border border-slate-200 p-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Kontakt card</p>
+                <div className="mt-3 grid gap-2">
+                  <input value={landingSettings.contactEyebrow} onChange={(e) => setLandingSettings((p) => ({ ...p, contactEyebrow: e.target.value }))} placeholder="Eyebrow" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input value={landingSettings.contactTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, contactTitle: e.target.value }))} placeholder="Naslov" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <textarea value={landingSettings.contactText} onChange={(e) => setLandingSettings((p) => ({ ...p, contactText: e.target.value }))} rows={4} placeholder="Opis kontakta" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <textarea value={landingSettings.contactPoints.map((item) => `${item.label} | ${item.value}`).join("\n")} onChange={(e) => setLandingSettings((p) => ({ ...p, contactPoints: e.target.value.split("\n").map((line) => line.trim()).filter(Boolean).map((line) => { const [label, ...rest] = line.split("|"); return { label: label?.trim() || "", value: rest.join("|").trim() }; }).filter((item) => item.label || item.value).slice(0, 8) }))} rows={5} placeholder="Telefon | +381 ...&#10;Email | prodaja@santos.rs" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input value={landingSettings.contactPrimaryCtaLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, contactPrimaryCtaLabel: e.target.value }))} placeholder="Primary CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input value={landingSettings.contactPrimaryCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, contactPrimaryCtaHref: e.target.value }))} placeholder="Primary CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input value={landingSettings.contactSecondaryCtaLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, contactSecondaryCtaLabel: e.target.value }))} placeholder="Secondary CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  <input value={landingSettings.contactSecondaryCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, contactSecondaryCtaHref: e.target.value }))} placeholder="Secondary CTA href / mailto" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Prava potrosaca i kupovina na pocetnoj</p>
             <div className="grid gap-3 md:grid-cols-2">
+              <input value={landingSettings.customerInfoEyebrow} onChange={(e) => setLandingSettings((p) => ({ ...p, customerInfoEyebrow: e.target.value }))} placeholder="Eyebrow sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.customerInfoTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, customerInfoTitle: e.target.value }))} placeholder="Naslov sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={landingSettings.companyPib} onChange={(e) => setLandingSettings((p) => ({ ...p, companyPib: e.target.value }))} placeholder="PIB" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={landingSettings.companyMb} onChange={(e) => setLandingSettings((p) => ({ ...p, companyMb: e.target.value }))} placeholder="MB" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.companyPibLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, companyPibLabel: e.target.value }))} placeholder="Label za PIB" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.companyMbLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, companyMbLabel: e.target.value }))} placeholder="Label za MB" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.companyDetailsEyebrow} onChange={(e) => setLandingSettings((p) => ({ ...p, companyDetailsEyebrow: e.target.value }))} placeholder="Eyebrow company details" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={landingSettings.customerRightsTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, customerRightsTitle: e.target.value }))} placeholder="Naslov prava potrosaca" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={landingSettings.purchaseGuideTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, purchaseGuideTitle: e.target.value }))} placeholder="Naslov uputstva za kupovinu" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <textarea value={landingSettings.customerRightsText} onChange={(e) => setLandingSettings((p) => ({ ...p, customerRightsText: e.target.value }))} rows={6} placeholder="Tekst prava potrosaca" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <textarea value={landingSettings.purchaseGuideText} onChange={(e) => setLandingSettings((p) => ({ ...p, purchaseGuideText: e.target.value }))} rows={6} placeholder="Tekst uputstva za kupovinu" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.customerInfoPrimaryCtaLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, customerInfoPrimaryCtaLabel: e.target.value }))} placeholder="Primary CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.customerInfoPrimaryCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, customerInfoPrimaryCtaHref: e.target.value }))} placeholder="Primary CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.customerInfoSecondaryCtaLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, customerInfoSecondaryCtaLabel: e.target.value }))} placeholder="Secondary CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.customerInfoSecondaryCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, customerInfoSecondaryCtaHref: e.target.value }))} placeholder="Secondary CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.documentsEmptyText} onChange={(e) => setLandingSettings((p) => ({ ...p, documentsEmptyText: e.target.value }))} placeholder="Tekst kada nema dokumenata" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Blog sekcija</p>
+            <div className="grid gap-3 md:grid-cols-3">
+              <input value={landingSettings.blogSectionTitle} onChange={(e) => setLandingSettings((p) => ({ ...p, blogSectionTitle: e.target.value }))} placeholder="Naslov blog sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.blogSectionCtaLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, blogSectionCtaLabel: e.target.value }))} placeholder="CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={landingSettings.blogSectionCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, blogSectionCtaHref: e.target.value }))} placeholder="CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
             </div>
           </div>
 

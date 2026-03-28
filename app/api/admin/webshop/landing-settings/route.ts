@@ -1,10 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
 import {
+  normalizeLandingCustomSections,
+  normalizeLandingProductSectionContent,
+  normalizeLandingProductSections,
+} from "@/lib/catalog/landingSections";
+import {
   getLandingSettings,
+  type LandingContactPoint,
   updateLandingSettings,
   type LandingDocument,
   type LandingSettings,
+  type LandingStoryCard,
   type LandingUniformImage,
 } from "@/lib/catalog/landingSettings";
 
@@ -58,6 +65,49 @@ const parseUniformImages = (value: unknown): LandingUniformImage[] => {
     .slice(0, 24);
 };
 
+const parseStringList = (value: unknown, max = 12): string[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => String(item || "").trim())
+    .filter(Boolean)
+    .slice(0, max);
+};
+
+const parseStoryCards = (value: unknown): LandingStoryCard[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row, index) => {
+      if (!row || typeof row !== "object") return null;
+      const entry = row as Record<string, unknown>;
+      return {
+        id: String(entry.id || `story-${index + 1}`).trim() || `story-${index + 1}`,
+        badge: String(entry.badge || "").trim(),
+        title: String(entry.title || "").trim(),
+        copy: String(entry.copy || "").trim(),
+        image: String(entry.image || "").trim(),
+        ctaLabel: String(entry.ctaLabel || "").trim(),
+        ctaHref: String(entry.ctaHref || "").trim(),
+      };
+    })
+    .filter((item): item is LandingStoryCard => Boolean(item))
+    .slice(0, 6);
+};
+
+const parseContactPoints = (value: unknown): LandingContactPoint[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const entry = row as Record<string, unknown>;
+      const label = String(entry.label || "").trim();
+      const valueText = String(entry.value || "").trim();
+      if (!label && !valueText) return null;
+      return { label, value: valueText };
+    })
+    .filter((item): item is LandingContactPoint => Boolean(item))
+    .slice(0, 12);
+};
+
 export async function GET(req: NextRequest) {
   if (!hasAdminToken(req)) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
@@ -79,6 +129,9 @@ export async function PATCH(req: NextRequest) {
   const row = payload as Record<string, unknown>;
   const patch: PatchPayload = {};
   if ("showSaleSection" in row) patch.showSaleSection = Boolean(row.showSaleSection);
+  if ("productSections" in row) patch.productSections = normalizeLandingProductSections(row.productSections);
+  if ("productSectionContent" in row) patch.productSectionContent = normalizeLandingProductSectionContent(row.productSectionContent);
+  if ("customSections" in row) patch.customSections = normalizeLandingCustomSections(row.customSections);
   if ("saleSectionTitle" in row) patch.saleSectionTitle = String(row.saleSectionTitle || "");
   if ("saleSectionSubtitle" in row) patch.saleSectionSubtitle = String(row.saleSectionSubtitle || "");
   if ("heroEyebrow" in row) patch.heroEyebrow = String(row.heroEyebrow || "");
@@ -115,6 +168,38 @@ export async function PATCH(req: NextRequest) {
   if ("shopHeroTitle" in row) patch.shopHeroTitle = String(row.shopHeroTitle || "");
   if ("shopHeroLead" in row) patch.shopHeroLead = String(row.shopHeroLead || "");
   if ("shopHeroImage" in row) patch.shopHeroImage = String(row.shopHeroImage || "");
+  if ("storySectionTitle" in row) patch.storySectionTitle = String(row.storySectionTitle || "");
+  if ("storySectionCtaLabel" in row) patch.storySectionCtaLabel = String(row.storySectionCtaLabel || "");
+  if ("storySectionCtaHref" in row) patch.storySectionCtaHref = String(row.storySectionCtaHref || "");
+  if ("storyCards" in row) patch.storyCards = parseStoryCards(row.storyCards);
+  if ("aboutEyebrow" in row) patch.aboutEyebrow = String(row.aboutEyebrow || "");
+  if ("aboutTitle" in row) patch.aboutTitle = String(row.aboutTitle || "");
+  if ("aboutParagraphs" in row) patch.aboutParagraphs = parseStringList(row.aboutParagraphs, 6);
+  if ("aboutPrimaryCtaLabel" in row) patch.aboutPrimaryCtaLabel = String(row.aboutPrimaryCtaLabel || "");
+  if ("aboutPrimaryCtaHref" in row) patch.aboutPrimaryCtaHref = String(row.aboutPrimaryCtaHref || "");
+  if ("aboutSecondaryCtaLabel" in row) patch.aboutSecondaryCtaLabel = String(row.aboutSecondaryCtaLabel || "");
+  if ("aboutSecondaryCtaHref" in row) patch.aboutSecondaryCtaHref = String(row.aboutSecondaryCtaHref || "");
+  if ("contactEyebrow" in row) patch.contactEyebrow = String(row.contactEyebrow || "");
+  if ("contactTitle" in row) patch.contactTitle = String(row.contactTitle || "");
+  if ("contactText" in row) patch.contactText = String(row.contactText || "");
+  if ("contactPoints" in row) patch.contactPoints = parseContactPoints(row.contactPoints);
+  if ("contactPrimaryCtaLabel" in row) patch.contactPrimaryCtaLabel = String(row.contactPrimaryCtaLabel || "");
+  if ("contactPrimaryCtaHref" in row) patch.contactPrimaryCtaHref = String(row.contactPrimaryCtaHref || "");
+  if ("contactSecondaryCtaLabel" in row) patch.contactSecondaryCtaLabel = String(row.contactSecondaryCtaLabel || "");
+  if ("contactSecondaryCtaHref" in row) patch.contactSecondaryCtaHref = String(row.contactSecondaryCtaHref || "");
+  if ("customerInfoEyebrow" in row) patch.customerInfoEyebrow = String(row.customerInfoEyebrow || "");
+  if ("customerInfoTitle" in row) patch.customerInfoTitle = String(row.customerInfoTitle || "");
+  if ("customerInfoPrimaryCtaLabel" in row) patch.customerInfoPrimaryCtaLabel = String(row.customerInfoPrimaryCtaLabel || "");
+  if ("customerInfoPrimaryCtaHref" in row) patch.customerInfoPrimaryCtaHref = String(row.customerInfoPrimaryCtaHref || "");
+  if ("customerInfoSecondaryCtaLabel" in row) patch.customerInfoSecondaryCtaLabel = String(row.customerInfoSecondaryCtaLabel || "");
+  if ("customerInfoSecondaryCtaHref" in row) patch.customerInfoSecondaryCtaHref = String(row.customerInfoSecondaryCtaHref || "");
+  if ("companyDetailsEyebrow" in row) patch.companyDetailsEyebrow = String(row.companyDetailsEyebrow || "");
+  if ("companyPibLabel" in row) patch.companyPibLabel = String(row.companyPibLabel || "");
+  if ("companyMbLabel" in row) patch.companyMbLabel = String(row.companyMbLabel || "");
+  if ("documentsEmptyText" in row) patch.documentsEmptyText = String(row.documentsEmptyText || "");
+  if ("blogSectionTitle" in row) patch.blogSectionTitle = String(row.blogSectionTitle || "");
+  if ("blogSectionCtaLabel" in row) patch.blogSectionCtaLabel = String(row.blogSectionCtaLabel || "");
+  if ("blogSectionCtaHref" in row) patch.blogSectionCtaHref = String(row.blogSectionCtaHref || "");
   if ("heroStripProductIds" in row) patch.heroStripProductIds = parseIdList(row.heroStripProductIds);
   if ("highlightedProductIds" in row) patch.highlightedProductIds = parseIdList(row.highlightedProductIds);
   if ("popularProductIds" in row) patch.popularProductIds = parseIdList(row.popularProductIds);
