@@ -136,6 +136,16 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
           { href: "/checkout", label: "Checkout", labelEn: "Checkout" },
         ],
       },
+      {
+        title: "Pravno",
+        titleEn: "Legal",
+        links: [
+          { href: "/uslovi_kupovine", label: "Uslovi kupovine", labelEn: "Purchase terms" },
+          { href: "/polisa_privatnosti", label: "Polisa privatnosti", labelEn: "Privacy policy" },
+          { href: "/reklamacije", label: "Reklamacije", labelEn: "Complaints" },
+          { href: "/isporuka", label: "Isporuka", labelEn: "Delivery" },
+        ],
+      },
     ],
   },
   contactPage: {

@@ -3,6 +3,7 @@ import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import Reveal from "@/app/components/motion/Reveal";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
+import { LEGAL_PAGE_ORDER, LEGAL_PAGES } from "@/lib/storefront/legalPages";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 
 export const metadata = {
@@ -19,6 +20,7 @@ export default async function DocumentsPage({
   const isEn = lang === "en";
   const landingSettings = await getLandingSettings();
   const documents = landingSettings.documents.filter((item) => item.title && item.url);
+  const legalPages = LEGAL_PAGE_ORDER.map((slug) => LEGAL_PAGES[slug]);
   const withLang = (href: string) => {
     if (!isEn || !href.startsWith("/")) return href;
     if (href.includes("?")) return `${href}&lang=en`;
@@ -61,6 +63,26 @@ export default async function DocumentsPage({
                       {isEn ? "Documents will be added here soon." : "Dokumenta ce biti dodata ovde cim budu spremna za preuzimanje."}
                     </div>
                   )}
+                </div>
+                <div className="mt-5">
+                  <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+                    {isEn ? "Legal pages" : "Pravne stranice"}
+                  </p>
+                  <div className="d-grid gap-3">
+                    {legalPages.map((page) => (
+                      <Link
+                        key={page.slug}
+                        href={withLang(`/${page.slug}`)}
+                        className="border text-decoration-none text-dark px-4 py-3"
+                        style={{ borderRadius: 18 }}
+                      >
+                        <div className="fw-medium">{isEn ? page.titleEn : page.title}</div>
+                        <div className="text-secondary small mt-1">
+                          {isEn ? page.descriptionEn : page.description}
+                        </div>
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
             </div>
