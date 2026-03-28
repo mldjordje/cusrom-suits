@@ -37,6 +37,17 @@ type LandingGridOrderEntry =
   | { kind: "builtin"; key: LandingProductSectionKey; order: number }
   | { kind: "custom"; id: string; order: number };
 
+type LandingGridOrderRef =
+  | { kind: "builtin"; key: LandingProductSectionKey }
+  | { kind: "custom"; id: string };
+
+type LandingDisplaySection = (typeof LANDING_PRODUCT_SECTION_CONFIG)[number] & {
+  control: LandingProductSectionState;
+  ids: number[];
+  displayPosition: number | null;
+  names: string[];
+};
+
 const defaultPickerValue: Record<LandingProductSectionKey, string> = {
   heroStripProductIds: "",
   highlightedProductIds: "",
@@ -221,10 +232,13 @@ export default function AdminLandingSectionsPage() {
     [orderedGridEntries],
   );
 
-  const displaySections = useMemo(() => {
+  const displaySections = useMemo<LandingDisplaySection[]>(() => {
     const orderedControls = sortSectionsForDisplay(state.productSections);
     return orderedControls.map((control) => {
       const config = getLandingProductSectionConfig(control.key);
+      if (!config) {
+        throw new Error(`Missing landing section config for ${control.key}`);
+      }
       const ids = state[control.key];
       const displayPosition = config?.placement === "grid" ? gridPositionByBuiltInKey.get(control.key) ?? null : null;
 
@@ -416,7 +430,7 @@ export default function AdminLandingSectionsPage() {
     });
   };
 
-  const moveGridSection = (entry: LandingGridOrderEntry, direction: -1 | 1) => {
+  const moveGridSection = (entry: LandingGridOrderRef, direction: -1 | 1) => {
     setState((prev) => {
       const orderedEntries = getOrderedGridEntries(prev);
       const currentIndex = orderedEntries.findIndex((candidate) =>

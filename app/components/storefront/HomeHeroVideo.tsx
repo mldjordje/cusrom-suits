@@ -15,6 +15,7 @@ type HomeCategory = {
 
 type Props = {
   categories: HomeCategory[];
+  showProductCards?: boolean;
   featuredProducts: {
     legacyId: number;
     sku: string;
@@ -56,7 +57,7 @@ const findCategoryId = (categories: HomeCategory[], terms: string[]) => {
 
 const hrefForCategory = (categoryId?: number) => (categoryId ? `/web-shop?categoryId=${categoryId}` : "/web-shop");
 
-export default function HomeHeroVideo({ categories, featuredProducts, content, lang = "sr" }: Props) {
+export default function HomeHeroVideo({ categories, showProductCards = true, featuredProducts, content, lang = "sr" }: Props) {
   const withLang = (href: string) => {
     if (lang !== "en" || !href.startsWith("/")) return href;
     if (href.includes("?")) return `${href}&lang=en`;
@@ -154,28 +155,30 @@ export default function HomeHeroVideo({ categories, featuredProducts, content, l
           </div>
         </div>
 
-        <div className="ss-home18-hero__cards">
-          {cards.map((card) => (
-            <article key={card.id} className="ss-home18-hero__card-item" data-hero-card>
-              <Link href={card.href} className="d-block ss-home18-hero__card-link">
-                <StorefrontSmartImage
-                  sources={[card.image]}
-                  fallbackSrc="/img/hero.jpg"
-                  width={330}
-                  height={400}
-                  alt={card.title}
-                  className="w-100 h-auto d-block ss-home18-hero__card-image"
-                />
-                <span className="menu-link menu-link_us-s fw-semi-bold fs-18 text-white text-uppercase d-block mt-2 ss-home18-hero__card-title">
-                  {card.title}
-                </span>
-                <span className="ss-home18-hero__card-meta">
-                  {decodeHtmlEntities(content.heroPrimaryCtaLabel)}
-                </span>
-              </Link>
-            </article>
-          ))}
-        </div>
+        {showProductCards ? (
+          <div className="ss-home18-hero__cards">
+            {cards.map((card) => (
+              <article key={card.id} className="ss-home18-hero__card-item" data-hero-card>
+                <Link href={card.href} className="d-block ss-home18-hero__card-link">
+                  <StorefrontSmartImage
+                    sources={[card.image]}
+                    fallbackSrc="/img/hero.jpg"
+                    width={330}
+                    height={400}
+                    alt={card.title}
+                    className="w-100 h-auto d-block ss-home18-hero__card-image"
+                  />
+                  <span className="menu-link menu-link_us-s fw-semi-bold fs-18 text-white text-uppercase d-block mt-2 ss-home18-hero__card-title">
+                    {card.title}
+                  </span>
+                  <span className="ss-home18-hero__card-meta">
+                    {decodeHtmlEntities(content.heroPrimaryCtaLabel)}
+                  </span>
+                </Link>
+              </article>
+            ))}
+          </div>
+        ) : null}
       </div>
       <HeroParallaxFx targetId="ss-home-hero" />
     </section>
