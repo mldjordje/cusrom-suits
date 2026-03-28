@@ -37,6 +37,14 @@ const DEFAULT_ADMIN_PASSWORD = "santorini";
 const normalize = (value: string) => value.trim();
 const nowIso = () => new Date().toISOString();
 const createId = (prefix: string) => `${prefix}_${randomBytes(6).toString("hex")}`;
+const isReadOnlyStorageError = (error: unknown) => {
+  const code = String((error as { code?: string } | null)?.code || "").toUpperCase();
+  return code === "EROFS" || code === "EPERM" || code === "EACCES";
+};
+const formatUsersWriteError = (error: unknown) =>
+  isReadOnlyStorageError(error)
+    ? "Ovaj deployment koristi read-only storage za admin korisnike. Login radi sa bootstrap nalogom, ali izmene korisnika ne mogu da se sacuvaju dok se admin users ne prebace na trajni storage."
+    : `Ne mogu da sacuvam admin korisnike: ${String((error as { message?: string } | null)?.message || error)}`;
 
 const normalizeRoleIds = (roleIds: AdminRoleId[] | undefined): AdminRoleId[] => {
   const seen = new Set<AdminRoleId>();
@@ -117,15 +125,23 @@ const readUsersFile = async (): Promise<AdminUsersFile> => {
   }
 
   const seeded = { version: ADMIN_USERS_FILE_VERSION, users: [createBootstrapOwner()] };
-  await writeJsonFile(ADMIN_USERS_PATH, seeded);
+  try {
+    await writeJsonFile(ADMIN_USERS_PATH, seeded);
+  } catch (error) {
+    console.warn(`[adminUsers] Bootstrap user is available in-memory only. ${formatUsersWriteError(error)}`);
+  }
   return seeded;
 };
 
 const writeUsersFile = async (users: AdminUserRecord[]) => {
-  await writeJsonFile(ADMIN_USERS_PATH, {
-    version: ADMIN_USERS_FILE_VERSION,
-    users,
-  } satisfies AdminUsersFile);
+  try {
+    await writeJsonFile(ADMIN_USERS_PATH, {
+      version: ADMIN_USERS_FILE_VERSION,
+      users,
+    } satisfies AdminUsersFile);
+  } catch (error) {
+    throw new Error(formatUsersWriteError(error));
+  }
 };
 
 const ensureOwnerSurvives = (users: AdminUserRecord[]) => {
@@ -156,9 +172,16 @@ export async function authenticateAdminUser(username: string, password: string):
   const nextUsers = file.users.map((user) =>
     user.id === target.id ? { ...user, lastLoginAt: nowIso(), updatedAt: nowIso() } : user
   );
-  await writeUsersFile(nextUsers);
-  const fresh = nextUsers.find((user) => user.id === target.id) ?? target;
-  return toSafeUser(fresh);
+  try {
+    await writeUsersFile(nextUsers);
+    const fresh = nextUsers.find((user) => user.id === target.id) ?? target;
+    return toSafeUser(fresh);
+  } catch (error) {
+    console.warn(
+      `[adminUsers] Skipping lastLoginAt persistence for ${target.username}. ${String((error as { message?: string } | null)?.message || error)}`,
+    );
+    return toSafeUser(target);
+  }
 }
 
 export async function createAdminUser(input: {
