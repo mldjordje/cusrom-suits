@@ -1,4 +1,4 @@
-import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
 import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import {
   DEFAULT_LANDING_PRODUCT_SECTIONS,
@@ -368,7 +368,7 @@ const decodeLandingText = (value: unknown, fallback: string) =>
   decodeHtmlEntities(String(value || fallback || ""));
 
 async function readLandingSettingsUncached(): Promise<LandingSettings> {
-  const settings = await readJsonFile<Partial<LandingSettings>>(LANDING_SETTINGS_PATH, {});
+  const settings = await readPersistentJsonFile<Partial<LandingSettings>>(LANDING_SETTINGS_PATH, {});
   const normalizedProductSections = normalizeLandingProductSections(settings.productSections);
   const productSectionMap = buildLandingProductSectionMap(normalizedProductSections);
   const saleSection = productSectionMap.get("saleProductIds");
@@ -779,7 +779,7 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
     trendingProductIds:
       patch.trendingProductIds == null ? current.trendingProductIds : normalizeLegacyIdList(patch.trendingProductIds),
   };
-  await writeJsonFile(LANDING_SETTINGS_PATH, next);
+  await writePersistentJsonFile(LANDING_SETTINGS_PATH, next);
   revalidateTag(LANDING_SETTINGS_CACHE_TAG);
   return next;
 }

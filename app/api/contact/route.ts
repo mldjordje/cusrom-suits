@@ -1,19 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
-
-const CONTACT_MESSAGES_PATH = "data/contact-messages.json";
-
-type ContactMessage = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  subject: string;
-  message: string;
-  preferredStore: string;
-  source: string;
-  createdAt: string;
-};
+import { appendContactMessage, type ContactMessage } from "@/lib/contact/messages";
 
 const sanitize = (value: FormDataEntryValue | null) =>
   String(value || "").trim().slice(0, 2000);
@@ -64,9 +50,7 @@ export async function POST(req: NextRequest) {
     createdAt: new Date().toISOString(),
   };
 
-  const list = await readJsonFile<ContactMessage[]>(CONTACT_MESSAGES_PATH, []);
-  list.unshift(entry);
-  await writeJsonFile(CONTACT_MESSAGES_PATH, list.slice(0, 1000));
+  await appendContactMessage(entry);
 
   if (contentType.includes("application/json")) {
     return NextResponse.json({ success: true, data: entry });

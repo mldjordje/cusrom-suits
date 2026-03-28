@@ -1,6 +1,6 @@
 import { revalidateTag, unstable_cache } from "next/cache";
 import { decodeHtmlEntities } from "@/lib/catalog/presentation";
-import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
 
 const SITE_CONTENT_PATH = "data/site-content.json";
 const SITE_CONTENT_CACHE_TAG = "site-content";
@@ -325,7 +325,7 @@ const normalizeStores = (value: unknown, fallback: SiteStoreLocation[]) => {
 };
 
 async function readSiteContentUncached(): Promise<SiteContent> {
-  const raw = await readJsonFile<Partial<SiteContent>>(SITE_CONTENT_PATH, {});
+  const raw = await readPersistentJsonFile<Partial<SiteContent>>(SITE_CONTENT_PATH, {});
   return {
     navigation: { items: normalizeNavItems(raw.navigation?.items, DEFAULT_SITE_CONTENT.navigation.items) },
     footer: {
@@ -469,7 +469,7 @@ export async function updateSiteContent(patch: Partial<SiteContent>): Promise<Si
     },
     stores: patch.stores == null ? current.stores : normalizeStores(patch.stores, current.stores),
   };
-  await writeJsonFile(SITE_CONTENT_PATH, next);
+  await writePersistentJsonFile(SITE_CONTENT_PATH, next);
   revalidateTag(SITE_CONTENT_CACHE_TAG);
   return next;
 }

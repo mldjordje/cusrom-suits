@@ -1,18 +1,4 @@
-import { readJsonFile } from "@/lib/storage/jsonStore";
-
-type ContactMessage = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  subject: string;
-  message: string;
-  preferredStore?: string;
-  source?: string;
-  createdAt: string;
-};
-
-const CONTACT_MESSAGES_PATH = "data/contact-messages.json";
+import { listContactMessages } from "@/lib/contact/messages";
 
 const formatDate = (value: string) => {
   if (!value) return "-";
@@ -22,7 +8,7 @@ const formatDate = (value: string) => {
 };
 
 export default async function ContactMessagesAdminPage() {
-  const messages = await readJsonFile<ContactMessage[]>(CONTACT_MESSAGES_PATH, []);
+  const messages = await listContactMessages();
 
   return (
     <div className="flex flex-col gap-5">

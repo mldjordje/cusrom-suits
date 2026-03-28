@@ -1,13 +1,14 @@
 import Link from "next/link";
 import { listCatalogProducts } from "@/lib/catalog/store";
 import { listPosts } from "@/lib/blog/store";
+import { listContactMessages } from "@/lib/contact/messages";
 import { listSyncRuns } from "@/lib/integrations/core/store";
 import { listNewsletterSubscribers } from "@/lib/newsletter/store";
-import { readJsonFile } from "@/lib/storage/jsonStore";
+import { listRecentOrders } from "@/lib/orders/store";
 
 const cards = [
   { href: "/admin/webshop", title: "Web Shop Hub", desc: "Proizvodi, lager i centralni workflow.", tag: "CORE" },
-  { href: "/admin/webshop?tab=landing", title: "Pocetna i sekcije", desc: "Hero, baneri i raspored proizvoda na home.", tag: "CONTENT" },
+  { href: "/admin/landing", title: "Pocetna i sekcije", desc: "Sekcije landinga i raspored proizvoda na home.", tag: "CONTENT" },
   { href: "/admin/webshop?tab=akcije", title: "Akcije i snizenja", desc: "Rucne akcije i automatska promo pravila.", tag: "SALES" },
   { href: "/admin/tutorial", title: "Tutorial", desc: "Objasnjenje kako rade web shop, lager, porudzbine i Ananas.", tag: "GUIDE" },
   { href: "/admin/integrations", title: "Integracije", desc: "Ananas + lager sync, logovi i retry.", tag: "SYNC" },
@@ -31,8 +32,8 @@ export default async function AdminHome() {
     listCatalogProducts({ page: 1, pageSize: 1, activeOnly: false, exportOnly: false }),
     listPosts({ page: 1, pageSize: 1, type: "all", onlyPublished: false }),
     listSyncRuns(6),
-    readJsonFile<any[]>("data/orders.json", []),
-    readJsonFile<any[]>("data/contact-messages.json", []),
+    listRecentOrders(200),
+    listContactMessages(),
     listNewsletterSubscribers(),
   ]);
 

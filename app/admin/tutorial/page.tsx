@@ -6,7 +6,9 @@ const sections = [
     body: [
       "Prvo dodas ili izmenis proizvod u delu `Web Shop -> Proizvodi i lager`.",
       "Ako zelis da proizvod bude na snizenju, idi na `Web Shop -> Akcije i snizenja` i tamo menjaj akcijsku cenu ili popust.",
-      "Ako zelis da proizvod bude na pocetnoj strani, idi na `Web Shop -> Pocetna i sekcije` i izaberi ga u konkretnoj sekciji.",
+      "Ako zelis da proizvod bude na pocetnoj strani, idi na posebnu stranu `Pocetna i sekcije` i tamo biraj sekcije i proizvode.",
+      "Za footer, prodajna mesta, kontakt stranu i ostale javne tekstove koristi `Site Content`.",
+      "Za dostavu, preuzimanje i vaucere koristi `Fulfillment`.",
       "Na kraju proveri storefront i po potrebi prati porudzbine u `Porudzbine`.",
     ],
   },
@@ -18,7 +20,7 @@ const sections = [
       "`Prodajna cena` je cena koju kupac vidi na sajtu. `Regularna cena` je puna, precrtana cena.",
       "`Lager magacin 1` i `Ukupan lager` su kolicine. Ako je lager 0, proizvod moze ostati vidljiv ali bez trenutne dostupnosti.",
       "Kategorije sluze za filtriranje, organizaciju i potencijalna promo pravila po grupama proizvoda.",
-      "Pocetna strana se vise ne podesava iz editora proizvoda. Za to postoji poseban tab `Pocetna i sekcije`.",
+      "Pocetna strana se vise ne podesava iz editora proizvoda. Za to postoji posebna strana `Pocetna i sekcije`.",
     ],
   },
   {
@@ -28,18 +30,18 @@ const sections = [
       "Prvi je direktno po proizvodu: uneses `Akcijsku cenu` ili `Popust %` i sacuvas red.",
       "Drugi je kroz `Automatska pravila`: na primer, popust za ceo brend, kategoriju ili odredjene proizvode.",
       "Ako koristis pravila, prioritet odredjuje koje pravilo ima prednost kada ih ima vise.",
-      "Akcija i raspored na pocetnoj su odvojene stvari: snizenje se radi u ovom tabu, a home sekcije u posebnom tabu.",
+      "Akcija i raspored na pocetnoj su odvojene stvari: snizenje se radi u ovom tabu, a home sekcije na posebnoj strani.",
     ],
   },
   {
     title: "4. Pocetna i sekcije",
     body: [
-      "Pocetna strana se uredjuje na jednom mestu: `Web Shop -> Pocetna i sekcije`.",
-      "Svaka sekcija ima svoju listu proizvoda: hero traka, izdvojeni modeli, popularno, nova kolekcija, trendinzi i akcije na pocetnoj.",
-      "Preporuceni nacin rada je da proizvode za home biras iskljucivo u tim sekcijama, a ne kroz edit samog proizvoda.",
-      "Na vrhu strane postoji kratak pregled svih sekcija sa brojem dodatih proizvoda.",
-      "Ako neka sekcija ostane prazna, storefront koristi rezervni fallback prikaz.",
-      "Promene nisu automatske. Posle izmene obavezno klikni `Sacuvaj landing`.",
+      "Pocetna strana se sada uredjuje na posebnoj strani `Pocetna i sekcije` odnosno `/admin/landing`.",
+      "Tamo mozes da ukljucujes i iskljucujes sekcije, menjas redosled, biras proizvode unutar sekcije i dodajes nove custom produkt sekcije.",
+      "Landing vise nije ogranicen samo na stare hardkodirane blokove: postoji raspored sekcija i svaka produkt sekcija ima sopstveni naslov, podnaslov i CTA.",
+      "Ako zelis da menjas hero, bannere, story kartice, dokumenta, business uniforme ili ostale landing tekstove, koristi editor sadrzaja koji je povezan sa landing podesavanjima.",
+      "Ako neka produkt sekcija ostane prazna, storefront jos uvek moze da koristi fallback izbor iz kataloga, ali preporuka je da za home rucno kuriras ono sto zelis da se vidi.",
+      "Promene nisu automatske. Posle izmene obavezno klikni `Sacuvaj sekcije` ili `Sacuvaj landing`, zavisno od bloka koji uredjujes.",
     ],
   },
   {
@@ -47,12 +49,31 @@ const sections = [
     body: [
       "Web shop korpa i checkout zavrsavaju u `Porudzbine`.",
       "Tu se vidi izvor porudzbine, artikli, kontakt podaci, cena i status.",
+      "Trenutni checkout tok je bez online karticnog placanja. Kupac salje porudzbinu kao upit, a tim zatim potvrdjuje dostupnost i naredne korake.",
       "Preporuka je da status ide redom: `pending` -> `confirmed` -> `completed`, ili `cancelled` ako je potrebno.",
       "Ako kupac prijavi problem sa porudzbinom, prvo proveri da li su artikli bili aktivni i da li je lager bio smislen u trenutku kupovine.",
     ],
   },
   {
-    title: "6. Ananas i integracije",
+    title: "6. Site Content, dokumenta i pravne stranice",
+    body: [
+      "Strana `Site Content` sluzi za navigaciju, footer, prodajna mesta, about i kontakt sadrzaj.",
+      "Kada uploadujes slike ili dokumenta kroz admin, novi fajlovi se sada cuvaju centralno tako da ostaju dostupni i na produkciji.",
+      "Sekcija `Dokumenta` na javnom sajtu sada nije samo download lista, vec i ulazna tacka za pravne stranice.",
+      "Pravne stranice koje moraju postojati i ostati azurne su: `Polisa privatnosti`, `Uslovi kupovine`, `Reklamacije`, `Isporuka`, `Uslovi koriscenja kolacica` i `Nacin placanja`.",
+      "Ako menjas kontakt podatke firme, prodajna mesta ili copy u footeru, proveri i javni sajt posle cuvanja jer su to odmah vidljive promene.",
+    ],
+  },
+  {
+    title: "7. Fulfillment, dostava i vauceri",
+    body: [
+      "Strana `Fulfillment` kontrolise pickup/delivery tok, dostupne kurirske sluzbe i vaucere.",
+      "Ako kupac vidi pogresnu dostavu ili se ne pojavljuje odgovarajuca kurirska sluzba, prvo proveri `Fulfillment`, a ne landing ili proizvod.",
+      "Vaucere koristi pazljivo: kada se iskoriste, vezuju se za konkretnu porudzbinu.",
+    ],
+  },
+  {
+    title: "8. Ananas i integracije",
     body: [
       "Sve oko sinhronizacije i izvoza je u `Integracije`.",
       "Tu se prate runovi, retry logika i stanja za Ananas i lager tokove.",
@@ -61,12 +82,13 @@ const sections = [
     ],
   },
   {
-    title: "7. Preporuceni dnevni checklist",
+    title: "9. Preporuceni dnevni checklist",
     body: [
       "Dodaj ili izmeni proizvod i lager.",
       "Ako treba, podesi akcijsku cenu ili promo pravilo.",
-      "Ako treba da bude na home, dodaj ga u odgovarajucu sekciju pocetne.",
+      "Ako treba da bude na home, dodaj ga u odgovarajucu sekciju pocetne ili custom landing sekciju.",
       "Proveri porudzbine, kontakt poruke i newsletter prijave.",
+      "Ako si menjao prodajna mesta, footer ili dokumenta, proveri i javne stranice.",
       "Po potrebi proveri `Integracije` ako ima sync problema.",
     ],
   },
@@ -76,7 +98,9 @@ const quickLinks = [
   { href: "/admin/webshop", label: "Web Shop Hub" },
   { href: "/admin/webshop?tab=products", label: "Proizvodi i lager" },
   { href: "/admin/webshop?tab=akcije", label: "Akcije i snizenja" },
-  { href: "/admin/webshop?tab=landing", label: "Pocetna i sekcije" },
+  { href: "/admin/landing", label: "Pocetna i sekcije" },
+  { href: "/admin/site-content", label: "Site Content" },
+  { href: "/admin/fulfillment", label: "Fulfillment" },
   { href: "/admin/orders", label: "Porudzbine" },
   { href: "/admin/integrations", label: "Integracije / Ananas" },
   { href: "/admin/categories", label: "Kategorije" },
@@ -85,10 +109,11 @@ const quickLinks = [
 const launchChecklist = [
   "Proveri build i produkcione env varijable.",
   "Potvrdi sveze katalog podatke u Supabase.",
-  "Pusti content schema i importuj blog/news u Supabase.",
-  "Prodji redirecte iz stare strukture sajta.",
-  "Proveri home, listing, product detail, checkout i kontakt tok.",
-  "Proveri admin tok za porudzbine, kontakt poruke i landing sekcije.",
+  "Ako koristimo legacy asset host, proveri da je `LEGACY_ASSET_ORIGIN` postavljen na produkciji.",
+  "Prodji redirecte iz stare strukture sajta i pravne URL-ove.",
+  "Proveri home, listing, product detail, checkout, kontakt i newsletter tok.",
+  "Proveri landing sekcije, dokumenta, pravne stranice i prodajna mesta.",
+  "Proveri admin tok za porudzbine, kontakt poruke, site content i fulfillment.",
 ];
 
 export default function AdminTutorialPage() {
@@ -98,7 +123,7 @@ export default function AdminTutorialPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tutorial</p>
         <h1 className="mt-1 text-3xl font-bold text-slate-900">Kako radi web shop admin</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Jedno mesto za objasnjenje proizvoda, lagera, akcija, pocetne strane, porudzbina i Ananas/integracija.
+          Jedno mesto za objasnjenje proizvoda, lagera, akcija, pocetne strane, javnog sadrzaja, porudzbina i integracija.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {quickLinks.map((link) => (
@@ -126,7 +151,7 @@ export default function AdminTutorialPage() {
         ))}
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">8. Launch checklist za glavni domen</h2>
+          <h2 className="text-xl font-semibold text-slate-900">10. Launch checklist za glavni domen</h2>
           <div className="mt-3 space-y-2 text-sm text-slate-700">
             {launchChecklist.map((line) => (
               <p key={line}>{line}</p>

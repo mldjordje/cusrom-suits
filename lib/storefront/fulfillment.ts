@@ -1,6 +1,6 @@
 import crypto from "crypto";
 import { revalidateTag, unstable_cache } from "next/cache";
-import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
 
 const FULFILLMENT_PATH = "data/fulfillment-settings.json";
 const FULFILLMENT_CACHE_TAG = "fulfillment-settings";
@@ -144,7 +144,7 @@ const normalizeVouchers = (value: unknown) => {
 };
 
 async function readFulfillmentUncached(): Promise<FulfillmentSettings> {
-  const raw = await readJsonFile<Partial<FulfillmentSettings>>(FULFILLMENT_PATH, {});
+  const raw = await readPersistentJsonFile<Partial<FulfillmentSettings>>(FULFILLMENT_PATH, {});
   return {
     pickupEnabled: raw.pickupEnabled !== false,
     deliveryEnabled: raw.deliveryEnabled !== false,
@@ -186,7 +186,7 @@ export async function updateFulfillmentSettings(patch: Partial<FulfillmentSettin
     deliveryServices: patch.deliveryServices == null ? current.deliveryServices : normalizeDeliveryServices(patch.deliveryServices, current.deliveryServices),
     vouchers: patch.vouchers == null ? current.vouchers : normalizeVouchers(patch.vouchers),
   };
-  await writeJsonFile(FULFILLMENT_PATH, next);
+  await writePersistentJsonFile(FULFILLMENT_PATH, next);
   revalidateTag(FULFILLMENT_CACHE_TAG);
   return next;
 }

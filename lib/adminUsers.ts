@@ -1,5 +1,5 @@
 import { randomBytes, scryptSync, timingSafeEqual } from "crypto";
-import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
 import {
   getAdminPermissionsForRoles,
   isKnownAdminRole,
@@ -117,7 +117,7 @@ const createBootstrapOwner = (): AdminUserRecord => {
 
 const readUsersFile = async (): Promise<AdminUsersFile> => {
   const fallback: AdminUsersFile = { version: ADMIN_USERS_FILE_VERSION, users: [] };
-  const raw = await readJsonFile<AdminUsersFile>(ADMIN_USERS_PATH, fallback);
+  const raw = await readPersistentJsonFile<AdminUsersFile>(ADMIN_USERS_PATH, fallback);
   const users = Array.isArray(raw?.users) ? raw.users.map(normalizeStoredUser) : [];
 
   if (users.length) {
@@ -126,7 +126,7 @@ const readUsersFile = async (): Promise<AdminUsersFile> => {
 
   const seeded = { version: ADMIN_USERS_FILE_VERSION, users: [createBootstrapOwner()] };
   try {
-    await writeJsonFile(ADMIN_USERS_PATH, seeded);
+    await writePersistentJsonFile(ADMIN_USERS_PATH, seeded);
   } catch (error) {
     console.warn(`[adminUsers] Bootstrap user is available in-memory only. ${formatUsersWriteError(error)}`);
   }
@@ -135,7 +135,7 @@ const readUsersFile = async (): Promise<AdminUsersFile> => {
 
 const writeUsersFile = async (users: AdminUserRecord[]) => {
   try {
-    await writeJsonFile(ADMIN_USERS_PATH, {
+    await writePersistentJsonFile(ADMIN_USERS_PATH, {
       version: ADMIN_USERS_FILE_VERSION,
       users,
     } satisfies AdminUsersFile);

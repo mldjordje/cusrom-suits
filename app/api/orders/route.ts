@@ -3,7 +3,7 @@ import { isAdminRequestAuthenticated } from "@/lib/adminAuth";
 import { evaluateVoucher, getFulfillmentSettings, redeemVoucher } from "@/lib/storefront/fulfillment";
 import { getSiteContent } from "@/lib/storefront/siteContent";
 import { getServiceSupabase } from "@/lib/supabase/server";
-import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
 import type { StorefrontCartItem } from "@/lib/cart/types";
 
 const ORDERS_PATH = "data/orders.json";
@@ -13,10 +13,10 @@ const requireAdmin = async (req: NextRequest) => {
   return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
 };
 
-const readOrdersFile = async () => readJsonFile<any[]>(ORDERS_PATH, []);
+const readOrdersFile = async () => readPersistentJsonFile<any[]>(ORDERS_PATH, []);
 
 const writeOrdersFile = async (orders: any[]) => {
-  await writeJsonFile(ORDERS_PATH, orders);
+  await writePersistentJsonFile(ORDERS_PATH, orders);
 };
 
 const isStorefrontPayload = (payload: any): payload is {

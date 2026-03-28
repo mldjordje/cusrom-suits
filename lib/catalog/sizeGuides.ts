@@ -1,4 +1,4 @@
-import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
 
 const SIZE_GUIDES_PATH = "data/size-guides.json";
 
@@ -215,7 +215,7 @@ const normalizeTable = (value: unknown, index: number): SizeGuideTable | null =>
 };
 
 export async function getSizeGuideSettings(): Promise<SizeGuideSettings> {
-  const settings = await readJsonFile<Partial<SizeGuideSettings>>(SIZE_GUIDES_PATH, DEFAULT_SIZE_GUIDE_SETTINGS);
+  const settings = await readPersistentJsonFile<Partial<SizeGuideSettings>>(SIZE_GUIDES_PATH, DEFAULT_SIZE_GUIDE_SETTINGS);
   const tables = Array.isArray(settings.tables)
     ? settings.tables
         .map((item, index) => normalizeTable(item, index))
@@ -241,6 +241,6 @@ export async function updateSizeGuideSettings(
       : current.tables,
   };
 
-  await writeJsonFile(SIZE_GUIDES_PATH, next);
+  await writePersistentJsonFile(SIZE_GUIDES_PATH, next);
   return next;
 }

@@ -1,5 +1,6 @@
 import { getAnonSupabase, getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
 import type { LegacyCatalogProduct } from "@/lib/legacy/types";
 
 const CATEGORY_REGISTRY_PATH = "data/webshop-categories.json";
@@ -55,7 +56,7 @@ const normalizeRegistryRecord = (
 };
 
 export async function listCategoryRegistry() {
-  const rows = await readJsonFile<unknown[]>(CATEGORY_REGISTRY_PATH, []);
+  const rows = await readPersistentJsonFile<unknown[]>(CATEGORY_REGISTRY_PATH, []);
   return rows
     .map((row, index) => normalizeRegistryRecord(row, index + 1))
     .filter((row): row is CatalogCategoryRecord => Boolean(row))
@@ -63,7 +64,7 @@ export async function listCategoryRegistry() {
 }
 
 async function writeCategoryRegistry(rows: CatalogCategoryRecord[]) {
-  await writeJsonFile(CATEGORY_REGISTRY_PATH, rows);
+  await writePersistentJsonFile(CATEGORY_REGISTRY_PATH, rows);
 }
 
 async function loadCategoriesFromSupabase() {

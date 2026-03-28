@@ -3,6 +3,7 @@ import fs from "fs/promises";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
+import { uploadSiteAsset } from "@/lib/storage/siteAssets";
 
 const MAX_FILES_PER_REQUEST = 12;
 const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
@@ -51,7 +52,12 @@ export async function POST(req: NextRequest) {
 
   const today = new Date().toISOString().slice(0, 10);
   const outputDir = path.join(process.cwd(), "public", "site-assets", today);
-  await fs.mkdir(outputDir, { recursive: true });
+  let localMirrorAvailable = true;
+  try {
+    await fs.mkdir(outputDir, { recursive: true });
+  } catch {
+    localMirrorAvailable = false;
+  }
 
   const urls: string[] = [];
 
@@ -74,10 +80,28 @@ export async function POST(req: NextRequest) {
     const baseName = sanitizeFileSegment(path.basename(file.name || "fajl", ext)) || "fajl";
     const cleanExt = ext ? `.${sanitizeFileSegment(ext.replace(/^\./, "")) || ext.replace(/^\./, "").toLowerCase()}` : "";
     const finalName = `${Date.now()}-${randomUUID()}-${baseName}${cleanExt}`;
+    const storagePath = `${today}/${finalName}`;
     const outputPath = path.join(outputDir, finalName);
+    const buffer = Buffer.from(await file.arrayBuffer());
 
-    await fs.writeFile(outputPath, Buffer.from(await file.arrayBuffer()));
-    urls.push(`/site-assets/${today}/${finalName}`);
+    const uploaded = await uploadSiteAsset(storagePath, buffer, file.type || null);
+    if (!uploaded) {
+      if (!localMirrorAvailable) {
+        return NextResponse.json(
+          { success: false, message: `"${file.name}" nije mogao da se sacuva na storage-u.` },
+          { status: 500 },
+        );
+      }
+      await fs.writeFile(outputPath, buffer);
+    } else if (localMirrorAvailable) {
+      try {
+        await fs.writeFile(outputPath, buffer);
+      } catch {
+        // Local mirror is best-effort only on read-only deployments.
+      }
+    }
+
+    urls.push(`/site-assets/${storagePath}`);
   }
 
   return NextResponse.json({ success: true, urls });

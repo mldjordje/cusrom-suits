@@ -1,4 +1,4 @@
-import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
 
 const NEWSLETTER_SUBSCRIBERS_PATH = "data/newsletter-subscribers.json";
 
@@ -15,7 +15,7 @@ export const isValidNewsletterEmail = (value: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(value));
 
 export async function listNewsletterSubscribers() {
-  const items = await readJsonFile<NewsletterSubscriber[]>(NEWSLETTER_SUBSCRIBERS_PATH, []);
+  const items = await readPersistentJsonFile<NewsletterSubscriber[]>(NEWSLETTER_SUBSCRIBERS_PATH, []);
   return [...items].sort(
     (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime(),
   );
@@ -45,7 +45,7 @@ export async function subscribeToNewsletter(input: { email: string; source?: str
     createdAt: new Date().toISOString(),
   };
 
-  await writeJsonFile(NEWSLETTER_SUBSCRIBERS_PATH, [subscriber, ...subscribers].slice(0, 5000));
+  await writePersistentJsonFile(NEWSLETTER_SUBSCRIBERS_PATH, [subscriber, ...subscribers].slice(0, 5000));
 
   return {
     success: true as const,
