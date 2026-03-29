@@ -1,5 +1,7 @@
+"use client";
+
 import Link from "next/link";
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 import { localizeDynamicCategoryLabel } from "@/lib/storefront/dynamicCopy";
 
@@ -59,8 +61,24 @@ export default function WebShopFilters({
 }: WebShopFiltersProps) {
   const isEn = lang === "en";
   const localizeCategory = (value: string) => localizeDynamicCategoryLabel(value, isEn ? "en" : "sr");
-  const mobileSortToggleId = "ss-shop-mobile-sort-toggle";
-  const mobileFilterToggleId = "ss-shop-mobile-filter-toggle";
+  const [mobileSortOpen, setMobileSortOpen] = useState(false);
+  const [mobileFilterOpen, setMobileFilterOpen] = useState(false);
+
+  useEffect(() => {
+    const shouldLockScroll = mobileSortOpen || mobileFilterOpen;
+    if (!shouldLockScroll) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [mobileFilterOpen, mobileSortOpen]);
+
+  const closeMobilePanels = () => {
+    setMobileSortOpen(false);
+    setMobileFilterOpen(false);
+  };
 
   const makeHref = (patch: Record<string, string | number | null>) => {
     const params = new URLSearchParams();
@@ -253,27 +271,45 @@ export default function WebShopFilters({
           </div>
 
           <div className="ss-shop-mobile-toolbar__actions">
-            <input id={mobileSortToggleId} type="checkbox" className="ss-shop-mobile-toggle" />
-            <input id={mobileFilterToggleId} type="checkbox" className="ss-shop-mobile-toggle" />
-
-            <label htmlFor={mobileSortToggleId} className="ss-shop-mobile-trigger">
+            <button
+              type="button"
+              className="ss-shop-mobile-trigger"
+              aria-expanded={mobileSortOpen}
+              onClick={() => {
+                setMobileFilterOpen(false);
+                setMobileSortOpen((current) => !current);
+              }}
+            >
               {isEn ? "Sort" : "Sort"}
-            </label>
-            <label htmlFor={mobileFilterToggleId} className="ss-shop-mobile-trigger ss-shop-mobile-trigger--primary">
+            </button>
+            <button
+              type="button"
+              className="ss-shop-mobile-trigger ss-shop-mobile-trigger--primary"
+              aria-expanded={mobileFilterOpen}
+              onClick={() => {
+                setMobileSortOpen(false);
+                setMobileFilterOpen((current) => !current);
+              }}
+            >
               {isEn ? "Filters" : "Filteri"}
               {activeFilterChips.length > 0 ? <span className="ss-shop-mobile-trigger__count">{activeFilterChips.length}</span> : null}
-            </label>
+            </button>
 
-            <label htmlFor={mobileSortToggleId} className="ss-shop-mobile-overlay ss-shop-mobile-overlay--popover" />
-            <div className="ss-shop-mobile-popover">
+            <button
+              type="button"
+              aria-label={isEn ? "Close sort" : "Zatvori sortiranje"}
+              className={`ss-shop-mobile-overlay ss-shop-mobile-overlay--popover ${mobileSortOpen ? "is-open" : ""}`}
+              onClick={closeMobilePanels}
+            />
+            <div className={`ss-shop-mobile-popover ${mobileSortOpen ? "is-open" : ""}`}>
               <div className="ss-shop-mobile-popover__header">
                 <div>
                   <span className="ss-shop-mobile-popover__eyebrow">{isEn ? "Current sort" : "Trenutni sort"}</span>
                   <strong>{currentSortLabel}</strong>
                 </div>
-                <label htmlFor={mobileSortToggleId} className="ss-shop-mobile-close">
+                <button type="button" className="ss-shop-mobile-close" onClick={closeMobilePanels}>
                   {isEn ? "Close" : "Zatvori"}
-                </label>
+                </button>
               </div>
               <div className="ss-shop-mobile-sort-links">
                 {sortOptions.map((option) => (
@@ -281,6 +317,7 @@ export default function WebShopFilters({
                     key={option.value}
                     href={makeHref({ sort: option.value === "featured" ? null : option.value })}
                     className={`ss-shop-mobile-sort-link ${sort === option.value ? "is-active" : ""}`}
+                    onClick={closeMobilePanels}
                   >
                     {option.label}
                   </Link>
@@ -288,16 +325,21 @@ export default function WebShopFilters({
               </div>
             </div>
 
-            <label htmlFor={mobileFilterToggleId} className="ss-shop-mobile-overlay" />
-            <div className="ss-shop-mobile-drawer">
+            <button
+              type="button"
+              aria-label={isEn ? "Close filters" : "Zatvori filtere"}
+              className={`ss-shop-mobile-overlay ${mobileFilterOpen ? "is-open" : ""}`}
+              onClick={closeMobilePanels}
+            />
+            <div className={`ss-shop-mobile-drawer ${mobileFilterOpen ? "is-open" : ""}`}>
               <div className="ss-shop-mobile-drawer__header">
                 <div>
                   <span className="ss-shop-mobile-popover__eyebrow">{isEn ? "Filter products" : "Filtriraj proizvode"}</span>
                   <strong>{isEn ? "Web shop filters" : "Web shop filteri"}</strong>
                 </div>
-                <label htmlFor={mobileFilterToggleId} className="ss-shop-mobile-close">
+                <button type="button" className="ss-shop-mobile-close" onClick={closeMobilePanels}>
                   {isEn ? "Close" : "Zatvori"}
-                </label>
+                </button>
               </div>
 
               {renderCategoryLinks("ss-shop-mobile-drawer__categories")}

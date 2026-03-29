@@ -371,11 +371,12 @@ export default async function WebShopPage({
                   alt="Santos web shop hero"
                   className="slideshow-bg__img object-fit-cover"
                   priority
+                  sizes="100vw"
                 />
               </div>
               <div className="ss-shop-hero__overlay" />
-              <div className="container position-relative h-100">
-                <div className="ss-shop-hero__content">
+              <div className="ss-shop-hero__content">
+                <div className="container ss-shop-hero__content-inner">
                   <div className="ss-shop-hero__card">
                     <p className="ss-shop-hero__eyebrow">{heroEyebrow}</p>
                     <h1>{heroTitle}</h1>
@@ -389,7 +390,6 @@ export default async function WebShopPage({
                         {isEn ? "View sale" : "Pogledaj akcije"}
                       </Link>
                     </div>
-
                   </div>
                 </div>
               </div>
