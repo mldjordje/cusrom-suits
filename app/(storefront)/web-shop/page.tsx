@@ -86,7 +86,7 @@ export default async function WebShopPage({
     onSale,
     activeOnly: true,
     exportOnly: true,
-    collapseBySku: false,
+    collapseBySku: true,
   });
   const landingSettings = await getLandingSettings();
 
