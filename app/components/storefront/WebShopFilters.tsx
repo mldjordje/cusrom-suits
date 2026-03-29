@@ -239,11 +239,15 @@ export default function WebShopFilters({
 
       <div className="ss-shop-feed">
         <div className="ss-shop-mobile-toolbar d-lg-none">
-          <div className="ss-shop-mobile-toolbar__summary">
-            <span className="ss-shop-mobile-toolbar__eyebrow">{isEn ? "Collection" : "Kolekcija"}</span>
+          <div className="ss-shop-mobile-toolbar__summary ss-shop-mobile-toolbar__summary--compact">
             <strong>
               {showingCount} / {totalCount} {isEn ? "products" : "proizvoda"}
             </strong>
+            {activeFilterChips.length > 0 ? (
+              <span className="ss-shop-mobile-toolbar__active">
+                {activeFilterChips.length} {isEn ? "active filters" : "aktivnih filtera"}
+              </span>
+            ) : null}
           </div>
 
           <div className="ss-shop-mobile-toolbar__actions">
@@ -298,6 +302,17 @@ export default function WebShopFilters({
               {renderForm("ss-shop-mobile-filters", true)}
             </div>
           </div>
+
+          {activeFilterChips.length > 0 ? (
+            <div className="ss-filter-chip-list ss-filter-chip-list--mobile d-lg-none">
+              {activeFilterChips.map((chip) => (
+                <Link key={`mobile-${chip.key}`} href={chip.href} className="ss-filter-chip" aria-label={`${isEn ? "Remove" : "Ukloni"} ${chip.label}`}>
+                  <span>{chip.label}</span>
+                  <span className="ss-filter-chip__x">x</span>
+                </Link>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         <div className="ss-shop-results-bar">
@@ -321,7 +336,7 @@ export default function WebShopFilters({
         </div>
 
         {activeFilterChips.length > 0 ? (
-          <div className="ss-filter-chip-list mb-3">
+          <div className="ss-filter-chip-list ss-filter-chip-list--desktop mb-3 d-none d-lg-flex">
             {activeFilterChips.map((chip) => (
               <Link key={chip.key} href={chip.href} className="ss-filter-chip" aria-label={`${isEn ? "Remove" : "Ukloni"} ${chip.label}`}>
                 <span>{chip.label}</span>
