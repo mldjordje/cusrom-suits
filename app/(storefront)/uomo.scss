@@ -875,7 +875,9 @@
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  padding-top: clamp(4.75rem, 8vw, 6.4rem);
+  padding-bottom: 1.4rem;
   z-index: 2;
 }
 
@@ -4342,9 +4344,9 @@ button.header-tools__item,
 button.ss-mobile-link,
 .ss-cart-trigger-btn {
   padding: 0;
-  border: 0;
-  background: transparent;
   color: inherit;
+  font: inherit;
+  appearance: none;
 }
 
 .ss-cart-drawer {

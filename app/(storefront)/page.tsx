@@ -100,6 +100,9 @@ const dedupeProductsBySku = <T extends { legacyId: number; sku?: string | null }
   return result;
 };
 
+const getSkuKey = (item: { legacyId: number; sku?: string | null }) =>
+  String(item.sku || item.legacyId).trim().toLowerCase();
+
 const getProductDisplayName = (item: CatalogProductView, lang: "sr" | "en") =>
   getCatalogProductDisplayName(
     {
@@ -148,31 +151,48 @@ const sortLandingProducts = (items: CatalogProductView[], lang: "sr" | "en") =>
     return right.legacyId - left.legacyId;
   });
 
-const pickProductsForSectionDistinct = <T extends { legacyId: number; sku?: string | null }>(
+const pickProductsForSectionManaged = <T extends { legacyId: number; sku?: string | null }>(
   source: T[],
   preferredIds: number[],
   limit: number,
   fallback: T[],
   usedSkuKeys: Set<string>,
 ) => {
-  const primary = pickProductsForSection(source, preferredIds, Math.max(limit * 2, limit), fallback);
-  const backup = [...fallback, ...source];
+  const primary = pickProductsForSection(source, preferredIds, limit, []);
+  const backup = dedupeProductsBySku([...fallback, ...source]);
   const out: T[] = [];
+  const sectionSkuKeys = new Set<string>();
 
-  const takeCandidate = (candidate: T) => {
-    const key = String(candidate.sku || candidate.legacyId).trim().toLowerCase();
-    if (!key || usedSkuKeys.has(key)) return false;
-    usedSkuKeys.add(key);
+  const takePreferredCandidate = (candidate: T) => {
+    const key = getSkuKey(candidate);
+    if (!key) return false;
+    sectionSkuKeys.add(key);
+    out.push(candidate);
+    return out.length >= limit;
+  };
+
+  const takeFallbackCandidate = (candidate: T) => {
+    const key = getSkuKey(candidate);
+    if (!key || usedSkuKeys.has(key) || sectionSkuKeys.has(key)) return false;
+    sectionSkuKeys.add(key);
     out.push(candidate);
     return out.length >= limit;
   };
 
   for (const candidate of primary) {
-    if (takeCandidate(candidate)) return out;
+    if (takePreferredCandidate(candidate)) {
+      sectionSkuKeys.forEach((key) => usedSkuKeys.add(key));
+      return out;
+    }
   }
   for (const candidate of backup) {
-    if (takeCandidate(candidate)) return out;
+    if (takeFallbackCandidate(candidate)) {
+      sectionSkuKeys.forEach((key) => usedSkuKeys.add(key));
+      return out;
+    }
   }
+
+  sectionSkuKeys.forEach((key) => usedSkuKeys.add(key));
   return out;
 };
 
@@ -242,12 +262,16 @@ export default async function HomePage({
   const pinnedProducts = (
     await Promise.all(pinnedProductIds.map((id) => getCatalogProductByLegacyId(id)))
   ).filter((item): item is CatalogProductView => Boolean(item?.isActive && item?.isExported));
+  const pinnedProductsById = new Map(pinnedProducts.map((item) => [item.legacyId, item]));
 
   const landingPoolUnique = sortLandingProducts(
     dedupeProductsBySku([...pinnedProducts, ...catalog.items]),
     contentLang,
   );
 
+  const saleManualPool = landingSettings.saleProductIds
+    .map((id) => pinnedProductsById.get(id))
+    .filter((item): item is CatalogProductView => Boolean(item));
   const salePool = sortLandingProducts(
     dedupeProductsBySku([...pinnedProducts, ...saleCatalog.items]).filter(
       (item) =>
@@ -259,35 +283,35 @@ export default async function HomePage({
   );
 
   const usedSkuKeys = new Set<string>();
-  const heroStripProducts = pickProductsForSectionDistinct(
+  const heroStripProducts = pickProductsForSectionManaged(
     landingPoolUnique,
     landingSettings.heroStripProductIds,
     4,
     landingPoolUnique.slice(0, 12),
     usedSkuKeys,
   );
-  const heroProducts = pickProductsForSectionDistinct(
+  const heroProducts = pickProductsForSectionManaged(
     landingPoolUnique,
     landingSettings.highlightedProductIds,
     8,
     landingPoolUnique.slice(0, 24),
     usedSkuKeys,
   );
-  const featured = pickProductsForSectionDistinct(
+  const featured = pickProductsForSectionManaged(
     landingPoolUnique,
     landingSettings.popularProductIds,
     4,
     landingPoolUnique.slice(0, 24),
     usedSkuKeys,
   );
-  const arrivals = pickProductsForSectionDistinct(
+  const arrivals = pickProductsForSectionManaged(
     landingPoolUnique,
     landingSettings.arrivalsProductIds,
     4,
     landingPoolUnique.slice(8, 32),
     usedSkuKeys,
   );
-  const trending = pickProductsForSectionDistinct(
+  const trending = pickProductsForSectionManaged(
     landingPoolUnique,
     landingSettings.trendingProductIds,
     4,
@@ -295,7 +319,7 @@ export default async function HomePage({
     usedSkuKeys,
   );
   const saleItems = pickProductsForSection(
-    salePool,
+    [...saleManualPool, ...salePool],
     landingSettings.saleProductIds,
     4,
     salePool.slice(0, 16),
@@ -305,7 +329,13 @@ export default async function HomePage({
   const customGridSections = normalizeLandingCustomSections(landingSettings.customSections)
     .map((section) => ({
       section,
-      items: pickProductsForSection(landingPoolUnique, section.productIds, Math.max(section.productIds.length, 1), []),
+      items: pickProductsForSectionManaged(
+        landingPoolUnique,
+        section.productIds,
+        Math.max(section.productIds.length, 1),
+        landingPoolUnique,
+        usedSkuKeys,
+      ),
     }))
     .filter(({ section, items }) => section.enabled && items.length > 0);
 

@@ -86,7 +86,7 @@ export default async function WebShopPage({
     onSale,
     activeOnly: true,
     exportOnly: true,
-    collapseBySku: true,
+    collapseBySku: false,
   });
   const landingSettings = await getLandingSettings();
 
@@ -104,10 +104,14 @@ export default async function WebShopPage({
   const items = sortItems(result.items, sort);
   const topCategories = result.categories.slice(0, 7);
   const heroEyebrow = landingSettings.shopHeroEyebrow?.trim() || (isEn ? "Curated ready-to-wear" : "Kurirana ready-to-wear kolekcija");
-  const heroTitle = isEn ? "Ready-to-wear collection" : "Ready-to-wear kolekcija";
-  const heroLead = isEn
-    ? "Selected menswear models with cleaner navigation and easier filtering across desktop and mobile."
-    : "Odabrani modeli muske kolekcije sa cistijom navigacijom i laksim filtriranjem na desktopu i telefonu.";
+  const heroTitle =
+    landingSettings.shopHeroTitle?.trim() ||
+    (isEn ? "Ready-to-wear collection" : "Ready-to-wear kolekcija");
+  const heroLead =
+    landingSettings.shopHeroLead?.trim() ||
+    (isEn
+      ? "Selected menswear models with cleaner navigation and easier filtering across desktop and mobile."
+      : "Odabrani modeli muske kolekcije sa cistijom navigacijom i laksim filtriranjem na desktopu i telefonu.");
   const sortLabelMap: Record<string, string> = {
     featured: isEn ? "Featured" : "Izdvojeno",
     price_asc: isEn ? "Price: Low to High" : "Cena: od nize ka visoj",
@@ -197,8 +201,8 @@ export default async function WebShopPage({
 
   const heroStats = [
     {
-      label: isEn ? "Showing" : "Prikazano",
-      value: String(items.length),
+      label: isEn ? "Available" : "Dostupno",
+      value: String(result.total),
     },
     {
       label: isEn ? "Categories" : "Kategorije",

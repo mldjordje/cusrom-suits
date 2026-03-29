@@ -28,8 +28,9 @@ const formatDate = (value: string | null | undefined) => {
 };
 
 export default async function AdminHome() {
-  const [catalog, posts, runs, orders, contacts, newsletter] = await Promise.all([
-    listCatalogProducts({ page: 1, pageSize: 1, activeOnly: false, exportOnly: false }),
+  const [catalogStorefront, catalogRaw, posts, runs, orders, contacts, newsletter] = await Promise.all([
+    listCatalogProducts({ page: 1, pageSize: 1, activeOnly: true, exportOnly: true, collapseBySku: false }),
+    listCatalogProducts({ page: 1, pageSize: 1, activeOnly: false, exportOnly: false, collapseBySku: false }),
     listPosts({ page: 1, pageSize: 1, type: "all", onlyPublished: false }),
     listSyncRuns(6),
     listRecentOrders(200),
@@ -38,7 +39,11 @@ export default async function AdminHome() {
   ]);
 
   const stats = [
-    { label: "Proizvodi", value: catalog.total, hint: `${catalog.categories.length} kategorija` },
+    {
+      label: "Storefront proizvodi",
+      value: catalogStorefront.total,
+      hint: `${catalogStorefront.categories.length} kategorija / ${catalogRaw.total} ukupno u katalogu`,
+    },
     { label: "Objave", value: posts.total, hint: "blog + vesti" },
     { label: "Porudzbine", value: orders.length, hint: "lokalni/supabase izvori" },
     { label: "Kontakt poruke", value: contacts.length, hint: "landing i kontakt forma" },

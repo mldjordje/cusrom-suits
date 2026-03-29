@@ -594,8 +594,8 @@ export default function AdminWebshopPage() {
   const [q, setQ] = useState("");
   const [categoryId, setCategoryId] = useState("");
   const [inStock, setInStock] = useState(false);
-  const [activeOnly, setActiveOnly] = useState(false);
-  const [exportOnly, setExportOnly] = useState(false);
+  const [activeOnly, setActiveOnly] = useState(true);
+  const [exportOnly, setExportOnly] = useState(true);
   const [onSaleOnly, setOnSaleOnly] = useState(false);
   const [saleQ, setSaleQ] = useState("");
   const [saleOnSaleOnly, setSaleOnSaleOnly] = useState(true);
