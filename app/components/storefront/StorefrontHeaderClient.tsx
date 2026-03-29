@@ -20,6 +20,8 @@ type HeaderNavItem = {
   label: string;
 };
 
+const SHOP_CATEGORIES_SESSION_KEY = "ss-shop-categories-v1";
+
 export default function StorefrontHeaderClient({
   lang = "sr",
   variant = "default",
@@ -34,6 +36,7 @@ export default function StorefrontHeaderClient({
   const [mobileShopExpanded, setMobileShopExpanded] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [shopCategories, setShopCategories] = useState<ShopCategory[]>([]);
+  const [shouldLoadShopCategories, setShouldLoadShopCategories] = useState(false);
   const lockedScrollY = useRef(0);
   const { reduceMotion } = useAnimationBudget();
   const normalizedPath = pathname ?? "";
@@ -101,6 +104,16 @@ export default function StorefrontHeaderClient({
   }, [normalizedPath]);
 
   useEffect(() => {
+    if (
+      normalizedPath === "/web-shop" ||
+      normalizedPath.startsWith("/web-shop/") ||
+      normalizedPath === "/akcije"
+    ) {
+      setShouldLoadShopCategories(true);
+    }
+  }, [normalizedPath]);
+
+  useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 26);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
@@ -108,13 +121,32 @@ export default function StorefrontHeaderClient({
   }, []);
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+    const cached = window.sessionStorage.getItem(SHOP_CATEGORIES_SESSION_KEY);
+    if (!cached) return;
+    try {
+      const parsed = JSON.parse(cached) as ShopCategory[];
+      if (Array.isArray(parsed) && parsed.length) {
+        setShopCategories(parsed);
+      }
+    } catch {
+      window.sessionStorage.removeItem(SHOP_CATEGORIES_SESSION_KEY);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!shouldLoadShopCategories || shopCategories.length > 0) return;
     let active = true;
     const loadCategories = async () => {
       try {
         const res = await fetch("/api/storefront/categories", { cache: "force-cache" });
         const json = await res.json();
         if (!active || !json?.success || !Array.isArray(json.categories)) return;
-        setShopCategories(json.categories);
+        const categories = json.categories as ShopCategory[];
+        setShopCategories(categories);
+        if (typeof window !== "undefined") {
+          window.sessionStorage.setItem(SHOP_CATEGORIES_SESSION_KEY, JSON.stringify(categories));
+        }
       } catch {
         if (active) setShopCategories([]);
       }
@@ -123,7 +155,7 @@ export default function StorefrontHeaderClient({
     return () => {
       active = false;
     };
-  }, []);
+  }, [shouldLoadShopCategories, shopCategories.length]);
 
   const desktopFloating = isHome && !isContrast;
   const closeMobileMenu = () => setMobileOpen(false);
@@ -184,10 +216,12 @@ export default function StorefrontHeaderClient({
                   <li
                     key={item.href}
                     className={`navigation__item ${isItemActive(item.href) ? "is-active" : ""} ${item.href === "/web-shop" ? "menu-item-has-children position-relative" : ""}`}
+                    onMouseEnter={item.href === "/web-shop" ? () => setShouldLoadShopCategories(true) : undefined}
                   >
                     <Link
                       href={withLang(item.href)}
                       className={`navigation__link ${isItemActive(item.href) ? "is-active" : ""}`}
+                      onFocus={item.href === "/web-shop" ? () => setShouldLoadShopCategories(true) : undefined}
                     >
                       {item.label}
                     </Link>
@@ -380,7 +414,10 @@ export default function StorefrontHeaderClient({
                               type="button"
                               className={`ss-mobile-nav-link ss-mobile-nav-link--toggle ${isItemActive(item.href) ? "is-active" : ""} ${mobileShopExpanded ? "is-open" : ""}`}
                               aria-expanded={mobileShopExpanded}
-                              onClick={() => setMobileShopExpanded((prev) => !prev)}
+                              onClick={() => {
+                                setShouldLoadShopCategories(true);
+                                setMobileShopExpanded((prev) => !prev);
+                              }}
                             >
                               <span>{item.label}</span>
                               <svg

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
 const SELECTOR = [
@@ -26,6 +27,7 @@ const SELECTOR = [
 ].join(", ");
 
 export default function StorefrontViewportEffects() {
+  const pathname = usePathname();
   const { reduceMotion } = useAnimationBudget();
 
   useEffect(() => {
@@ -44,6 +46,9 @@ export default function StorefrontViewportEffects() {
       scan();
       return;
     }
+
+    const root = document.querySelector(".page-wrapper") ?? document.body;
+    let frameId = 0;
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -67,21 +72,32 @@ export default function StorefrontViewportEffects() {
       }
     };
 
+    const scheduleObserveElements = () => {
+      if (frameId) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        observeElements();
+      });
+    };
+
     observeElements();
 
     const mutationObserver = new MutationObserver(() => {
-      observeElements();
+      scheduleObserveElements();
     });
-    mutationObserver.observe(document.body, {
+    mutationObserver.observe(root, {
       childList: true,
       subtree: true,
     });
 
     return () => {
+      if (frameId) {
+        window.cancelAnimationFrame(frameId);
+      }
       mutationObserver.disconnect();
       observer.disconnect();
     };
-  }, [reduceMotion]);
+  }, [pathname, reduceMotion]);
 
   return null;
 }

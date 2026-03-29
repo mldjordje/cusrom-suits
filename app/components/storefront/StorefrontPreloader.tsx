@@ -3,8 +3,8 @@
 import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 
-const MIN_VISIBLE_MS = 800;
-const EXIT_DURATION_MS = 420;
+const MIN_VISIBLE_MS = 260;
+const EXIT_DURATION_MS = 260;
 const SESSION_KEY = "ss-storefront-preloader-seen";
 
 export default function StorefrontPreloader() {
@@ -42,7 +42,7 @@ export default function StorefrontPreloader() {
       release();
     } else {
       window.addEventListener("load", release, { once: true });
-      releaseTimer = window.setTimeout(release, 1800);
+      releaseTimer = window.setTimeout(release, 1200);
     }
 
     return () => {
