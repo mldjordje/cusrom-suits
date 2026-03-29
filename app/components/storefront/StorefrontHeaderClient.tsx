@@ -31,6 +31,7 @@ export default function StorefrontHeaderClient({
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [mobileShopExpanded, setMobileShopExpanded] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [shopCategories, setShopCategories] = useState<ShopCategory[]>([]);
   const lockedScrollY = useRef(0);
@@ -92,6 +93,12 @@ export default function StorefrontHeaderClient({
   useEffect(() => {
     setMobileOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    setMobileShopExpanded(
+      normalizedPath === "/web-shop" || normalizedPath.startsWith("/web-shop/") || normalizedPath === "/akcije",
+    );
+  }, [normalizedPath]);
 
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 26);
@@ -367,30 +374,53 @@ export default function StorefrontHeaderClient({
                           ease: [0.22, 1, 0.36, 1],
                         }}
                       >
-                        <Link
-                          href={withLang(item.href)}
-                          className={`ss-mobile-nav-link ${isItemActive(item.href) ? "is-active" : ""}`}
-                          onClick={closeMobileMenu}
-                        >
-                          <span>{item.label}</span>
-                          <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                            <path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                          </svg>
-                        </Link>
                         {item.href === "/web-shop" && shopMenuLinks.length > 0 ? (
-                          <div className="ss-mobile-nav-submenu">
-                            {shopMenuLinks.map((link) => (
-                              <Link
-                                key={`mobile-${link.href}`}
-                                href={withLang(link.href)}
-                                className="ss-mobile-nav-submenu__link"
-                                onClick={closeMobileMenu}
+                          <>
+                            <button
+                              type="button"
+                              className={`ss-mobile-nav-link ss-mobile-nav-link--toggle ${isItemActive(item.href) ? "is-active" : ""} ${mobileShopExpanded ? "is-open" : ""}`}
+                              aria-expanded={mobileShopExpanded}
+                              onClick={() => setMobileShopExpanded((prev) => !prev)}
+                            >
+                              <span>{item.label}</span>
+                              <svg
+                                className="ss-mobile-nav-link__chevron"
+                                width="16"
+                                height="16"
+                                viewBox="0 0 16 16"
+                                xmlns="http://www.w3.org/2000/svg"
+                                aria-hidden="true"
                               >
-                                {link.label}
-                              </Link>
-                            ))}
-                          </div>
-                        ) : null}
+                                <path d="M3.5 6L8 10.5L12.5 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </button>
+                            {mobileShopExpanded ? (
+                              <div className="ss-mobile-nav-submenu">
+                                {shopMenuLinks.map((link) => (
+                                  <Link
+                                    key={`mobile-${link.href}`}
+                                    href={withLang(link.href)}
+                                    className="ss-mobile-nav-submenu__link"
+                                    onClick={closeMobileMenu}
+                                  >
+                                    {link.label}
+                                  </Link>
+                                ))}
+                              </div>
+                            ) : null}
+                          </>
+                        ) : (
+                          <Link
+                            href={withLang(item.href)}
+                            className={`ss-mobile-nav-link ${isItemActive(item.href) ? "is-active" : ""}`}
+                            onClick={closeMobileMenu}
+                          >
+                            <span>{item.label}</span>
+                            <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                              <path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </Link>
+                        )}
                       </m.li>
                     ))}
                   </ul>
