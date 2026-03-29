@@ -3,6 +3,7 @@ import Link from "next/link";
 import dynamic from "next/dynamic";
 import { decodeHtmlEntities, getCatalogProductDisplayName } from "@/lib/catalog/presentation";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
+import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 
 const HeroParallaxFx = dynamic(() => import("@/app/components/storefront/HeroParallaxFx"));
@@ -58,6 +59,7 @@ const findCategoryId = (categories: HomeCategory[], terms: string[]) => {
 const hrefForCategory = (categoryId?: number) => (categoryId ? `/web-shop?categoryId=${categoryId}` : "/web-shop");
 
 export default function HomeHeroVideo({ categories, showProductCards = true, featuredProducts, content, lang = "sr" }: Props) {
+  const tx = (value: string, fallbackEn?: string) => localizeDynamicStorefrontText(value, lang, fallbackEn);
   const withLang = (href: string) => {
     if (lang !== "en" || !href.startsWith("/")) return href;
     if (href.includes("?")) return `${href}&lang=en`;
@@ -84,25 +86,25 @@ export default function HomeHeroVideo({ categories, showProductCards = true, fea
       : [
           {
             id: "fallback-1",
-            title: "Kolekcija odela",
+            title: tx("Kolekcija odela", "Suit Collection"),
             image: "/img/odela2.jpg",
             href: withLang(hrefForCategory(suitsCategoryId)),
           },
           {
             id: "fallback-2",
-            title: "Premium obuca",
+            title: tx("Premium obuca", "Premium Footwear"),
             image: "/img/obuca.jpg",
             href: withLang(hrefForCategory(shoesCategoryId)),
           },
           {
             id: "fallback-3",
-            title: "Nova kolekcija",
+            title: tx("Nova kolekcija", "New Collection"),
             image: "/img/hero.jpg",
             href: withLang("/web-shop"),
           },
           {
             id: "fallback-4",
-            title: "Aktuelne akcije",
+            title: tx("Aktuelne akcije", "Current Sale"),
             image: "/img/hero2.jpg",
             href: withLang("/akcije"),
           },

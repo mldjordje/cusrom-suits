@@ -21,6 +21,7 @@ const sections = [
       "`Prodajna cena` je cena koju kupac vidi na sajtu. `Regularna cena` je puna, precrtana cena.",
       "`Lager magacin 1` i `Ukupan lager` su kolicine. Ako je lager 0, proizvod moze ostati vidljiv ali bez trenutne dostupnosti.",
       "Kategorije sluze za filtriranje, organizaciju i potencijalna promo pravila po grupama proizvoda.",
+      "Svaki artikal sada moze da ima i video klip. Dodajes ga u editoru proizvoda kroz URL ili `Upload video`, a posle obavezno kliknes `Sacuvaj`.",
       "Pocetna strana se vise ne podesava iz editora proizvoda. Za to postoji posebna strana `Pocetna i sekcije`.",
     ],
   },
@@ -42,6 +43,7 @@ const sections = [
       "Landing vise nije ogranicen samo na stare hardkodirane blokove: postoji raspored sekcija i svaka produkt sekcija ima sopstveni naslov, podnaslov i CTA.",
       "Custom sekcije imaju sopstvene proizvode, naslov, podnaslov i dugme, a hero, banneri, story kartice, dokumenta i ostali landing blokovi imaju poseban content editor.",
       "Ako zelis da menjas hero, bannere, story kartice, dokumenta, business uniforme ili ostale landing tekstove, koristi editor sadrzaja koji je povezan sa landing podesavanjima.",
+      "Strana `Poslovne uniforme` sada podrzava i slike i video klipove, a tekst na toj stranici se i dalje menja kroz landing content editor.",
       "Ako neka produkt sekcija ostane prazna, storefront jos uvek moze da koristi fallback izbor iz kataloga, ali preporuka je da za home rucno kuriras ono sto zelis da se vidi.",
       "Promene nisu automatske. Posle izmene obavezno klikni `Sacuvaj sekcije` ili `Sacuvaj landing`, zavisno od bloka koji uredjujes.",
     ],
@@ -65,6 +67,7 @@ const sections = [
       "Pravne stranice koje moraju postojati i ostati azurne su: `Polisa privatnosti`, `Uslovi kupovine`, `Reklamacije`, `Isporuka`, `Uslovi koriscenja kolacica` i `Nacin placanja`.",
       "Ako menjas logoe, slike bannera ili dokumenta, proveri javni sajt odmah posle cuvanja da bi bio siguran da se novi asset stvarno povukao na produkciji.",
       "Ako menjas kontakt podatke firme, prodajna mesta ili copy u footeru, proveri i javni sajt posle cuvanja jer su to odmah vidljive promene.",
+      "Na admin dashboardu postoji i `Vercel analytics overview` kao brzi pregled kljucnih signala i link ka punom analytics dashboardu.",
     ],
   },
   {

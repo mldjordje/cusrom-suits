@@ -148,6 +148,7 @@ export default async function WebShopProductPage({
   const displaySpecification = getLocalizedCatalogSpecification(displayProduct, lang);
   const material = getProductMaterial(displayProduct, lang);
   const gallery = getCatalogProductImageSources(displayProduct, [product, ...variants], ["/img/odela.jpg"]);
+  const productVideoUrl = displayProduct.videoUrl || product.videoUrl || null;
   const sizeOptions = getProductSizeOptions(product, variants);
   const selectedSize =
     sizeOptions.find((option) => option.legacyId === product.legacyId)?.label ||
@@ -240,7 +241,7 @@ export default async function WebShopProductPage({
           <div className="row">
             <div className="col-lg-7">
               <div className="product-single__media" data-media-type="scroll-snap">
-                <ProductImageGallery images={gallery} name={displayName} />
+                <ProductImageGallery images={gallery} name={displayName} videoUrl={productVideoUrl} />
               </div>
             </div>
 

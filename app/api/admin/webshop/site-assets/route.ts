@@ -6,19 +6,42 @@ import { hasAdminToken } from "@/lib/auth/admin";
 import { uploadSiteAsset } from "@/lib/storage/siteAssets";
 
 const MAX_FILES_PER_REQUEST = 12;
-const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 80 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
   "image/jpeg",
   "image/png",
   "image/webp",
   "image/gif",
+  "video/mp4",
+  "video/webm",
+  "video/quicktime",
+  "video/x-msvideo",
+  "video/mpeg",
   "application/pdf",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ]);
-const ALLOWED_EXTENSIONS = new Set([".jpg", ".jpeg", ".png", ".webp", ".gif", ".pdf", ".doc", ".docx", ".xls", ".xlsx"]);
+const ALLOWED_EXTENSIONS = new Set([
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".webp",
+  ".gif",
+  ".mp4",
+  ".webm",
+  ".mov",
+  ".avi",
+  ".mpeg",
+  ".mpg",
+  ".m4v",
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+]);
 
 const sanitizeFileSegment = (value: string) =>
   String(value || "")
@@ -63,8 +86,8 @@ export async function POST(req: NextRequest) {
 
   for (const file of files) {
     if (file.size > MAX_FILE_SIZE_BYTES) {
-      return NextResponse.json(
-        { success: false, message: `"${file.name}" prelazi limit od 20MB.` },
+        return NextResponse.json(
+        { success: false, message: `"${file.name}" prelazi limit od 80MB.` },
         { status: 400 },
       );
     }

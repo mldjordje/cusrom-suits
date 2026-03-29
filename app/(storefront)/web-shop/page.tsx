@@ -10,6 +10,7 @@ import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartIma
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
 import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
+import { localizeDynamicCategoryLabel, localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getCatalogProductImageSources, getLocalizedCatalogProductName } from "@/lib/storefront/product-details";
 import { absoluteUrl, buildBreadcrumbJsonLd, buildSeoMetadata } from "@/lib/seo";
@@ -107,18 +108,22 @@ export default async function WebShopPage({
       },
       lang,
     );
+  const tx = (value: string, fallbackEn?: string) =>
+    localizeDynamicStorefrontText(value, isEn ? "en" : "sr", fallbackEn);
+  const localizeCategory = (value: string) => localizeDynamicCategoryLabel(value, isEn ? "en" : "sr");
 
   const items = sortItems(result.items, sort);
   const topCategories = result.categories.slice(0, 7);
-  const heroEyebrow = landingSettings.shopHeroEyebrow?.trim() || (isEn ? "Santos & Santorini" : "Santos & Santorini");
+  const heroEyebrow = tx(landingSettings.shopHeroEyebrow?.trim() || "Santos & Santorini", "Santos & Santorini");
   const heroTitle =
-    landingSettings.shopHeroTitle?.trim() ||
-    (isEn ? "Menswear collection" : "Muska kolekcija");
-  const heroLead =
+    tx(landingSettings.shopHeroTitle?.trim() || (isEn ? "Menswear collection" : "Muska kolekcija"), "Menswear Collection");
+  const heroLead = tx(
     landingSettings.shopHeroLead?.trim() ||
-    (isEn
-      ? "Browse the current Santos & Santorini offer and filter the collection by category, availability, or sale."
-      : "Pregledajte aktuelnu Santos & Santorini ponudu i filtrirajte kolekciju po kategoriji, dostupnosti ili akciji.");
+      (isEn
+        ? "Browse the current Santos & Santorini offer and filter the collection by category, availability, or sale."
+        : "Pregledajte aktuelnu Santos & Santorini ponudu i filtrirajte kolekciju po kategoriji, dostupnosti ili akciji."),
+    "Browse the current Santos & Santorini offer and filter the collection by category, availability, or sale.",
+  );
   const sortLabelMap: Record<string, string> = {
     featured: isEn ? "Featured" : "Izdvojeno",
     price_asc: isEn ? "Price: Low to High" : "Cena: od nize ka visoj",
@@ -163,7 +168,7 @@ export default async function WebShopPage({
   };
 
   const categoryNameById = new Map(result.categories.map((category) => [category.id, category.name]));
-  const selectedCategoryName = categoryId > 0 ? categoryNameById.get(categoryId) || `Category ${categoryId}` : "";
+  const selectedCategoryName = categoryId > 0 ? localizeCategory(categoryNameById.get(categoryId) || `Category ${categoryId}`) : "";
   const activeFilterChips: ActiveFilterChip[] = [];
 
   if (q.trim()) {
@@ -218,7 +223,7 @@ export default async function WebShopPage({
       active: onSale && categoryId <= 0,
     },
     ...topCategories.slice(0, 5).map((category) => ({
-      label: category.name,
+      label: localizeCategory(category.name),
       href: makeHref({ categoryId: category.id, onSale: null, page: 1 }),
       active: categoryId === category.id,
     })),

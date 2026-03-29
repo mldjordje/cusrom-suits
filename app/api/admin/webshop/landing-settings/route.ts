@@ -13,6 +13,7 @@ import {
   type LandingSettings,
   type LandingStoryCard,
   type LandingUniformImage,
+  type LandingUniformVideo,
 } from "@/lib/catalog/landingSettings";
 
 type PatchPayload = Partial<LandingSettings>;
@@ -62,6 +63,23 @@ const parseUniformImages = (value: unknown): LandingUniformImage[] => {
       return { title, image, alt };
     })
     .filter((item): item is LandingUniformImage => Boolean(item))
+    .slice(0, 24);
+};
+
+const parseUniformVideos = (value: unknown): LandingUniformVideo[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const entry = row as Record<string, unknown>;
+      const title = String(entry.title || "").trim();
+      const video = String(entry.video || "").trim();
+      const poster = String(entry.poster || "").trim();
+      const alt = String(entry.alt || "").trim();
+      if (!title && !video && !poster && !alt) return null;
+      return { title, video, poster, alt };
+    })
+    .filter((item): item is LandingUniformVideo => Boolean(item))
     .slice(0, 24);
 };
 
@@ -164,6 +182,7 @@ export async function PATCH(req: NextRequest) {
   if ("uniformsCtaLabel" in row) patch.uniformsCtaLabel = String(row.uniformsCtaLabel || "");
   if ("uniformsCtaHref" in row) patch.uniformsCtaHref = String(row.uniformsCtaHref || "");
   if ("uniformsImages" in row) patch.uniformsImages = parseUniformImages(row.uniformsImages);
+  if ("uniformsVideos" in row) patch.uniformsVideos = parseUniformVideos(row.uniformsVideos);
   if ("shopHeroEyebrow" in row) patch.shopHeroEyebrow = String(row.shopHeroEyebrow || "");
   if ("shopHeroTitle" in row) patch.shopHeroTitle = String(row.shopHeroTitle || "");
   if ("shopHeroLead" in row) patch.shopHeroLead = String(row.shopHeroLead || "");

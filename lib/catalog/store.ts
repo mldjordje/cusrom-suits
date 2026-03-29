@@ -47,6 +47,7 @@ export type CatalogProductView = {
   categories: CatalogCategory[];
   coverImage: string | null;
   images: string[];
+  videoUrl: string | null;
   attributes: Record<string, unknown>;
   rawPayload: Record<string, unknown>;
 };
@@ -243,11 +244,26 @@ const compactRawPayload = (
   if (Array.isArray(source.categories)) compact.categories = source.categories;
   if (source.landing && typeof source.landing === "object") compact.landing = source.landing;
   if (source.attributes && typeof source.attributes === "object") compact.attributes = source.attributes;
+  if (source.media && typeof source.media === "object") compact.media = source.media;
   if (source.imageFallback && typeof source.imageFallback === "object") {
     compact.imageFallback = source.imageFallback;
   }
 
   return compact;
+};
+
+const extractProductVideoUrl = (rawPayload: Record<string, unknown> | null | undefined) => {
+  if (!rawPayload || typeof rawPayload !== "object") return null;
+
+  const media =
+    rawPayload.media && typeof rawPayload.media === "object"
+      ? (rawPayload.media as Record<string, unknown>)
+      : null;
+  const mediaVideoUrl = String(media?.videoUrl || "").trim();
+  if (mediaVideoUrl) return mediaVideoUrl;
+
+  const directVideoUrl = String(rawPayload.videoUrl || "").trim();
+  return directVideoUrl || null;
 };
 
 const normalizeCatalogRow = (
@@ -295,6 +311,7 @@ const normalizeCatalogRow = (
     categories,
     coverImage,
     images,
+    videoUrl: extractProductVideoUrl(rawPayload),
     attributes:
       rawPayload && typeof rawPayload.attributes === "object"
         ? (rawPayload.attributes as Record<string, unknown>)
@@ -334,11 +351,18 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
   })),
   coverImage: item.coverImage,
   images: Array.isArray(item.images) ? item.images : [],
+  videoUrl: extractProductVideoUrl(item.raw as Record<string, unknown>),
   attributes: item.attributes as unknown as Record<string, unknown>,
   rawPayload: compactRawPayload({
     categories: item.categories,
     attributes: item.attributes,
     landing: item.raw?.landing,
+    media:
+      item.raw && typeof item.raw.media === "object"
+        ? item.raw.media
+        : extractProductVideoUrl(item.raw as Record<string, unknown>)
+          ? { videoUrl: extractProductVideoUrl(item.raw as Record<string, unknown>) }
+          : undefined,
   }),
 });
 
@@ -459,6 +483,7 @@ const scoreCollapsedRepresentative = (item: CatalogProductView) => {
   if (item.nameEn && item.nameEn.trim()) score += 8;
   if (item.categories.length > 0) score += 12;
   if (item.coverImage) score += 8;
+  if (item.videoUrl) score += 10;
   if (item.brand) score += 4;
   if (stock > 0) score += Math.min(stock, 10);
   if (discountPercent > 0) score += 40 + Math.min(discountPercent, 35);
@@ -567,6 +592,7 @@ const collapseCatalogProductsBySku = (items: CatalogProductView[]): CatalogProdu
       priceFinalGross: pricingLeader.priceFinalGross,
       rebatePercent: mergedDiscountPercent,
       coverImage: representative.coverImage || current.coverImage || item.coverImage,
+      videoUrl: representative.videoUrl || current.videoUrl || item.videoUrl,
       isActive: current.isActive || item.isActive,
       isExported: current.isExported || item.isExported,
       landingFeatured: current.landingFeatured || item.landingFeatured,

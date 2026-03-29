@@ -29,6 +29,13 @@ export type LandingUniformImage = {
   alt: string;
 };
 
+export type LandingUniformVideo = {
+  title: string;
+  video: string;
+  poster: string;
+  alt: string;
+};
+
 export type LandingStoryCard = {
   id: string;
   badge: string;
@@ -81,6 +88,7 @@ export type LandingSettings = {
   uniformsCtaLabel: string;
   uniformsCtaHref: string;
   uniformsImages: LandingUniformImage[];
+  uniformsVideos: LandingUniformVideo[];
   shopHeroEyebrow: string;
   shopHeroTitle: string;
   shopHeroLead: string;
@@ -179,6 +187,26 @@ const DEFAULT_SETTINGS: LandingSettings = {
       title: "Timski setovi",
       image: "https://santos.rs/fajlovi/uniforme/BRI04963.jpg",
       alt: "Santos poslovne uniforme za kompanijske timove",
+    },
+  ],
+  uniformsVideos: [
+    {
+      title: "Zenska uniforma mantil",
+      video: "https://santos.rs/fajlovi/uniforme/Santos%20zenska%20uniforma%20mantil.mp4",
+      poster: "https://santos.rs/fajlovi/uniforme/BRI04849.jpg",
+      alt: "Santos video prezentacija zenske poslovne uniforme",
+    },
+    {
+      title: "Kosulja kratak rukav",
+      video: "https://santos.rs/fajlovi/uniforme/Santos%20uniforma%20kosulja%20kratak%20rukav.mp4",
+      poster: "https://santos.rs/fajlovi/uniforme/BRI04899.jpg",
+      alt: "Santos video prezentacija poslovne kosulje kratkog rukava",
+    },
+    {
+      title: "Pantalone i jakna",
+      video: "https://santos.rs/fajlovi/uniforme/Santos%20uniforma%20pantalone%20jakna.mp4",
+      poster: "https://santos.rs/fajlovi/uniforme/BRI04939.jpg",
+      alt: "Santos video prezentacija kompleta pantalone i jakna",
     },
   ],
   shopHeroEyebrow: "Kurirani izbor krojeva",
@@ -293,6 +321,25 @@ const normalizeLandingUniformImages = (value: unknown, max = 24) => {
   return value
     .map(normalizeLandingUniformImage)
     .filter((item): item is LandingUniformImage => Boolean(item))
+    .slice(0, max);
+};
+
+const normalizeLandingUniformVideo = (value: unknown): LandingUniformVideo | null => {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const title = String(row.title || "").trim();
+  const video = String(row.video || "").trim();
+  const poster = String(row.poster || "").trim();
+  const alt = String(row.alt || "").trim();
+  if (!title && !video && !poster && !alt) return null;
+  return { title, video, poster, alt };
+};
+
+const normalizeLandingUniformVideos = (value: unknown, max = 24) => {
+  if (!Array.isArray(value)) return [] as LandingUniformVideo[];
+  return value
+    .map(normalizeLandingUniformVideo)
+    .filter((item): item is LandingUniformVideo => Boolean(item))
     .slice(0, max);
 };
 
@@ -428,6 +475,7 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
     uniformsCtaLabel: decodeLandingText(settings.uniformsCtaLabel, DEFAULT_SETTINGS.uniformsCtaLabel),
     uniformsCtaHref: String(settings.uniformsCtaHref || DEFAULT_SETTINGS.uniformsCtaHref),
     uniformsImages: normalizeLandingUniformImages(settings.uniformsImages ?? DEFAULT_SETTINGS.uniformsImages),
+    uniformsVideos: normalizeLandingUniformVideos(settings.uniformsVideos ?? DEFAULT_SETTINGS.uniformsVideos),
     shopHeroEyebrow: decodeLandingText(settings.shopHeroEyebrow, DEFAULT_SETTINGS.shopHeroEyebrow),
     shopHeroTitle: decodeLandingText(settings.shopHeroTitle, DEFAULT_SETTINGS.shopHeroTitle),
     shopHeroLead: decodeLandingText(settings.shopHeroLead, DEFAULT_SETTINGS.shopHeroLead),
@@ -625,6 +673,8 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
         : String(patch.uniformsCtaHref).trim() || DEFAULT_SETTINGS.uniformsCtaHref,
     uniformsImages:
       patch.uniformsImages == null ? current.uniformsImages : normalizeLandingUniformImages(patch.uniformsImages, 24),
+    uniformsVideos:
+      patch.uniformsVideos == null ? current.uniformsVideos : normalizeLandingUniformVideos(patch.uniformsVideos, 24),
     shopHeroEyebrow:
       patch.shopHeroEyebrow == null
         ? current.shopHeroEyebrow

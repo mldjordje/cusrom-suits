@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { trackVercelServerEvent } from "@/lib/analytics/vercel";
 import { subscribeToNewsletter } from "@/lib/newsletter/store";
 
 const sanitize = (value: FormDataEntryValue | null) => String(value || "").trim().slice(0, 200);
@@ -20,6 +21,11 @@ export async function POST(req: NextRequest) {
 
   const result = await subscribeToNewsletter({ email, source });
   const status = result.success ? 200 : 400;
+  if (result.success && !("duplicate" in result && result.duplicate)) {
+    void trackVercelServerEvent("newsletter_subscribed", {
+      source: source || "storefront-footer",
+    });
+  }
 
   return NextResponse.json(
     {

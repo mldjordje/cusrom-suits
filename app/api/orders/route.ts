@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { trackVercelServerEvent } from "@/lib/analytics/vercel";
 import { isAdminRequestAuthenticated } from "@/lib/adminAuth";
 import { evaluateVoucher, getFulfillmentSettings, redeemVoucher } from "@/lib/storefront/fulfillment";
 import { getSiteContent } from "@/lib/storefront/siteContent";
@@ -178,6 +179,13 @@ export async function POST(req: NextRequest) {
       if (voucherCode) {
         await redeemVoucher(voucherCode, String(entry.id));
       }
+      void trackVercelServerEvent("order_submitted", {
+        source: "storefront",
+        fulfillmentMethod: deliveryMethod,
+        total: finalTotal,
+        quantity,
+        hasVoucher: voucherCode ? 1 : 0,
+      });
       return NextResponse.json({ success: true, orderId: entry.id, storage: "file", finalTotal, voucherCode: voucherCode || null });
     }
 
@@ -202,6 +210,13 @@ export async function POST(req: NextRequest) {
     if (voucherCode && orderId) {
       await redeemVoucher(voucherCode, orderId);
     }
+    void trackVercelServerEvent("order_submitted", {
+      source: "storefront",
+      fulfillmentMethod: deliveryMethod,
+      total: finalTotal,
+      quantity,
+      hasVoucher: voucherCode ? 1 : 0,
+    });
     return NextResponse.json({ success: true, orderId, finalTotal, voucherCode: voucherCode || null });
   }
 

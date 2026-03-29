@@ -25,6 +25,7 @@ type CatalogProduct = {
   categories: CatalogCategory[];
   coverImage?: string | null;
   images?: string[];
+  videoUrl?: string | null;
 };
 type ProductDraft = {
   name: string;
@@ -38,6 +39,7 @@ type ProductDraft = {
   isExported: boolean;
   landingFeatured: boolean;
   landingPriority: string;
+  videoUrl: string;
 };
 type Pagination = { page: number; pageSize: number; total: number; totalPages: number };
 type CreateDraft = {
@@ -55,6 +57,7 @@ type CreateDraft = {
   isExported: boolean;
   landingFeatured: boolean;
   landingPriority: string;
+  videoUrl: string;
 };
 type LandingProductSectionKey =
   | "heroStripProductIds"
@@ -71,6 +74,12 @@ type LandingDocument = {
 type LandingUniformImage = {
   title: string;
   image: string;
+  alt: string;
+};
+type LandingUniformVideo = {
+  title: string;
+  video: string;
+  poster: string;
   alt: string;
 };
 type LandingStoryCard = {
@@ -121,6 +130,7 @@ type LandingSettings = {
   uniformsCtaLabel: string;
   uniformsCtaHref: string;
   uniformsImages: LandingUniformImage[];
+  uniformsVideos: LandingUniformVideo[];
   shopHeroEyebrow: string;
   shopHeroTitle: string;
   shopHeroLead: string;
@@ -254,6 +264,7 @@ const defaultCreateDraft: CreateDraft = {
   isExported: true,
   landingFeatured: false,
   landingPriority: "",
+  videoUrl: "",
 };
 
 const defaultLandingSettings: LandingSettings = {
@@ -294,6 +305,7 @@ const defaultLandingSettings: LandingSettings = {
   uniformsCtaLabel: "Pogledaj uniforme",
   uniformsCtaHref: "/poslovne-uniforme",
   uniformsImages: [],
+  uniformsVideos: [],
   shopHeroEyebrow: "Kurirani izbor krojeva",
   shopHeroTitle: "Web shop kolekcija spremna za porucivanje",
   shopHeroLead:
@@ -441,6 +453,23 @@ const normalizeLandingUniformImages = (value: unknown, max = 24): LandingUniform
     .slice(0, max);
 };
 
+const normalizeLandingUniformVideos = (value: unknown, max = 24): LandingUniformVideo[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row) => {
+      if (!row || typeof row !== "object") return null;
+      const entry = row as Record<string, unknown>;
+      const title = String(entry.title || "").trim();
+      const video = String(entry.video || "").trim();
+      const poster = String(entry.poster || "").trim();
+      const alt = String(entry.alt || "").trim();
+      if (!title && !video && !poster && !alt) return null;
+      return { title, video, poster, alt };
+    })
+    .filter((item): item is LandingUniformVideo => Boolean(item))
+    .slice(0, max);
+};
+
 const normalizeStringList = (value: unknown, fallback: string[], max = 12) => {
   if (!Array.isArray(value)) {
     return fallback.slice(0, max);
@@ -554,6 +583,7 @@ const toDraft = (item: CatalogProduct): ProductDraft => ({
   isExported: item.isExported,
   landingFeatured: Boolean(item.landingFeatured),
   landingPriority: item.landingPriority == null ? "" : String(item.landingPriority),
+  videoUrl: item.videoUrl || "",
 });
 
 const normalizeTab = (value: string | null | undefined): TabKey => {
@@ -619,7 +649,7 @@ export default function AdminWebshopPage() {
   const [savingLanding, setSavingLanding] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState<"left" | "right" | null>(null);
   const [uploadingAssetKind, setUploadingAssetKind] =
-    useState<"shopHero" | "documents" | "uniforms" | "storyCard" | null>(null);
+    useState<"shopHero" | "documents" | "uniforms" | "storyCard" | "productVideo" | null>(null);
   const [landingProductQuery, setLandingProductQuery] = useState("");
   const [landingProductResults, setLandingProductResults] = useState<CatalogProduct[]>([]);
   const [landingProductsLoading, setLandingProductsLoading] = useState(false);
@@ -954,6 +984,7 @@ export default function AdminWebshopPage() {
         productSectionContent: normalizeLandingProductSectionContent(loaded.productSectionContent),
         documents: normalizeLandingDocuments(loaded.documents),
         uniformsImages: normalizeLandingUniformImages(loaded.uniformsImages),
+        uniformsVideos: normalizeLandingUniformVideos(loaded.uniformsVideos),
         storyCards: normalizeLandingStoryCards(loaded.storyCards),
         aboutParagraphs: normalizeStringList(loaded.aboutParagraphs, defaultLandingSettings.aboutParagraphs, 6),
         contactPoints: normalizeLandingContactPoints(loaded.contactPoints, 8),
@@ -1063,6 +1094,22 @@ export default function AdminWebshopPage() {
     setLandingSettings((prev) => ({
       ...prev,
       uniformsImages: prev.uniformsImages.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
+  const updateLandingUniformVideo = (index: number, patch: Partial<LandingUniformVideo>) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      uniformsVideos: prev.uniformsVideos.map((item, itemIndex) =>
+        itemIndex === index ? { ...item, ...patch } : item,
+      ),
+    }));
+  };
+
+  const removeLandingUniformVideo = (index: number) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      uniformsVideos: prev.uniformsVideos.filter((_, itemIndex) => itemIndex !== index),
     }));
   };
 
@@ -1185,6 +1232,63 @@ export default function AdminWebshopPage() {
     }
   };
 
+  const uploadUniformVideos = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploadingAssetKind("uniforms");
+    setError(null);
+    setNotice(null);
+    try {
+      const urls = await uploadSiteAssets(files);
+      if (!urls.length) throw new Error("Upload nije vratio URL.");
+      const nextItems = urls.map((url, index) => ({
+        title: humanizeAssetName(files[index]?.name || `Uniform video ${index + 1}`),
+        video: url,
+        poster: "",
+        alt: humanizeAssetName(files[index]?.name || `Uniform video ${index + 1}`),
+      }));
+      setLandingSettings((prev) => ({ ...prev, uniformsVideos: [...prev.uniformsVideos, ...nextItems] }));
+      setNotice(`${urls.length} video klip(a) uniformi uploadovano. Sacuvaj landing da ostanu na sajtu.`);
+    } catch (e: any) {
+      setError(e?.message || "Upload video klipova uniformi nije uspeo.");
+    } finally {
+      setUploadingAssetKind(null);
+    }
+  };
+
+  const uploadCreateVideo = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploadingAssetKind("productVideo");
+    setError(null);
+    setNotice(null);
+    try {
+      const [url] = await uploadSiteAssets(files);
+      if (!url) throw new Error("Upload nije vratio URL.");
+      setCreateDraft((prev) => ({ ...prev, videoUrl: url }));
+      setNotice("Video za proizvod je uploadovan.");
+    } catch (e: any) {
+      setError(e?.message || "Upload product videa nije uspeo.");
+    } finally {
+      setUploadingAssetKind(null);
+    }
+  };
+
+  const uploadEditorVideo = async (legacyId: number, files: FileList | null) => {
+    if (!files?.length) return;
+    setUploadingAssetKind("productVideo");
+    setError(null);
+    setNotice(null);
+    try {
+      const [url] = await uploadSiteAssets(files);
+      if (!url) throw new Error("Upload nije vratio URL.");
+      updateDraft(legacyId, { videoUrl: url });
+      setNotice(`Video za artikal #${legacyId} je uploadovan. Klikni Sacuvaj.`);
+    } catch (e: any) {
+      setError(e?.message || "Upload product videa nije uspeo.");
+    } finally {
+      setUploadingAssetKind(null);
+    }
+  };
+
   const uploadStoryCardImage = async (index: number, files: FileList | null) => {
     if (!files?.length) return;
     setUploadingAssetKind("storyCard");
@@ -1247,6 +1351,7 @@ export default function AdminWebshopPage() {
           isExported: draft.isExported,
           landingFeatured: draft.landingFeatured,
           landingPriority: draft.landingPriority.trim() ? toNumberOrNull(draft.landingPriority) : null,
+          videoUrl: draft.videoUrl.trim() || null,
         }),
       });
       const json = await res.json();
@@ -1293,6 +1398,7 @@ export default function AdminWebshopPage() {
             stockTotal: toNumberOrNull(createDraft.stockTotal) ?? 0,
             coverImage: createImages[0] || null,
             images: createImages,
+            videoUrl: createDraft.videoUrl.trim() || null,
             isActive: createDraft.isActive,
             isExported: createDraft.isExported,
             landingFeatured: createDraft.landingFeatured,
@@ -1423,6 +1529,7 @@ export default function AdminWebshopPage() {
         productSectionContent: normalizeLandingProductSectionContent(nextSettings.productSectionContent ?? prev.productSectionContent),
         documents: normalizeLandingDocuments(nextSettings.documents ?? prev.documents),
         uniformsImages: normalizeLandingUniformImages(nextSettings.uniformsImages ?? prev.uniformsImages),
+        uniformsVideos: normalizeLandingUniformVideos(nextSettings.uniformsVideos ?? prev.uniformsVideos),
         storyCards: normalizeLandingStoryCards(nextSettings.storyCards ?? prev.storyCards),
         aboutParagraphs: normalizeStringList(nextSettings.aboutParagraphs ?? prev.aboutParagraphs, prev.aboutParagraphs, 6),
         contactPoints: normalizeLandingContactPoints(nextSettings.contactPoints ?? prev.contactPoints, 8),
@@ -1705,6 +1812,47 @@ export default function AdminWebshopPage() {
                         </div>
                       </div>
                     ))}
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="rounded-xl border border-slate-200 p-3 md:col-span-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Video proizvoda (opciono)</p>
+                <div className="mt-2 grid gap-2 md:grid-cols-[1fr_auto]">
+                  <input
+                    value={createDraft.videoUrl}
+                    onChange={(e) => setCreateDraft((p) => ({ ...p, videoUrl: e.target.value }))}
+                    placeholder="URL video klipa ili upload ispod"
+                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  />
+                  <label className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime"
+                      className="hidden"
+                      onChange={(e) => {
+                        void uploadCreateVideo(e.target.files);
+                        e.currentTarget.value = "";
+                      }}
+                    />
+                    {uploadingAssetKind === "productVideo" ? "Uploading..." : "Upload video"}
+                  </label>
+                </div>
+                {createDraft.videoUrl ? (
+                  <div className="mt-3 rounded-xl border border-slate-200 p-2">
+                    <video
+                      src={createDraft.videoUrl}
+                      controls
+                      preload="metadata"
+                      className="max-h-64 w-full rounded-lg bg-slate-950"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCreateDraft((prev) => ({ ...prev, videoUrl: "" }))}
+                      className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700"
+                    >
+                      Ukloni video
+                    </button>
                   </div>
                 ) : null}
               </div>
@@ -2135,19 +2283,34 @@ export default function AdminWebshopPage() {
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Poslovne uniforme</p>
-              <label className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
-                <input
-                  type="file"
-                  accept="image/*"
-                  multiple
-                  className="hidden"
-                  onChange={(e) => {
-                    void uploadUniformImages(e.target.files);
-                    e.currentTarget.value = "";
-                  }}
-                />
-                {uploadingAssetKind === "uniforms" ? "Uploading..." : "Upload fotografije"}
-              </label>
+              <div className="flex flex-wrap gap-2">
+                <label className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      void uploadUniformImages(e.target.files);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                  {uploadingAssetKind === "uniforms" ? "Uploading..." : "Upload fotografije"}
+                </label>
+                <label className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm,video/quicktime"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      void uploadUniformVideos(e.target.files);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                  {uploadingAssetKind === "uniforms" ? "Uploading..." : "Upload video"}
+                </label>
+              </div>
             </div>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
               <input value={landingSettings.uniformsEyebrow} onChange={(e) => setLandingSettings((p) => ({ ...p, uniformsEyebrow: e.target.value }))} placeholder="Eyebrow sekcije" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
@@ -2166,6 +2329,33 @@ export default function AdminWebshopPage() {
                     <input value={item.image} onChange={(e) => updateLandingUniformImage(index, { image: e.target.value })} placeholder="URL slike" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
                     <input value={item.alt} onChange={(e) => updateLandingUniformImage(index, { alt: e.target.value })} placeholder="Alt tekst" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
                     <button onClick={() => removeLandingUniformImage(index)} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700">Ukloni</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+              {landingSettings.uniformsVideos.length === 0 ? <p className="text-xs text-slate-500">Jos nema dodatih video klipova uniformi.</p> : null}
+              {landingSettings.uniformsVideos.map((item, index) => (
+                <div key={`uniform-video-${index}`} className="rounded-xl border border-slate-200 p-3">
+                  {item.video ? (
+                    <video
+                      src={item.video}
+                      poster={item.poster || undefined}
+                      controls
+                      preload="metadata"
+                      className="h-44 w-full rounded-lg bg-slate-950 object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-44 items-center justify-center rounded-lg border border-dashed border-slate-200 text-xs text-slate-400">
+                      Video jos nije dodat
+                    </div>
+                  )}
+                  <div className="mt-3 grid gap-2">
+                    <input value={item.title} onChange={(e) => updateLandingUniformVideo(index, { title: e.target.value })} placeholder="Naziv video kartice" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <input value={item.video} onChange={(e) => updateLandingUniformVideo(index, { video: e.target.value })} placeholder="URL video klipa" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <input value={item.poster} onChange={(e) => updateLandingUniformVideo(index, { poster: e.target.value })} placeholder="Poster slika (opciono)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <input value={item.alt} onChange={(e) => updateLandingUniformVideo(index, { alt: e.target.value })} placeholder="Alt / opis videa" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                    <button onClick={() => removeLandingUniformVideo(index)} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700">Ukloni video</button>
                   </div>
                 </div>
               ))}
@@ -2583,6 +2773,44 @@ export default function AdminWebshopPage() {
               <input value={drafts[currentEditorItem.legacyId]?.rebatePercent || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { rebatePercent: e.target.value })} placeholder="Popust % (0-100)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={drafts[currentEditorItem.legacyId]?.stockWarehouse1 || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { stockWarehouse1: e.target.value })} placeholder="Lager magacin 1" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={drafts[currentEditorItem.legacyId]?.stockTotal || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { stockTotal: e.target.value })} placeholder="Ukupan lager" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={drafts[currentEditorItem.legacyId]?.videoUrl || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { videoUrl: e.target.value })} placeholder="URL product videa" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-slate-200 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Video proizvoda</p>
+                <label className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm,video/quicktime"
+                    className="hidden"
+                    onChange={(e) => {
+                      void uploadEditorVideo(currentEditorItem.legacyId, e.target.files);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                  {uploadingAssetKind === "productVideo" ? "Uploading..." : "Upload video"}
+                </label>
+              </div>
+              {drafts[currentEditorItem.legacyId]?.videoUrl ? (
+                <div className="mt-3">
+                  <video
+                    src={drafts[currentEditorItem.legacyId]?.videoUrl || ""}
+                    controls
+                    preload="metadata"
+                    className="max-h-72 w-full rounded-xl bg-slate-950"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateDraft(currentEditorItem.legacyId, { videoUrl: "" })}
+                    className="mt-2 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700"
+                  >
+                    Ukloni video
+                  </button>
+                </div>
+              ) : (
+                <p className="mt-3 text-xs text-slate-500">Za ovaj artikal jos nema dodat video klip.</p>
+              )}
             </div>
 
             <div className="mt-4 flex flex-wrap gap-3">

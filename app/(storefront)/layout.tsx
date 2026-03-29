@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/next";
 import StorefrontMobileShopNav from "@/app/components/storefront/StorefrontMobileShopNav";
 import StorefrontCartDrawer from "@/app/components/storefront/cart/StorefrontCartDrawer";
 import StorefrontCartProvider from "@/app/components/storefront/cart/StorefrontCartProvider";
@@ -12,6 +13,7 @@ export default function StorefrontLayout({ children }: { children: ReactNode }) 
       {children}
       <StorefrontCartDrawer />
       <StorefrontMobileShopNav />
+      <Analytics />
     </StorefrontCartProvider>
   );
 }

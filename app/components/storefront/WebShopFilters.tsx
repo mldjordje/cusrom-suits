@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
+import { localizeDynamicCategoryLabel } from "@/lib/storefront/dynamicCopy";
 
 type ShopCategory = {
   id: number;
@@ -57,6 +58,7 @@ export default function WebShopFilters({
   children,
 }: WebShopFiltersProps) {
   const isEn = lang === "en";
+  const localizeCategory = (value: string) => localizeDynamicCategoryLabel(value, isEn ? "en" : "sr");
   const mobileSortToggleId = "ss-shop-mobile-sort-toggle";
   const mobileFilterToggleId = "ss-shop-mobile-filter-toggle";
 
@@ -110,7 +112,7 @@ export default function WebShopFilters({
           })}
           className={`ss-shop-filter-chip ${categoryId === category.id ? "is-active" : ""}`}
         >
-          {category.name}
+          {localizeCategory(category.name)}
         </Link>
       ))}
     </div>
@@ -167,7 +169,7 @@ export default function WebShopFilters({
         <option value="sale">{isEn ? "Sale" : "Akcija"}</option>
         {categories.map((category) => (
           <option key={category.id} value={category.id}>
-            {category.name}
+            {localizeCategory(category.name)}
           </option>
         ))}
       </select>

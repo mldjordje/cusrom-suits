@@ -25,6 +25,7 @@ type ProductUpdatePayload = {
   isExported?: boolean;
   landingFeatured?: boolean;
   landingPriority?: number | null;
+  videoUrl?: string | null;
 };
 
 type ProductCreatePayload = {
@@ -49,6 +50,7 @@ type ProductCreatePayload = {
   landingPriority?: number | null;
   images?: string[];
   coverImage?: string | null;
+  videoUrl?: string | null;
 };
 
 const hasOwn = (obj: Record<string, unknown>, key: string) =>
@@ -96,6 +98,9 @@ const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
   if (hasOwn(row, "landingPriority")) {
     out.landingPriority = row.landingPriority == null ? null : toNumberOrUndefined(row.landingPriority) ?? null;
   }
+  if (hasOwn(row, "videoUrl")) {
+    out.videoUrl = row.videoUrl == null ? null : String(row.videoUrl || "").trim() || null;
+  }
   return out;
 };
 
@@ -128,6 +133,7 @@ const parseCreatePayload = (raw: unknown): ProductCreatePayload | null => {
     landingPriority: row.landingPriority == null ? null : toNumberOrUndefined(row.landingPriority) ?? null,
     images: parseStringList(row.images),
     coverImage: row.coverImage == null ? null : String(row.coverImage),
+    videoUrl: row.videoUrl == null ? null : String(row.videoUrl || "").trim() || null,
   };
 };
 
@@ -199,6 +205,14 @@ const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
             },
           }
         : {}),
+      ...(patch.videoUrl !== undefined
+        ? {
+            media: {
+              ...((current.raw && typeof current.raw.media === "object" ? current.raw.media : {}) || {}),
+              videoUrl: patch.videoUrl,
+            },
+          }
+        : {}),
     },
   };
 
@@ -226,7 +240,11 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
   if (patch.stockTotal !== undefined) update.stock_total = patch.stockTotal;
   if (patch.isActive !== undefined) update.is_active = patch.isActive;
   if (patch.isExported !== undefined) update.is_exported = patch.isExported;
-  if (patch.landingFeatured !== undefined || patch.landingPriority !== undefined) {
+  if (
+    patch.landingFeatured !== undefined ||
+    patch.landingPriority !== undefined ||
+    patch.videoUrl !== undefined
+  ) {
     const { data: existing, error: rawError } = await supabase
       .from("catalog_products")
       .select("raw_payload")
@@ -245,6 +263,10 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
       currentRawPayload && typeof currentRawPayload.landing === "object"
         ? (currentRawPayload.landing as Record<string, unknown>)
         : {};
+    const currentMedia =
+      currentRawPayload && typeof currentRawPayload.media === "object"
+        ? (currentRawPayload.media as Record<string, unknown>)
+        : {};
 
     update.raw_payload = {
       ...currentRawPayload,
@@ -252,6 +274,10 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
         ...currentLanding,
         ...(patch.landingFeatured !== undefined ? { featured: patch.landingFeatured } : {}),
         ...(patch.landingPriority !== undefined ? { priority: patch.landingPriority } : {}),
+      },
+      media: {
+        ...currentMedia,
+        ...(patch.videoUrl !== undefined ? { videoUrl: patch.videoUrl } : {}),
       },
     };
   }
@@ -324,6 +350,9 @@ const createInLegacyFile = async (payload: ProductCreatePayload) => {
         featured: payload.landingFeatured === true,
         priority: payload.landingPriority ?? null,
       },
+      media: {
+        videoUrl: payload.videoUrl ?? null,
+      },
     },
   };
 
@@ -375,6 +404,9 @@ const createInSupabase = async (payload: ProductCreatePayload) => {
       landing: {
         featured: payload.landingFeatured === true,
         priority: payload.landingPriority ?? null,
+      },
+      media: {
+        videoUrl: payload.videoUrl ?? null,
       },
       attributes: {},
       stockWarehouses: [],

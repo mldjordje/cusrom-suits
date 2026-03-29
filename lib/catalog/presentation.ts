@@ -1,3 +1,5 @@
+import { localizeDynamicCategoryLabel } from "@/lib/storefront/dynamicCopy";
+
 const COLLAPSE_WHITESPACE = /\s+/g;
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -352,7 +354,7 @@ export function getCatalogProductCategoryLabel(
   const categories = input.categories || [];
   const firstCategory = categories.find((category) => String(category?.name || "").trim().length > 0);
   if (firstCategory) {
-    return String(firstCategory.name).trim();
+    return localizeDynamicCategoryLabel(String(firstCategory.name).trim(), lang);
   }
 
   const typeKey = inferProductTypeKey(input.name, categories);

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { trackVercelServerEvent } from "@/lib/analytics/vercel";
 import { appendContactMessage, type ContactMessage } from "@/lib/contact/messages";
 
 const sanitize = (value: FormDataEntryValue | null) =>
@@ -51,6 +52,11 @@ export async function POST(req: NextRequest) {
   };
 
   await appendContactMessage(entry);
+  void trackVercelServerEvent("contact_submitted", {
+    source: entry.source,
+    preferredStore: entry.preferredStore || "unspecified",
+    hasPhone: entry.phone ? 1 : 0,
+  });
 
   if (contentType.includes("application/json")) {
     return NextResponse.json({ success: true, data: entry });

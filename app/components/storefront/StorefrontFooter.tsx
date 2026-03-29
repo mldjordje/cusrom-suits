@@ -1,5 +1,4 @@
 import Link from "next/link";
-import NewsletterSignupForm from "@/app/components/storefront/NewsletterSignupForm";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { getSiteContent } from "@/lib/storefront/siteContent";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
@@ -85,18 +84,6 @@ export default async function StorefrontFooter({
                 </div>
               </div>
             ))}
-
-            <div className="col-12 col-lg-3">
-              <div className="ss-footer__group ss-footer__group--newsletter">
-                <h5 className="ss-footer__title">Newsletter</h5>
-                <p className="ss-footer__newsletter-copy">
-                  {isEn
-                    ? "New drops, campaigns and selected edits. Low noise, high signal."
-                    : "Nove kolekcije, kampanje i izdvojeni modeli. Malo buke, vise signala."}
-                </p>
-                <NewsletterSignupForm lang={lang} />
-              </div>
-            </div>
           </div>
         </div>
 

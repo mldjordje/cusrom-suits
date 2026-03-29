@@ -31,6 +31,7 @@ import {
   buildSeoMetadata,
   buildWebSiteJsonLd,
 } from "@/lib/seo";
+import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -236,6 +237,8 @@ export default async function HomePage({
   ]);
 
   const contentLang: "sr" | "en" = isEn ? "en" : "sr";
+  const tx = (value: string, fallbackEn?: string) =>
+    localizeDynamicStorefrontText(value, contentLang, fallbackEn);
   const productSectionContentMap = buildLandingProductSectionContentMap(landingSettings.productSectionContent);
   const storyCards = landingSettings.storyCards.filter(
     (item) => item.title || item.copy || item.image || item.ctaLabel,
@@ -243,7 +246,16 @@ export default async function HomePage({
   const aboutParagraphs = landingSettings.aboutParagraphs.filter(Boolean);
   const contactPoints = landingSettings.contactPoints.filter((item) => item.label || item.value);
   const landingDocuments = landingSettings.documents.filter((item) => item.title && item.url);
-  const landingUniformImages = landingSettings.uniformsImages.filter((item) => item.image);
+  const landingUniformImages = [
+    ...landingSettings.uniformsImages.filter((item) => item.image),
+    ...landingSettings.uniformsVideos
+      .filter((item) => item.poster)
+      .map((item, index) => ({
+        title: item.title || `uniform-video-${index + 1}`,
+        image: item.poster,
+        alt: item.alt || item.title,
+      })),
+  ];
   const pinnedProductIds = Array.from(
     new Set(
       [
@@ -380,14 +392,14 @@ export default async function HomePage({
       return (
         <section key={key} className="container pb-5 ss-editorial-section ss-editorial-section--featured">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <h2 className="section-title text-uppercase">{sectionContent?.title}</h2>
+            <h2 className="section-title text-uppercase">{sectionContent?.title ? tx(sectionContent.title) : ""}</h2>
             {sectionContent?.ctaLabel ? (
               <Link href={withOptionalLang(sectionContent.ctaHref)} className="btn-link default-underline text-uppercase fw-medium">
-                {sectionContent.ctaLabel}
+                {tx(sectionContent.ctaLabel, "View All")}
               </Link>
             ) : null}
           </div>
-          {sectionContent?.subtitle ? <p className="text-secondary mb-4">{sectionContent.subtitle}</p> : null}
+          {sectionContent?.subtitle ? <p className="text-secondary mb-4">{tx(sectionContent.subtitle)}</p> : null}
           <div className="row row-cols-2 row-cols-md-4 g-2 g-md-3 ss-feature-strip">
             {heroProducts.map((item, index) => (
               <ProductItemMotion key={item.legacyId} index={index}>
@@ -415,14 +427,14 @@ export default async function HomePage({
       return (
         <section key={key} className="products-grid container ss-editorial-section ss-editorial-section--products">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <h2 className="section-title text-uppercase">{sectionContent?.title}</h2>
+            <h2 className="section-title text-uppercase">{sectionContent?.title ? tx(sectionContent.title) : ""}</h2>
             {sectionContent?.ctaLabel ? (
               <Link href={withOptionalLang(sectionContent.ctaHref)} className="btn-link default-underline text-uppercase fw-medium">
-                {sectionContent.ctaLabel}
+                {tx(sectionContent.ctaLabel, "View All")}
               </Link>
             ) : null}
           </div>
-          {sectionContent?.subtitle ? <p className="text-secondary mb-4">{sectionContent.subtitle}</p> : null}
+          {sectionContent?.subtitle ? <p className="text-secondary mb-4">{tx(sectionContent.subtitle)}</p> : null}
           <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
             {featured.map((item, index) => (
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
@@ -467,14 +479,14 @@ export default async function HomePage({
       return (
         <section key={key} className="products-grid container ss-editorial-section ss-editorial-section--arrivals">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <h2 className="section-title text-uppercase">{sectionContent?.title}</h2>
+            <h2 className="section-title text-uppercase">{sectionContent?.title ? tx(sectionContent.title) : ""}</h2>
             {sectionContent?.ctaLabel ? (
               <Link href={withOptionalLang(sectionContent.ctaHref)} className="btn-link default-underline text-uppercase fw-medium">
-                {sectionContent.ctaLabel}
+                {tx(sectionContent.ctaLabel, "View All")}
               </Link>
             ) : null}
           </div>
-          {sectionContent?.subtitle ? <p className="text-secondary mb-4">{sectionContent.subtitle}</p> : null}
+          {sectionContent?.subtitle ? <p className="text-secondary mb-4">{tx(sectionContent.subtitle)}</p> : null}
           <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
             {arrivals.map((item, index) => (
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
@@ -518,15 +530,15 @@ export default async function HomePage({
       return (
         <section key={key} className="products-grid container ss-editorial-section ss-editorial-section--sale">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <h2 className="section-title text-uppercase">{sectionContent?.title || landingSettings.saleSectionTitle}</h2>
+            <h2 className="section-title text-uppercase">{tx(sectionContent?.title || landingSettings.saleSectionTitle, "Current Sale")}</h2>
             {sectionContent?.ctaLabel ? (
               <Link href={withOptionalLang(sectionContent.ctaHref)} className="btn-link default-underline text-uppercase fw-medium">
-                {sectionContent.ctaLabel}
+                {tx(sectionContent.ctaLabel, "View All")}
               </Link>
             ) : null}
           </div>
           {sectionContent?.subtitle || landingSettings.saleSectionSubtitle ? (
-            <p className="text-secondary mb-4">{sectionContent?.subtitle || landingSettings.saleSectionSubtitle}</p>
+            <p className="text-secondary mb-4">{tx(sectionContent?.subtitle || landingSettings.saleSectionSubtitle)}</p>
           ) : null}
           <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
             {saleItems.map((item, index) => (
@@ -565,14 +577,14 @@ export default async function HomePage({
       return (
         <section key={key} className="products-grid container ss-editorial-section ss-editorial-section--trending">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <h2 className="section-title text-uppercase">{sectionContent?.title}</h2>
+            <h2 className="section-title text-uppercase">{sectionContent?.title ? tx(sectionContent.title) : ""}</h2>
             {sectionContent?.ctaLabel ? (
               <Link href={withOptionalLang(sectionContent.ctaHref)} className="btn-link default-underline text-uppercase fw-medium">
-                {sectionContent.ctaLabel}
+                {tx(sectionContent.ctaLabel, "View All")}
               </Link>
             ) : null}
           </div>
-          {sectionContent?.subtitle ? <p className="text-secondary mb-4">{sectionContent.subtitle}</p> : null}
+          {sectionContent?.subtitle ? <p className="text-secondary mb-4">{tx(sectionContent.subtitle)}</p> : null}
           <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
             {trending.map((item, index) => (
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
@@ -617,14 +629,14 @@ export default async function HomePage({
   const renderCustomGridSection = (section: LandingCustomSection, items: CatalogProductView[]) => (
     <section key={section.id} className="products-grid container ss-editorial-section ss-editorial-section--custom">
       <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-        <h2 className="section-title text-uppercase">{section.title || (isEn ? "Santos selection" : "Santos izbor")}</h2>
+        <h2 className="section-title text-uppercase">{tx(section.title || (isEn ? "Santos selection" : "Santos izbor"), "Santos Selection")}</h2>
         {section.ctaLabel ? (
           <Link href={withOptionalLang(section.ctaHref)} className="btn-link default-underline text-uppercase fw-medium">
-            {section.ctaLabel}
+            {tx(section.ctaLabel, "View All")}
           </Link>
         ) : null}
       </div>
-      {section.subtitle ? <p className="text-secondary mb-4">{section.subtitle}</p> : null}
+        {section.subtitle ? <p className="text-secondary mb-4">{tx(section.subtitle)}</p> : null}
       <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
         {items.map((item, index) => (
           <ProductItemMotion key={`${section.id}-${item.legacyId}`} className="product-card-wrapper" index={index}>
@@ -689,22 +701,22 @@ export default async function HomePage({
           showProductCards={heroStripEnabled}
           featuredProducts={heroStripProducts}
           content={{
-            heroEyebrow: landingSettings.heroEyebrow,
-            heroTitleLine1: landingSettings.heroTitleLine1,
-            heroTitleLine2: landingSettings.heroTitleLine2,
-            heroPrimaryCtaLabel: landingSettings.heroPrimaryCtaLabel,
+            heroEyebrow: tx(landingSettings.heroEyebrow, "Santos & Santorini"),
+            heroTitleLine1: tx(landingSettings.heroTitleLine1, "New Collection"),
+            heroTitleLine2: tx(landingSettings.heroTitleLine2),
+            heroPrimaryCtaLabel: tx(landingSettings.heroPrimaryCtaLabel, "Web Shop"),
             heroPrimaryCtaHref: landingSettings.heroPrimaryCtaHref,
-            heroSecondaryCtaLabel: landingSettings.heroSecondaryCtaLabel,
+            heroSecondaryCtaLabel: tx(landingSettings.heroSecondaryCtaLabel, "Contact"),
             heroSecondaryCtaHref: landingSettings.heroSecondaryCtaHref,
           }}
         />
 
         <Reveal as="section" className="container pb-5 ss-editorial-section ss-editorial-section--story" delay={0.02}>
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <h2 className="section-title text-uppercase">{landingSettings.storySectionTitle}</h2>
+            <h2 className="section-title text-uppercase">{tx(landingSettings.storySectionTitle, "Brand Story")}</h2>
             {landingSettings.storySectionCtaLabel ? (
               <Link href={withOptionalLang(landingSettings.storySectionCtaHref)} className="btn-link default-underline text-uppercase fw-medium">
-                {landingSettings.storySectionCtaLabel}
+                {tx(landingSettings.storySectionCtaLabel, "View Collection")}
               </Link>
             ) : null}
           </div>
@@ -712,21 +724,21 @@ export default async function HomePage({
             {storyCards.map((block) => (
               <article key={block.id} className="col-12 col-md-6 col-lg-4">
                 <div className="position-relative overflow-hidden h-100 ss-story-card" style={{ minHeight: 420, borderRadius: 24 }}>
-                  <Image src={block.image || "/img/hero.jpg"} alt={block.title} fill sizes="(max-width: 991px) 100vw, 33vw" style={{ objectFit: "cover" }} />
+                  <Image src={block.image || "/img/hero.jpg"} alt={tx(block.title)} fill sizes="(max-width: 991px) 100vw, 33vw" style={{ objectFit: "cover" }} />
                   <div
                     className="position-absolute top-0 start-0 w-100 h-100"
                     style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.78) 100%)" }}
                   />
                   <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-between p-4 text-white ss-story-card__body">
                     <span className="text-uppercase fw-medium" style={{ letterSpacing: "0.14em", fontSize: "0.68rem" }}>
-                      {block.badge}
+                      {tx(block.badge)}
                     </span>
                     <div>
-                      <h3 className="h4 text-white text-uppercase mb-2">{block.title}</h3>
+                      <h3 className="h4 text-white text-uppercase mb-2">{tx(block.title)}</h3>
                       <p className="mb-3">{block.copy}</p>
                       {block.ctaLabel ? (
                         <Link href={withOptionalLang(block.ctaHref)} className="btn btn-light btn-sm text-uppercase fw-medium">
-                          {block.ctaLabel}
+                          {tx(block.ctaLabel, "View More")}
                         </Link>
                       ) : null}
                     </div>
@@ -761,14 +773,14 @@ export default async function HomePage({
                   fallbackSrc="/img/hero2.jpg"
                   width={690}
                   height={330}
-                  alt={landingSettings.bannerLeftTitle}
+                  alt={tx(landingSettings.bannerLeftTitle, "Ready to Wear")}
                   className="w-100 h-auto"
                   unoptimized
                 />
                 <div className="position-absolute top-50 start-50 translate-middle text-center">
-                  <h4 className="text-uppercase text-white">{landingSettings.bannerLeftTitle}</h4>
+                  <h4 className="text-uppercase text-white">{tx(landingSettings.bannerLeftTitle, "Ready to Wear")}</h4>
                   <Link href={withLang(landingSettings.bannerLeftHref)} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">
-                    {landingSettings.bannerLeftButtonLabel}
+                    {tx(landingSettings.bannerLeftButtonLabel, "Shop Now")}
                   </Link>
                 </div>
               </div>
@@ -780,14 +792,14 @@ export default async function HomePage({
                   fallbackSrc="/img/hero.jpg"
                   width={690}
                   height={330}
-                  alt={landingSettings.bannerRightTitle}
+                  alt={tx(landingSettings.bannerRightTitle, "Current Sale")}
                   className="w-100 h-auto"
                   unoptimized
                 />
                 <div className="position-absolute top-50 start-50 translate-middle text-center">
-                  <h4 className="text-uppercase text-white">{landingSettings.bannerRightTitle}</h4>
+                  <h4 className="text-uppercase text-white">{tx(landingSettings.bannerRightTitle, "Current Sale")}</h4>
                   <Link href={withLang(landingSettings.bannerRightHref)} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">
-                    {landingSettings.bannerRightButtonLabel}
+                    {tx(landingSettings.bannerRightButtonLabel, "View Sale")}
                   </Link>
                 </div>
               </div>
@@ -815,9 +827,9 @@ export default async function HomePage({
             <div className="col-12 col-lg-7">
               <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
                 <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-                  {landingSettings.aboutEyebrow}
+                  {tx(landingSettings.aboutEyebrow, "About")}
                 </p>
-                <h2 className="section-title text-uppercase mb-4">{landingSettings.aboutTitle}</h2>
+                <h2 className="section-title text-uppercase mb-4">{tx(landingSettings.aboutTitle, "About Santos & Santorini")}</h2>
                 <div className="row g-3">
                   {aboutParagraphs.map((paragraph) => (
                     <div key={paragraph} className="col-12 col-md-6">
@@ -828,12 +840,12 @@ export default async function HomePage({
                 <div className="d-flex flex-wrap gap-2 mt-4">
                   {landingSettings.aboutPrimaryCtaLabel ? (
                     <Link href={withOptionalLang(landingSettings.aboutPrimaryCtaHref)} className="btn btn-dark btn-sm text-uppercase fw-medium">
-                      {landingSettings.aboutPrimaryCtaLabel}
+                      {tx(landingSettings.aboutPrimaryCtaLabel, "Contact")}
                     </Link>
                   ) : null}
                   {landingSettings.aboutSecondaryCtaLabel ? (
                     <Link href={withOptionalLang(landingSettings.aboutSecondaryCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                      {landingSettings.aboutSecondaryCtaLabel}
+                      {tx(landingSettings.aboutSecondaryCtaLabel, "Visit Web Shop")}
                     </Link>
                   ) : null}
                 </div>
@@ -842,15 +854,15 @@ export default async function HomePage({
             <div className="col-12 col-lg-5">
               <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
                 <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-                  {landingSettings.contactEyebrow}
+                  {tx(landingSettings.contactEyebrow, "Contact")}
                 </p>
-                <h3 className="h4 text-uppercase mb-3">{landingSettings.contactTitle}</h3>
-                <p className="text-secondary mb-4">{landingSettings.contactText}</p>
+                <h3 className="h4 text-uppercase mb-3">{tx(landingSettings.contactTitle, "Support and personal recommendations")}</h3>
+                <p className="text-secondary mb-4">{tx(landingSettings.contactText)}</p>
                 <div className="d-grid gap-2">
                   {contactPoints.map((point) => (
                     <div key={point.label} className="border px-3 py-2" style={{ borderRadius: 14 }}>
                       <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
-                        {point.label}
+                        {tx(point.label)}
                       </div>
                       <div>{point.value}</div>
                     </div>
@@ -859,12 +871,12 @@ export default async function HomePage({
                 <div className="d-flex flex-wrap gap-2 mt-4">
                   {landingSettings.contactPrimaryCtaLabel ? (
                     <Link href={withOptionalLang(landingSettings.contactPrimaryCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                      {landingSettings.contactPrimaryCtaLabel}
+                      {tx(landingSettings.contactPrimaryCtaLabel, "Contact Form")}
                     </Link>
                   ) : null}
                   {landingSettings.contactSecondaryCtaLabel ? (
                     <a href={landingSettings.contactSecondaryCtaHref} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                      {landingSettings.contactSecondaryCtaLabel}
+                      {tx(landingSettings.contactSecondaryCtaLabel, "Send Email")}
                     </a>
                   ) : null}
                 </div>
@@ -880,36 +892,36 @@ export default async function HomePage({
             <div className="col-12 col-lg-7">
               <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
                 <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-                  {landingSettings.customerInfoEyebrow}
+                  {tx(landingSettings.customerInfoEyebrow, "Customer Information")}
                 </p>
-                <h2 className="section-title text-uppercase mb-4">{landingSettings.customerInfoTitle}</h2>
+                <h2 className="section-title text-uppercase mb-4">{tx(landingSettings.customerInfoTitle, "Customer rights and purchase guide")}</h2>
                 <div className="row g-3">
                   <div className="col-12 col-md-6">
                     <div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}>
                       <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
-                        {landingSettings.customerRightsTitle}
+                        {tx(landingSettings.customerRightsTitle, "Customer Rights")}
                       </p>
-                      <p className="text-secondary mb-0">{landingSettings.customerRightsText}</p>
+                      <p className="text-secondary mb-0">{tx(landingSettings.customerRightsText)}</p>
                     </div>
                   </div>
                   <div className="col-12 col-md-6">
                     <div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}>
                       <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
-                        {landingSettings.purchaseGuideTitle}
+                        {tx(landingSettings.purchaseGuideTitle, "Purchase Guide")}
                       </p>
-                      <p className="text-secondary mb-0">{landingSettings.purchaseGuideText}</p>
+                      <p className="text-secondary mb-0">{tx(landingSettings.purchaseGuideText)}</p>
                     </div>
                   </div>
                 </div>
                 <div className="d-flex flex-wrap gap-2 mt-4">
                   {landingSettings.customerInfoPrimaryCtaLabel ? (
                     <Link href={withOptionalLang(landingSettings.customerInfoPrimaryCtaHref)} className="btn btn-dark btn-sm text-uppercase fw-medium">
-                      {landingSettings.customerInfoPrimaryCtaLabel}
+                      {tx(landingSettings.customerInfoPrimaryCtaLabel, "Open Checkout")}
                     </Link>
                   ) : null}
                   {landingSettings.customerInfoSecondaryCtaLabel ? (
                     <Link href={withOptionalLang(landingSettings.customerInfoSecondaryCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                      {landingSettings.customerInfoSecondaryCtaLabel}
+                      {tx(landingSettings.customerInfoSecondaryCtaLabel, "Documents")}
                     </Link>
                   ) : null}
                 </div>
@@ -918,27 +930,27 @@ export default async function HomePage({
             <div className="col-12 col-lg-5">
               <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
                 <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-                  {landingSettings.companyDetailsEyebrow}
+                  {tx(landingSettings.companyDetailsEyebrow, "Company Details")}
                 </p>
                 <div className="d-grid gap-2">
                   <div className="border px-3 py-2" style={{ borderRadius: 14 }}>
                     <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
-                      {landingSettings.companyPibLabel}
+                      {tx(landingSettings.companyPibLabel, "Tax ID")}
                     </div>
                     <div>{landingSettings.companyPib}</div>
                   </div>
                   <div className="border px-3 py-2" style={{ borderRadius: 14 }}>
                     <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
-                      {landingSettings.companyMbLabel}
+                      {tx(landingSettings.companyMbLabel, "Registration No.")}
                     </div>
                     <div>{landingSettings.companyMb}</div>
                   </div>
                 </div>
                 <div className="mt-4">
                   <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
-                    {landingSettings.documentsTitle}
+                    {tx(landingSettings.documentsTitle, "Documents")}
                   </p>
-                  <p className="text-secondary mb-3">{landingSettings.documentsSubtitle}</p>
+                  <p className="text-secondary mb-3">{tx(landingSettings.documentsSubtitle)}</p>
                   <div className="d-grid gap-2">
                     {landingDocuments.length > 0 ? (
                       landingDocuments.slice(0, 3).map((item) => (
@@ -950,13 +962,13 @@ export default async function HomePage({
                           className="border px-3 py-2 text-decoration-none text-dark"
                           style={{ borderRadius: 14 }}
                         >
-                          <div className="fw-medium">{item.title}</div>
-                          {item.description ? <div className="text-secondary small">{item.description}</div> : null}
+                          <div className="fw-medium">{tx(item.title)}</div>
+                          {item.description ? <div className="text-secondary small">{tx(item.description)}</div> : null}
                         </a>
                       ))
                     ) : (
                       <div className="border px-3 py-3 text-secondary" style={{ borderRadius: 14 }}>
-                        {landingSettings.documentsEmptyText}
+                        {tx(landingSettings.documentsEmptyText, "Documents will appear here as soon as they are added.")}
                       </div>
                     )}
                   </div>
@@ -972,18 +984,18 @@ export default async function HomePage({
           <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
             <div>
               <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-                {landingSettings.uniformsEyebrow}
+                {tx(landingSettings.uniformsEyebrow, "Business Uniforms")}
               </p>
-              <h2 className="section-title text-uppercase mb-0">{landingSettings.uniformsTitle}</h2>
+              <h2 className="section-title text-uppercase mb-0">{tx(landingSettings.uniformsTitle, "Business Uniforms")}</h2>
             </div>
             <Link href={withOptionalLang(landingSettings.uniformsCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-              {landingSettings.uniformsCtaLabel}
+              {tx(landingSettings.uniformsCtaLabel, "View Uniforms")}
             </Link>
           </div>
           <div className="row g-4 align-items-stretch">
             <div className="col-12 col-lg-5">
               <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-secondary mb-0">{landingSettings.uniformsText}</p>
+                <p className="text-secondary mb-0">{tx(landingSettings.uniformsText)}</p>
               </div>
             </div>
             <div className="col-12 col-lg-7">
@@ -993,13 +1005,13 @@ export default async function HomePage({
                     <div className="border bg-white h-100 p-2 ss-editorial-card" style={{ borderRadius: 20 }}>
                       <Image
                         src={item.image}
-                        alt={item.alt || item.title || landingSettings.uniformsTitle}
+                        alt={item.alt || tx(item.title || landingSettings.uniformsTitle, "Business Uniforms")}
                         width={420}
                         height={520}
                         className="w-100 h-auto"
                         style={{ borderRadius: 16, objectFit: "cover" }}
                       />
-                      {item.title ? <p className="mt-3 mb-1 fw-medium text-uppercase small">{item.title}</p> : null}
+                      {item.title ? <p className="mt-3 mb-1 fw-medium text-uppercase small">{tx(item.title)}</p> : null}
                     </div>
                   </div>
                 ))}
@@ -1012,10 +1024,10 @@ export default async function HomePage({
 
         <Reveal as="section" className="blog-grid container ss-editorial-section ss-editorial-section--blog" delay={0.18}>
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <h2 className="section-title text-uppercase">{landingSettings.blogSectionTitle}</h2>
+            <h2 className="section-title text-uppercase">{tx(landingSettings.blogSectionTitle, "Latest Blog")}</h2>
             {landingSettings.blogSectionCtaLabel ? (
               <Link href={withOptionalLang(landingSettings.blogSectionCtaHref)} className="btn-link default-underline text-uppercase fw-medium">
-                {landingSettings.blogSectionCtaLabel}
+                {tx(landingSettings.blogSectionCtaLabel, "View All")}
               </Link>
             ) : null}
           </div>
