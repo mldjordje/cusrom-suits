@@ -42,6 +42,7 @@ if (legacyAssetUrl) {
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
+    unoptimized: true,
     formats: ["image/webp"],
     minimumCacheTTL: 86400,
     deviceSizes: [640, 750, 828, 1080, 1200, 1600, 1920],
