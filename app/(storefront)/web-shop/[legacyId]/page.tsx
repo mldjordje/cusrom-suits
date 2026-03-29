@@ -273,16 +273,6 @@ export default async function WebShopProductPage({
               </div>
 
               <div className="ss-product-glass-card ss-product-hero-card">
-                <div className="ss-product-journey mb-3">
-                  <span className="ss-product-journey__eyebrow">
-                    {isEn ? "Simple order flow" : "Jednostavan tok porucivanja"}
-                  </span>
-                  <p className="ss-product-journey__text">
-                    {isEn
-                      ? "Choose your size, add the item to cart, then confirm the order details in checkout."
-                      : "Izaberi velicinu, dodaj model u korpu, pa potvrdi podatke u checkout-u."}
-                  </p>
-                </div>
                 <h1 className="product-single__name">{displayName}</h1>
                 <div className="product-single__rating">
                   <div className="reviews-group d-flex text-warning" aria-hidden="true">
@@ -310,8 +300,8 @@ export default async function WebShopProductPage({
                   <p>
                     {shortDescription ||
                       (isEn
-                        ? "Selected ready-to-wear piece with refined fit, declaration details and available sizes."
-                        : "Izdvojen ready-to-wear model sa preciznim krojem, deklaracijom i dostupnim velicinama.")}
+                        ? "Product details, material information, and available sizes from the Santos & Santorini collection."
+                        : "Detalji proizvoda, sastav i dostupne velicine iz Santos & Santorini kolekcije.")}
                   </p>
                 </div>
 
@@ -471,7 +461,7 @@ export default async function WebShopProductPage({
           <div className="ss-mobile-product-bar__inner">
             <div className="ss-mobile-product-bar__meta">
               <div>
-                <p className="ss-mobile-product-bar__eyebrow">{isEn ? "Ready to order" : "Spremno za porucivanje"}</p>
+                <p className="ss-mobile-product-bar__eyebrow">{isEn ? "Santos & Santorini" : "Santos & Santorini"}</p>
                 <div className="ss-mobile-product-bar__prices">
                   <strong className="ss-mobile-product-bar__price">{formatRsd(product.priceFinalGross)}</strong>
                   {discountPercent > 0 ? (
@@ -512,7 +502,7 @@ export default async function WebShopProductPage({
           <Reveal as="section" className="products-carousel container mt-5 pt-4 ss-related-products" delay={0.06}>
             <div className="ss-related-products__header">
               <div>
-                <p className="ss-related-products__eyebrow">{isEn ? "Continue browsing" : "Nastavi pregled"}</p>
+                <p className="ss-related-products__eyebrow">{isEn ? "You may also like" : "Mozda ce vam se dopasti"}</p>
                 <h2 className="h3 text-uppercase mb-0">
                   {isEn ? "Related " : "Povezani "}
                   <strong>{isEn ? "Products" : "Proizvodi"}</strong>
@@ -520,8 +510,8 @@ export default async function WebShopProductPage({
               </div>
               <p className="ss-related-products__copy">
                 {isEn
-                  ? "If this fit or category is close to what you want, these are the next products worth checking."
-                  : "Ako ti ovaj kroj ili kategorija odgovara, ovo su sledeci proizvodi koje vredi pogledati."}
+                  ? "More models from the current Santos & Santorini offer."
+                  : "Jos modela iz aktuelne Santos & Santorini ponude."}
               </p>
               <Link href={withLang("/web-shop")} className="btn btn-outline-dark text-uppercase fw-medium ss-related-products__cta">
                 {isEn ? "All products" : "Svi proizvodi"}

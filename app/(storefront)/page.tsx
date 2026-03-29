@@ -617,7 +617,7 @@ export default async function HomePage({
   const renderCustomGridSection = (section: LandingCustomSection, items: CatalogProductView[]) => (
     <section key={section.id} className="products-grid container ss-editorial-section ss-editorial-section--custom">
       <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-        <h2 className="section-title text-uppercase">{section.title || (isEn ? "Curated selection" : "Kurirana selekcija")}</h2>
+        <h2 className="section-title text-uppercase">{section.title || (isEn ? "Santos selection" : "Santos izbor")}</h2>
         {section.ctaLabel ? (
           <Link href={withOptionalLang(section.ctaHref)} className="btn-link default-underline text-uppercase fw-medium">
             {section.ctaLabel}

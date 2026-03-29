@@ -110,15 +110,15 @@ export default async function WebShopPage({
 
   const items = sortItems(result.items, sort);
   const topCategories = result.categories.slice(0, 7);
-  const heroEyebrow = landingSettings.shopHeroEyebrow?.trim() || (isEn ? "Curated ready-to-wear" : "Kurirana ready-to-wear kolekcija");
+  const heroEyebrow = landingSettings.shopHeroEyebrow?.trim() || (isEn ? "Santos & Santorini" : "Santos & Santorini");
   const heroTitle =
     landingSettings.shopHeroTitle?.trim() ||
-    (isEn ? "Ready-to-wear collection" : "Ready-to-wear kolekcija");
+    (isEn ? "Menswear collection" : "Muska kolekcija");
   const heroLead =
     landingSettings.shopHeroLead?.trim() ||
     (isEn
-      ? "Selected menswear models with cleaner navigation and easier filtering across desktop and mobile."
-      : "Odabrani modeli muske kolekcije sa cistijom navigacijom i laksim filtriranjem na desktopu i telefonu.");
+      ? "Browse the current Santos & Santorini offer and filter the collection by category, availability, or sale."
+      : "Pregledajte aktuelnu Santos & Santorini ponudu i filtrirajte kolekciju po kategoriji, dostupnosti ili akciji.");
   const sortLabelMap: Record<string, string> = {
     featured: isEn ? "Featured" : "Izdvojeno",
     price_asc: isEn ? "Price: Low to High" : "Cena: od nize ka visoj",
@@ -205,17 +205,6 @@ export default async function WebShopPage({
       href: makeHref({ onSale: null, page: 1 }),
     });
   }
-
-  const heroStats = [
-    {
-      label: isEn ? "Available" : "Dostupno",
-      value: String(result.total),
-    },
-    {
-      label: isEn ? "Categories" : "Kategorije",
-      value: String(Math.max(topCategories.length, 1)),
-    },
-  ];
 
   const heroCategoryLinks = [
     {
@@ -396,14 +385,6 @@ export default async function WebShopPage({
                       </Link>
                     </div>
 
-                    <div className="ss-shop-hero__stats">
-                      {heroStats.map((stat) => (
-                        <div key={stat.label} className="ss-shop-hero__stat">
-                          <span>{stat.label}</span>
-                          <strong>{stat.value}</strong>
-                        </div>
-                      ))}
-                    </div>
                   </div>
                 </div>
               </div>
@@ -445,8 +426,8 @@ export default async function WebShopPage({
                   <h2 className="ss-shop-gallery__title">
                     {items.length > 0
                       ? isEn
-                        ? "A cleaner catalog view for faster browsing"
-                        : "Cistiji katalog za brzi pregled modela"
+                        ? "Current offer"
+                        : "Aktuelna ponuda"
                       : isEn
                         ? "No products found"
                         : "Nema pronadjenih proizvoda"}
@@ -460,12 +441,12 @@ export default async function WebShopPage({
               {items.length === 0 ? (
                 <div className="ss-shop-empty-state">
                   <div className="ss-shop-empty-state__card">
-                    <p className="ss-shop-empty-state__eyebrow">{isEn ? "Try again" : "Pokusi ponovo"}</p>
-                    <h3>{isEn ? "Adjust filters for a wider selection." : "Prilagodi filtere za siri izbor proizvoda."}</h3>
+                    <p className="ss-shop-empty-state__eyebrow">{isEn ? "No results" : "Nema rezultata"}</p>
+                    <h3>{isEn ? "No products match the selected filters." : "Nijedan proizvod ne odgovara izabranim filterima."}</h3>
                     <p>
                       {isEn
-                        ? "Start with product name or category, then narrow the selection only when needed."
-                        : "Kreni od naziva proizvoda ili kategorije, pa izbor suzi samo kada je potrebno."}
+                        ? "Clear one or more filters and try another combination."
+                        : "Uklonite jedan ili vise filtera i pokusajte drugu kombinaciju."}
                     </p>
                     <Link href={makeHref({ q: null, categoryId: null, inStock: null, onSale: null, sort: null, page: 1 })} className="btn btn-primary text-uppercase fw-medium">
                       {isEn ? "Reset filters" : "Resetuj filtere"}
