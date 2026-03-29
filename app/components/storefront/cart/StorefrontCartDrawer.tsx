@@ -85,9 +85,23 @@ export default function StorefrontCartDrawer({
                   </Link>
 
                   <div className="cart-drawer-item__info flex-grow-1">
-                    <h6 className="cart-drawer-item__title fw-normal mb-1">
-                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{item.name}</Link>
-                    </h6>
+                    <div className="ss-cart-drawer__headline">
+                      <h6 className="cart-drawer-item__title fw-normal mb-1">
+                        <Link href={withLang(`/web-shop/${item.legacyId}`)}>{item.name}</Link>
+                      </h6>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.legacyId)}
+                        className="ss-cart-drawer__remove"
+                        aria-label={isEn ? "Remove item" : "Ukloni artikal"}
+                      >
+                        <svg width="14" height="14" viewBox="0 0 18 18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                          <path d="M4 4L14 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                          <path d="M14 4L4 14" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+                        </svg>
+                        <span>{isEn ? "Remove" : "Ukloni"}</span>
+                      </button>
+                    </div>
                     {item.categoryLabel ? (
                       <p className="cart-drawer-item__option text-secondary mb-1">{item.categoryLabel}</p>
                     ) : null}
@@ -116,13 +130,6 @@ export default function StorefrontCartDrawer({
                       </div>
                     </div>
                   </div>
-
-                  <button
-                    type="button"
-                    onClick={() => removeItem(item.legacyId)}
-                    className="btn-close-xs position-absolute top-0 end-0 js-cart-item-remove"
-                    aria-label={isEn ? "Remove item" : "Ukloni artikal"}
-                  />
                 </div>
 
                 <hr className="cart-drawer-divider" />

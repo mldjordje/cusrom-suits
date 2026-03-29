@@ -1,0 +1,10 @@
+[
+  {
+    "scope": "ananas",
+    "entityType": "discount_snapshot",
+    "entityId": "2026-03-18_2026-03-19",
+    "payloadHash": "2e8346af62e3e803ad44a92a02b055a19fc5bdf3215c98738450e527372429cf",
+    "updatedAt": "2026-03-18T10:56:46.737Z",
+    "sourceRunId": "dda429a3-f07e-420e-9f52-f5f79cc4692a"
+  }
+]

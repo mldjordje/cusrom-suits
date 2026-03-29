@@ -23,6 +23,7 @@ export type UseFabricsOptions = {
 type CacheEntry<T> = { data: T[]; error: string | null; ts: number };
 
 const CACHE_TTL_MS = 5 * 60 * 1000;
+const FABRICS_REQUEST_TIMEOUT_MS = 8000;
 const FABRICS_CACHE = new Map<string, CacheEntry<any>>();
 const FABRICS_INFLIGHT = new Map<string, Promise<CacheEntry<any>>>();
 const FABRICS_REV_KEY = "fabrics:rev";
@@ -91,7 +92,16 @@ export function useFabrics<T = any>(query?: FabricQuery, options?: UseFabricsOpt
     const existing = FABRICS_INFLIGHT.get(cacheKey);
     const inflight =
       existing ??
-      fetch(url, { cache: "force-cache" })
+      (() => {
+        const controller = new AbortController();
+        const timeoutId = window.setTimeout(() => controller.abort("timeout"), FABRICS_REQUEST_TIMEOUT_MS);
+        return fetch(url, {
+          cache: "force-cache",
+          signal: controller.signal,
+        }).finally(() => {
+          window.clearTimeout(timeoutId);
+        });
+      })()
         .then(async (response) => {
           const contentType = response.headers.get("content-type") || "";
           if (!response.ok) {
@@ -110,9 +120,13 @@ export function useFabrics<T = any>(query?: FabricQuery, options?: UseFabricsOpt
           return { data: fallbackList, error: payload?.message || "Fallback na lokalne tkanine." } as CacheEntry<T>;
         })
         .catch((err) => {
+          const message =
+            err?.name === "AbortError" || err === "timeout"
+              ? "Tkanine se sporo ucitavaju. Koristimo lokalni fallback."
+              : err?.message || "Neuspelo ucitavanje tkanina. Koristimo fallback.";
           return {
             data: fallbackList,
-            error: err?.message || "Neuspelo ucitavanje tkanina. Koristimo fallback.",
+            error: message,
           } as CacheEntry<T>;
         })
         .then((entry) => {

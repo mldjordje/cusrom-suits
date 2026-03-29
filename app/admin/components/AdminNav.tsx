@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import type { AdminPermission } from "@/lib/adminRoles";
 
 type NavChild = {
@@ -24,10 +24,10 @@ const navItems: NavItem[] = [
     href: "/admin/webshop",
     label: "Web Shop",
     icon: "WS",
-    matchPaths: ["/admin/webshop", "/admin/categories", "/admin/orders", "/admin/size-guides"],
+    matchPaths: ["/admin/webshop", "/admin/landing", "/admin/categories", "/admin/orders", "/admin/size-guides"],
     children: [
       { href: "/admin/webshop?tab=products", label: "Proizvodi i lager" },
-      { href: "/admin/webshop?tab=landing", label: "Pocetna i sekcije" },
+      { href: "/admin/landing", label: "Pocetna i sekcije" },
       { href: "/admin/webshop?tab=akcije", label: "Akcije i snizenja" },
       { href: "/admin/categories", label: "Kategorije" },
       { href: "/admin/orders", label: "Porudzbine" },
@@ -62,8 +62,21 @@ type AdminNavProps = {
 
 export default function AdminNav({ onNavigate, permissions = ["*"] }: AdminNavProps) {
   const pathname = usePathname() || "";
+  const searchParams = useSearchParams();
   const canAccess = (permission?: AdminPermission) =>
     !permission || permissions.includes("*") || permissions.includes(permission);
+  const childMatchesCurrentLocation = (href: string) => {
+    const [childPath, childQuery] = href.split("?");
+    const pathMatches = pathname === childPath || pathname.startsWith(`${childPath}/`);
+    if (!pathMatches) return false;
+    if (!childQuery) return true;
+
+    const expectedParams = new URLSearchParams(childQuery);
+    for (const [key, value] of expectedParams.entries()) {
+      if (searchParams.get(key) !== value) return false;
+    }
+    return true;
+  };
 
   return (
     <nav className="admin-template-nav" aria-label="Admin navigation">
@@ -95,8 +108,7 @@ export default function AdminNav({ onNavigate, permissions = ["*"] }: AdminNavPr
 
                 <ul className="admin-template-subnav-list">
                   {item.children.map((child) => {
-                    const childPath = child.href.split("?")[0] || child.href;
-                    const childActive = pathname === childPath || pathname.startsWith(`${childPath}/`);
+                    const childActive = childMatchesCurrentLocation(child.href);
                     return (
                       <li key={child.href}>
                         <Link

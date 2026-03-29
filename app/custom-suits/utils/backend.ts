@@ -14,17 +14,17 @@ const ensureTrailingSlash = (value: string) =>
   value && value.endsWith("/") ? value : `${value}/`;
 
 const CDN_TRANSPARENT = "/assets/suits/transparent/";
+const LOCAL_DEV_TRANSPARENT = "/assets/suits/transparent/";
 const LEGACY_REMOTE = "https://customsuits.adspire.rs/uploads/transparent/";
+const isDevelopment = process.env.NODE_ENV === "development";
 
 export function getTransparentCdnBase() {
   const explicit = process.env.NEXT_PUBLIC_TRANSPARENT_CDN_BASE?.trim();
+  if (isDevelopment) {
+    const localDev = process.env.NEXT_PUBLIC_TRANSPARENT_LOCAL_BASE?.trim();
+    return ensureTrailingSlash(localDev || LOCAL_DEV_TRANSPARENT);
+  }
   if (explicit) return ensureTrailingSlash(explicit);
-
-  const localDev =
-    process.env.NODE_ENV === "development"
-      ? process.env.NEXT_PUBLIC_TRANSPARENT_LOCAL_BASE?.trim()
-      : null;
-  if (localDev) return ensureTrailingSlash(localDev);
 
   // Default to bundled static assets; legacy remote as last resort
   return ensureTrailingSlash(CDN_TRANSPARENT || explicit || LEGACY_REMOTE);
@@ -39,10 +39,14 @@ type PhotoVariant = "blue" | "black" | "light";
 const PHOTO_BASES: Record<PhotoVariant, string> = {
   blue: "/assets/suits/blue/",
   black: "/assets/suits/black/",
-  light: "/assets/suits/light/",
+  // Light variant does not exist locally, so blue is the closest bundled fallback.
+  light: "/assets/suits/blue/",
 };
 
 export function getPhotoCdnBase(variant: PhotoVariant = "blue") {
+  if (isDevelopment) {
+    return ensureTrailingSlash(PHOTO_BASES[variant]);
+  }
   const explicit = process.env.NEXT_PUBLIC_PHOTO_CDN_BASE?.trim();
   if (explicit) {
     const withVariant = explicit.includes("{variant}")

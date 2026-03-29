@@ -9,6 +9,9 @@ out
 dist
 tsconfig.tsbuildinfo
 
+# Full MySQL exports (veliki fajl, produkcijski podaci — ne commitovati)
+agyc3416_santos_sa2025.sql
+
 # local env files
 .env
 .env.local

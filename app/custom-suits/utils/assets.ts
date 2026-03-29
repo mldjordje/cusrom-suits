@@ -37,6 +37,12 @@ const FALLBACK_SOURCES: Record<string, Partial<Record<LayerFolder, string | null
   },
 };
 
+const PHOTO_FALLBACK_SOURCES: Partial<Record<PhotoVariant, Record<string, string>>> = {
+  black: {
+    "interior+sleeves": "sleeves",
+  },
+};
+
 type ManifestData = { files: Set<string> };
 
 let manifestPromise: Promise<ManifestData | null> | null = null;
@@ -91,7 +97,8 @@ export const photoPair = (
   src: string,
   variant: PhotoVariant = "blue"
 ) => {
-  const baseName = spriteFileBase(src);
+  const requestedBaseName = spriteFileBase(src);
+  const baseName = PHOTO_FALLBACK_SOURCES[variant]?.[requestedBaseName] ?? requestedBaseName;
   const prefix = getPhotoCdnBase(variant);
   return {
     webp: appendVersion(`${prefix}${baseName}.webp`),

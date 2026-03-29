@@ -159,6 +159,9 @@ export default function StorefrontHeaderClient({
 
   const desktopFloating = isHome && !isContrast;
   const closeMobileMenu = () => setMobileOpen(false);
+  const handleSearchTrigger = () => {
+    window.dispatchEvent(new CustomEvent("ss:open-storefront-search"));
+  };
   const headerClass = [
     "header",
     "header-fullwidth",
@@ -243,16 +246,17 @@ export default function StorefrontHeaderClient({
 
             <div className="header-tools d-flex align-items-center gap-2">
               <StorefrontLanguageSwitcher lang={lang} className="d-none d-md-inline-flex me-1" />
-              <Link
-                href={withLang("/web-shop")}
+              <button
+                type="button"
                 className="header-tools__item d-none d-md-inline-flex"
                 aria-label={isEn ? "Search" : "Pretraga"}
+                onClick={handleSearchTrigger}
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.5" />
                   <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
-              </Link>
+              </button>
               <StorefrontCartLink
                 className="header-tools__item d-none d-md-inline-flex"
                 ariaLabel={isEn ? "Cart" : "Korpa"}
@@ -310,16 +314,17 @@ export default function StorefrontHeaderClient({
             </div>
 
             <div className="ss-mobile-tools">
-              <Link
-                href={withLang("/web-shop")}
+              <button
+                type="button"
                 className="ss-mobile-slot ss-mobile-link"
                 aria-label={isEn ? "Search" : "Pretraga"}
+                onClick={handleSearchTrigger}
               >
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                   <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.5" />
                   <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                 </svg>
-              </Link>
+              </button>
               <StorefrontCartLink
                 className="ss-mobile-slot ss-mobile-link"
                 ariaLabel={isEn ? "Cart" : "Korpa"}
@@ -385,13 +390,20 @@ export default function StorefrontHeaderClient({
                     exit={{ opacity: 0 }}
                     transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    <Link href={withLang("/web-shop")} className="ss-mobile-nav-search ss-mobile-nav-quicklink" onClick={closeMobileMenu}>
+                    <button
+                      type="button"
+                      className="ss-mobile-nav-search ss-mobile-nav-quicklink"
+                      onClick={() => {
+                        closeMobileMenu();
+                        handleSearchTrigger();
+                      }}
+                    >
                       <span>{isEn ? "Search products" : "Pretrazi proizvode"}</span>
                       <svg width="19" height="19" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
                         <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.5" />
                         <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
                       </svg>
-                    </Link>
+                    </button>
                   </m.div>
 
                   <ul className="navigation__list list-unstyled position-relative ss-mobile-nav-list">

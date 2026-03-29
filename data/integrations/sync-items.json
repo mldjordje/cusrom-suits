@@ -1,0 +1,4899 @@
+[
+  {
+    "id": "8406e4aa-9638-4fc9-b908-cf884cb41866",
+    "runId": "6840dc62-39e9-482f-a472-b222c138749e",
+    "domain": "stock_outbound",
+    "entityType": "file",
+    "entityId": "b2b_webdocument.csv",
+    "status": "failed",
+    "message": "Supabase query failed for 'b2b_document': Could not find the table 'public.b2b_document' in the schema cache",
+    "payloadHash": null,
+    "payload": {
+      "source": "failed",
+      "cutoffIso": "2026-03-17T10:57:12.716Z"
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:57:13.114Z",
+    "updatedAt": "2026-03-18T10:57:13.114Z"
+  },
+  {
+    "id": "5428eeed-4646-4468-92f0-d19944ffe829",
+    "runId": "6840dc62-39e9-482f-a472-b222c138749e",
+    "domain": "stock_outbound",
+    "entityType": "file",
+    "entityId": "b2b_webdocumentitem.csv",
+    "status": "failed",
+    "message": "Supabase query failed for 'b2b_documentitem': Could not find the table 'public.b2b_documentitem' in the schema cache",
+    "payloadHash": null,
+    "payload": {
+      "source": "failed",
+      "cutoffIso": "2026-03-17T10:57:12.654Z"
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:57:13.046Z",
+    "updatedAt": "2026-03-18T10:57:13.046Z"
+  },
+  {
+    "id": "f517ce21-599c-41dc-8b30-005b7fe3f01a",
+    "runId": "6840dc62-39e9-482f-a472-b222c138749e",
+    "domain": "stock_outbound",
+    "entityType": "file",
+    "entityId": "b2b_webdocumentdetail.csv",
+    "status": "failed",
+    "message": "Supabase query failed for 'b2b_documentdetail': Could not find the table 'public.b2b_documentdetail' in the schema cache",
+    "payloadHash": null,
+    "payload": {
+      "source": "failed",
+      "cutoffIso": "2026-03-17T10:57:12.584Z"
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:57:12.980Z",
+    "updatedAt": "2026-03-18T10:57:12.980Z"
+  },
+  {
+    "id": "c1a33095-b8b1-4786-8195-e037771e696b",
+    "runId": "6840dc62-39e9-482f-a472-b222c138749e",
+    "domain": "stock_outbound",
+    "entityType": "file",
+    "entityId": "b2c_webdocument.csv",
+    "status": "failed",
+    "message": "Supabase query failed for 'b2c_document': Could not find the table 'public.b2c_document' in the schema cache",
+    "payloadHash": null,
+    "payload": {
+      "source": "failed",
+      "cutoffIso": "2026-03-17T10:57:12.517Z"
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:57:12.914Z",
+    "updatedAt": "2026-03-18T10:57:12.914Z"
+  },
+  {
+    "id": "d5cbcb89-a331-4a17-ad29-98c4f177bee6",
+    "runId": "6840dc62-39e9-482f-a472-b222c138749e",
+    "domain": "stock_outbound",
+    "entityType": "file",
+    "entityId": "b2c_webdocumentitem.csv",
+    "status": "failed",
+    "message": "Supabase query failed for 'b2c_documentitem': Could not find the table 'public.b2c_documentitem' in the schema cache",
+    "payloadHash": null,
+    "payload": {
+      "source": "failed",
+      "cutoffIso": "2026-03-17T10:57:12.455Z"
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:57:12.849Z",
+    "updatedAt": "2026-03-18T10:57:12.849Z"
+  },
+  {
+    "id": "8a445ebe-e23a-4dda-92a9-31f1bab59e06",
+    "runId": "6840dc62-39e9-482f-a472-b222c138749e",
+    "domain": "stock_outbound",
+    "entityType": "file",
+    "entityId": "b2c_webdocumentdetail.csv",
+    "status": "failed",
+    "message": "Supabase query failed for 'b2c_documentdetail': Could not find the table 'public.b2c_documentdetail' in the schema cache",
+    "payloadHash": null,
+    "payload": {
+      "source": "failed",
+      "cutoffIso": "2026-03-17T10:57:12.393Z"
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:57:12.782Z",
+    "updatedAt": "2026-03-18T10:57:12.782Z"
+  },
+  {
+    "id": "c9b6423d-ca97-488b-87ba-2cd897101377",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12925148",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "0660333ff24c846ec383a91e143971edfa2be6a904a48a5e91ae666ba808ad07",
+    "payload": {
+      "name": "P20/48/2",
+      "description": "Santos &amp; Santorini pantalone teget boje sa  crnim tačkama, regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/DSC_6924.jpg",
+      "ean": "12925148",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/DSC_6924.jpg",
+        "https://santos.rs/fajlovi/product/DSC_6925.jpg"
+      ],
+      "parentEan": "12925148",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "6950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129251",
+      "externalId": 12925148,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "48"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:46.673Z",
+    "updatedAt": "2026-03-18T10:56:46.673Z"
+  },
+  {
+    "id": "1af7551b-b836-4179-8265-a362c09ec764",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12924858",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "37956179812e2734750f468e7280012cd17c9565fc9a55979dc6ba05f5833428",
+    "payload": {
+      "name": "P20/48/3                              M.Pantalone",
+      "description": "Santos &amp; Santorini pantalone braon boje sa  crnim tačkama, regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5225.jpg",
+      "ean": "12924858",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5225.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5226.jpg"
+      ],
+      "parentEan": "12924858",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 2,
+      "sku": "129248",
+      "externalId": 12924858,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "58"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:46.548Z",
+    "updatedAt": "2026-03-18T10:56:46.548Z"
+  },
+  {
+    "id": "679f01ed-8ae7-4526-acf4-8fdaf4459461",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12924856",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "a15a8c142ed5a031b95211b79e34714bd17ac00b872c40ff38879092f69d4dca",
+    "payload": {
+      "name": "P20/48/3",
+      "description": "Santos &amp; Santorini pantalone braon boje sa  crnim tačkama, regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5225.jpg",
+      "ean": "12924856",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5225.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5226.jpg"
+      ],
+      "parentEan": "12924856",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "6950.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129248",
+      "externalId": 12924856,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "56"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:46.423Z",
+    "updatedAt": "2026-03-18T10:56:46.423Z"
+  },
+  {
+    "id": "949b574d-bfc8-46d0-ad72-6bcd3e77d70b",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12924854",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "0251719645463ee3f1c1554b104051dbcfb468e4d9beb7e853fdc03a22a7e2fc",
+    "payload": {
+      "name": "P20/48/3",
+      "description": "Santos &amp; Santorini pantalone braon boje sa  crnim tačkama, regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5225.jpg",
+      "ean": "12924854",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5225.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5226.jpg"
+      ],
+      "parentEan": "12924854",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129248",
+      "externalId": 12924854,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "54"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:46.293Z",
+    "updatedAt": "2026-03-18T10:56:46.293Z"
+  },
+  {
+    "id": "613c3cb1-6436-4764-84b5-29fa4d1267ec",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12924852",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "2049def159fa184baff6a9bd91f54f68b9f08063f7c4fb433f4bea58cb8640fd",
+    "payload": {
+      "name": "P20/48/3",
+      "description": "Santos &amp; Santorini pantalone braon boje sa  crnim tačkama, regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5225.jpg",
+      "ean": "12924852",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5225.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5226.jpg"
+      ],
+      "parentEan": "12924852",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "6950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129248",
+      "externalId": 12924852,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "52"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:46.167Z",
+    "updatedAt": "2026-03-18T10:56:46.167Z"
+  },
+  {
+    "id": "6e161fe9-a139-4e94-a50c-5562b43aa8b2",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12924848",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "bec36e80cd262afa948450b1eac7dbcf7965bc79efb40db085f227e1a0a10998",
+    "payload": {
+      "name": "P20/48/3",
+      "description": "Santos &amp; Santorini pantalone braon boje sa  crnim tačkama, regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5225.jpg",
+      "ean": "12924848",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5225.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5226.jpg"
+      ],
+      "parentEan": "12924848",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "6950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129248",
+      "externalId": 12924848,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "48"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:46.036Z",
+    "updatedAt": "2026-03-18T10:56:46.036Z"
+  },
+  {
+    "id": "bfb0f2e5-cac9-4bd0-9c40-5aac11a70fa0",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12919856",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "bbcb572cd0b0d3b91c3df4a20f06c479e236f32af8c2baafc056b88c02789d97",
+    "payload": {
+      "name": "P24/45/2",
+      "description": "Santos &amp; Santorini karo pantalone regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5293.jpg",
+      "ean": "12919856",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5293.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5294.jpg"
+      ],
+      "parentEan": "12919856",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4865.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129198",
+      "externalId": 12919856,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "56"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:45.909Z",
+    "updatedAt": "2026-03-18T10:56:45.909Z"
+  },
+  {
+    "id": "3947f247-475f-4596-b2d3-1127a05344af",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12919854",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "74496e471db5eea222d26710a08a095a758bcc9577bbb7def7930cbf04e044bf",
+    "payload": {
+      "name": "P24/45/2",
+      "description": "Santos &amp; Santorini karo pantalone regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5293.jpg",
+      "ean": "12919854",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5293.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5294.jpg"
+      ],
+      "parentEan": "12919854",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129198",
+      "externalId": 12919854,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "54"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:45.779Z",
+    "updatedAt": "2026-03-18T10:56:45.779Z"
+  },
+  {
+    "id": "9593b707-c285-4bd1-9ff9-cde12d80cd41",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12919852",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "c5108ae26b542390c6b61a080f9c7fd53440baf73efd474b2a18e9b8e0bb44db",
+    "payload": {
+      "name": "P24/45/2",
+      "description": "Santos &amp; Santorini karo pantalone regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5293.jpg",
+      "ean": "12919852",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5293.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5294.jpg"
+      ],
+      "parentEan": "12919852",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129198",
+      "externalId": 12919852,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "52"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:45.652Z",
+    "updatedAt": "2026-03-18T10:56:45.652Z"
+  },
+  {
+    "id": "67b05c74-6595-4f15-9c8c-4a7452af0506",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12919850",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "e508852ada9facaf546b8270b7adbc4b0e608e60efca5c780f4ff4b995fb7a03",
+    "payload": {
+      "name": "P24/45/2                              M.Pantalone",
+      "description": "Santos &amp; Santorini karo pantalone regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5293.jpg",
+      "ean": "12919850",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5293.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5294.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5295.jpg"
+      ],
+      "parentEan": "12919850",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129198",
+      "externalId": 12919850,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "50"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:45.516Z",
+    "updatedAt": "2026-03-18T10:56:45.516Z"
+  },
+  {
+    "id": "3222ab0c-fdfa-443f-a224-bb5e1a1d9547",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12919848",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "1a657a428b703530426c037feb78ddf963001eb1d185c8f6cf1994e8458a307b",
+    "payload": {
+      "name": "P24/45/2                              M.Pantalone",
+      "description": "Santos &amp; Santorini karo pantalone regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5293.jpg",
+      "ean": "12919848",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5293.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5294.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5295.jpg"
+      ],
+      "parentEan": "12919848",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 2,
+      "sku": "129198",
+      "externalId": 12919848,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "48"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:45.391Z",
+    "updatedAt": "2026-03-18T10:56:45.391Z"
+  },
+  {
+    "id": "a27470b0-8ea0-4475-aefa-40f307baace3",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12919658",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "b491f32d644fb9b5c037d0b304e416d87d7031f1154cf56eeb7fa3572e5ce839",
+    "payload": {
+      "name": "P24/45/6                               M.Pantalone",
+      "description": "Santos &amp; Santorini karo pantalone regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+      "ean": "12919658",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5347.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5348.jpg"
+      ],
+      "parentEan": "12919658",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 3,
+      "sku": "129196",
+      "externalId": 12919658,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "58"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:45.267Z",
+    "updatedAt": "2026-03-18T10:56:45.267Z"
+  },
+  {
+    "id": "f683bbcd-7cfa-42d5-a5fa-a2c74d81e88d",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12919656",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "cc833bbfc4f54612c33a6f5a2082f5e7a8f70895843f669a38af0f34a9b45a51",
+    "payload": {
+      "name": "P24/45/6                               M.Pantalone",
+      "description": "Santos &amp; Santorini karo pantalone regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+      "ean": "12919656",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5347.jpg"
+      ],
+      "parentEan": "12919656",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 3,
+      "sku": "129196",
+      "externalId": 12919656,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "56"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:45.138Z",
+    "updatedAt": "2026-03-18T10:56:45.138Z"
+  },
+  {
+    "id": "f0b3c3f9-8f88-402c-8c4f-311fb75a524d",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12919654",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "8969336d46021e57f1457979020e58d2ed2499f462020d7cbaf9fe13544a70d8",
+    "payload": {
+      "name": "P24/45/6                               M.Pantalone",
+      "description": "Santos &amp; Santorini karo pantalone regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+      "ean": "12919654",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5347.jpg"
+      ],
+      "parentEan": "12919654",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129196",
+      "externalId": 12919654,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "54"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:45.009Z",
+    "updatedAt": "2026-03-18T10:56:45.009Z"
+  },
+  {
+    "id": "f2c64162-9f85-49b2-b086-d638f4cb63e8",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12919652",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "ac6c706f891b3c6456148364e7b4fbb9dbdf560ad15c173d70602dc003f221a4",
+    "payload": {
+      "name": "P24/45/6                               M.Pantalone",
+      "description": "Santos &amp; Santorini karo pantalone regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+      "ean": "12919652",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5347.jpg"
+      ],
+      "parentEan": "12919652",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 2,
+      "sku": "129196",
+      "externalId": 12919652,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "52"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:44.882Z",
+    "updatedAt": "2026-03-18T10:56:44.882Z"
+  },
+  {
+    "id": "acfe2006-19fc-415f-9ea2-6cb6d3674e59",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12919650",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "6b559f64e3d99980c30897f5639e01f44fc5d537c729534019cd25d897f67dc7",
+    "payload": {
+      "name": "P24/45/6                               M.Pantalone",
+      "description": "Santos &amp; Santorini karo pantalone regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+      "ean": "12919650",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5347.jpg"
+      ],
+      "parentEan": "12919650",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129196",
+      "externalId": 12919650,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "50"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:44.758Z",
+    "updatedAt": "2026-03-18T10:56:44.758Z"
+  },
+  {
+    "id": "f11434d0-b74b-42ef-bbf6-26b69b6fe5a6",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12919648",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "d85858f120f7ff2b40aca5aab5c84e9d8ff11cc262c89ef53170d453d337e458",
+    "payload": {
+      "name": "P24/45/6                               M.Pantalone",
+      "description": "Santos &amp; Santorini karo pantalone regular slim kroja. Obrađene procesom specijalnog silikonskog pranja koji im daje jedinstveni mekani opip i jedinstvenu boju sa diskretnim promenama na ivicama i šavovima.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+      "ean": "12919648",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5343.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5347.jpg"
+      ],
+      "parentEan": "12919648",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129196",
+      "externalId": 12919648,
+      "productType": "Pantalone",
+      "category": "Pantalone",
+      "attributes": {
+        "Velicina": [
+          "48"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:44.628Z",
+    "updatedAt": "2026-03-18T10:56:44.628Z"
+  },
+  {
+    "id": "637119f3-31bf-49ef-a06a-ef8ac32c02cb",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12916744",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "d27f322e3da56ef4a53a9a250aa970c1ab1bccb1c67f71b53760caf0d6ebc43e",
+    "payload": {
+      "name": "021-146 GREEN",
+      "description": "<p>Santos &amp; Santorini cipele izrađene od kože visokog kvaliteta, obrađene specijalnom laserskom metodom i jedinstvenog dizajna.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_9348.jpg",
+      "ean": "012916744",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_9348.jpg",
+        "https://santos.rs/fajlovi/product/ANS_9354.jpg"
+      ],
+      "parentEan": "012916744",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129167",
+      "externalId": 12916744,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "44"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:44.502Z",
+    "updatedAt": "2026-03-18T10:56:44.502Z"
+  },
+  {
+    "id": "d2e3ad57-fd1b-4f02-8e66-39be4e2e7cfd",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12916743",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "0397d99d14001020b3c0bafe359f4449163b6f60ad2eeeb88387d9d0762a1ef4",
+    "payload": {
+      "name": "021-146 GREEN",
+      "description": "<p>Santos &amp; Santorini cipele izrađene od kože visokog kvaliteta, obrađene specijalnom laserskom metodom i jedinstvenog dizajna.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_9348.jpg",
+      "ean": "012916743",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_9348.jpg",
+        "https://santos.rs/fajlovi/product/ANS_9354.jpg"
+      ],
+      "parentEan": "012916743",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129167",
+      "externalId": 12916743,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:44.375Z",
+    "updatedAt": "2026-03-18T10:56:44.375Z"
+  },
+  {
+    "id": "d8b730a5-fff6-482b-8506-e82231adf33a",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12916742",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "259ff56400f68db7aa437d89a7102ebeb3eb75ffb1e56cb854a653f6d2d7df70",
+    "payload": {
+      "name": "021-146 GREEN",
+      "description": "<p>Santos &amp; Santorini cipele izrađene od kože visokog kvaliteta, obrađene specijalnom laserskom metodom i jedinstvenog dizajna.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_9348.jpg",
+      "ean": "012916742",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_9348.jpg",
+        "https://santos.rs/fajlovi/product/ANS_9354.jpg"
+      ],
+      "parentEan": "012916742",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129167",
+      "externalId": 12916742,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:44.246Z",
+    "updatedAt": "2026-03-18T10:56:44.246Z"
+  },
+  {
+    "id": "cdc5aa32-e98c-4d93-9a6d-595759278859",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12916741",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "93bd677693c3e1ad66fdaf69cd431005cea0dbd327b9aa601f82af30bb3c054b",
+    "payload": {
+      "name": "021-146 GREEN",
+      "description": "<p>Santos &amp; Santorini cipele izrađene od kože visokog kvaliteta, obrađene specijalnom laserskom metodom i jedinstvenog dizajna.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_9348.jpg",
+      "ean": "012916741",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_9348.jpg",
+        "https://santos.rs/fajlovi/product/ANS_9354.jpg"
+      ],
+      "parentEan": "012916741",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129167",
+      "externalId": 12916741,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "41"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:44.116Z",
+    "updatedAt": "2026-03-18T10:56:44.116Z"
+  },
+  {
+    "id": "aba967f7-6033-4ad7-835c-ab4b41e74504",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12916740",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "d39c71df363a2c8e8c9eef9a2715b9bd34ec69395731ee98c44096fcb3a5a3f6",
+    "payload": {
+      "name": "021-146 GREEN",
+      "description": "<p>Santos &amp; Santorini cipele izrađene od kože visokog kvaliteta, obrađene specijalnom laserskom metodom i jedinstvenog dizajna.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_9348.jpg",
+      "ean": "012916740",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_9348.jpg",
+        "https://santos.rs/fajlovi/product/ANS_9354.jpg"
+      ],
+      "parentEan": "012916740",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129167",
+      "externalId": 12916740,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:43.972Z",
+    "updatedAt": "2026-03-18T10:56:43.972Z"
+  },
+  {
+    "id": "84cb0e3e-95fb-4b66-afb1-7838fd1f2340",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12916643",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "eb2754820fe6684b9996d588bfa753b598622729553f6471c2cd2e460b134109",
+    "payload": {
+      "name": "021-130 BUDGANDI",
+      "description": "<p>Santos &amp; Santorini cipele izrađene od kože visokog kvaliteta, obrađene specijalnom laserskom metodom i jedinstvenog dizajna.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Crvene 03.jpg",
+      "ean": "012916643",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Crvene 03.jpg",
+        "https://santos.rs/fajlovi/product/Crvene 01.jpg"
+      ],
+      "parentEan": "012916643",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129166",
+      "externalId": 12916643,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:43.844Z",
+    "updatedAt": "2026-03-18T10:56:43.844Z"
+  },
+  {
+    "id": "3607b129-cc07-4d34-92d2-09e902812008",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12916642",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "30ab8a46c729b338c57f1d0914e58caad8a51bbbc45164b51d0462ec8846da47",
+    "payload": {
+      "name": "021-130 BUDGANDI",
+      "description": "<p>Santos &amp; Santorini cipele izrađene od kože visokog kvaliteta, obrađene specijalnom laserskom metodom i jedinstvenog dizajna.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Crvene 03.jpg",
+      "ean": "012916642",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Crvene 03.jpg",
+        "https://santos.rs/fajlovi/product/Crvene 01.jpg"
+      ],
+      "parentEan": "012916642",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "10320.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129166",
+      "externalId": 12916642,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:43.720Z",
+    "updatedAt": "2026-03-18T10:56:43.720Z"
+  },
+  {
+    "id": "a4dda3c2-fbc4-4b02-b393-fac1b8501835",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12916641",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "8b49757fa5cc3ef23b0677f3e27b2e53c2c811544c1a16c91a5ed3994f078f94",
+    "payload": {
+      "name": "021-130 BUDGANDI",
+      "description": "<p>Santos &amp; Santorini cipele izrađene od kože visokog kvaliteta, obrađene specijalnom laserskom metodom i jedinstvenog dizajna.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Crvene 03.jpg",
+      "ean": "012916641",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Crvene 03.jpg",
+        "https://santos.rs/fajlovi/product/Crvene 01.jpg"
+      ],
+      "parentEan": "012916641",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129166",
+      "externalId": 12916641,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "41"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:43.595Z",
+    "updatedAt": "2026-03-18T10:56:43.595Z"
+  },
+  {
+    "id": "de53a242-ca18-4c1d-adaf-7865754c8060",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12916640",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "2ac9a07eba822a608ec42937fc0d3cba6268512e75196a63681128f0aadcc904",
+    "payload": {
+      "name": "021-130 BUDGANDI",
+      "description": "<p>Santos &amp; Santorini cipele izrađene od kože visokog kvaliteta, obrađene specijalnom laserskom metodom i jedinstvenog dizajna.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Crvene 03.jpg",
+      "ean": "012916640",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Crvene 03.jpg",
+        "https://santos.rs/fajlovi/product/Crvene 01.jpg"
+      ],
+      "parentEan": "012916640",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129166",
+      "externalId": 12916640,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:43.465Z",
+    "updatedAt": "2026-03-18T10:56:43.465Z"
+  },
+  {
+    "id": "ef5817c8-51b4-48da-b8e5-7bbb7669dd97",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12915587",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "9ef7e42b6f4606b37db6a19df65ac14fdfe251a712e6a3c9d936c4cad13e0a12",
+    "payload": {
+      "name": "CASCAVEL/1                     M.Košulja",
+      "description": "<p>Santos &amp; Santorini košulja bele boje od sateniziranog pamuka. Regular slim kroja savršena za svaku priliku, poslovne i svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00223.jpg",
+      "ean": "012915587",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00223.jpg",
+        "https://santos.rs/fajlovi/product/BRI00234.jpg"
+      ],
+      "parentEan": "012915587",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 15,
+      "sku": "129155",
+      "externalId": 12915587,
+      "productType": "Košulje",
+      "category": "Košulje",
+      "attributes": {
+        "Velicina": [
+          "4XL"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:43.337Z",
+    "updatedAt": "2026-03-18T10:56:43.337Z"
+  },
+  {
+    "id": "0254b4af-ce0c-42c5-b5db-09fcd16470ce",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12915586",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "4ab2b1413e7570a3a0ab44ff39f8abcf079ea6e70cb917cd5aa81e01e832b867",
+    "payload": {
+      "name": "CASCAVEL/1                     M.Košulja",
+      "description": "<p>Santos &amp; Santorini košulja bele boje od sateniziranog pamuka. Regular slim kroja savršena za svaku priliku, poslovne i svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00223.jpg",
+      "ean": "012915586",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00223.jpg",
+        "https://santos.rs/fajlovi/product/BRI00234.jpg"
+      ],
+      "parentEan": "012915586",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 7,
+      "sku": "129155",
+      "externalId": 12915586,
+      "productType": "Košulje",
+      "category": "Košulje",
+      "attributes": {
+        "Velicina": [
+          "3XL"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:43.212Z",
+    "updatedAt": "2026-03-18T10:56:43.212Z"
+  },
+  {
+    "id": "8555bc39-1456-4912-ad46-42543e6b0ab8",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12915585",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "29183751214a1482446bdfdc9e3abe17e4b95b68d7bdd1dd4bf61003049e350d",
+    "payload": {
+      "name": "CASCAVEL/1                     M.Košulja",
+      "description": "<p>Santos &amp; Santorini košulja bele boje od sateniziranog pamuka. Regular slim kroja savršena za svaku priliku, poslovne i svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00223.jpg",
+      "ean": "012915585",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00223.jpg",
+        "https://santos.rs/fajlovi/product/BRI00234.jpg"
+      ],
+      "parentEan": "012915585",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 17,
+      "sku": "129155",
+      "externalId": 12915585,
+      "productType": "Košulje",
+      "category": "Košulje",
+      "attributes": {
+        "Velicina": [
+          "XXL"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:43.081Z",
+    "updatedAt": "2026-03-18T10:56:43.081Z"
+  },
+  {
+    "id": "a76d51fa-1543-42d1-b904-13c387ec10d6",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12915583",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "4635caad10495b5d4fb7c326518e5a3bfbdfd40aa4ebcb6f563f1e1477714906",
+    "payload": {
+      "name": "CASCAVEL/1                     M.Košulja",
+      "description": "<p>Santos &amp; Santorini košulja bele boje od sateniziranog pamuka. Regular slim kroja savršena za svaku priliku, poslovne i svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00223.jpg",
+      "ean": "012915583",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00223.jpg",
+        "https://santos.rs/fajlovi/product/BRI00234.jpg"
+      ],
+      "parentEan": "012915583",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 24,
+      "sku": "129155",
+      "externalId": 12915583,
+      "productType": "Košulje",
+      "category": "Košulje",
+      "attributes": {
+        "Velicina": [
+          "XL"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:42.959Z",
+    "updatedAt": "2026-03-18T10:56:42.959Z"
+  },
+  {
+    "id": "cd6c26da-6a13-47dc-9ca1-f73b4bab52dc",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12915582",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "1e42b876a1f85252c84123d49b5e3808ca6117247f4012ebc73780374cb51660",
+    "payload": {
+      "name": "CASCAVEL/1                     M.Košulja",
+      "description": "<p>Santos &amp; Santorini košulja bele boje od sateniziranog pamuka. Regular slim kroja savršena za svaku priliku, poslovne i svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00223.jpg",
+      "ean": "012915582",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00223.jpg",
+        "https://santos.rs/fajlovi/product/BRI00234.jpg"
+      ],
+      "parentEan": "012915582",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 19,
+      "sku": "129155",
+      "externalId": 12915582,
+      "productType": "Košulje",
+      "category": "Košulje",
+      "attributes": {
+        "Velicina": [
+          "S"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:42.830Z",
+    "updatedAt": "2026-03-18T10:56:42.830Z"
+  },
+  {
+    "id": "154cf2e6-c594-4438-bdc2-82a8078be110",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12915581",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "97f5ed9fc8e2996ba4129795062174399c30d9483fbb1ce235e3cfaab1a8042e",
+    "payload": {
+      "name": "CASCAVEL/1                     M.Košulja",
+      "description": "<p>Santos &amp; Santorini košulja bele boje od sateniziranog pamuka. Regular slim kroja savršena za svaku priliku, poslovne i svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00223.jpg",
+      "ean": "012915581",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00223.jpg",
+        "https://santos.rs/fajlovi/product/BRI00234.jpg"
+      ],
+      "parentEan": "012915581",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 19,
+      "sku": "129155",
+      "externalId": 12915581,
+      "productType": "Košulje",
+      "category": "Košulje",
+      "attributes": {
+        "Velicina": [
+          "M"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:42.705Z",
+    "updatedAt": "2026-03-18T10:56:42.705Z"
+  },
+  {
+    "id": "7de1b007-5993-4057-be1b-35ec4651fa08",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12915580",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "efb22c934990ecd935df7ac18b2a49082b399f5350a9b129d59a6d5db2cd1d94",
+    "payload": {
+      "name": "CASCAVEL/1                     M.Košulja",
+      "description": "<p>Santos &amp; Santorini košulja bele boje od sateniziranog pamuka. Regular slim kroja savršena za svaku priliku, poslovne i svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00223.jpg",
+      "ean": "012915580",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00223.jpg",
+        "https://santos.rs/fajlovi/product/BRI00234.jpg"
+      ],
+      "parentEan": "012915580",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 27,
+      "sku": "129155",
+      "externalId": 12915580,
+      "productType": "Košulje",
+      "category": "Košulje",
+      "attributes": {
+        "Velicina": [
+          "L"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:42.578Z",
+    "updatedAt": "2026-03-18T10:56:42.578Z"
+  },
+  {
+    "id": "0c34e4a0-e712-4f51-982c-79b79c2b7b3d",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12914458",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "8a909cdf9c8095fac815313a5e8859330c5d6ecdd2c8581e158f58c739dd304c",
+    "payload": {
+      "name": "24/33/13                                    M.Odelo",
+      "description": "<p>\n\nSantos &amp; Santorini teget, karirano odelo, regular slim kroja. Pogodno za svečane, poslovne i opuštene prilike. Odelo kojim ističete vaš ego.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5535.jpg",
+      "ean": "012914458",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5535.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5534.jpg"
+      ],
+      "parentEan": "012914458",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129144",
+      "externalId": 12914458,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "58"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:42.451Z",
+    "updatedAt": "2026-03-18T10:56:42.451Z"
+  },
+  {
+    "id": "03ca6586-21b9-4c07-8df9-cf7fadbc81d4",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12914456",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "e6797476cd25f5da3b32f87b7497935ec4985a5e21ac933f5b4b842fde2ce737",
+    "payload": {
+      "name": "24/33/13",
+      "description": "<p>\n\nSantos &amp; Santorini teget, karirano odelo, regular slim kroja. Pogodno za svečane, poslovne i opuštene prilike. Odelo kojim ističete vaš ego.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5535.jpg",
+      "ean": "012914456",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5535.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5534.jpg"
+      ],
+      "parentEan": "012914456",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129144",
+      "externalId": 12914456,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "56"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:42.320Z",
+    "updatedAt": "2026-03-18T10:56:42.320Z"
+  },
+  {
+    "id": "f0176171-8a03-4792-9c09-eb5ab8a20da5",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12914454",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "daf4d819a6cae4631abc4bfb12bec02d71d08da56f8f6c97db25224ec4cbd7ce",
+    "payload": {
+      "name": "24/33/13",
+      "description": "<p>\n\nSantos &amp; Santorini teget, karirano odelo, regular slim kroja. Pogodno za svečane, poslovne i opuštene prilike. Odelo kojim ističete vaš ego.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5535.jpg",
+      "ean": "012914454",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5535.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5534.jpg"
+      ],
+      "parentEan": "012914454",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129144",
+      "externalId": 12914454,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "54"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:42.195Z",
+    "updatedAt": "2026-03-18T10:56:42.195Z"
+  },
+  {
+    "id": "dc03874d-fc1a-42ae-8c1e-f5cee3eb7734",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12914452",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "03a9bc3d29797f6057fec817489900c8afe641ba4d8664330b49af2015739367",
+    "payload": {
+      "name": "24/33/13                                    M.Odelo",
+      "description": "<p>\n\nSantos &amp; Santorini teget, karirano odelo, regular slim kroja. Pogodno za svečane, poslovne i opuštene prilike. Odelo kojim ističete vaš ego.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5535.jpg",
+      "ean": "012914452",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5535.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5534.jpg"
+      ],
+      "parentEan": "012914452",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129144",
+      "externalId": 12914452,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "52"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:42.057Z",
+    "updatedAt": "2026-03-18T10:56:42.057Z"
+  },
+  {
+    "id": "7f6ec849-d708-4295-8411-94c74899f902",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12914056",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "c0f2c3531c5f14d8c1fbaf42e18ea9e5df82684615fb24e39767fdbce087078c",
+    "payload": {
+      "name": "24/33/6/1",
+      "description": "Santos &amp; Santorini karirano odelo, regular slim kroja. Pogodno za svečane, poslovne i opuštene prilike. Odelo kojim ističete vaš ego.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5445.jpg",
+      "ean": "12914056",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5445.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5446.jpg"
+      ],
+      "parentEan": "12914056",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129140",
+      "externalId": 12914056,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "56"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:41.928Z",
+    "updatedAt": "2026-03-18T10:56:41.928Z"
+  },
+  {
+    "id": "f00f3c34-cb0e-4222-b57c-ee3b110fe13b",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12914054",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "06734ffc401c8efd47131b40aa2fe390cb917b1e6ae37306f1bea01bd71b9011",
+    "payload": {
+      "name": "24/33/6/1",
+      "description": "Santos &amp; Santorini karirano odelo, regular slim kroja. Pogodno za svečane, poslovne i opuštene prilike. Odelo kojim ističete vaš ego.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5445.jpg",
+      "ean": "12914054",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5445.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5446.jpg"
+      ],
+      "parentEan": "12914054",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129140",
+      "externalId": 12914054,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "54"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:41.788Z",
+    "updatedAt": "2026-03-18T10:56:41.788Z"
+  },
+  {
+    "id": "56641cb3-3126-43e0-a08a-59c99638c7a2",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12914052",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "f1f98daf1639f7274136a4192c10fc96e152ad177a43e6327c39d47dc3d62b8f",
+    "payload": {
+      "name": "24/33/6/1",
+      "description": "Santos &amp; Santorini karirano odelo, regular slim kroja. Pogodno za svečane, poslovne i opuštene prilike. Odelo kojim ističete vaš ego.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5445.jpg",
+      "ean": "12914052",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5445.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5446.jpg"
+      ],
+      "parentEan": "12914052",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129140",
+      "externalId": 12914052,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "52"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:41.665Z",
+    "updatedAt": "2026-03-18T10:56:41.665Z"
+  },
+  {
+    "id": "d6d7c8f5-a1ff-4453-8231-bda43c9a68e0",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12914050",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "17b8f83cdfff4982bc280258c3c98ffdc6fe8dd3575e9fe7d001e93e5426594b",
+    "payload": {
+      "name": "24/33/6/1",
+      "description": "Santos &amp; Santorini karirano odelo, regular slim kroja. Pogodno za svečane, poslovne i opuštene prilike. Odelo kojim ističete vaš ego.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5445.jpg",
+      "ean": "12914050",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5445.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5446.jpg"
+      ],
+      "parentEan": "12914050",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129140",
+      "externalId": 12914050,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "50"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:41.537Z",
+    "updatedAt": "2026-03-18T10:56:41.537Z"
+  },
+  {
+    "id": "84643c92-51f3-43c5-8786-09c647c1d63a",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12914048",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "fa7042d9b3dfec2fd11be13c77f70c839f15e6e46f0192390535cc9a06d17142",
+    "payload": {
+      "name": "24/33/6/1",
+      "description": "Santos &amp; Santorini karirano odelo, regular slim kroja. Pogodno za svečane, poslovne i opuštene prilike. Odelo kojim ističete vaš ego.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5445.jpg",
+      "ean": "12914048",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5445.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5446.jpg"
+      ],
+      "parentEan": "12914048",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129140",
+      "externalId": 12914048,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "48"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:41.413Z",
+    "updatedAt": "2026-03-18T10:56:41.413Z"
+  },
+  {
+    "id": "7e5d1084-9008-425c-a913-0a7a2c928819",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913656",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "2b933a3daed80030a15a8fbfb630f73c5f4f8529ef2ad9dc7069c23bc3cdac72",
+    "payload": {
+      "name": "24/33/2/1                                   M.Odelo",
+      "description": "<p>\n\nSantos &amp; Santorini karirano odelo, regular slim kroja. Pogodno za svečane poslovne i opuštene prilike. Odelo kojim ističete vaš ego.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5323.jpg",
+      "ean": "012913656",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5323.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5320.jpg"
+      ],
+      "parentEan": "012913656",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129136",
+      "externalId": 12913656,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "56"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:41.280Z",
+    "updatedAt": "2026-03-18T10:56:41.280Z"
+  },
+  {
+    "id": "cedb161b-5b68-4137-ba47-b5308ba8bbf5",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913650",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "074a4d6cdfe16aa9266774c548a17d23dea886f398ab9672973aa0bf698ca25e",
+    "payload": {
+      "name": "24/33/2/1                                   M.Odelo",
+      "description": "<p>\n\nSantos &amp; Santorini karirano odelo, regular slim kroja. Pogodno za svečane poslovne i opuštene prilike. Odelo kojim ističete vaš ego.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5323.jpg",
+      "ean": "012913650",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5323.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5320.jpg"
+      ],
+      "parentEan": "012913650",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129136",
+      "externalId": 12913650,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "50"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:41.159Z",
+    "updatedAt": "2026-03-18T10:56:41.159Z"
+  },
+  {
+    "id": "f8e58d0a-913a-468c-bec7-847b83443325",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913558",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "0c97b42b6d476fc8a9c95cc791e61ff33613ff3ea7c21e56db42695e8c0cb25b",
+    "payload": {
+      "name": "24/33/2",
+      "description": "Santos &amp; Santorini karirano odelo regular slim kroja pogodno za svečane poslovne i opuštene prilike.Odelo kojim ističete vaš ego.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+      "ean": "12913558",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5500.jpg"
+      ],
+      "parentEan": "12913558",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129135",
+      "externalId": 12913558,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "58"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:41.027Z",
+    "updatedAt": "2026-03-18T10:56:41.027Z"
+  },
+  {
+    "id": "2d537c32-8bed-4016-a5a1-41e6c4a82960",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913556",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "46c03d968495335397a09b4b04016e9b5c505b3723957e887c185678bdd5ed3e",
+    "payload": {
+      "name": "24/33/2                                       M.Odelo",
+      "description": "Santos &amp; Santorini karirano odelo regular slim kroja pogodno za svečane poslovne i opuštene prilike.Odelo kojim ističete vaš ego.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+      "ean": "12913556",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5500.jpg"
+      ],
+      "parentEan": "12913556",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129135",
+      "externalId": 12913556,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "56"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:40.855Z",
+    "updatedAt": "2026-03-18T10:56:40.855Z"
+  },
+  {
+    "id": "d837885f-2583-4a3b-b207-463742784f3b",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913554",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "36b61ac426149f524b5f2e357eead49b61982ecd476797327d3fd7ef55bacd9e",
+    "payload": {
+      "name": "24/33/2",
+      "description": "Santos &amp; Santorini karirano odelo regular slim kroja pogodno za svečane poslovne i opuštene prilike.Odelo kojim ističete vaš ego.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+      "ean": "12913554",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5500.jpg"
+      ],
+      "parentEan": "12913554",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129135",
+      "externalId": 12913554,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "54"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:40.732Z",
+    "updatedAt": "2026-03-18T10:56:40.732Z"
+  },
+  {
+    "id": "2643beac-8f28-4ccc-a5af-c77a0603faae",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913552",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "f6402f90f49a642ae0170e00d706a7d8d87cd481bd1f37b507e735bbfe792630",
+    "payload": {
+      "name": "24/33/2",
+      "description": "Santos &amp; Santorini karirano odelo regular slim kroja pogodno za svečane poslovne i opuštene prilike.Odelo kojim ističete vaš ego.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+      "ean": "12913552",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5500.jpg"
+      ],
+      "parentEan": "12913552",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129135",
+      "externalId": 12913552,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "52"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:40.602Z",
+    "updatedAt": "2026-03-18T10:56:40.602Z"
+  },
+  {
+    "id": "0a90de26-d278-45ac-a0e0-0185afaf5e92",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913550",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "03ef4609423015fbf606a18b9aee15bb8c95c280dbec2c4ec3c666ed6ff3d8a4",
+    "payload": {
+      "name": "24/33/2                                       M.Odelo",
+      "description": "Santos &amp; Santorini karirano odelo regular slim kroja pogodno za svečane poslovne i opuštene prilike.Odelo kojim ističete vaš ego.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+      "ean": "12913550",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5500.jpg"
+      ],
+      "parentEan": "12913550",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "129135",
+      "externalId": 12913550,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "50"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:40.476Z",
+    "updatedAt": "2026-03-18T10:56:40.476Z"
+  },
+  {
+    "id": "352c2c74-18a6-47e9-8364-5f3007aca127",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913548",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "e76815023f4de0d217b08e84c50c92ff718b3a2575477c70418af1bc8d8f9584",
+    "payload": {
+      "name": "24/33/2",
+      "description": "Santos &amp; Santorini karirano odelo regular slim kroja pogodno za svečane poslovne i opuštene prilike.Odelo kojim ističete vaš ego.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+      "ean": "12913548",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5500.jpg"
+      ],
+      "parentEan": "12913548",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "21900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129135",
+      "externalId": 12913548,
+      "productType": "Odelo",
+      "category": "Odelo",
+      "attributes": {
+        "Velicina": [
+          "48"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:40.354Z",
+    "updatedAt": "2026-03-18T10:56:40.354Z"
+  },
+  {
+    "id": "41b95830-a2f7-497c-aae7-5907fe2e0b30",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913144",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "14259ed065ceea9ce40d802924d3e1518143d12c1c909df62a72e1a039e8e679",
+    "payload": {
+      "name": "01 TOBACCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/01-tobaco 1.jpg",
+      "ean": "12913144",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/01-tobaco 1.jpg",
+        "https://santos.rs/fajlovi/product/01-tobaco-2.jpg"
+      ],
+      "parentEan": "12913144",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129131",
+      "externalId": 12913144,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "44"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:40.224Z",
+    "updatedAt": "2026-03-18T10:56:40.224Z"
+  },
+  {
+    "id": "05ff05a3-250e-4688-8660-4f528189069f",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913143",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "54f962e15d80c426501e5f24a6d713e2906f78aae85d6d44cc32e67f40b30c4e",
+    "payload": {
+      "name": "01 TOBACCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/01-tobaco 1.jpg",
+      "ean": "12913143",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/01-tobaco 1.jpg",
+        "https://santos.rs/fajlovi/product/01-tobaco-2.jpg"
+      ],
+      "parentEan": "12913143",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "10320.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129131",
+      "externalId": 12913143,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:40.101Z",
+    "updatedAt": "2026-03-18T10:56:40.101Z"
+  },
+  {
+    "id": "6ff99a2c-81e8-468b-aa92-d3dfff20187e",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913142",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "0037cdaf1e2c62e45a3fe8ef64f35ea94145bf1181669a4d69879c2317446290",
+    "payload": {
+      "name": "01 TOBACCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/01-tobaco 1.jpg",
+      "ean": "12913142",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/01-tobaco 1.jpg",
+        "https://santos.rs/fajlovi/product/01-tobaco-2.jpg"
+      ],
+      "parentEan": "12913142",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129131",
+      "externalId": 12913142,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:39.970Z",
+    "updatedAt": "2026-03-18T10:56:39.970Z"
+  },
+  {
+    "id": "93383a8f-4835-4dab-b87e-8203f3ff74ab",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12913140",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "283b1ce91212387528e7bde0e8b23ba72ac1a8d7736c1a9bcdfb587d0d05319a",
+    "payload": {
+      "name": "01 TOBACCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/01-tobaco 1.jpg",
+      "ean": "12913140",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/01-tobaco 1.jpg",
+        "https://santos.rs/fajlovi/product/01-tobaco-2.jpg"
+      ],
+      "parentEan": "12913140",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "129131",
+      "externalId": 12913140,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:39.848Z",
+    "updatedAt": "2026-03-18T10:56:39.848Z"
+  },
+  {
+    "id": "04d386c9-730e-4f67-a14b-6b0aa2bd86f1",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12862844",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "6ee7cb3668f444a6351517b4669c1e004cd73b65bde9216d8b38d3b267dba221",
+    "payload": {
+      "name": "1308 BLACK",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/DSC_2758.jpg",
+      "ean": "12862844",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/DSC_2758.jpg",
+        "https://santos.rs/fajlovi/product/DSC_2759.jpg"
+      ],
+      "parentEan": "12862844",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128628",
+      "externalId": 12862844,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "44"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:39.724Z",
+    "updatedAt": "2026-03-18T10:56:39.724Z"
+  },
+  {
+    "id": "373ec92f-239e-403e-b7e0-80e63fae9d5d",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12862843",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "f3c7136af5a15e46bbf6a65fe178ec28cdc50de3fedfc5ffe3f34c14796f5857",
+    "payload": {
+      "name": "1308 BLACK",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/DSC_2758.jpg",
+      "ean": "12862843",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/DSC_2758.jpg",
+        "https://santos.rs/fajlovi/product/DSC_2759.jpg"
+      ],
+      "parentEan": "12862843",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128628",
+      "externalId": 12862843,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:39.598Z",
+    "updatedAt": "2026-03-18T10:56:39.598Z"
+  },
+  {
+    "id": "5bca4605-174c-4dd6-96a2-2aff246a7aa2",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12862842",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "4a24a99e4c8b6b1e522c09bf00a36d094a0b0092672cfcd0f0cf922c012ba83f",
+    "payload": {
+      "name": "1308 BLACK",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/DSC_2758.jpg",
+      "ean": "12862842",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/DSC_2758.jpg",
+        "https://santos.rs/fajlovi/product/DSC_2759.jpg"
+      ],
+      "parentEan": "12862842",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11610.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128628",
+      "externalId": 12862842,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:39.473Z",
+    "updatedAt": "2026-03-18T10:56:39.473Z"
+  },
+  {
+    "id": "075a7a62-245d-400c-8f30-3595787e8ed2",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12862841",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "1829d2a5eb9934029c9a602c5148ba29b45e73117fd177b1fb61f76bb4eefa9c",
+    "payload": {
+      "name": "1308 BLACK",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/DSC_2758.jpg",
+      "ean": "12862841",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/DSC_2758.jpg",
+        "https://santos.rs/fajlovi/product/DSC_2759.jpg",
+        "https://santos.rs/fajlovi/product/DSC_2760.jpg"
+      ],
+      "parentEan": "12862841",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128628",
+      "externalId": 12862841,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "41"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:39.347Z",
+    "updatedAt": "2026-03-18T10:56:39.347Z"
+  },
+  {
+    "id": "1c0c62c0-0c94-48a2-9b65-4184e7168099",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12861643",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "82e8c423b085d1d833680564054b78a1432cb71b10943a2f623f4f32fe2ab8a5",
+    "payload": {
+      "name": "105 TOBACCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/DSC_2731.jpg",
+      "ean": "12861643",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/DSC_2731.jpg",
+        "https://santos.rs/fajlovi/product/DSC_2732.jpg"
+      ],
+      "parentEan": "12861643",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "10320.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128616",
+      "externalId": 12861643,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:39.218Z",
+    "updatedAt": "2026-03-18T10:56:39.218Z"
+  },
+  {
+    "id": "d871a077-4b4c-4761-930c-3e95216b9515",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12861641",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "7c986a8db5240e315307050ca1ca5e2c87ab4f28f4f26fd9ce5bc654a797b617",
+    "payload": {
+      "name": "105 TOBACCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/DSC_2731.jpg",
+      "ean": "12861641",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/DSC_2731.jpg",
+        "https://santos.rs/fajlovi/product/DSC_2732.jpg"
+      ],
+      "parentEan": "12861641",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128616",
+      "externalId": 12861641,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "41"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:39.091Z",
+    "updatedAt": "2026-03-18T10:56:39.091Z"
+  },
+  {
+    "id": "56ca14e1-cfcf-4c8c-b187-8fdacc2f0d79",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12861640",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "dd32bfac02fec5f422f2e8aa0beeee886614771361846a40e1b8a40588577ee0",
+    "payload": {
+      "name": "105 TOBACCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/DSC_2731.jpg",
+      "ean": "12861640",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/DSC_2731.jpg",
+        "https://santos.rs/fajlovi/product/DSC_2732.jpg"
+      ],
+      "parentEan": "12861640",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "12900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128616",
+      "externalId": 12861640,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:38.967Z",
+    "updatedAt": "2026-03-18T10:56:38.967Z"
+  },
+  {
+    "id": "42029dc8-58b5-426a-8cc1-d6bc3d299cd1",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12836145",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "06b8fbf1e6f90a73387f1593e7933605d4a57b46e483dc6df9e6f22c44ceb4a9",
+    "payload": {
+      "name": "4022 NERO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene ručnom metodom bojenja,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/9.jpg",
+      "ean": "12836145",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/9.jpg",
+        "https://santos.rs/fajlovi/product/9-1.jpg"
+      ],
+      "parentEan": "12836145",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128361",
+      "externalId": 12836145,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "45"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:38.843Z",
+    "updatedAt": "2026-03-18T10:56:38.843Z"
+  },
+  {
+    "id": "ce04dfb5-bbc5-4bd6-85e1-a157c9cba6ca",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12836144",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "2b1da8fea982b45fc2e9854818c3a8fbcfe78ea59719f0a14fbe73233f94029b",
+    "payload": {
+      "name": "4022 NERO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene ručnom metodom bojenja,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/9.jpg",
+      "ean": "12836144",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/9.jpg",
+        "https://santos.rs/fajlovi/product/9-1.jpg"
+      ],
+      "parentEan": "12836144",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11899.20",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128361",
+      "externalId": 12836144,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "44"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:38.711Z",
+    "updatedAt": "2026-03-18T10:56:38.711Z"
+  },
+  {
+    "id": "42ce2368-6851-40e9-80c5-a310a33d31c5",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12836143",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "0b0e70440d4fbc8380649ab4dd7c770b2555158808ff7f7ea25689316e672324",
+    "payload": {
+      "name": "4022 NERO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene ručnom metodom bojenja,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/9.jpg",
+      "ean": "12836143",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/9.jpg",
+        "https://santos.rs/fajlovi/product/9-1.jpg"
+      ],
+      "parentEan": "12836143",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128361",
+      "externalId": 12836143,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:38.528Z",
+    "updatedAt": "2026-03-18T10:56:38.528Z"
+  },
+  {
+    "id": "f1df47bb-549a-4d22-ae23-c72c16074742",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12836140",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "0a5920861b038bda2a21a686a9ad0f70115f42148c3a01c5962def5b8b95cf45",
+    "payload": {
+      "name": "4022 NERO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene ručnom metodom bojenja,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/9.jpg",
+      "ean": "12836140",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/9.jpg",
+        "https://santos.rs/fajlovi/product/9-1.jpg"
+      ],
+      "parentEan": "12836140",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128361",
+      "externalId": 12836140,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:38.397Z",
+    "updatedAt": "2026-03-18T10:56:38.397Z"
+  },
+  {
+    "id": "8c8d3a2c-88cb-4e05-9c67-50170d8fd088",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12834245",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "79d6e256d024106cea45d2d4ecf35d64741a106b492d0a1b440dcb49e7f49307",
+    "payload": {
+      "name": "3035 GREY",
+      "description": "Santos &amp; Santorini cipele su izrađene od uljane kože visokog kvaliteta. Jedinstvenog dizajna, udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/16.jpg",
+      "ean": "12834245",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/16.jpg",
+        "https://santos.rs/fajlovi/product/16-1.jpg"
+      ],
+      "parentEan": "12834245",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "8950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128342",
+      "externalId": 12834245,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "45"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:38.273Z",
+    "updatedAt": "2026-03-18T10:56:38.273Z"
+  },
+  {
+    "id": "1fe69a18-0181-477a-9d6c-5cf58fd955b5",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12834244",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "c8973f32d363de057262d1136a54bb96d0746ca3253d3c0c153c56a427050cc7",
+    "payload": {
+      "name": "3035 GREY                                     M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od uljane kože visokog kvaliteta. Jedinstvenog dizajna, udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/16.jpg",
+      "ean": "12834244",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/16.jpg",
+        "https://santos.rs/fajlovi/product/16-1.jpg"
+      ],
+      "parentEan": "12834244",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "8950.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128342",
+      "externalId": 12834244,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "44"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:38.149Z",
+    "updatedAt": "2026-03-18T10:56:38.149Z"
+  },
+  {
+    "id": "3c528efd-3aff-4359-b621-0204c88e5f8a",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12834242",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "3b6257b81a07731fbaa54b4d7527cbe9bb8f5122047ab54ab6252581cfe60fd5",
+    "payload": {
+      "name": "3035 GREY",
+      "description": "Santos &amp; Santorini cipele su izrađene od uljane kože visokog kvaliteta. Jedinstvenog dizajna, udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/16.jpg",
+      "ean": "12834242",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/16.jpg",
+        "https://santos.rs/fajlovi/product/16-1.jpg"
+      ],
+      "parentEan": "12834242",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "8949.60",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128342",
+      "externalId": 12834242,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:38.021Z",
+    "updatedAt": "2026-03-18T10:56:38.021Z"
+  },
+  {
+    "id": "b94c0ef2-9c23-433f-b93f-5cc0f193433b",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12834241",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "0f8b74d7698d3b84d231eb2ddd6b6c2ad0b56cf8fe88f3006822be2305dd9cbc",
+    "payload": {
+      "name": "3035 GREY",
+      "description": "Santos &amp; Santorini cipele su izrađene od uljane kože visokog kvaliteta. Jedinstvenog dizajna, udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/16.jpg",
+      "ean": "12834241",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/16.jpg",
+        "https://santos.rs/fajlovi/product/16-1.jpg"
+      ],
+      "parentEan": "12834241",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "8949.60",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128342",
+      "externalId": 12834241,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "41"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:37.896Z",
+    "updatedAt": "2026-03-18T10:56:37.896Z"
+  },
+  {
+    "id": "9c0e6443-80a2-43ed-b619-c99aaee1b3fd",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12834240",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "403b5ebd8df18d657413c84aaaa778ad7cccbf16d5c89d003733f68dc3dcf419",
+    "payload": {
+      "name": "3035 GREY                                     M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od uljane kože visokog kvaliteta. Jedinstvenog dizajna, udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/16.jpg",
+      "ean": "12834240",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/16.jpg",
+        "https://santos.rs/fajlovi/product/16-1.jpg"
+      ],
+      "parentEan": "12834240",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "8950.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128342",
+      "externalId": 12834240,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:37.770Z",
+    "updatedAt": "2026-03-18T10:56:37.770Z"
+  },
+  {
+    "id": "4f90a410-4d0c-4673-83ec-f2dfbc5e1e3c",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12834045",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "a796666ca5491cb5fbff30a092b6cf57edcc399e44dee34a0cc3affe894747bc",
+    "payload": {
+      "name": "4000 BEIG",
+      "description": "<p>Santos&amp;Santorini trobojne cipele izrađene od glatke i perforirane kože visokog kvaliteta, lepljenog i prošivenog ultra lakog đona.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+      "ean": "012834045",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+        "https://santos.rs/fajlovi/product/Beigo 02.jpg"
+      ],
+      "parentEan": "012834045",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128340",
+      "externalId": 12834045,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "45"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:37.648Z",
+    "updatedAt": "2026-03-18T10:56:37.648Z"
+  },
+  {
+    "id": "80b9f6d5-c61b-4d43-a17f-a90d4fbc1b5d",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12834044",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "3e025f36f1676a93b4dc0d9e6e1d147d35b206d7d1736e99156d18b5fd2916f1",
+    "payload": {
+      "name": "4000 BEIG",
+      "description": "<p>Santos&amp;Santorini trobojne cipele izrađene od glatke i perforirane kože visokog kvaliteta, lepljenog i prošivenog ultra lakog đona.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+      "ean": "12834044",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+        "https://santos.rs/fajlovi/product/Beigo 02.jpg"
+      ],
+      "parentEan": "12834044",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128340",
+      "externalId": 12834044,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "44"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:37.518Z",
+    "updatedAt": "2026-03-18T10:56:37.518Z"
+  },
+  {
+    "id": "68cf3db9-e2ce-4c53-8a7e-ed0583f7f1ec",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12834043",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "b24aead00318075c23478237af346636db611aaef3ff851b15a66d991cefae5f",
+    "payload": {
+      "name": "4000 BEIG",
+      "description": "<p>Santos&amp;Santorini trobojne cipele izrađene od glatke i perforirane kože visokog kvaliteta, lepljenog i prošivenog ultra lakog đona.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+      "ean": "12834043",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+        "https://santos.rs/fajlovi/product/Beigo 02.jpg"
+      ],
+      "parentEan": "12834043",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128340",
+      "externalId": 12834043,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:37.391Z",
+    "updatedAt": "2026-03-18T10:56:37.391Z"
+  },
+  {
+    "id": "7fd29826-465f-4196-bf20-d6eef7bb5c36",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12834042",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "17948c75f8db101c593719cace8efa69b29d7e9147832d15fb9952a3ba9d47ad",
+    "payload": {
+      "name": "4000 BEIG",
+      "description": "<p>Santos&amp;Santorini trobojne cipele izrađene od glatke i perforirane kože visokog kvaliteta, lepljenog i prošivenog ultra lakog đona.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+      "ean": "012834042",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+        "https://santos.rs/fajlovi/product/Beigo 02.jpg"
+      ],
+      "parentEan": "012834042",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128340",
+      "externalId": 12834042,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:37.267Z",
+    "updatedAt": "2026-03-18T10:56:37.267Z"
+  },
+  {
+    "id": "026dbee8-d0d8-4dae-8dd7-e50de57c2c49",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12834041",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "271f133a368201def01a995d0341c86d181d4e9e014af9077d9a56fd9fbbe4bd",
+    "payload": {
+      "name": "4000 BEIG",
+      "description": "<p>Santos&amp;Santorini trobojne cipele izrađene od glatke i perforirane kože visokog kvaliteta, lepljenog i prošivenog ultra lakog đona.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+      "ean": "012834041",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+        "https://santos.rs/fajlovi/product/Beigo 02.jpg"
+      ],
+      "parentEan": "012834041",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128340",
+      "externalId": 12834041,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "41"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:37.113Z",
+    "updatedAt": "2026-03-18T10:56:37.113Z"
+  },
+  {
+    "id": "1e376f49-e1cc-44c8-ba1f-18b153b466a4",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12834040",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "c9722bb4b359f5e5508bd19e3fff6e88a3e5f44180d2721e35fceac5e69b888e",
+    "payload": {
+      "name": "4000 BEIG",
+      "description": "<p>Santos&amp;Santorini trobojne cipele izrađene od glatke i perforirane kože visokog kvaliteta, lepljenog i prošivenog ultra lakog đona.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+      "ean": "12834040",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Beigo 01(1).jpg",
+        "https://santos.rs/fajlovi/product/Beigo 02.jpg"
+      ],
+      "parentEan": "12834040",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128340",
+      "externalId": 12834040,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:36.985Z",
+    "updatedAt": "2026-03-18T10:56:36.985Z"
+  },
+  {
+    "id": "4c0d6b4c-1f2e-4ab1-9050-d6b4bbb090e3",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833945",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "107b583d4cc0051f0c2cf3be49dc209fd15b36b1107adfc19b3e25e5115fc34c",
+    "payload": {
+      "name": "4000 BIANCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/11.jpg",
+      "ean": "12833945",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/11.jpg",
+        "https://santos.rs/fajlovi/product/11-1.jpg"
+      ],
+      "parentEan": "12833945",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128339",
+      "externalId": 12833945,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "45"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:36.855Z",
+    "updatedAt": "2026-03-18T10:56:36.855Z"
+  },
+  {
+    "id": "a616d2d1-b341-4e75-b875-c50cd9736272",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833944",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "36eaf60cd11e5bfe82c56f5ce8bdcec2e99860415dc639bee2562f499fef723f",
+    "payload": {
+      "name": "4000 BIANCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/11.jpg",
+      "ean": "12833944",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/11.jpg",
+        "https://santos.rs/fajlovi/product/11-1.jpg"
+      ],
+      "parentEan": "12833944",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128339",
+      "externalId": 12833944,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "44"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:36.732Z",
+    "updatedAt": "2026-03-18T10:56:36.732Z"
+  },
+  {
+    "id": "17d5da7d-ec4c-4605-8612-322a40a87481",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833943",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "89adb1aff159aa93628a9f4f054655b17a0a46afd35ecc8153831ec3f4b47ed8",
+    "payload": {
+      "name": "4000 BIANCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/11.jpg",
+      "ean": "12833943",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/11.jpg",
+        "https://santos.rs/fajlovi/product/11-1.jpg"
+      ],
+      "parentEan": "12833943",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128339",
+      "externalId": 12833943,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:36.606Z",
+    "updatedAt": "2026-03-18T10:56:36.606Z"
+  },
+  {
+    "id": "94531da7-c74a-4291-b810-2f0600a7f4c9",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833942",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "2dd175adb0a15d1273264e7ad43f64ecfd9d4e7b8b4c80449f387d52119e553d",
+    "payload": {
+      "name": "4000 BIANCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/11.jpg",
+      "ean": "12833942",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/11.jpg",
+        "https://santos.rs/fajlovi/product/11-1.jpg"
+      ],
+      "parentEan": "12833942",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128339",
+      "externalId": 12833942,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:36.478Z",
+    "updatedAt": "2026-03-18T10:56:36.478Z"
+  },
+  {
+    "id": "68aba755-7111-4891-949b-db022a990a40",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833941",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "bd6d8b2d6180bfc53338ded035e0643a0e44190f5ef3ba7259e4793478472092",
+    "payload": {
+      "name": "4000 BIANCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/11.jpg",
+      "ean": "12833941",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/11.jpg",
+        "https://santos.rs/fajlovi/product/11-1.jpg"
+      ],
+      "parentEan": "12833941",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128339",
+      "externalId": 12833941,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "41"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:36.355Z",
+    "updatedAt": "2026-03-18T10:56:36.355Z"
+  },
+  {
+    "id": "dc551102-0889-433e-bb45-339484eba1b2",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833940",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "122c890cfc593b806d0a0ef84f93f1c942922f2c98d61dac3f4bc71283aeb4ad",
+    "payload": {
+      "name": "4000 BIANCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta,obrađene specijalnom laserskom metodom,jedinstvenog dizajna",
+      "coverImage": "https://santos.rs/fajlovi/product/11.jpg",
+      "ean": "12833940",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/11.jpg",
+        "https://santos.rs/fajlovi/product/11-1.jpg"
+      ],
+      "parentEan": "12833940",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128339",
+      "externalId": 12833940,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:36.228Z",
+    "updatedAt": "2026-03-18T10:56:36.228Z"
+  },
+  {
+    "id": "db5238df-cc51-4b7b-aabe-473574a130cf",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833845",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "8eaf413ce085bbebf0e90d337dfdd9792887dc5088ef0faf10923c36a7c81e44",
+    "payload": {
+      "name": "4002 NERO                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta, jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/17.jpg",
+      "ean": "12833845",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/17.jpg",
+        "https://santos.rs/fajlovi/product/17-1.jpg"
+      ],
+      "parentEan": "12833845",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128338",
+      "externalId": 12833845,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "45"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:36.103Z",
+    "updatedAt": "2026-03-18T10:56:36.103Z"
+  },
+  {
+    "id": "c02b5a80-3af3-4f1d-a373-446353338c1b",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833844",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "29e5ef3cd5c46196c54b98a8fb2beecb751ea800e3471aec86ea710f98c78b5b",
+    "payload": {
+      "name": "4002 NERO                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta, jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/17.jpg",
+      "ean": "12833844",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/17.jpg",
+        "https://santos.rs/fajlovi/product/17-1.jpg"
+      ],
+      "parentEan": "12833844",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128338",
+      "externalId": 12833844,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "44"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:35.961Z",
+    "updatedAt": "2026-03-18T10:56:35.961Z"
+  },
+  {
+    "id": "0f141134-f844-4345-9845-f389905ce19b",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833843",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "95dbdd516493ad5d0b66e88d2b8c07f522ece99387492f41239d81f1e761f800",
+    "payload": {
+      "name": "4002 NERO                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta, jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/17.jpg",
+      "ean": "12833843",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/17.jpg",
+        "https://santos.rs/fajlovi/product/17-1.jpg"
+      ],
+      "parentEan": "12833843",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128338",
+      "externalId": 12833843,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:35.838Z",
+    "updatedAt": "2026-03-18T10:56:35.838Z"
+  },
+  {
+    "id": "b3829080-5777-4928-810c-859c71a53d38",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833842",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "e0157dc25bf117b0f9e9840da3ab3e1c8414e5ccf7093c6fe4b8b2f6079afa78",
+    "payload": {
+      "name": "4002 NERO                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta, jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/17.jpg",
+      "ean": "12833842",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/17.jpg",
+        "https://santos.rs/fajlovi/product/17-1.jpg"
+      ],
+      "parentEan": "12833842",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 2,
+      "sku": "128338",
+      "externalId": 12833842,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:35.712Z",
+    "updatedAt": "2026-03-18T10:56:35.712Z"
+  },
+  {
+    "id": "67fa93ff-b1ae-4183-a304-f21f5a1445b4",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833841",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "9f729df37871912ee76258c7e5b7c9d91ec7bbfed15e7b084e400c01975a61c3",
+    "payload": {
+      "name": "4002 NERO                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta, jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/17.jpg",
+      "ean": "12833841",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/17.jpg",
+        "https://santos.rs/fajlovi/product/17-1.jpg"
+      ],
+      "parentEan": "12833841",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128338",
+      "externalId": 12833841,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "41"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:35.588Z",
+    "updatedAt": "2026-03-18T10:56:35.588Z"
+  },
+  {
+    "id": "e1f336ce-216d-42a5-af45-4a41fd2ef55e",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833840",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "bf6109c6bf0d54298481e25b2b16ff95827d9d1c2600e7508c01a172ab2f88fb",
+    "payload": {
+      "name": "4002 NERO                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta, jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/17.jpg",
+      "ean": "12833840",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/17.jpg",
+        "https://santos.rs/fajlovi/product/17-1.jpg"
+      ],
+      "parentEan": "12833840",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128338",
+      "externalId": 12833840,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:35.465Z",
+    "updatedAt": "2026-03-18T10:56:35.465Z"
+  },
+  {
+    "id": "f866d79c-9911-4828-b101-deb7fccb1591",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833645",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "2cc2be519681272542a9658175298f63b777ccf80265306c9b354ccc6e6378a4",
+    "payload": {
+      "name": "1290 BLU                                   M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od uljane kože visokog kvaliteta jedinstvenog dizajna udobne i lagane",
+      "coverImage": "https://santos.rs/fajlovi/product/6-1.jpg",
+      "ean": "12833645",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/6-1.jpg",
+        "https://santos.rs/fajlovi/product/6-2.jpg"
+      ],
+      "parentEan": "12833645",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "8950.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128336",
+      "externalId": 12833645,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "45"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:35.339Z",
+    "updatedAt": "2026-03-18T10:56:35.339Z"
+  },
+  {
+    "id": "237cc6d7-c93d-4135-abbb-52cf2dcf4164",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833644",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "3ddc063f6f93bf594b6e53b78a26e7997cb654d5b5d0acafd62af915af46e331",
+    "payload": {
+      "name": "1290 BLU",
+      "description": "Santos &amp; Santorini cipele su izrađene od uljane kože visokog kvaliteta jedinstvenog dizajna udobne i lagane",
+      "coverImage": "https://santos.rs/fajlovi/product/6-1.jpg",
+      "ean": "12833644",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/6-1.jpg",
+        "https://santos.rs/fajlovi/product/6-2.jpg"
+      ],
+      "parentEan": "12833644",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "8950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128336",
+      "externalId": 12833644,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "44"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:35.216Z",
+    "updatedAt": "2026-03-18T10:56:35.216Z"
+  },
+  {
+    "id": "2ab0fd0f-c26b-4ebe-9a32-b255d2fd7a93",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833643",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "62f74b13cf9c3c52dd63d47ee9710e1e4491e03ba4e7726df5b1a8a2694b0ca6",
+    "payload": {
+      "name": "1290 BLU",
+      "description": "Santos &amp; Santorini cipele su izrađene od uljane kože visokog kvaliteta jedinstvenog dizajna udobne i lagane",
+      "coverImage": "https://santos.rs/fajlovi/product/6-1.jpg",
+      "ean": "12833643",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/6-1.jpg",
+        "https://santos.rs/fajlovi/product/6-2.jpg"
+      ],
+      "parentEan": "12833643",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "8950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128336",
+      "externalId": 12833643,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:35.081Z",
+    "updatedAt": "2026-03-18T10:56:35.081Z"
+  },
+  {
+    "id": "ce24cccd-b23b-4944-8a31-0f55325d2b27",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833642",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "57536dd103d59bd6f037e319f97e005d13ccfb0684439329d6af3c07891f10ed",
+    "payload": {
+      "name": "1290 BLU",
+      "description": "Santos &amp; Santorini cipele su izrađene od uljane kože visokog kvaliteta jedinstvenog dizajna udobne i lagane",
+      "coverImage": "https://santos.rs/fajlovi/product/6-1.jpg",
+      "ean": "12833642",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/6-1.jpg",
+        "https://santos.rs/fajlovi/product/6-2.jpg"
+      ],
+      "parentEan": "12833642",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "8950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128336",
+      "externalId": 12833642,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:34.958Z",
+    "updatedAt": "2026-03-18T10:56:34.958Z"
+  },
+  {
+    "id": "867119b8-ab4f-4be4-a437-6979943daf48",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833640",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "f6e2c207e2088ee7a9dfd632c892ace3dcd1620204f83acfda65419636bf33a3",
+    "payload": {
+      "name": "1290 BLU",
+      "description": "Santos &amp; Santorini cipele su izrađene od uljane kože visokog kvaliteta jedinstvenog dizajna udobne i lagane",
+      "coverImage": "https://santos.rs/fajlovi/product/6-1.jpg",
+      "ean": "12833640",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/6-1.jpg",
+        "https://santos.rs/fajlovi/product/6-2.jpg"
+      ],
+      "parentEan": "12833640",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "8950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128336",
+      "externalId": 12833640,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:34.835Z",
+    "updatedAt": "2026-03-18T10:56:34.835Z"
+  },
+  {
+    "id": "91a284ec-7b8b-4197-910a-24bf38dbbb79",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833545",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "5e75408241dbd8fbdbb93c4aeea38fd9a19aa34bd68cb564d675cb79f4984c56",
+    "payload": {
+      "name": "4002 BLU                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/7-1.jpg",
+      "ean": "12833545",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/7-1.jpg",
+        "https://santos.rs/fajlovi/product/7-2.jpg"
+      ],
+      "parentEan": "12833545",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128335",
+      "externalId": 12833545,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "45"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:34.694Z",
+    "updatedAt": "2026-03-18T10:56:34.694Z"
+  },
+  {
+    "id": "786bd3b8-242d-4eae-89e3-2cc0f7482843",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833544",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "f5ef72bbec2cc659dfa90ad15f3871b76379748d89f35d043ed8342e9b963561",
+    "payload": {
+      "name": "4002 BLU                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/7-1.jpg",
+      "ean": "12833544",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/7-1.jpg",
+        "https://santos.rs/fajlovi/product/7-2.jpg"
+      ],
+      "parentEan": "12833544",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128335",
+      "externalId": 12833544,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "44"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:34.568Z",
+    "updatedAt": "2026-03-18T10:56:34.568Z"
+  },
+  {
+    "id": "ff7d4d0c-4127-4e59-b03c-cfa44c0fcba7",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833543",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "fdc05aaba8eaa1d62ad5f441e46637fb3ca0e3c6e9cd36cfa93e36177b165a74",
+    "payload": {
+      "name": "4002 BLU                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/7-1.jpg",
+      "ean": "12833543",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/7-1.jpg",
+        "https://santos.rs/fajlovi/product/7-2.jpg"
+      ],
+      "parentEan": "12833543",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128335",
+      "externalId": 12833543,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:34.445Z",
+    "updatedAt": "2026-03-18T10:56:34.445Z"
+  },
+  {
+    "id": "75bb8ad3-4430-4970-8c65-1e8bc65fdede",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833542",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "1a282884eef8a61a52b8713bcbc281e1c18602fd5c4e4f589df5d187871839b1",
+    "payload": {
+      "name": "4002 BLU                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/7-1.jpg",
+      "ean": "12833542",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/7-1.jpg",
+        "https://santos.rs/fajlovi/product/7-2.jpg"
+      ],
+      "parentEan": "12833542",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 2,
+      "sku": "128335",
+      "externalId": 12833542,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:34.313Z",
+    "updatedAt": "2026-03-18T10:56:34.313Z"
+  },
+  {
+    "id": "5247aeb5-e4eb-4647-8b0a-a48b9f80de01",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833541",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "f52d25f64b19119c60c26e6e5386a137004ea32703d6b910c080ec5616a0b138",
+    "payload": {
+      "name": "4002 BLU                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/7-1.jpg",
+      "ean": "12833541",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/7-1.jpg",
+        "https://santos.rs/fajlovi/product/7-2.jpg"
+      ],
+      "parentEan": "12833541",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128335",
+      "externalId": 12833541,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "41"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:34.186Z",
+    "updatedAt": "2026-03-18T10:56:34.186Z"
+  },
+  {
+    "id": "efba5172-1e66-4392-b434-84a9d334f99f",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833540",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "42979fc2e66e910b3cd5f332a557a922e4cf0d9564c6813db0ad9bb5452b667f",
+    "payload": {
+      "name": "4002 BLU                                    M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od kože visokog kvaliteta jedinstvenog dizajna. Udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/7-1.jpg",
+      "ean": "12833540",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/7-1.jpg",
+        "https://santos.rs/fajlovi/product/7-2.jpg"
+      ],
+      "parentEan": "12833540",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128335",
+      "externalId": 12833540,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:34.065Z",
+    "updatedAt": "2026-03-18T10:56:34.065Z"
+  },
+  {
+    "id": "cfc66a4e-f110-4c95-aea5-c3b8918051e7",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833445",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "c9245227689f70a6f9bc54a26e95b7118ab8a7eac8433931c25c59bc12340b02",
+    "payload": {
+      "name": "4002 BIANCO",
+      "description": "Santos &amp; Santorini cipele su izrađene od glatke kože visokog kvaliteta jedinstvenog dizajna udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+      "ean": "12833445",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-2.jpg"
+      ],
+      "parentEan": "12833445",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "9800.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128334",
+      "externalId": 12833445,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "45"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:33.939Z",
+    "updatedAt": "2026-03-18T10:56:33.939Z"
+  },
+  {
+    "id": "bf8b2aee-9196-441e-8fed-9eff529e68da",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833444",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "d7e4765419bef6008795acbe836a5bd259de8b34ae59f03cf02db67dbb0da9c3",
+    "payload": {
+      "name": "4002 BIANCO                             M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od glatke kože visokog kvaliteta jedinstvenog dizajna udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+      "ean": "12833444",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-2.jpg"
+      ],
+      "parentEan": "12833444",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 2,
+      "sku": "128334",
+      "externalId": 12833444,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "44"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:33.812Z",
+    "updatedAt": "2026-03-18T10:56:33.812Z"
+  },
+  {
+    "id": "d9f85604-db75-4942-a6a9-c764bb7139f9",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833443",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "7eb87a26c179ea1ecb2a5d68ff199f9ccd4748b9e1c6cdd1f3c115871dd8cb76",
+    "payload": {
+      "name": "4002 BIANCO                             M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od glatke kože visokog kvaliteta jedinstvenog dizajna udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+      "ean": "12833443",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-2.jpg"
+      ],
+      "parentEan": "12833443",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 2,
+      "sku": "128334",
+      "externalId": 12833443,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "43"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:33.676Z",
+    "updatedAt": "2026-03-18T10:56:33.676Z"
+  },
+  {
+    "id": "823ae461-1372-4410-a142-e3324175e59f",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833442",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "bedd5dfe4b0da80d4ffd29f656a215bb09b970c921e03f83f7f8fc7b3b6ba346",
+    "payload": {
+      "name": "128334",
+      "description": "Santos &amp; Santorini cipele su izrađene od glatke kože visokog kvaliteta jedinstvenog dizajna udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+      "ean": "12833442",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-2.jpg"
+      ],
+      "parentEan": "12833442",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "9800.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128334",
+      "externalId": 12833442,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:33.552Z",
+    "updatedAt": "2026-03-18T10:56:33.552Z"
+  },
+  {
+    "id": "280575fa-d3a0-4e93-9513-d6da87b24e9d",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833441",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "c868c48ebc8affc72b3920866a7a952615e1f6403f49657f50395251f1a076f1",
+    "payload": {
+      "name": "4002 BIANCO                             M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od glatke kože visokog kvaliteta jedinstvenog dizajna udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+      "ean": "12833441",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-2.jpg",
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-3.jpg"
+      ],
+      "parentEan": "12833441",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128334",
+      "externalId": 12833441,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "41"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:33.422Z",
+    "updatedAt": "2026-03-18T10:56:33.422Z"
+  },
+  {
+    "id": "19ee04bd-32f9-4e0f-bc54-37089cf663cc",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12833440",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "6d22df5ebe5d2e9bb99f32867e2b699f52ef10e758d3acf56237a6fa33227205",
+    "payload": {
+      "name": "4002 BIANCO                             M.Cipele",
+      "description": "Santos &amp; Santorini cipele su izrađene od glatke kože visokog kvaliteta jedinstvenog dizajna udobne i lagane.",
+      "coverImage": "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+      "ean": "12833440",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-1.jpg",
+        "https://santos.rs/fajlovi/product/Muške-Cipele-4002-BIANCO-2.jpg"
+      ],
+      "parentEan": "12833440",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "4990.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128334",
+      "externalId": 12833440,
+      "productType": "Sportska",
+      "category": "Sportska",
+      "attributes": {
+        "Velicina": [
+          "40"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:33.297Z",
+    "updatedAt": "2026-03-18T10:56:33.297Z"
+  },
+  {
+    "id": "c43ad56b-2890-4899-8903-65a1f7358924",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12825480",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "76ea3c44a3ece76b3ecd6c601a9da7626addf7e72feb022a883efc94d0a92509",
+    "payload": {
+      "name": "C8/81",
+      "description": "<p>Santos &amp; Santorini košulja od sateniziranog pamuka, regular slim kroja. Savršena  za svaku priliku poslovne, svečane prirode, kao i opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Karl 1.jpg",
+      "ean": "012825480",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Karl 1.jpg",
+        "https://santos.rs/fajlovi/product/Karl 2.jpg"
+      ],
+      "parentEan": "012825480",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "128254",
+      "externalId": 12825480,
+      "productType": "Košulje",
+      "category": "Košulje",
+      "attributes": {
+        "Velicina": [
+          "L"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:33.168Z",
+    "updatedAt": "2026-03-18T10:56:33.168Z"
+  },
+  {
+    "id": "b9988b68-d21a-4e4f-9fec-820f959fb8bd",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12824987",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "ca79bd4a22256b6f3ea1655ee12f34a783a213c1b1bb51e51e241c6a78c76089",
+    "payload": {
+      "name": "CASCAVEL/75                           M.Košulja",
+      "description": "<p>\n\nSantos &amp; Santorini košulja od sateniziranog pamuka, regular slim kroja. Savršena za svaku priliku - poslovne ili svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00455.jpg",
+      "ean": "012824987",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00455.jpg",
+        "https://santos.rs/fajlovi/product/STB06867.jpg"
+      ],
+      "parentEan": "012824987",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 4,
+      "sku": "128249",
+      "externalId": 12824987,
+      "productType": "Ostalo",
+      "category": "Ostalo",
+      "attributes": {
+        "Velicina": [
+          "4XL"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:33.046Z",
+    "updatedAt": "2026-03-18T10:56:33.046Z"
+  },
+  {
+    "id": "f15693ed-88df-4bd6-a58c-cdf4b567dc25",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12824986",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "2ef93e3420da3a927b2f1e8c3b1a0aa85ea2a45fc061279b39b66cee08f4c43e",
+    "payload": {
+      "name": "CASCAVEL/75                           M.Košulja",
+      "description": "<p>\n\nSantos &amp; Santorini košulja od sateniziranog pamuka, regular slim kroja. Savršena za svaku priliku - poslovne ili svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00455.jpg",
+      "ean": "012824986",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00455.jpg",
+        "https://santos.rs/fajlovi/product/STB06867.jpg"
+      ],
+      "parentEan": "012824986",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 7,
+      "sku": "128249",
+      "externalId": 12824986,
+      "productType": "Ostalo",
+      "category": "Ostalo",
+      "attributes": {
+        "Velicina": [
+          "3XL"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:32.918Z",
+    "updatedAt": "2026-03-18T10:56:32.918Z"
+  },
+  {
+    "id": "77922ac6-6d3e-4e6b-a19a-b734a3316859",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12824985",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "6c4d7677dbe7df054e41cadd69d5075c58bc1f630272ccc8585ce3a46b005532",
+    "payload": {
+      "name": "CASCAVEL/75                           M.Košulja",
+      "description": "<p>\n\nSantos &amp; Santorini košulja od sateniziranog pamuka, regular slim kroja. Savršena za svaku priliku - poslovne ili svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00455.jpg",
+      "ean": "012824985",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00455.jpg",
+        "https://santos.rs/fajlovi/product/STB06867.jpg"
+      ],
+      "parentEan": "012824985",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 4,
+      "sku": "128249",
+      "externalId": 12824985,
+      "productType": "Ostalo",
+      "category": "Ostalo",
+      "attributes": {
+        "Velicina": [
+          "XXL"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:32.790Z",
+    "updatedAt": "2026-03-18T10:56:32.790Z"
+  },
+  {
+    "id": "1067778f-f29c-4f9f-8d6e-b8d258a4ab40",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12824983",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "6392929675cab246806609558a76d079a758a42deee960de1662183b205106e7",
+    "payload": {
+      "name": "CASCAVEL/75                           M.Košulja",
+      "description": "<p>\n\nSantos &amp; Santorini košulja od sateniziranog pamuka, regular slim kroja. Savršena za svaku priliku - poslovne ili svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00455.jpg",
+      "ean": "012824983",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00455.jpg",
+        "https://santos.rs/fajlovi/product/STB06867.jpg"
+      ],
+      "parentEan": "012824983",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 1,
+      "sku": "128249",
+      "externalId": 12824983,
+      "productType": "Košulje",
+      "category": "Košulje",
+      "attributes": {
+        "Velicina": [
+          "XL"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:32.663Z",
+    "updatedAt": "2026-03-18T10:56:32.663Z"
+  },
+  {
+    "id": "d2cfb807-6eb9-4262-b05b-bb6955d987a8",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12824982",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "0b0ab7c8076ea6bb2465863039a67951da2d43d621c2abe797c3b8cb4b3e9052",
+    "payload": {
+      "name": "CASCAVEL/75                           M.Košulja",
+      "description": "<p>\n\nSantos &amp; Santorini košulja od sateniziranog pamuka, regular slim kroja. Savršena za svaku priliku - poslovne ili svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00455.jpg",
+      "ean": "012824982",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00455.jpg",
+        "https://santos.rs/fajlovi/product/STB06867.jpg"
+      ],
+      "parentEan": "012824982",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 3,
+      "sku": "128249",
+      "externalId": 12824982,
+      "productType": "Ostalo",
+      "category": "Ostalo",
+      "attributes": {
+        "Velicina": [
+          "S"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:32.534Z",
+    "updatedAt": "2026-03-18T10:56:32.534Z"
+  },
+  {
+    "id": "bae17453-7614-43b0-961b-59c9b1ef5417",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12824981",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "d2c4c338e850eeb1ba4f60002d908a4498dbbac9a40bfc76ceb99584bcc89668",
+    "payload": {
+      "name": "CASCAVEL/75                           M.Košulja",
+      "description": "<p>\n\nSantos &amp; Santorini košulja od sateniziranog pamuka, regular slim kroja. Savršena za svaku priliku - poslovne ili svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00455.jpg",
+      "ean": "012824981",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00455.jpg",
+        "https://santos.rs/fajlovi/product/STB06867.jpg"
+      ],
+      "parentEan": "012824981",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 6,
+      "sku": "128249",
+      "externalId": 12824981,
+      "productType": "Ostalo",
+      "category": "Ostalo",
+      "attributes": {
+        "Velicina": [
+          "M"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:32.404Z",
+    "updatedAt": "2026-03-18T10:56:32.404Z"
+  },
+  {
+    "id": "58a9d441-3ef5-40fb-a6cb-264e3799f760",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12824980",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "eadce1ccf85e07e99da67a783f0a8fe8e92780e0b726dcff448d872317888803",
+    "payload": {
+      "name": "CASCAVEL/75                           M.Košulja",
+      "description": "<p>\n\nSantos &amp; Santorini košulja od sateniziranog pamuka, regular slim kroja. Savršena za svaku priliku - poslovne ili svečane prirode, kao i za opuštene vikend varijante.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI00455.jpg",
+      "ean": "012824980",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI00455.jpg",
+        "https://santos.rs/fajlovi/product/STB06867.jpg"
+      ],
+      "parentEan": "012824980",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3950.00",
+      "vat": "20.00",
+      "stockLevel": 2,
+      "sku": "128249",
+      "externalId": 12824980,
+      "productType": "Ostalo",
+      "category": "Ostalo",
+      "attributes": {
+        "Velicina": [
+          "L"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:32.256Z",
+    "updatedAt": "2026-03-18T10:56:32.256Z"
+  },
+  {
+    "id": "976e42b5-b8e8-43bc-8872-3b3d14ff26fb",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12591142",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "bb516d14200a6ce1d6aa6f02e4851969113e9caf35bc5e032655343b82eae718",
+    "payload": {
+      "name": "08-TOBACCO",
+      "description": "<p>\n\nSantos&amp;Santorini cipele su jedinstvenog dizajna, proizvedene od visoko kvalitetne kože obrađene specijalnom laserskom metodom.\n\n\n<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/Tufnaste 04.jpg",
+      "ean": "012591142",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/Tufnaste 04.jpg",
+        "https://santos.rs/fajlovi/product/Tufnaste 01.jpg"
+      ],
+      "parentEan": "012591142",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "11900.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "125911",
+      "externalId": 12591142,
+      "productType": "Elegantna",
+      "category": "Elegantna",
+      "attributes": {
+        "Velicina": [
+          "42"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:32.130Z",
+    "updatedAt": "2026-03-18T10:56:32.130Z"
+  },
+  {
+    "id": "7a39f9d4-d40d-40b4-95ae-f1232bc518ad",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12349386",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "d7eed76279544536549ff8f9082ebcd1f8fbde99e0b09dcdf99b445fe2c5a1e1",
+    "payload": {
+      "name": "Muška košulja",
+      "description": "Santos & Santorini košulja od sateniziranog pamuka regular slim savršena  za svaku priliku poslovne,svečane kao i opuštene vikend varijante",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5436.jpg",
+      "ean": "12349386",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5436.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5438.jpg"
+      ],
+      "parentEan": "12349386",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "0.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "123493",
+      "externalId": 12349386,
+      "productType": "Ostalo",
+      "category": "Ostalo",
+      "attributes": {}
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:32.004Z",
+    "updatedAt": "2026-03-18T10:56:32.004Z"
+  },
+  {
+    "id": "a39a1bc9-eccb-45ab-ae26-9a8c99e6c483",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12349385",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "f5e6b303a924adffce9bd8fe4250651c82052e1e568706f9b92cc91fd11c1002",
+    "payload": {
+      "name": "C8/11",
+      "description": "Santos &amp; Santorini košulja od sateniziranog pamuka, regular slim kroja. Savršena  za svaku priliku poslovne ili svečane prilike, kao i opuštene vikend varijante.",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5436.jpg",
+      "ean": "12349385",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5436.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5438.jpg"
+      ],
+      "parentEan": "12349385",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "3650.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "123493",
+      "externalId": 12349385,
+      "productType": "Košulje",
+      "category": "Košulje",
+      "attributes": {
+        "Velicina": [
+          "XXL"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:31.879Z",
+    "updatedAt": "2026-03-18T10:56:31.879Z"
+  },
+  {
+    "id": "958384d0-c553-44d1-81d1-81db91d74eaf",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12349383",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "d6d76100f55d60cf8cda83735889b21f7fc5d08442c070c9cbf45015ed3d08c1",
+    "payload": {
+      "name": "Muška košulja",
+      "description": "Santos & Santorini košulja od sateniziranog pamuka regular slim savršena  za svaku priliku poslovne,svečane kao i opuštene vikend varijante",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5436.jpg",
+      "ean": "12349383",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5436.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5438.jpg"
+      ],
+      "parentEan": "12349383",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "0.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "123493",
+      "externalId": 12349383,
+      "productType": "Ostalo",
+      "category": "Ostalo",
+      "attributes": {}
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:31.753Z",
+    "updatedAt": "2026-03-18T10:56:31.753Z"
+  },
+  {
+    "id": "28b986a3-c804-4d0f-be38-a183f137b5d3",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12349382",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "e2b891c84e771c3455f22d0d41b9cd131c78ea81f463b5ba081936f2abda64fa",
+    "payload": {
+      "name": "Muška košulja",
+      "description": "Santos & Santorini košulja od sateniziranog pamuka regular slim savršena  za svaku priliku poslovne,svečane kao i opuštene vikend varijante",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5436.jpg",
+      "ean": "12349382",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5436.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5438.jpg"
+      ],
+      "parentEan": "12349382",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "0.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "123493",
+      "externalId": 12349382,
+      "productType": "Ostalo",
+      "category": "Ostalo",
+      "attributes": {}
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:31.621Z",
+    "updatedAt": "2026-03-18T10:56:31.621Z"
+  },
+  {
+    "id": "37228b9c-aeb9-4c27-a5f7-48f888c31d41",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12349380",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "1bd5b93d4a5fa8838b3f948f433b2e27d40988b6e5805b048509377902e66845",
+    "payload": {
+      "name": "Muška košulja",
+      "description": "Santos & Santorini košulja od sateniziranog pamuka regular slim savršena  za svaku priliku poslovne,svečane kao i opuštene vikend varijante",
+      "coverImage": "https://santos.rs/fajlovi/product/ANS_5436.jpg",
+      "ean": "12349380",
+      "brand": "Santos&Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/ANS_5436.jpg",
+        "https://santos.rs/fajlovi/product/ANS_5438.jpg"
+      ],
+      "parentEan": "12349380",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "0.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "123493",
+      "externalId": 12349380,
+      "productType": "Ostalo",
+      "category": "Ostalo",
+      "attributes": {}
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:31.495Z",
+    "updatedAt": "2026-03-18T10:56:31.495Z"
+  },
+  {
+    "id": "be2aaf0d-a616-4468-a7ba-5a6bc13c3fab",
+    "runId": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "entityType": "product",
+    "entityId": "12231480",
+    "status": "failed",
+    "message": "Missing Ananas credentials for stage. Configure env vars for selected environment.",
+    "payloadHash": "e6e27a1237ba8f21bb46758266811e0a896a7c3194a51e070bbcc7b92a6c3aff",
+    "payload": {
+      "name": "M. Jakna SNT31/L41/1",
+      "description": "<p>Santos&amp;Santorini prošivena jakna crne boje kariranih detalja na ramenima i laktovima, sa visokom kragnom i dugim rukavima. Džepovi na bokovima i sa unutrašnjim džepom. Sa rajsferšlusom i kopčanjem na dugmad napred i blago zaobljenih rubova.<br></p>",
+      "coverImage": "https://santos.rs/fajlovi/product/BRI_8853.jpg",
+      "ean": "012231480",
+      "brand": "Santos & Santorini",
+      "gallery": [
+        "https://santos.rs/fajlovi/product/BRI_8853.jpg",
+        "https://santos.rs/fajlovi/product/BRI_8852.jpg"
+      ],
+      "parentEan": "012231480",
+      "packageWeightValue": "0.52",
+      "packageWeightUnit": "kg",
+      "basePrice": "9950.00",
+      "vat": "20.00",
+      "stockLevel": 0,
+      "sku": "122314",
+      "externalId": 12231480,
+      "productType": "Jakne",
+      "category": "Jakne",
+      "attributes": {
+        "Velicina": [
+          "L"
+        ]
+      }
+    },
+    "response": null,
+    "retryOfItemId": null,
+    "createdAt": "2026-03-18T10:56:31.353Z",
+    "updatedAt": "2026-03-18T10:56:31.353Z"
+  }
+]

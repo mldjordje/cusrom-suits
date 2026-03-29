@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState } from "react";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
 import { suits, vestStyles, fabrics as fallbackFabrics } from "../data/options";
@@ -291,7 +291,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
   };
 
   return (
-    <motion.div
+    <m.div
       className="flex h-full flex-col lg:sticky lg:top-8 lg:max-h-[calc(100vh-4rem)]"
       variants={sidebarVariants}
       initial="hidden"
@@ -427,14 +427,20 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
                           onClick={() => dispatch({ type: "SET_COLOR", payload: fabric.id })}
                           className="w-full text-left"
                         >
-                          <div className="relative h-20 w-full overflow-hidden">
-                            <Image
-                              src={fabric.texture}
-                              alt={fabric.name}
-                              fill
-                              sizes="96px"
-                              style={{ objectFit: "cover" }}
-                            />
+                          <div className="relative h-20 w-full overflow-hidden bg-gray-100">
+                            {fabric.texture ? (
+                              <Image
+                                src={fabric.texture}
+                                alt={fabric.name}
+                                fill
+                                sizes="96px"
+                                style={{ objectFit: "cover" }}
+                              />
+                            ) : (
+                              <div className="flex h-full items-center justify-center text-[10px] text-gray-400">
+                                Nema slike
+                              </div>
+                            )}
                             <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/15 to-transparent opacity-0 transition group-hover:opacity-100" />
                           </div>
                           <div className={`px-2.5 py-2.5 text-[11px] ${isActive ? "text-gray-900" : "text-gray-600"}`}>
@@ -712,7 +718,7 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
         )}
       </div>
       <FabricDetailModal fabric={detailFabric} onClose={() => setDetailFabric(null)} />
-    </motion.div>
+    </m.div>
   );
 };
 

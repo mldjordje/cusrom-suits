@@ -2,7 +2,7 @@
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { Slider, Switch, TextField, FormControlLabel } from "@mui/material";
-import { motion } from "framer-motion";
+import { m } from "framer-motion";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
 import { computePrice } from "../utils/price";
@@ -402,7 +402,7 @@ function MeasurePageContent() {
         <div className="absolute -left-24 top-40 h-[260px] w-[260px] rounded-full bg-[radial-gradient(circle_at_center,_rgba(187,208,205,0.4),_rgba(187,208,205,0))]" />
       </div>
       <div className="relative mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-        <motion.header {...fadeUp} className="mb-10 space-y-4">
+        <m.header {...fadeUp} className="mb-10 space-y-4">
           <div className="inline-flex items-center gap-3 rounded-full border border-white/70 bg-white/70 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.35em] text-[#6f625b] shadow-sm">
             <span className="h-2 w-2 rounded-full bg-[#ff7a00]" />
             Korak 2/3 · Mere
@@ -434,11 +434,11 @@ function MeasurePageContent() {
               );
             })}
           </div>
-        </motion.header>
+        </m.header>
 
         <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <div className="space-y-6">
-            <motion.section {...fadeUp} transition={{ duration: 0.6, delay: 0.05 }}>
+            <m.section {...fadeUp} transition={{ duration: 0.6, delay: 0.05 }}>
               <div className="rounded-[32px] border border-[#eadfd8] bg-white/85 p-6 shadow-[0_25px_70px_rgba(20,15,12,0.08)]">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -486,9 +486,9 @@ function MeasurePageContent() {
                   />
                 </div>
               </div>
-            </motion.section>
+            </m.section>
 
-            <motion.section {...fadeUp} transition={{ duration: 0.6, delay: 0.12 }}>
+            <m.section {...fadeUp} transition={{ duration: 0.6, delay: 0.12 }}>
               <div className="rounded-[32px] border border-[#eadfd8] bg-white/90 p-6 shadow-[0_24px_60px_rgba(20,15,12,0.08)]">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
@@ -550,9 +550,9 @@ function MeasurePageContent() {
                   <p className="mt-6 text-sm text-[#7c716a]">Unesite osnovne podatke da dobijete preporuku.</p>
                 )}
               </div>
-            </motion.section>
+            </m.section>
 
-            <motion.section {...fadeUp} transition={{ duration: 0.6, delay: 0.18 }}>
+            <m.section {...fadeUp} transition={{ duration: 0.6, delay: 0.18 }}>
               <div className="rounded-[32px] border border-[#eadfd8] bg-white/95 p-6 shadow-[0_24px_60px_rgba(20,15,12,0.08)]">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
@@ -632,11 +632,11 @@ function MeasurePageContent() {
                   </div>
                 </form>
               </div>
-            </motion.section>
+            </m.section>
           </div>
 
           <div className="space-y-6">
-            <motion.section {...fadeUp} transition={{ duration: 0.6, delay: 0.1 }}>
+            <m.section {...fadeUp} transition={{ duration: 0.6, delay: 0.1 }}>
               <div className="rounded-[32px] border border-[#eadfd8] bg-white/95 p-6 shadow-[0_24px_60px_rgba(20,15,12,0.08)]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#6f625b]">Vas dizajn</p>
                 <div className="mt-3 flex items-baseline justify-between">
@@ -724,9 +724,9 @@ function MeasurePageContent() {
                   </button>
                 </div>
               </div>
-            </motion.section>
+            </m.section>
 
-            <motion.section {...fadeUp} transition={{ duration: 0.6, delay: 0.14 }}>
+            <m.section {...fadeUp} transition={{ duration: 0.6, delay: 0.14 }}>
               <div className="rounded-[32px] border border-[#eadfd8] bg-white/95 p-6 shadow-[0_20px_60px_rgba(20,15,12,0.08)]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#6f625b]">Fit vodič</p>
                 <h3 className="mt-3 text-xl font-semibold text-[#1c1917]">Brze smernice</h3>
@@ -745,9 +745,9 @@ function MeasurePageContent() {
                   </li>
                 </ul>
               </div>
-            </motion.section>
+            </m.section>
 
-            <motion.section {...fadeUp} transition={{ duration: 0.6, delay: 0.18 }}>
+            <m.section {...fadeUp} transition={{ duration: 0.6, delay: 0.18 }}>
               <div className="rounded-[32px] border border-[#eadfd8] bg-[#101010] p-6 text-white shadow-[0_30px_80px_rgba(0,0,0,0.25)]">
                 <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-white/60">Sta sledi</p>
                 <h3 className="mt-3 text-2xl font-semibold">Potvrda i merenje</h3>
@@ -766,7 +766,7 @@ function MeasurePageContent() {
                   </li>
                 </ul>
               </div>
-            </motion.section>
+            </m.section>
           </div>
         </div>
       </div>

@@ -1,0 +1,77 @@
+[
+  {
+    "id": "c8dc02be-7f46-45ba-bc2a-0e79e8354273",
+    "domain": "stock_inbound",
+    "status": "failed",
+    "environment": "production",
+    "mode": "delta",
+    "trigger": "manual",
+    "startedAt": "2026-03-18T10:57:12.242Z",
+    "finishedAt": "2026-03-18T10:57:12.344Z",
+    "durationMs": 229,
+    "counters": {
+      "total": 0,
+      "success": 0,
+      "failed": 1,
+      "skipped": 0
+    },
+    "summary": "Sync completed with issues.",
+    "meta": {
+      "fatalError": "Missing STOCK_SYNC_SOURCE_ZIP_URL env variable."
+    },
+    "createdAt": "2026-03-18T10:57:12.242Z",
+    "updatedAt": "2026-03-18T10:57:12.344Z"
+  },
+  {
+    "id": "6840dc62-39e9-482f-a472-b222c138749e",
+    "domain": "stock_outbound",
+    "status": "failed",
+    "environment": "production",
+    "mode": "delta",
+    "trigger": "manual",
+    "startedAt": "2026-03-18T10:57:12.228Z",
+    "finishedAt": "2026-03-18T10:57:13.184Z",
+    "durationMs": 1075,
+    "counters": {
+      "total": 0,
+      "success": 0,
+      "failed": 1,
+      "skipped": 0
+    },
+    "summary": "Sync completed with issues.",
+    "meta": {
+      "fatalError": "No outbound CSV files were generated."
+    },
+    "createdAt": "2026-03-18T10:57:12.228Z",
+    "updatedAt": "2026-03-18T10:57:13.184Z"
+  },
+  {
+    "id": "dda429a3-f07e-420e-9f52-f5f79cc4692a",
+    "domain": "ananas",
+    "status": "failed",
+    "environment": "stage",
+    "mode": "delta",
+    "trigger": "manual",
+    "startedAt": "2026-03-18T10:56:23.750Z",
+    "finishedAt": "2026-03-18T10:56:46.800Z",
+    "durationMs": 23168,
+    "counters": {
+      "total": 120,
+      "success": 0,
+      "failed": 120,
+      "skipped": 0
+    },
+    "summary": "Sync completed with issues.",
+    "meta": {
+      "catalogCount": 120,
+      "changedProducts": 120,
+      "discounts": {
+        "create": 0,
+        "update": 0,
+        "cancel": 0
+      }
+    },
+    "createdAt": "2026-03-18T10:56:23.750Z",
+    "updatedAt": "2026-03-18T10:56:46.800Z"
+  }
+]

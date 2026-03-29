@@ -18,12 +18,18 @@ const StorefrontMobileShopNav = dynamic(
   { ssr: false },
 );
 
+const StorefrontSearchOverlay = dynamic(
+  () => import("@/app/components/storefront/StorefrontSearchOverlay"),
+  { ssr: false },
+);
+
 export default function StorefrontRuntimeShell() {
   return (
     <>
       <StorefrontPreloader />
       <StorefrontViewportEffects />
       <StorefrontCartDrawer />
+      <StorefrontSearchOverlay />
       <StorefrontMobileShopNav />
     </>
   );

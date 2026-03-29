@@ -1,7 +1,7 @@
 "use client";
 /* eslint-disable @next/next/no-img-element */
 
-import { AnimatePresence, motion, type Variants } from "framer-motion";
+import { AnimatePresence, m, type Variants } from "framer-motion";
 import React, { useCallback, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { SuitState } from "../hooks/useSuitConfigurator";
 import { suits, vestStyles, fabrics as fallbackFabrics } from "../data/options";
@@ -207,7 +207,7 @@ const Drawer = ({
 }) => {
   return (
     <div className="fixed inset-0 z-[60] flex lg:hidden">
-      <motion.div
+      <m.div
         className="pointer-events-auto flex h-full w-[56vw] min-w-[210px] max-w-[280px] flex-col overflow-hidden transform bg-white shadow-2xl"
         initial="hidden"
         animate="visible"
@@ -215,8 +215,8 @@ const Drawer = ({
         variants={drawerPanelVariants}
       >
         {children}
-      </motion.div>
-      <motion.button
+      </m.div>
+      <m.button
         aria-label="Close"
         onClick={onClose}
         className="pointer-events-auto h-full flex-1 bg-black/25"

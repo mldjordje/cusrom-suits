@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { motion, type Variants } from "framer-motion";
+import { m, type Variants } from "framer-motion";
 import { suits, fabrics as fallbackFabrics } from "./data/options";
 import { useSuitConfigurator } from "./hooks/useSuitConfigurator";
 import { useFabrics } from "./hooks/useFabrics";
@@ -42,29 +42,29 @@ export default function CustomSuitsPage() {
   }, [config.colorId, dispatch, firstFabricId]);
 
   const configuratorVariants: Variants = {
-    hidden: { opacity: 0, y: 30 },
+    hidden: { opacity: 0, y: 16 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.9, ease: [0.4, 0, 0.2, 1] },
+      transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
     },
   };
 
   const columnVariants: Variants = {
-    hidden: { opacity: 0, y: 25 },
+    hidden: { opacity: 0, y: 12 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.75, ease: [0.4, 0, 0.2, 1] },
+      transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
     },
   };
 
   const controlsVariants: Variants = {
-    hidden: { opacity: 0, y: 35 },
+    hidden: { opacity: 0, y: 16 },
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.6, ease: [0.4, 0, 0.2, 1] },
+      transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
     },
   };
   const price = React.useMemo(() => computePrice(config, suits), [config]);
@@ -170,7 +170,7 @@ export default function CustomSuitsPage() {
       <div className="relative z-20">
         <StickyMiniNav variant="compact" />
       </div>
-      <motion.div
+      <m.div
         id="konfigurator"
         className="mx-auto w-full max-w-[1600px] px-3 pb-10 pt-12 sm:px-4 sm:pb-24 sm:pt-24 lg:px-2 lg:pb-16"
         variants={configuratorVariants}
@@ -178,7 +178,7 @@ export default function CustomSuitsPage() {
         animate="visible"
       >
         <div className="relative isolate flex min-h-[100svh] flex-col gap-2 sm:gap-3 lg:min-h-[78vh] lg:grid lg:grid-cols-[420px_minmax(0,1fr)_280px] lg:gap-8 xl:grid-cols-[480px_minmax(0,1fr)_300px]">
-          <motion.section
+          <m.section
             className="order-1 hidden w-full lg:order-1 lg:block"
             variants={columnVariants}
             initial="hidden"
@@ -189,8 +189,8 @@ export default function CustomSuitsPage() {
                 <Sidebar config={config} dispatch={dispatch} showSummary={false} showFooter={false} />
               </div>
             </div>
-          </motion.section>
-          <motion.section
+          </m.section>
+          <m.section
             className={`order-2 relative flex w-full items-center justify-center overflow-visible p-0 sm:rounded-[28px] sm:bg-white/90 sm:p-3 sm:shadow-[0_20px_70px_rgba(15,23,42,0.12)] sm:ring-1 sm:ring-black/5 sm:backdrop-blur-sm lg:order-2 lg:h-full lg:bg-transparent lg:p-0 lg:shadow-none lg:ring-0 lg:backdrop-blur-0 lg:rounded-none transition-transform duration-300 ease-out origin-left ${
               activeMobilePanel ? "translate-x-20 scale-[0.86] sm:translate-x-24 sm:scale-[0.88]" : "translate-x-0"
             } lg:translate-x-0 lg:scale-100 will-change-transform transform-gpu`}
@@ -208,8 +208,8 @@ export default function CustomSuitsPage() {
                 fabricsLoading={fabricsLoading}
               />
             </div>
-          </motion.section>
-          <motion.aside
+          </m.section>
+          <m.aside
             className="order-3 hidden w-full lg:block"
             variants={columnVariants}
             initial="hidden"
@@ -282,17 +282,17 @@ export default function CustomSuitsPage() {
                 <p className="mt-4 text-[11px] text-gray-500">Izrada traje oko 3 nedelje. Dostava je besplatna.</p>
               </div>
             </div>
-          </motion.aside>
+          </m.aside>
         </div>
-        <motion.div variants={controlsVariants} initial="hidden" animate="visible">
+        <m.div variants={controlsVariants} initial="hidden" animate="visible">
           <MobileControls
             config={config}
             dispatch={dispatch}
             activePanel={activeMobilePanel}
             onPanelChange={setActiveMobilePanel}
           />
-        </motion.div>
-      </motion.div>
+        </m.div>
+      </m.div>
     </div>
   );
 }

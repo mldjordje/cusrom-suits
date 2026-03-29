@@ -45,12 +45,52 @@ import { PANTS_STRIPE_TUNING } from "./pantsStripeTuning";
 ===================================================================================== */
 const cdnTransparent = getTransparentCdnBase();
 const SHIRT_PAIR = cdnPair("shirt_to_jacket_open.png");
+// Mask canvases are rendered at half the display size — CSS scales them up,
+// so the visual result is identical but the canvas operations run ~4× faster.
 const JACKET_CANVAS = { w: 600, h: 733 } as const;
 const PANTS_CANVAS = { w: 600, h: 350 } as const;
 const PANTS_SEAM_MASK_SRC = "/assets/suits/masks/pants_seam.png";
 const EMPTY_TEXTURE_DATA_URL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4nGNgYAAAAAMAASsJTYQAAAAASUVORK5CYII=";
+const IMAGE_LOAD_TIMEOUT_MS = 8000;
+const createTimedImageLoader = (crossOrigin?: string | null) => (url: string) =>
+  new Promise<HTMLImageElement>((resolve, reject) => {
+    const img = new Image();
+    let settled = false;
+    const cleanup = () => {
+      img.onload = null;
+      img.onerror = null;
+      window.clearTimeout(timeoutId);
+    };
+    const timeoutId = window.setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error(`Image load timeout for ${url}`));
+    }, IMAGE_LOAD_TIMEOUT_MS);
+    if (crossOrigin) img.crossOrigin = crossOrigin;
+    img.onload = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resolve(img);
+    };
+    img.onerror = () => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      reject(new Error(`Image load failed for ${url}`));
+    };
+    img.src = url;
+  });
+/** Load an image, trying primary URL first then optional fallback. Returns null on failure. */
+const loadImgWithFallback = (primary: string, fallback?: string): Promise<HTMLImageElement | null> => {
+  const tryUrl = createTimedImageLoader("anonymous");
+  return tryUrl(primary).catch(() => (fallback ? tryUrl(fallback).catch(() => null) : null));
+};
+
 const MASK_BLEED_PX = 1.1;
+const PANTS_MASK_BLEED_PX = 0;
 const SPLIT_MASK_BLEED_PX = 0;
 const TEXTURE_TILE_PX = 75;
 const STRIPE_TILE_SCALE = 0.5;
@@ -173,14 +213,7 @@ const parseNumber = (value: unknown) => {
   return null;
 };
 
-const loadCrossOriginImage = (url: string) =>
-  new Promise<HTMLImageElement>((resolve, reject) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = reject;
-    img.src = url;
-  });
+const loadCrossOriginImage = createTimedImageLoader("anonymous");
 
 const normalizeHex = (value?: string | null) => {
   if (!value) return null;
@@ -722,20 +755,8 @@ const SuitPreview = ({
       setEffectsReady(true);
       return;
     }
-    const requestIdle = (window as any).requestIdleCallback as ((cb: () => void, options?: { timeout: number }) => number) | undefined;
-    const cancelIdle = (window as any).cancelIdleCallback as ((id: number) => void) | undefined;
-    let idleId: number | null = null;
-    let timeoutId: number | null = null;
-    const run = () => setEffectsReady(true);
-    if (requestIdle) {
-      idleId = requestIdle(run, { timeout: 500 });
-    } else {
-      timeoutId = window.setTimeout(run, 60);
-    }
-    return () => {
-      if (idleId !== null && cancelIdle) cancelIdle(idleId);
-      if (timeoutId !== null) window.clearTimeout(timeoutId);
-    };
+    const tid = window.setTimeout(() => setEffectsReady(true), 60);
+    return () => window.clearTimeout(tid);
   }, []);
 
   const currentSuit = useMemo(
@@ -922,7 +943,7 @@ const SuitPreview = ({
     const name = String((selectedFabric as any)?.name || "");
     const texture = String(fabricTexture || "");
     const haystack = `${name} ${texture}`.toLowerCase();
-    return /pinstripe|stripe|linije|lines|pruga|pruge/.test(haystack);
+    return /pinstripe|stripe|linije|lines|line|pruga|pruge/.test(haystack);
   }, [fabricTexture, selectedFabric]);
   const stripeSpacingBaseOverride = useMemo(
     () => parseNumber((selectedFabric as any)?.stripeSpacing ?? (selectedFabric as any)?.stripe_spacing),
@@ -1939,14 +1960,7 @@ const SuitPreview = ({
     const img = new Image();
     img.crossOrigin = "anonymous";
     let cancelled = false;
-    let idleId: number | null = null;
     let timeoutId: number | null = null;
-    const requestIdle = (typeof window !== "undefined" ? (window as any).requestIdleCallback : undefined) as
-      | ((cb: () => void, options?: { timeout: number }) => number)
-      | undefined;
-    const cancelIdle = (typeof window !== "undefined" ? (window as any).cancelIdleCallback : undefined) as
-      | ((id: number) => void)
-      | undefined;
     img.onload = () => {
       const run = () => {
         if (cancelled) return;
@@ -2035,11 +2049,7 @@ const SuitPreview = ({
 
         } catch {}
       };
-      if (requestIdle) {
-        idleId = requestIdle(run, { timeout: 250 });
-      } else {
-        timeoutId = window.setTimeout(run, 0);
-      }
+      timeoutId = window.setTimeout(run, 0);
     };
     img.onerror = () => {
       setFabricAvgColor(null);
@@ -2049,7 +2059,6 @@ const SuitPreview = ({
     img.src = fabricTexture;
     return () => {
       cancelled = true;
-      if (idleId !== null && cancelIdle) cancelIdle(idleId);
       if (timeoutId !== null) window.clearTimeout(timeoutId);
     };
   }, [fabricTexture, isStripeFabric, lowPowerMode, pantsStripeZoneEligible, patternStripe]);
@@ -2072,84 +2081,55 @@ const SuitPreview = ({
       return;
     }
     let cancelled = false;
-    let idleId: number | null = null;
-    let timeoutId: number | null = null;
-    const requestIdle = (typeof window !== "undefined" ? (window as any).requestIdleCallback : undefined) as
-      | ((cb: () => void, options?: { timeout: number }) => number)
-      | undefined;
-    const cancelIdle = (typeof window !== "undefined" ? (window as any).cancelIdleCallback : undefined) as
-      | ((id: number) => void)
-      | undefined;
-
-    const run = () => {
+    const tid = window.setTimeout(async () => {
       if (cancelled) return;
-      (async () => {
-        try {
-          const c = document.createElement("canvas");
-          c.width = JACKET_CANVAS.w;
-          c.height = JACKET_CANVAS.h;
-          const ctx = c.getContext("2d");
-          if (!ctx) return;
-          ctx.clearRect(0, 0, c.width, c.height);
-          ctx.globalCompositeOperation = "source-over";
-          for (const layer of vestFabricLayers) {
-            const tryLoad = (url: string) =>
-              new Promise<HTMLImageElement>((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => resolve(img);
-                img.onerror = reject;
-                img.src = url;
-              });
-            let img: HTMLImageElement | null = null;
-            try {
-              img = await tryLoad(layer.src);
-            } catch {
-              img = null;
-            }
-            if (!img) continue;
-            const scale = Math.min(c.width / img.width, c.height / img.height);
-            const w = Math.round(img.width * scale);
-            const h = Math.round(img.height * scale);
-            const dx = Math.round((c.width - w) / 2);
-            const dy = Math.round((c.height - h) / 2);
-            ctx.drawImage(img, dx, dy, w, h);
-          }
-          if (MASK_BLEED_PX > 0) {
-            const temp = document.createElement("canvas");
-            temp.width = c.width;
-            temp.height = c.height;
-            const tctx = temp.getContext("2d");
-            if (tctx) {
-              tctx.drawImage(c, 0, 0);
-              ctx.clearRect(0, 0, c.width, c.height);
-              ctx.drawImage(temp, 0, 0);
-              ctx.filter = `blur(${MASK_BLEED_PX}px)`;
-              ctx.drawImage(temp, 0, 0);
-              ctx.filter = "none";
-            }
-          }
-          if (!cancelled) {
-            const url = c.toDataURL("image/png");
-            VEST_MASK_CACHE.set(vestMaskKey, url);
-            setVestUnionMask(url);
-          }
-        } catch {
-          if (!cancelled) setVestUnionMask(null);
+      try {
+        const c = document.createElement("canvas");
+        c.width = JACKET_CANVAS.w;
+        c.height = JACKET_CANVAS.h;
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.globalCompositeOperation = "source-over";
+        const imgs = await Promise.all(
+          vestFabricLayers.map((layer) => loadImgWithFallback(layer.src))
+        );
+        for (const img of imgs) {
+          if (!img) continue;
+          const scale = Math.min(c.width / img.width, c.height / img.height);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const dx = Math.round((c.width - w) / 2);
+          const dy = Math.round((c.height - h) / 2);
+          ctx.drawImage(img, dx, dy, w, h);
         }
-      })();
-    };
-
-    if (requestIdle) {
-      idleId = requestIdle(run, { timeout: 400 });
-    } else {
-      timeoutId = window.setTimeout(run, 0);
-    }
+        if (MASK_BLEED_PX > 0) {
+          const temp = document.createElement("canvas");
+          temp.width = c.width;
+          temp.height = c.height;
+          const tctx = temp.getContext("2d");
+          if (tctx) {
+            tctx.drawImage(c, 0, 0);
+            ctx.clearRect(0, 0, c.width, c.height);
+            ctx.drawImage(temp, 0, 0);
+            ctx.filter = `blur(${MASK_BLEED_PX}px)`;
+            ctx.drawImage(temp, 0, 0);
+            ctx.filter = "none";
+          }
+        }
+        if (!cancelled) {
+          const url = c.toDataURL("image/png");
+          VEST_MASK_CACHE.set(vestMaskKey, url);
+          setVestUnionMask(url);
+        }
+      } catch {
+        if (!cancelled) setVestUnionMask(null);
+      }
+    }, 0);
 
     return () => {
       cancelled = true;
-      if (idleId !== null && cancelIdle) cancelIdle(idleId);
-      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      window.clearTimeout(tid);
     };
   }, [vestFabricLayers, vestMaskKey]);
 
@@ -2166,92 +2146,62 @@ const SuitPreview = ({
     }
 
     let cancelled = false;
-    let idleId: number | null = null;
-    let timeoutId: number | null = null;
-    const requestIdle = (typeof window !== "undefined" ? (window as any).requestIdleCallback : undefined) as
-      | ((cb: () => void, options?: { timeout: number }) => number)
-      | undefined;
-    const cancelIdle = (typeof window !== "undefined" ? (window as any).cancelIdleCallback : undefined) as
-      | ((id: number) => void)
-      | undefined;
-
-    const run = () => {
+    const tid = window.setTimeout(async () => {
       if (cancelled) return;
       setMaskBuilding(true);
-      (async () => {
-        try {
-          const c = document.createElement("canvas");
-          c.width = JACKET_CANVAS.w;
-          c.height = JACKET_CANVAS.h;
-          const ctx = c.getContext("2d");
-          if (!ctx) return;
-          ctx.clearRect(0, 0, c.width, c.height);
-          ctx.globalCompositeOperation = "source-over";
-          for (const layer of fabricMaskLayers) {
+      try {
+        const c = document.createElement("canvas");
+        c.width = JACKET_CANVAS.w;
+        c.height = JACKET_CANVAS.h;
+        const ctx = c.getContext("2d");
+        if (!ctx) return;
+        ctx.clearRect(0, 0, c.width, c.height);
+        ctx.globalCompositeOperation = "source-over";
+        // Load all layer images in parallel instead of sequentially
+        const imgs = await Promise.all(
+          fabricMaskLayers.map((layer) => {
             const pair = cdnPair(layer.src);
-            const tryLoad = (url: string) =>
-              new Promise<HTMLImageElement>((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = "anonymous";
-                img.onload = () => resolve(img);
-                img.onerror = reject;
-                img.src = url;
-              });
-            let img: HTMLImageElement | null = null;
-            try {
-              img = await tryLoad(pair.webp);
-            } catch {
-              try {
-                img = await tryLoad(pair.png);
-              } catch {
-                img = null;
-              }
-            }
-            if (!img) continue;
-            const scale = Math.min(c.width / img.width, c.height / img.height);
-            const w = Math.round(img.width * scale);
-            const h = Math.round(img.height * scale);
-            const dx = Math.round((c.width - w) / 2);
-            const dy = Math.round((c.height - h) / 2);
-            ctx.drawImage(img, dx, dy, w, h);
-          }
-          if (MASK_BLEED_PX > 0) {
-            const temp = document.createElement("canvas");
-            temp.width = c.width;
-            temp.height = c.height;
-            const tctx = temp.getContext("2d");
-            if (tctx) {
-              tctx.drawImage(c, 0, 0);
-              ctx.clearRect(0, 0, c.width, c.height);
-              ctx.drawImage(temp, 0, 0);
-              ctx.filter = `blur(${MASK_BLEED_PX}px)`;
-              ctx.drawImage(temp, 0, 0);
-              ctx.filter = "none";
-            }
-          }
-          if (!cancelled) {
-            const url = c.toDataURL("image/png");
-            JACKET_MASK_CACHE.set(jacketMaskKey, url);
-            setJacketUnionMask(url);
-          }
-        } catch {
-          if (!cancelled) setJacketUnionMask(null);
-        } finally {
-          if (!cancelled) setMaskBuilding(false);
+            return loadImgWithFallback(pair.webp, pair.png);
+          })
+        );
+        for (const img of imgs) {
+          if (!img) continue;
+          const scale = Math.min(c.width / img.width, c.height / img.height);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const dx = Math.round((c.width - w) / 2);
+          const dy = Math.round((c.height - h) / 2);
+          ctx.drawImage(img, dx, dy, w, h);
         }
-      })();
-    };
-
-    if (requestIdle) {
-      idleId = requestIdle(run, { timeout: 400 });
-    } else {
-      timeoutId = window.setTimeout(run, 0);
-    }
+        if (MASK_BLEED_PX > 0) {
+          const temp = document.createElement("canvas");
+          temp.width = c.width;
+          temp.height = c.height;
+          const tctx = temp.getContext("2d");
+          if (tctx) {
+            tctx.drawImage(c, 0, 0);
+            ctx.clearRect(0, 0, c.width, c.height);
+            ctx.drawImage(temp, 0, 0);
+            ctx.filter = `blur(${MASK_BLEED_PX}px)`;
+            ctx.drawImage(temp, 0, 0);
+            ctx.filter = "none";
+          }
+        }
+        if (!cancelled) {
+          const url = c.toDataURL("image/png");
+          JACKET_MASK_CACHE.set(jacketMaskKey, url);
+          setJacketUnionMask(url);
+        }
+      } catch {
+        if (!cancelled) setJacketUnionMask(null);
+      } finally {
+        if (!cancelled) setMaskBuilding(false);
+      }
+    }, 0);
 
     return () => {
       cancelled = true;
-      if (idleId !== null && cancelIdle) cancelIdle(idleId);
-      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      window.clearTimeout(tid);
       setMaskBuilding(false);
     };
   }, [fabricMaskLayers, jacketMaskKey]);
@@ -2268,109 +2218,79 @@ const SuitPreview = ({
     }
 
     let cancelled = false;
-    let idleId: number | null = null;
-    let timeoutId: number | null = null;
-    const requestIdle = (typeof window !== "undefined" ? (window as any).requestIdleCallback : undefined) as
-      | ((cb: () => void, options?: { timeout: number }) => number)
-      | undefined;
-    const cancelIdle = (typeof window !== "undefined" ? (window as any).cancelIdleCallback : undefined) as
-      | ((id: number) => void)
-      | undefined;
-
-    const run = () => {
+    const tid = window.setTimeout(async () => {
       if (cancelled) return;
-      (async () => {
-        try {
-          const canvas = document.createElement("canvas");
-          canvas.width = JACKET_CANVAS.w;
-          canvas.height = JACKET_CANVAS.h;
-          const ctx = canvas.getContext("2d");
-          if (!ctx) return;
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = JACKET_CANVAS.w;
+        canvas.height = JACKET_CANVAS.h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-          for (const layer of fabricMaskLayers) {
+        // Load all fabric mask images + lapel image in parallel
+        const lapelPair = cdnPair(jacketLapelMaskSrc);
+        const [lapelImg, ...maskImgs] = await Promise.all([
+          loadImgWithFallback(lapelPair.webp, lapelPair.png),
+          ...fabricMaskLayers.map((layer) => {
             const pair = cdnPair(layer.src);
-            let img: HTMLImageElement | null = null;
-            try {
-              img = await loadCrossOriginImage(pair.webp);
-            } catch {
-              try {
-                img = await loadCrossOriginImage(pair.png);
-              } catch {
-                img = null;
-              }
-            }
-            if (!img) continue;
-            const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
-            const w = Math.round(img.width * scale);
-            const h = Math.round(img.height * scale);
-            const dx = Math.round((canvas.width - w) / 2);
-            const dy = Math.round((canvas.height - h) / 2);
-            ctx.drawImage(img, dx, dy, w, h);
-          }
-          const unionData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            return loadImgWithFallback(pair.webp, pair.png);
+          }),
+        ]);
 
-          const lapelCanvas = document.createElement("canvas");
-          lapelCanvas.width = JACKET_CANVAS.w;
-          lapelCanvas.height = JACKET_CANVAS.h;
-          const lapelCtx = lapelCanvas.getContext("2d");
-          if (!lapelCtx) return;
-          lapelCtx.clearRect(0, 0, lapelCanvas.width, lapelCanvas.height);
-          const lapelPair = cdnPair(jacketLapelMaskSrc);
-          let lapelImg: HTMLImageElement | null = null;
-          try {
-            lapelImg = await loadCrossOriginImage(lapelPair.webp);
-          } catch {
-            try {
-              lapelImg = await loadCrossOriginImage(lapelPair.png);
-            } catch {
-              lapelImg = null;
-            }
-          }
-          if (!lapelImg) {
-            if (!cancelled) setJacketStripeZones(null);
-            return;
-          }
-          const lapelScale = Math.min(
-            lapelCanvas.width / lapelImg.width,
-            lapelCanvas.height / lapelImg.height
-          );
-          const lapelW = Math.round(lapelImg.width * lapelScale);
-          const lapelH = Math.round(lapelImg.height * lapelScale);
-          const lapelDx = Math.round((lapelCanvas.width - lapelW) / 2);
-          const lapelDy = Math.round((lapelCanvas.height - lapelH) / 2);
-          lapelCtx.drawImage(lapelImg, lapelDx, lapelDy, lapelW, lapelH);
-          const lapelData = lapelCtx.getImageData(0, 0, lapelCanvas.width, lapelCanvas.height);
-
-          const zones = buildJacketStripeZones({
-            ctx,
-            unionData,
-            lapelData,
-            width: canvas.width,
-            height: canvas.height,
-            config: jacketStripeTuning.boundaries,
-          });
-
-          if (!cancelled) {
-            setJacketStripeZones(zones);
-            if (zones) JACKET_STRIPE_ZONES_CACHE.set(jacketStripeZonesKey, zones);
-          }
-        } catch {
-          if (!cancelled) setJacketStripeZones(null);
+        for (const img of maskImgs) {
+          if (!img) continue;
+          const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+          const w = Math.round(img.width * scale);
+          const h = Math.round(img.height * scale);
+          const dx = Math.round((canvas.width - w) / 2);
+          const dy = Math.round((canvas.height - h) / 2);
+          ctx.drawImage(img, dx, dy, w, h);
         }
-      })();
-    };
+        const unionData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-    if (requestIdle) {
-      idleId = requestIdle(run, { timeout: 350 });
-    } else {
-      timeoutId = window.setTimeout(run, 0);
-    }
+        if (!lapelImg) {
+          if (!cancelled) setJacketStripeZones(null);
+          return;
+        }
+        const lapelCanvas = document.createElement("canvas");
+        lapelCanvas.width = JACKET_CANVAS.w;
+        lapelCanvas.height = JACKET_CANVAS.h;
+        const lapelCtx = lapelCanvas.getContext("2d");
+        if (!lapelCtx) return;
+        lapelCtx.clearRect(0, 0, lapelCanvas.width, lapelCanvas.height);
+        const lapelScale = Math.min(
+          lapelCanvas.width / lapelImg.width,
+          lapelCanvas.height / lapelImg.height
+        );
+        const lapelW = Math.round(lapelImg.width * lapelScale);
+        const lapelH = Math.round(lapelImg.height * lapelScale);
+        const lapelDx = Math.round((lapelCanvas.width - lapelW) / 2);
+        const lapelDy = Math.round((lapelCanvas.height - lapelH) / 2);
+        lapelCtx.drawImage(lapelImg, lapelDx, lapelDy, lapelW, lapelH);
+        const lapelData = lapelCtx.getImageData(0, 0, lapelCanvas.width, lapelCanvas.height);
+
+        const zones = buildJacketStripeZones({
+          ctx,
+          unionData,
+          lapelData,
+          width: canvas.width,
+          height: canvas.height,
+          config: jacketStripeTuning.boundaries,
+        });
+
+        if (!cancelled) {
+          setJacketStripeZones(zones);
+          if (zones) JACKET_STRIPE_ZONES_CACHE.set(jacketStripeZonesKey, zones);
+        }
+      } catch {
+        if (!cancelled) setJacketStripeZones(null);
+      }
+    }, 0);
 
     return () => {
       cancelled = true;
-      if (idleId !== null && cancelIdle) cancelIdle(idleId);
-      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      window.clearTimeout(tid);
     };
   }, [
     fabricMaskLayers,
@@ -2382,6 +2302,10 @@ const SuitPreview = ({
 
   useEffect(() => {
     if (!detailLayers.length && !pantsLayer) {
+      setAssetWarnings([]);
+      return;
+    }
+    if (process.env.NODE_ENV === "development") {
       setAssetWarnings([]);
       return;
     }
@@ -2492,7 +2416,10 @@ const SuitPreview = ({
     () => (showStyleOverlays ? pantsOverlayLayers : []),
     [showStyleOverlays, pantsOverlayLayers]
   );
-  const jacketPhotoLayers = useMemo(() => (usePhotoBase ? detailLayers : []), [detailLayers, usePhotoBase]);
+  const jacketPhotoLayers = useMemo(
+    () => (usePhotoBase ? structuralJacketLayers : []),
+    [structuralJacketLayers, usePhotoBase]
+  );
   const pantsPhotoLayers = useMemo(
     () => (usePhotoBase ? [...pantsBaseLayers, ...pantsPhotoDetailLayers] : []),
     [pantsBaseLayers, pantsPhotoDetailLayers, usePhotoBase]
@@ -2518,8 +2445,8 @@ const SuitPreview = ({
   const pantsMaskSourceLayers = useMemo(() => pantsMaskLayers, [pantsMaskLayers]);
   const pantsMaskKey = useMemo(
     () =>
-      `${pantsMaskSourceLayers.map((layer) => layer.src).filter(Boolean).join("|")}|${PANTS_MASK_VERSION}|${pantsZoneTuningSignature}`,
-    [pantsMaskSourceLayers, pantsZoneTuningSignature]
+      `${pantsMaskSourceLayers.map((layer) => layer.src).filter(Boolean).join("|")}|${PANTS_MASK_VERSION}|${pantsZoneTuningSignature}|${pantsStripeZoneEligible ? "stripe" : "solid"}`,
+    [pantsMaskSourceLayers, pantsZoneTuningSignature, pantsStripeZoneEligible]
   );
   const resolvePhotoLayer = useCallback(
     (layer: SuitLayer, garment: RenderGarment) => {
@@ -2834,10 +2761,11 @@ const SuitPreview = ({
   const jacketTextureStyleReal = useMemo<React.CSSProperties>(() => {
     const baseOpacity = Number(fabricTextureStyle.opacity ?? tunedTextureOpacity);
     if (usePhotoBase) {
-      const blend: React.CSSProperties["mixBlendMode"] =
-        isStripeFabric ? (fabricTone === "dark" ? "soft-light" : "overlay") : "soft-light";
-      const preserveMul = isStripeFabric ? (fabricTone === "dark" ? 0.88 : 0.8) : 0.72;
-      const opacity = clamp(baseOpacity * preserveMul, 0.12, isStripeFabric ? 0.4 : 0.3);
+      // Use soft-light for all stripe fabrics — overlay creates an overly harsh
+      // "stamped on" look vs the natural texture in the reference.
+      const blend: React.CSSProperties["mixBlendMode"] = "soft-light";
+      const preserveMul = isStripeFabric ? (fabricTone === "dark" ? 0.82 : 0.74) : 0.72;
+      const opacity = clamp(baseOpacity * preserveMul, 0.10, isStripeFabric ? 0.28 : 0.3);
       return {
         ...fabricTextureStyle,
         mixBlendMode: blend,
@@ -2865,11 +2793,12 @@ const SuitPreview = ({
   const pantsTextureStyleReal = useMemo<React.CSSProperties>(() => {
     const baseOpacity = Number(pantsZoneTextureStyle.opacity ?? tunedTextureOpacity);
     const stripeZoneEnhanced = pantsZoneTextureActive && (hasTextureStripes || isStripeFabric);
+    const usesRealStripeTexture = hasTextureStripes || isStripeFabric;
     if (usePhotoBase) {
-      const blend: React.CSSProperties["mixBlendMode"] =
-        isStripeFabric ? "overlay" : "soft-light";
-      const preserveMul = stripeZoneEnhanced ? 0.72 : pantsZoneTextureActive ? 0.66 : 0.7;
-      const opacity = clamp(baseOpacity * preserveMul, 0.1, 0.32);
+      const blend: React.CSSProperties["mixBlendMode"] = usesRealStripeTexture ? "normal" : "soft-light";
+      const preserveMul = usesRealStripeTexture ? 1 : stripeZoneEnhanced ? 0.88 : pantsZoneTextureActive ? 0.66 : 0.7;
+      const maxOpacity = usesRealStripeTexture ? 0.58 : stripeZoneEnhanced ? 0.48 : 0.32;
+      const opacity = clamp(baseOpacity * preserveMul, usesRealStripeTexture ? 0.18 : 0.14, maxOpacity);
       return {
         ...pantsZoneTextureStyle,
         mixBlendMode: blend,
@@ -2879,10 +2808,12 @@ const SuitPreview = ({
     const preserveMul = stripeZoneEnhanced ? 0.98 : pantsZoneTextureActive ? 0.56 : 0.72;
     const opacity = clamp(baseOpacity * preserveMul, stripeZoneEnhanced ? 0.14 : 0.05, 0.56);
     const blend: React.CSSProperties["mixBlendMode"] =
-      pantsZoneTextureActive && hasTextureStripes
-        ? fabricTone === "dark"
-          ? "soft-light"
-          : "overlay"
+      usesRealStripeTexture
+        ? "normal"
+        : pantsZoneTextureActive && hasTextureStripes
+          ? fabricTone === "dark"
+            ? "soft-light"
+            : "overlay"
         : pantsZoneTextureStyle.mixBlendMode;
     return {
       ...pantsZoneTextureStyle,
@@ -2899,17 +2830,8 @@ const SuitPreview = ({
     usePhotoBase,
   ]);
   const pantsDetailProtectTextureStyle = useMemo<React.CSSProperties>(() => {
-    if (usePhotoBase) return pantsTextureStyleReal;
-    const baseOpacity = Number(pantsTextureStyleReal.opacity ?? 0.18);
-    const stripeEnhanced = hasTextureStripes || isStripeFabric;
-    const minOpacity = stripeEnhanced ? 0.11 : 0.04;
-    const maxOpacity = stripeEnhanced ? 0.54 : 0.34;
-    const preserveMul = stripeEnhanced ? 1.0 : 0.92;
-    return {
-      ...pantsTextureStyleReal,
-      opacity: clamp(baseOpacity * preserveMul, minOpacity, maxOpacity),
-    };
-  }, [hasTextureStripes, isStripeFabric, pantsTextureStyleReal, usePhotoBase]);
+    return pantsTextureStyleReal;
+  }, [pantsTextureStyleReal]);
   const jacketStripeCoverage = jacketStripeZones?.stats.coverageRatio ?? 0;
   useEffect(() => {
     if (!onRenderDebug) return;
@@ -2986,24 +2908,10 @@ const SuitPreview = ({
     : (pantsStripeZoneConfig.masks.leftLeg ?? pantsMask);
   const pantsZoneStripeActive =
     ENABLE_PANTS_SYNTHETIC_STRIPES && Boolean(jacketPatternOverlayConfig) && !hasCheckPattern;
-  const pantsStripeHighlightStyle = useMemo<React.CSSProperties | null>(() => {
-    if (!stripeHighlightStyle) return null;
-    if (usePhotoBase && (hasTextureStripes || isStripeFabric)) return null;
-    if (!(hasTextureStripes || isStripeFabric)) return stripeHighlightStyle;
-    const baseOpacity = Number(stripeHighlightStyle.opacity ?? 0.2);
-    return {
-      ...stripeHighlightStyle,
-      mixBlendMode: fabricTone === "dark" ? "screen" : "overlay",
-      opacity: clamp(baseOpacity * (pantsZoneTextureActive ? 0.56 : 0.62), 0.08, 0.24),
-    };
-  }, [
-    fabricTone,
-    hasTextureStripes,
-    isStripeFabric,
-    pantsZoneTextureActive,
-    stripeHighlightStyle,
-    usePhotoBase,
-  ]);
+  const pantsStripeHighlightStyle = useMemo<React.CSSProperties | null>(
+    () => null,
+    []
+  );
   const pantsLeftPatternOverlayStyle = useMemo<React.CSSProperties | null>(() => {
     if (!pantsZoneStripeActive || !jacketPatternOverlayConfig) return null;
     const overlayAngle = normalizeRotation(
@@ -3258,14 +3166,6 @@ const SuitPreview = ({
     }
 
     let cancelled = false;
-    let idleId: number | null = null;
-    let timeoutId: number | null = null;
-    const requestIdle = (typeof window !== "undefined" ? (window as any).requestIdleCallback : undefined) as
-      | ((cb: () => void, opts?: { timeout: number }) => number)
-      | undefined;
-    const cancelIdle = (typeof window !== "undefined" ? (window as any).cancelIdleCallback : undefined) as
-      | ((id: number) => void)
-      | undefined;
 
     const clearZoneMasks = () => {
       setPantsLegMasks(null);
@@ -3280,20 +3180,10 @@ const SuitPreview = ({
       PANTS_ZONE_BOUNDS_CACHE.delete(pantsMaskKey);
     };
 
-    const run = () => {
+    const tid = window.setTimeout(async () => {
       if (cancelled) return;
       setPantsMaskBuilding(true);
-      (async () => {
-        try {
-          const loadImage = (url: string) =>
-            new Promise<HTMLImageElement>((resolve, reject) => {
-              const img = new Image();
-              img.crossOrigin = "anonymous";
-              img.onload = () => resolve(img);
-              img.onerror = reject;
-              img.src = url;
-            });
-
+      try {
           const c = document.createElement("canvas");
           c.width = PANTS_CANVAS.w;
           c.height = PANTS_CANVAS.h;
@@ -3303,18 +3193,14 @@ const SuitPreview = ({
           ctx.clearRect(0, 0, c.width, c.height);
           ctx.globalCompositeOperation = "source-over";
 
-          for (const layer of pantsMaskSourceLayers) {
-            const pair = cdnPair(layer.src);
-            let img: HTMLImageElement | null = null;
-            try {
-              img = await loadImage(pair.webp);
-            } catch {
-              try {
-                img = await loadImage(pair.png);
-              } catch {
-                img = null;
-              }
-            }
+          // Load all pants mask images in parallel
+          const imgs = await Promise.all(
+            pantsMaskSourceLayers.map((layer) => {
+              const pair = cdnPair(layer.src);
+              return loadImgWithFallback(pair.webp, pair.png);
+            })
+          );
+          for (const img of imgs) {
             if (!img) continue;
             const scale = Math.min(c.width / img.width, c.height / img.height);
             const w = Math.round(img.width * scale);
@@ -3541,7 +3427,7 @@ const SuitPreview = ({
             PANTS_MASK_STATS_CACHE.delete(pantsMaskKey);
           }
 
-          if (MASK_BLEED_PX > 0) {
+          if (PANTS_MASK_BLEED_PX > 0) {
             const temp = document.createElement("canvas");
             temp.width = c.width;
             temp.height = c.height;
@@ -3550,7 +3436,7 @@ const SuitPreview = ({
               tctx.drawImage(c, 0, 0);
               ctx.clearRect(0, 0, c.width, c.height);
               ctx.drawImage(temp, 0, 0);
-              ctx.filter = `blur(${MASK_BLEED_PX}px)`;
+              ctx.filter = `blur(${PANTS_MASK_BLEED_PX}px)`;
               ctx.drawImage(temp, 0, 0);
               ctx.filter = "none";
             }
@@ -3568,34 +3454,26 @@ const SuitPreview = ({
               setPantsAxisAngle(null);
             }
           }
-        } catch {
-          if (!cancelled) {
-            setPantsUnionMask(null);
-            clearZoneMasks();
-            setPantsAxisAngle(null);
-            setPantsMaskStats(null);
-            setPantsZoneBounds(null);
-            PANTS_MASK_CACHE.delete(pantsMaskKey);
-            PANTS_AXIS_CACHE.delete(pantsMaskKey);
-            PANTS_MASK_STATS_CACHE.delete(pantsMaskKey);
-            PANTS_ZONE_BOUNDS_CACHE.delete(pantsMaskKey);
-          }
-        } finally {
-          if (!cancelled) setPantsMaskBuilding(false);
+      } catch {
+        if (!cancelled) {
+          setPantsUnionMask(null);
+          clearZoneMasks();
+          setPantsAxisAngle(null);
+          setPantsMaskStats(null);
+          setPantsZoneBounds(null);
+          PANTS_MASK_CACHE.delete(pantsMaskKey);
+          PANTS_AXIS_CACHE.delete(pantsMaskKey);
+          PANTS_MASK_STATS_CACHE.delete(pantsMaskKey);
+          PANTS_ZONE_BOUNDS_CACHE.delete(pantsMaskKey);
         }
-      })();
-    };
-
-    if (requestIdle) {
-      idleId = requestIdle(run, { timeout: 400 });
-    } else {
-      timeoutId = window.setTimeout(run, 0);
-    }
+      } finally {
+        if (!cancelled) setPantsMaskBuilding(false);
+      }
+    }, 0);
 
     return () => {
       cancelled = true;
-      if (idleId !== null && cancelIdle) cancelIdle(idleId);
-      if (timeoutId !== null) window.clearTimeout(timeoutId);
+      window.clearTimeout(tid);
       setPantsMaskBuilding(false);
     };
   }, [pantsMaskKey, pantsMaskSourceLayers, pantsStripeDetectedForZones]);
@@ -3692,7 +3570,33 @@ const SuitPreview = ({
             })
           : showJacketLayers
             ? interiorLayers?.map((l) => {
-              const isLcpLayer = l.id === "interior_base";
+              // Only the base interior shape (interior1.png) receives the suit fabric.
+              // The secondary shadow layers (interior2, interior3) stay as plain sprites.
+              if (l.id === "interior_base") {
+                const pair = cdnPair(l.src);
+                const maskUrl = pair?.png || l.src;
+                return (
+                  <FabricUnion
+                    key={`int-${l.id}`}
+                    layers={fabricMaskLayers}
+                    resolve={resolveCdn}
+                    fabricTexture={useTexture ? fabricTextureSource : undefined}
+                    textureStyle={jacketTextureStyleReal}
+                    baseColor={tunedFabricFill || toneBaseColor}
+                    fabricAvgColor={tunedFabricFill}
+                    baseBlendMode="color"
+                    baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+                    panZoom={panZoom}
+                    canvas={JACKET_CANVAS}
+                    mask={maskUrl}
+                    textureScale={jacketTextureScale}
+                    textureTileSizePx={stripeTileSizePx}
+                    maskSize="contain"
+                    maskPosition="center"
+                    maskRepeat="no-repeat"
+                  />
+                );
+              }
               return (
                 <img
                   key={`int-${l.id}`}
@@ -3700,8 +3604,7 @@ const SuitPreview = ({
                   alt={l.name}
                   className="absolute inset-0 w-full h-full object-contain pointer-events-none"
                   decoding="async"
-                  fetchPriority={isLcpLayer ? "high" : undefined}
-                  loading={isLcpLayer ? "eager" : undefined}
+                  loading="lazy"
                 />
               );
             })

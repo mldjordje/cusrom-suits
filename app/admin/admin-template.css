@@ -258,38 +258,162 @@
   color: inherit;
 }
 
+/* Mobilni drawer: sidebar je skriven dok se ne otvori Meni */
+.admin-template-backdrop {
+  display: none;
+}
+
+.admin-template-menu-toggle {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 0.75rem;
+  background: rgba(15, 23, 42, 0.55);
+  color: #f8fafc;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.admin-template-menu-toggle:hover {
+  border-color: rgba(96, 165, 250, 0.55);
+  background: rgba(30, 41, 59, 0.82);
+}
+
+.admin-template-menu-toggle-bars {
+  display: inline-block;
+  width: 1.1rem;
+  height: 0.85rem;
+  background: linear-gradient(
+    currentColor,
+    currentColor 14%,
+    transparent 14%,
+    transparent 43%,
+    currentColor 43%,
+    currentColor 57%,
+    transparent 57%,
+    transparent 86%,
+    currentColor 86%
+  );
+  opacity: 0.95;
+}
+
+.admin-template-menu-toggle-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.admin-template-topbar-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
 @media (max-width: 1024px) {
+  /* Blok umesto grida da fiksni sidebar ne gura sadržaj nadole */
   .admin-template-shell {
-    grid-template-columns: 1fr;
+    display: block;
+  }
+
+  .admin-template-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    border: 0;
+    padding: 0;
+    margin: 0;
+    border-radius: 0;
+    background: rgba(15, 23, 42, 0.55);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .admin-template-root:not(.admin-template-root--drawer-open) .admin-template-backdrop {
+    display: none;
   }
 
   .admin-template-sidebar {
-    position: static;
+    position: fixed;
+    left: 0;
+    top: 0;
+    z-index: 50;
+    width: min(300px, 88vw);
+    height: 100vh;
     max-height: none;
-    border-right: 0;
-    border-bottom: 1px solid rgba(148, 163, 184, 0.25);
+    border-right: 1px solid rgba(148, 163, 184, 0.25);
+    border-bottom: none;
+    padding: 1rem 0.85rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    transform: translateX(-105%);
+    transition: transform 0.22s ease;
+    box-shadow: 8px 0 24px rgba(0, 0, 0, 0.35);
+  }
+
+  .admin-template-root--drawer-open .admin-template-sidebar {
+    transform: translateX(0);
+  }
+
+  .admin-template-menu-toggle {
+    display: inline-flex;
   }
 
   .admin-template-nav-list {
-    flex-direction: row;
-    flex-wrap: wrap;
+    flex-direction: column;
+    flex-wrap: nowrap;
   }
 
   .admin-template-nav-link {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+  }
+
+  .admin-template-nav-link__copy small {
+    display: none;
   }
 
   .admin-template-subnav-list {
-    padding-left: 0;
+    padding-left: 2.1rem;
   }
 
   .admin-template-topbar {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .admin-template-topbar-title {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .admin-template-topbar-title h1 {
+    font-size: 1rem;
+    line-height: 1.25;
   }
 
   .admin-template-topbar-meta {
     width: 100%;
     text-align: left;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.5rem 0.75rem;
+  }
+
+  .admin-template-content {
+    padding: 0.75rem 0.65rem 1.25rem;
+  }
+}
+
+@media (min-width: 1025px) {
+  .admin-template-backdrop {
+    display: none !important;
   }
 }

@@ -11,9 +11,10 @@ export const PANTS_STRIPE_MANUAL_TUNING = {
     singleRightAbsDeg: -74,
 
     // Deterministic zone directions.
-    // Negative = clockwise diagonal, 0 = native weave orientation.
-    // Keep right side closer to horizontal but not too steep,
-    // otherwise stripe contrast can visually collapse on dark fabrics.
+    // leftMain  = left-leg diagonal fold
+    // rightUpper = centre / fly area (near-vertical to match how stripes read on folded fabric)
+    // rightLower = lower-right fold (steeper diagonal)
+    // waist      = waistband strip on far right
     leftMainAbsDeg: -62,
     rightUpperAbsDeg: -88,
     rightLowerAbsDeg: -74,
@@ -27,20 +28,19 @@ export const PANTS_STRIPE_MANUAL_TUNING = {
     boundaryBottomXRatio: 0.44,
 
     // Right-lower split line controls.
-    // Larger start means lower zone appears less often.
     rightLowerStartYRatio: 0.44,
-    // Positive slope tilts the split down as X increases.
     rightLowerSlopeRatio: 0.32,
 
     // Legacy/fallback clamps still used by split logic.
     boundaryMinXRatio: 0.26,
     boundaryMaxXRatio: 0.5,
 
-    // Waist partition start.
-    waistXRatio: 0.94,
+    // Waist partition: slightly wider than original (0.94) so the belt strip
+    // is more visible, but not so wide it swallows the body zone.
+    waistXRatio: 0.88,
 
     // Extra belt strip on far right.
-    beltStartXRatio: 0.95,
+    beltStartXRatio: 0.90,
     beltTopYRatio: 0.02,
     beltBottomYRatio: 0.98,
 
