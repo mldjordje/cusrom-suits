@@ -41,6 +41,7 @@ export default function StorefrontSearchOverlay() {
   const [isLoading, setIsLoading] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const hasMountedRef = useRef(false);
   const effectiveLang = searchParams.get("lang") === "en" ? "en" : "sr";
   const isEn = effectiveLang === "en";
 
@@ -89,6 +90,10 @@ export default function StorefrontSearchOverlay() {
   }, [closeCartDrawer]);
 
   useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
     setIsOpen(false);
   }, [pathname, searchParams]);
 
@@ -306,7 +311,6 @@ export default function StorefrontSearchOverlay() {
                           alt={displayName}
                           sizes="120px"
                           className="ss-search-overlay__result-img-tag"
-                          unoptimized
                         />
                       </div>
                       <div className="ss-search-overlay__result-copy">

@@ -775,7 +775,7 @@ export default async function HomePage({
                   height={330}
                   alt={tx(landingSettings.bannerLeftTitle, "Ready to Wear")}
                   className="w-100 h-auto"
-                  unoptimized
+                  sizes="(max-width: 767px) 100vw, 50vw"
                 />
                 <div className="position-absolute top-50 start-50 translate-middle text-center">
                   <h4 className="text-uppercase text-white">{tx(landingSettings.bannerLeftTitle, "Ready to Wear")}</h4>
@@ -794,7 +794,7 @@ export default async function HomePage({
                   height={330}
                   alt={tx(landingSettings.bannerRightTitle, "Current Sale")}
                   className="w-100 h-auto"
-                  unoptimized
+                  sizes="(max-width: 767px) 100vw, 50vw"
                 />
                 <div className="position-absolute top-50 start-50 translate-middle text-center">
                   <h4 className="text-uppercase text-white">{tx(landingSettings.bannerRightTitle, "Current Sale")}</h4>

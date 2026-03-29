@@ -87,7 +87,6 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
                 alt={name}
                 className="ss-product-gallery__main-image"
                 priority
-                unoptimized
                 quality={78}
                 sizes="(max-width: 575px) 100vw, (max-width: 991px) 92vw, 58vw"
               />
@@ -132,7 +131,6 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
                   height={112}
                   alt={`${name} thumbnail ${index + 1}`}
                   className="ss-product-gallery__thumb-image"
-                  unoptimized
                   quality={64}
                   sizes="96px"
                   fallbackSrc="/img/odela.jpg"
@@ -146,7 +144,6 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
                       height={112}
                       alt={`${name} video thumbnail ${index + 1}`}
                       className="ss-product-gallery__thumb-image"
-                      unoptimized
                       quality={64}
                       sizes="96px"
                       fallbackSrc="/img/odela.jpg"

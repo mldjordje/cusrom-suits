@@ -12,8 +12,12 @@ export default function AppMotionShell({ children }: { children: React.ReactNode
     <LazyMotion features={domAnimation} strict>
       <MotionConfig reducedMotion={reduceMotion ? "always" : "never"}>
         <div className="ss-app-shell">
-          <div className="ss-app-shell__glow ss-app-shell__glow--one" aria-hidden="true" />
-          <div className="ss-app-shell__glow ss-app-shell__glow--two" aria-hidden="true" />
+          {reduceMotion ? null : (
+            <>
+              <div className="ss-app-shell__glow ss-app-shell__glow--one" aria-hidden="true" />
+              <div className="ss-app-shell__glow ss-app-shell__glow--two" aria-hidden="true" />
+            </>
+          )}
 
           <m.div
             key={pathname || "/"}

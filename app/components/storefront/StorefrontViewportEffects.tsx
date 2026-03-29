@@ -1,44 +1,59 @@
 "use client";
 
 import { useEffect } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
-const SELECTOR = [
-  ".page-wrapper .btn",
-  ".page-wrapper .pc__atc",
-  ".page-wrapper .ss-filter-chip",
+const DESKTOP_SELECTOR = [
+  ".page-wrapper .ss-editorial-section",
   ".page-wrapper .ss-filter-panel",
   ".page-wrapper .product-single__details-tab",
   ".page-wrapper .ss-product-glass-card",
-  ".page-wrapper .ss-editorial-card",
-  ".page-wrapper .product-card",
   ".page-wrapper .blog-grid__item",
   ".page-wrapper .ss-story-card",
   ".page-wrapper .ss-banner-panel",
   ".page-wrapper .ss-home18-hero__card-item",
-  ".ss-mobile-nav-panel__hero",
-  ".ss-mobile-nav-quicklink",
-  ".ss-mobile-nav-link",
-  ".ss-mobile-nav-pill",
-  ".ss-mobile-nav-close",
+  ".page-wrapper .product-card",
+  ".ss-footer__panel",
+  ".ss-footer__bottom",
+].join(", ");
+
+const MOBILE_SELECTOR = [
+  ".page-wrapper .ss-editorial-section",
+  ".page-wrapper .ss-filter-panel",
+  ".page-wrapper .product-single",
+  ".page-wrapper .product-single__details-tab",
+  ".page-wrapper .ss-product-glass-card",
+  ".page-wrapper .ss-shop-gallery",
+  ".page-wrapper .ss-banner-panel",
+  ".page-wrapper .ss-story-card",
+  ".page-wrapper .blog-grid__item",
   ".ss-footer__panel",
   ".ss-footer__bottom",
 ].join(", ");
 
 export default function StorefrontViewportEffects() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { reduceMotion } = useAnimationBudget();
+  const routeState = `${pathname || ""}?${searchParams.toString()}`;
 
   useEffect(() => {
+    const pointerCoarse = window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 820px)").matches;
+    const selector = pointerCoarse ? MOBILE_SELECTOR : DESKTOP_SELECTOR;
+
     const scan = () => {
-      const elements = Array.from(document.querySelectorAll<HTMLElement>(SELECTOR));
+      const elements = Array.from(document.querySelectorAll<HTMLElement>(selector)).filter(
+        (element, index, collection) => collection.indexOf(element) === index,
+      );
+
       for (const element of elements) {
         element.classList.add("ss-viewfx");
         if (reduceMotion) {
           element.classList.add("is-inview");
         }
       }
+
       return elements;
     };
 
@@ -47,57 +62,39 @@ export default function StorefrontViewportEffects() {
       return;
     }
 
-    const root = document.querySelector(".page-wrapper") ?? document.body;
-    let frameId = 0;
-
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          entry.target.classList.toggle("is-inview", entry.isIntersecting);
+          if (!entry.isIntersecting) continue;
+          entry.target.classList.add("is-inview");
+          observer.unobserve(entry.target);
         }
       },
       {
-        rootMargin: "0px 0px -12% 0px",
-        threshold: 0.14,
+        rootMargin: pointerCoarse ? "0px 0px -6% 0px" : "0px 0px -12% 0px",
+        threshold: pointerCoarse ? 0.08 : 0.14,
       },
     );
 
-    const observed = new WeakSet<Element>();
     const observeElements = () => {
-      const elements = scan();
-      for (const element of elements) {
-        if (observed.has(element)) continue;
-        observed.add(element);
+      for (const element of scan()) {
         observer.observe(element);
       }
     };
 
-    const scheduleObserveElements = () => {
-      if (frameId) return;
-      frameId = window.requestAnimationFrame(() => {
-        frameId = 0;
-        observeElements();
-      });
-    };
-
     observeElements();
 
-    const mutationObserver = new MutationObserver(() => {
-      scheduleObserveElements();
-    });
-    mutationObserver.observe(root, {
-      childList: true,
-      subtree: true,
-    });
+    const retryTimers = [220, 900].map((delay) =>
+      window.setTimeout(() => {
+        observeElements();
+      }, delay),
+    );
 
     return () => {
-      if (frameId) {
-        window.cancelAnimationFrame(frameId);
-      }
-      mutationObserver.disconnect();
+      retryTimers.forEach((timer) => window.clearTimeout(timer));
       observer.disconnect();
     };
-  }, [pathname, reduceMotion]);
+  }, [reduceMotion, routeState]);
 
   return null;
 }

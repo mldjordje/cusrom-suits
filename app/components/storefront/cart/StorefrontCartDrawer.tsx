@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
 import StorefrontQuantityControl from "@/app/components/storefront/cart/StorefrontQuantityControl";
@@ -32,6 +32,7 @@ export default function StorefrontCartDrawer({
     closeCartDrawer,
   } = useCart();
   const [effectiveLang, setEffectiveLang] = useState<StorefrontLanguage>(lang);
+  const hasMountedRef = useRef(false);
   const isEn = effectiveLang === "en";
 
   useEffect(() => {
@@ -46,6 +47,10 @@ export default function StorefrontCartDrawer({
   };
 
   useEffect(() => {
+    if (!hasMountedRef.current) {
+      hasMountedRef.current = true;
+      return;
+    }
     closeCartDrawer();
   }, [pathname, closeCartDrawer]);
 
@@ -80,7 +85,6 @@ export default function StorefrontCartDrawer({
                       height={400}
                       alt={item.name}
                       sizes="110px"
-                      unoptimized
                     />
                   </Link>
 

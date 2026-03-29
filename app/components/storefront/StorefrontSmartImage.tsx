@@ -28,6 +28,9 @@ export default function StorefrontSmartImage({
   const [activeIndex, setActiveIndex] = useState(0);
   const requestedQuality = typeof props.quality === "number" ? props.quality : 75;
   const normalizedQuality = requestedQuality <= 64 ? 60 : 75;
+  const normalizedSizes =
+    props.sizes ??
+    (typeof props.width === "number" && !("fill" in props && props.fill) ? `${props.width}px` : undefined);
 
   useEffect(() => {
     setActiveIndex(0);
@@ -35,7 +38,10 @@ export default function StorefrontSmartImage({
 
   const activeSrc = candidates[Math.min(activeIndex, Math.max(candidates.length - 1, 0))] || fallbackSrc;
   const shouldBypassOptimization =
-    props.unoptimized == null && isRemoteStorefrontImageSrc(activeSrc);
+    props.unoptimized == null &&
+    (activeSrc.startsWith("data:image/") ||
+      activeSrc.toLowerCase().includes(".svg") ||
+      (isRemoteStorefrontImageSrc(activeSrc) && activeSrc.toLowerCase().includes(".svg")));
 
   return (
     <Image
@@ -43,6 +49,7 @@ export default function StorefrontSmartImage({
       src={activeSrc}
       alt={alt}
       quality={normalizedQuality}
+      sizes={normalizedSizes}
       unoptimized={shouldBypassOptimization ? true : props.unoptimized}
       onError={(event) => {
         onError?.(event);
