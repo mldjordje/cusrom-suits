@@ -49,6 +49,13 @@ const formatRsd = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
+const getDiscountPercent = (priceGross: number, priceFinalGross: number) => {
+  const gross = Number(priceGross || 0);
+  const finalGross = Number(priceFinalGross || 0);
+  if (gross <= 0 || gross <= finalGross) return 0;
+  return Math.round(((gross - finalGross) / gross) * 100);
+};
+
 const stripHtml = (value: string | null) =>
   decodeHtmlEntities((value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
 
@@ -159,6 +166,7 @@ export default async function WebShopProductPage({
   const washCare = getProductWashCare(product, lang);
 
   const discountAmount = Math.max(0, product.priceGross - product.priceFinalGross);
+  const discountPercent = getDiscountPercent(product.priceGross, product.priceFinalGross);
   const stockValue = Math.max(
     0,
     Math.floor(product.stockTotal > 0 ? product.stockTotal : product.stockWarehouse1),
@@ -289,7 +297,15 @@ export default async function WebShopProductPage({
                   {discountAmount > 0 ? (
                     <span className="old-price ms-2">{formatRsd(product.priceGross)}</span>
                   ) : null}
+                  {discountPercent > 0 ? (
+                    <span className="ss-product-price-badge">-{discountPercent}%</span>
+                  ) : null}
                 </div>
+                {discountPercent > 0 ? (
+                  <p className="ss-product-price-note">
+                    {isEn ? "You save" : "Stedite"} {formatRsd(discountAmount)} ({discountPercent}%)
+                  </p>
+                ) : null}
                 <div className="product-single__short-desc">
                   <p>
                     {shortDescription ||
@@ -456,7 +472,15 @@ export default async function WebShopProductPage({
             <div className="ss-mobile-product-bar__meta">
               <div>
                 <p className="ss-mobile-product-bar__eyebrow">{isEn ? "Ready to order" : "Spremno za porucivanje"}</p>
-                <strong className="ss-mobile-product-bar__price">{formatRsd(product.priceFinalGross)}</strong>
+                <div className="ss-mobile-product-bar__prices">
+                  <strong className="ss-mobile-product-bar__price">{formatRsd(product.priceFinalGross)}</strong>
+                  {discountPercent > 0 ? (
+                    <>
+                      <span className="ss-mobile-product-bar__old-price">{formatRsd(product.priceGross)}</span>
+                      <span className="ss-product-price-badge ss-product-price-badge--mobile">-{discountPercent}%</span>
+                    </>
+                  ) : null}
+                </div>
               </div>
               <p className="ss-mobile-product-bar__note">
                 {selectedSize

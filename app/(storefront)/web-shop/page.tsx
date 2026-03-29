@@ -24,6 +24,13 @@ const formatRsd = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
+const getDiscountPercent = (priceGross: number, priceFinalGross: number) => {
+  const gross = Number(priceGross || 0);
+  const finalGross = Number(priceFinalGross || 0);
+  if (gross <= 0 || gross <= finalGross) return 0;
+  return Math.round(((gross - finalGross) / gross) * 100);
+};
+
 const toStringParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] || "" : value || "";
 
@@ -251,6 +258,7 @@ export default async function WebShopPage({
     const imageSources = getCatalogProductImageSources(item, [], [fallbackImage]);
     const displayName = getLocalizedCatalogProductName(item, lang);
     const detailHref = isEn ? `/web-shop/${item.legacyId}?lang=en` : `/web-shop/${item.legacyId}`;
+    const discountPercent = getDiscountPercent(item.priceGross, item.priceFinalGross);
     const imageSizes =
       imageWidth >= 600
         ? "(max-width: 991px) 100vw, (max-width: 1399px) 50vw, 42vw"
@@ -271,6 +279,11 @@ export default async function WebShopPage({
                 quality={68}
               />
             </Link>
+            {discountPercent > 0 ? (
+              <span className="ss-product-card__badge">
+                -{discountPercent}% {isEn ? "off" : "popust"}
+              </span>
+            ) : null}
             <div className="pc__info hover__content text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
               <p className="pc__category">{getCategoryLabel(item)}</p>
               <h6 className="pc__title">
@@ -286,6 +299,11 @@ export default async function WebShopPage({
                   <span className="money price">{formatRsd(item.priceFinalGross)}</span>
                 )}
               </div>
+              {discountPercent > 0 ? (
+                <p className="ss-product-card__discount mb-0">
+                  {isEn ? "Save" : "Usteda"} {discountPercent}%
+                </p>
+              ) : null}
               <Link href={detailHref} className="pc__atc anim_appear-bottom btn mt-3 border-0 text-uppercase fw-medium">
                 {isEn ? "View product" : "Pogledaj proizvod"}
               </Link>
@@ -306,6 +324,11 @@ export default async function WebShopPage({
                 <span className="money price">{formatRsd(item.priceFinalGross)}</span>
               )}
             </div>
+            {discountPercent > 0 ? (
+              <p className="ss-product-card__discount mb-0">
+                {isEn ? "Save" : "Usteda"} {discountPercent}%
+              </p>
+            ) : null}
           </div>
         </div>
       </ProductItemMotion>

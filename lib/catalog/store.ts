@@ -200,6 +200,23 @@ const getAvailableStockValue = (item: Pick<CatalogProductView, "stockWarehouse1"
   return total > 0 ? total : warehouse1;
 };
 
+const getCatalogDiscountPercent = (
+  item: Pick<CatalogProductView, "priceGross" | "priceFinalGross" | "rebatePercent">,
+) => {
+  const gross = Number(item.priceGross || 0);
+  const finalGross = Number(item.priceFinalGross || 0);
+  if (gross > 0 && finalGross >= 0 && gross > finalGross) {
+    return Math.round(((gross - finalGross) / gross) * 100);
+  }
+
+  const rebatePercent = Math.round(Number(item.rebatePercent || 0));
+  return rebatePercent > 0 ? rebatePercent : 0;
+};
+
+const hasCatalogDiscount = (
+  item: Pick<CatalogProductView, "priceGross" | "priceFinalGross" | "rebatePercent">,
+) => getCatalogDiscountPercent(item) > 0;
+
 const parseCategories = (rawPayload: Record<string, unknown> | null | undefined): CatalogCategory[] => {
   const maybeCategories = rawPayload && Array.isArray(rawPayload.categories) ? rawPayload.categories : [];
   return maybeCategories
@@ -433,6 +450,7 @@ const scoreCollapsedRepresentative = (item: CatalogProductView) => {
     brand: item.brand,
   });
   const stock = getAvailableStockValue(item);
+  const discountPercent = getCatalogDiscountPercent(item);
 
   let score = 0;
   if (item.manufCode && item.manufCode.trim()) score += 24;
@@ -443,6 +461,7 @@ const scoreCollapsedRepresentative = (item: CatalogProductView) => {
   if (item.coverImage) score += 8;
   if (item.brand) score += 4;
   if (stock > 0) score += Math.min(stock, 10);
+  if (discountPercent > 0) score += 40 + Math.min(discountPercent, 35);
 
   return score;
 };
@@ -454,6 +473,29 @@ const pickCollapsedRepresentative = (left: CatalogProductView, right: CatalogPro
     return rightScore > leftScore ? right : left;
   }
   return right.legacyId > left.legacyId ? right : left;
+};
+
+const pickCollapsedPricingLeader = (left: CatalogProductView, right: CatalogProductView) => {
+  const leftDiscount = getCatalogDiscountPercent(left);
+  const rightDiscount = getCatalogDiscountPercent(right);
+
+  if (rightDiscount !== leftDiscount) {
+    return rightDiscount > leftDiscount ? right : left;
+  }
+
+  if (left.priceFinalGross !== right.priceFinalGross) {
+    return right.priceFinalGross < left.priceFinalGross ? right : left;
+  }
+
+  if (left.priceGross !== right.priceGross) {
+    return right.priceGross > left.priceGross ? right : left;
+  }
+
+  if (hasCatalogDiscount(left) !== hasCatalogDiscount(right)) {
+    return hasCatalogDiscount(right) ? right : left;
+  }
+
+  return pickCollapsedRepresentative(left, right);
 };
 
 const collapseCatalogProductsBySku = (items: CatalogProductView[]): CatalogProductView[] => {
@@ -502,6 +544,12 @@ const collapseCatalogProductsBySku = (items: CatalogProductView[]): CatalogProdu
       ...((item.rawPayload?.collapsedVariantIds as number[] | undefined) || [item.legacyId]),
     ]);
     const representative = pickCollapsedRepresentative(current, item);
+    const pricingLeader = pickCollapsedPricingLeader(current, item);
+    const mergedDiscountPercent = Math.max(
+      getCatalogDiscountPercent(current),
+      getCatalogDiscountPercent(item),
+      getCatalogDiscountPercent(pricingLeader),
+    );
 
     map.set(key, {
       ...current,
@@ -515,6 +563,9 @@ const collapseCatalogProductsBySku = (items: CatalogProductView[]): CatalogProdu
       specificationEn: representative.specificationEn || current.specificationEn || item.specificationEn,
       manufCode: representative.manufCode || current.manufCode || item.manufCode,
       brand: representative.brand || current.brand || item.brand,
+      priceGross: pricingLeader.priceGross,
+      priceFinalGross: pricingLeader.priceFinalGross,
+      rebatePercent: mergedDiscountPercent,
       coverImage: representative.coverImage || current.coverImage || item.coverImage,
       isActive: current.isActive || item.isActive,
       isExported: current.isExported || item.isExported,
@@ -528,6 +579,8 @@ const collapseCatalogProductsBySku = (items: CatalogProductView[]): CatalogProdu
         ...current.rawPayload,
         collapsedVariantIds: Array.from(collapsedVariantIds).sort((a, b) => a - b),
         collapsedVariantCount: collapsedVariantIds.size,
+        collapsedRepresentativeLegacyId: representative.legacyId,
+        collapsedPricingSourceLegacyId: pricingLeader.legacyId,
       },
     });
   }

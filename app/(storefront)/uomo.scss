@@ -1510,6 +1510,26 @@
   background: linear-gradient(180deg, #f3efe8, #e8e2d7);
 }
 
+.ss-product-card__badge {
+  position: absolute;
+  top: 0.9rem;
+  left: 0.9rem;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.9rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(138, 21, 18, 0.96), rgba(187, 49, 35, 0.94));
+  color: #fff;
+  font-size: 0.64rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  box-shadow: 0 14px 26px rgba(103, 18, 16, 0.22);
+}
+
 .ss-product-card {
   height: 100%;
   display: flex;
@@ -1619,6 +1639,46 @@
 }
 
 .ss-product-card .product-card__price .price-sale {
+  color: #9b2218;
+}
+
+.ss-product-card__discount {
+  margin-top: 0.2rem;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: #9b2218;
+}
+
+.ss-product-price-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2rem;
+  margin-left: 0.85rem;
+  padding: 0.4rem 0.9rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(138, 21, 18, 0.96), rgba(187, 49, 35, 0.94));
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  text-transform: uppercase;
+  vertical-align: middle;
+}
+
+.ss-product-price-badge--mobile {
+  margin-left: 0;
+  padding: 0.24rem 0.6rem;
+  min-height: 1.7rem;
+  font-size: 0.64rem;
+}
+
+.ss-product-price-note {
+  margin: 0.55rem 0 0;
+  font-size: 0.9rem;
+  font-weight: 600;
   color: #9b2218;
 }
 
@@ -2143,6 +2203,19 @@
   font-size: 1.25rem;
   line-height: 1.05;
   color: #181414;
+}
+
+.ss-mobile-product-bar__prices {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.ss-mobile-product-bar__old-price {
+  font-size: 0.84rem;
+  color: #8f96a3;
+  text-decoration: line-through;
 }
 
 .ss-mobile-product-bar__note {
@@ -3708,6 +3781,15 @@ body.mobile-menu-opened {
     padding: 0.75rem 0.2rem 0.15rem;
   }
 
+  .ss-product-card__badge {
+    top: 0.7rem;
+    left: 0.7rem;
+    min-height: 1.65rem;
+    padding: 0.28rem 0.65rem;
+    font-size: 0.56rem;
+    letter-spacing: 0.08em;
+  }
+
   .ss-product-card .pc__category {
     margin-bottom: 0.4rem;
     padding: 0 0.55rem;
@@ -3730,6 +3812,10 @@ body.mobile-menu-opened {
   .ss-product-card .product-card__price {
     flex-wrap: wrap;
     gap: 0.25rem 0.45rem;
+  }
+
+  .ss-product-card__discount {
+    font-size: 0.64rem;
   }
 
   .ss-story-card {
