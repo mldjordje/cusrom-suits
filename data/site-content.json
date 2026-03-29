@@ -125,7 +125,7 @@
       "email": "santos.pobedina@gmail.com",
       "hours": ["Pon-Pet: 09:00 - 21:00", "Subota: 09:00 - 20:00", "Nedelja: 10:00 - 17:00"],
       "hoursEn": ["Mon-Fri: 09:00 - 21:00", "Saturday: 09:00 - 20:00", "Sunday: 10:00 - 17:00"],
-      "mapEmbedUrl": "https://www.google.com/maps?q=43.3201002,21.9037988&z=15&output=embed"
+      "mapEmbedUrl": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3639.7269588634736!2d21.892546976667187!3d43.320317373896415!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4755b0733fffffff%3A0x997bd3a90b12829c!2sSantos%20%26%20Santorini!5e1!3m2!1sen!2srs!4v1774780655927!5m2!1sen!2srs"
     },
     {
       "slug": "krusevac",
@@ -141,7 +141,7 @@
       "email": "santos.krusevac@gmail.com",
       "hours": ["Pon-Pet: 09:00 - 21:00", "Subota: 09:00 - 18:00", "Nedelja: Ne radimo"],
       "hoursEn": ["Mon-Fri: 09:00 - 21:00", "Saturday: 09:00 - 18:00", "Sunday: Closed"],
-      "mapEmbedUrl": "https://www.google.com/maps?q=43.5805506,21.3256574&z=15&output=embed"
+      "mapEmbedUrl": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3624.143938196094!2d21.330695!3d43.579821!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4756870062ccd25d%3A0x780e3454e14c0558!2sSantos%20%26%20Santorini!5e1!3m2!1sen!2srs!4v1774780623102!5m2!1sen!2srs"
     }
   ]
 }
