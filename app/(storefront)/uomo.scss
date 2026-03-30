@@ -66,6 +66,7 @@
 }
 
 .ss-home18-hero__media {
+  z-index: 0;
   overflow: hidden;
   pointer-events: none;
 }
@@ -105,6 +106,7 @@
 }
 
 .ss-home18-hero__overlay {
+  z-index: 1;
   pointer-events: none;
   background: linear-gradient(180deg, rgba(6, 9, 12, 0.56) 0%, rgba(10, 14, 20, 0.7) 52%, rgba(12, 16, 22, 0.9) 100%);
 }
@@ -150,6 +152,7 @@
 }
 
 .ss-home18-hero__content {
+  z-index: 2;
   min-height: 100svh;
   display: flex;
   flex-direction: column;
