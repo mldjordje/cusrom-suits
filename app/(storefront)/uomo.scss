@@ -969,6 +969,12 @@
   position: relative;
 }
 
+.ss-shop-hero-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
 .ss-shop-hero__media {
   position: relative;
   min-height: clamp(22rem, 52vw, 32rem);

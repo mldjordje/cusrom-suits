@@ -1,3 +1,7 @@
+# Legacy / template kopije (veliki folderi — ne za Git niti Vercel)
+public_html (stari sajt)/
+Sajt kupljen novi template zip/
+
 # dependencies
 node_modules
 npm-debug.log
@@ -5,12 +9,21 @@ yarn-error.log
 
 # build output
 .next
+.next-stale-*/
 out
 dist
 tsconfig.tsbuildinfo
 
 # Full MySQL exports (veliki fajl, produkcijski podaci — ne commitovati)
 agyc3416_santos_sa2025.sql
+
+# Lokalni admin nalozi (hash lozinke — nikad na remote)
+data/admin-users.json
+
+# Slučajni / privremeni fajlovi u rootu
+.tmp_old_preview.tsx
+_SuitPreview.diff
+Sajt kupljen novi template zip.zip
 
 # local env files
 .env
@@ -41,6 +54,9 @@ transparent-upload/
 /tmp-*.png
 /white-mask.png
 /stripe reference.png
+
+# agent / local temp logs at repo root
+.tmp-*
 
 # local research/reference folders
 /hockerty-httpcopier/

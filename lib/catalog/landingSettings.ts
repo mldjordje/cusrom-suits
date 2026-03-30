@@ -51,6 +51,37 @@ export type LandingContactPoint = {
   value: string;
 };
 
+/** Jedan vizuelni hero blok na /web-shop (do 2 komada, jedan ispod drugog). */
+export type LandingShopHeroSection = {
+  id: string;
+  image: string;
+  showPromo: boolean;
+  promoLabel: string;
+  promoHref: string;
+};
+
+const SHOP_HERO_MAX_SECTIONS = 2;
+
+function normalizeShopHeroSectionsInput(value: unknown): LandingShopHeroSection[] {
+  if (!Array.isArray(value)) return [];
+  const out: LandingShopHeroSection[] = [];
+  for (let i = 0; i < value.length && out.length < SHOP_HERO_MAX_SECTIONS; i++) {
+    const row = value[i];
+    if (!row || typeof row !== "object") continue;
+    const r = row as Record<string, unknown>;
+    const image = String(r.image || "").trim();
+    if (!image) continue;
+    out.push({
+      id: String(r.id || `shop-hero-${out.length + 1}`).trim() || `shop-hero-${out.length + 1}`,
+      image,
+      showPromo: Boolean(r.showPromo),
+      promoLabel: decodeLandingText(r.promoLabel, ""),
+      promoHref: String(r.promoHref || "/akcije").trim() || "/akcije",
+    });
+  }
+  return out;
+}
+
 export type LandingSettings = {
   showSaleSection: boolean;
   productSections: LandingProductSectionState[];
@@ -96,6 +127,7 @@ export type LandingSettings = {
   shopHeroShowPromo: boolean;
   shopHeroPromoLabel: string;
   shopHeroPromoHref: string;
+  shopHeroSections: LandingShopHeroSection[];
   storySectionTitle: string;
   storySectionCtaLabel: string;
   storySectionCtaHref: string;
@@ -220,6 +252,15 @@ const DEFAULT_SETTINGS: LandingSettings = {
   shopHeroShowPromo: false,
   shopHeroPromoLabel: "",
   shopHeroPromoHref: "/akcije",
+  shopHeroSections: [
+    {
+      id: "shop-hero-1",
+      image: "/img/hero2.jpg",
+      showPromo: false,
+      promoLabel: "",
+      promoHref: "/akcije",
+    },
+  ],
   storySectionTitle: "Brend Prica",
   storySectionCtaLabel: "Pogledaj kolekciju",
   storySectionCtaHref: "/web-shop",
@@ -296,6 +337,35 @@ const DEFAULT_SETTINGS: LandingSettings = {
   saleProductIds: [],
   trendingProductIds: [],
 };
+
+/** Za čuvanje: uvek bar jedna sekcija sa podrazumevanom slikom. */
+export function normalizeShopHeroSectionsForSave(value: unknown): LandingShopHeroSection[] {
+  const rows = normalizeShopHeroSectionsInput(value);
+  if (rows.length >= 1) return rows;
+  return [
+    {
+      id: "shop-hero-1",
+      image: DEFAULT_SETTINGS.shopHeroImage,
+      showPromo: false,
+      promoLabel: "",
+      promoHref: "/akcije",
+    },
+  ];
+}
+
+function resolveShopHeroSections(settings: Partial<LandingSettings>): LandingShopHeroSection[] {
+  const fromArray = normalizeShopHeroSectionsInput(settings.shopHeroSections);
+  if (fromArray.length > 0) return fromArray;
+  return [
+    {
+      id: "shop-hero-1",
+      image: String(settings.shopHeroImage || DEFAULT_SETTINGS.shopHeroImage),
+      showPromo: Boolean(settings.shopHeroShowPromo ?? DEFAULT_SETTINGS.shopHeroShowPromo),
+      promoLabel: decodeLandingText(settings.shopHeroPromoLabel, DEFAULT_SETTINGS.shopHeroPromoLabel),
+      promoHref: String(settings.shopHeroPromoHref || DEFAULT_SETTINGS.shopHeroPromoHref),
+    },
+  ];
+}
 
 const normalizeLandingDocument = (value: unknown): LandingDocument | null => {
   if (!value || typeof value !== "object") return null;
@@ -444,6 +514,9 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
     );
   }
 
+  const shopHeroSections = resolveShopHeroSections(settings);
+  const shopHeroFirst = shopHeroSections[0]!;
+
   return {
     showSaleSection: saleSectionEnabled,
     productSections: syncedProductSections,
@@ -485,10 +558,11 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
     shopHeroEyebrow: decodeLandingText(settings.shopHeroEyebrow, DEFAULT_SETTINGS.shopHeroEyebrow),
     shopHeroTitle: decodeLandingText(settings.shopHeroTitle, DEFAULT_SETTINGS.shopHeroTitle),
     shopHeroLead: decodeLandingText(settings.shopHeroLead, DEFAULT_SETTINGS.shopHeroLead),
-    shopHeroImage: String(settings.shopHeroImage || DEFAULT_SETTINGS.shopHeroImage),
-    shopHeroShowPromo: Boolean(settings.shopHeroShowPromo ?? DEFAULT_SETTINGS.shopHeroShowPromo),
-    shopHeroPromoLabel: decodeLandingText(settings.shopHeroPromoLabel, DEFAULT_SETTINGS.shopHeroPromoLabel),
-    shopHeroPromoHref: String(settings.shopHeroPromoHref || DEFAULT_SETTINGS.shopHeroPromoHref),
+    shopHeroSections,
+    shopHeroImage: shopHeroFirst.image,
+    shopHeroShowPromo: shopHeroFirst.showPromo,
+    shopHeroPromoLabel: shopHeroFirst.promoLabel,
+    shopHeroPromoHref: shopHeroFirst.promoHref,
     storySectionTitle: decodeLandingText(settings.storySectionTitle, DEFAULT_SETTINGS.storySectionTitle),
     storySectionCtaLabel: decodeLandingText(settings.storySectionCtaLabel, DEFAULT_SETTINGS.storySectionCtaLabel),
     storySectionCtaHref: String(settings.storySectionCtaHref || DEFAULT_SETTINGS.storySectionCtaHref),
@@ -572,6 +646,45 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
 
   const saleSectionEnabled =
     buildLandingProductSectionMap(nextProductSections).get("saleProductIds")?.enabled ?? current.showSaleSection;
+
+  let nextShopHeroSections: LandingShopHeroSection[];
+  if (patch.shopHeroSections != null) {
+    nextShopHeroSections = normalizeShopHeroSectionsForSave(patch.shopHeroSections);
+  } else if (
+    patch.shopHeroImage != null ||
+    patch.shopHeroShowPromo != null ||
+    patch.shopHeroPromoLabel != null ||
+    patch.shopHeroPromoHref != null
+  ) {
+    const base = [...current.shopHeroSections];
+    const first = base[0] ?? {
+      id: "shop-hero-1",
+      image: DEFAULT_SETTINGS.shopHeroImage,
+      showPromo: false,
+      promoLabel: "",
+      promoHref: "/akcije",
+    };
+    nextShopHeroSections = [
+      {
+        ...first,
+        image:
+          patch.shopHeroImage == null
+            ? first.image
+            : String(patch.shopHeroImage).trim() || first.image,
+        showPromo: patch.shopHeroShowPromo == null ? first.showPromo : Boolean(patch.shopHeroShowPromo),
+        promoLabel:
+          patch.shopHeroPromoLabel == null ? first.promoLabel : String(patch.shopHeroPromoLabel).trim(),
+        promoHref:
+          patch.shopHeroPromoHref == null
+            ? first.promoHref
+            : String(patch.shopHeroPromoHref).trim() || first.promoHref,
+      },
+      ...base.slice(1),
+    ];
+  } else {
+    nextShopHeroSections = current.shopHeroSections;
+  }
+  const nextShopHeroFirst = nextShopHeroSections[0]!;
 
   const next: LandingSettings = {
     showSaleSection: saleSectionEnabled,
@@ -696,18 +809,11 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
       patch.shopHeroLead == null
         ? current.shopHeroLead
         : String(patch.shopHeroLead).trim() || DEFAULT_SETTINGS.shopHeroLead,
-    shopHeroImage:
-      patch.shopHeroImage == null
-        ? current.shopHeroImage
-        : String(patch.shopHeroImage).trim() || DEFAULT_SETTINGS.shopHeroImage,
-    shopHeroShowPromo:
-      patch.shopHeroShowPromo == null ? current.shopHeroShowPromo : Boolean(patch.shopHeroShowPromo),
-    shopHeroPromoLabel:
-      patch.shopHeroPromoLabel == null ? current.shopHeroPromoLabel : String(patch.shopHeroPromoLabel).trim(),
-    shopHeroPromoHref:
-      patch.shopHeroPromoHref == null
-        ? current.shopHeroPromoHref
-        : String(patch.shopHeroPromoHref).trim() || DEFAULT_SETTINGS.shopHeroPromoHref,
+    shopHeroSections: nextShopHeroSections,
+    shopHeroImage: nextShopHeroFirst.image,
+    shopHeroShowPromo: nextShopHeroFirst.showPromo,
+    shopHeroPromoLabel: nextShopHeroFirst.promoLabel,
+    shopHeroPromoHref: nextShopHeroFirst.promoHref,
     storySectionTitle:
       patch.storySectionTitle == null
         ? current.storySectionTitle

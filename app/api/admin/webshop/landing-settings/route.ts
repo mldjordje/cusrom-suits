@@ -186,6 +186,9 @@ export async function PATCH(req: NextRequest) {
   if ("shopHeroEyebrow" in row) patch.shopHeroEyebrow = String(row.shopHeroEyebrow || "");
   if ("shopHeroTitle" in row) patch.shopHeroTitle = String(row.shopHeroTitle || "");
   if ("shopHeroLead" in row) patch.shopHeroLead = String(row.shopHeroLead || "");
+  if ("shopHeroSections" in row && Array.isArray(row.shopHeroSections)) {
+    patch.shopHeroSections = row.shopHeroSections as LandingSettings["shopHeroSections"];
+  }
   if ("shopHeroImage" in row) patch.shopHeroImage = String(row.shopHeroImage || "");
   if ("shopHeroShowPromo" in row) patch.shopHeroShowPromo = Boolean(row.shopHeroShowPromo);
   if ("shopHeroPromoLabel" in row) patch.shopHeroPromoLabel = String(row.shopHeroPromoLabel || "");

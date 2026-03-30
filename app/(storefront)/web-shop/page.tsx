@@ -43,6 +43,9 @@ export async function generateMetadata({
 }) {
   const lang = await resolveStorefrontLanguage(await searchParams);
   const isEn = lang === "en";
+  const landingForOg = await getLandingSettings();
+  const ogHeroImage =
+    landingForOg.shopHeroSections[0]?.image || landingForOg.shopHeroImage || "/img/hero2.jpg";
 
   return buildSeoMetadata({
     title: "Web Shop",
@@ -51,7 +54,7 @@ export async function generateMetadata({
       : "Pregledajte ready-to-wear musku kolekciju, aktuelne akcije i dostupne velicine u Santos & Santorini web shopu.",
     path: "/web-shop",
     lang,
-    image: "/img/hero2.jpg",
+    image: ogHeroImage,
     keywords: ["web shop odela", "muski sakoi", "muske kosulje", "ready to wear"],
   });
 }
@@ -363,41 +366,45 @@ export default async function WebShopPage({
       <main className="page-wrapper ss-shop-page">
         <Reveal as="section" className="ss-shop-hero-section" delay={0} amount={0.12} y={14}>
           <div className="container ss-shop-hero">
-            <div className="ss-shop-hero__media">
-              <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
-                <Image
-                  src={landingSettings.shopHeroImage || "/img/hero2.jpg"}
-                  width={1759}
-                  height={620}
-                  alt="Santos web shop hero"
-                  className="slideshow-bg__img object-fit-cover"
-                  priority
-                  sizes="100vw"
-                />
-              </div>
-              <div className="ss-shop-hero__overlay" />
-              {/* Brand + inline CTAs overlay */}
-              <div className="ss-shop-hero__ui">
-                <span className="ss-shop-hero__brand">Santos &amp; Santorini</span>
-                <div className="ss-shop-hero__inline-actions">
-                  <Link href="#shop-products" className="ss-hero-pill">
-                    {isEn ? "Collection" : "Kolekcija"}
-                  </Link>
-                  <Link href={makeHref({ categoryId: null, onSale: 1, page: 1 })} className="ss-hero-pill ss-hero-pill--sale">
-                    {isEn ? "Sale" : "Akcija"}
-                  </Link>
+            <div className="ss-shop-hero-stack">
+              {landingSettings.shopHeroSections.map((section, heroIndex) => (
+                <div key={section.id} className="ss-shop-hero__media">
+                  <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
+                    <Image
+                      src={section.image || "/img/hero2.jpg"}
+                      width={1759}
+                      height={620}
+                      alt={heroIndex === 0 ? "Santos web shop hero" : `Santos web shop hero ${heroIndex + 1}`}
+                      className="slideshow-bg__img object-fit-cover"
+                      priority={heroIndex === 0}
+                      sizes="100vw"
+                    />
+                  </div>
+                  <div className="ss-shop-hero__overlay" />
+                  {heroIndex === 0 ? (
+                    <div className="ss-shop-hero__ui">
+                      <span className="ss-shop-hero__brand">Santos &amp; Santorini</span>
+                      <div className="ss-shop-hero__inline-actions">
+                        <Link href="#shop-products" className="ss-hero-pill">
+                          {isEn ? "Collection" : "Kolekcija"}
+                        </Link>
+                        <Link href={makeHref({ categoryId: null, onSale: 1, page: 1 })} className="ss-hero-pill ss-hero-pill--sale">
+                          {isEn ? "Sale" : "Akcija"}
+                        </Link>
+                      </div>
+                    </div>
+                  ) : null}
+                  {section.showPromo && section.promoLabel ? (
+                    <Link
+                      href={section.promoHref || makeHref({ categoryId: null, onSale: 1, page: 1 })}
+                      className="ss-shop-hero__promo-badge"
+                    >
+                      <span className="ss-shop-hero__promo-dot" aria-hidden="true" />
+                      {section.promoLabel}
+                    </Link>
+                  ) : null}
                 </div>
-              </div>
-              {/* Admin-configurable promo badge */}
-              {landingSettings.shopHeroShowPromo && landingSettings.shopHeroPromoLabel ? (
-                <Link
-                  href={landingSettings.shopHeroPromoHref || makeHref({ categoryId: null, onSale: 1, page: 1 })}
-                  className="ss-shop-hero__promo-badge"
-                >
-                  <span className="ss-shop-hero__promo-dot" aria-hidden="true" />
-                  {landingSettings.shopHeroPromoLabel}
-                </Link>
-              ) : null}
+              ))}
             </div>
             <div className="ss-shop-hero__categories">
               {heroCategoryLinks.map((link) => (
