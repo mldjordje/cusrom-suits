@@ -6,6 +6,7 @@ import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import StorefrontTrustStrip from "@/app/components/storefront/StorefrontTrustStrip";
 import WebShopFilters from "@/app/components/storefront/WebShopFilters";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
+import Reveal from "@/app/components/motion/Reveal";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
@@ -360,7 +361,7 @@ export default async function WebShopPage({
       <JsonLd data={collectionJsonLd} />
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-shop-page">
-        <section className="ss-shop-hero-section">
+        <Reveal as="section" className="ss-shop-hero-section" delay={0} amount={0.12} y={14}>
           <div className="container ss-shop-hero">
             <div className="ss-shop-hero__media">
               <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
@@ -375,24 +376,28 @@ export default async function WebShopPage({
                 />
               </div>
               <div className="ss-shop-hero__overlay" />
-              <div className="ss-shop-hero__content">
-                <div className="container ss-shop-hero__content-inner">
-                  <div className="ss-shop-hero__card">
-                    <p className="ss-shop-hero__eyebrow">{heroEyebrow}</p>
-                    <h1>{heroTitle}</h1>
-                    <p className="ss-shop-hero__lead">{heroLead}</p>
-
-                    <div className="ss-shop-hero__actions">
-                      <Link href="#shop-products" className="btn btn-light text-uppercase fw-medium">
-                        {isEn ? "Browse collection" : "Pogledaj kolekciju"}
-                      </Link>
-                      <Link href={makeHref({ categoryId: null, onSale: 1, page: 1 })} className="btn btn-outline-light text-uppercase fw-medium">
-                        {isEn ? "View sale" : "Pogledaj akcije"}
-                      </Link>
-                    </div>
-                  </div>
+              {/* Brand + inline CTAs overlay */}
+              <div className="ss-shop-hero__ui">
+                <span className="ss-shop-hero__brand">Santos &amp; Santorini</span>
+                <div className="ss-shop-hero__inline-actions">
+                  <Link href="#shop-products" className="ss-hero-pill">
+                    {isEn ? "Collection" : "Kolekcija"}
+                  </Link>
+                  <Link href={makeHref({ categoryId: null, onSale: 1, page: 1 })} className="ss-hero-pill ss-hero-pill--sale">
+                    {isEn ? "Sale" : "Akcija"}
+                  </Link>
                 </div>
               </div>
+              {/* Admin-configurable promo badge */}
+              {landingSettings.shopHeroShowPromo && landingSettings.shopHeroPromoLabel ? (
+                <Link
+                  href={landingSettings.shopHeroPromoHref || makeHref({ categoryId: null, onSale: 1, page: 1 })}
+                  className="ss-shop-hero__promo-badge"
+                >
+                  <span className="ss-shop-hero__promo-dot" aria-hidden="true" />
+                  {landingSettings.shopHeroPromoLabel}
+                </Link>
+              ) : null}
             </div>
             <div className="ss-shop-hero__categories">
               {heroCategoryLinks.map((link) => (
@@ -406,9 +411,10 @@ export default async function WebShopPage({
               ))}
             </div>
           </div>
-        </section>
+        </Reveal>
 
         <section className="shop-main container ss-shop-main-section" id="shop-products">
+          <Reveal as="div" className="ss-shop-main-reveal" delay={0.06} amount={0.08} y={20}>
           <WebShopFilters
             lang={lang}
             query={q}
@@ -488,9 +494,12 @@ export default async function WebShopPage({
               {isEn ? "Show more" : "Prikazi jos"}
             </Link>
           </div>
+          </Reveal>
         </section>
 
-        <StorefrontTrustStrip lang={lang} compact />
+        <Reveal as="div" delay={0.1} amount={0.15} y={12}>
+          <StorefrontTrustStrip lang={lang} compact />
+        </Reveal>
 
         <div className="mb-5 pb-xl-5" />
       </main>

@@ -24,10 +24,11 @@ const navItems: NavItem[] = [
     href: "/admin/webshop",
     label: "Web Shop",
     icon: "WS",
-    matchPaths: ["/admin/webshop", "/admin/landing", "/admin/categories", "/admin/orders", "/admin/size-guides"],
+    matchPaths: ["/admin/webshop", "/admin/landing", "/admin/shop-hero", "/admin/categories", "/admin/orders", "/admin/size-guides"],
     children: [
       { href: "/admin/webshop?tab=products", label: "Proizvodi i lager" },
       { href: "/admin/landing", label: "Pocetna i sekcije" },
+      { href: "/admin/shop-hero", label: "Web Shop Hero" },
       { href: "/admin/webshop?tab=akcije", label: "Akcije i snizenja" },
       { href: "/admin/categories", label: "Kategorije" },
       { href: "/admin/orders", label: "Porudzbine" },

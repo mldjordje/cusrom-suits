@@ -187,6 +187,9 @@ export async function PATCH(req: NextRequest) {
   if ("shopHeroTitle" in row) patch.shopHeroTitle = String(row.shopHeroTitle || "");
   if ("shopHeroLead" in row) patch.shopHeroLead = String(row.shopHeroLead || "");
   if ("shopHeroImage" in row) patch.shopHeroImage = String(row.shopHeroImage || "");
+  if ("shopHeroShowPromo" in row) patch.shopHeroShowPromo = Boolean(row.shopHeroShowPromo);
+  if ("shopHeroPromoLabel" in row) patch.shopHeroPromoLabel = String(row.shopHeroPromoLabel || "");
+  if ("shopHeroPromoHref" in row) patch.shopHeroPromoHref = String(row.shopHeroPromoHref || "");
   if ("storySectionTitle" in row) patch.storySectionTitle = String(row.storySectionTitle || "");
   if ("storySectionCtaLabel" in row) patch.storySectionCtaLabel = String(row.storySectionCtaLabel || "");
   if ("storySectionCtaHref" in row) patch.storySectionCtaHref = String(row.storySectionCtaHref || "");

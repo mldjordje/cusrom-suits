@@ -259,18 +259,26 @@ export default function WebShopFilters({
 
       <div className="ss-shop-feed">
         <div className="ss-shop-mobile-toolbar d-lg-none">
-          <div className="ss-shop-mobile-toolbar__summary ss-shop-mobile-toolbar__summary--compact">
-            <strong>
-              {showingCount} / {totalCount} {isEn ? "products" : "proizvoda"}
-            </strong>
-            {activeFilterChips.length > 0 ? (
-              <span className="ss-shop-mobile-toolbar__active">
-                {activeFilterChips.length} {isEn ? "active filters" : "aktivnih filtera"}
-              </span>
-            ) : null}
-          </div>
+          <div className="ss-shop-mobile-toolbar__top">
+            <div
+              className="ss-shop-mobile-toolbar__summary ss-shop-mobile-toolbar__summary--compact"
+              aria-label={
+                isEn
+                  ? `Showing ${showingCount} of ${totalCount} products`
+                  : `Prikazano ${showingCount} od ${totalCount} proizvoda`
+              }
+            >
+              <strong>
+                {showingCount}/{totalCount}
+              </strong>
+              {activeFilterChips.length > 0 ? (
+                <span className="ss-shop-mobile-toolbar__active" title={isEn ? "Active filters" : "Aktivni filteri"}>
+                  {activeFilterChips.length}
+                </span>
+              ) : null}
+            </div>
 
-          <div className="ss-shop-mobile-toolbar__actions">
+            <div className="ss-shop-mobile-toolbar__actions">
             <button
               type="button"
               className="ss-shop-mobile-trigger"
@@ -345,6 +353,7 @@ export default function WebShopFilters({
               {renderCategoryLinks("ss-shop-mobile-drawer__categories")}
               {renderForm("ss-shop-mobile-filters", true)}
             </div>
+          </div>
           </div>
 
           {activeFilterChips.length > 0 ? (

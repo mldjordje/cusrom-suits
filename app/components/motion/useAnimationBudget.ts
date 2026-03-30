@@ -18,52 +18,48 @@ const readConnection = (): ConnectionLike | null => {
   return nav.connection || nav.mozConnection || nav.webkitConnection || null;
 };
 
-const isLowPowerDevice = () => {
+/**
+ * Only skip motion for accessibility / data-saver / very slow networks.
+ * Mobile-first UX still uses scroll reveals; we do not treat phones as "low power"
+ * for animation (that previously disabled all storefront motion).
+ */
+const shouldForceReduceMotion = () => {
   if (typeof navigator === "undefined" || typeof window === "undefined") return false;
 
-  const nav = navigator as Navigator & {
-    deviceMemory?: number;
-    hardwareConcurrency?: number;
-  };
-
-  const deviceMemory = Number(nav.deviceMemory || 8);
-  const cpuCores = Number(nav.hardwareConcurrency || 8);
   const connection = readConnection();
   const effectiveType = String(connection?.effectiveType || "").toLowerCase();
   const saveData = Boolean(connection?.saveData);
   const weakNetwork = effectiveType.includes("2g") || effectiveType.includes("slow-2g");
-  const coarsePointer = window.matchMedia("(pointer: coarse)").matches;
-  const compactViewport = window.matchMedia("(max-width: 820px)").matches;
-  const appleMobile = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-  return saveData || weakNetwork || deviceMemory <= 4 || cpuCores <= 4 || coarsePointer || compactViewport || appleMobile;
+  return saveData || weakNetwork;
 };
 
 export default function useAnimationBudget() {
   const prefersReducedMotion = useReducedMotion();
-  const [lowPower, setLowPower] = useState(() => isLowPowerDevice());
+  const [networkConstrained, setNetworkConstrained] = useState(() => shouldForceReduceMotion());
 
   useEffect(() => {
-    setLowPower(isLowPowerDevice());
+    setNetworkConstrained(shouldForceReduceMotion());
     const connection = readConnection();
     if (!connection || typeof (connection as EventTarget).addEventListener !== "function") return;
 
-    const onConnectionChange = () => setLowPower(isLowPowerDevice());
+    const onConnectionChange = () => setNetworkConstrained(shouldForceReduceMotion());
     (connection as EventTarget).addEventListener("change", onConnectionChange);
     return () => {
       (connection as EventTarget).removeEventListener("change", onConnectionChange);
     };
   }, []);
 
-  const reduceMotion = Boolean(prefersReducedMotion || lowPower);
+  const reduceMotion = Boolean(prefersReducedMotion || networkConstrained);
 
   return useMemo(
     () => ({
       reduceMotion,
-      lowPower,
+      /** @deprecated use reduceMotion; kept for callers that checked "lowPower" */
+      lowPower: networkConstrained,
       allowParallax: !reduceMotion,
       allowTransitions: !reduceMotion,
     }),
-    [lowPower, reduceMotion],
+    [networkConstrained, reduceMotion],
   );
 }

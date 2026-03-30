@@ -721,8 +721,15 @@ export default async function HomePage({
             ) : null}
           </div>
           <div className="row g-4">
-            {storyCards.map((block) => (
-              <article key={block.id} className="col-12 col-md-6 col-lg-4">
+            {storyCards.map((block, storyIndex) => (
+              <Reveal
+                key={block.id}
+                as="article"
+                className="col-12 col-md-6 col-lg-4"
+                delay={0.06 * storyIndex}
+                y={26}
+                amount={0.15}
+              >
                 <div className="position-relative overflow-hidden h-100 ss-story-card" style={{ minHeight: 420, borderRadius: 24 }}>
                   <Image src={block.image || "/img/hero.jpg"} alt={tx(block.title)} fill sizes="(max-width: 991px) 100vw, 33vw" style={{ objectFit: "cover" }} />
                   <div
@@ -744,7 +751,7 @@ export default async function HomePage({
                     </div>
                   </div>
                 </div>
-              </article>
+              </Reveal>
             ))}
           </div>
         </Reveal>
@@ -753,12 +760,16 @@ export default async function HomePage({
 
         {topGridSections.length > 0
           ? topGridSections.map((entry, index) => (
-              <div
+              <Reveal
                 key={entry.kind === "builtin" ? `top-grid-${entry.key}` : `top-grid-${entry.section.id}`}
+                as="div"
+                delay={Math.min(0.07 * index, 0.35)}
+                y={22}
+                amount={0.08}
               >
                 {renderOrderedGridSection(entry)}
                 {index < topGridSections.length - 1 ? <div className="mb-3 mb-xl-4 pt-xl-1 pb-4" /> : null}
-              </div>
+              </Reveal>
             ))
           : null}
 

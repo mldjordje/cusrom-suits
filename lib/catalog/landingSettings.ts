@@ -93,6 +93,9 @@ export type LandingSettings = {
   shopHeroTitle: string;
   shopHeroLead: string;
   shopHeroImage: string;
+  shopHeroShowPromo: boolean;
+  shopHeroPromoLabel: string;
+  shopHeroPromoHref: string;
   storySectionTitle: string;
   storySectionCtaLabel: string;
   storySectionCtaHref: string;
@@ -214,6 +217,9 @@ const DEFAULT_SETTINGS: LandingSettings = {
   shopHeroLead:
     "Pregledaj kolekciju uz citljiviju navigaciju, pretragu po proizvodu i filtere koji sada rade pregledno i na desktopu i na telefonu.",
   shopHeroImage: "/img/hero2.jpg",
+  shopHeroShowPromo: false,
+  shopHeroPromoLabel: "",
+  shopHeroPromoHref: "/akcije",
   storySectionTitle: "Brend Prica",
   storySectionCtaLabel: "Pogledaj kolekciju",
   storySectionCtaHref: "/web-shop",
@@ -480,6 +486,9 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
     shopHeroTitle: decodeLandingText(settings.shopHeroTitle, DEFAULT_SETTINGS.shopHeroTitle),
     shopHeroLead: decodeLandingText(settings.shopHeroLead, DEFAULT_SETTINGS.shopHeroLead),
     shopHeroImage: String(settings.shopHeroImage || DEFAULT_SETTINGS.shopHeroImage),
+    shopHeroShowPromo: Boolean(settings.shopHeroShowPromo ?? DEFAULT_SETTINGS.shopHeroShowPromo),
+    shopHeroPromoLabel: decodeLandingText(settings.shopHeroPromoLabel, DEFAULT_SETTINGS.shopHeroPromoLabel),
+    shopHeroPromoHref: String(settings.shopHeroPromoHref || DEFAULT_SETTINGS.shopHeroPromoHref),
     storySectionTitle: decodeLandingText(settings.storySectionTitle, DEFAULT_SETTINGS.storySectionTitle),
     storySectionCtaLabel: decodeLandingText(settings.storySectionCtaLabel, DEFAULT_SETTINGS.storySectionCtaLabel),
     storySectionCtaHref: String(settings.storySectionCtaHref || DEFAULT_SETTINGS.storySectionCtaHref),
@@ -691,6 +700,14 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
       patch.shopHeroImage == null
         ? current.shopHeroImage
         : String(patch.shopHeroImage).trim() || DEFAULT_SETTINGS.shopHeroImage,
+    shopHeroShowPromo:
+      patch.shopHeroShowPromo == null ? current.shopHeroShowPromo : Boolean(patch.shopHeroShowPromo),
+    shopHeroPromoLabel:
+      patch.shopHeroPromoLabel == null ? current.shopHeroPromoLabel : String(patch.shopHeroPromoLabel).trim(),
+    shopHeroPromoHref:
+      patch.shopHeroPromoHref == null
+        ? current.shopHeroPromoHref
+        : String(patch.shopHeroPromoHref).trim() || DEFAULT_SETTINGS.shopHeroPromoHref,
     storySectionTitle:
       patch.storySectionTitle == null
         ? current.storySectionTitle
