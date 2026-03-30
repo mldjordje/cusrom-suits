@@ -9,9 +9,16 @@ import {
   normalizeLandingCustomSections,
   normalizeLandingProductSections,
   type LandingCustomSection,
+  type LandingProductLayout,
   type LandingProductSectionKey,
   type LandingProductSectionState,
 } from "@/lib/catalog/landingSections";
+import {
+  applyGridOrderToSections,
+  getOrderedGridEntries,
+  type LandingGridOrderEntry,
+  type LandingGridOrderRef,
+} from "@/lib/catalog/landingSectionOrder";
 
 type LandingSectionsState = {
   showSaleSection: boolean;
@@ -32,14 +39,6 @@ type CatalogProduct = {
   sku: string;
   name: string;
 };
-
-type LandingGridOrderEntry =
-  | { kind: "builtin"; key: LandingProductSectionKey; order: number }
-  | { kind: "custom"; id: string; order: number };
-
-type LandingGridOrderRef =
-  | { kind: "builtin"; key: LandingProductSectionKey }
-  | { kind: "custom"; id: string };
 
 type LandingDisplaySection = (typeof LANDING_PRODUCT_SECTION_CONFIG)[number] & {
   control: LandingProductSectionState;
@@ -91,64 +90,6 @@ const normalizeLegacyIdList = (value: unknown, max = 24): number[] => {
 
 const limitForLandingSection = (key: LandingProductSectionKey) =>
   getLandingProductSectionConfig(key)?.limit ?? 24;
-
-const getOrderedGridEntries = (
-  value: Pick<LandingSectionsState, "productSections" | "customSections">,
-): LandingGridOrderEntry[] => {
-  const builtins = normalizeLandingProductSections(value.productSections)
-    .filter((section) => getLandingProductSectionConfig(section.key)?.placement === "grid")
-    .map((section) => ({
-      kind: "builtin" as const,
-      key: section.key,
-      order: section.order,
-      defaultOrder: getLandingProductSectionConfig(section.key)?.defaultOrder ?? 0,
-    }));
-
-  const customs = normalizeLandingCustomSections(value.customSections).map((section, index) => ({
-    kind: "custom" as const,
-    id: section.id,
-    order: section.order,
-    defaultOrder: 100 + index,
-  }));
-
-  return [...builtins, ...customs]
-    .sort((left, right) => {
-      if (left.order !== right.order) return left.order - right.order;
-      return left.defaultOrder - right.defaultOrder;
-    })
-    .map(({ defaultOrder: _defaultOrder, ...entry }) => entry);
-};
-
-const applyGridOrderToState = (state: LandingSectionsState, orderedEntries: LandingGridOrderEntry[]): LandingSectionsState => {
-  const builtInOrderMap = new Map<LandingProductSectionKey, number>();
-  const customOrderMap = new Map<string, number>();
-
-  orderedEntries.forEach((entry, index) => {
-    const order = index + 1;
-    if (entry.kind === "builtin") {
-      builtInOrderMap.set(entry.key, order);
-      return;
-    }
-    customOrderMap.set(entry.id, order);
-  });
-
-  return {
-    ...state,
-    productSections: normalizeLandingProductSections(
-      state.productSections.map((section) => {
-        const placement = getLandingProductSectionConfig(section.key)?.placement;
-        if (placement !== "grid") return section;
-        return { ...section, order: builtInOrderMap.get(section.key) ?? section.order };
-      }),
-    ),
-    customSections: normalizeLandingCustomSections(
-      state.customSections.map((section) => ({
-        ...section,
-        order: customOrderMap.get(section.id) ?? section.order,
-      })),
-    ),
-  };
-};
 
 const sortSectionsForDisplay = (sections: LandingProductSectionState[]) => {
   const normalized = normalizeLandingProductSections(sections);
@@ -204,11 +145,7 @@ export default function AdminLandingSectionsPage() {
   );
 
   const orderedGridEntries = useMemo(
-    () =>
-      getOrderedGridEntries({
-        productSections: state.productSections,
-        customSections: state.customSections,
-      }),
+    () => getOrderedGridEntries(state.productSections, state.customSections),
     [state.customSections, state.productSections],
   );
 
@@ -342,7 +279,8 @@ export default function AdminLandingSectionsPage() {
           title: "",
           subtitle: "",
           enabled: true,
-          order: getOrderedGridEntries(prev).length + 1,
+          order: getOrderedGridEntries(prev.productSections, prev.customSections).length + 1,
+          layout: "grid",
           productIds: [],
         },
       ]),
@@ -432,7 +370,7 @@ export default function AdminLandingSectionsPage() {
 
   const moveGridSection = (entry: LandingGridOrderRef, direction: -1 | 1) => {
     setState((prev) => {
-      const orderedEntries = getOrderedGridEntries(prev);
+      const orderedEntries = getOrderedGridEntries(prev.productSections, prev.customSections);
       const currentIndex = orderedEntries.findIndex((candidate) =>
         candidate.kind === "builtin" && entry.kind === "builtin"
           ? candidate.key === entry.key
@@ -446,8 +384,24 @@ export default function AdminLandingSectionsPage() {
       const reordered = [...orderedEntries];
       const [picked] = reordered.splice(currentIndex, 1);
       reordered.splice(targetIndex, 0, picked);
-      return applyGridOrderToState(prev, reordered);
+      return {
+        ...prev,
+        ...applyGridOrderToSections(prev.productSections, prev.customSections, reordered),
+      };
     });
+  };
+
+  const setBuiltinLayout = (key: LandingProductSectionKey, layout: LandingProductLayout) => {
+    setState((prev) => ({
+      ...prev,
+      productSections: normalizeLandingProductSections(
+        prev.productSections.map((section) => (section.key === key ? { ...section, layout } : section)),
+      ),
+    }));
+  };
+
+  const setCustomLayout = (id: string, layout: LandingProductLayout) => {
+    updateCustomSection(id, { layout });
   };
 
   const saveSections = async () => {
@@ -616,6 +570,18 @@ export default function AdminLandingSectionsPage() {
                     >
                       Dole
                     </button>
+                    <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+                      <span className="uppercase tracking-[0.08em]">Prikaz</span>
+                      <select
+                        value={section.control.layout}
+                        onChange={(e) => setBuiltinLayout(section.key, e.target.value as LandingProductLayout)}
+                        disabled={section.placement !== "grid"}
+                        className="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-800 disabled:opacity-40"
+                      >
+                        <option value="grid">Mreza</option>
+                        <option value="carousel">Karusel (horizontalno)</option>
+                      </select>
+                    </label>
                   </div>
                 </div>
 
@@ -773,6 +739,17 @@ export default function AdminLandingSectionsPage() {
                       >
                         Dole
                       </button>
+                      <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+                        <span className="uppercase tracking-[0.08em]">Prikaz</span>
+                        <select
+                          value={section.layout}
+                          onChange={(e) => setCustomLayout(section.id, e.target.value as LandingProductLayout)}
+                          className="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-800"
+                        >
+                          <option value="grid">Mreza</option>
+                          <option value="carousel">Karusel (horizontalno)</option>
+                        </select>
+                      </label>
                       <button
                         type="button"
                         onClick={() => removeCustomSection(section.id)}

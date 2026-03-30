@@ -267,6 +267,75 @@
     0 0 20px rgba(214, 0, 28, 0.12);
 }
 
+/* Hero CTA: bez globalnog "sheen" kvadrata koji prolazi preko svih .btn u page-wrapper */
+@media (prefers-reduced-motion: no-preference) {
+  .ss-home18-hero__cta .btn::before,
+  .ss-home18-hero__cta .btn::after {
+    animation: none !important;
+    opacity: 0.06 !important;
+    transform: none !important;
+  }
+
+  .ss-home18-hero__cta .btn {
+    transition:
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.35s ease,
+      border-color 0.25s ease,
+      background-color 0.25s ease;
+  }
+
+  .ss-home18-hero__cta .btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 16px 36px rgba(0, 0, 0, 0.32),
+      0 0 0 1px rgba(255, 255, 255, 0.12);
+  }
+}
+
+/* Landing: horizontalni strip proizvoda (admin: Karusel) */
+.ss-landing-product-row--carousel {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.85rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.35rem;
+  margin-inline: -0.15rem;
+  padding-inline: 0.15rem;
+  scrollbar-width: thin;
+}
+
+.ss-landing-product-row--carousel > .product-card-wrapper,
+.ss-landing-product-row--carousel > .col,
+.ss-landing-product-row--carousel > a,
+.ss-landing-product-row--carousel > * {
+  flex: 0 0 min(78vw, 280px);
+  max-width: min(78vw, 280px);
+  scroll-snap-align: start;
+}
+
+@media (min-width: 768px) {
+  .ss-landing-product-row--carousel > .product-card-wrapper,
+  .ss-landing-product-row--carousel > .col,
+  .ss-landing-product-row--carousel > a,
+  .ss-landing-product-row--carousel > * {
+    flex: 0 0 min(42vw, 300px);
+    max-width: min(42vw, 300px);
+  }
+}
+
+@media (min-width: 1200px) {
+  .ss-landing-product-row--carousel > .product-card-wrapper,
+  .ss-landing-product-row--carousel > .col,
+  .ss-landing-product-row--carousel > a,
+  .ss-landing-product-row--carousel > * {
+    flex: 0 0 280px;
+    max-width: 280px;
+  }
+}
+
 .ss-header-home-floating .header-tools__item,
 .ss-header-home-floating .header-tools .btn-link {
   color: #fff;

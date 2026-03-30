@@ -5,6 +5,7 @@ import { decodeHtmlEntities, getCatalogProductDisplayName } from "@/lib/catalog/
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import HomeHeroMedia from "@/app/components/storefront/HomeHeroMedia";
+import HomeHeroIntroMotion from "@/app/components/storefront/HomeHeroIntroMotion";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 
 const HeroParallaxFx = dynamic(() => import("@/app/components/storefront/HeroParallaxFx"));
@@ -121,22 +122,15 @@ export default function HomeHeroVideo({ categories, showProductCards = true, fea
       <div className="ss-home18-hero__overlay position-absolute top-0 start-0 w-100 h-100" />
 
       <div className="container position-relative ss-home18-hero__content">
-        <div className="ss-home18-hero__intro text-center text-white" data-hero-intro>
-          <p className="text-uppercase fs-13 fw-normal mb-2 text-white ss-home18-hero__eyebrow">{decodeHtmlEntities(content.heroEyebrow)}</p>
-          <h2 className="text-uppercase h1 fw-semi-bold lh-1 mb-4 text-white">
-            {decodeHtmlEntities(content.heroTitleLine1)}
-            <br />
-            {decodeHtmlEntities(content.heroTitleLine2)}
-          </h2>
-          <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap ss-home18-hero__cta">
-            <Link href={withLang(content.heroPrimaryCtaHref)} className="btn btn-light border-0 fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn">
-              {decodeHtmlEntities(content.heroPrimaryCtaLabel)}
-            </Link>
-            <Link href={withLang(content.heroSecondaryCtaHref)} className="btn btn-outline-light fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn ss-cta-btn--ghost-light">
-              {decodeHtmlEntities(content.heroSecondaryCtaLabel)}
-            </Link>
-          </div>
-        </div>
+        <HomeHeroIntroMotion
+          eyebrow={decodeHtmlEntities(content.heroEyebrow)}
+          titleLine1={decodeHtmlEntities(content.heroTitleLine1)}
+          titleLine2={decodeHtmlEntities(content.heroTitleLine2)}
+          primaryLabel={decodeHtmlEntities(content.heroPrimaryCtaLabel)}
+          primaryHref={withLang(content.heroPrimaryCtaHref)}
+          secondaryLabel={decodeHtmlEntities(content.heroSecondaryCtaLabel)}
+          secondaryHref={withLang(content.heroSecondaryCtaHref)}
+        />
 
         {showProductCards ? (
           <div className="ss-home18-hero__cards">

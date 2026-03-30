@@ -1,6 +1,5 @@
 "use client";
 
-import { useEffect, useState } from "react";
 import { m, useReducedMotion } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
@@ -14,15 +13,10 @@ export default function ProductItemMotion({ children, index = 0, className }: Pr
   const prefersReduced = useReducedMotion();
   const { reduceMotion: budgetReduce } = useAnimationBudget();
   const reduceMotion = Boolean(prefersReduced || budgetReduce);
-  const [mounted, setMounted] = useState(false);
   const delay = reduceMotion ? 0 : Math.min((index % 12) * 0.05, 0.4);
   const xShift = reduceMotion ? 0 : (index % 2 === 0 ? -10 : 10);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (reduceMotion || !mounted) {
+  if (reduceMotion) {
     return <div className={className}>{children}</div>;
   }
 
@@ -41,7 +35,7 @@ export default function ProductItemMotion({ children, index = 0, className }: Pr
         x: 0,
         scale: 1,
       }}
-      viewport={{ once: true, amount: 0.18, margin: "0px 0px -10% 0px" }}
+      viewport={{ once: true, amount: 0.12, margin: "0px 0px 12% 0px" }}
       transition={{
         duration: 0.68,
         delay,

@@ -76,10 +76,14 @@ export const LANDING_PRODUCT_SECTION_CONFIG = [
 export type LandingProductSectionKey = (typeof LANDING_PRODUCT_SECTION_CONFIG)[number]["key"];
 export type LandingProductSectionPlacement = (typeof LANDING_PRODUCT_SECTION_CONFIG)[number]["placement"];
 
+/** grid = klasicna mreza; carousel = horizontalni strip (manje ponavljanje na duzoj stranici) */
+export type LandingProductLayout = "grid" | "carousel";
+
 export type LandingProductSectionState = {
   key: LandingProductSectionKey;
   enabled: boolean;
   order: number;
+  layout: LandingProductLayout;
 };
 
 export type LandingProductSectionContent = {
@@ -98,6 +102,7 @@ export type LandingCustomSection = {
   ctaHref: string;
   enabled: boolean;
   order: number;
+  layout: LandingProductLayout;
   productIds: number[];
 };
 
@@ -105,11 +110,19 @@ const configByKey = new Map(
   LANDING_PRODUCT_SECTION_CONFIG.map((section) => [section.key, section] as const),
 );
 
+const parseProductLayout = (value: unknown, fallback: LandingProductLayout): LandingProductLayout => {
+  if (value == null) return fallback;
+  const token = String(value).toLowerCase().trim();
+  if (token === "carousel") return "carousel";
+  return "grid";
+};
+
 export const DEFAULT_LANDING_PRODUCT_SECTIONS: LandingProductSectionState[] =
   LANDING_PRODUCT_SECTION_CONFIG.map((section) => ({
     key: section.key,
     enabled: true,
     order: section.defaultOrder,
+    layout: "grid",
   }));
 
 export const DEFAULT_LANDING_PRODUCT_SECTION_CONTENT: LandingProductSectionContent[] =
@@ -141,6 +154,7 @@ export const normalizeLandingProductSections = (value: unknown): LandingProductS
         key: key as LandingProductSectionKey,
         enabled: row.enabled == null ? defaults.enabled : Boolean(row.enabled),
         order: Number.isFinite(parsedOrder) ? Math.max(0, Math.floor(parsedOrder)) : defaults.order,
+        layout: parseProductLayout(row.layout, defaults.layout),
       });
     }
   }
@@ -230,8 +244,9 @@ export const normalizeLandingCustomSections = (value: unknown, maxSections = 12)
       const defaultOrder =
         LANDING_PRODUCT_SECTION_CONFIG.filter((section) => section.placement === "grid").length + index + 1;
       const order = Number.isFinite(parsedOrder) ? Math.max(1, Math.floor(parsedOrder)) : defaultOrder;
+      const layout = parseProductLayout(row.layout, "grid");
       const productIds = normalizeLegacyIdList(row.productIds, 12);
-      return { id, title, subtitle, ctaLabel, ctaHref, enabled, order, productIds };
+      return { id, title, subtitle, ctaLabel, ctaHref, enabled, order, layout, productIds };
     })
     .filter((section): section is LandingCustomSection => Boolean(section))
     .sort((left, right) => {

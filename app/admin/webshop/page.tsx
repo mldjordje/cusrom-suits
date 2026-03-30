@@ -4,7 +4,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { normalizeLandingProductSectionContent, type LandingProductSectionContent } from "@/lib/catalog/landingSections";
+import {
+  normalizeLandingCustomSections,
+  normalizeLandingProductSectionContent,
+  normalizeLandingProductSections,
+  type LandingCustomSection,
+  type LandingProductLayout,
+  type LandingProductSectionContent,
+  type LandingProductSectionKey,
+  type LandingProductSectionState,
+} from "@/lib/catalog/landingSections";
+import {
+  applyGridOrderToSections,
+  getOrderedGridEntries,
+  type LandingGridOrderRef,
+} from "@/lib/catalog/landingSectionOrder";
 
 type TabKey = "products" | "landing" | "akcije";
 type CatalogCategory = { id: number; name: string; path: string[] };
@@ -59,13 +73,6 @@ type CreateDraft = {
   landingPriority: string;
   videoUrl: string;
 };
-type LandingProductSectionKey =
-  | "heroStripProductIds"
-  | "highlightedProductIds"
-  | "popularProductIds"
-  | "arrivalsProductIds"
-  | "saleProductIds"
-  | "trendingProductIds";
 type LandingDocument = {
   title: string;
   description: string;
@@ -97,6 +104,8 @@ type LandingContactPoint = {
 };
 type LandingSettings = {
   showSaleSection: boolean;
+  productSections: LandingProductSectionState[];
+  customSections: LandingCustomSection[];
   productSectionContent: LandingProductSectionContent[];
   saleSectionTitle: string;
   saleSectionSubtitle: string;
@@ -269,6 +278,8 @@ const defaultCreateDraft: CreateDraft = {
 
 const defaultLandingSettings: LandingSettings = {
   showSaleSection: true,
+  productSections: normalizeLandingProductSections([]),
+  customSections: normalizeLandingCustomSections([]),
   productSectionContent: normalizeLandingProductSectionContent([]),
   saleSectionTitle: "Aktuelne Akcije",
   saleSectionSubtitle: "",
@@ -695,6 +706,27 @@ export default function AdminWebshopPage() {
     [landingProductMap, landingSettings],
   );
 
+  const landingGridOrderEntries = useMemo(
+    () => getOrderedGridEntries(landingSettings.productSections, landingSettings.customSections),
+    [landingSettings.customSections, landingSettings.productSections],
+  );
+
+  const gridPositionByBuiltInKey = useMemo(() => {
+    const map = new Map<LandingProductSectionKey, number>();
+    landingGridOrderEntries.forEach((entry, index) => {
+      if (entry.kind === "builtin") map.set(entry.key, index + 1);
+    });
+    return map;
+  }, [landingGridOrderEntries]);
+
+  const productSectionByKey = useMemo(() => {
+    const map = new Map<LandingProductSectionKey, LandingProductSectionState>();
+    for (const row of normalizeLandingProductSections(landingSettings.productSections)) {
+      map.set(row.key, row);
+    }
+    return map;
+  }, [landingSettings.productSections]);
+
   useEffect(() => {
     const sync = () => {
       const params = new URLSearchParams(window.location.search);
@@ -981,6 +1013,8 @@ export default function AdminWebshopPage() {
       const loaded = { ...defaultLandingSettings, ...(json.settings as LandingSettings) };
       setLandingSettings({
         ...loaded,
+        productSections: normalizeLandingProductSections(loaded.productSections),
+        customSections: normalizeLandingCustomSections(loaded.customSections),
         productSectionContent: normalizeLandingProductSectionContent(loaded.productSectionContent),
         documents: normalizeLandingDocuments(loaded.documents),
         uniformsImages: normalizeLandingUniformImages(loaded.uniformsImages),
@@ -1026,6 +1060,37 @@ export default function AdminWebshopPage() {
 
   const limitForLandingSection = (key: LandingProductSectionKey) =>
     landingSectionConfig.find((section) => section.key === key)?.limit ?? 24;
+
+  const moveLandingGridSection = (entry: LandingGridOrderRef, direction: -1 | 1) => {
+    setLandingSettings((prev) => {
+      const ordered = getOrderedGridEntries(prev.productSections, prev.customSections);
+      const currentIndex = ordered.findIndex((candidate) =>
+        entry.kind === "builtin" && candidate.kind === "builtin"
+          ? candidate.key === entry.key
+          : entry.kind === "custom" && candidate.kind === "custom"
+            ? candidate.id === entry.id
+            : false,
+      );
+      const targetIndex = currentIndex + direction;
+      if (currentIndex < 0 || targetIndex < 0 || targetIndex >= ordered.length) return prev;
+      const reordered = [...ordered];
+      const [picked] = reordered.splice(currentIndex, 1);
+      reordered.splice(targetIndex, 0, picked);
+      return {
+        ...prev,
+        ...applyGridOrderToSections(prev.productSections, prev.customSections, reordered),
+      };
+    });
+  };
+
+  const setWebshopSectionLayout = (key: LandingProductSectionKey, layout: LandingProductLayout) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      productSections: normalizeLandingProductSections(
+        prev.productSections.map((section) => (section.key === key ? { ...section, layout } : section)),
+      ),
+    }));
+  };
 
   const replaceLandingSectionIds = (key: LandingProductSectionKey, nextIds: unknown) => {
     const limit = limitForLandingSection(key);
@@ -1526,6 +1591,8 @@ export default function AdminWebshopPage() {
       setLandingSettings((prev) => ({
         ...prev,
         ...nextSettings,
+        productSections: normalizeLandingProductSections(nextSettings.productSections ?? prev.productSections),
+        customSections: normalizeLandingCustomSections(nextSettings.customSections ?? prev.customSections),
         productSectionContent: normalizeLandingProductSectionContent(nextSettings.productSectionContent ?? prev.productSectionContent),
         documents: normalizeLandingDocuments(nextSettings.documents ?? prev.documents),
         uniformsImages: normalizeLandingUniformImages(nextSettings.uniformsImages ?? prev.uniformsImages),
@@ -2011,6 +2078,52 @@ export default function AdminWebshopPage() {
             ))}
           </div>
 
+          <div className="rounded-2xl border border-emerald-200 bg-emerald-50/60 p-4 shadow-sm">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-emerald-900">Redosled grid sekcija (pocetna)</p>
+            <p className="mt-1 text-xs text-emerald-900/80">
+              Pomeri npr. akcije na vrh. Hero traka (ispod videa) nije u ovoj listi — ona je uvek prva ispod hero bloka. Isti redosled kao na{" "}
+              <Link href="/admin/landing" className="font-semibold underline">
+                /admin/landing
+              </Link>
+              .
+            </p>
+            <ul className="mt-3 space-y-2">
+              {landingGridOrderEntries.map((entry, idx) => (
+                <li
+                  key={entry.kind === "builtin" ? entry.key : entry.id}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-emerald-100 bg-white px-3 py-2 text-sm"
+                >
+                  <span className="font-medium text-slate-800">
+                    {entry.kind === "builtin"
+                      ? landingSectionConfig.find((s) => s.key === entry.key)?.label || entry.key
+                      : landingSettings.customSections.find((c) => c.id === entry.id)?.title?.trim() || "Custom sekcija"}
+                  </span>
+                  <div className="flex flex-wrap gap-1">
+                    <button
+                      type="button"
+                      onClick={() => moveLandingGridSection(entry, -1)}
+                      disabled={idx === 0}
+                      className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-700 disabled:opacity-40"
+                    >
+                      Gore
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveLandingGridSection(entry, 1)}
+                      disabled={idx === landingGridOrderEntries.length - 1}
+                      className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-700 disabled:opacity-40"
+                    >
+                      Dole
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+            {landingGridOrderEntries.length === 0 ? (
+              <p className="mt-2 text-xs text-slate-500">Nema aktivnih grid sekcija za redosled.</p>
+            ) : null}
+          </div>
+
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Hero</p>
             <div className="grid gap-3 md:grid-cols-2">
@@ -2411,16 +2524,54 @@ export default function AdminWebshopPage() {
                 const sectionIds = landingSettings[section.key];
                 const csvValue = sectionIds.join(",");
                 const candidates = landingProductResults.filter((item) => !sectionIds.includes(item.legacyId));
+                const gridPos = gridPositionByBuiltInKey.get(section.key);
+                const layout = productSectionByKey.get(section.key)?.layout ?? "grid";
                 return (
                   <div id={`section-${section.key}`} key={section.key} className="rounded-xl border border-slate-200 p-3 scroll-mt-24">
                     <div className="flex flex-wrap items-center justify-between gap-2">
                       <div>
                         <p className="text-sm font-semibold text-slate-900">{section.label}</p>
                         <p className="text-xs text-slate-500">{section.description}</p>
+                        {gridPos != null ? (
+                          <p className="mt-1 text-[11px] font-semibold uppercase tracking-[0.1em] text-slate-400">
+                            Grid pozicija: {gridPos} / {landingGridOrderEntries.length}
+                          </p>
+                        ) : null}
                       </div>
-                      <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600">
-                        {sectionIds.length}/{section.limit}
-                      </span>
+                      <div className="flex flex-wrap items-end gap-2">
+                        <span className="rounded-full border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-600">
+                          {sectionIds.length}/{section.limit}
+                        </span>
+                        <div className="flex gap-1">
+                          <button
+                            type="button"
+                            onClick={() => moveLandingGridSection({ kind: "builtin", key: section.key }, -1)}
+                            disabled={gridPos == null || gridPos <= 1}
+                            className="rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-700 disabled:opacity-40"
+                          >
+                            Gore
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => moveLandingGridSection({ kind: "builtin", key: section.key }, 1)}
+                            disabled={gridPos == null || gridPos >= landingGridOrderEntries.length}
+                            className="rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-700 disabled:opacity-40"
+                          >
+                            Dole
+                          </button>
+                        </div>
+                        <label className="flex flex-col gap-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] text-slate-500">
+                          Prikaz
+                          <select
+                            value={layout}
+                            onChange={(e) => setWebshopSectionLayout(section.key, e.target.value as LandingProductLayout)}
+                            className="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold normal-case text-slate-800"
+                          >
+                            <option value="grid">Mreza</option>
+                            <option value="carousel">Karusel</option>
+                          </select>
+                        </label>
+                      </div>
                     </div>
 
                     <div className="mt-3 grid gap-2 md:grid-cols-3">
