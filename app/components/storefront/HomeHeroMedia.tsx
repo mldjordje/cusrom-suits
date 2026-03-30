@@ -6,6 +6,8 @@ import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
 type HomeHeroMediaProps = {
   desktopVideoId: string;
+  /** Optional muted autoplay loop on narrow viewports; skipped on save-data / 2G. */
+  mobileVideoId?: string;
   desktopPosterSrc: string;
   mobilePosterSrc: string;
 };
@@ -15,12 +17,15 @@ const buildEmbed = (id: string) =>
 
 export default function HomeHeroMedia({
   desktopVideoId,
+  mobileVideoId,
   desktopPosterSrc,
   mobilePosterSrc,
 }: HomeHeroMediaProps) {
-  const { reduceMotion } = useAnimationBudget();
+  /** Hero video is decorative; keep it unless the network is clearly constrained (not OS reduce-motion). */
+  const { lowPower } = useAnimationBudget();
   const [isDesktop, setIsDesktop] = useState(false);
-  const [showVideo, setShowVideo] = useState(false);
+  const [showDesktopVideo, setShowDesktopVideo] = useState(false);
+  const [showMobileVideo, setShowMobileVideo] = useState(false);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -39,40 +44,63 @@ export default function HomeHeroMedia({
   }, []);
 
   useEffect(() => {
-    if (reduceMotion || !isDesktop) {
-      setShowVideo(false);
+    const enable = Boolean(isDesktop && !lowPower);
+    if (!enable) {
+      setShowDesktopVideo(false);
       return;
     }
-
     let cancelled = false;
     let timeoutId: number | null = null;
     let idleId: number | null = null;
-
-    const enableVideo = () => {
-      if (!cancelled) {
-        setShowVideo(true);
-      }
+    const go = () => {
+      if (!cancelled) setShowDesktopVideo(true);
     };
-
     if (typeof window.requestIdleCallback === "function") {
-      idleId = window.requestIdleCallback(enableVideo, { timeout: 1400 });
+      idleId = window.requestIdleCallback(go, { timeout: 1400 });
     } else {
-      timeoutId = window.setTimeout(enableVideo, 950);
+      timeoutId = window.setTimeout(go, 950);
     }
-
     return () => {
       cancelled = true;
       if (idleId !== null && typeof window.cancelIdleCallback === "function") {
         window.cancelIdleCallback(idleId);
       }
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-      }
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
     };
-  }, [isDesktop, reduceMotion]);
+  }, [isDesktop, lowPower]);
+
+  useEffect(() => {
+    const enable = Boolean(!isDesktop && mobileVideoId && !lowPower);
+    if (!enable) {
+      setShowMobileVideo(false);
+      return;
+    }
+    let cancelled = false;
+    let timeoutId: number | null = null;
+    let idleId: number | null = null;
+    const go = () => {
+      if (!cancelled) setShowMobileVideo(true);
+    };
+    if (typeof window.requestIdleCallback === "function") {
+      idleId = window.requestIdleCallback(go, { timeout: 1400 });
+    } else {
+      timeoutId = window.setTimeout(go, 950);
+    }
+    return () => {
+      cancelled = true;
+      if (idleId !== null && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) window.clearTimeout(timeoutId);
+    };
+  }, [isDesktop, lowPower, mobileVideoId]);
+
+  const videoReady = showDesktopVideo || showMobileVideo;
 
   return (
-    <div className={`ss-home18-hero__media position-absolute top-0 start-0 w-100 h-100 ${showVideo ? "is-video-ready" : ""}`}>
+    <div
+      className={`ss-home18-hero__media position-absolute top-0 start-0 w-100 h-100 ${videoReady ? "is-video-ready" : ""}`}
+    >
       <Image
         src={isDesktop ? desktopPosterSrc : mobilePosterSrc}
         alt=""
@@ -81,11 +109,23 @@ export default function HomeHeroMedia({
         className="ss-home18-hero__poster"
         sizes="100vw"
       />
-      {showVideo ? (
+      {showDesktopVideo ? (
         <iframe
           title="Santos and Santorini hero desktop video"
           src={buildEmbed(desktopVideoId)}
           className="ss-home18-hero__iframe ss-home18-hero__iframe--desktop ss-home18-hero__video-frame"
+          allow="autoplay; fullscreen; picture-in-picture"
+          allowFullScreen
+          loading="lazy"
+          tabIndex={-1}
+          aria-hidden="true"
+        />
+      ) : null}
+      {showMobileVideo && mobileVideoId ? (
+        <iframe
+          title="Santos and Santorini hero mobile video"
+          src={buildEmbed(mobileVideoId)}
+          className="ss-home18-hero__iframe ss-home18-hero__iframe--mobile ss-home18-hero__video-frame"
           allow="autoplay; fullscreen; picture-in-picture"
           allowFullScreen
           loading="lazy"

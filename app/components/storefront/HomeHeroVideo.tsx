@@ -116,6 +116,7 @@ export default function HomeHeroVideo({ categories, showProductCards = true, fea
       <div className="ss-home18-hero__grid" aria-hidden="true" />
       <HomeHeroMedia
         desktopVideoId="18WbTwdI0Vs"
+        mobileVideoId="U8g-651j3yo"
         desktopPosterSrc="/img/hero2.jpg"
         mobilePosterSrc="/img/hero.jpg"
       />
