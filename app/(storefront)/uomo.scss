@@ -71,6 +71,7 @@
 }
 
 .ss-home18-hero__poster {
+  z-index: 0;
   object-fit: cover;
   object-position: center;
   filter: saturate(0.92) contrast(1.04);
@@ -78,6 +79,7 @@
 }
 
 .ss-home18-hero__iframe {
+  z-index: 1;
   position: absolute;
   inset: 50% auto auto 50%;
   border: 0;

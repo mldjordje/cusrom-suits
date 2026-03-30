@@ -223,6 +223,7 @@ export default function StorefrontHeaderClient({
                   >
                     <Link
                       href={withLang(item.href)}
+                      prefetch={item.href === "/web-shop" || item.href.startsWith("/web-shop")}
                       className={`navigation__link ${isItemActive(item.href) ? "is-active" : ""}`}
                       onFocus={item.href === "/web-shop" ? () => setShouldLoadShopCategories(true) : undefined}
                     >
@@ -232,7 +233,12 @@ export default function StorefrontHeaderClient({
                       <div className="default-menu ss-header-shop-submenu">
                         <div className="ss-header-shop-submenu__inner">
                           {shopMenuLinks.map((link) => (
-                            <Link key={link.href} href={withLang(link.href)} className="menu-link menu-link_us-s">
+                            <Link
+                              key={link.href}
+                              href={withLang(link.href)}
+                              prefetch={link.href.startsWith("/web-shop")}
+                              className="menu-link menu-link_us-s"
+                            >
                               {link.label}
                             </Link>
                           ))}
@@ -449,6 +455,7 @@ export default function StorefrontHeaderClient({
                                   <Link
                                     key={`mobile-${link.href}`}
                                     href={withLang(link.href)}
+                                    prefetch={link.href.startsWith("/web-shop")}
                                     className="ss-mobile-nav-submenu__link"
                                     onClick={closeMobileMenu}
                                   >
@@ -461,6 +468,7 @@ export default function StorefrontHeaderClient({
                         ) : (
                           <Link
                             href={withLang(item.href)}
+                            prefetch={item.href === "/web-shop" || item.href.startsWith("/web-shop")}
                             className={`ss-mobile-nav-link ${isItemActive(item.href) ? "is-active" : ""}`}
                             onClick={closeMobileMenu}
                           >

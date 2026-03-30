@@ -15,6 +15,8 @@ type Props = {
 
 const ease = [0.22, 1, 0.36, 1] as const;
 
+const prefetchIfWebShop = (href: string) => href.includes("/web-shop");
+
 export default function HomeHeroIntroMotion({
   eyebrow,
   titleLine1,
@@ -36,11 +38,16 @@ export default function HomeHeroIntroMotion({
           {titleLine2}
         </h2>
         <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap ss-home18-hero__cta">
-          <Link href={primaryHref} className="btn btn-light border-0 fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn">
+          <Link
+            href={primaryHref}
+            prefetch={prefetchIfWebShop(primaryHref)}
+            className="btn btn-light border-0 fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn"
+          >
             {primaryLabel}
           </Link>
           <Link
             href={secondaryHref}
+            prefetch={prefetchIfWebShop(secondaryHref)}
             className="btn btn-outline-light fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn ss-cta-btn--ghost-light"
           >
             {secondaryLabel}
@@ -89,13 +96,18 @@ export default function HomeHeroIntroMotion({
         }}
       >
         <m.span className="d-inline-flex" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
-          <Link href={primaryHref} className="btn btn-light border-0 fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn">
+          <Link
+            href={primaryHref}
+            prefetch={prefetchIfWebShop(primaryHref)}
+            className="btn btn-light border-0 fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn"
+          >
             {primaryLabel}
           </Link>
         </m.span>
         <m.span className="d-inline-flex" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
           <Link
             href={secondaryHref}
+            prefetch={prefetchIfWebShop(secondaryHref)}
             className="btn btn-outline-light fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn ss-cta-btn--ghost-light"
           >
             {secondaryLabel}

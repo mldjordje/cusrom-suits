@@ -89,18 +89,20 @@ export default async function WebShopPage({
   const onSale = toStringParam(params.onSale) === "1" || rawCategoryId === "sale";
   const sort = toStringParam(params.sort) || "featured";
 
-  const result = await listCatalogProducts({
-    page,
-    pageSize: 24,
-    query: q,
-    categoryId: categoryId || undefined,
-    inStock,
-    onSale,
-    activeOnly: true,
-    exportOnly: true,
-    collapseBySku: true,
-  });
-  const landingSettings = await getLandingSettings();
+  const [result, landingSettings] = await Promise.all([
+    listCatalogProducts({
+      page,
+      pageSize: 24,
+      query: q,
+      categoryId: categoryId || undefined,
+      inStock,
+      onSale,
+      activeOnly: true,
+      exportOnly: true,
+      collapseBySku: true,
+    }),
+    getLandingSettings(),
+  ]);
 
   const getCategoryLabel = (item: CatalogProductView) =>
     getCatalogProductCategoryLabel(

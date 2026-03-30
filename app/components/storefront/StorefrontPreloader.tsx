@@ -5,23 +5,20 @@ import { useEffect, useRef, useState } from "react";
 
 const MIN_VISIBLE_MS = 260;
 const EXIT_DURATION_MS = 260;
-const SESSION_KEY = "ss-storefront-preloader-seen";
 
 export default function StorefrontPreloader() {
-  const [isVisible, setIsVisible] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
   const startedAtRef = useRef(0);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    if (window.sessionStorage.getItem(SESSION_KEY) === "1") return;
 
     let releaseTimer: number | undefined;
     let exitTimer: number | undefined;
     let released = false;
 
     startedAtRef.current = window.performance.now();
-    setIsVisible(true);
 
     const release = () => {
       if (released) return;
@@ -31,7 +28,6 @@ export default function StorefrontPreloader() {
 
       releaseTimer = window.setTimeout(() => {
         setIsExiting(true);
-        window.sessionStorage.setItem(SESSION_KEY, "1");
         exitTimer = window.setTimeout(() => {
           setIsVisible(false);
         }, EXIT_DURATION_MS);
