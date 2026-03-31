@@ -4596,6 +4596,7 @@ body.mobile-menu-opened {
 .ss-size-guide-modal__viewport {
   position: fixed;
   inset: 0;
+  overflow-x: hidden;
   overflow-y: auto;
   padding: 1.25rem;
 }
@@ -4656,6 +4657,7 @@ body.mobile-menu-opened {
 .ss-size-guide-modal__body {
   display: grid;
   gap: 1.25rem;
+  min-width: 0;
   padding: 1.4rem 1.5rem 1.55rem;
 }
 
@@ -4671,6 +4673,7 @@ body.mobile-menu-opened {
   margin: 0;
   color: #475569;
   line-height: 1.72;
+  overflow-wrap: anywhere;
 }
 
 .ss-size-guide-modal__bullets {
@@ -4686,6 +4689,7 @@ body.mobile-menu-opened {
   border: 1px solid rgba(226, 232, 240, 0.9);
   border-radius: 1.35rem;
   background: linear-gradient(180deg, #fff, #f8fafc);
+  min-width: 0;
 }
 
 .ss-size-guide-table-card__head {
@@ -4736,6 +4740,9 @@ body.mobile-menu-opened {
 
 .ss-size-guide-table-card__table-wrap {
   overflow-x: auto;
+  max-width: 100%;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
 }
 
 .ss-size-guide-table {
