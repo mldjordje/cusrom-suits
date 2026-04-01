@@ -66,10 +66,10 @@ export default function StorefrontMobileShopNav({
   ];
 
   return (
-    <footer className="footer-mobile ss-shop-mobile-nav container w-100 px-4 d-md-none bg-body position-fixed footer-mobile_initialized">
-      <div className="row text-center">
+    <footer className="footer-mobile ss-shop-mobile-nav d-md-none footer-mobile_initialized">
+      <div className="ss-shop-mobile-nav__inner">
         {navItems.map((item) => (
-          <div key={item.href} className="col-4">
+          <div key={item.href} className="ss-shop-mobile-nav__item">
             <Link
               href={withLang(item.href)}
               className={`footer-mobile__link d-flex flex-column align-items-center ${item.isActive ? "is-active" : ""}`}

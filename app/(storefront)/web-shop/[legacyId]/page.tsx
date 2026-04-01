@@ -373,7 +373,7 @@ export default async function WebShopProductPage({
                 </div>
 
                 <div className="product-single__addtocart">
-                  <div className="d-flex flex-wrap gap-2">
+                  <div className="d-flex flex-wrap gap-2 ss-product-cta-actions">
                     <AddToCartButton
                       lang={lang}
                       className="btn btn-primary btn-addtocart ss-cta-btn"
