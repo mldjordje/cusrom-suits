@@ -3777,6 +3777,10 @@ body.mobile-menu-opened {
     padding-bottom: 3.4rem;
   }
 
+  .ss-product-page .product-single.container {
+    padding-top: calc(4.55rem + env(safe-area-inset-top, 0px));
+  }
+
   .ss-order-steps {
     gap: 0.45rem;
   }

@@ -9,7 +9,6 @@ import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
 import ProductImageGallery from "@/app/components/storefront/ProductImageGallery";
 import ProductSizeGuideButton from "@/app/components/storefront/ProductSizeGuideButton";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
-import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSteps";
 import Reveal from "@/app/components/motion/Reveal";
 import {
   getCatalogProductByLegacyId,
@@ -234,9 +233,6 @@ export default async function WebShopProductPage({
       <JsonLd data={productJsonLd} />
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-commerce-page ss-product-page">
-        <section className="container ss-commerce-shell">
-          <StorefrontOrderSteps lang={lang} current="product" />
-        </section>
         <Reveal as="section" className="product-single container">
           <div className="row">
             <div className="col-lg-7">
