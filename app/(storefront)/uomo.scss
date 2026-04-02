@@ -4653,6 +4653,11 @@ body.mobile-menu-opened {
   word-break: break-word;
 }
 
+.ss-product-size-picker .swatch.is-pending {
+  opacity: 0.72;
+  transform: translateY(-1px);
+}
+
 .product-single__meta-info .meta-item {
   display: grid;
   grid-template-columns: minmax(0, 7rem) minmax(0, 1fr);

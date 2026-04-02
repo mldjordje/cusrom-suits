@@ -7,6 +7,7 @@ import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import StorefrontTrustStrip from "@/app/components/storefront/StorefrontTrustStrip";
 import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
 import ProductImageGallery from "@/app/components/storefront/ProductImageGallery";
+import ProductSizePicker from "@/app/components/storefront/ProductSizePicker";
 import ProductSizeGuideButton from "@/app/components/storefront/ProductSizeGuideButton";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import Reveal from "@/app/components/motion/Reveal";
@@ -333,21 +334,11 @@ export default async function WebShopProductPage({
                   <div className="product-single__swatches mt-3">
                     <div className="product-swatch text-swatches">
                       <label>{isEn ? "Choose size" : "Odaberite velicinu"}</label>
-                      <div className="swatch-list d-flex flex-wrap gap-2 ss-product-size-picker">
-                        {sizeOptions.map((option) => {
-                          const active = option.legacyId === product.legacyId;
-                          return (
-                            <Link
-                              key={`${option.label}-${option.legacyId}`}
-                              href={variantHref(option.legacyId)}
-                              className={`swatch text-uppercase ${active ? "bg-dark text-white" : ""} ${!option.inStock ? "opacity-50" : ""}`}
-                              aria-current={active ? "page" : undefined}
-                            >
-                              {option.label}
-                            </Link>
-                          );
-                        })}
-                      </div>
+                      <ProductSizePicker
+                        options={sizeOptions}
+                        currentLegacyId={product.legacyId}
+                        getHref={variantHref}
+                      />
                       <p className="small text-secondary mt-2 mb-0">
                         {selectedSize
                           ? `${isEn ? "Selected size" : "Odabrana velicina"}: ${selectedSize}`

@@ -1,0 +1,63 @@
+"use client";
+
+import { startTransition, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+
+type ProductSizeOption = {
+  legacyId: number;
+  label: string;
+  inStock: boolean;
+};
+
+export default function ProductSizePicker({
+  options,
+  currentLegacyId,
+  getHref,
+}: {
+  options: ProductSizeOption[];
+  currentLegacyId: number;
+  getHref: (legacyId: number) => string;
+}) {
+  const router = useRouter();
+  const [pendingLegacyId, setPendingLegacyId] = useState<number | null>(null);
+
+  useEffect(() => {
+    setPendingLegacyId(null);
+  }, [currentLegacyId]);
+
+  useEffect(() => {
+    for (const option of options) {
+      if (option.legacyId !== currentLegacyId) {
+        router.prefetch(getHref(option.legacyId));
+      }
+    }
+  }, [currentLegacyId, getHref, options, router]);
+
+  return (
+    <div className="swatch-list d-flex flex-wrap gap-2 ss-product-size-picker">
+      {options.map((option) => {
+        const isActive = option.legacyId === currentLegacyId;
+        const isPending = pendingLegacyId === option.legacyId;
+
+        return (
+          <button
+            key={`${option.label}-${option.legacyId}`}
+            type="button"
+            className={`swatch text-uppercase ${isActive ? "bg-dark text-white" : ""} ${!option.inStock ? "opacity-50" : ""} ${isPending ? "is-pending" : ""}`}
+            aria-pressed={isActive}
+            onClick={() => {
+              if (isActive) return;
+              const href = getHref(option.legacyId);
+              setPendingLegacyId(option.legacyId);
+              startTransition(() => {
+                router.replace(href, { scroll: false });
+              });
+            }}
+          >
+            {option.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
