@@ -7,16 +7,15 @@ type ProductSizeOption = {
   legacyId: number;
   label: string;
   inStock: boolean;
+  href: string;
 };
 
 export default function ProductSizePicker({
   options,
   currentLegacyId,
-  getHref,
 }: {
   options: ProductSizeOption[];
   currentLegacyId: number;
-  getHref: (legacyId: number) => string;
 }) {
   const router = useRouter();
   const [pendingLegacyId, setPendingLegacyId] = useState<number | null>(null);
@@ -28,10 +27,10 @@ export default function ProductSizePicker({
   useEffect(() => {
     for (const option of options) {
       if (option.legacyId !== currentLegacyId) {
-        router.prefetch(getHref(option.legacyId));
+        router.prefetch(option.href);
       }
     }
-  }, [currentLegacyId, getHref, options, router]);
+  }, [currentLegacyId, options, router]);
 
   return (
     <div className="swatch-list d-flex flex-wrap gap-2 ss-product-size-picker">
@@ -47,10 +46,9 @@ export default function ProductSizePicker({
             aria-pressed={isActive}
             onClick={() => {
               if (isActive) return;
-              const href = getHref(option.legacyId);
               setPendingLegacyId(option.legacyId);
               startTransition(() => {
-                router.replace(href, { scroll: false });
+                router.replace(option.href, { scroll: false });
               });
             }}
           >

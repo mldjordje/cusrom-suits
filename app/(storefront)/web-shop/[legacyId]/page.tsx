@@ -181,6 +181,10 @@ export default async function WebShopProductPage({
     .slice(0, 6);
   const variantHref = (variantId: number) =>
     isEn ? `/web-shop/${variantId}?lang=en` : `/web-shop/${variantId}`;
+  const sizePickerOptions = sizeOptions.map((option) => ({
+    ...option,
+    href: variantHref(option.legacyId),
+  }));
   const cartItem = {
     legacyId: product.legacyId,
     sku: product.sku,
@@ -335,9 +339,8 @@ export default async function WebShopProductPage({
                     <div className="product-swatch text-swatches">
                       <label>{isEn ? "Choose size" : "Odaberite velicinu"}</label>
                       <ProductSizePicker
-                        options={sizeOptions}
+                        options={sizePickerOptions}
                         currentLegacyId={product.legacyId}
-                        getHref={variantHref}
                       />
                       <p className="small text-secondary mt-2 mb-0">
                         {selectedSize
