@@ -1,11 +1,9 @@
 "use client";
 
-import { LazyMotion, MotionConfig, domAnimation, m } from "framer-motion";
-import { usePathname } from "next/navigation";
+import { LazyMotion, MotionConfig, domAnimation } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
 export default function AppMotionShell({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
   const { reduceMotion } = useAnimationBudget();
 
   return (
@@ -19,15 +17,7 @@ export default function AppMotionShell({ children }: { children: React.ReactNode
             </>
           )}
 
-          <m.div
-            key={pathname || "/"}
-            className="ss-page-motion"
-            initial={reduceMotion ? false : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={reduceMotion ? { duration: 0 } : { duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-          >
-            {children}
-          </m.div>
+          <div className="ss-page-motion">{children}</div>
         </div>
       </MotionConfig>
     </LazyMotion>

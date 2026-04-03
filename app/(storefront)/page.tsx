@@ -4,7 +4,7 @@ import JsonLd from "@/app/components/seo/JsonLd";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import HomeHeroVideo from "@/app/components/storefront/HomeHeroVideo";
-import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
+import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import SectionHeadingReveal from "@/app/components/motion/SectionHeadingReveal";
@@ -414,8 +414,8 @@ export default async function HomePage({
           <div className={gridFeatured}>
             {heroProducts.map((item, index) => (
               <ProductItemMotion key={item.legacyId} index={index}>
-                <Link href={withLang(`/web-shop/${item.legacyId}`)} className="d-block ss-featured-tile">
-                  <StorefrontSmartImage
+                <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false} className="d-block ss-featured-tile">
+                  <StorefrontImage
                     sources={getCatalogProductImageSources(item, [], ["/img/odela.jpg"])}
                     width={330}
                     height={400}
@@ -453,8 +453,8 @@ export default async function HomePage({
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
                 <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                   <div className="pc__img-wrapper">
-                    <Link href={withLang(`/web-shop/${item.legacyId}`)}>
-                      <StorefrontSmartImage
+                    <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
+                      <StorefrontImage
                         sources={getCatalogProductImageSources(item, [], ["/img/odela2.jpg"])}
                         width={330}
                         height={400}
@@ -466,7 +466,9 @@ export default async function HomePage({
                   <div className="pc__info position-relative">
                     <p className="pc__category">{getProductCategoryLabel(item, contentLang)}</p>
                     <h6 className="pc__title">
-                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{getProductDisplayName(item, contentLang)}</Link>
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
+                        {getProductDisplayName(item, contentLang)}
+                      </Link>
                     </h6>
                     <div className="product-card__price d-flex">
                       {item.priceGross > item.priceFinalGross ? (
@@ -507,8 +509,8 @@ export default async function HomePage({
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
                 <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                   <div className="pc__img-wrapper">
-                    <Link href={withLang(`/web-shop/${item.legacyId}`)}>
-                      <StorefrontSmartImage
+                    <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
+                      <StorefrontImage
                         sources={getCatalogProductImageSources(item, [], ["/img/hero2.jpg"])}
                         width={330}
                         height={400}
@@ -519,7 +521,9 @@ export default async function HomePage({
                   </div>
                   <div className="pc__info position-relative">
                     <h6 className="pc__title">
-                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{getProductDisplayName(item, contentLang)}</Link>
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
+                        {getProductDisplayName(item, contentLang)}
+                      </Link>
                     </h6>
                     <div className="product-card__price d-flex">
                       {item.priceGross > item.priceFinalGross ? (
@@ -562,8 +566,8 @@ export default async function HomePage({
               <ProductItemMotion key={`sale-${item.legacyId}`} className="product-card-wrapper" index={index}>
                 <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                   <div className="pc__img-wrapper">
-                    <Link href={withLang(`/web-shop/${item.legacyId}`)}>
-                      <StorefrontSmartImage
+                    <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
+                      <StorefrontImage
                         sources={getCatalogProductImageSources(item, [], ["/img/odela.jpg"])}
                         width={330}
                         height={400}
@@ -574,7 +578,9 @@ export default async function HomePage({
                   </div>
                   <div className="pc__info position-relative">
                     <h6 className="pc__title">
-                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{getProductDisplayName(item, contentLang)}</Link>
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
+                        {getProductDisplayName(item, contentLang)}
+                      </Link>
                     </h6>
                     <div className="product-card__price d-flex">
                       <span className="money price price-old">{formatRsd(item.priceGross)}</span>
@@ -609,8 +615,8 @@ export default async function HomePage({
               <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
                 <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
                   <div className="pc__img-wrapper">
-                    <Link href={withLang(`/web-shop/${item.legacyId}`)}>
-                      <StorefrontSmartImage
+                    <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
+                      <StorefrontImage
                         sources={getCatalogProductImageSources(item, [], ["/img/hero2.jpg"])}
                         width={330}
                         height={400}
@@ -621,7 +627,9 @@ export default async function HomePage({
                   </div>
                   <div className="pc__info position-relative">
                     <h6 className="pc__title">
-                      <Link href={withLang(`/web-shop/${item.legacyId}`)}>{getProductDisplayName(item, contentLang)}</Link>
+                      <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
+                        {getProductDisplayName(item, contentLang)}
+                      </Link>
                     </h6>
                     <div className="product-card__price d-flex">
                       {item.priceGross > item.priceFinalGross ? (
@@ -668,8 +676,8 @@ export default async function HomePage({
           <ProductItemMotion key={`${section.id}-${item.legacyId}`} className="product-card-wrapper" index={index}>
             <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
               <div className="pc__img-wrapper">
-                <Link href={withLang(`/web-shop/${item.legacyId}`)}>
-                  <StorefrontSmartImage
+                <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
+                  <StorefrontImage
                     sources={getCatalogProductImageSources(item, [], ["/img/hero2.jpg"])}
                     width={330}
                     height={400}
@@ -681,7 +689,9 @@ export default async function HomePage({
               <div className="pc__info position-relative">
                 <p className="pc__category">{getProductCategoryLabel(item, contentLang)}</p>
                 <h6 className="pc__title">
-                  <Link href={withLang(`/web-shop/${item.legacyId}`)}>{getProductDisplayName(item, contentLang)}</Link>
+                  <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
+                    {getProductDisplayName(item, contentLang)}
+                  </Link>
                 </h6>
                 <div className="product-card__price d-flex">
                   {item.priceGross > item.priceFinalGross ? (
@@ -808,7 +818,7 @@ export default async function HomePage({
           <div className="row g-4">
             <div className="col-md-6">
               <div className="position-relative overflow-hidden ss-banner-panel">
-                <StorefrontSmartImage
+                <StorefrontImage
                   sources={[landingSettings.bannerLeftImage]}
                   fallbackSrc="/img/hero2.jpg"
                   width={690}
@@ -827,7 +837,7 @@ export default async function HomePage({
             </div>
             <div className="col-md-6">
               <div className="position-relative overflow-hidden ss-banner-panel">
-                <StorefrontSmartImage
+                <StorefrontImage
                   sources={[landingSettings.bannerRightImage]}
                   fallbackSrc="/img/hero.jpg"
                   width={690}
@@ -1088,8 +1098,8 @@ export default async function HomePage({
               <article key={post.id} className="mb-4">
                 <div className="blog-grid__item ss-blog-card">
                   <div className="blog-grid__item-image-wrap">
-                    <Link href={withLang(`/blog/${post.slug}`)}>
-                      <StorefrontSmartImage
+                    <Link href={withLang(`/blog/${post.slug}`)} prefetch={false}>
+                      <StorefrontImage
                         sources={[post.coverImage || "/img/hero.jpg"]}
                         width={330}
                         height={230}
@@ -1100,7 +1110,9 @@ export default async function HomePage({
                   </div>
                   <div className="blog-grid__item-detail">
                     <h6 className="blog-grid__item-title">
-                      <Link href={withLang(`/blog/${post.slug}`)}>{post.title}</Link>
+                    <Link href={withLang(`/blog/${post.slug}`)} prefetch={false}>
+                      {post.title}
+                    </Link>
                     </h6>
                     <p className="text-secondary">{(post.excerpt || "").slice(0, 85) || (isEn ? "Continue reading." : "Nastavite sa citanjem.")}</p>
                   </div>

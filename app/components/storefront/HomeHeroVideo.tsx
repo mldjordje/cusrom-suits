@@ -6,7 +6,7 @@ import type { StorefrontLanguage } from "@/lib/storefront/language";
 import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import HomeHeroMedia from "@/app/components/storefront/HomeHeroMedia";
 import HomeHeroIntroMotion from "@/app/components/storefront/HomeHeroIntroMotion";
-import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
+import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 
 const HeroParallaxFx = dynamic(() => import("@/app/components/storefront/HeroParallaxFx"));
 
@@ -137,16 +137,16 @@ export default function HomeHeroVideo({ categories, showProductCards = true, fea
           <div className="ss-home18-hero__cards">
             {cards.map((card) => (
               <article key={card.id} className="ss-home18-hero__card-item" data-hero-card>
-                <Link href={card.href} className="d-block ss-home18-hero__card-link">
-                  <StorefrontSmartImage
-                  sources={[card.image]}
-                  fallbackSrc="/img/hero.jpg"
-                  width={330}
-                  height={400}
-                  alt={card.title}
-                  className="w-100 h-auto d-block ss-home18-hero__card-image"
-                  sizes="(max-width: 767px) 46vw, (max-width: 1199px) 19vw, 330px"
-                />
+                <Link href={card.href} prefetch={false} className="d-block ss-home18-hero__card-link">
+                  <StorefrontImage
+                    sources={[card.image]}
+                    fallbackSrc="/img/hero.jpg"
+                    width={330}
+                    height={400}
+                    alt={card.title}
+                    className="w-100 h-auto d-block ss-home18-hero__card-image"
+                    sizes="(max-width: 767px) 46vw, (max-width: 1199px) 19vw, 330px"
+                  />
                   <span className="menu-link menu-link_us-s fw-semi-bold fs-18 text-white text-uppercase d-block mt-2 ss-home18-hero__card-title">
                     {card.title}
                   </span>

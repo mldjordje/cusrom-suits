@@ -7,7 +7,7 @@ import StorefrontTrustStrip from "@/app/components/storefront/StorefrontTrustStr
 import WebShopFilters from "@/app/components/storefront/WebShopFilters";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import Reveal from "@/app/components/motion/Reveal";
-import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
+import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
 import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
@@ -268,8 +268,8 @@ export default async function WebShopPage({
       <ProductItemMotion key={key} className={wrapperClassName} index={motionIndex}>
         <div className={cardClassName}>
           <div className={imageWrapperClassName}>
-            <Link href={detailHref}>
-              <StorefrontSmartImage
+            <Link href={detailHref} prefetch={false}>
+              <StorefrontImage
                 sources={imageSources}
                 width={imageWidth}
                 height={imageHeight}
@@ -287,7 +287,9 @@ export default async function WebShopPage({
             <div className="pc__info hover__content text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
               <p className="pc__category">{getCategoryLabel(item)}</p>
               <h6 className="pc__title">
-                <Link href={detailHref}>{displayName}</Link>
+                <Link href={detailHref} prefetch={false}>
+                  {displayName}
+                </Link>
               </h6>
               <div className="product-card__price d-flex justify-content-center">
                 {item.priceGross > item.priceFinalGross ? (
@@ -304,7 +306,7 @@ export default async function WebShopPage({
                   {isEn ? "Save" : "Usteda"} {discountPercent}%
                 </p>
               ) : null}
-              <Link href={detailHref} className="pc__atc anim_appear-bottom btn mt-3 border-0 text-uppercase fw-medium">
+              <Link href={detailHref} prefetch={false} className="pc__atc anim_appear-bottom btn mt-3 border-0 text-uppercase fw-medium">
                 {isEn ? "View product" : "Pogledaj proizvod"}
               </Link>
             </div>
@@ -312,7 +314,9 @@ export default async function WebShopPage({
           <div className="pc__info ss-card-mobile-info d-md-none">
             <p className="pc__category">{getCategoryLabel(item)}</p>
             <h6 className="pc__title mb-1">
-              <Link href={detailHref}>{displayName}</Link>
+              <Link href={detailHref} prefetch={false}>
+                {displayName}
+              </Link>
             </h6>
             <div className="product-card__price d-flex">
               {item.priceGross > item.priceFinalGross ? (

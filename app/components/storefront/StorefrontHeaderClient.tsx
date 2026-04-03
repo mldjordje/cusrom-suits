@@ -43,6 +43,11 @@ export default function StorefrontHeaderClient({
   const isHome = normalizedPath === "/" || normalizedPath === "";
   const isEn = lang === "en";
   const isContrast = variant === "contrast";
+  const updateScrolledStateRef = useRef<(nextScrollY: number) => void>(() => {});
+  updateScrolledStateRef.current = (nextScrollY: number) => {
+    const shouldBeScrolled = nextScrollY > 26;
+    setIsScrolled((current) => (current === shouldBeScrolled ? current : shouldBeScrolled));
+  };
 
   const withLang = (href: string) => {
     if (!isEn) return href;
@@ -114,10 +119,24 @@ export default function StorefrontHeaderClient({
   }, [normalizedPath]);
 
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 26);
-    onScroll();
+    let frameId = 0;
+
+    const onScroll = () => {
+      if (frameId !== 0) return;
+      frameId = window.requestAnimationFrame(() => {
+        frameId = 0;
+        updateScrolledStateRef.current(window.scrollY);
+      });
+    };
+
+    updateScrolledStateRef.current(window.scrollY);
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (frameId !== 0) {
+        window.cancelAnimationFrame(frameId);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -206,9 +225,7 @@ export default function StorefrontHeaderClient({
                   alt="Santos and Santorini"
                   width={340}
                   height={96}
-                  unoptimized
                   className="logo__image d-block ss-site-logo"
-                  priority
                 />
               </Link>
             </div>
@@ -312,9 +329,7 @@ export default function StorefrontHeaderClient({
                   alt="Santos and Santorini"
                   width={280}
                   height={79}
-                  unoptimized
                   className="logo__image d-block ss-site-logo ss-site-logo--mobile"
-                  priority
                 />
               </Link>
             </div>
@@ -371,9 +386,7 @@ export default function StorefrontHeaderClient({
                         alt="Santos and Santorini"
                         width={280}
                         height={79}
-                        unoptimized
                         className="logo__image d-block ss-site-logo ss-site-logo--mobile"
-                        priority
                       />
                     </Link>
                     <button

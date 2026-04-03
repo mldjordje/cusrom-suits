@@ -4,97 +4,125 @@ import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
-const DESKTOP_SELECTOR = [
-  ".page-wrapper .ss-editorial-section",
-  ".page-wrapper .ss-filter-panel",
-  ".page-wrapper .product-single__details-tab",
-  ".page-wrapper .ss-product-glass-card",
-  ".page-wrapper .blog-grid__item",
-  ".page-wrapper .ss-story-card",
-  ".page-wrapper .ss-banner-panel",
-  ".page-wrapper .ss-home18-hero__card-item",
-  ".page-wrapper .product-card",
+const REVEAL_SELECTOR = [
+  ".ss-filter-panel",
+  ".product-single__details-tab",
+  ".ss-product-glass-card",
   ".ss-footer__panel",
   ".ss-footer__bottom",
+  ".ss-shop-hero__media",
 ].join(", ");
 
-const MOBILE_SELECTOR = [
-  ".page-wrapper .ss-editorial-section",
-  ".page-wrapper .ss-filter-panel",
-  ".page-wrapper .product-single",
-  ".page-wrapper .product-single__details-tab",
-  ".page-wrapper .ss-product-glass-card",
-  ".page-wrapper .ss-shop-gallery",
-  ".page-wrapper .ss-banner-panel",
-  ".page-wrapper .ss-story-card",
-  ".page-wrapper .blog-grid__item",
-  ".ss-footer__panel",
-  ".ss-footer__bottom",
+const PARALLAX_SELECTOR = [
+  ".ss-shop-hero__media .slideshow-bg__img",
+  ".ss-banner-panel img",
+  ".ss-story-card img",
 ].join(", ");
 
 export default function StorefrontViewportEffects() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { reduceMotion } = useAnimationBudget();
+  const { reduceMotion, allowParallax } = useAnimationBudget();
   const routeState = `${pathname || ""}?${searchParams.toString()}`;
 
   useEffect(() => {
-    const pointerCoarse = window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 820px)").matches;
-    const selector = pointerCoarse ? MOBILE_SELECTOR : DESKTOP_SELECTOR;
+    if (reduceMotion) return;
 
-    const scan = () => {
-      const elements = Array.from(document.querySelectorAll<HTMLElement>(selector)).filter(
-        (element, index, collection) => collection.indexOf(element) === index,
-      );
+    let mounted = true;
+    let cleanup: (() => void) | null = null;
+    let idleHandle: number | null = null;
+    let timeoutHandle: number | null = null;
 
-      for (const element of elements) {
-        element.classList.add("ss-viewfx");
-        if (reduceMotion) {
-          element.classList.add("is-inview");
+    const boot = async () => {
+      const [gsapModule, scrollTriggerModule] = await Promise.all([
+        import("gsap"),
+        import("gsap/dist/ScrollTrigger"),
+      ]);
+      if (!mounted) return;
+
+      const gsap = gsapModule.gsap;
+      const ScrollTrigger = scrollTriggerModule.ScrollTrigger;
+      gsap.registerPlugin(ScrollTrigger);
+
+      const pointerCoarse =
+        window.matchMedia("(pointer: coarse)").matches || window.matchMedia("(max-width: 820px)").matches;
+
+      const context = gsap.context(() => {
+        const revealTargets = gsap.utils.toArray<HTMLElement>(REVEAL_SELECTOR);
+        revealTargets.forEach((target, index) => {
+          gsap.fromTo(
+            target,
+            {
+              autoAlpha: 0,
+              y: pointerCoarse ? 16 : 28,
+            },
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: pointerCoarse ? 0.5 : 0.7,
+              delay: Math.min(index * 0.02, 0.12),
+              ease: "power3.out",
+              clearProps: "transform,opacity,visibility",
+              scrollTrigger: {
+                trigger: target,
+                start: pointerCoarse ? "top 94%" : "top 88%",
+                once: true,
+              },
+            },
+          );
+        });
+
+        if (allowParallax) {
+          const parallaxTargets = gsap.utils.toArray<HTMLElement>(PARALLAX_SELECTOR);
+          parallaxTargets.forEach((target) => {
+            const section = target.closest(".ss-shop-hero__media, .ss-banner-panel, .ss-story-card");
+            if (!section) return;
+
+            gsap.fromTo(
+              target,
+              { yPercent: -4, scale: 1.02 },
+              {
+                yPercent: 4,
+                scale: 1.08,
+                ease: "none",
+                scrollTrigger: {
+                  trigger: section,
+                  start: "top bottom",
+                  end: "bottom top",
+                  scrub: pointerCoarse ? 0.35 : 0.7,
+                },
+              },
+            );
+          });
         }
-      }
 
-      return elements;
+        ScrollTrigger.refresh();
+      }, document.body);
+
+      cleanup = () => context.revert();
     };
 
-    if (reduceMotion) {
-      scan();
-      return;
+    const runBoot = () => {
+      void boot().catch(() => {});
+    };
+
+    if (typeof window.requestIdleCallback === "function") {
+      idleHandle = window.requestIdleCallback(runBoot, { timeout: 1200 });
+    } else {
+      timeoutHandle = window.setTimeout(runBoot, 180);
     }
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (!entry.isIntersecting) continue;
-          entry.target.classList.add("is-inview");
-          observer.unobserve(entry.target);
-        }
-      },
-      {
-        rootMargin: pointerCoarse ? "0px 0px -6% 0px" : "0px 0px -12% 0px",
-        threshold: pointerCoarse ? 0.08 : 0.14,
-      },
-    );
-
-    const observeElements = () => {
-      for (const element of scan()) {
-        observer.observe(element);
-      }
-    };
-
-    observeElements();
-
-    const retryTimers = [220, 900].map((delay) =>
-      window.setTimeout(() => {
-        observeElements();
-      }, delay),
-    );
-
     return () => {
-      retryTimers.forEach((timer) => window.clearTimeout(timer));
-      observer.disconnect();
+      mounted = false;
+      if (idleHandle !== null && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleHandle);
+      }
+      if (timeoutHandle !== null) {
+        window.clearTimeout(timeoutHandle);
+      }
+      cleanup?.();
     };
-  }, [reduceMotion, routeState]);
+  }, [allowParallax, reduceMotion, routeState]);
 
   return null;
 }

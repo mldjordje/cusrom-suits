@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useLayoutEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
 type HomeHeroMediaProps = {
@@ -27,8 +27,9 @@ export default function HomeHeroMedia({
   const { lowPower } = useAnimationBudget();
   const [viewportReady, setViewportReady] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
+  const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const mq = window.matchMedia(DESKTOP_MQ);
     setIsDesktop(mq.matches);
     setViewportReady(true);
@@ -38,8 +39,34 @@ export default function HomeHeroMedia({
     return () => mq.removeEventListener("change", onChange);
   }, []);
 
-  const showDesktopVideo = viewportReady && isDesktop && !lowPower;
-  const showMobileVideo = viewportReady && !isDesktop && Boolean(mobileVideoId) && !lowPower;
+  useEffect(() => {
+    if (!viewportReady || lowPower) {
+      setShouldLoadVideo(false);
+      return;
+    }
+
+    let timeoutId: number | null = null;
+    let idleId: number | null = null;
+    const activate = () => setShouldLoadVideo(true);
+
+    if (typeof window.requestIdleCallback === "function") {
+      idleId = window.requestIdleCallback(activate, { timeout: 1400 });
+    } else {
+      timeoutId = window.setTimeout(activate, 900);
+    }
+
+    return () => {
+      if (idleId !== null && typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== null) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [lowPower, viewportReady]);
+
+  const showDesktopVideo = shouldLoadVideo && viewportReady && isDesktop && !lowPower;
+  const showMobileVideo = shouldLoadVideo && viewportReady && !isDesktop && Boolean(mobileVideoId) && !lowPower;
   const videoReady = showDesktopVideo || showMobileVideo;
   const posterSrc = !viewportReady || isDesktop ? desktopPosterSrc : mobilePosterSrc;
 
@@ -60,6 +87,7 @@ export default function HomeHeroMedia({
           title="Santos and Santorini hero desktop video"
           src={buildEmbed(desktopVideoId)}
           className="ss-home18-hero__iframe ss-home18-hero__iframe--desktop ss-home18-hero__video-frame"
+          loading="lazy"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           allowFullScreen
           tabIndex={-1}
@@ -71,6 +99,7 @@ export default function HomeHeroMedia({
           title="Santos and Santorini hero mobile video"
           src={buildEmbed(mobileVideoId)}
           className="ss-home18-hero__iframe ss-home18-hero__iframe--mobile ss-home18-hero__video-frame"
+          loading="lazy"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
           allowFullScreen
           tabIndex={-1}

@@ -67,10 +67,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="sr">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} ${playfairDisplay.variable} antialiased`}
-      >
+    <html
+      lang="sr"
+      className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} ${playfairDisplay.variable}`}
+    >
+      <body className="antialiased">
         <AppMotionShell>{children}</AppMotionShell>
       </body>
     </html>

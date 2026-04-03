@@ -6,7 +6,7 @@ import { useEffect, useRef, useState } from "react";
 const MIN_VISIBLE_MS = 260;
 const EXIT_DURATION_MS = 260;
 
-export default function StorefrontPreloader() {
+export default function StorefrontPreloader({ onExitComplete }: { onExitComplete?: () => void }) {
   const [isVisible, setIsVisible] = useState(true);
   const [isExiting, setIsExiting] = useState(false);
   const startedAtRef = useRef(0);
@@ -30,6 +30,7 @@ export default function StorefrontPreloader() {
         setIsExiting(true);
         exitTimer = window.setTimeout(() => {
           setIsVisible(false);
+          onExitComplete?.();
         }, EXIT_DURATION_MS);
       }, waitMs);
     };
@@ -46,7 +47,7 @@ export default function StorefrontPreloader() {
       if (releaseTimer) window.clearTimeout(releaseTimer);
       if (exitTimer) window.clearTimeout(exitTimer);
     };
-  }, []);
+  }, [onExitComplete]);
 
   if (!isVisible) return null;
 
@@ -64,7 +65,6 @@ export default function StorefrontPreloader() {
             width={360}
             height={110}
             priority
-            unoptimized
             className="ss-preloader__logo"
           />
         </div>
