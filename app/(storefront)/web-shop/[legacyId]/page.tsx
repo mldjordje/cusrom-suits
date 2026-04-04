@@ -147,7 +147,13 @@ export default async function WebShopProductPage({
   const displayDescription = getLocalizedCatalogDescription(displayProduct, lang);
   const displaySpecification = getLocalizedCatalogSpecification(displayProduct, lang);
   const material = getProductMaterial(displayProduct, lang);
-  const gallery = getCatalogProductImageSources(displayProduct, [product, ...variants], ["/img/odela.jpg"]);
+  const ownGallery = getCatalogProductImageSources(product, [], []);
+  const fallbackGallery = getCatalogProductImageSources(
+    displayProduct,
+    variants.filter((variant) => variant.legacyId !== product.legacyId),
+    ["/img/odela.jpg"],
+  );
+  const gallery = ownGallery.length > 0 ? ownGallery : fallbackGallery;
   const productVideoUrl = displayProduct.videoUrl || product.videoUrl || null;
   const sizeOptions = getProductSizeOptions(product, variants);
   const selectedSize =
