@@ -244,12 +244,21 @@ export const getCatalogProductImageSources = (
     ...currentProduct.images,
     currentProduct.coverImage,
     ...variants.flatMap((variant) => [...variant.images, variant.coverImage]),
-    ...fallbackImages,
   ]
     .map(normalizeImageCandidate)
     .filter((value) => value.length > 0);
 
-  return Array.from(new Set(sources));
+  if (sources.length > 0) {
+    return Array.from(new Set(sources));
+  }
+
+  return Array.from(
+    new Set(
+      fallbackImages
+        .map(normalizeImageCandidate)
+        .filter((value) => value.length > 0),
+    ),
+  );
 };
 
 export const getPreferredCatalogProductForDisplay = (
