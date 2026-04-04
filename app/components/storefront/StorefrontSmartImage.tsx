@@ -40,6 +40,7 @@ export default function StorefrontSmartImage({
   const shouldBypassOptimization =
     props.unoptimized == null &&
     (activeSrc.startsWith("data:image/") ||
+      isRemoteStorefrontImageSrc(activeSrc) ||
       activeSrc.toLowerCase().includes(".svg") ||
       (isRemoteStorefrontImageSrc(activeSrc) && activeSrc.toLowerCase().includes(".svg")));
 
