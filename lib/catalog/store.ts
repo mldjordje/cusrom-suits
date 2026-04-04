@@ -458,6 +458,39 @@ const applySkuImageFallbacks = (items: CatalogProductView[]): CatalogProductView
   });
 };
 
+const hasCatalogProductMedia = (
+  item: Pick<CatalogProductView, "coverImage" | "images"> | null | undefined,
+) =>
+  Boolean(
+    item &&
+      ((item.coverImage && item.coverImage.trim().length > 0) ||
+        (Array.isArray(item.images) &&
+          item.images.some((img) => String(img || "").trim().length > 0))),
+  );
+
+const mergeCatalogProductMedia = (
+  primary: CatalogProductView,
+  fallback: CatalogProductView | null,
+): CatalogProductView => {
+  if (!fallback || hasCatalogProductMedia(primary)) {
+    return primary;
+  }
+
+  return {
+    ...primary,
+    coverImage: fallback.coverImage || primary.coverImage,
+    images: fallback.images.length > 0 ? [...fallback.images] : primary.images,
+    videoUrl: primary.videoUrl || fallback.videoUrl,
+    rawPayload: {
+      ...primary.rawPayload,
+      imageFallback: {
+        type: "legacy-file",
+        legacyId: primary.legacyId,
+      },
+    },
+  };
+};
+
 const scoreCollapsedRepresentative = (item: CatalogProductView) => {
   const displayName = getCatalogProductDisplayName({
     name: item.name,
@@ -715,6 +748,13 @@ async function loadFromFile(): Promise<CatalogProductView[]> {
   return applySkuImageFallbacks(fileItems.map(normalizeLegacyJson));
 }
 
+async function loadCatalogProductFromFileByLegacyId(
+  legacyId: number,
+): Promise<CatalogProductView | null> {
+  const items = await loadFromFile();
+  return items.find((item) => item.legacyId === legacyId) || null;
+}
+
 export async function listCatalogProducts(input: CatalogListInput = {}): Promise<CatalogListResult> {
   const startedAt = Date.now();
   const page = Math.max(1, Number(input.page || 1));
@@ -850,14 +890,16 @@ export async function getCatalogProductByLegacyId(
   if (supabase) {
     const normalized = await getCatalogProductByLegacyIdCached(id);
     if (normalized) {
-      if (!applyPromotions) return normalized;
+      const withMedia = hasCatalogProductMedia(normalized)
+        ? normalized
+        : mergeCatalogProductMedia(normalized, await loadCatalogProductFromFileByLegacyId(id));
+      if (!applyPromotions) return withMedia;
       const rules = await listPromotionRulesCached();
-      return rules.length ? applyPromotionRulesToProduct(normalized, rules) : normalized;
+      return rules.length ? applyPromotionRulesToProduct(withMedia, rules) : withMedia;
     }
   }
 
-  const items = await loadFromFile();
-  const found = items.find((item) => item.legacyId === id) || null;
+  const found = await loadCatalogProductFromFileByLegacyId(id);
   if (!found || !applyPromotions) return found;
   const rules = await listPromotionRulesCached();
   return rules.length ? applyPromotionRulesToProduct(found, rules) : found;
@@ -913,37 +955,9 @@ async function fetchCatalogProductByLegacyIdFromSupabase(
     .eq("legacy_product_id", legacyId)
     .order("sort", { ascending: true });
 
-  let imageUrls = (media || [])
+  const imageUrls = (media || [])
     .map((m) => String((m as Record<string, unknown>).url || ""))
     .filter((value) => value.length > 0);
-
-  if (!imageUrls.length) {
-    const sku = String((row as Record<string, unknown>).sku || "").trim();
-    if (sku) {
-      const { data: siblingRows } = await supabase
-        .from("catalog_products")
-        .select("legacy_id")
-        .eq("sku", sku)
-        .neq("legacy_id", legacyId)
-        .limit(24);
-
-      const siblingIds = (siblingRows || [])
-        .map((item) => Number((item as Record<string, unknown>).legacy_id))
-        .filter((value) => Number.isFinite(value));
-
-      if (siblingIds.length > 0) {
-        const { data: siblingMedia } = await supabase
-          .from("catalog_product_media")
-          .select("legacy_product_id,url,sort")
-          .in("legacy_product_id", siblingIds)
-          .order("sort", { ascending: true });
-
-        imageUrls = (siblingMedia || [])
-          .map((item) => String((item as Record<string, unknown>).url || ""))
-          .filter((value) => value.length > 0);
-      }
-    }
-  }
 
   const imagesByProductId = new Map<number, string[]>();
   imagesByProductId.set(legacyId, imageUrls);

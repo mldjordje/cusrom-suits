@@ -29,6 +29,9 @@ const DEFAULT_KEYWORDS = [
 ];
 
 export const absoluteUrl = (path = "/") => {
+  if (/^https?:\/\//i.test(path)) {
+    return path;
+  }
   const normalizedPath = path.startsWith("/") ? path : `/${path}`;
   return new URL(normalizedPath, SITE_URL).toString();
 };
@@ -187,4 +190,3 @@ export const buildWebSiteJsonLd = () => ({
     "query-input": "required name=search_term_string",
   },
 });
-
