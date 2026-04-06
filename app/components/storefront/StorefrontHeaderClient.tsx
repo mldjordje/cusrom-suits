@@ -204,8 +204,12 @@ export default function StorefrontHeaderClient({
   ]
     .filter(Boolean)
     .join(" ");
-  const desktopLogoSrc = isHome && !isContrast ? "/img/logo-header-dark.png" : "/img/logo-header.png";
-  const mobileLogoSrc = isHome && !isContrast ? "/img/logo-header-dark-mobile.png" : "/img/logo-header-mobile.png";
+  // Default (non-contrast) header is dark until scrolled; use the "dark" logo variant
+  // (white Santorini) for readability. When scrolled, header becomes light so we switch
+  // back to the standard logo.
+  const shouldUseDarkLogo = !isContrast && !isScrolled;
+  const desktopLogoSrc = shouldUseDarkLogo ? "/img/logo-header-dark.png" : "/img/logo-header.png";
+  const mobileLogoSrc = shouldUseDarkLogo ? "/img/logo-header-dark-mobile.png" : "/img/logo-header-mobile.png";
   const shopMenuLinks = [
     { href: "/web-shop", label: isEn ? "All products" : "Svi proizvodi" },
     { href: "/web-shop?categoryId=sale", label: isEn ? "Sale" : "Akcija" },

@@ -9,6 +9,16 @@ export const sanitizeStorefrontImageSrc = (value: unknown): string => {
     return sanitizeStorefrontImageSrc(`https:${raw}`);
   }
 
+  // Legacy content sometimes stores paths or protocol-less hostnames.
+  // Normalize them into absolute URLs so next/image treats them as remote.
+  if (raw.startsWith("/fajlovi/")) {
+    return `https://santos.rs${raw}`;
+  }
+
+  if (/^(santos\.rs|www\.santos\.rs)\//i.test(raw)) {
+    return sanitizeStorefrontImageSrc(`https://${raw}`);
+  }
+
   if (raw.startsWith("/") || raw.startsWith("data:image/")) {
     return raw;
   }
