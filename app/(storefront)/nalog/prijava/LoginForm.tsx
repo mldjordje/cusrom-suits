@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
+import StorefrontGoogleSignInButton from "@/app/components/storefront/StorefrontGoogleSignInButton";
 import { useStorefrontAuth } from "@/app/components/storefront/StorefrontAuthProvider";
 import { isStorefrontAuthConfigured, tryCreateStorefrontBrowserClient } from "@/lib/supabase/storefront-browser";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
@@ -30,6 +31,19 @@ export default function LoginForm({ lang }: { lang: StorefrontLanguage }) {
   };
 
   const nextPath = safeNextPath(searchParams.get("next"));
+
+  useEffect(() => {
+    if (searchParams.get("error") === "oauth") {
+      const msg = searchParams.get("msg");
+      setError(
+        msg
+          ? decodeURIComponent(msg)
+          : isEn
+            ? "Google sign-in failed. Check Supabase Google provider and redirect URLs."
+            : "Google prijava nije uspela. Proveri Google provider i redirect URL-ove u Supabase.",
+      );
+    }
+  }, [searchParams, isEn]);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -98,6 +112,10 @@ export default function LoginForm({ lang }: { lang: StorefrontLanguage }) {
           {isEn ? "Sign up" : "Registracija"}
         </Link>
       </div>
+
+      <StorefrontGoogleSignInButton isEn={isEn} nextPath={nextPath} />
+
+      <p className="text-center text-secondary small text-uppercase mb-3">{isEn ? "or with email" : "ili emailom"}</p>
 
       <form onSubmit={handleSubmit} className="ss-order-form-section">
         {error ? <div className="alert alert-danger py-2 small mb-3">{error}</div> : null}

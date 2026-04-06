@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useCallback, useEffect, useState } from "react";
+import StorefrontGoogleSignInButton from "@/app/components/storefront/StorefrontGoogleSignInButton";
 import { useStorefrontAuth } from "@/app/components/storefront/StorefrontAuthProvider";
 import { isStorefrontAuthConfigured, tryCreateStorefrontBrowserClient } from "@/lib/supabase/storefront-browser";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
@@ -99,6 +100,10 @@ export default function SignupForm({ lang }: { lang: StorefrontLanguage }) {
           {isEn ? "Sign in" : "Prijava"}
         </Link>
       </div>
+
+      <StorefrontGoogleSignInButton isEn={isEn} nextPath="/nalog/porudzbine" />
+
+      <p className="text-center text-secondary small text-uppercase mb-3">{isEn ? "or register with email" : "ili registracija emailom"}</p>
 
       <form onSubmit={handleSubmit} className="ss-order-form-section">
         {error ? <div className="alert alert-danger py-2 small mb-3">{error}</div> : null}
