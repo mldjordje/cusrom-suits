@@ -1,10 +1,10 @@
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import JsonLd from "@/app/components/seo/JsonLd";
 import Reveal from "@/app/components/motion/Reveal";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import { getPostBySlug, listPosts } from "@/lib/blog/store";
 import {
   COMPANY_INFO,
@@ -144,8 +144,9 @@ export default async function BlogDetailPage({
 
           <article className="blog-single__item-content">
             <p>
-              <Image
-                src={post.coverImage || "/assets/images/blog/blog-single.jpg"}
+              <StorefrontSmartImage
+                sources={[post.coverImage || "", "/assets/images/blog/blog-single.jpg"]}
+                fallbackSrc="/assets/images/blog/blog-single.jpg"
                 width={1410}
                 height={550}
                 alt={post.title}

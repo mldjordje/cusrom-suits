@@ -1,8 +1,8 @@
-import Image from "next/image";
 import Link from "next/link";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import Reveal from "@/app/components/motion/Reveal";
+import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
@@ -66,8 +66,9 @@ export default async function BusinessUniformsPage({
               <div key={`${item.type}-${item.src}-${index}`} className="col-12 col-md-6 col-xl-4">
                 <div className="border bg-white p-3 h-100" style={{ borderRadius: 24 }}>
                   {item.type === "image" ? (
-                    <Image
-                      src={item.src}
+                    <StorefrontSmartImage
+                      sources={[item.src, "/img/hero2.jpg"]}
+                      fallbackSrc="/img/hero2.jpg"
                       alt={item.alt || tx(item.title || landingSettings.uniformsTitle, "Business Uniforms")}
                       width={600}
                       height={760}

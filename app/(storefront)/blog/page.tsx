@@ -1,9 +1,9 @@
-import Image from "next/image";
 import Link from "next/link";
 import JsonLd from "@/app/components/seo/JsonLd";
 import Reveal from "@/app/components/motion/Reveal";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import { listPosts } from "@/lib/blog/store";
 import { absoluteUrl, buildBreadcrumbJsonLd, buildSeoMetadata } from "@/lib/seo";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
@@ -93,8 +93,9 @@ export default async function BlogPage({
       <main className="page-wrapper">
         <Reveal as="section" className="blog-page-title mb-4 mb-xl-5">
           <div className="title-bg">
-            <Image
-              src="/img/hero.jpg"
+            <StorefrontSmartImage
+              sources={["/img/hero.jpg"]}
+              fallbackSrc="/img/hero.jpg"
               width={1780}
               height={420}
               alt="Santos blog"
@@ -182,8 +183,9 @@ export default async function BlogPage({
               <div key={post.id} className="blog-grid__item ss-card-hover">
                 <div className="blog-grid__item-image">
                   <Link href={isEn ? `/blog/${post.slug}?lang=en` : `/blog/${post.slug}`}>
-                    <Image
-                      src={post.coverImage || "/img/hero2.jpg"}
+                    <StorefrontSmartImage
+                      sources={[post.coverImage || "", "/img/hero2.jpg"]}
+                      fallbackSrc="/img/hero2.jpg"
                       width={690}
                       height={500}
                       alt={post.title}
