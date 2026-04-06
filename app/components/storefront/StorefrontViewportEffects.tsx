@@ -4,17 +4,16 @@ import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
+/* Bez .ss-shop-hero__media: GSAP autoAlpha:0 + ScrollTrigger "top 88%" cesto ne okine za above-the-fold hero. */
 const REVEAL_SELECTOR = [
   ".ss-filter-panel",
   ".product-single__details-tab",
   ".ss-product-glass-card",
   ".ss-footer__panel",
   ".ss-footer__bottom",
-  ".ss-shop-hero__media",
 ].join(", ");
 
 const PARALLAX_SELECTOR = [
-  ".ss-shop-hero__media .slideshow-bg__img",
   ".ss-banner-panel img",
   ".ss-story-card img",
 ].join(", ");

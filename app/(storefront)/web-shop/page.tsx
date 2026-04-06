@@ -370,7 +370,7 @@ export default async function WebShopPage({
       <JsonLd data={collectionJsonLd} />
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-shop-page">
-        <Reveal as="section" className="ss-shop-hero-section" delay={0} amount={0.12} y={14}>
+        <Reveal as="section" className="ss-shop-hero-section" delay={0} amount={0.05} y={12}>
           <div className="container ss-shop-hero">
             <div className="ss-shop-hero-stack">
               {landingSettings.shopHeroSections.map((section, heroIndex) => (

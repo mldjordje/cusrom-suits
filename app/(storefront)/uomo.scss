@@ -1133,7 +1133,16 @@
 .ss-shop-hero__media .background-img,
 .ss-shop-hero__media .background-img img,
 .ss-shop-hero__media .slideshow-bg__img {
+  width: 100%;
   height: 100%;
+}
+
+.ss-shop-hero__media .slideshow-bg__img,
+.ss-shop-hero__media .background-img img {
+  object-fit: cover;
+  object-position: center center;
+  /* Next/Image + height:100% bez width na nekim WebKit-ima ostavlja 0 širinu */
+  min-width: 0;
 }
 
 .ss-shop-hero__overlay {
