@@ -101,7 +101,8 @@ export const exchangeGoogleAuthorizationCode = async (input: {
 type GoogleUserInfo = {
   sub?: string;
   email?: string;
-  email_verified?: boolean;
+  /** Google userinfo moze vratiti boolean ili string u JSON-u */
+  email_verified?: boolean | string;
   name?: string;
   picture?: string;
 };
