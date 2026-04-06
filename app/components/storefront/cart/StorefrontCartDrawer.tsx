@@ -56,7 +56,10 @@ export default function StorefrontCartDrawer({
 
   return (
     <>
-      <aside className={`aside aside_right overflow-hidden cart-drawer ss-cart-drawer ${isDrawerOpen ? "aside_visible" : ""}`} id="cartDrawer">
+      <aside
+        className={`aside aside_right overflow-hidden cart-drawer ss-cart-drawer d-flex flex-column ${isDrawerOpen ? "aside_visible" : ""}`}
+        id="cartDrawer"
+      >
         <div className="aside-header d-flex align-items-center">
           <h3 className="text-uppercase fs-6 mb-0">
             {isEn ? "Shopping bag" : "Korpa"} (
@@ -70,7 +73,7 @@ export default function StorefrontCartDrawer({
           />
         </div>
 
-        <div className="aside-content cart-drawer-items-list">
+        <div className="aside-content cart-drawer-items-list flex-grow-1 ss-cart-drawer__scroll">
           {!isReady ? (
             <div className="fs-18 mt-5 px-4">{isEn ? "Loading cart..." : "Ucitavam korpu..."}</div>
           ) : items.length ? (
@@ -146,7 +149,7 @@ export default function StorefrontCartDrawer({
           )}
         </div>
 
-        <div className="cart-drawer-actions position-absolute start-0 bottom-0 w-100">
+        <div className="cart-drawer-actions ss-cart-drawer__footer w-100 mt-auto flex-shrink-0">
           <hr className="cart-drawer-divider" />
           <div className="d-flex justify-content-between align-items-center gap-3">
             <div>

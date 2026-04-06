@@ -8,6 +8,7 @@ import {
   getAdminViewerFromCookieStore,
   sanitizeAdminNextPath,
 } from "@/lib/adminAuth";
+import { isGoogleAdminSignInConfigured } from "@/lib/adminGoogleOAuth";
 import { buildSeoMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = buildSeoMetadata({
@@ -29,6 +30,8 @@ export default async function AdminLoginPage({
   const params = await searchParams;
   const nextPath = sanitizeAdminNextPath(getParam(params.next));
   const showError = getParam(params.error) === "1";
+  const googleError = getParam(params.error);
+  const googleSignInEnabled = isGoogleAdminSignInConfigured();
   const cookieStore = await cookies();
   const hasSession =
     Boolean(await getAdminViewerFromCookieStore(cookieStore)) ||
@@ -102,6 +105,16 @@ export default async function AdminLoginPage({
                   </div>
                 ) : null}
 
+                {googleError && googleError !== "1" ? (
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    {googleError === "google_forbidden"
+                      ? "Ovaj Google nalog nema admin pristup."
+                      : googleError === "google_config"
+                        ? "Google prijava nije podesena na serveru."
+                        : "Google prijava nije uspela. Pokusaj ponovo."}
+                  </div>
+                ) : null}
+
                 <button
                   type="submit"
                   className="w-full rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800"
@@ -109,6 +122,38 @@ export default async function AdminLoginPage({
                   Uloguj se
                 </button>
               </form>
+
+              {googleSignInEnabled ? (
+                <div className="mt-6">
+                  <a
+                    href={`/api/admin/auth/google?next=${encodeURIComponent(nextPath)}`}
+                    className="flex w-full items-center justify-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-3 text-sm font-semibold text-slate-800 transition hover:border-slate-300 hover:bg-slate-50"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
+                      <path
+                        fill="#FFC107"
+                        d="M43.611 20.083H42V20H24v8h11.303C33.72 32.657 29.223 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"
+                      />
+                      <path
+                        fill="#FF3D00"
+                        d="m6.306 14.691 6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"
+                      />
+                      <path
+                        fill="#4CAF50"
+                        d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"
+                      />
+                      <path
+                        fill="#1976D2"
+                        d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002 6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"
+                      />
+                    </svg>
+                    Nastavi sa Google nalogom
+                  </a>
+                  <p className="mt-2 text-center text-xs text-slate-500">
+                    Samo odobreni admin mejlovi mogu da udju.
+                  </p>
+                </div>
+              ) : null}
 
               <p className="mt-6 text-xs leading-5 text-slate-500">
                 Ako i dalje koristis stari token pristup, on ostaje podrzan preko `?token=` linka.

@@ -10,7 +10,12 @@ export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
   const isAdminApi = pathname.startsWith("/api/admin/");
 
-  if (pathname === "/admin-login" || pathname === "/api/admin/login") {
+  if (
+    pathname === "/admin-login" ||
+    pathname === "/api/admin/login" ||
+    pathname === "/api/admin/auth/google" ||
+    pathname === "/api/admin/auth/google/callback"
+  ) {
     return NextResponse.next();
   }
 
