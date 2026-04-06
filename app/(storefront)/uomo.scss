@@ -511,7 +511,15 @@
   z-index: 1201;
 }
 
-@media (min-width: 1200px) {
+/* Uklanja „prazan“ prostor ispod loga u linku (baseline / line-height). */
+#header .logo a,
+.ss-mobile-logo a,
+.ss-mobile-nav-brand__logo {
+  display: inline-flex;
+  line-height: 0;
+}
+
+@media (min-width: 992px) {
   #header .header-desk_type_1 {
     display: grid;
     grid-template-columns: auto minmax(0, 1fr) auto;
@@ -534,7 +542,7 @@
 
   #header .header-desk_type_1 .navigation__list {
     display: flex;
-    flex-wrap: nowrap;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: center;
     gap: clamp(0.05rem, 0.45vw, 0.55rem);
@@ -574,7 +582,25 @@
   }
 }
 
-@media (min-width: 1200px) and (max-width: 1599.98px) {
+/* U usim desktop sirinama ima previse linkova: dozvoli 2 reda i zbij malo spacing. */
+@media (min-width: 992px) and (max-width: 1299.98px) {
+  #header .header-desk_type_1 {
+    column-gap: clamp(0.6rem, 1.2vw, 1.1rem);
+  }
+
+  #header .header-desk_type_1 .navigation__list {
+    row-gap: 0.15rem;
+    column-gap: 0.35rem;
+  }
+
+  #header .header-desk_type_1 .navigation__link {
+    min-height: 2.6rem;
+    padding-inline: 0.34rem;
+    font-size: 0.82rem;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1599.98px) {
   #header .header-desk_type_1 .ss-inline-link {
     display: none;
   }

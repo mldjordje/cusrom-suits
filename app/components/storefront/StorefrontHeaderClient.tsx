@@ -228,6 +228,8 @@ export default function StorefrontHeaderClient({
                   width={340}
                   height={96}
                   className="logo__image d-block ss-site-logo"
+                  sizes="(min-width: 1200px) 214px, (min-width: 992px) 200px, 256px"
+                  priority
                 />
               </Link>
             </div>
@@ -343,6 +345,7 @@ export default function StorefrontHeaderClient({
                   width={280}
                   height={79}
                   className="logo__image d-block ss-site-logo ss-site-logo--mobile"
+                  sizes="(max-width: 767.98px) min(208px, 54vw), 208px"
                 />
               </Link>
             </div>
@@ -400,6 +403,7 @@ export default function StorefrontHeaderClient({
                         width={280}
                         height={79}
                         className="logo__image d-block ss-site-logo ss-site-logo--mobile"
+                        sizes="(max-width: 767.98px) min(208px, 54vw), 208px"
                       />
                     </Link>
                     <button

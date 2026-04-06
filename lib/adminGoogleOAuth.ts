@@ -10,15 +10,24 @@ const normalizeEmail = (value: string) => value.trim().toLowerCase();
  * Comma-separated env overrides the built-in owner allowlist.
  * Podrazumevano: pun admin (owner + sve permisije) za glavne naloge.
  */
+const defaultAdminGoogleEmails = () => [
+  normalizeEmail("web.wise018@gmail.com"),
+  normalizeEmail("santorini.jocic@gmail.com"),
+];
+
+/**
+ * Uvek ukljucuje ugradjene owner mejlove; ADMIN_GOOGLE_ALLOWED_EMAILS ih dodaje (ne zamenjuje),
+ * da slucajna lista na Vercelu ne iskljuci pristup.
+ */
 export const getAdminGoogleAllowlist = (): string[] => {
   const raw = process.env.ADMIN_GOOGLE_ALLOWED_EMAILS?.trim();
-  if (raw) {
-    return raw
-      .split(",")
-      .map((item) => normalizeEmail(item))
-      .filter(Boolean);
-  }
-  return [normalizeEmail("web.wise018@gmail.com"), normalizeEmail("santorini.jocic@gmail.com")];
+  const extra = raw
+    ? raw
+        .split(",")
+        .map((item) => normalizeEmail(item))
+        .filter(Boolean)
+    : [];
+  return [...new Set([...defaultAdminGoogleEmails(), ...extra])];
 };
 
 export const isGoogleAdminSignInConfigured = () =>
@@ -28,14 +37,27 @@ export const isGoogleAdminSignInConfigured = () =>
 
 export const getAdminGoogleClientId = () => process.env.ADMIN_GOOGLE_CLIENT_ID?.trim() || "";
 
+/**
+ * Mora biti identican na koraku /auth/google i u callback-u, i mora odgovarati hostu
+ * na kom je postavljen OAuth state cookie (inace google_state).
+ * Zato prvo koristimo origin zahteva, ne VERCEL_URL (cesto drugaciji od javnog domena).
+ */
 export const getAdminGoogleRedirectUri = (req: NextRequest): string => {
   const explicit = process.env.ADMIN_GOOGLE_REDIRECT_URI?.trim();
   if (explicit) return explicit;
-  const base =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : "") ||
-    req.nextUrl.origin;
-  return `${base.replace(/\/$/, "")}/api/admin/auth/google/callback`;
+
+  const fromOrigin = req.nextUrl?.origin?.replace(/\/$/, "").trim();
+  if (fromOrigin && /^https?:\/\//i.test(fromOrigin)) {
+    return `${fromOrigin}/api/admin/auth/google/callback`;
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "");
+  if (siteUrl) return `${siteUrl}/api/admin/auth/google/callback`;
+
+  const vercel = process.env.VERCEL_URL?.trim().replace(/^https?:\/\//i, "");
+  if (vercel) return `https://${vercel}/api/admin/auth/google/callback`;
+
+  return "http://localhost:3000/api/admin/auth/google/callback";
 };
 
 const randomState = () => {

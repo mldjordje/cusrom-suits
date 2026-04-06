@@ -111,7 +111,11 @@ export default async function AdminLoginPage({
                       ? "Ovaj Google nalog nema admin pristup."
                       : googleError === "google_config"
                         ? "Google prijava nije podesena na serveru."
-                        : "Google prijava nije uspela. Pokusaj ponovo."}
+                        : googleError === "google_state"
+                          ? "Sesija prijave je istekla ili domen nije isti (npr. www vs bez www). Otvori admin prijavu na istom URL-u kao u Google konzoli i pokusaj ponovo."
+                          : googleError === "google_token"
+                            ? "Google nije prihvatio kod prijave (redirect URI na serveru i u Google Cloud moraju biti identicni)."
+                            : "Google prijava nije uspela. Pokusaj ponovo."}
                   </div>
                 ) : null}
 

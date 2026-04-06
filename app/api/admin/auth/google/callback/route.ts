@@ -63,7 +63,8 @@ export async function GET(req: NextRequest) {
   }
 
   const email = String(user.email || "");
-  const verified = user.email_verified === true || user.email_verified === "true";
+  const verified =
+    user.email_verified === true || String(user.email_verified).toLowerCase() === "true";
   if (!verified || !isEmailAllowedForGoogleAdmin(email)) {
     return fail("google_forbidden");
   }
