@@ -4,6 +4,7 @@ import { isAdminRequestAuthenticated } from "@/lib/adminAuth";
 import { evaluateVoucher, getFulfillmentSettings, redeemVoucher } from "@/lib/storefront/fulfillment";
 import { getSiteContent } from "@/lib/storefront/siteContent";
 import { getServiceSupabase } from "@/lib/supabase/server";
+import { getStorefrontUserFromCookies } from "@/lib/supabase/storefront-server";
 import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
 import type { StorefrontCartItem } from "@/lib/cart/types";
 
@@ -110,6 +111,11 @@ export async function POST(req: NextRequest) {
       voucherDiscount = voucherResult.discountAmount;
     }
     const finalTotal = Math.max(0, subtotal + deliveryCost - voucherDiscount);
+    const { user: sessionUser } = await getStorefrontUserFromCookies();
+    const sessionEmail = sessionUser?.email?.trim().toLowerCase() || "";
+    const storefrontUserId =
+      sessionUser?.id && sessionEmail && sessionEmail === email.toLowerCase() ? sessionUser.id : null;
+
     const contact = {
       ime: fullName,
       email,
@@ -129,6 +135,7 @@ export async function POST(req: NextRequest) {
     const config = {
       source: "storefront",
       type: "webshop",
+      ...(storefrontUserId ? { storefrontUserId } : {}),
       items,
       totals: {
         subtotal,

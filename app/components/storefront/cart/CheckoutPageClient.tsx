@@ -1,9 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { FormEvent } from "react";
 import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSteps";
+import { useStorefrontAuth } from "@/app/components/storefront/StorefrontAuthProvider";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
@@ -62,6 +63,7 @@ export default function CheckoutPageClient({
   fulfillmentCopy: FulfillmentCopy;
 }) {
   const { items, subtotal, clearCart, isReady } = useCart();
+  const { user: authUser, loading: authLoading } = useStorefrontAuth();
   const [form, setForm] = useState(() => ({
     ...initialForm,
     deliveryMethod: fulfillmentCopy.deliveryEnabled ? "delivery" : "pickup",
@@ -94,6 +96,18 @@ export default function CheckoutPageClient({
   );
   const deliveryCost = form.deliveryMethod === "delivery" ? Number(selectedDeliveryService?.price || 0) : 0;
   const checkoutTotal = subtotal + deliveryCost;
+
+  useEffect(() => {
+    if (!authUser) return;
+    const metaName =
+      typeof authUser.user_metadata?.full_name === "string" ? authUser.user_metadata.full_name.trim() : "";
+    const mail = authUser.email?.trim() || "";
+    setForm((prev) => ({
+      ...prev,
+      fullName: prev.fullName.trim() ? prev.fullName : metaName,
+      email: prev.email.trim() ? prev.email : mail,
+    }));
+  }, [authUser]);
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -276,6 +290,13 @@ export default function CheckoutPageClient({
                   ? "These three fields are enough for the team to confirm the order quickly."
                   : "Ova tri polja su dovoljna da tim brzo potvrdi porudzbinu."}
               </p>
+              {authUser && !authLoading ? (
+                <p className="small text-success mb-3 mb-md-4">
+                  {isEn
+                    ? "You are signed in. The order is linked to your account when the email matches your login."
+                    : "Ulogovan si. Porudzbina se vezuje za nalog kada email u formi odgovara prijavi."}
+                </p>
+              ) : null}
               <div className="row g-3">
                 <div className="col-md-6">
                   <label htmlFor="checkout-full-name" className="form-label">{isEn ? "Full name" : "Ime i prezime"}</label>

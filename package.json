@@ -40,6 +40,7 @@
         "@heroicons/react": "^2.2.0",
         "@mui/icons-material": "^7.3.9",
         "@mui/material": "^7.3.9",
+        "@supabase/ssr": "^0.6.1",
         "@supabase/supabase-js": "^2.99.1",
         "@vercel/analytics": "^2.0.1",
         "adm-zip": "^0.5.16",

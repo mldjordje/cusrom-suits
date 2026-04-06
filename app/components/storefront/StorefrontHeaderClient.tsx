@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 import StorefrontLanguageSwitcher from "@/app/components/storefront/StorefrontLanguageSwitcher";
+import { useStorefrontAuth } from "@/app/components/storefront/StorefrontAuthProvider";
 import StorefrontCartLink from "@/app/components/storefront/cart/StorefrontCartLink";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
@@ -39,6 +40,7 @@ export default function StorefrontHeaderClient({
   const [shouldLoadShopCategories, setShouldLoadShopCategories] = useState(false);
   const lockedScrollY = useRef(0);
   const { reduceMotion } = useAnimationBudget();
+  const { user: authUser, loading: authLoading } = useStorefrontAuth();
   const normalizedPath = pathname ?? "";
   const isHome = normalizedPath === "/" || normalizedPath === "";
   const isEn = lang === "en";
@@ -284,6 +286,17 @@ export default function StorefrontHeaderClient({
                 className="header-tools__item d-none d-md-inline-flex"
                 ariaLabel={isEn ? "Cart" : "Korpa"}
               />
+              <Link
+                href={withLang(authUser ? "/nalog/porudzbine" : "/nalog/prijava")}
+                className="ss-inline-link text-uppercase fw-medium d-none d-md-inline-flex"
+              >
+                {authLoading ? "…" : authUser ? (isEn ? "My orders" : "Moje porudzbine") : isEn ? "Sign in" : "Prijava"}
+              </Link>
+              {!authUser && !authLoading ? (
+                <Link href={withLang("/nalog/registracija")} className="ss-inline-link text-uppercase fw-medium d-none d-md-inline-flex">
+                  {isEn ? "Sign up" : "Registracija"}
+                </Link>
+              ) : null}
               <Link href={withLang("/kontakt")} className="ss-inline-link text-uppercase fw-medium">
                 {isEn ? "Contact" : "Kontakt"}
               </Link>
@@ -496,6 +509,30 @@ export default function StorefrontHeaderClient({
                   </ul>
 
                   <div className="ss-mobile-nav-footer">
+                    <Link
+                      href={withLang(authUser ? "/nalog/porudzbine" : "/nalog/prijava")}
+                      className="ss-mobile-nav-account ss-mobile-nav-pill"
+                      onClick={closeMobileMenu}
+                    >
+                      {authLoading
+                        ? "…"
+                        : authUser
+                          ? isEn
+                            ? "My orders"
+                            : "Moje porudzbine"
+                          : isEn
+                            ? "Sign in"
+                            : "Prijava"}
+                    </Link>
+                    {!authUser && !authLoading ? (
+                      <Link
+                        href={withLang("/nalog/registracija")}
+                        className="ss-mobile-nav-account ss-mobile-nav-pill"
+                        onClick={closeMobileMenu}
+                      >
+                        {isEn ? "Sign up" : "Registracija"}
+                      </Link>
+                    ) : null}
                     <Link href={withLang("/kontakt")} className="ss-mobile-nav-account ss-mobile-nav-pill" onClick={closeMobileMenu}>
                       {isEn ? "Contact" : "Kontakt"}
                     </Link>

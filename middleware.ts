@@ -5,10 +5,24 @@ import {
   isValidLegacyAdminToken,
   sanitizeAdminNextPath,
 } from "@/lib/adminAuth";
+import { updateStorefrontSupabaseSession } from "@/lib/supabase/update-storefront-session";
 
 export async function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
+  const isAdminArea = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
   const isAdminApi = pathname.startsWith("/api/admin/");
+
+  if (!isAdminArea) {
+    const shouldRefreshStorefrontAuth =
+      pathname.startsWith("/nalog") ||
+      pathname === "/checkout" ||
+      pathname.startsWith("/api/storefront/orders") ||
+      (pathname === "/api/orders" && req.method === "POST");
+    if (shouldRefreshStorefrontAuth) {
+      return updateStorefrontSupabaseSession(req);
+    }
+    return NextResponse.next();
+  }
 
   if (
     pathname === "/admin-login" ||
@@ -52,5 +66,12 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/api/admin/:path*"],
+  matcher: [
+    "/admin/:path*",
+    "/api/admin/:path*",
+    "/nalog/:path*",
+    "/checkout",
+    "/api/storefront/orders",
+    "/api/orders",
+  ],
 };
