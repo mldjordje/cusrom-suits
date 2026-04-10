@@ -1959,6 +1959,21 @@
   -webkit-overflow-scrolling: touch;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.78) 52%, rgba(255, 255, 255, 0.96));
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0.22s ease;
+}
+
+.ss-product-card .pc__img-wrapper:hover .pc__info.hover__content,
+.ss-product-card .pc__img-wrapper:focus-within .pc__info.hover__content {
+  opacity: 1;
+  visibility: visible;
+}
+
+.ss-product-card .pc__info.hover__content a,
+.ss-product-card .pc__info.hover__content button {
+  pointer-events: auto;
 }
 
 .ss-product-card .pc__info.hover__content .pc__category {
@@ -1994,6 +2009,12 @@
   white-space: normal;
   text-align: center;
   word-break: break-word;
+  bottom: auto !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .ss-product-card .pc__info {
