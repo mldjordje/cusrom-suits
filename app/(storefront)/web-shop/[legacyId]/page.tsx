@@ -255,6 +255,17 @@ export default async function WebShopProductPage({
               <div className="product-single__media" data-media-type="scroll-snap">
                 <ProductImageGallery images={gallery} name={displayName} videoUrl={productVideoUrl} />
               </div>
+              <div className="ss-product-tabs-under-media d-none d-lg-block">
+                <ProductDetailTabs
+                  lang={lang}
+                  description={displayDescription}
+                  specification={displaySpecification}
+                  attributes={attributeItems}
+                  declaration={declaration}
+                  sizeGuide={sizeGuide}
+                  washCare={washCare}
+                />
+              </div>
             </div>
 
             <div className="col-lg-5 ss-product-single-info">
@@ -464,40 +475,18 @@ export default async function WebShopProductPage({
             </div>
           </div>
 
-          <div className="row mt-4">
-            <div className="col-lg-7">
-              <div className="ss-product-glass-card ss-product-description-under-media">
-                <h2 className="h5 text-uppercase mb-3">{isEn ? "Description" : "Opis proizvoda"}</h2>
-                <div
-                  className="content"
-                  dangerouslySetInnerHTML={{
-                    __html: decodeHtmlEntities(
-                      displayDescription ||
-                        (isEn
-                          ? "<p>Detailed product description is currently unavailable.</p>"
-                          : "<p>Detaljan opis proizvoda trenutno nije dostupan.</p>"),
-                    ),
-                  }}
-                />
-                {displaySpecification ? (
-                  <div
-                    className="content mt-3"
-                    dangerouslySetInnerHTML={{ __html: decodeHtmlEntities(displaySpecification) }}
-                  />
-                ) : null}
-              </div>
-            </div>
+          <div className="ss-product-tabs-mobile d-lg-none">
+            <ProductDetailTabs
+              lang={lang}
+              description={displayDescription}
+              specification={displaySpecification}
+              attributes={attributeItems}
+              declaration={declaration}
+              sizeGuide={sizeGuide}
+              washCare={washCare}
+            />
           </div>
 
-          <ProductDetailTabs
-            lang={lang}
-            description={displayDescription}
-            specification={displaySpecification}
-            attributes={attributeItems}
-            declaration={declaration}
-            sizeGuide={sizeGuide}
-            washCare={washCare}
-          />
         </Reveal>
 
         <div className="ss-mobile-product-bar d-lg-none">

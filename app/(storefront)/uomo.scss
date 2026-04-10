@@ -4857,14 +4857,17 @@ body.mobile-menu-opened {
   word-break: break-word;
 }
 
-.ss-product-description-under-media {
+.ss-product-tabs-under-media {
   margin-top: 1.25rem;
-  padding: 1.25rem;
 }
 
-.ss-product-description-under-media .content {
-  color: #475569;
-  line-height: 1.72;
+.ss-product-tabs-under-media .product-single__details-tab.ss-product-glass-card,
+.ss-product-tabs-mobile .product-single__details-tab.ss-product-glass-card {
+  margin-top: 0;
+}
+
+.ss-product-tabs-mobile {
+  margin-top: 1.25rem;
 }
 
 .ss-size-guide-modal {
