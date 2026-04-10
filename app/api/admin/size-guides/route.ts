@@ -89,6 +89,8 @@ export async function PATCH(req: NextRequest) {
 
   const settings = await updateSizeGuideSettings({
     tables,
+    imageSrc: row.imageSrc === null ? null : parseString(row.imageSrc),
+    imageAlt: parseString(row.imageAlt),
     updatedAt: new Date().toISOString(),
   });
 

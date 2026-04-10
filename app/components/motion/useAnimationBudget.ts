@@ -8,13 +8,16 @@ type ConnectionLike = {
   effectiveType?: string;
 };
 
+type NavigatorWithHardwareHints = Navigator & {
+  deviceMemory?: number;
+  connection?: ConnectionLike;
+  mozConnection?: ConnectionLike;
+  webkitConnection?: ConnectionLike;
+};
+
 const readConnection = (): ConnectionLike | null => {
   if (typeof navigator === "undefined") return null;
-  const nav = navigator as Navigator & {
-    connection?: ConnectionLike;
-    mozConnection?: ConnectionLike;
-    webkitConnection?: ConnectionLike;
-  };
+  const nav = navigator as NavigatorWithHardwareHints;
   return nav.connection || nav.mozConnection || nav.webkitConnection || null;
 };
 
@@ -30,8 +33,11 @@ const shouldForceReduceMotion = () => {
   const effectiveType = String(connection?.effectiveType || "").toLowerCase();
   const saveData = Boolean(connection?.saveData);
   const weakNetwork = effectiveType.includes("2g") || effectiveType.includes("slow-2g");
+  const nav = navigator as NavigatorWithHardwareHints;
+  const weakMemory = typeof nav.deviceMemory === "number" && nav.deviceMemory > 0 && nav.deviceMemory <= 2;
+  const weakCpu = typeof navigator.hardwareConcurrency === "number" && navigator.hardwareConcurrency > 0 && navigator.hardwareConcurrency <= 2;
 
-  return saveData || weakNetwork;
+  return saveData || weakNetwork || weakMemory || weakCpu;
 };
 
 export default function useAnimationBudget() {

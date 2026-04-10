@@ -8,6 +8,14 @@ const BUSINESS_UNIFORMS_NAV_ITEM: SiteNavItem = {
   labelEn: "Business uniforms",
 };
 
+const LOYALTY_NAV_ITEM: SiteNavItem = {
+  href: "/loyalty-program",
+  label: "Loyalty program",
+  labelEn: "Loyalty program",
+};
+
+const REQUIRED_NAV_ITEMS = [BUSINESS_UNIFORMS_NAV_ITEM, LOYALTY_NAV_ITEM];
+
 export default async function StorefrontHeader({
   lang = "sr",
   variant = "default",
@@ -17,19 +25,16 @@ export default async function StorefrontHeader({
 }) {
   const isEn = lang === "en";
   const siteContent = await getSiteContent();
-  const navigationItems = siteContent.navigation.items.some((item) => item.href === BUSINESS_UNIFORMS_NAV_ITEM.href)
-    ? siteContent.navigation.items
-    : (() => {
-        const anchorIndex = siteContent.navigation.items.findIndex(
-          (item) => item.href === "/blog" || item.href === "/prodajna-mesta" || item.href === "/kontakt",
-        );
-        const nextItems = [...siteContent.navigation.items];
-        if (anchorIndex >= 0) {
-          nextItems.splice(anchorIndex, 0, BUSINESS_UNIFORMS_NAV_ITEM);
-          return nextItems;
-        }
-        return [...nextItems, BUSINESS_UNIFORMS_NAV_ITEM];
-      })();
+  const navigationItems = REQUIRED_NAV_ITEMS.reduce((items, requiredItem) => {
+    if (items.some((item) => item.href === requiredItem.href)) return items;
+    const anchorIndex = items.findIndex((item) => item.href === "/blog" || item.href === "/kontakt");
+    const nextItems = [...items];
+    if (anchorIndex >= 0) {
+      nextItems.splice(anchorIndex, 0, requiredItem);
+      return nextItems;
+    }
+    return [...nextItems, requiredItem];
+  }, siteContent.navigation.items.filter((item) => item.href !== "/prodajna-mesta"));
   const navItems = navigationItems.map((item) => ({
     href: item.href,
     label: isEn ? item.labelEn : item.label,

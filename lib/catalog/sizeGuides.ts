@@ -22,6 +22,8 @@ export type SizeGuideTable = {
 
 export type SizeGuideSettings = {
   updatedAt: string | null;
+  imageSrc: string | null;
+  imageAlt: string;
   tables: SizeGuideTable[];
 };
 
@@ -35,6 +37,8 @@ const makeRows = (tableId: string, rows: string[][]): SizeGuideRow[] =>
 
 export const DEFAULT_SIZE_GUIDE_SETTINGS: SizeGuideSettings = {
   updatedAt: null,
+  imageSrc: "/assets/images/size-guide.jpg",
+  imageAlt: "Odredite velicinu",
   tables: [
     {
       id: "blazer-slim",
@@ -224,6 +228,11 @@ export async function getSizeGuideSettings(): Promise<SizeGuideSettings> {
 
   return {
     updatedAt: normalizeString(settings.updatedAt) || DEFAULT_SIZE_GUIDE_SETTINGS.updatedAt,
+    imageSrc:
+      settings.imageSrc === null
+        ? null
+        : normalizeString(settings.imageSrc) || DEFAULT_SIZE_GUIDE_SETTINGS.imageSrc,
+    imageAlt: normalizeString(settings.imageAlt) || DEFAULT_SIZE_GUIDE_SETTINGS.imageAlt,
     tables: tables.length ? tables : DEFAULT_SIZE_GUIDE_SETTINGS.tables,
   };
 }
@@ -234,6 +243,8 @@ export async function updateSizeGuideSettings(
   const current = await getSizeGuideSettings();
   const next: SizeGuideSettings = {
     updatedAt: patch.updatedAt === null ? null : normalizeString(patch.updatedAt) || nowIso(),
+    imageSrc: patch.imageSrc === null ? null : normalizeString(patch.imageSrc) || current.imageSrc,
+    imageAlt: normalizeString(patch.imageAlt) || current.imageAlt,
     tables: Array.isArray(patch.tables)
       ? patch.tables
           .map((item, index) => normalizeTable(item, index))

@@ -1,10 +1,13 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import type { SizeGuideSettings } from "@/lib/catalog/sizeGuides";
 
 const emptySettings: SizeGuideSettings = {
   updatedAt: null,
+  imageSrc: null,
+  imageAlt: "",
   tables: [],
 };
 
@@ -12,6 +15,7 @@ export default function AdminSizeGuidesPage() {
   const [settings, setSettings] = useState<SizeGuideSettings>(emptySettings);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [uploadingImage, setUploadingImage] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -44,6 +48,81 @@ export default function AdminSizeGuidesPage() {
     }));
   };
 
+  const addTable = () => {
+    const id = `custom-${Date.now()}`;
+    setSettings((prev) => ({
+      ...prev,
+      tables: [
+        ...prev.tables,
+        {
+          id,
+          title: "Nova tabela",
+          group: "shirt",
+          fit: "standard",
+          headers: ["Velicina", "Grudi", "Struk"],
+          rows: [{ id: `${id}-row-1`, cells: ["", "", ""] }],
+          notes: [],
+        },
+      ],
+    }));
+  };
+
+  const removeTable = (tableId: string) => {
+    setSettings((prev) => ({
+      ...prev,
+      tables: prev.tables.filter((table) => table.id !== tableId),
+    }));
+  };
+
+  const addColumn = (tableId: string) => {
+    updateTable(tableId, (current) => ({
+      ...current,
+      headers: [...current.headers, `Kolona ${current.headers.length + 1}`],
+      rows: current.rows.map((row) => ({ ...row, cells: [...row.cells, ""] })),
+    }));
+  };
+
+  const removeColumn = (tableId: string, headerIndex: number) => {
+    updateTable(tableId, (current) => {
+      if (current.headers.length <= 1) return current;
+      return {
+        ...current,
+        headers: current.headers.filter((_, index) => index !== headerIndex),
+        rows: current.rows.map((row) => ({
+          ...row,
+          cells: row.cells.filter((_, index) => index !== headerIndex),
+        })),
+      };
+    });
+  };
+
+  const uploadSizeGuideImage = async (files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    setUploadingImage(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const fd = new FormData();
+      fd.append("files", file);
+      const res = await fetch("/api/admin/webshop/site-assets", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!json?.success || !Array.isArray(json.urls) || !json.urls[0]) {
+        throw new Error(json?.message || "Upload nije uspeo.");
+      }
+      setSettings((prev) => ({
+        ...prev,
+        imageSrc: json.urls[0],
+        imageAlt: prev.imageAlt || "Odredite velicinu",
+      }));
+      setNotice("Slika je uploadovana. Klikni Sacuvaj sve.");
+    } catch (e: any) {
+      setError(e?.message || "Upload slike nije uspeo.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const save = async () => {
     setSaving(true);
     setError(null);
@@ -52,7 +131,11 @@ export default function AdminSizeGuidesPage() {
       const res = await fetch("/api/admin/size-guides", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tables: settings.tables }),
+        body: JSON.stringify({
+          imageSrc: settings.imageSrc,
+          imageAlt: settings.imageAlt,
+          tables: settings.tables,
+        }),
       });
       const json = await res.json();
       if (!json?.success) {
@@ -93,6 +176,12 @@ export default function AdminSizeGuidesPage() {
             >
               {saving ? "Cuvanje..." : "Sacuvaj sve"}
             </button>
+            <button
+              onClick={addTable}
+              className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700"
+            >
+              Dodaj tabelu
+            </button>
           </div>
         </div>
         {settings.updatedAt ? (
@@ -105,9 +194,79 @@ export default function AdminSizeGuidesPage() {
         {notice ? <p className="mt-3 text-sm text-emerald-700">{notice}</p> : null}
       </div>
 
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr),220px]">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Popup slika</p>
+            <h2 className="mt-1 text-lg font-semibold text-slate-900">Slika za &quot;Odredite velicinu&quot;</h2>
+            <p className="mt-1 text-sm text-slate-600">URL ili upload slike koja se prikazuje iznad tabela u popup-u.</p>
+            <div className="mt-4 grid gap-3 md:grid-cols-2">
+              <input
+                value={settings.imageSrc || ""}
+                onChange={(e) => setSettings((prev) => ({ ...prev, imageSrc: e.target.value || null }))}
+                placeholder="URL slike"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+              <input
+                value={settings.imageAlt || ""}
+                onChange={(e) => setSettings((prev) => ({ ...prev, imageAlt: e.target.value }))}
+                placeholder="Alt tekst"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+              <label className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={(e) => {
+                    void uploadSizeGuideImage(e.target.files);
+                    e.currentTarget.value = "";
+                  }}
+                />
+                {uploadingImage ? "Uploading..." : "Upload slike"}
+              </label>
+              <button
+                type="button"
+                onClick={() => setSettings((prev) => ({ ...prev, imageSrc: null }))}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700"
+              >
+                Ukloni sliku
+              </button>
+            </div>
+          </div>
+          {settings.imageSrc ? (
+            <Image
+              src={settings.imageSrc}
+              alt={settings.imageAlt || "Odredite velicinu"}
+              width={420}
+              height={260}
+              className="h-44 w-full rounded-2xl border border-slate-200 object-cover"
+            />
+          ) : (
+            <div className="flex h-44 items-center justify-center rounded-2xl border border-dashed border-slate-300 text-sm text-slate-500">
+              Nema slike
+            </div>
+          )}
+        </div>
+      </div>
+
       <div className="grid gap-4">
         {settings.tables.map((table) => (
           <article key={table.id} className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex flex-wrap justify-end gap-2">
+              <button
+                onClick={() => addColumn(table.id)}
+                className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700"
+              >
+                Dodaj kolonu
+              </button>
+              <button
+                onClick={() => removeTable(table.id)}
+                className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700"
+              >
+                Obrisi tabelu
+              </button>
+            </div>
             <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr),180px,180px]">
               <label className="grid gap-2 text-sm text-slate-700">
                 <span className="font-semibold text-slate-900">Naslov tabele</span>
@@ -148,17 +307,26 @@ export default function AdminSizeGuidesPage() {
               <p className="mb-2 text-sm font-semibold text-slate-900">Kolone</p>
               <div className="grid gap-2 md:grid-cols-3 xl:grid-cols-6">
                 {table.headers.map((header, headerIndex) => (
-                  <input
-                    key={`${table.id}-header-${headerIndex}`}
-                    value={header}
-                    onChange={(e) =>
-                      updateTable(table.id, (current) => ({
-                        ...current,
-                        headers: current.headers.map((item, index) => (index === headerIndex ? e.target.value : item)),
-                      }))
-                    }
-                    className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                  />
+                  <div key={`${table.id}-header-${headerIndex}`} className="flex gap-1">
+                    <input
+                      value={header}
+                      onChange={(e) =>
+                        updateTable(table.id, (current) => ({
+                          ...current,
+                          headers: current.headers.map((item, index) => (index === headerIndex ? e.target.value : item)),
+                        }))
+                      }
+                      className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeColumn(table.id, headerIndex)}
+                      disabled={table.headers.length <= 1}
+                      className="rounded-xl border border-rose-200 px-2 text-[11px] font-semibold uppercase text-rose-700 disabled:opacity-40"
+                    >
+                      X
+                    </button>
+                  </div>
                 ))}
               </div>
             </div>

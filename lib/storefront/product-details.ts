@@ -27,6 +27,8 @@ export type ProductSizeGuide = {
   bullets: string[];
   buttonLabel: string;
   modalTitle: string;
+  imageSrc: string | null;
+  imageAlt: string;
   tables: SizeGuideTable[];
   fallbackNote: string | null;
 };
@@ -415,6 +417,8 @@ export const getProductSizeGuide = async (
     bullets: getSizeGuideBullets(lang, hasNumericSizes),
     buttonLabel: lang === "en" ? "Determine size" : "Odredite velicinu",
     modalTitle: lang === "en" ? "Size guide" : "Tabela velicina",
+    imageSrc: settings.imageSrc,
+    imageAlt: settings.imageAlt,
     tables: visibleTables,
     fallbackNote: visibleTables.length ? null : localizedFallback,
   };

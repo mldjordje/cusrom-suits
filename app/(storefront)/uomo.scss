@@ -482,6 +482,10 @@
 .ss-header-home-floating {
   background: transparent !important;
   box-shadow: none !important;
+  position: fixed !important;
+  top: 0;
+  left: 0;
+  right: 0;
 }
 
 .ss-header-home-floating .container,
@@ -496,7 +500,7 @@
 }
 
 #header.header {
-  z-index: 1200;
+  z-index: 1300;
 }
 
 #header .navigation,
@@ -4041,6 +4045,10 @@ body.mobile-menu-opened {
     grid-template-columns: 1fr;
   }
 
+  .ss-size-guide-recommender__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
   .product-single__addtocart .btn-addtocart,
   .product-single__addtocart .ss-cta-btn {
     min-height: 2.7rem;
@@ -4828,9 +4836,19 @@ body.mobile-menu-opened {
   word-break: break-word;
 }
 
+.ss-product-description-under-media {
+  margin-top: 1.25rem;
+  padding: 1.25rem;
+}
+
+.ss-product-description-under-media .content {
+  color: #475569;
+  line-height: 1.72;
+}
+
 .ss-size-guide-modal {
   position: relative;
-  z-index: 90;
+  z-index: 2100;
 }
 
 .ss-size-guide-modal__backdrop {
@@ -4906,6 +4924,76 @@ body.mobile-menu-opened {
   gap: 1.25rem;
   min-width: 0;
   padding: 1.4rem 1.5rem 1.55rem;
+}
+
+.ss-size-guide-modal__image-wrap {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.ss-size-guide-modal__image {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 420px;
+  object-fit: cover;
+}
+
+.ss-size-guide-recommender {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.ss-size-guide-recommender h3 {
+  margin: 0 0 0.45rem;
+  font-size: 0.95rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.ss-size-guide-recommender p {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.55;
+}
+
+.ss-size-guide-recommender__grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.ss-size-guide-recommender__grid label {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #475569;
+}
+
+.ss-size-guide-recommender__grid input {
+  min-width: 0;
+  border: 1px solid rgba(148, 163, 184, 0.38);
+  border-radius: 8px;
+  padding: 0.7rem 0.75rem;
+  font-size: 0.95rem;
+}
+
+.ss-size-guide-recommender__result {
+  border-radius: 8px;
+  background: #111827;
+  padding: 0.85rem 1rem;
+  color: #fff;
+  font-weight: 700;
 }
 
 .ss-size-guide-modal__intro h3 {
@@ -5459,7 +5547,7 @@ button.ss-mobile-nav-quicklink,
   position: fixed;
   top: 0;
   right: 0;
-  z-index: 1200;
+  z-index: 2000;
   display: flex;
   flex-direction: column;
   width: min(420px, 100vw);
@@ -5535,7 +5623,7 @@ button.ss-mobile-nav-quicklink,
 .ss-cart-drawer-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1190;
+  z-index: 1990;
   border: 0;
   background: rgba(15, 23, 42, 0.36);
   opacity: 0;

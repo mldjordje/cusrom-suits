@@ -334,7 +334,7 @@ export default async function HomePage({
   const saleItems = pickProductsForSection(
     [...saleManualPool, ...salePool],
     landingSettings.saleProductIds,
-    4,
+    Math.max(6, landingSettings.saleProductIds.length || 0),
     salePool.slice(0, 16),
   );
   const landingSectionStateMap = buildLandingProductSectionMap(landingSettings.productSections);
@@ -883,9 +883,6 @@ export default async function HomePage({
                 <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
                   {tx(landingSettings.aboutEyebrow, "About")}
                 </p>
-                <SectionHeadingReveal className="section-title text-uppercase mb-4">
-                  {tx(landingSettings.aboutTitle, "About Santos & Santorini")}
-                </SectionHeadingReveal>
                 <div className="row g-3">
                   {aboutParagraphs.map((paragraph) => (
                     <div key={paragraph} className="col-12 col-md-6">

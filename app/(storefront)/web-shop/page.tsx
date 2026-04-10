@@ -11,6 +11,7 @@ import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
 import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
+import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { localizeDynamicCategoryLabel, localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getCatalogProductImageSources, getLocalizedCatalogProductName } from "@/lib/storefront/product-details";
@@ -259,6 +260,7 @@ export default async function WebShopPage({
     const displayName = getLocalizedCatalogProductName(item, lang);
     const detailHref = isEn ? `/web-shop/${item.legacyId}?lang=en` : `/web-shop/${item.legacyId}`;
     const discountPercent = getDiscountPercent(item.priceGross, item.priceFinalGross);
+    const businessUniform = isBusinessUniformProduct(item);
     const imageSizes =
       imageWidth >= 600
         ? "(max-width: 991px) 100vw, (max-width: 1399px) 50vw, 42vw"
@@ -284,30 +286,36 @@ export default async function WebShopPage({
                 -{discountPercent}% {isEn ? "off" : "popust"}
               </span>
             ) : null}
-            <div className="pc__info hover__content text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
-              <p className="pc__category">{getCategoryLabel(item)}</p>
-              <h6 className="pc__title">
-                <Link href={detailHref} prefetch={false}>
-                  {displayName}
-                </Link>
-              </h6>
-              <div className="product-card__price d-flex justify-content-center">
-                {item.priceGross > item.priceFinalGross ? (
-                  <>
-                    <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                    <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
-                  </>
-                ) : (
-                  <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-                )}
-              </div>
-              {discountPercent > 0 ? (
+              <div className="pc__info hover__content text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
+                <p className="pc__category">{getCategoryLabel(item)}</p>
+                <h6 className="pc__title">
+                  <Link href={detailHref} prefetch={false}>
+                    {displayName}
+                  </Link>
+                </h6>
+              {businessUniform ? (
+                <div className="product-card__price d-flex justify-content-center">
+                  <span className="money price">{isEn ? "Inquiry only" : "Na upit"}</span>
+                </div>
+              ) : (
+                <div className="product-card__price d-flex justify-content-center">
+                  {item.priceGross > item.priceFinalGross ? (
+                    <>
+                      <span className="money price price-old">{formatRsd(item.priceGross)}</span>
+                      <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
+                    </>
+                  ) : (
+                    <span className="money price">{formatRsd(item.priceFinalGross)}</span>
+                  )}
+                </div>
+              )}
+              {discountPercent > 0 && !businessUniform ? (
                 <p className="ss-product-card__discount mb-0">
                   {isEn ? "Save" : "Usteda"} {discountPercent}%
                 </p>
               ) : null}
               <Link href={detailHref} prefetch={false} className="pc__atc anim_appear-bottom btn mt-3 border-0 text-uppercase fw-medium">
-                {isEn ? "View product" : "Pogledaj proizvod"}
+                {businessUniform ? (isEn ? "Send inquiry" : "Posalji upit") : isEn ? "View product" : "Pogledaj proizvod"}
               </Link>
             </div>
           </div>
@@ -318,17 +326,23 @@ export default async function WebShopPage({
                 {displayName}
               </Link>
             </h6>
-            <div className="product-card__price d-flex">
-              {item.priceGross > item.priceFinalGross ? (
-                <>
-                  <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                  <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
-                </>
-              ) : (
-                <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-              )}
-            </div>
-            {discountPercent > 0 ? (
+            {businessUniform ? (
+              <div className="product-card__price d-flex">
+                <span className="money price">{isEn ? "Inquiry only" : "Na upit"}</span>
+              </div>
+            ) : (
+              <div className="product-card__price d-flex">
+                {item.priceGross > item.priceFinalGross ? (
+                  <>
+                    <span className="money price price-old">{formatRsd(item.priceGross)}</span>
+                    <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
+                  </>
+                ) : (
+                  <span className="money price">{formatRsd(item.priceFinalGross)}</span>
+                )}
+              </div>
+            )}
+            {discountPercent > 0 && !businessUniform ? (
               <p className="ss-product-card__discount mb-0">
                 {isEn ? "Save" : "Usteda"} {discountPercent}%
               </p>

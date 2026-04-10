@@ -245,6 +245,7 @@ const compactRawPayload = (
   if (source.landing && typeof source.landing === "object") compact.landing = source.landing;
   if (source.attributes && typeof source.attributes === "object") compact.attributes = source.attributes;
   if (source.media && typeof source.media === "object") compact.media = source.media;
+  if (source.productType) compact.productType = source.productType;
   if (source.imageFallback && typeof source.imageFallback === "object") {
     compact.imageFallback = source.imageFallback;
   }
@@ -363,6 +364,7 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
         : extractProductVideoUrl(item.raw as Record<string, unknown>)
           ? { videoUrl: extractProductVideoUrl(item.raw as Record<string, unknown>) }
           : undefined,
+    productType: item.raw?.productType,
   }),
 });
 

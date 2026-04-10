@@ -17,8 +17,8 @@ import {
   getRelatedCatalogProducts,
 } from "@/lib/catalog/store";
 import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
-import OpenCartDrawerButton from "@/app/components/storefront/cart/OpenCartDrawerButton";
 import { decodeHtmlEntities } from "@/lib/catalog/presentation";
+import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import {
   getCatalogProductImageSources,
@@ -165,6 +165,7 @@ export default async function WebShopProductPage({
     sizeOptions,
   );
   const washCare = getProductWashCare(product, lang);
+  const businessUniform = isBusinessUniformProduct(displayProduct) || isBusinessUniformProduct(product);
 
   const discountAmount = Math.max(0, product.priceGross - product.priceFinalGross);
   const discountPercent = getDiscountPercent(product.priceGross, product.priceFinalGross);
@@ -216,20 +217,30 @@ export default async function WebShopProductPage({
     category: categoryLabel,
     material,
     size: selectedSize || undefined,
-    offers: {
-      "@type": "Offer",
-      url: absoluteUrl(canonicalPath),
-      priceCurrency: "RSD",
-      price: Number(product.priceFinalGross || 0),
-      availability:
-        stockValue > 0
-          ? "https://schema.org/InStock"
-          : "https://schema.org/PreOrder",
-      seller: {
-        "@type": "Organization",
-        name: COMPANY_INFO.name,
-      },
-    },
+    offers: businessUniform
+      ? {
+          "@type": "Offer",
+          url: absoluteUrl(canonicalPath),
+          availability: "https://schema.org/PreOrder",
+          seller: {
+            "@type": "Organization",
+            name: COMPANY_INFO.name,
+          },
+        }
+      : {
+          "@type": "Offer",
+          url: absoluteUrl(canonicalPath),
+          priceCurrency: "RSD",
+          price: Number(product.priceFinalGross || 0),
+          availability:
+            stockValue > 0
+              ? "https://schema.org/InStock"
+              : "https://schema.org/PreOrder",
+          seller: {
+            "@type": "Organization",
+            name: COMPANY_INFO.name,
+          },
+        },
   };
 
   return (
@@ -281,19 +292,27 @@ export default async function WebShopProductPage({
                     <span>*****</span>
                   </div>
                   <span className="reviews-note text-lowercase text-secondary ms-1">
-                    {stockValue} {isEn ? "in stock" : "na stanju"}
+                    {businessUniform
+                      ? (isEn ? "team inquiry" : "upit za timske porudzbine")
+                      : `${stockValue} ${isEn ? "in stock" : "na stanju"}`}
                   </span>
                 </div>
                 <div className="product-single__price">
-                  <span className="current-price">{formatRsd(product.priceFinalGross)}</span>
-                  {discountAmount > 0 ? (
-                    <span className="old-price ms-2">{formatRsd(product.priceGross)}</span>
-                  ) : null}
-                  {discountPercent > 0 ? (
-                    <span className="ss-product-price-badge">-{discountPercent}%</span>
-                  ) : null}
+                  {businessUniform ? (
+                    <span className="current-price">{isEn ? "Inquiry only" : "Na upit"}</span>
+                  ) : (
+                    <>
+                      <span className="current-price">{formatRsd(product.priceFinalGross)}</span>
+                      {discountAmount > 0 ? (
+                        <span className="old-price ms-2">{formatRsd(product.priceGross)}</span>
+                      ) : null}
+                      {discountPercent > 0 ? (
+                        <span className="ss-product-price-badge">-{discountPercent}%</span>
+                      ) : null}
+                    </>
+                  )}
                 </div>
-                {discountPercent > 0 ? (
+                {discountPercent > 0 && !businessUniform ? (
                   <p className="ss-product-price-note">
                     {isEn ? "You save" : "Stedite"} {formatRsd(discountAmount)} ({discountPercent}%)
                   </p>
@@ -309,16 +328,6 @@ export default async function WebShopProductPage({
 
                 <div className="product-single__swatches">
                   <div className="product-swatch text-swatches">
-                    <label>{isEn ? "Category" : "Kategorija"}</label>
-                    <div className="swatch-list">
-                      {product.categories.slice(0, 2).map((category) => (
-                        <span key={category.id} className="swatch text-uppercase">
-                          {category.name}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="product-swatch text-swatches">
                     <label>{isEn ? "Material" : "Materijal"}</label>
                     <div className="swatch-list">
                       <span className="swatch">{material}</span>
@@ -327,8 +336,12 @@ export default async function WebShopProductPage({
                   <div className="product-swatch color-swatches">
                     <label>Status</label>
                     <div className="swatch-list">
-                      <span className={`swatch ${stockValue > 0 ? "bg-success" : "bg-secondary"} text-white`}>
-                        {stockValue > 0 ? (isEn ? "In stock" : "Na stanju") : (isEn ? "On request" : "Na upit")}
+                      <span className={`swatch ${stockValue > 0 && !businessUniform ? "bg-success" : "bg-secondary"} text-white`}>
+                        {businessUniform
+                          ? (isEn ? "Inquiry only" : "Na upit")
+                          : stockValue > 0
+                            ? (isEn ? "In stock" : "Na stanju")
+                            : (isEn ? "On request" : "Na upit")}
                       </span>
                     </div>
                   </div>
@@ -356,31 +369,33 @@ export default async function WebShopProductPage({
                 <div className="ss-product-size-guide-row">
                   <ProductSizeGuideButton lang={lang} sizeGuide={sizeGuide} />
                   <p className="ss-product-size-guide-row__copy">
-                    {isEn
-                      ? "Open the size table and compare measurements before adding the item to cart."
-                      : "Otvorite tabelu velicina i uporedite mere pre dodavanja artikla u korpu."}
+                    {businessUniform
+                      ? isEn
+                        ? "Open the size table and compare measurements before sending an inquiry."
+                        : "Otvorite tabelu velicina i uporedite mere pre slanja upita."
+                      : isEn
+                        ? "Open the size table and compare measurements before adding the item to cart."
+                        : "Otvorite tabelu velicina i uporedite mere pre dodavanja artikla u korpu."}
                   </p>
                 </div>
 
                 <div className="product-single__addtocart">
                   <div className="d-flex flex-wrap gap-2 ss-product-cta-actions">
-                    <AddToCartButton
-                      lang={lang}
-                      className="btn btn-primary btn-addtocart ss-cta-btn"
-                      item={cartItem}
-                    />
-                    <OpenCartDrawerButton
-                      className="btn btn-outline-dark btn-addtocart ss-cta-btn ss-cta-btn--ghost"
-                      ariaLabel={isEn ? "Open cart" : "Otvori korpu"}
-                    >
-                      {isEn ? "View cart" : "Idi na korpu"}
-                    </OpenCartDrawerButton>
+                    {businessUniform ? (
+                      <Link
+                        href={withLang(`/kontakt?product=${product.legacyId}`)}
+                        className="btn btn-primary btn-addtocart ss-cta-btn"
+                      >
+                        {isEn ? "Send inquiry" : "Posalji upit"}
+                      </Link>
+                    ) : (
+                      <AddToCartButton
+                        lang={lang}
+                        className="btn btn-primary btn-addtocart ss-cta-btn"
+                        item={cartItem}
+                      />
+                    )}
                   </div>
-                  <p className="ss-product-cta-note mb-0">
-                    {isEn
-                      ? "The order is sent as a direct inquiry without online payment, and our team confirms availability afterward."
-                      : "Porudzbina se salje kao direktan upit bez online placanja, a nas tim potom potvrdjuje dostupnost."}
-                  </p>
                 </div>
 
                 <div className="product-single__addtolinks">
@@ -399,10 +414,6 @@ export default async function WebShopProductPage({
                   <span>{product.sku}</span>
                 </div>
                 <div className="meta-item">
-                  <label>{isEn ? "Categories" : "Kategorije"}:</label>
-                  <span>{categoryLabel}</span>
-                </div>
-                <div className="meta-item">
                   <label>{isEn ? "Brand" : "Brend"}:</label>
                   <span>{product.brand || "Santos"}</span>
                 </div>
@@ -412,12 +423,28 @@ export default async function WebShopProductPage({
                 </div>
                 <div className="meta-item">
                   <label>{isEn ? "Size" : "Velicina"}:</label>
-                  <span>{selectedSize || (isEn ? "Check size selector" : "Pogledajte selektor velicina")}</span>
+                  <span>
+                    {selectedSize ||
+                      (businessUniform
+                        ? isEn
+                          ? "Defined by inquiry"
+                          : "Definise se kroz upit"
+                        : isEn
+                          ? "Check size selector"
+                          : "Pogledajte selektor velicina")}
+                  </span>
                 </div>
-                <div className="meta-item">
-                  <label>PDV:</label>
-                  <span>{product.taxPercent}% {isEn ? "included" : "uracunat"}</span>
-                </div>
+                {businessUniform ? (
+                  <div className="meta-item">
+                    <label>{isEn ? "Type" : "Tip"}:</label>
+                    <span>{isEn ? "Business uniforms" : "Poslovne uniforme"}</span>
+                  </div>
+                ) : (
+                  <div className="meta-item">
+                    <label>PDV:</label>
+                    <span>{product.taxPercent}% {isEn ? "included" : "uracunat"}</span>
+                  </div>
+                )}
               </div>
 
               {showSizeGuide && sizeGuide ? (
@@ -434,6 +461,31 @@ export default async function WebShopProductPage({
                   </ul>
                 </div>
               ) : null}
+            </div>
+          </div>
+
+          <div className="row mt-4">
+            <div className="col-lg-7">
+              <div className="ss-product-glass-card ss-product-description-under-media">
+                <h2 className="h5 text-uppercase mb-3">{isEn ? "Description" : "Opis proizvoda"}</h2>
+                <div
+                  className="content"
+                  dangerouslySetInnerHTML={{
+                    __html: decodeHtmlEntities(
+                      displayDescription ||
+                        (isEn
+                          ? "<p>Detailed product description is currently unavailable.</p>"
+                          : "<p>Detaljan opis proizvoda trenutno nije dostupan.</p>"),
+                    ),
+                  }}
+                />
+                {displaySpecification ? (
+                  <div
+                    className="content mt-3"
+                    dangerouslySetInnerHTML={{ __html: decodeHtmlEntities(displaySpecification) }}
+                  />
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -454,8 +506,10 @@ export default async function WebShopProductPage({
               <div>
                 <p className="ss-mobile-product-bar__eyebrow">{isEn ? "Santos & Santorini" : "Santos & Santorini"}</p>
                 <div className="ss-mobile-product-bar__prices">
-                  <strong className="ss-mobile-product-bar__price">{formatRsd(product.priceFinalGross)}</strong>
-                  {discountPercent > 0 ? (
+                  <strong className="ss-mobile-product-bar__price">
+                    {businessUniform ? (isEn ? "Inquiry" : "Na upit") : formatRsd(product.priceFinalGross)}
+                  </strong>
+                  {discountPercent > 0 && !businessUniform ? (
                     <>
                       <span className="ss-mobile-product-bar__old-price">{formatRsd(product.priceGross)}</span>
                       <span className="ss-product-price-badge ss-product-price-badge--mobile">-{discountPercent}%</span>
@@ -464,27 +518,29 @@ export default async function WebShopProductPage({
                 </div>
               </div>
               <p className="ss-mobile-product-bar__note">
-                {selectedSize
-                  ? `${isEn ? "Size" : "Velicina"}: ${selectedSize}`
-                  : stockValue > 0
-                    ? `${stockValue} ${isEn ? "available now" : "dostupno odmah"}`
-                    : isEn
-                      ? "Availability confirmed after inquiry"
-                      : "Dostupnost se potvrdjuje nakon upita"}
+                {businessUniform
+                  ? (isEn ? "Inquiry for team needs" : "Upit za potrebe tima")
+                  : selectedSize
+                    ? `${isEn ? "Size" : "Velicina"}: ${selectedSize}`
+                    : stockValue > 0
+                      ? `${stockValue} ${isEn ? "available now" : "dostupno odmah"}`
+                      : isEn
+                        ? "Availability confirmed after inquiry"
+                        : "Dostupnost se potvrdjuje nakon upita"}
               </p>
             </div>
             <div className="ss-mobile-product-bar__actions">
-              <AddToCartButton
-                lang={lang}
-                className="btn btn-primary btn-addtocart ss-mobile-product-bar__btn"
-                item={cartItem}
-              />
-              <OpenCartDrawerButton
-                className="btn btn-outline-dark ss-mobile-product-bar__btn"
-                ariaLabel={isEn ? "Open cart" : "Otvori korpu"}
-              >
-                {isEn ? "Cart" : "Korpa"}
-              </OpenCartDrawerButton>
+              {businessUniform ? (
+                <Link href={withLang(`/kontakt?product=${product.legacyId}`)} className="btn btn-primary ss-mobile-product-bar__btn">
+                  {isEn ? "Inquiry" : "Upit"}
+                </Link>
+              ) : (
+                <AddToCartButton
+                  lang={lang}
+                  className="btn btn-primary btn-addtocart ss-mobile-product-bar__btn"
+                  item={cartItem}
+                />
+              )}
             </div>
           </div>
         </div>

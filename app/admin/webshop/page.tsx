@@ -19,6 +19,7 @@ import {
   getOrderedGridEntries,
   type LandingGridOrderRef,
 } from "@/lib/catalog/landingSectionOrder";
+import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 
 type TabKey = "products" | "landing" | "akcije";
 type CatalogCategory = { id: number; name: string; path: string[] };
@@ -40,6 +41,7 @@ type CatalogProduct = {
   coverImage?: string | null;
   images?: string[];
   videoUrl?: string | null;
+  rawPayload?: Record<string, unknown> | null;
 };
 type ProductDraft = {
   name: string;
@@ -54,6 +56,7 @@ type ProductDraft = {
   landingFeatured: boolean;
   landingPriority: string;
   videoUrl: string;
+  businessUniform: boolean;
 };
 type Pagination = { page: number; pageSize: number; total: number; totalPages: number };
 type CreateDraft = {
@@ -72,6 +75,7 @@ type CreateDraft = {
   landingFeatured: boolean;
   landingPriority: string;
   videoUrl: string;
+  businessUniform: boolean;
 };
 type LandingDocument = {
   title: string;
@@ -245,7 +249,7 @@ const landingSectionConfig: Array<{
   { key: "highlightedProductIds", label: "Izdvojeni modeli", description: "Prva velika produkt sekcija.", limit: 8 },
   { key: "popularProductIds", label: "Popularni proizvodi", description: "Sekcija popularnih proizvoda.", limit: 4 },
   { key: "arrivalsProductIds", label: "Nova kolekcija", description: "Sekcija novih modela.", limit: 4 },
-  { key: "saleProductIds", label: "Akcije na pocetnoj", description: "Ako je prazno, home sam povlaci proizvode sa akcijskom cenom. Uneti ID-jevi imaju prioritet.", limit: 4 },
+  { key: "saleProductIds", label: "Akcije na pocetnoj", description: "Ako je prazno, home sam povlaci proizvode sa akcijskom cenom. Uneti ID-jevi imaju prioritet.", limit: 6 },
   { key: "trendingProductIds", label: "Trendinzi", description: "Sekcija trendova i preporuka.", limit: 4 },
 ];
 
@@ -274,6 +278,7 @@ const defaultCreateDraft: CreateDraft = {
   landingFeatured: false,
   landingPriority: "",
   videoUrl: "",
+  businessUniform: false,
 };
 
 const defaultLandingSettings: LandingSettings = {
@@ -595,6 +600,7 @@ const toDraft = (item: CatalogProduct): ProductDraft => ({
   landingFeatured: Boolean(item.landingFeatured),
   landingPriority: item.landingPriority == null ? "" : String(item.landingPriority),
   videoUrl: item.videoUrl || "",
+  businessUniform: isBusinessUniformProduct(item),
 });
 
 const normalizeTab = (value: string | null | undefined): TabKey => {
@@ -1417,6 +1423,7 @@ export default function AdminWebshopPage() {
           landingFeatured: draft.landingFeatured,
           landingPriority: draft.landingPriority.trim() ? toNumberOrNull(draft.landingPriority) : null,
           videoUrl: draft.videoUrl.trim() || null,
+          businessUniform: draft.businessUniform,
         }),
       });
       const json = await res.json();
@@ -1464,6 +1471,7 @@ export default function AdminWebshopPage() {
             coverImage: createImages[0] || null,
             images: createImages,
             videoUrl: createDraft.videoUrl.trim() || null,
+            businessUniform: createDraft.businessUniform,
             isActive: createDraft.isActive,
             isExported: createDraft.isExported,
             landingFeatured: createDraft.landingFeatured,
@@ -1764,6 +1772,7 @@ export default function AdminWebshopPage() {
                   inputMode="decimal"
                   min="0"
                   value={createDraft.priceGross}
+                  disabled={createDraft.businessUniform}
                   onChange={(e) => setCreateDraft((p) => ({ ...p, priceGross: e.target.value }))}
                   placeholder="npr 12990"
                   className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
@@ -1776,6 +1785,7 @@ export default function AdminWebshopPage() {
                   inputMode="decimal"
                   min="0"
                   value={createDraft.priceFinalGross}
+                  disabled={createDraft.businessUniform}
                   onChange={(e) => setCreateDraft((p) => ({ ...p, priceFinalGross: e.target.value }))}
                   placeholder="npr 10990"
                   className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
@@ -1789,6 +1799,7 @@ export default function AdminWebshopPage() {
                   min="0"
                   max="100"
                   value={createDraft.rebatePercent}
+                  disabled={createDraft.businessUniform}
                   onChange={(e) => setCreateDraft((p) => ({ ...p, rebatePercent: e.target.value }))}
                   placeholder="npr 15"
                   className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
@@ -1814,6 +1825,7 @@ export default function AdminWebshopPage() {
                   inputMode="numeric"
                   min="0"
                   value={createDraft.stockWarehouse1}
+                  disabled={createDraft.businessUniform}
                   onChange={(e) => setCreateDraft((p) => ({ ...p, stockWarehouse1: e.target.value }))}
                   placeholder="npr 3"
                   className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
@@ -1826,6 +1838,7 @@ export default function AdminWebshopPage() {
                   inputMode="numeric"
                   min="0"
                   value={createDraft.stockTotal}
+                  disabled={createDraft.businessUniform}
                   onChange={(e) => setCreateDraft((p) => ({ ...p, stockTotal: e.target.value }))}
                   placeholder="npr 8"
                   className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
@@ -1926,6 +1939,28 @@ export default function AdminWebshopPage() {
             </div>
 
             <div className="mt-3 flex flex-wrap items-center gap-3">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={createDraft.businessUniform}
+                  onChange={(e) =>
+                    setCreateDraft((p) => ({
+                      ...p,
+                      businessUniform: e.target.checked,
+                      ...(e.target.checked
+                        ? {
+                            priceGross: "0",
+                            priceFinalGross: "0",
+                            rebatePercent: "0",
+                            stockWarehouse1: "0",
+                            stockTotal: "0",
+                          }
+                        : {}),
+                    }))
+                  }
+                />
+                Poslovna uniforma (bez cene i lagera)
+              </label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={createDraft.isActive} onChange={(e) => setCreateDraft((p) => ({ ...p, isActive: e.target.checked }))} />Aktivan (vidljiv na sajtu)</label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={createDraft.isExported} onChange={(e) => setCreateDraft((p) => ({ ...p, isExported: e.target.checked }))} />Export (sinhronizacija)</label>
               <button onClick={createProduct} disabled={creating} className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">{creating ? "Kreiranje..." : "Kreiraj proizvod"}</button>
@@ -2919,11 +2954,11 @@ export default function AdminWebshopPage() {
             <div className="grid gap-3 md:grid-cols-2">
               <input value={drafts[currentEditorItem.legacyId]?.name || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { name: e.target.value })} placeholder="Naziv" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
               <input value={drafts[currentEditorItem.legacyId]?.brand || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { brand: e.target.value })} placeholder="Brend (opciono)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={drafts[currentEditorItem.legacyId]?.priceGross || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceGross: e.target.value })} placeholder="Regularna cena (RSD)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={drafts[currentEditorItem.legacyId]?.priceFinalGross || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceFinalGross: e.target.value })} placeholder="Prodajna cena (RSD)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={drafts[currentEditorItem.legacyId]?.rebatePercent || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { rebatePercent: e.target.value })} placeholder="Popust % (0-100)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={drafts[currentEditorItem.legacyId]?.stockWarehouse1 || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { stockWarehouse1: e.target.value })} placeholder="Lager magacin 1" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={drafts[currentEditorItem.legacyId]?.stockTotal || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { stockTotal: e.target.value })} placeholder="Ukupan lager" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              <input value={drafts[currentEditorItem.legacyId]?.priceGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceGross: e.target.value })} placeholder="Regularna cena (RSD)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+              <input value={drafts[currentEditorItem.legacyId]?.priceFinalGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceFinalGross: e.target.value })} placeholder="Prodajna cena (RSD)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+              <input value={drafts[currentEditorItem.legacyId]?.rebatePercent || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { rebatePercent: e.target.value })} placeholder="Popust % (0-100)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+              <input value={drafts[currentEditorItem.legacyId]?.stockWarehouse1 || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { stockWarehouse1: e.target.value })} placeholder="Lager magacin 1" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+              <input value={drafts[currentEditorItem.legacyId]?.stockTotal || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { stockTotal: e.target.value })} placeholder="Ukupan lager" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
               <input value={drafts[currentEditorItem.legacyId]?.videoUrl || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { videoUrl: e.target.value })} placeholder="URL product videa" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
             </div>
 
@@ -2965,6 +3000,27 @@ export default function AdminWebshopPage() {
             </div>
 
             <div className="mt-4 flex flex-wrap gap-3">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="checkbox"
+                  checked={Boolean(drafts[currentEditorItem.legacyId]?.businessUniform)}
+                  onChange={(e) =>
+                    updateDraft(currentEditorItem.legacyId, {
+                      businessUniform: e.target.checked,
+                      ...(e.target.checked
+                        ? {
+                            priceGross: "0",
+                            priceFinalGross: "0",
+                            rebatePercent: "0",
+                            stockWarehouse1: "0",
+                            stockTotal: "0",
+                          }
+                        : {}),
+                    })
+                  }
+                />
+                Poslovna uniforma (bez cene i lagera)
+              </label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(drafts[currentEditorItem.legacyId]?.isActive)} onChange={(e) => updateDraft(currentEditorItem.legacyId, { isActive: e.target.checked })} />Aktivan (vidljiv na sajtu)</label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(drafts[currentEditorItem.legacyId]?.isExported)} onChange={(e) => updateDraft(currentEditorItem.legacyId, { isExported: e.target.checked })} />Export (sinhronizacija)</label>
             </div>

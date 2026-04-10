@@ -66,6 +66,18 @@ export default async function StorefrontFooter({
                     </svg>
                     <span>Instagram</span>
                   </a>
+                  <a
+                    href={footer.facebookUrl || "https://www.facebook.com/share/1GqmAg7ENk/?mibextid=wwXIfr"}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ss-footer__social-link"
+                    aria-label="Facebook"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M14.2 8.4H16V5.3C15.7 5.3 14.7 5.2 13.5 5.2C11 5.2 9.3 6.7 9.3 9.5V12H6.5V15.5H9.3V23H12.8V15.5H15.6L16.1 12H12.8V9.8C12.8 8.8 13.1 8.4 14.2 8.4Z" fill="currentColor" />
+                    </svg>
+                    <span>Facebook</span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -88,7 +100,7 @@ export default async function StorefrontFooter({
         </div>
 
         <div className="ss-footer__bottom">
-          <span>Copyright {new Date().getFullYear()} Santos & Santorini</span>
+          <span>Copyright {new Date().getFullYear()} Santos & Santorini | Santos DOO</span>
           <span>
             {isEn ? footer.bottomTaglineEn : footer.bottomTagline}
           </span>

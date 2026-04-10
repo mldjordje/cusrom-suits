@@ -3,6 +3,7 @@ import { hasAdminToken } from "@/lib/auth/admin";
 import { invalidateCatalogCaches, listCatalogProducts } from "@/lib/catalog/store";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
+import { BUSINESS_UNIFORM_PRODUCT_TYPE } from "@/lib/catalog/productTypes";
 import type { LegacyCatalogProduct, LegacyCategory } from "@/lib/legacy/types";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
@@ -26,6 +27,7 @@ type ProductUpdatePayload = {
   landingFeatured?: boolean;
   landingPriority?: number | null;
   videoUrl?: string | null;
+  businessUniform?: boolean;
 };
 
 type ProductCreatePayload = {
@@ -51,6 +53,7 @@ type ProductCreatePayload = {
   images?: string[];
   coverImage?: string | null;
   videoUrl?: string | null;
+  businessUniform?: boolean;
 };
 
 const hasOwn = (obj: Record<string, unknown>, key: string) =>
@@ -101,6 +104,7 @@ const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
   if (hasOwn(row, "videoUrl")) {
     out.videoUrl = row.videoUrl == null ? null : String(row.videoUrl || "").trim() || null;
   }
+  if (hasOwn(row, "businessUniform")) out.businessUniform = Boolean(row.businessUniform);
   return out;
 };
 
@@ -134,6 +138,7 @@ const parseCreatePayload = (raw: unknown): ProductCreatePayload | null => {
     images: parseStringList(row.images),
     coverImage: row.coverImage == null ? null : String(row.coverImage),
     videoUrl: row.videoUrl == null ? null : String(row.videoUrl || "").trim() || null,
+    businessUniform: Boolean(row.businessUniform),
   };
 };
 
@@ -155,12 +160,49 @@ const normalizeLegacyCategory = (input: ProductCreatePayload): LegacyCategory[] 
   ];
 };
 
+const withProductType = (
+  rawPayload: Record<string, unknown>,
+  businessUniform: boolean | undefined,
+) => {
+  if (businessUniform === undefined) return rawPayload;
+  const next = { ...rawPayload };
+  if (businessUniform) {
+    next.productType = BUSINESS_UNIFORM_PRODUCT_TYPE;
+  } else {
+    delete next.productType;
+  }
+  return next;
+};
+
 const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
   const products = await readJsonFile<LegacyCatalogProduct[]>(LEGACY_PRODUCTS_PATH, []);
   const idx = products.findIndex((item) => Number(item.legacyId) === Number(patch.legacyId));
   if (idx === -1) return { success: false, message: "Product not found." };
 
   const current = products[idx];
+  const nextRaw = withProductType(
+    {
+      ...current.raw,
+      ...(patch.landingFeatured !== undefined || patch.landingPriority !== undefined
+        ? {
+            landing: {
+              ...((current.raw && typeof current.raw.landing === "object" ? current.raw.landing : {}) || {}),
+              ...(patch.landingFeatured !== undefined ? { featured: patch.landingFeatured } : {}),
+              ...(patch.landingPriority !== undefined ? { priority: patch.landingPriority } : {}),
+            },
+          }
+        : {}),
+      ...(patch.videoUrl !== undefined
+        ? {
+            media: {
+              ...((current.raw && typeof current.raw.media === "object" ? current.raw.media : {}) || {}),
+              videoUrl: patch.videoUrl,
+            },
+          }
+        : {}),
+    },
+    patch.businessUniform,
+  );
   const next: LegacyCatalogProduct = {
     ...current,
     sku: patch.sku ?? current.sku,
@@ -194,26 +236,7 @@ const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
       active: patch.isActive !== undefined ? (patch.isActive ? "y" : "n") : current.status.active,
       export: patch.isExported !== undefined ? (patch.isExported ? "y" : "n") : current.status.export,
     },
-    raw: {
-      ...current.raw,
-      ...(patch.landingFeatured !== undefined || patch.landingPriority !== undefined
-        ? {
-            landing: {
-              ...((current.raw && typeof current.raw.landing === "object" ? current.raw.landing : {}) || {}),
-              ...(patch.landingFeatured !== undefined ? { featured: patch.landingFeatured } : {}),
-              ...(patch.landingPriority !== undefined ? { priority: patch.landingPriority } : {}),
-            },
-          }
-        : {}),
-      ...(patch.videoUrl !== undefined
-        ? {
-            media: {
-              ...((current.raw && typeof current.raw.media === "object" ? current.raw.media : {}) || {}),
-              videoUrl: patch.videoUrl,
-            },
-          }
-        : {}),
-    },
+    raw: nextRaw as LegacyCatalogProduct["raw"],
   };
 
   products[idx] = next;
@@ -243,7 +266,8 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
   if (
     patch.landingFeatured !== undefined ||
     patch.landingPriority !== undefined ||
-    patch.videoUrl !== undefined
+    patch.videoUrl !== undefined ||
+    patch.businessUniform !== undefined
   ) {
     const { data: existing, error: rawError } = await supabase
       .from("catalog_products")
@@ -268,18 +292,21 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
         ? (currentRawPayload.media as Record<string, unknown>)
         : {};
 
-    update.raw_payload = {
-      ...currentRawPayload,
-      landing: {
-        ...currentLanding,
-        ...(patch.landingFeatured !== undefined ? { featured: patch.landingFeatured } : {}),
-        ...(patch.landingPriority !== undefined ? { priority: patch.landingPriority } : {}),
+    update.raw_payload = withProductType(
+      {
+        ...currentRawPayload,
+        landing: {
+          ...currentLanding,
+          ...(patch.landingFeatured !== undefined ? { featured: patch.landingFeatured } : {}),
+          ...(patch.landingPriority !== undefined ? { priority: patch.landingPriority } : {}),
+        },
+        media: {
+          ...currentMedia,
+          ...(patch.videoUrl !== undefined ? { videoUrl: patch.videoUrl } : {}),
+        },
       },
-      media: {
-        ...currentMedia,
-        ...(patch.videoUrl !== undefined ? { videoUrl: patch.videoUrl } : {}),
-      },
-    };
+      patch.businessUniform,
+    );
   }
 
   const { error } = await supabase
@@ -353,6 +380,7 @@ const createInLegacyFile = async (payload: ProductCreatePayload) => {
       media: {
         videoUrl: payload.videoUrl ?? null,
       },
+      ...(payload.businessUniform ? { productType: BUSINESS_UNIFORM_PRODUCT_TYPE } : {}),
     },
   };
 
@@ -408,6 +436,7 @@ const createInSupabase = async (payload: ProductCreatePayload) => {
       media: {
         videoUrl: payload.videoUrl ?? null,
       },
+      ...(payload.businessUniform ? { productType: BUSINESS_UNIFORM_PRODUCT_TYPE } : {}),
       attributes: {},
       stockWarehouses: [],
       legacyRaw: {

@@ -29,6 +29,7 @@ export type SiteFooterContent = {
   brandCopy: string;
   brandCopyEn: string;
   instagramUrl: string;
+  facebookUrl: string;
   bottomTagline: string;
   bottomTaglineEn: string;
   groups: SiteFooterGroup[];
@@ -100,8 +101,8 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       { href: "/akcije", label: "Akcije", labelEn: "Sale" },
       { href: "/o-nama", label: "O nama", labelEn: "About" },
       { href: "/poslovne-uniforme", label: "Poslovne uniforme", labelEn: "Business uniforms" },
+      { href: "/loyalty-program", label: "Loyalty program", labelEn: "Loyalty program" },
       { href: "/blog", label: "Blog", labelEn: "Blog" },
-      { href: "/prodajna-mesta", label: "Prodajna mesta", labelEn: "Stores" },
       { href: "/kontakt", label: "Kontakt", labelEn: "Contact" },
     ],
   },
@@ -111,6 +112,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     brandCopy: "Modern tailoring, ready-to-wear modeli i modernije mobile iskustvo kupovine.",
     brandCopyEn: "Modern tailoring, ready-to-wear pieces and a cleaner mobile shopping experience.",
     instagramUrl: "https://www.instagram.com/santos.santorini/",
+    facebookUrl: "https://www.facebook.com/share/1GqmAg7ENk/?mibextid=wwXIfr",
     bottomTagline: "Krojenje, aksesoari i editorial shopping.",
     bottomTaglineEn: "Tailoring, accessories and editorial shopping.",
     groups: [
@@ -121,7 +123,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
           { href: "/", label: "Pocetna", labelEn: "Home" },
           { href: "/o-nama", label: "O nama", labelEn: "About" },
           { href: "/poslovne-uniforme", label: "Poslovne uniforme", labelEn: "Business uniforms" },
-          { href: "/prodajna-mesta", label: "Prodajna mesta", labelEn: "Store locations" },
+          { href: "/loyalty-program", label: "Loyalty program", labelEn: "Loyalty program" },
           { href: "/blog", label: "Blog", labelEn: "Blog" },
           { href: "/kontakt", label: "Kontakt", labelEn: "Contact" },
         ],
@@ -337,6 +339,7 @@ async function readSiteContentUncached(): Promise<SiteContent> {
       brandCopy: decodeText(raw.footer?.brandCopy, DEFAULT_SITE_CONTENT.footer.brandCopy),
       brandCopyEn: decodeText(raw.footer?.brandCopyEn, DEFAULT_SITE_CONTENT.footer.brandCopyEn),
       instagramUrl: String(raw.footer?.instagramUrl || DEFAULT_SITE_CONTENT.footer.instagramUrl).trim(),
+      facebookUrl: String((raw.footer as Partial<SiteFooterContent> | undefined)?.facebookUrl || DEFAULT_SITE_CONTENT.footer.facebookUrl).trim(),
       bottomTagline: decodeText(raw.footer?.bottomTagline, DEFAULT_SITE_CONTENT.footer.bottomTagline),
       bottomTaglineEn: decodeText(raw.footer?.bottomTaglineEn, DEFAULT_SITE_CONTENT.footer.bottomTaglineEn),
       groups: normalizeFooterGroups(raw.footer?.groups, DEFAULT_SITE_CONTENT.footer.groups),
@@ -416,6 +419,7 @@ export async function updateSiteContent(patch: Partial<SiteContent>): Promise<Si
       brandCopy: patch.footer?.brandCopy == null ? current.footer.brandCopy : decodeText(patch.footer.brandCopy, current.footer.brandCopy),
       brandCopyEn: patch.footer?.brandCopyEn == null ? current.footer.brandCopyEn : decodeText(patch.footer.brandCopyEn, current.footer.brandCopyEn),
       instagramUrl: patch.footer?.instagramUrl == null ? current.footer.instagramUrl : String(patch.footer.instagramUrl).trim() || current.footer.instagramUrl,
+      facebookUrl: patch.footer?.facebookUrl == null ? current.footer.facebookUrl : String(patch.footer.facebookUrl).trim() || current.footer.facebookUrl,
       bottomTagline: patch.footer?.bottomTagline == null ? current.footer.bottomTagline : decodeText(patch.footer.bottomTagline, current.footer.bottomTagline),
       bottomTaglineEn: patch.footer?.bottomTaglineEn == null ? current.footer.bottomTaglineEn : decodeText(patch.footer.bottomTaglineEn, current.footer.bottomTaglineEn),
       groups: patch.footer?.groups == null ? current.footer.groups : normalizeFooterGroups(patch.footer.groups, current.footer.groups),

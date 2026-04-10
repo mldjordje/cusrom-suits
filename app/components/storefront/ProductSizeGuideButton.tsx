@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { Fragment, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
@@ -15,9 +16,64 @@ export default function ProductSizeGuideButton({
   sizeGuide,
 }: Props) {
   const [open, setOpen] = useState(false);
+  const [measurements, setMeasurements] = useState({
+    height: "",
+    weight: "",
+    chest: "",
+    waist: "",
+  });
   const isEn = lang === "en";
 
   if (!sizeGuide) return null;
+
+  const parseNumber = (value: string) => {
+    const parsed = Number(String(value || "").replace(",", "."));
+    return Number.isFinite(parsed) ? parsed : null;
+  };
+
+  const recommendation = (() => {
+    const chest = parseNumber(measurements.chest);
+    const waist = parseNumber(measurements.waist);
+    const weight = parseNumber(measurements.weight);
+    if (!chest && !waist && !weight) return null;
+
+    for (const table of sizeGuide.tables) {
+      const chestIndex = table.headers.findIndex((header) => /grudi|chest|c\b/i.test(header));
+      const waistIndex = table.headers.findIndex((header) => /struk|waist|d\b/i.test(header));
+      const sizeIndex = 0;
+      const scoredRows = table.rows
+        .map((row) => {
+          const chestValue = chestIndex >= 0 ? parseNumber(row.cells[chestIndex] || "") : null;
+          const waistValue = waistIndex >= 0 ? parseNumber(row.cells[waistIndex] || "") : null;
+          let score = 0;
+          let signals = 0;
+          if (chest != null && chestValue != null) {
+            score += Math.abs(chestValue - chest);
+            signals += 1;
+          }
+          if (waist != null && waistValue != null) {
+            score += Math.abs(waistValue - waist);
+            signals += 1;
+          }
+          if (!signals && weight != null) {
+            const numericSize = parseNumber(row.cells[sizeIndex] || "");
+            if (numericSize != null) {
+              score += Math.abs(numericSize - Math.round(weight / 2));
+              signals += 1;
+            }
+          }
+          return { row, score, signals };
+        })
+        .filter((item) => item.signals > 0)
+        .sort((left, right) => left.score - right.score);
+
+      if (scoredRows[0]?.row.cells[sizeIndex]) {
+        return `${scoredRows[0].row.cells[sizeIndex]} (${table.title})`;
+      }
+    }
+
+    return null;
+  })();
 
   return (
     <>
@@ -78,9 +134,62 @@ export default function ProductSizeGuideButton({
                   </div>
 
                   <div className="ss-size-guide-modal__body">
+                    {sizeGuide.imageSrc ? (
+                      <div className="ss-size-guide-modal__image-wrap">
+                        <Image
+                          src={sizeGuide.imageSrc}
+                          alt={sizeGuide.imageAlt || sizeGuide.modalTitle}
+                          width={980}
+                          height={420}
+                          className="ss-size-guide-modal__image"
+                        />
+                      </div>
+                    ) : null}
+
                     <div className="ss-size-guide-modal__intro">
                       <h3>{sizeGuide.title}</h3>
                       <p>{sizeGuide.intro}</p>
+                    </div>
+
+                    <div className="ss-size-guide-recommender">
+                      <div>
+                        <h3>{isEn ? "Size recommendation" : "Preporuka velicine"}</h3>
+                        <p>
+                          {isEn
+                            ? "Enter the measurements you know. The recommendation is a helper, not a final tailoring measurement."
+                            : "Unesite mere koje znate. Preporuka je pomoc pri izboru, ne finalna krojacka mera."}
+                        </p>
+                      </div>
+                      <div className="ss-size-guide-recommender__grid">
+                        {[
+                          { key: "height", label: isEn ? "Height" : "Visina" },
+                          { key: "weight", label: isEn ? "Weight" : "Tezina" },
+                          { key: "chest", label: isEn ? "Chest" : "Obim grudi" },
+                          { key: "waist", label: isEn ? "Waist" : "Obim struka" },
+                        ].map((field) => (
+                          <label key={field.key}>
+                            <span>{field.label}</span>
+                            <input
+                              inputMode="decimal"
+                              value={measurements[field.key as keyof typeof measurements]}
+                              onChange={(event) =>
+                                setMeasurements((prev) => ({
+                                  ...prev,
+                                  [field.key]: event.target.value,
+                                }))
+                              }
+                              placeholder="cm"
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      <div className="ss-size-guide-recommender__result">
+                        {recommendation
+                          ? `${isEn ? "Recommended size" : "Preporucena velicina"}: ${recommendation}`
+                          : isEn
+                            ? "Enter chest, waist or weight to get a recommendation."
+                            : "Unesite obim grudi, struka ili tezinu za preporuku."}
+                      </div>
                     </div>
 
                     {sizeGuide.bullets.length ? (

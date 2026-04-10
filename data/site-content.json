@@ -6,8 +6,8 @@
       { "href": "/akcije", "label": "Akcije", "labelEn": "Sale" },
       { "href": "/o-nama", "label": "O nama", "labelEn": "About" },
       { "href": "/poslovne-uniforme", "label": "Poslovne uniforme", "labelEn": "Business uniforms" },
+      { "href": "/loyalty-program", "label": "Loyalty program", "labelEn": "Loyalty program" },
       { "href": "/blog", "label": "Blog", "labelEn": "Blog" },
-      { "href": "/prodajna-mesta", "label": "Prodajna mesta", "labelEn": "Stores" },
       { "href": "/kontakt", "label": "Kontakt", "labelEn": "Contact" }
     ]
   },
@@ -17,6 +17,7 @@
     "brandCopy": "Modern tailoring, ready-to-wear modeli i modernije mobile iskustvo kupovine.",
     "brandCopyEn": "Modern tailoring, ready-to-wear pieces and a cleaner mobile shopping experience.",
     "instagramUrl": "https://www.instagram.com/santos.santorini/",
+    "facebookUrl": "https://www.facebook.com/share/1GqmAg7ENk/?mibextid=wwXIfr",
     "bottomTagline": "Krojenje, aksesoari i editorial shopping.",
     "bottomTaglineEn": "Tailoring, accessories and editorial shopping.",
     "groups": [
@@ -27,7 +28,7 @@
           { "href": "/", "label": "Pocetna", "labelEn": "Home" },
           { "href": "/o-nama", "label": "O nama", "labelEn": "About" },
           { "href": "/poslovne-uniforme", "label": "Poslovne uniforme", "labelEn": "Business uniforms" },
-          { "href": "/prodajna-mesta", "label": "Prodajna mesta", "labelEn": "Store locations" },
+          { "href": "/loyalty-program", "label": "Loyalty program", "labelEn": "Loyalty program" },
           { "href": "/blog", "label": "Blog", "labelEn": "Blog" },
           { "href": "/kontakt", "label": "Kontakt", "labelEn": "Contact" }
         ]

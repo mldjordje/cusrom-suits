@@ -52,9 +52,9 @@ export default async function BusinessUniformsPage({
             <h1 className="section-title text-uppercase mb-3">{tx(landingSettings.uniformsTitle, "Business Uniforms")}</h1>
             <p className="text-secondary mb-0">{tx(landingSettings.uniformsText)}</p>
             <div className="d-flex flex-wrap gap-2 mt-4">
-              <Link href={withLang("/kontakt")} className="btn btn-dark btn-sm text-uppercase fw-medium">
-                {isEn ? "Contact team" : "Kontaktiraj tim"}
-              </Link>
+              <a href="#uniforme-upit" className="btn btn-dark btn-sm text-uppercase fw-medium">
+                {isEn ? "Send inquiry" : "Posalji upit"}
+              </a>
               <Link href={withLang("/dokumenta")} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
                 {isEn ? "Documents" : "Dokumenta"}
               </Link>
@@ -90,6 +90,51 @@ export default async function BusinessUniformsPage({
                 </div>
               </div>
             ))}
+          </div>
+
+          <div id="uniforme-upit" className="border bg-white p-4 p-md-5 mt-5" style={{ borderRadius: 24 }}>
+            <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+              {isEn ? "Inquiry" : "Upit"}
+            </p>
+            <h2 className="h4 text-uppercase mb-3">{isEn ? "Business uniforms" : "Poslovne uniforme"}</h2>
+            <p className="text-secondary mb-4">
+              {isEn
+                ? "Send team size, activity type and timeline. We will reply with the next steps."
+                : "Posaljite opis potreba, broj ljudi, delatnost i okvirni rok. Tim ce vam odgovoriti sa sledecim koracima."}
+            </p>
+            <form action="/api/contact" method="post" className="row g-3">
+              <div className="col-md-6">
+                <input name="name" required className="form-control" placeholder={isEn ? "Full name" : "Ime i prezime"} />
+              </div>
+              <div className="col-md-6">
+                <input name="email" type="email" required className="form-control" placeholder="Email" />
+              </div>
+              <div className="col-md-6">
+                <input name="phone" className="form-control" placeholder={isEn ? "Phone" : "Telefon"} />
+              </div>
+              <div className="col-md-6">
+                <input
+                  name="subject"
+                  className="form-control"
+                  defaultValue={isEn ? "Business uniforms inquiry" : "Upit za poslovne uniforme"}
+                />
+              </div>
+              <div className="col-12">
+                <textarea
+                  name="message"
+                  required
+                  rows={6}
+                  className="form-control"
+                  placeholder={isEn ? "Describe your needs" : "Poruka - opis potreba"}
+                />
+              </div>
+              <input type="hidden" name="source" value="business-uniforms" />
+              <div className="col-12">
+                <button type="submit" className="btn btn-primary text-uppercase fw-medium">
+                  {isEn ? "Send inquiry" : "Posalji upit"}
+                </button>
+              </div>
+            </form>
           </div>
         </Reveal>
       </main>

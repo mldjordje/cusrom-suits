@@ -28,6 +28,7 @@ type SiteContent = {
     brandCopy: string;
     brandCopyEn: string;
     instagramUrl: string;
+    facebookUrl: string;
     bottomTagline: string;
     bottomTaglineEn: string;
     groups: SiteFooterGroup[];
@@ -121,6 +122,7 @@ const defaultContent: SiteContent = {
     brandCopy: "",
     brandCopyEn: "",
     instagramUrl: "",
+    facebookUrl: "",
     bottomTagline: "",
     bottomTaglineEn: "",
     groups: [],
@@ -353,14 +355,15 @@ export default function AdminSiteContentPage() {
       <div className={cardClass}>
         <div className="mb-4">
           <h2 className="text-lg font-semibold text-slate-900">Footer</h2>
-          <p className="text-sm text-slate-600">Brend tekst, Instagram i footer navigacija.</p>
+          <p className="text-sm text-slate-600">Brend tekst, drustvene mreze i footer navigacija.</p>
         </div>
         <div className="grid gap-3 md:grid-cols-2">
           <input value={content.footer.eyebrow} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, eyebrow: e.target.value } }))} placeholder="Eyebrow SR" className={fieldClass} />
           <input value={content.footer.eyebrowEn} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, eyebrowEn: e.target.value } }))} placeholder="Eyebrow EN" className={fieldClass} />
           <textarea value={content.footer.brandCopy} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, brandCopy: e.target.value } }))} placeholder="Footer copy SR" className={`${fieldClass} min-h-[90px]`} />
           <textarea value={content.footer.brandCopyEn} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, brandCopyEn: e.target.value } }))} placeholder="Footer copy EN" className={`${fieldClass} min-h-[90px]`} />
-          <input value={content.footer.instagramUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, instagramUrl: e.target.value } }))} placeholder="Instagram URL" className={`${fieldClass} md:col-span-2`} />
+          <input value={content.footer.instagramUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, instagramUrl: e.target.value } }))} placeholder="Instagram URL" className={fieldClass} />
+          <input value={content.footer.facebookUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, facebookUrl: e.target.value } }))} placeholder="Facebook URL" className={fieldClass} />
           <input value={content.footer.bottomTagline} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, bottomTagline: e.target.value } }))} placeholder="Bottom tagline SR" className={fieldClass} />
           <input value={content.footer.bottomTaglineEn} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, bottomTaglineEn: e.target.value } }))} placeholder="Bottom tagline EN" className={fieldClass} />
         </div>
