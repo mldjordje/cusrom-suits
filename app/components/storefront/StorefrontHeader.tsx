@@ -8,13 +8,7 @@ const BUSINESS_UNIFORMS_NAV_ITEM: SiteNavItem = {
   labelEn: "Business uniforms",
 };
 
-const LOYALTY_NAV_ITEM: SiteNavItem = {
-  href: "/loyalty-program",
-  label: "Loyalty program",
-  labelEn: "Loyalty program",
-};
-
-const REQUIRED_NAV_ITEMS = [BUSINESS_UNIFORMS_NAV_ITEM, LOYALTY_NAV_ITEM];
+const REQUIRED_NAV_ITEMS = [BUSINESS_UNIFORMS_NAV_ITEM];
 
 export default async function StorefrontHeader({
   lang = "sr",
@@ -34,7 +28,7 @@ export default async function StorefrontHeader({
       return nextItems;
     }
     return [...nextItems, requiredItem];
-  }, siteContent.navigation.items.filter((item) => item.href !== "/prodajna-mesta"));
+  }, siteContent.navigation.items.filter((item) => item.href !== "/prodajna-mesta" && item.href !== "/loyalty-program"));
   const navItems = navigationItems.map((item) => ({
     href: item.href,
     label: isEn ? item.labelEn : item.label,

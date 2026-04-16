@@ -101,7 +101,6 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       { href: "/akcije", label: "Akcije", labelEn: "Sale" },
       { href: "/o-nama", label: "O nama", labelEn: "About" },
       { href: "/poslovne-uniforme", label: "Poslovne uniforme", labelEn: "Business uniforms" },
-      { href: "/loyalty-program", label: "Loyalty program", labelEn: "Loyalty program" },
       { href: "/blog", label: "Blog", labelEn: "Blog" },
       { href: "/kontakt", label: "Kontakt", labelEn: "Contact" },
     ],

@@ -298,11 +298,6 @@ export default function StorefrontHeaderClient({
               >
                 {authLoading ? "…" : authUser ? (isEn ? "My orders" : "Moje porudzbine") : isEn ? "Sign in" : "Prijava"}
               </Link>
-              {!authUser && !authLoading ? (
-                <Link href={withLang("/nalog/registracija")} className="ss-inline-link text-uppercase fw-medium d-none d-md-inline-flex">
-                  {isEn ? "Sign up" : "Registracija"}
-                </Link>
-              ) : null}
               <Link href={withLang("/kontakt")} className="ss-inline-link text-uppercase fw-medium">
                 {isEn ? "Contact" : "Kontakt"}
               </Link>
@@ -532,15 +527,6 @@ export default function StorefrontHeaderClient({
                             ? "Sign in"
                             : "Prijava"}
                     </Link>
-                    {!authUser && !authLoading ? (
-                      <Link
-                        href={withLang("/nalog/registracija")}
-                        className="ss-mobile-nav-account ss-mobile-nav-pill"
-                        onClick={closeMobileMenu}
-                      >
-                        {isEn ? "Sign up" : "Registracija"}
-                      </Link>
-                    ) : null}
                     <Link href={withLang("/kontakt")} className="ss-mobile-nav-account ss-mobile-nav-pill" onClick={closeMobileMenu}>
                       {isEn ? "Contact" : "Kontakt"}
                     </Link>

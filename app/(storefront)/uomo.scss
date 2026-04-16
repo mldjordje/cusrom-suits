@@ -501,6 +501,35 @@
 
 #header.header {
   z-index: 1300;
+  /* Omogući klik na sadržaj ispod headera kad stranica skroluje (fiksni/sticky header). */
+  pointer-events: none;
+}
+
+#header.header a,
+#header.header button,
+#header.header input,
+#header.header select,
+#header.header textarea,
+#header.header .ss-lang-switch,
+#header.header .ss-lang-switch *,
+#header.header .default-menu,
+#header.header .default-menu a,
+#header.header .ss-header-shop-submenu,
+#header.header .ss-header-shop-submenu a {
+  pointer-events: auto;
+}
+
+.header-mobile {
+  pointer-events: none;
+}
+
+.header-mobile a,
+.header-mobile button,
+.header-mobile .ss-lang-switch,
+.header-mobile .ss-lang-switch *,
+.header-mobile .ss-mobile-slot,
+.header-mobile .ss-mobile-link {
+  pointer-events: auto;
 }
 
 #header .navigation,
@@ -510,7 +539,6 @@
 #header .header-tools,
 #header .header-tools__item,
 #header .logo a {
-  pointer-events: auto;
   position: relative;
   z-index: 1201;
 }
@@ -558,11 +586,16 @@
     min-width: 0;
   }
 
+  #header .container {
+    padding-top: 0.35rem;
+    padding-bottom: 0.35rem;
+  }
+
   #header .header-desk_type_1 .navigation__link {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 2.8rem;
+    min-height: 2.55rem;
     padding-inline: clamp(0.36rem, 0.65vw, 0.8rem);
     white-space: nowrap;
     text-align: center;
@@ -1893,6 +1926,11 @@
   background: linear-gradient(180deg, #f3efe8, #e8e2d7);
 }
 
+/* Tema (_product-card): ::before na hover-container prekriva sliku i blokira klik na Link; hover sloj ispod sive maske. */
+.ss-product-card .pc__img-wrapper.hover-container::before {
+  pointer-events: none;
+}
+
 .ss-product-card__badge {
   position: absolute;
   top: 0.9rem;
@@ -1959,6 +1997,7 @@
   max-width: 100%;
   min-width: 0 !important;
   height: 100% !important;
+  z-index: 2;
   box-sizing: border-box;
   justify-content: flex-end !important;
   align-items: stretch !important;
