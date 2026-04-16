@@ -2021,6 +2021,9 @@
 
 /* Desktop UX: korisnik često hoveruje celu karticu (ne baš sliku). */
 @media (min-width: 768px) {
+  /* Tema koristi `.product-card:hover ...` pa dodaj fallback da overlay uvek radi. */
+  .product-card:hover .pc__info.hover__content,
+  .product-card:focus-within .pc__info.hover__content,
   .ss-product-card:hover .pc__info.hover__content,
   .ss-product-card:focus-within .pc__info.hover__content {
     opacity: 1;
