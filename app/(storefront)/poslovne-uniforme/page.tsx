@@ -12,6 +12,15 @@ export const metadata = {
   description: "Poslovne uniforme i galerija modela za kompanije i timove.",
 };
 
+const toUniformSlug = (value: string) =>
+  (value || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 70);
+
 export default async function BusinessUniformsPage({
   searchParams,
 }: {
@@ -24,6 +33,16 @@ export default async function BusinessUniformsPage({
   const landingSettings = await getLandingSettings();
   const images = landingSettings.uniformsImages.filter((item) => item.image);
   const videos = landingSettings.uniformsVideos.filter((item) => item.video);
+  const products = images.map((item, index) => {
+    const title = tx(item.title || "", isEn ? "Business uniform" : undefined) || (isEn ? "Business uniform" : "Poslovna uniforma");
+    const baseSlug = toUniformSlug(item.title || item.alt || `uniform-${index + 1}`) || `uniform-${index + 1}`;
+    return {
+      slug: `${baseSlug}-${index + 1}`,
+      title,
+      description: item.alt ? tx(item.alt) : "",
+      cover: item.image,
+    };
+  });
   const galleryItems = [
     ...images.map((item) => ({ type: "image" as const, title: item.title, alt: item.alt, src: item.image })),
     ...videos.map((item) => ({
@@ -60,6 +79,67 @@ export default async function BusinessUniformsPage({
               </Link>
             </div>
           </div>
+
+          <Reveal as="section" className="pb-4" delay={0.02} amount={0.1} y={14}>
+            <div className="d-flex align-items-end justify-content-between gap-3 mb-3">
+              <div>
+                <p className="text-uppercase mb-1" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+                  {isEn ? "Uniform collection" : "Kolekcija uniformi"}
+                </p>
+                <h2 className="h3 text-uppercase mb-0">{isEn ? "Business uniforms" : "Poslovne uniforme"}</h2>
+              </div>
+              <span className="text-secondary small">{products.length ? `${products.length} ${isEn ? "models" : "modela"}` : ""}</span>
+            </div>
+
+            {products.length ? (
+              <div className="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 g-md-3">
+                {products.map((product) => (
+                  <div key={product.slug} className="product-card-wrapper">
+                    <div className="product-card ss-card-hover ss-product-card mb-0">
+                      <div className="pc__img-wrapper hover-container">
+                        <Link href={withLang(`/poslovne-uniforme/${product.slug}`)} prefetch={false}>
+                          <StorefrontSmartImage
+                            sources={[product.cover, "/img/hero2.jpg"]}
+                            fallbackSrc="/img/hero2.jpg"
+                            alt={product.title}
+                            width={330}
+                            height={400}
+                            className="pc__img object-position-top"
+                            sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
+                            quality={70}
+                          />
+                        </Link>
+                        <Link
+                          href={withLang(`/poslovne-uniforme/${product.slug}`)}
+                          prefetch={false}
+                          className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium ss-cta-btn"
+                        >
+                          {isEn ? "Open" : "Otvori"}
+                        </Link>
+                      </div>
+                      <div className="pc__info position-relative">
+                        <p className="pc__category">{isEn ? "Uniform" : "Uniforma"}</p>
+                        <h6 className="pc__title mb-1">
+                          <Link href={withLang(`/poslovne-uniforme/${product.slug}`)} prefetch={false}>
+                            {product.title}
+                          </Link>
+                        </h6>
+                        {product.description ? <p className="text-secondary small mb-0">{product.description}</p> : null}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="border bg-white p-4" style={{ borderRadius: 24 }}>
+                <p className="mb-0 text-secondary">
+                  {isEn
+                    ? "Uniform models will be available soon."
+                    : "Modeli uniformi ce uskoro biti dostupni."}
+                </p>
+              </div>
+            )}
+          </Reveal>
 
           <Reveal as="div" className="row g-4" delay={0.04} amount={0.08} y={16}>
             {galleryItems.map((item, index) => (
