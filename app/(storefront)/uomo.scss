@@ -2019,6 +2019,15 @@
   visibility: visible;
 }
 
+/* Desktop UX: korisnik često hoveruje celu karticu (ne baš sliku). */
+@media (min-width: 768px) {
+  .ss-product-card:hover .pc__info.hover__content,
+  .ss-product-card:focus-within .pc__info.hover__content {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
 .ss-product-card .pc__info.hover__content a,
 .ss-product-card .pc__info.hover__content button {
   pointer-events: auto;
