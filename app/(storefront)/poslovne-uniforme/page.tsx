@@ -44,7 +44,7 @@ export default async function BusinessUniformsPage({
     <>
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper">
-        <Reveal as="section" className="container py-5">
+        <section className="container py-5">
           <div className="border bg-white p-4 p-md-5 mb-4" style={{ borderRadius: 24 }}>
             <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
               {tx(landingSettings.uniformsEyebrow, "Business Uniforms")}
@@ -61,7 +61,7 @@ export default async function BusinessUniformsPage({
             </div>
           </div>
 
-          <div className="row g-4">
+          <Reveal as="div" className="row g-4" delay={0.04} amount={0.08} y={16}>
             {galleryItems.map((item, index) => (
               <div key={`${item.type}-${item.src}-${index}`} className="col-12 col-md-6 col-xl-4">
                 <div className="border bg-white p-3 h-100" style={{ borderRadius: 24 }}>
@@ -90,9 +90,16 @@ export default async function BusinessUniformsPage({
                 </div>
               </div>
             ))}
-          </div>
+          </Reveal>
 
-          <div id="uniforme-upit" className="border bg-white p-4 p-md-5 mt-5" style={{ borderRadius: 24 }}>
+          <Reveal
+            as="div"
+            id="uniforme-upit"
+            className="border bg-white p-4 p-md-5 mt-5"
+            delay={0.06}
+            amount={0.12}
+            y={16}
+          >
             <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
               {isEn ? "Inquiry" : "Upit"}
             </p>
@@ -135,8 +142,8 @@ export default async function BusinessUniformsPage({
                 </button>
               </div>
             </form>
-          </div>
-        </Reveal>
+          </Reveal>
+        </section>
       </main>
       <StorefrontFooter lang={lang} />
     </>

@@ -425,6 +425,39 @@ export default async function HomePage({
                   <span className="menu-link menu-link_us-s fw-semi-bold fs-16 text-uppercase">
                     {getProductDisplayName(item, contentLang)}
                   </span>
+                  <span className="ss-featured-tile__meta" aria-hidden="true">
+                    {item.priceGross > item.priceFinalGross ? (
+                      <>
+                        <span className="money price price-old">{formatRsd(item.priceGross)}</span>
+                        <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
+                      </>
+                    ) : (
+                      <span className="money price">{formatRsd(item.priceFinalGross)}</span>
+                    )}
+                  </span>
+                  <span className="ss-featured-tile__overlay" aria-hidden="true">
+                    <span className="ss-featured-tile__overlay-inner">
+                      <span className="ss-featured-tile__overlay-category">
+                        {getProductCategoryLabel(item, contentLang)}
+                      </span>
+                      <span className="ss-featured-tile__overlay-title">
+                        {getProductDisplayName(item, contentLang)}
+                      </span>
+                      <span className="ss-featured-tile__overlay-price">
+                        {item.priceGross > item.priceFinalGross ? (
+                          <>
+                            <span className="money price price-old">{formatRsd(item.priceGross)}</span>
+                            <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
+                          </>
+                        ) : (
+                          <span className="money price">{formatRsd(item.priceFinalGross)}</span>
+                        )}
+                      </span>
+                      <span className="ss-featured-tile__overlay-cta">
+                        {contentLang === "en" ? "View product" : "Pogledaj proizvod"}
+                      </span>
+                    </span>
+                  </span>
                 </Link>
               </ProductItemMotion>
             ))}

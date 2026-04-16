@@ -286,7 +286,7 @@ export default async function WebShopPage({
                 -{discountPercent}% {isEn ? "off" : "popust"}
               </span>
             ) : null}
-              <div className="pc__info hover__content text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
+              <div className="pc__info hover__content position-absolute text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
                 <p className="pc__category">{getCategoryLabel(item)}</p>
                 <h6 className="pc__title">
                   <Link href={detailHref} prefetch={false}>

@@ -1041,6 +1041,98 @@
   backdrop-filter: blur(14px);
 }
 
+.ss-featured-tile__meta {
+  display: block;
+  margin-top: 0.35rem;
+  color: rgba(24, 20, 20, 0.72);
+  font-size: 0.9rem;
+}
+
+.ss-featured-tile__meta .price-old {
+  margin-right: 0.45rem;
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.ss-featured-tile__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  align-items: flex-end;
+  padding: 0.7rem;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.22s ease, visibility 0.22s ease, transform 0.22s ease;
+  transform: translateY(6px);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.78) 55%, rgba(255, 255, 255, 0.94));
+}
+
+.ss-featured-tile__overlay-inner {
+  width: 100%;
+  border-radius: 1.15rem;
+  padding: 0.85rem 0.85rem 0.75rem;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(24, 20, 20, 0.08);
+  box-shadow: 0 18px 40px rgba(8, 11, 16, 0.12);
+}
+
+.ss-featured-tile__overlay-category {
+  display: block;
+  margin-bottom: 0.35rem;
+  color: rgba(24, 20, 20, 0.64);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ss-featured-tile__overlay-title {
+  display: block;
+  color: #181414;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+
+.ss-featured-tile__overlay-price {
+  display: block;
+  margin-top: 0.35rem;
+  color: rgba(24, 20, 20, 0.86);
+}
+
+.ss-featured-tile__overlay-price .price-old {
+  margin-right: 0.5rem;
+  opacity: 0.7;
+  text-decoration: line-through;
+}
+
+.ss-featured-tile__overlay-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.65rem;
+  width: 100%;
+  min-height: 2.6rem;
+  border-radius: 999px;
+  background: #181414;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.ss-featured-tile:hover .ss-featured-tile__overlay,
+.ss-featured-tile:focus-within .ss-featured-tile__overlay {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
 .ss-banner-panel {
   border-radius: 1.9rem;
   box-shadow:
@@ -3634,8 +3726,8 @@ body.mobile-menu-opened {
 
 .ss-footer {
   position: relative;
-  padding-top: 3.25rem;
-  padding-bottom: 1.6rem;
+  padding-top: 2.1rem;
+  padding-bottom: 1.1rem;
   background:
     radial-gradient(circle at top, rgba(127, 60, 54, 0.12), rgba(127, 60, 54, 0) 26%),
     linear-gradient(180deg, #0d121a 0%, #0a0f16 100%);
@@ -3644,7 +3736,7 @@ body.mobile-menu-opened {
 
 .ss-footer__panel {
   border-radius: 2rem;
-  padding: 1.15rem;
+  padding: 0.85rem;
   background:
     linear-gradient(145deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.03)),
     rgba(255, 255, 255, 0.04);
