@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -38,6 +39,7 @@ type CatalogProduct = {
   legacyId: number;
   sku: string;
   name: string;
+  coverImage?: string | null;
 };
 
 type LandingDisplaySection = (typeof LANDING_PRODUCT_SECTION_CONFIG)[number] & {
@@ -634,8 +636,23 @@ export default function AdminLandingSectionsPage() {
                     return (
                       <div
                         key={`${section.key}-${id}`}
-                        className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs"
+                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs"
                       >
+                        {product?.coverImage ? (
+                          <Image
+                            src={product.coverImage}
+                            alt={product.name}
+                            width={28}
+                            height={28}
+                            className="h-7 w-7 rounded-full object-cover"
+                            unoptimized
+                          />
+                        ) : (
+                          <div
+                            className="h-7 w-7 rounded-full border border-slate-200 bg-white"
+                            aria-hidden="true"
+                          />
+                        )}
                         <span className="font-semibold text-slate-700">
                           #{id}
                           {product ? ` / ${product.sku}` : ""}
@@ -821,8 +838,23 @@ export default function AdminLandingSectionsPage() {
                       return (
                         <div
                           key={`${section.id}-${id}`}
-                          className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs"
+                          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs"
                         >
+                          {product?.coverImage ? (
+                            <Image
+                              src={product.coverImage}
+                              alt={product.name}
+                              width={28}
+                              height={28}
+                              className="h-7 w-7 rounded-full object-cover"
+                              unoptimized
+                            />
+                          ) : (
+                            <div
+                              className="h-7 w-7 rounded-full border border-slate-200 bg-white"
+                              aria-hidden="true"
+                            />
+                          )}
                           <span className="font-semibold text-slate-700">
                             #{id}
                             {product ? ` / ${product.sku}` : ""}

@@ -2040,6 +2040,7 @@ export default function AdminWebshopPage() {
                       for (const i of items) map[i.legacyId] = true;
                       setSelected(map);
                     }} /></th>
+                    <th className="px-2 py-2">Slika</th>
                     <th className="px-2 py-2">ID / SKU</th>
                     <th className="px-2 py-2">Naziv</th>
                     <th className="px-2 py-2">Kategorija</th>
@@ -2055,6 +2056,16 @@ export default function AdminWebshopPage() {
                     return (
                       <tr key={item.legacyId} className="border-b border-slate-100 align-top">
                         <td className="px-2 py-2"><input type="checkbox" checked={Boolean(selected[item.legacyId])} onChange={(e) => setSelected((prev) => ({ ...prev, [item.legacyId]: e.target.checked }))} /></td>
+                        <td className="px-2 py-2">
+                          <Image
+                            src={cardImage(item)}
+                            alt={item.name}
+                            width={44}
+                            height={44}
+                            className="h-11 w-11 rounded-lg object-cover"
+                            unoptimized
+                          />
+                        </td>
                         <td className="px-2 py-2 text-xs font-mono">#{item.legacyId}<br />{item.sku}</td>
                         <td className="px-2 py-2"><input value={draft?.name || ""} onChange={(e) => updateDraft(item.legacyId, { name: e.target.value })} className="w-64 rounded border border-slate-200 px-2 py-1 text-xs" /></td>
                         <td className="px-2 py-2 text-xs">{item.categories[0]?.path.join(" / ") || "-"}</td>
