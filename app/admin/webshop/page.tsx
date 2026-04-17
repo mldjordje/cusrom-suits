@@ -20,6 +20,7 @@ import {
   type LandingGridOrderRef,
 } from "@/lib/catalog/landingSectionOrder";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
+import AdminLandingProductPickGrid from "@/app/admin/components/AdminLandingProductPickGrid";
 
 type TabKey = "products" | "landing" | "akcije";
 type CatalogCategory = { id: number; name: string; path: string[] };
@@ -680,6 +681,8 @@ export default function AdminWebshopPage() {
   const [bulkSaving, setBulkSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  /** Desktop catalog: mreža sa slikama ili klasična tabela */
+  const [productsCatalogView, setProductsCatalogView] = useState<"grid" | "table">("grid");
 
   const selectedIds = useMemo(() => Object.keys(selected).filter((id) => selected[Number(id)]).map(Number), [selected]);
   const categories = useMemo(() => {
@@ -1389,7 +1392,6 @@ export default function AdminWebshopPage() {
   useEffect(() => {
     if (activeTab === "landing") {
       void loadLanding();
-      void loadLandingProducts("");
     }
     if (activeTab === "akcije") {
       void loadSales();
@@ -1397,6 +1399,15 @@ export default function AdminWebshopPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab]);
+
+  useEffect(() => {
+    if (activeTab !== "landing") return;
+    const handle = window.setTimeout(() => {
+      void loadLandingProducts(landingProductQuery);
+    }, 380);
+    return () => window.clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, landingProductQuery]);
 
   const saveProduct = async (legacyId: number) => {
     const draft = drafts[legacyId];
@@ -1656,6 +1667,52 @@ export default function AdminWebshopPage() {
 
   const currentEditorItem = items.find((item) => item.legacyId === editorId) || null;
   const currentSaleEditorItem = saleItems.find((item) => item.legacyId === saleEditorId) || null;
+
+  const renderProductCatalogCard = (item: CatalogProduct) => {
+    const draft = drafts[item.legacyId];
+    return (
+      <article key={item.legacyId} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="flex gap-3">
+          <Image src={cardImage(item)} alt={item.name} width={96} height={96} className="h-24 w-24 shrink-0 rounded-lg object-cover" />
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              #{item.legacyId} / {item.sku}
+            </p>
+            <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">{item.name}</h3>
+            <p className="mt-1 text-xs text-slate-600">{item.categories[0]?.path.join(" / ") || "Bez kategorije"}</p>
+            <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
+              <span className="rounded-full border border-slate-200 px-2 py-1">{formatRsd(item.priceFinalGross)}</span>
+              <span className="rounded-full border border-slate-200 px-2 py-1">Lager {item.stockWarehouse1}</span>
+            </div>
+          </div>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2">
+          <button
+            type="button"
+            onClick={() => setEditorId(item.legacyId)}
+            className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700"
+          >
+            Izmeni
+          </button>
+          <button
+            type="button"
+            onClick={() => saveProduct(item.legacyId)}
+            disabled={savingId === item.legacyId || !draft}
+            className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700"
+          >
+            {savingId === item.legacyId ? "Cuvanje..." : "Sacuvaj"}
+          </button>
+          <Link
+            href={`/web-shop/${item.legacyId}`}
+            target="_blank"
+            className="rounded-lg border border-slate-200 px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700"
+          >
+            Pregled
+          </Link>
+        </div>
+      </article>
+    );
+  };
 
   return (
     <div className="flex flex-col gap-5">
@@ -1981,9 +2038,34 @@ export default function AdminWebshopPage() {
               <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={exportOnly} onChange={(e) => setExportOnly(e.target.checked)} />Samo export</label>
               <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={onSaleOnly} onChange={(e) => setOnSaleOnly(e.target.checked)} />Samo akcija</label>
             </div>
-            <div className="mt-3 flex flex-wrap gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <button onClick={() => loadProducts(1)} className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Primeni filtere</button>
               <button onClick={() => loadProducts(pagination.page)} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">Osvezi</button>
+              <div className="ml-auto hidden flex-wrap items-center gap-1 lg:flex">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Desktop</span>
+                <button
+                  type="button"
+                  onClick={() => setProductsCatalogView("grid")}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${
+                    productsCatalogView === "grid"
+                      ? "border border-blue-200 bg-blue-50 text-blue-800"
+                      : "border border-slate-200 text-slate-600"
+                  }`}
+                >
+                  Mreža
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProductsCatalogView("table")}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${
+                    productsCatalogView === "table"
+                      ? "border border-blue-200 bg-blue-50 text-blue-800"
+                      : "border border-slate-200 text-slate-600"
+                  }`}
+                >
+                  Tabela
+                </button>
+              </div>
             </div>
           </div>
 
@@ -2002,34 +2084,15 @@ export default function AdminWebshopPage() {
 
           {loading ? <p className="text-sm text-slate-500">Ucitavanje...</p> : null}
 
-          <div className="grid gap-3 lg:hidden">
-            {items.map((item) => {
-              const draft = drafts[item.legacyId];
-              return (
-                <article key={`m-${item.legacyId}`} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-                  <div className="flex gap-3">
-                    <Image src={cardImage(item)} alt={item.name} width={96} height={96} className="h-24 w-24 rounded-lg object-cover" />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">#{item.legacyId} / {item.sku}</p>
-                      <h3 className="line-clamp-2 text-sm font-semibold text-slate-900">{item.name}</h3>
-                      <p className="mt-1 text-xs text-slate-600">{item.categories[0]?.path.join(" / ") || "Bez kategorije"}</p>
-                      <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
-                        <span className="rounded-full border border-slate-200 px-2 py-1">{formatRsd(item.priceFinalGross)}</span>
-                        <span className="rounded-full border border-slate-200 px-2 py-1">Lager {item.stockWarehouse1}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="mt-3 grid grid-cols-3 gap-2">
-                    <button onClick={() => setEditorId(item.legacyId)} className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">Izmeni</button>
-                    <button onClick={() => saveProduct(item.legacyId)} disabled={savingId === item.legacyId || !draft} className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">{savingId === item.legacyId ? "Cuvanje..." : "Sacuvaj"}</button>
-                    <Link href={`/web-shop/${item.legacyId}`} target="_blank" className="rounded-lg border border-slate-200 px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Pregled</Link>
-                  </div>
-                </article>
-              );
-            })}
-          </div>
+          <div className="grid gap-3 lg:hidden">{items.map(renderProductCatalogCard)}</div>
 
-          <div className="hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:block">
+          {productsCatalogView === "grid" ? (
+            <div className="hidden gap-3 lg:grid lg:grid-cols-2 xl:grid-cols-3">{items.map(renderProductCatalogCard)}</div>
+          ) : null}
+
+          <div
+            className={`hidden rounded-2xl border border-slate-200 bg-white p-4 shadow-sm lg:block ${productsCatalogView === "table" ? "" : "lg:hidden"}`}
+          >
             <div className="overflow-x-auto">
               <table className="min-w-[1200px] w-full text-sm">
                 <thead>
@@ -2079,13 +2142,29 @@ export default function AdminWebshopPage() {
                 </tbody>
               </table>
             </div>
+          </div>
 
-            <div className="mt-4 flex items-center justify-between">
-              <p className="text-xs text-slate-500">Page {pagination.page} / {pagination.totalPages} ({pagination.total})</p>
-              <div className="flex gap-2">
-                <button onClick={() => loadProducts(Math.max(1, pagination.page - 1))} disabled={pagination.page <= 1 || loading} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 disabled:opacity-50">Prethodna</button>
-                <button onClick={() => loadProducts(Math.min(pagination.totalPages, pagination.page + 1))} disabled={pagination.page >= pagination.totalPages || loading} className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 disabled:opacity-50">Sledeca</button>
-              </div>
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-3">
+            <p className="text-xs text-slate-500">
+              Strana {pagination.page} / {pagination.totalPages} ({pagination.total} ukupno)
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => loadProducts(Math.max(1, pagination.page - 1))}
+                disabled={pagination.page <= 1 || loading}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 disabled:opacity-50"
+              >
+                Prethodna
+              </button>
+              <button
+                type="button"
+                onClick={() => loadProducts(Math.min(pagination.totalPages, pagination.page + 1))}
+                disabled={pagination.page >= pagination.totalPages || loading}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 disabled:opacity-50"
+              >
+                Sledeca
+              </button>
             </div>
           </div>
         </>
@@ -2644,6 +2723,18 @@ export default function AdminWebshopPage() {
                         ))}
                       </select>
                     </div>
+
+                    <AdminLandingProductPickGrid
+                      candidates={candidates}
+                      onPick={(legacyId) => addLandingSectionId(section.key, String(legacyId))}
+                      emptyHint={
+                        landingProductsLoading
+                          ? undefined
+                          : landingProductResults.length === 0
+                            ? "Unesi pojam iznad pa sačekaj rezultate."
+                            : undefined
+                      }
+                    />
 
                     <div className="mt-3 flex flex-wrap gap-2">
                       {sectionIds.length === 0 ? (

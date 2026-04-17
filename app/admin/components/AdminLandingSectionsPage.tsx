@@ -20,6 +20,7 @@ import {
   type LandingGridOrderEntry,
   type LandingGridOrderRef,
 } from "@/lib/catalog/landingSectionOrder";
+import AdminLandingProductPickGrid from "@/app/admin/components/AdminLandingProductPickGrid";
 
 type LandingSectionsState = {
   showSaleSection: boolean;
@@ -235,9 +236,16 @@ export default function AdminLandingSectionsPage() {
 
   useEffect(() => {
     void loadSections();
-    void loadProducts("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      void loadProducts(productQuery);
+    }, 400);
+    return () => window.clearTimeout(handle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productQuery]);
 
   const replaceLandingSectionIds = (key: LandingProductSectionKey, nextIds: unknown) => {
     const limit = limitForLandingSection(key);
@@ -629,6 +637,18 @@ export default function AdminLandingSectionsPage() {
                   </select>
                 </div>
 
+                <AdminLandingProductPickGrid
+                  candidates={candidates}
+                  onPick={(legacyId) => addLandingSectionId(section.key, String(legacyId))}
+                  emptyHint={
+                    productsLoading
+                      ? undefined
+                      : productResults.length === 0
+                        ? "Kucaj pojam iznad — rezultati se ucitavaju automatski."
+                        : undefined
+                  }
+                />
+
                 <div className="mt-3 flex flex-wrap gap-2">
                   {sectionIds.length === 0 ? <p className="text-xs text-slate-500">Nema manuelno odabranih proizvoda.</p> : null}
                   {sectionIds.map((id, index) => {
@@ -828,6 +848,18 @@ export default function AdminLandingSectionsPage() {
                       ))}
                     </select>
                   </div>
+
+                  <AdminLandingProductPickGrid
+                    candidates={candidates}
+                    onPick={(legacyId) => addCustomSectionId(section.id, String(legacyId))}
+                    emptyHint={
+                      productsLoading
+                        ? undefined
+                        : productResults.length === 0
+                          ? "Kucaj pojam iznad — rezultati se ucitavaju automatski."
+                          : undefined
+                    }
+                  />
 
                   <div className="mt-3 flex flex-wrap gap-2">
                     {section.productIds.length === 0 ? (

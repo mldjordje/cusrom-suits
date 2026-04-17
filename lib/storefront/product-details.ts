@@ -148,8 +148,17 @@ const getProductHaystack = (product: CatalogProductView) =>
     .join(" ")
     .toLowerCase();
 
+/** ASCII-ish fold so regexes match Serbian Latin category names (npr. "KOSULJE", "Obuca"). */
+const foldLatinSrForMatch = (value: string) =>
+  value
+    .toLowerCase()
+    .replace(/đ/g, "dj")
+    .replace(/[čć]/g, "c")
+    .replace(/š/g, "s")
+    .replace(/ž/g, "z");
+
 const getProductGroups = (product: CatalogProductView): SizeGuideGroup[] => {
-  const haystack = getProductHaystack(product);
+  const haystack = foldLatinSrForMatch(getProductHaystack(product));
   const groups = new Set<SizeGuideGroup>();
   const isSuit = /odel|suit/.test(haystack);
 
@@ -181,7 +190,9 @@ const getProductFit = (
   product: CatalogProductView,
   sizeOptions: ProductSizeOption[],
 ): SizeGuideFit | null => {
-  const haystack = `${getProductHaystack(product)} ${sizeOptions.map((option) => option.label).join(" ").toLowerCase()}`;
+  const haystack = foldLatinSrForMatch(
+    `${getProductHaystack(product)} ${sizeOptions.map((option) => option.label).join(" ")}`,
+  );
   if (/\bslim\b|slim fit|strukiran/.test(haystack)) return "slim";
   if (/\bregular\b|regular fit|classic fit|klasic/.test(haystack)) return "regular";
   return null;

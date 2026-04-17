@@ -5,6 +5,7 @@ import { Fragment, useState } from "react";
 import { Dialog, Transition } from "@headlessui/react";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 import type { ProductSizeGuide } from "@/lib/storefront/product-details";
+import { computeRecommendedSize } from "@/lib/storefront/sizeRecommendation";
 
 type Props = {
   lang?: StorefrontLanguage;
@@ -26,54 +27,7 @@ export default function ProductSizeGuideButton({
 
   if (!sizeGuide) return null;
 
-  const parseNumber = (value: string) => {
-    const parsed = Number(String(value || "").replace(",", "."));
-    return Number.isFinite(parsed) ? parsed : null;
-  };
-
-  const recommendation = (() => {
-    const chest = parseNumber(measurements.chest);
-    const waist = parseNumber(measurements.waist);
-    const weight = parseNumber(measurements.weight);
-    if (!chest && !waist && !weight) return null;
-
-    for (const table of sizeGuide.tables) {
-      const chestIndex = table.headers.findIndex((header) => /grudi|chest|c\b/i.test(header));
-      const waistIndex = table.headers.findIndex((header) => /struk|waist|d\b/i.test(header));
-      const sizeIndex = 0;
-      const scoredRows = table.rows
-        .map((row) => {
-          const chestValue = chestIndex >= 0 ? parseNumber(row.cells[chestIndex] || "") : null;
-          const waistValue = waistIndex >= 0 ? parseNumber(row.cells[waistIndex] || "") : null;
-          let score = 0;
-          let signals = 0;
-          if (chest != null && chestValue != null) {
-            score += Math.abs(chestValue - chest);
-            signals += 1;
-          }
-          if (waist != null && waistValue != null) {
-            score += Math.abs(waistValue - waist);
-            signals += 1;
-          }
-          if (!signals && weight != null) {
-            const numericSize = parseNumber(row.cells[sizeIndex] || "");
-            if (numericSize != null) {
-              score += Math.abs(numericSize - Math.round(weight / 2));
-              signals += 1;
-            }
-          }
-          return { row, score, signals };
-        })
-        .filter((item) => item.signals > 0)
-        .sort((left, right) => left.score - right.score);
-
-      if (scoredRows[0]?.row.cells[sizeIndex]) {
-        return `${scoredRows[0].row.cells[sizeIndex]} (${table.title})`;
-      }
-    }
-
-    return null;
-  })();
+  const recommendation = computeRecommendedSize(sizeGuide.tables, measurements);
 
   return (
     <>
@@ -187,8 +141,8 @@ export default function ProductSizeGuideButton({
                         {recommendation
                           ? `${isEn ? "Recommended size" : "Preporucena velicina"}: ${recommendation}`
                           : isEn
-                            ? "Enter chest, waist or weight to get a recommendation."
-                            : "Unesite obim grudi, struka ili tezinu za preporuku."}
+                            ? "Enter chest and/or waist. For shoes, enter foot length in cm in any field."
+                            : "Unesite obim grudi i/ili struka (za obucu duzinu stopala u cm u bilo koje polje)."}
                       </div>
                     </div>
 

@@ -84,14 +84,18 @@ export default async function BlogDetailPage({
     { name: "Blog", path: "/blog" },
     { name: post.title, path: canonicalPath },
   ]);
+  const articleUrl = absoluteUrl(canonicalPath);
   const articleJsonLd = {
     "@context": "https://schema.org",
     "@type": "BlogPosting",
+    "@id": `${articleUrl}#article`,
     headline: post.title,
+    url: articleUrl,
     description: truncateText(post.excerpt || post.title, 240),
     image: absoluteUrl(post.coverImage || "/img/hero.jpg"),
     datePublished: post.publishedAt || post.createdAt,
     dateModified: post.updatedAt || post.publishedAt || post.createdAt,
+    inLanguage: isEn ? "en-US" : "sr-RS",
     author: {
       "@type": "Organization",
       name: COMPANY_INFO.name,
@@ -104,7 +108,7 @@ export default async function BlogDetailPage({
         url: absoluteUrl("/img/logo.png"),
       },
     },
-    mainEntityOfPage: absoluteUrl(canonicalPath),
+    mainEntityOfPage: articleUrl,
   };
 
   return (

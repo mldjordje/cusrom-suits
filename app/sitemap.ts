@@ -1,7 +1,14 @@
 import type { MetadataRoute } from "next";
 import { listPosts } from "@/lib/blog/store";
 import { listCatalogProducts } from "@/lib/catalog/store";
-import { absoluteUrl } from "@/lib/seo";
+import { absoluteUrl, withStorefrontLanguage } from "@/lib/seo";
+
+const hreflangAlternates = (path: string): MetadataRoute.Sitemap[number]["alternates"] => ({
+  languages: {
+    "sr-RS": absoluteUrl(path),
+    "en-US": absoluteUrl(withStorefrontLanguage(path, "en")),
+  },
+});
 
 const STATIC_ROUTES = [
   "/",
@@ -73,18 +80,21 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
     url: absoluteUrl(path),
+    alternates: hreflangAlternates(path),
     changeFrequency: path === "/" ? "weekly" : "monthly",
     priority: path === "/" ? 1 : path === "/web-shop" || path === "/custom-suits" ? 0.9 : 0.7,
   }));
 
   const productEntries: MetadataRoute.Sitemap = productPaths.map((path) => ({
     url: absoluteUrl(path),
+    alternates: hreflangAlternates(path),
     changeFrequency: "weekly",
     priority: 0.8,
   }));
 
   const blogSitemapEntries: MetadataRoute.Sitemap = blogEntries.map((entry) => ({
     url: absoluteUrl(entry.path),
+    alternates: hreflangAlternates(entry.path),
     lastModified: entry.lastModified,
     changeFrequency: "monthly",
     priority: 0.7,

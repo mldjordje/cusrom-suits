@@ -365,6 +365,7 @@ export default async function WebShopPage({
     description: heroLead,
     mainEntity: {
       "@type": "ItemList",
+      numberOfItems: Math.min(12, items.length),
       itemListElement: items.slice(0, 12).map((item, index) => ({
         "@type": "ListItem",
         position: index + 1,

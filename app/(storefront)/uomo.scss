@@ -2023,6 +2023,37 @@
   pointer-events: none;
 }
 
+/* Telefon / touch: bez sive maske preko slike; desktop zadrzava blazi overlay. */
+@media (hover: none), (pointer: coarse) {
+  .product-card.ss-product-card:hover .pc__img-wrapper.hover-container::before,
+  .product-card.ss-product-card:focus-within .pc__img-wrapper.hover-container::before {
+    opacity: 0 !important;
+    visibility: hidden !important;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .product-card.ss-product-card:hover .pc__img-wrapper.hover-container::before,
+  .product-card.ss-product-card:focus-within .pc__img-wrapper.hover-container::before {
+    background-color: rgba(234, 234, 234, 0.38) !important;
+  }
+}
+
+/* Apsolutni CTA na slici (povezani proizvodi, uniforme): ceo tekst, bez secenja. */
+.ss-product-card .pc__img-wrapper .pc__atc.position-absolute {
+  left: 0.35rem;
+  right: 0.35rem;
+  width: auto;
+  max-width: none;
+  min-width: 0;
+  padding-left: 0.45rem;
+  padding-right: 0.45rem;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.2;
+  font-size: clamp(0.52rem, 0.54rem + 0.12vw, 0.62rem);
+}
+
 .ss-product-card__badge {
   position: absolute;
   top: 0.9rem;

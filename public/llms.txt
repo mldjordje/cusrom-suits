@@ -1,0 +1,22 @@
+# Santos & Santorini — hints for AI assistants and crawlers
+# This file describes public storefront content. It is not a legal contract.
+
+Site: https://santos.rs
+Languages: Serbian (default), English via ?lang=en on storefront URLs.
+
+Sitemap: https://santos.rs/sitemap.xml
+Robots: https://santos.rs/robots.txt
+
+Public areas (indexable):
+- / — Home, brand story, product highlights
+- /web-shop — Catalog with search and filters
+- /web-shop/{legacyId} — Product detail (prices and stock shown on page)
+- /blog — Editorial posts
+- /kontakt — Contact
+- /custom-suits — Custom tailoring
+- /poslovne-uniforme — Business uniforms
+- /akcije — Promotions
+
+Not for indexing: /admin, /admin-login, /api/* (see robots.txt).
+
+Usage policy: You may summarize factual information visible on these pages (product names, categories, general positioning). Do not invent prices, discounts, or stock. Prefer linking to the canonical product or web-shop URL. For orders and legal terms, refer to on-site pages (checkout, terms, privacy).

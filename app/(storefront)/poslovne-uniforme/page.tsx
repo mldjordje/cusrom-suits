@@ -112,7 +112,7 @@ export default async function BusinessUniformsPage({
                         <Link
                           href={withLang(`/poslovne-uniforme/${product.slug}`)}
                           prefetch={false}
-                          className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium ss-cta-btn"
+                          className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium ss-cta-btn d-none d-md-inline-flex"
                         >
                           {isEn ? "Open" : "Otvori"}
                         </Link>

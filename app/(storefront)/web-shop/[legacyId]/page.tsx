@@ -35,9 +35,11 @@ import {
   productSupportsSizeGuide,
 } from "@/lib/storefront/product-details";
 import {
-  COMPANY_INFO,
+  ORGANIZATION_JSONLD_ID,
   absoluteUrl,
   buildBreadcrumbJsonLd,
+  buildOrganizationJsonLd,
+  buildProductVideoObjectJsonLd,
   buildSeoMetadata,
   truncateText,
 } from "@/lib/seo";
@@ -203,10 +205,13 @@ export default async function WebShopProductPage({
     { name: "Web Shop", path: "/web-shop" },
     { name: displayName, path: canonicalPath },
   ]);
+  const productJsonLdId = `${absoluteUrl(canonicalPath)}#product`;
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
+    "@id": productJsonLdId,
     name: displayName,
+    url: absoluteUrl(canonicalPath),
     sku: product.sku,
     image: gallery.map((image) => absoluteUrl(image)),
     description: truncateText(shortDescription || displayName, 320),
@@ -217,15 +222,14 @@ export default async function WebShopProductPage({
     category: categoryLabel,
     material,
     size: selectedSize || undefined,
+    itemCondition: "https://schema.org/NewCondition",
     offers: businessUniform
       ? {
           "@type": "Offer",
           url: absoluteUrl(canonicalPath),
           availability: "https://schema.org/PreOrder",
-          seller: {
-            "@type": "Organization",
-            name: COMPANY_INFO.name,
-          },
+          priceCurrency: "RSD",
+          seller: { "@id": ORGANIZATION_JSONLD_ID },
         }
       : {
           "@type": "Offer",
@@ -236,17 +240,28 @@ export default async function WebShopProductPage({
             stockValue > 0
               ? "https://schema.org/InStock"
               : "https://schema.org/PreOrder",
-          seller: {
-            "@type": "Organization",
-            name: COMPANY_INFO.name,
-          },
+          itemCondition: "https://schema.org/NewCondition",
+          seller: { "@id": ORGANIZATION_JSONLD_ID },
         },
   };
 
+  const videoJsonLd =
+    productVideoUrl && productVideoUrl.trim().length > 0
+      ? buildProductVideoObjectJsonLd({
+          name: `${displayName} — video`,
+          description: shortDescription || displayName,
+          pageUrl: canonicalPath,
+          videoUrl: productVideoUrl,
+          thumbnailUrl: gallery[0] || null,
+        })
+      : null;
+
   return (
     <>
+      <JsonLd data={buildOrganizationJsonLd()} />
       <JsonLd data={breadcrumbJsonLd} />
       <JsonLd data={productJsonLd} />
+      {videoJsonLd ? <JsonLd data={videoJsonLd} /> : null}
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-commerce-page ss-product-page">
         <Reveal as="section" className="product-single container">
@@ -583,7 +598,10 @@ export default async function WebShopProductPage({
                             quality={60}
                           />
                         </Link>
-                        <Link href={variantHref(item.legacyId)} className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium ss-cta-btn">
+                        <Link
+                          href={variantHref(item.legacyId)}
+                          className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium ss-cta-btn d-none d-md-inline-flex"
+                        >
                           {isEn ? "Open product" : "Otvori proizvod"}
                         </Link>
                       </div>

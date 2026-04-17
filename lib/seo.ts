@@ -5,6 +5,25 @@ export const SITE_NAME = "Santos & Santorini";
 export const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://santos.rs").replace(/\/+$/, "");
 export const DEFAULT_OG_IMAGE = "/img/hero.jpg";
 
+/** Stable @id for JSON-LD graph linking (Product offers, FAQ, etc.) */
+export const ORGANIZATION_JSONLD_ID = `${SITE_URL}#organization`;
+
+const parseSameAsFromEnv = (): string[] => {
+  const raw = String(process.env.NEXT_PUBLIC_ORG_SAME_AS || "").trim();
+  if (raw) {
+    return raw
+      .split(/[\n,]+/)
+      .map((u) => u.trim())
+      .filter(Boolean);
+  }
+  return [
+    "https://www.instagram.com/santos.santorini/",
+    "https://www.facebook.com/share/1GqmAg7ENk/?mibextid=wwXIfr",
+  ];
+};
+
+export const COMPANY_SAME_AS = parseSameAsFromEnv();
+
 export const COMPANY_INFO = {
   name: SITE_NAME,
   legalName: "Santos & Santorini",
@@ -147,11 +166,13 @@ export const buildBreadcrumbJsonLd = (
 export const buildOrganizationJsonLd = () => ({
   "@context": "https://schema.org",
   "@type": "Organization",
+  "@id": ORGANIZATION_JSONLD_ID,
   name: COMPANY_INFO.name,
   url: SITE_URL,
   email: COMPANY_INFO.email,
   telephone: COMPANY_INFO.phoneDisplay,
   logo: absoluteUrl("/img/logo.png"),
+  sameAs: COMPANY_SAME_AS,
   address: {
     "@type": "PostalAddress",
     streetAddress: COMPANY_INFO.streetAddress,
@@ -164,11 +185,13 @@ export const buildOrganizationJsonLd = () => ({
 export const buildLocalBusinessJsonLd = () => ({
   "@context": "https://schema.org",
   "@type": "ClothingStore",
+  "@id": `${SITE_URL}#localbusiness`,
   name: COMPANY_INFO.name,
   url: SITE_URL,
   image: absoluteUrl(DEFAULT_OG_IMAGE),
   telephone: COMPANY_INFO.phoneDisplay,
   email: COMPANY_INFO.email,
+  sameAs: COMPANY_SAME_AS,
   address: {
     "@type": "PostalAddress",
     streetAddress: COMPANY_INFO.streetAddress,
@@ -181,12 +204,55 @@ export const buildLocalBusinessJsonLd = () => ({
 export const buildWebSiteJsonLd = () => ({
   "@context": "https://schema.org",
   "@type": "WebSite",
+  "@id": `${SITE_URL}#website`,
   name: COMPANY_INFO.name,
   url: SITE_URL,
   inLanguage: ["sr-RS", "en-US"],
+  publisher: { "@id": ORGANIZATION_JSONLD_ID },
   potentialAction: {
     "@type": "SearchAction",
     target: `${absoluteUrl("/web-shop")}?q={search_term_string}`,
     "query-input": "required name=search_term_string",
   },
 });
+
+/** Product video — YouTube ili direktan URL (schema.org VideoObject). */
+export const buildProductVideoObjectJsonLd = (input: {
+  name: string;
+  description: string;
+  pageUrl: string;
+  videoUrl: string;
+  thumbnailUrl?: string | null;
+}) => {
+  const { name, description, pageUrl, videoUrl, thumbnailUrl } = input;
+  let embedUrl: string | undefined;
+  let contentUrl = videoUrl;
+  try {
+    const u = new URL(videoUrl, SITE_URL);
+    if (u.hostname.includes("youtu.be")) {
+      const id = u.pathname.replace(/^\//, "");
+      if (id) embedUrl = `https://www.youtube.com/embed/${id}`;
+    } else if (u.hostname.includes("youtube.com")) {
+      const id = u.searchParams.get("v");
+      if (id) embedUrl = `https://www.youtube.com/embed/${id}`;
+    }
+  } catch {
+    embedUrl = undefined;
+  }
+  return {
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name,
+    description: truncateText(description, 240),
+    thumbnailUrl: thumbnailUrl ? absoluteUrl(thumbnailUrl) : undefined,
+    uploadDate: new Date().toISOString().slice(0, 10),
+    contentUrl: /^https?:\/\//i.test(contentUrl) ? contentUrl : absoluteUrl(contentUrl),
+    embedUrl,
+    isFamilyFriendly: true,
+    publisher: { "@id": ORGANIZATION_JSONLD_ID },
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": absoluteUrl(pageUrl),
+    },
+  };
+};
