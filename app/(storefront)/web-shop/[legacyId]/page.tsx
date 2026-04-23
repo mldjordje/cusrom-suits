@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import JsonLd from "@/app/components/seo/JsonLd";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import StorefrontTestimonials from "@/app/components/storefront/StorefrontTestimonials";
 import StorefrontTrustStrip from "@/app/components/storefront/StorefrontTrustStrip";
 import ProductDetailTabs from "@/app/components/storefront/ProductDetailTabs";
 import ProductImageGallery from "@/app/components/storefront/ProductImageGallery";
@@ -14,12 +15,15 @@ import Reveal from "@/app/components/motion/Reveal";
 import {
   getCatalogProductByLegacyId,
   getCatalogProductVariantsBySku,
+  getCompleteTheLookProducts,
   getRelatedCatalogProducts,
 } from "@/lib/catalog/store";
+import CompleteTheLook from "@/app/components/storefront/CompleteTheLook";
 import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
 import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
+import { getSiteContent } from "@/lib/storefront/siteContent";
 import {
   getCatalogProductImageSources,
   getPreferredCatalogProductForDisplay,
@@ -129,13 +133,15 @@ export default async function WebShopProductPage({
   const product = await getCatalogProductByLegacyId(id);
   if (!product) notFound();
 
-  const [related, variants] = await Promise.all([
+  const [related, variants, siteContent, completeTheLook] = await Promise.all([
     getRelatedCatalogProducts(product, 4),
     getCatalogProductVariantsBySku(product.sku, {
       applyPromotions: true,
       activeOnly: true,
       exportOnly: true,
     }),
+    getSiteContent(),
+    getCompleteTheLookProducts(product, 4),
   ]);
 
   const withLang = (href: string) => {
@@ -548,6 +554,14 @@ export default async function WebShopProductPage({
             </div>
           </div>
         </div>
+
+        <CompleteTheLook lang={lang} products={completeTheLook} />
+
+        <StorefrontTestimonials
+          lang={lang}
+          content={siteContent.testimonials}
+          productSku={product.sku}
+        />
 
         {related.length > 0 ? (
           <Reveal as="section" className="products-carousel container mt-5 pt-4 ss-related-products" delay={0.06}>

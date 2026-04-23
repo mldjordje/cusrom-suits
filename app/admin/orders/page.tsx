@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Order = {
   id: string;
@@ -90,6 +90,13 @@ const buildCsv = (rows: Order[]) => {
   return [headers.map(escape), ...lines].map((line) => line.join(",")).join("\n");
 };
 
+const EMAIL_STATUSES = new Set(["confirmed", "completed", "cancelled"]);
+const STATUS_NOTICE: Record<string, string> = {
+  confirmed: "Status je promenjen i kupcu je poslat mail sa potvrdom.",
+  completed: "Status je promenjen i kupcu je poslat mail o zavrsetku.",
+  cancelled: "Status je promenjen i kupcu je poslat mail o otkazu.",
+};
+
 export default function OrdersAdminPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
@@ -97,6 +104,11 @@ export default function OrdersAdminPage() {
   const [savingId, setSavingId] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
+  const [notice, setNotice] = useState<string | null>(null);
+  const [highlightId, setHighlightId] = useState<string | null>(null);
+  const cardRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   const load = async () => {
     setLoading(true);
@@ -118,6 +130,7 @@ export default function OrdersAdminPage() {
 
   const updateStatus = async (id: string, status: string) => {
     setSavingId(id);
+    setError(null);
     try {
       const res = await fetch("/api/orders", {
         method: "PATCH",
@@ -129,6 +142,10 @@ export default function OrdersAdminPage() {
         setError(json?.message || "Greska pri azuriranju");
       } else {
         setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, status } : o)));
+        if (EMAIL_STATUSES.has(status)) {
+          setNotice(STATUS_NOTICE[status] || null);
+          setTimeout(() => setNotice(null), 4500);
+        }
       }
     } catch (e: any) {
       setError(e?.message || "Greska");
@@ -137,11 +154,29 @@ export default function OrdersAdminPage() {
     }
   };
 
+  const copyOrderId = async (id: string) => {
+    try {
+      await navigator.clipboard.writeText(id);
+      setNotice("ID porudzbine kopiran u clipboard.");
+      setTimeout(() => setNotice(null), 2500);
+    } catch {
+      setError("Ne mogu da kopiram u clipboard.");
+    }
+  };
+
   const visibleOrders = useMemo(() => {
     const q = normalize(query.trim());
+    const fromTs = dateFrom ? new Date(`${dateFrom}T00:00:00`).getTime() : null;
+    const toTs = dateTo ? new Date(`${dateTo}T23:59:59.999`).getTime() : null;
     return orders.filter((order) => {
       const status = order.status || "draft";
       if (statusFilter !== "all" && status !== statusFilter) return false;
+      if (fromTs != null || toTs != null) {
+        const created = new Date(order.created_at || 0).getTime();
+        if (Number.isNaN(created)) return false;
+        if (fromTs != null && created < fromTs) return false;
+        if (toTs != null && created > toTs) return false;
+      }
       if (!q) return true;
       const contact = order.contact || {};
       const items = getOrderItems(order);
@@ -159,7 +194,7 @@ export default function OrdersAdminPage() {
         .join(" ");
       return haystack.includes(q);
     });
-  }, [orders, query, statusFilter]);
+  }, [orders, query, statusFilter, dateFrom, dateTo]);
 
   const exportCsv = () => {
     const csv = buildCsv(visibleOrders);
@@ -175,6 +210,24 @@ export default function OrdersAdminPage() {
   useEffect(() => {
     load();
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const highlight = params.get("highlight");
+    if (highlight) setHighlightId(highlight);
+  }, []);
+
+  useEffect(() => {
+    if (!highlightId || !orders.length) return;
+    const node = cardRefs.current[highlightId];
+    if (node) {
+      node.scrollIntoView({ behavior: "smooth", block: "center" });
+      const timeoutId = window.setTimeout(() => setHighlightId(null), 4000);
+      return () => window.clearTimeout(timeoutId);
+    }
+    return undefined;
+  }, [highlightId, orders]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -200,8 +253,8 @@ export default function OrdersAdminPage() {
       </div>
 
       <div className="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-1 flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="flex flex-col gap-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:flex-wrap">
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -220,15 +273,52 @@ export default function OrdersAdminPage() {
                 </option>
               ))}
             </select>
+            <div className="flex items-center gap-2 text-xs text-gray-600">
+              <label className="flex items-center gap-1">
+                Od
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                  className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700"
+                />
+              </label>
+              <label className="flex items-center gap-1">
+                Do
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                  className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700"
+                />
+              </label>
+              {dateFrom || dateTo ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDateFrom("");
+                    setDateTo("");
+                  }}
+                  className="rounded border border-gray-200 bg-white px-2 py-1 text-[11px] text-gray-600 hover:border-gray-400"
+                >
+                  Resetuj datume
+                </button>
+              ) : null}
+            </div>
+            <p className="ml-auto text-xs text-gray-500">
+              Prikazano {visibleOrders.length} od {orders.length}
+            </p>
           </div>
-          <p className="text-xs text-gray-500">
-            Prikazano {visibleOrders.length} od {orders.length}
-          </p>
         </div>
       </div>
 
       {loading && <p className="text-sm text-gray-500">Ucitavam...</p>}
       {error && <p className="text-sm text-red-600">{error}</p>}
+      {notice && (
+        <p className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm text-emerald-700">
+          {notice}
+        </p>
+      )}
 
       <div className="grid gap-3 sm:grid-cols-2">
         {visibleOrders.map((o) => {
@@ -239,11 +329,29 @@ export default function OrdersAdminPage() {
           const source = getOrderSource(o);
           const items = getOrderItems(o);
           const fulfillmentSummary = getOrderFulfillmentSummary(o);
+          const isHighlighted = highlightId === o.id;
           return (
-            <div key={o.id} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div
+              key={o.id}
+              ref={(node) => {
+                cardRefs.current[o.id] = node;
+              }}
+              className={`rounded-xl border bg-white p-4 shadow-sm transition ${
+                isHighlighted
+                  ? "border-amber-400 ring-4 ring-amber-100"
+                  : "border-gray-200"
+              }`}
+            >
               <div className="flex items-start justify-between gap-2">
-                <div>
-                  <p className="text-sm font-semibold text-gray-900">{o.id}</p>
+                <div className="min-w-0">
+                  <button
+                    type="button"
+                    onClick={() => copyOrderId(o.id)}
+                    title="Klikni da kopiras ID"
+                    className="max-w-full truncate text-left text-sm font-semibold text-gray-900 hover:text-amber-700"
+                  >
+                    {o.id}
+                  </button>
                   <p className="text-xs text-gray-500">
                     Izvor: {source === "storefront" || source === "webshop" ? "web shop" : "custom"} | Fabric: {o.fabric_id || "n/a"}
                   </p>
@@ -294,17 +402,46 @@ export default function OrdersAdminPage() {
                 <button
                   onClick={() => updateStatus(o.id, "confirmed")}
                   disabled={savingId === o.id}
-                  className="rounded-full border border-emerald-200 px-3 py-1 font-semibold text-emerald-700 transition hover:border-emerald-300"
+                  className="rounded-full border border-emerald-200 px-3 py-1 font-semibold text-emerald-700 transition hover:border-emerald-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  title="Potvrdi porudzbinu i posalji email kupcu"
                 >
-                  Potvrdi
+                  Potvrdi + mail
+                </button>
+                <button
+                  onClick={() => updateStatus(o.id, "completed")}
+                  disabled={savingId === o.id}
+                  className="rounded-full border border-blue-200 px-3 py-1 font-semibold text-blue-700 transition hover:border-blue-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  title="Zavrsi porudzbinu i posalji email kupcu"
+                >
+                  Zavrsi + mail
                 </button>
                 <button
                   onClick={() => updateStatus(o.id, "cancelled")}
                   disabled={savingId === o.id}
-                  className="rounded-full border border-rose-200 px-3 py-1 font-semibold text-rose-700 transition hover:border-rose-300"
+                  className="rounded-full border border-rose-200 px-3 py-1 font-semibold text-rose-700 transition hover:border-rose-300 disabled:cursor-not-allowed disabled:opacity-50"
+                  title="Otkazi porudzbinu i posalji email kupcu"
                 >
-                  Otkazi
+                  Otkazi + mail
                 </button>
+                {contactEmail ? (
+                  <a
+                    href={`mailto:${contactEmail}?subject=${encodeURIComponent(
+                      `Santos & Santorini - porudzbina ${o.id}`,
+                    )}`}
+                    className="rounded-full border border-gray-200 px-3 py-1 font-semibold text-gray-700 transition hover:border-gray-400"
+                  >
+                    Odgovori kupcu
+                  </a>
+                ) : null}
+                <a
+                  href={`/admin/orders/${encodeURIComponent(o.id)}/packing-slip`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="rounded-full border border-gray-200 px-3 py-1 font-semibold text-gray-700 transition hover:border-gray-400"
+                  title="Otvori printabilnu otpremnicu u novom tabu"
+                >
+                  Stampaj otpremnicu
+                </a>
               </div>
 
               {o.contact && (

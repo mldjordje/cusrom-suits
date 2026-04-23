@@ -33,6 +33,8 @@ Admin access (ako je ukljucen token):
 - `npm run lint` - lint checks
 - `npm run test:integrations` - core integrations tests
 - `npm run smoke:webshop-admin` - HTTP smoke check za storefront + admin rute
+- `node scripts/optimize-hero-assets.mjs` - kompresuje public/img/*.jpg (hero, odela)
+- `node scripts/generate-og-image.mjs` - generise 1200x630 og-default.jpg
 
 Smoke command koristi:
 
@@ -46,10 +48,13 @@ Kopiraj `.env.example` u `.env.local` i popuni po potrebi.
 Najbitnije varijable:
 
 - `ADMIN_ACCESS_TOKEN`
+- `ADMIN_SESSION_SECRET` (OBAVEZNO u produkciji; generisi: `node -e "console.log(require('crypto').randomBytes(48).toString('base64'))"`)
+- `NEXT_PUBLIC_SITE_URL`
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
 - `SUPABASE_SERVICE_ROLE_KEY`
 - `CRON_SECRET`
+- `RESEND_API_KEY` + `MAIL_FROM` + `ORDER_NOTIFICATION_EMAIL` (email notifikacije za porudzbine i kontakt)
 - `ANANAS_*`
 - `STOCK_*`
 

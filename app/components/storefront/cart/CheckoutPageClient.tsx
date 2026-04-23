@@ -180,14 +180,23 @@ export default function CheckoutPageClient({
       <div className="ss-commerce-stack">
         <StorefrontOrderSteps lang={lang} current="checkout" />
         <div className="ss-order-state-card text-center">
-          <p className="ss-order-state-card__eyebrow">{isEn ? "Order sent" : "Porudzbina poslata"}</p>
-          <h1>{isEn ? "Thank you, your order request is recorded." : "Hvala, tvoj zahtev za porudzbinu je evidentiran."}</h1>
-          <p>
-            {isEn ? "Recorded order number" : "Evidentiran broj porudzbine"}: <strong>{orderId}</strong>
+          <p className="ss-order-state-card__eyebrow">{isEn ? "Order received" : "Porudzbina primljena"}</p>
+          <h1>
+            {isEn
+              ? "Thank you! We received your order."
+              : "Hvala! Tvoja porudzbina je primljena."}
+          </h1>
+          <p className="fs-6 mt-2">
+            {isEn
+              ? "Our team will call you within 2 hours (Mon-Sat, 09-20h) to confirm size, delivery and payment method."
+              : "Nas tim ce te pozvati u roku od 2 sata (Pon-Sub, 09-20h) radi potvrde velicine, dostave i nacina placanja."}
+          </p>
+          <p className="mt-3">
+            {isEn ? "Order number" : "Broj porudzbine"}: <strong>{orderId}</strong>
           </p>
           {submittedTotal != null ? (
             <p>
-              {isEn ? "Recorded total" : "Evidentiran ukupno"}: <strong>{formatRsd(submittedTotal)}</strong>
+              {isEn ? "Total" : "Ukupno"}: <strong>{formatRsd(submittedTotal)}</strong>
             </p>
           ) : null}
           {appliedVoucherCode ? (
@@ -195,17 +204,17 @@ export default function CheckoutPageClient({
               {isEn ? "Voucher applied" : "Primenjen vaucer"}: <strong>{appliedVoucherCode}</strong>
             </p>
           ) : null}
-          <p>
+          <p className="text-secondary small mt-2">
             {isEn
-              ? "Our team will confirm availability, delivery and all final details directly with the customer."
-              : "Nas tim ce direktno sa kupcem potvrditi dostupnost, dostavu i sve finalne detalje."}
+              ? "Tip: save the order number. If you don't hear from us within 2 hours, please contact us directly."
+              : "Savet: sacuvaj broj porudzbine. Ako se ne javimo u roku od 2 sata, slobodno nas pozovi."}
           </p>
-          <div className="d-flex flex-wrap justify-content-center gap-2">
+          <div className="d-flex flex-wrap justify-content-center gap-2 mt-3">
             <Link href={withLang("/web-shop")} className="btn btn-primary text-uppercase fw-medium">
               {isEn ? "Continue shopping" : "Nastavi kupovinu"}
             </Link>
             <Link href={withLang("/kontakt")} className="btn btn-outline-dark text-uppercase fw-medium">
-              {isEn ? "Contact" : "Kontakt"}
+              {isEn ? "Contact us" : "Kontaktiraj nas"}
             </Link>
           </div>
         </div>

@@ -1,11 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { trackVercelServerEvent } from "@/lib/analytics/vercel";
 import { appendContactMessage, type ContactMessage } from "@/lib/contact/messages";
+import { buildRateLimitHeaders, checkRateLimit } from "@/lib/security/rateLimit";
+import { sendContactNotifications } from "@/lib/email/notifications";
 
 const sanitize = (value: FormDataEntryValue | null) =>
   String(value || "").trim().slice(0, 2000);
 
+const RATE_LIMIT = { limit: 5, windowMs: 60_000, scope: "contact" } as const;
+
 export async function POST(req: NextRequest) {
+  const rate = checkRateLimit(req, RATE_LIMIT);
+  if (!rate.ok) {
+    return NextResponse.json(
+      { success: false, message: "Previse zahteva. Pokusaj za nekoliko sekundi." },
+      { status: 429, headers: buildRateLimitHeaders(rate, RATE_LIMIT.limit) },
+    );
+  }
   const contentType = req.headers.get("content-type") || "";
   let name = "";
   let email = "";
@@ -57,6 +68,15 @@ export async function POST(req: NextRequest) {
     preferredStore: entry.preferredStore || "unspecified",
     hasPhone: entry.phone ? 1 : 0,
   });
+  void sendContactNotifications({
+    name: entry.name,
+    email: entry.email,
+    phone: entry.phone || undefined,
+    subject: entry.subject || undefined,
+    message: entry.message,
+    preferredStore: entry.preferredStore || undefined,
+    source: entry.source || undefined,
+  }).catch((err) => console.error("[contact] sendContactNotifications failed:", err));
 
   if (contentType.includes("application/json")) {
     return NextResponse.json({ success: true, data: entry });

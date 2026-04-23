@@ -4,11 +4,14 @@ import {
   getSiteContent,
   updateSiteContent,
   type SiteAboutPageContent,
+  type SiteAnnouncementsContent,
   type SiteContactPageContent,
   type SiteFooterContent,
   type SiteNavItem,
   type SiteStoreLocation,
   type SiteStoresPageContent,
+  type SiteTestimonial,
+  type SiteTestimonialsContent,
 } from "@/lib/storefront/siteContent";
 
 type SiteContentPatch = {
@@ -18,6 +21,8 @@ type SiteContentPatch = {
   storesPage?: SiteStoresPageContent;
   aboutPage?: SiteAboutPageContent;
   stores?: SiteStoreLocation[];
+  announcements?: SiteAnnouncementsContent;
+  testimonials?: SiteTestimonialsContent;
 };
 
 const parseTextList = (value: unknown, max = 12) => {
@@ -197,6 +202,46 @@ export async function PATCH(req: NextRequest) {
     };
   }
   if ("stores" in row) patch.stores = parseStores(row.stores);
+  if ("testimonials" in row && row.testimonials && typeof row.testimonials === "object") {
+    const value = row.testimonials as Record<string, unknown>;
+    const items = Array.isArray(value.items)
+      ? (value.items as unknown[]).reduce<SiteTestimonial[]>((acc, item) => {
+          if (!item || typeof item !== "object") return acc;
+          const entry = item as Record<string, unknown>;
+          const text = String(entry.text || "").trim();
+          const author = String(entry.author || "").trim();
+          if (!text || !author) return acc;
+          const textEn = String(entry.textEn || "").trim();
+          const location = String(entry.location || "").trim();
+          const locationEn = String(entry.locationEn || "").trim();
+          const productSku = String(entry.productSku || "").trim();
+          const ratingValue = Number(entry.rating);
+          const rating =
+            Number.isFinite(ratingValue) && ratingValue > 0 && ratingValue <= 5
+              ? Math.round(ratingValue)
+              : 5;
+          const id = String(entry.id || "").trim() || `t-${acc.length + 1}`;
+          acc.push({ id, text, textEn: textEn || text, author, location, locationEn: locationEn || location, productSku, rating });
+          return acc;
+        }, []).slice(0, 24)
+      : [];
+    patch.testimonials = {
+      enabled: value.enabled == null ? items.length > 0 : Boolean(value.enabled) && items.length > 0,
+      title: String(value.title || "").trim(),
+      titleEn: String(value.titleEn || "").trim(),
+      items,
+    };
+  }
+  if ("announcements" in row && row.announcements && typeof row.announcements === "object") {
+    const value = row.announcements as Record<string, unknown>;
+    const items = parseTextList(value.items, 6);
+    const itemsEn = parseTextList(value.itemsEn, 6);
+    patch.announcements = {
+      enabled: value.enabled == null ? items.length > 0 : Boolean(value.enabled),
+      items,
+      itemsEn: itemsEn.length ? itemsEn : items,
+    };
+  }
 
   const content = await updateSiteContent(patch);
   return NextResponse.json({ success: true, content });

@@ -3,7 +3,7 @@ import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 export const SITE_NAME = "Santos & Santorini";
 export const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://santos.rs").replace(/\/+$/, "");
-export const DEFAULT_OG_IMAGE = "/img/hero.jpg";
+export const DEFAULT_OG_IMAGE = "/img/og-default.jpg";
 
 /** Stable @id for JSON-LD graph linking (Product offers, FAQ, etc.) */
 export const ORGANIZATION_JSONLD_ID = `${SITE_URL}#organization`;

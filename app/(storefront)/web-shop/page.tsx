@@ -89,6 +89,18 @@ export default async function WebShopPage({
   const inStock = toStringParam(params.inStock) === "1";
   const onSale = toStringParam(params.onSale) === "1" || rawCategoryId === "sale";
   const sort = toStringParam(params.sort) || "featured";
+  const priceMin = Math.max(0, Number.parseInt(toStringParam(params.priceMin), 10) || 0);
+  const priceMax = Math.max(0, Number.parseInt(toStringParam(params.priceMax), 10) || 0);
+  const rawSizes = (() => {
+    const value = params.size;
+    if (Array.isArray(value)) return value.map((v) => String(v || ""));
+    return String(value || "")
+      .split(",")
+      .map((v) => v.trim());
+  })()
+    .map((value) => value.trim())
+    .filter(Boolean);
+  const selectedSizes = Array.from(new Set(rawSizes.map((v) => v.toUpperCase().replace(/\s+/g, ""))));
 
   const [result, landingSettings] = await Promise.all([
     listCatalogProducts({
@@ -101,6 +113,9 @@ export default async function WebShopPage({
       activeOnly: true,
       exportOnly: true,
       collapseBySku: true,
+      priceMin: priceMin || undefined,
+      priceMax: priceMax || undefined,
+      sizes: selectedSizes.length ? selectedSizes : undefined,
     }),
     getLandingSettings(),
   ]);
@@ -121,6 +136,48 @@ export default async function WebShopPage({
 
   const items = sortItems(result.items, sort);
   const topCategories = result.categories.slice(0, 7);
+
+  const DEFAULT_SIZES = [
+    "XS",
+    "S",
+    "M",
+    "L",
+    "XL",
+    "XXL",
+    "XXXL",
+    "4XL",
+    "5XL",
+    "6XL",
+    "44",
+    "46",
+    "48",
+    "50",
+    "52",
+    "54",
+    "56",
+    "58",
+  ];
+  const sizeOccurrences = new Map<string, number>();
+  for (const item of result.items) {
+    const attrSizes = (item.attributes as Record<string, unknown> | null | undefined)?.size;
+    if (!Array.isArray(attrSizes)) continue;
+    for (const raw of attrSizes) {
+      const value = String(raw || "").trim().toUpperCase();
+      if (!value) continue;
+      sizeOccurrences.set(value, (sizeOccurrences.get(value) || 0) + 1);
+    }
+  }
+  const orderIndex = (value: string) => {
+    const i = DEFAULT_SIZES.indexOf(value);
+    return i === -1 ? DEFAULT_SIZES.length + 1 : i;
+  };
+  const availableSizes = Array.from(sizeOccurrences.keys()).sort((a, b) => orderIndex(a) - orderIndex(b));
+
+  const priceValues = result.items
+    .map((item) => Number(item.priceFinalGross || 0))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  const priceFloor = priceValues.length ? Math.floor(Math.min(...priceValues)) : 0;
+  const priceCeiling = priceValues.length ? Math.ceil(Math.max(...priceValues)) : 0;
   const heroEyebrow = tx(landingSettings.shopHeroEyebrow?.trim() || "Santos & Santorini", "Santos & Santorini");
   const heroTitle =
     tx(landingSettings.shopHeroTitle?.trim() || (isEn ? "Menswear collection" : "Muska kolekcija"), "Menswear Collection");
@@ -156,6 +213,9 @@ export default async function WebShopPage({
       page: String(result.page),
       sort: sort !== "featured" ? sort : "",
       onSale: onSale ? "1" : "",
+      priceMin: priceMin > 0 ? String(priceMin) : "",
+      priceMax: priceMax > 0 ? String(priceMax) : "",
+      size: selectedSizes.length ? selectedSizes.join(",") : "",
     };
 
     for (const [key, value] of Object.entries(current)) {
@@ -215,6 +275,27 @@ export default async function WebShopPage({
       key: "sale",
       label: isEn ? "On sale" : "Na akciji",
       href: makeHref({ onSale: null, page: 1 }),
+    });
+  }
+
+  if (priceMin > 0 || priceMax > 0) {
+    const priceChipLabel = (() => {
+      if (priceMin > 0 && priceMax > 0) return `${priceMin} - ${priceMax} RSD`;
+      if (priceMin > 0) return `${isEn ? "From" : "Od"} ${priceMin} RSD`;
+      return `${isEn ? "Up to" : "Do"} ${priceMax} RSD`;
+    })();
+    activeFilterChips.push({
+      key: "price",
+      label: `${isEn ? "Price" : "Cena"}: ${priceChipLabel}`,
+      href: makeHref({ priceMin: null, priceMax: null, page: 1 }),
+    });
+  }
+
+  if (selectedSizes.length) {
+    activeFilterChips.push({
+      key: "size",
+      label: `${isEn ? "Size" : "Velicina"}: ${selectedSizes.join(", ")}`,
+      href: makeHref({ size: null, page: 1 }),
     });
   }
 
@@ -457,6 +538,12 @@ export default async function WebShopPage({
             showingCount={items.length}
             totalCount={result.total}
             sortOptions={sortOptions}
+            availableSizes={availableSizes}
+            selectedSizes={selectedSizes}
+            priceMin={priceMin}
+            priceMax={priceMax}
+            priceFloor={priceFloor}
+            priceCeiling={priceCeiling}
           >
             <div className="ss-shop-gallery">
               <div className="ss-shop-gallery__header">

@@ -28,8 +28,18 @@ const getAdminCredentials = () => ({
   password: normalize(process.env.ADMIN_PASSWORD || "santorini"),
 });
 
-const getSessionSecret = () =>
-  normalize(process.env.ADMIN_SESSION_SECRET || process.env.ADMIN_PASSWORD || "santos-admin-session");
+const DEFAULT_SESSION_SECRET = "santos-admin-session-dev-only-change-me";
+
+const getSessionSecret = () => {
+  const envSecret = normalize(process.env.ADMIN_SESSION_SECRET || "");
+  if (envSecret) return envSecret;
+  if (process.env.NODE_ENV === "production") {
+    console.warn(
+      "[adminAuth] ADMIN_SESSION_SECRET is not set. Using unsafe default. Set it in production env!",
+    );
+  }
+  return DEFAULT_SESSION_SECRET;
+};
 
 const bytesToBinary = (bytes: Uint8Array) => {
   let binary = "";

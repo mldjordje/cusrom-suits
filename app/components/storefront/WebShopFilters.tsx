@@ -35,6 +35,12 @@ type WebShopFiltersProps = {
   showingCount: number;
   totalCount: number;
   sortOptions: SortOption[];
+  availableSizes?: string[];
+  selectedSizes?: string[];
+  priceMin?: number;
+  priceMax?: number;
+  priceFloor?: number;
+  priceCeiling?: number;
   children: ReactNode;
 };
 
@@ -57,6 +63,12 @@ export default function WebShopFilters({
   showingCount,
   totalCount,
   sortOptions,
+  availableSizes = [],
+  selectedSizes = [],
+  priceMin = 0,
+  priceMax = 0,
+  priceFloor = 0,
+  priceCeiling = 0,
   children,
 }: WebShopFiltersProps) {
   const isEn = lang === "en";
@@ -88,6 +100,9 @@ export default function WebShopFilters({
       inStock: inStock ? "1" : "",
       onSale: onSale ? "1" : "",
       sort: sort !== "featured" ? sort : "",
+      priceMin: priceMin > 0 ? String(priceMin) : "",
+      priceMax: priceMax > 0 ? String(priceMax) : "",
+      size: selectedSizes.length ? selectedSizes.join(",") : "",
     };
 
     for (const [key, value] of Object.entries(current)) {
@@ -201,12 +216,93 @@ export default function WebShopFilters({
     </label>
   );
 
+  const priceFloorInput = priceFloor > 0 ? priceFloor : undefined;
+  const priceCeilingInput = priceCeiling > 0 ? priceCeiling : undefined;
+
+  const selectedSizesSet = new Set(selectedSizes.map((v) => v.toUpperCase()));
+
+  const buildSizeToggleHref = (size: string) => {
+    const normalized = size.toUpperCase();
+    const next = selectedSizesSet.has(normalized)
+      ? selectedSizes.filter((v) => v.toUpperCase() !== normalized)
+      : [...selectedSizes, normalized];
+    return makeHref({ size: next.length ? next.join(",") : null });
+  };
+
+  const renderPriceField = (formId: string) => (
+    <div className="ss-shop-form-block">
+      <span className="ss-shop-form-label">{isEn ? "Price (RSD)" : "Cena (RSD)"}</span>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.5rem" }}>
+        <input
+          id={`${formId}-priceMin`}
+          name="priceMin"
+          type="number"
+          inputMode="numeric"
+          min={priceFloorInput}
+          max={priceCeilingInput}
+          step={500}
+          defaultValue={priceMin > 0 ? priceMin : ""}
+          placeholder={priceFloorInput ? String(priceFloorInput) : isEn ? "From" : "Od"}
+          className="form-control"
+        />
+        <input
+          id={`${formId}-priceMax`}
+          name="priceMax"
+          type="number"
+          inputMode="numeric"
+          min={priceFloorInput}
+          max={priceCeilingInput}
+          step={500}
+          defaultValue={priceMax > 0 ? priceMax : ""}
+          placeholder={priceCeilingInput ? String(priceCeilingInput) : isEn ? "To" : "Do"}
+          className="form-control"
+        />
+      </div>
+      {priceFloorInput && priceCeilingInput ? (
+        <p className="ss-shop-form-note" style={{ marginTop: 6 }}>
+          {isEn ? "Range from catalog" : "Opseg iz kataloga"}: {priceFloorInput.toLocaleString("sr-RS")} -{" "}
+          {priceCeilingInput.toLocaleString("sr-RS")} RSD
+        </p>
+      ) : null}
+    </div>
+  );
+
+  const renderSizeField = () => {
+    if (!availableSizes || availableSizes.length === 0) return null;
+    return (
+      <div className="ss-shop-form-block">
+        <span className="ss-shop-form-label">{isEn ? "Size" : "Velicina"}</span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+          {selectedSizes.map((size) => (
+            <input key={`hidden-${size}`} type="hidden" name="size" value={size.toUpperCase()} />
+          ))}
+          {availableSizes.map((size) => {
+            const normalized = size.toUpperCase();
+            const isActive = selectedSizesSet.has(normalized);
+            return (
+              <Link
+                key={size}
+                href={buildSizeToggleHref(size)}
+                className={`ss-shop-filter-chip${isActive ? " is-active" : ""}`}
+                style={{ minWidth: 48, textAlign: "center", fontSize: 12 }}
+              >
+                {size}
+              </Link>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
+
   const renderForm = (formId: string, compact = false) => (
     <form action="/web-shop" method="get" id={formId} className={`ss-shop-filter-form ${compact ? "is-compact" : ""}`}>
       {lang === "en" ? <input type="hidden" name="lang" value="en" /> : null}
       {renderSearchField(`${formId}-query`)}
       {renderSortField(`${formId}-sort`)}
       {renderCategoryField(`${formId}-category`)}
+      {renderPriceField(formId)}
+      {renderSizeField()}
 
       <div className="ss-shop-form-grid">
         {renderToggleField("inStock", inStock, isEn ? "Only in stock" : "Samo na stanju")}

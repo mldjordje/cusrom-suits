@@ -84,6 +84,27 @@ export type SiteAboutPageContent = {
   secondaryImageAlt: string;
   secondaryImageAltEn: string;
 };
+export type SiteAnnouncementsContent = {
+  enabled: boolean;
+  items: string[];
+  itemsEn: string[];
+};
+export type SiteTestimonial = {
+  id: string;
+  text: string;
+  textEn: string;
+  author: string;
+  location: string;
+  locationEn: string;
+  productSku: string;
+  rating: number;
+};
+export type SiteTestimonialsContent = {
+  enabled: boolean;
+  title: string;
+  titleEn: string;
+  items: SiteTestimonial[];
+};
 export type SiteContent = {
   navigation: { items: SiteNavItem[] };
   footer: SiteFooterContent;
@@ -91,6 +112,8 @@ export type SiteContent = {
   storesPage: SiteStoresPageContent;
   aboutPage: SiteAboutPageContent;
   stores: SiteStoreLocation[];
+  announcements: SiteAnnouncementsContent;
+  testimonials: SiteTestimonialsContent;
 };
 
 export const DEFAULT_SITE_CONTENT: SiteContent = {
@@ -242,6 +265,56 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3624.143938196094!2d21.330695!3d43.579821!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4756870062ccd25d%3A0x780e3454e14c0558!2sSantos%20%26%20Santorini!5e1!3m2!1sen!2srs!4v1774780623102!5m2!1sen!2srs",
     },
   ],
+  announcements: {
+    enabled: true,
+    items: [
+      "Besplatna dostava u celoj Srbiji za porudzbine preko 15.000 RSD",
+      "Pravo na povracaj 14 dana",
+      "Dve prodavnice: Nis i Krusevac",
+    ],
+    itemsEn: [
+      "Free delivery across Serbia on orders over 15.000 RSD",
+      "Return within 14 days",
+      "Two stores: Nis and Krusevac",
+    ],
+  },
+  testimonials: {
+    enabled: true,
+    title: "Sta kazu nasi kupci",
+    titleEn: "What our customers say",
+    items: [
+      {
+        id: "t1",
+        text: "Kvalitet i kroj su iznad ocekivanja. Osecaj u odelu je savrsen - lagano, elegantno i tacno po meri.",
+        textEn: "Quality and tailoring are beyond expectations. The suit fits perfectly - light, elegant and right to size.",
+        author: "Nikola M.",
+        location: "Beograd",
+        locationEn: "Belgrade",
+        productSku: "",
+        rating: 5,
+      },
+      {
+        id: "t2",
+        text: "Tim je izasao u susret, dostava za dva dana, pakovanje urbano. Vracam se svakako.",
+        textEn: "The team was very helpful, delivery in two days, urban packaging. I'll be back.",
+        author: "Marko V.",
+        location: "Novi Sad",
+        locationEn: "Novi Sad",
+        productSku: "",
+        rating: 5,
+      },
+      {
+        id: "t3",
+        text: "Kosulje drze formu posle nekoliko pranja, materijal je prijatan. Konacno sam nasao brend kome mogu da verujem.",
+        textEn: "Shirts keep their shape after several washes and the fabric feels great. I finally found a brand I can trust.",
+        author: "Stefan J.",
+        location: "Nis",
+        locationEn: "Nis",
+        productSku: "",
+        rating: 5,
+      },
+    ],
+  },
 };
 
 const decodeText = (value: unknown, fallback: string) =>
@@ -285,6 +358,52 @@ const normalizeTextList = (value: unknown, fallback: string[], max = 12) => {
   if (!Array.isArray(value)) return fallback;
   const items = value.map((item) => decodeText(item, "")).filter(Boolean).slice(0, max);
   return items.length ? items : fallback;
+};
+
+const normalizeTestimonials = (
+  value: unknown,
+  fallback: SiteTestimonialsContent,
+): SiteTestimonialsContent => {
+  if (!value || typeof value !== "object") return fallback;
+  const row = value as Record<string, unknown>;
+  const items = Array.isArray(row.items)
+    ? row.items.reduce<SiteTestimonial[]>((acc, item) => {
+        if (!item || typeof item !== "object") return acc;
+        const entry = item as Record<string, unknown>;
+        const text = decodeText(entry.text, "");
+        if (!text) return acc;
+        const textEn = decodeText(entry.textEn, text);
+        const author = decodeText(entry.author, "");
+        if (!author) return acc;
+        const location = decodeText(entry.location, "");
+        const locationEn = decodeText(entry.locationEn, location);
+        const rawId = decodeText(entry.id, "");
+        const id = rawId || `t-${acc.length + 1}`;
+        const productSku = decodeText(entry.productSku, "");
+        const ratingValue = Number(entry.rating);
+        const rating =
+          Number.isFinite(ratingValue) && ratingValue > 0 && ratingValue <= 5
+            ? Math.round(ratingValue)
+            : 5;
+        acc.push({ id, text, textEn, author, location, locationEn, productSku, rating });
+        return acc;
+      }, [])
+    : fallback.items;
+  const title = decodeText(row.title, fallback.title);
+  const titleEn = decodeText(row.titleEn, fallback.titleEn);
+  const enabled =
+    row.enabled == null ? fallback.enabled && items.length > 0 : Boolean(row.enabled) && items.length > 0;
+  return { enabled, title, titleEn, items };
+};
+
+const normalizeAnnouncements = (value: unknown, fallback: SiteAnnouncementsContent): SiteAnnouncementsContent => {
+  if (!value || typeof value !== "object") return fallback;
+  const row = value as Record<string, unknown>;
+  const items = normalizeTextList(row.items, fallback.items, 6);
+  const itemsEn = normalizeTextList(row.itemsEn, items.length ? items : fallback.itemsEn, 6);
+  const enabled =
+    row.enabled == null ? fallback.enabled : Boolean(row.enabled) && items.length > 0;
+  return { enabled, items, itemsEn };
 };
 
 const normalizeStores = (value: unknown, fallback: SiteStoreLocation[]) => {
@@ -394,6 +513,8 @@ async function readSiteContentUncached(): Promise<SiteContent> {
       secondaryImageAltEn: decodeText(raw.aboutPage?.secondaryImageAltEn, DEFAULT_SITE_CONTENT.aboutPage.secondaryImageAltEn),
     },
     stores: normalizeStores(raw.stores, DEFAULT_SITE_CONTENT.stores),
+    announcements: normalizeAnnouncements(raw.announcements, DEFAULT_SITE_CONTENT.announcements),
+    testimonials: normalizeTestimonials(raw.testimonials, DEFAULT_SITE_CONTENT.testimonials),
   };
 }
 
@@ -474,6 +595,14 @@ export async function updateSiteContent(patch: Partial<SiteContent>): Promise<Si
       secondaryImageAltEn: patch.aboutPage?.secondaryImageAltEn == null ? current.aboutPage.secondaryImageAltEn : decodeText(patch.aboutPage.secondaryImageAltEn, current.aboutPage.secondaryImageAltEn),
     },
     stores: patch.stores == null ? current.stores : normalizeStores(patch.stores, current.stores),
+    announcements:
+      patch.announcements == null
+        ? current.announcements
+        : normalizeAnnouncements(patch.announcements, current.announcements),
+    testimonials:
+      patch.testimonials == null
+        ? current.testimonials
+        : normalizeTestimonials(patch.testimonials, current.testimonials),
   };
   await writePersistentJsonFile(SITE_CONTENT_PATH, next);
   revalidateTag(SITE_CONTENT_CACHE_TAG);

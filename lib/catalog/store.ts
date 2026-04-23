@@ -72,6 +72,9 @@ type CatalogListInput = {
   page?: number;
   pageSize?: number;
   applyPromotions?: boolean;
+  priceMin?: number;
+  priceMax?: number;
+  sizes?: string[];
 };
 
 type CatalogSnapshotCacheEntry = {
@@ -147,6 +150,9 @@ const makeCatalogListCacheKey = (input: {
   exportOnly: boolean;
   collapseBySku: boolean;
   applyPromotions: boolean;
+  priceMin: number;
+  priceMax: number;
+  sizes: string[];
 }) =>
   [
     CATALOG_LIST_CACHE_VERSION,
@@ -160,6 +166,9 @@ const makeCatalogListCacheKey = (input: {
     input.exportOnly ? 1 : 0,
     input.collapseBySku ? 1 : 0,
     input.applyPromotions ? 1 : 0,
+    input.priceMin || 0,
+    input.priceMax || 0,
+    input.sizes.join(",").toUpperCase(),
   ].join("|");
 
 const maybeLogCatalogPerformance = (payload: {
@@ -368,9 +377,15 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
   }),
 });
 
+const normalizeSizeValue = (value: unknown) => String(value ?? "").trim().toUpperCase().replace(/\s+/g, "");
+
 const applyFilters = (
   items: CatalogProductView[],
-  input: Required<Pick<CatalogListInput, "query" | "categoryId" | "inStock" | "onSale" | "activeOnly" | "exportOnly">>,
+  input: Required<Pick<CatalogListInput, "query" | "categoryId" | "inStock" | "onSale" | "activeOnly" | "exportOnly">> & {
+    priceMin?: number;
+    priceMax?: number;
+    sizes?: string[];
+  },
 ) => {
   const query = input.query.trim().toLowerCase();
   let filtered = [...items];
@@ -381,6 +396,27 @@ const applyFilters = (
   if (input.categoryId > 0) {
     filtered = filtered.filter((item) => item.categories.some((cat) => cat.id === input.categoryId));
   }
+
+  if (typeof input.priceMin === "number" && Number.isFinite(input.priceMin) && input.priceMin > 0) {
+    const min = input.priceMin;
+    filtered = filtered.filter((item) => Number(item.priceFinalGross) >= min);
+  }
+  if (typeof input.priceMax === "number" && Number.isFinite(input.priceMax) && input.priceMax > 0) {
+    const max = input.priceMax;
+    filtered = filtered.filter((item) => Number(item.priceFinalGross) <= max);
+  }
+
+  if (Array.isArray(input.sizes) && input.sizes.length > 0) {
+    const wanted = new Set(input.sizes.map(normalizeSizeValue).filter(Boolean));
+    if (wanted.size > 0) {
+      filtered = filtered.filter((item) => {
+        const raw = (item.attributes as Record<string, unknown> | null | undefined)?.size;
+        const values = Array.isArray(raw) ? raw : [];
+        return values.some((value) => wanted.has(normalizeSizeValue(value)));
+      });
+    }
+  }
+
   if (query.length > 0) {
     filtered = filtered.filter((item) => {
       const exactOrStartsWithCode =
@@ -769,6 +805,11 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const exportOnly = input.exportOnly !== false;
   const collapseBySku = Boolean(input.collapseBySku);
   const applyPromotions = input.applyPromotions !== false;
+  const priceMin = Number.isFinite(Number(input.priceMin)) ? Math.max(0, Number(input.priceMin)) : 0;
+  const priceMax = Number.isFinite(Number(input.priceMax)) ? Math.max(0, Number(input.priceMax)) : 0;
+  const sizes = Array.isArray(input.sizes)
+    ? input.sizes.map((value) => String(value || "").trim()).filter(Boolean)
+    : [];
 
   const cacheKey = makeCatalogListCacheKey({
     page,
@@ -781,6 +822,9 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     exportOnly,
     collapseBySku,
     applyPromotions,
+    priceMin,
+    priceMax,
+    sizes,
   });
   const listCache = getCatalogListCache();
   const cached = listCache.get(cacheKey);
@@ -820,7 +864,17 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const promoMs = Date.now() - promoStart;
 
   const filterStart = Date.now();
-  const filteredSource = applyFilters(displayItems, { query, categoryId, inStock, onSale, activeOnly, exportOnly });
+  const filteredSource = applyFilters(displayItems, {
+    query,
+    categoryId,
+    inStock,
+    onSale,
+    activeOnly,
+    exportOnly,
+    priceMin: priceMin || undefined,
+    priceMax: priceMax || undefined,
+    sizes,
+  });
   const filterMs = Date.now() - filterStart;
 
   const collapseStart = Date.now();
@@ -986,4 +1040,67 @@ export async function getRelatedCatalogProducts(
     collapseBySku: true,
   });
   return result.items.filter((candidate) => candidate.legacyId !== item.legacyId).slice(0, limit);
+}
+
+type CompleteTheLookPattern = {
+  // categories or product names considered the "base" product type
+  match: RegExp;
+  // patterns suggesting a complementary product name/category
+  complement: RegExp;
+};
+
+const COMPLETE_THE_LOOK_PATTERNS: CompleteTheLookPattern[] = [
+  // Suit/Odelo -> shirts, ties, belts, shoes, pocket squares
+  { match: /odelo|sako|blazer|suit/u, complement: /kosulj|shirt|kravat|tie|kais|belt|leptir|pocket|cipel|shoe/u },
+  // Shirt/Kosulja -> ties, cufflinks, suits, trousers
+  { match: /kosulj|shirt/u, complement: /kravat|tie|odelo|sako|suit|pantalon|trouser|leptir/u },
+  // Trousers -> shirts, belts, shoes
+  { match: /pantalon|trouser/u, complement: /kosulj|shirt|kais|belt|cipel|shoe/u },
+  // Tie/Kravata -> shirts, suits
+  { match: /kravat|tie|leptir/u, complement: /kosulj|shirt|odelo|sako|suit/u },
+  // Shoes -> belts, socks, trousers
+  { match: /cipel|shoe/u, complement: /kais|belt|carap|sock|pantalon|trouser/u },
+];
+
+const normalizeLower = (value: string) =>
+  String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "");
+
+export async function getCompleteTheLookProducts(
+  item: CatalogProductView,
+  limit = 4,
+): Promise<CatalogProductView[]> {
+  const categoryText = (item.categories || [])
+    .flatMap((category) => [category?.name || "", ...(category?.path || [])])
+    .join(" ");
+  const haystack = normalizeLower(`${item.name || ""} ${categoryText}`);
+
+  const pattern = COMPLETE_THE_LOOK_PATTERNS.find((entry) => entry.match.test(haystack));
+  if (!pattern) return [];
+
+  const result = await listCatalogProducts({
+    page: 1,
+    pageSize: 80,
+    collapseBySku: true,
+    activeOnly: true,
+    exportOnly: true,
+  });
+
+  const primaryCategoryId = item.categories[0]?.id || 0;
+  const filtered = result.items
+    .filter((candidate) => candidate.legacyId !== item.legacyId)
+    .filter((candidate) => {
+      if (primaryCategoryId && (candidate.categories || []).some((c) => c.id === primaryCategoryId)) {
+        return false;
+      }
+      const text = normalizeLower(
+        `${candidate.name || ""} ${(candidate.categories || []).flatMap((c) => [c?.name || "", ...(c?.path || [])]).join(" ")}`,
+      );
+      return pattern.complement.test(text);
+    });
+
+  return filtered.slice(0, limit);
 }

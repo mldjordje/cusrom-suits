@@ -1,3 +1,4 @@
+import StorefrontAnnouncementBar from "@/app/components/storefront/StorefrontAnnouncementBar";
 import StorefrontHeaderClient from "@/app/components/storefront/StorefrontHeaderClient";
 import { getSiteContent, type SiteNavItem } from "@/lib/storefront/siteContent";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
@@ -34,5 +35,10 @@ export default async function StorefrontHeader({
     label: isEn ? item.labelEn : item.label,
   }));
 
-  return <StorefrontHeaderClient lang={lang} variant={variant} navItems={navItems} />;
+  return (
+    <>
+      <StorefrontAnnouncementBar lang={lang} content={siteContent.announcements} />
+      <StorefrontHeaderClient lang={lang} variant={variant} navItems={navItems} />
+    </>
+  );
 }

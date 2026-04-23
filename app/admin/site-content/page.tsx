@@ -84,6 +84,29 @@ type SiteContent = {
     secondaryImageAltEn: string;
   };
   stores: SiteStoreLocation[];
+  announcements: SiteAnnouncementsContent;
+  testimonials: SiteTestimonialsContent;
+};
+type SiteAnnouncementsContent = {
+  enabled: boolean;
+  items: string[];
+  itemsEn: string[];
+};
+type SiteTestimonial = {
+  id: string;
+  text: string;
+  textEn: string;
+  author: string;
+  location: string;
+  locationEn: string;
+  productSku: string;
+  rating: number;
+};
+type SiteTestimonialsContent = {
+  enabled: boolean;
+  title: string;
+  titleEn: string;
+  items: SiteTestimonial[];
 };
 type LandingDocument = { title: string; description: string; url: string };
 
@@ -178,7 +201,20 @@ const defaultContent: SiteContent = {
     secondaryImageAltEn: "",
   },
   stores: [],
+  announcements: { enabled: true, items: [], itemsEn: [] },
+  testimonials: { enabled: true, title: "", titleEn: "", items: [] },
 };
+
+const emptyTestimonial = (): SiteTestimonial => ({
+  id: `t-${Date.now()}`,
+  text: "",
+  textEn: "",
+  author: "",
+  location: "",
+  locationEn: "",
+  productSku: "",
+  rating: 5,
+});
 
 export default function AdminSiteContentPage() {
   const [content, setContent] = useState<SiteContent>(defaultContent);
@@ -252,6 +288,28 @@ export default function AdminSiteContentPage() {
           ...content.aboutPage,
           paragraphs: content.aboutPage.paragraphs.map((item) => item.trim()).filter(Boolean),
           paragraphsEn: content.aboutPage.paragraphsEn.map((item) => item.trim()).filter(Boolean),
+        },
+        announcements: {
+          enabled: Boolean(content.announcements?.enabled),
+          items: (content.announcements?.items || []).map((item) => item.trim()).filter(Boolean),
+          itemsEn: (content.announcements?.itemsEn || []).map((item) => item.trim()).filter(Boolean),
+        },
+        testimonials: {
+          enabled: Boolean(content.testimonials?.enabled),
+          title: (content.testimonials?.title || "").trim(),
+          titleEn: (content.testimonials?.titleEn || "").trim(),
+          items: (content.testimonials?.items || [])
+            .map((item) => ({
+              id: (item.id || `t-${Math.random().toString(36).slice(2, 8)}`).trim(),
+              text: (item.text || "").trim(),
+              textEn: (item.textEn || "").trim() || (item.text || "").trim(),
+              author: (item.author || "").trim(),
+              location: (item.location || "").trim(),
+              locationEn: (item.locationEn || "").trim() || (item.location || "").trim(),
+              productSku: (item.productSku || "").trim(),
+              rating: Number(item.rating) > 0 && Number(item.rating) <= 5 ? Math.round(Number(item.rating)) : 5,
+            }))
+            .filter((item) => item.text && item.author),
         },
         stores: content.stores
           .map((store) => ({
@@ -477,6 +535,240 @@ export default function AdminSiteContentPage() {
               <textarea value={content.aboutPage.paragraphsEn.join("\n")} onChange={(e) => setContent((prev) => ({ ...prev, aboutPage: { ...prev.aboutPage, paragraphsEn: e.target.value.split("\n") } }))} placeholder="Paragraphs EN, one line = one paragraph" className={`${fieldClass} min-h-[120px]`} />
             </div>
           </section>
+        </div>
+      </div>
+
+      <div className={cardClass}>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Traka obavestenja (announcement bar)</h2>
+            <p className="text-sm text-slate-600">
+              Tanka crna traka iznad headera. Ostavi prazno da je sakrijes, ili ukljuci/iskljuci prekidacem.
+            </p>
+          </div>
+          <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
+            <input
+              type="checkbox"
+              checked={Boolean(content.announcements?.enabled)}
+              onChange={(e) =>
+                setContent((prev) => ({
+                  ...prev,
+                  announcements: {
+                    enabled: e.target.checked,
+                    items: prev.announcements?.items ?? [],
+                    itemsEn: prev.announcements?.itemsEn ?? [],
+                  },
+                }))
+              }
+            />
+            Prikazi traku
+          </label>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Poruke (SR) - jedna po redu, maksimalno 6
+            </label>
+            <textarea
+              value={(content.announcements?.items || []).join("\n")}
+              onChange={(e) =>
+                setContent((prev) => ({
+                  ...prev,
+                  announcements: {
+                    enabled: prev.announcements?.enabled ?? true,
+                    items: e.target.value.split("\n"),
+                    itemsEn: prev.announcements?.itemsEn ?? [],
+                  },
+                }))
+              }
+              placeholder="Besplatna dostava u celoj Srbiji za porudzbine preko 15.000 RSD"
+              className={`${fieldClass} min-h-[110px]`}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+              Messages (EN) - one per line
+            </label>
+            <textarea
+              value={(content.announcements?.itemsEn || []).join("\n")}
+              onChange={(e) =>
+                setContent((prev) => ({
+                  ...prev,
+                  announcements: {
+                    enabled: prev.announcements?.enabled ?? true,
+                    items: prev.announcements?.items ?? [],
+                    itemsEn: e.target.value.split("\n"),
+                  },
+                }))
+              }
+              placeholder="Free delivery across Serbia on orders over 15.000 RSD"
+              className={`${fieldClass} min-h-[110px]`}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div className={cardClass}>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Recenzije / social proof</h2>
+            <p className="text-sm text-slate-600">
+              Prikazuje se na stranici proizvoda (web shop) i na pocetnoj. Prikazi samo one koje imaju tekst i ime.
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
+              <input
+                type="checkbox"
+                checked={Boolean(content.testimonials?.enabled)}
+                onChange={(e) =>
+                  setContent((prev) => ({
+                    ...prev,
+                    testimonials: {
+                      ...(prev.testimonials || { enabled: true, title: "", titleEn: "", items: [] }),
+                      enabled: e.target.checked,
+                    },
+                  }))
+                }
+              />
+              Prikazi sekciju
+            </label>
+            <button
+              type="button"
+              onClick={() =>
+                setContent((prev) => ({
+                  ...prev,
+                  testimonials: {
+                    enabled: prev.testimonials?.enabled ?? true,
+                    title: prev.testimonials?.title ?? "",
+                    titleEn: prev.testimonials?.titleEn ?? "",
+                    items: [...(prev.testimonials?.items || []), emptyTestimonial()],
+                  },
+                }))
+              }
+              className={actionClass}
+            >
+              Dodaj recenziju
+            </button>
+          </div>
+        </div>
+        <div className="mb-4 grid gap-3 md:grid-cols-2">
+          <input
+            value={content.testimonials?.title || ""}
+            onChange={(e) =>
+              setContent((prev) => ({
+                ...prev,
+                testimonials: {
+                  ...(prev.testimonials || { enabled: true, title: "", titleEn: "", items: [] }),
+                  title: e.target.value,
+                },
+              }))
+            }
+            placeholder="Naslov sekcije (SR) - npr. Sta kazu nasi kupci"
+            className={fieldClass}
+          />
+          <input
+            value={content.testimonials?.titleEn || ""}
+            onChange={(e) =>
+              setContent((prev) => ({
+                ...prev,
+                testimonials: {
+                  ...(prev.testimonials || { enabled: true, title: "", titleEn: "", items: [] }),
+                  titleEn: e.target.value,
+                },
+              }))
+            }
+            placeholder="Section title (EN)"
+            className={fieldClass}
+          />
+        </div>
+        <div className="space-y-3">
+          {(content.testimonials?.items || []).map((item, index) => {
+            const updateItem = (updates: Partial<SiteTestimonial>) => {
+              setContent((prev) => ({
+                ...prev,
+                testimonials: {
+                  ...(prev.testimonials || { enabled: true, title: "", titleEn: "", items: [] }),
+                  items: (prev.testimonials?.items || []).map((it, i) => (i === index ? { ...it, ...updates } : it)),
+                },
+              }));
+            };
+            const removeItem = () => {
+              setContent((prev) => ({
+                ...prev,
+                testimonials: {
+                  ...(prev.testimonials || { enabled: true, title: "", titleEn: "", items: [] }),
+                  items: (prev.testimonials?.items || []).filter((_, i) => i !== index),
+                },
+              }));
+            };
+            return (
+              <div key={item.id || index} className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <div className="mb-2 flex items-center justify-between gap-3">
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                    Recenzija #{index + 1}
+                  </span>
+                  <button type="button" onClick={removeItem} className="text-xs font-semibold text-rose-600 hover:text-rose-700">
+                    Obrisi
+                  </button>
+                </div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <input
+                    value={item.author}
+                    onChange={(e) => updateItem({ author: e.target.value })}
+                    placeholder="Ime i prezime kupca"
+                    className={fieldClass}
+                  />
+                  <div className="grid grid-cols-2 gap-2">
+                    <input
+                      value={item.location}
+                      onChange={(e) => updateItem({ location: e.target.value })}
+                      placeholder="Grad (SR)"
+                      className={fieldClass}
+                    />
+                    <input
+                      value={item.locationEn}
+                      onChange={(e) => updateItem({ locationEn: e.target.value })}
+                      placeholder="City (EN)"
+                      className={fieldClass}
+                    />
+                  </div>
+                  <textarea
+                    value={item.text}
+                    onChange={(e) => updateItem({ text: e.target.value })}
+                    placeholder="Tekst recenzije (SR)"
+                    className={`${fieldClass} min-h-[90px]`}
+                  />
+                  <textarea
+                    value={item.textEn}
+                    onChange={(e) => updateItem({ textEn: e.target.value })}
+                    placeholder="Review text (EN)"
+                    className={`${fieldClass} min-h-[90px]`}
+                  />
+                  <input
+                    value={item.productSku}
+                    onChange={(e) => updateItem({ productSku: e.target.value })}
+                    placeholder="SKU ili ID proizvoda (opciono)"
+                    className={fieldClass}
+                  />
+                  <label className="flex items-center gap-2 text-xs text-slate-600">
+                    Ocena (1-5)
+                    <input
+                      type="number"
+                      min={1}
+                      max={5}
+                      value={item.rating}
+                      onChange={(e) => updateItem({ rating: Number(e.target.value) })}
+                      className={`${fieldClass} w-24`}
+                    />
+                  </label>
+                </div>
+              </div>
+            );
+          })}
+          {!content.testimonials?.items?.length ? (
+            <p className="text-sm text-slate-500">Nema recenzija. Dodaj prvu klikom na dugme iznad.</p>
+          ) : null}
         </div>
       </div>
 

@@ -6,9 +6,26 @@ import { getSiteContent } from "@/lib/storefront/siteContent";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { getStorefrontUserFromCookies } from "@/lib/supabase/storefront-server";
 import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
+import { buildRateLimitHeaders, checkRateLimit } from "@/lib/security/rateLimit";
+import { sendOrderNotifications, sendOrderStatusUpdate } from "@/lib/email/notifications";
+import type { OrderEmailContext } from "@/lib/email/templates";
 import type { StorefrontCartItem } from "@/lib/cart/types";
 
+const ORDERS_RATE_LIMIT = { limit: 6, windowMs: 60_000, scope: "orders" } as const;
+
 const ORDERS_PATH = "data/orders.json";
+
+let supabaseMissingWarned = false;
+const warnSupabaseMissing = (context: string) => {
+  if (supabaseMissingWarned) return;
+  supabaseMissingWarned = true;
+  const msg = `[orders] Supabase is not configured — falling back to data/orders.json (${context}). On Vercel this storage is EPHEMERAL and orders WILL be lost. Set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY.`;
+  if (process.env.NODE_ENV === "production") {
+    console.error(msg);
+  } else {
+    console.warn(msg);
+  }
+};
 
 const requireAdmin = async (req: NextRequest) => {
   if (await isAdminRequestAuthenticated(req)) return null;
@@ -31,6 +48,13 @@ const isStorefrontPayload = (payload: any): payload is {
 } => Array.isArray(payload?.items) && payload.items.length > 0;
 
 export async function POST(req: NextRequest) {
+  const rate = checkRateLimit(req, ORDERS_RATE_LIMIT);
+  if (!rate.ok) {
+    return NextResponse.json(
+      { success: false, message: "Previse zahteva. Pokusaj ponovo za nekoliko sekundi." },
+      { status: 429, headers: buildRateLimitHeaders(rate, ORDERS_RATE_LIMIT.limit) },
+    );
+  }
   const supabase = getServiceSupabase();
   const payload = await req.json().catch(() => null);
   if (!payload) {
@@ -179,7 +203,40 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString(),
     };
 
+    const buildEmailContext = (orderId: string): OrderEmailContext => ({
+      orderId,
+      customer: {
+        fullName,
+        email,
+        phone,
+        address: contact.adresa || undefined,
+        city: contact.grad || undefined,
+        postalCode: contact.postanski_broj || undefined,
+        note: contact.napomena || undefined,
+      },
+      fulfillment: {
+        method: deliveryMethod,
+        pickupStoreLabel: selectedPickupStore?.title || null,
+        deliveryServiceName: selectedDeliveryService?.name || null,
+        deliveryCost,
+      },
+      totals: {
+        subtotal,
+        deliveryCost,
+        voucherDiscount,
+        finalTotal,
+      },
+      voucherCode: voucherCode || null,
+      items: items.map((item) => ({
+        name: item.name,
+        size: item.size,
+        quantity: item.quantity,
+        price: item.price,
+      })),
+    });
+
     if (!supabase) {
+      warnSupabaseMissing("storefront order");
       const orders = await readOrdersFile();
       orders.unshift(entry);
       await writeOrdersFile(orders);
@@ -192,7 +249,11 @@ export async function POST(req: NextRequest) {
         total: finalTotal,
         quantity,
         hasVoucher: voucherCode ? 1 : 0,
+        storage: "file",
       });
+      void sendOrderNotifications(buildEmailContext(String(entry.id))).catch((err) =>
+        console.error("[orders] sendOrderNotifications failed (file fallback):", err),
+      );
       return NextResponse.json({ success: true, orderId: entry.id, storage: "file", finalTotal, voucherCode: voucherCode || null });
     }
 
@@ -224,6 +285,11 @@ export async function POST(req: NextRequest) {
       quantity,
       hasVoucher: voucherCode ? 1 : 0,
     });
+    if (orderId) {
+      void sendOrderNotifications(buildEmailContext(orderId)).catch((err) =>
+        console.error("[orders] sendOrderNotifications failed:", err),
+      );
+    }
     return NextResponse.json({ success: true, orderId, finalTotal, voucherCode: voucherCode || null });
   }
 
@@ -244,6 +310,7 @@ export async function POST(req: NextRequest) {
   };
 
   if (!supabase) {
+    warnSupabaseMissing("custom order");
     const orders = await readOrdersFile();
     orders.unshift(entry);
     await writeOrdersFile(orders);
@@ -320,20 +387,56 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: false, message: "No updates provided" }, { status: 400 });
   }
 
+  const shouldNotifyCustomer =
+    !isPublicUpdate &&
+    typeof payload?.status === "string" &&
+    payload.notifyCustomer !== false &&
+    ["confirmed", "completed", "cancelled"].includes(payload.status);
+
+  let previousOrder: Record<string, any> | null = null;
+
   if (!supabase) {
     const orders = await readOrdersFile();
     const index = orders.findIndex((order) => order.id === id);
     if (index === -1) {
       return NextResponse.json({ success: false, message: "Order not found" }, { status: 404 });
     }
+    previousOrder = orders[index];
     orders[index] = { ...orders[index], ...updates, updated_at: new Date().toISOString() };
     await writeOrdersFile(orders);
-    return NextResponse.json({ success: true, orderId: id, storage: "file" });
+  } else {
+    if (shouldNotifyCustomer) {
+      const { data: prev } = await supabase
+        .from("orders")
+        .select("status, contact, price")
+        .eq("id", id)
+        .maybeSingle();
+      previousOrder = (prev as Record<string, any> | null) ?? null;
+    }
+
+    const { error } = await supabase.from("orders").update(updates as never).eq("id", id);
+    if (error) {
+      return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    }
   }
 
-  const { error } = await supabase.from("orders").update(updates as never).eq("id", id);
-  if (error) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+  if (shouldNotifyCustomer && previousOrder) {
+    const contact = (previousOrder.contact as Record<string, any> | null) || null;
+    const customerEmail = String(contact?.email || "").trim();
+    const customerName = String(contact?.ime || contact?.name || "").trim();
+
+    if (customerEmail) {
+      void sendOrderStatusUpdate({
+        orderId: String(id),
+        customerName: customerName || customerEmail,
+        customerEmail,
+        newStatus: payload.status,
+        previousStatus: previousOrder.status || null,
+        finalTotal: typeof previousOrder.price === "number" ? previousOrder.price : undefined,
+        trackingNote: typeof payload.customerNote === "string" ? payload.customerNote : null,
+      }).catch((err) => console.error("[orders] sendOrderStatusUpdate failed:", err));
+    }
   }
-  return NextResponse.json({ success: true });
+
+  return NextResponse.json({ success: true, orderId: id, ...(supabase ? {} : { storage: "file" }) });
 }
