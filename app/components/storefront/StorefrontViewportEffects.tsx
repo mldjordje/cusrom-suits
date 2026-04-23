@@ -4,13 +4,12 @@ import { useEffect } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
-/* Bez .ss-shop-hero__media: GSAP autoAlpha:0 + ScrollTrigger "top 88%" cesto ne okine za above-the-fold hero. */
+/* Bez .ss-footer__* i .ss-shop-hero__media: GSAP autoAlpha:0 + ScrollTrigger "top 88%" cesto nikad ne okine
+   na kratkim stranama (footer u prvom ekranu) -> nevidljiv footer na desktopu. Footer ne animiraj ovde. */
 const REVEAL_SELECTOR = [
   ".ss-filter-panel",
   ".product-single__details-tab",
   ".ss-product-glass-card",
-  ".ss-footer__panel",
-  ".ss-footer__bottom",
 ].join(", ");
 
 const PARALLAX_SELECTOR = [
