@@ -111,6 +111,19 @@
     "secondaryImageAlt": "Atelier visual",
     "secondaryImageAltEn": "Atelier visual"
   },
+  "announcements": {
+    "enabled": false,
+    "items": [
+      "Besplatna dostava u celoj Srbiji za porudzbine preko 15.000 RSD",
+      "Pravo na povracaj 14 dana",
+      "Dve prodavnice: Nis i Krusevac"
+    ],
+    "itemsEn": [
+      "Free delivery across Serbia on orders over 15.000 RSD",
+      "Return within 14 days",
+      "Two stores: Nis and Krusevac"
+    ]
+  },
   "stores": [
     {
       "slug": "nis",
