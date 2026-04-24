@@ -42,7 +42,16 @@ export default function ProductSizePicker({
           <button
             key={`${option.label}-${option.legacyId}`}
             type="button"
-            className={`swatch text-uppercase ${isActive ? "bg-dark text-white" : ""} ${!option.inStock ? "opacity-50" : ""} ${isPending ? "is-pending" : ""}`}
+            className={[
+              "swatch",
+              "text-uppercase",
+              "ss-size-swatch",
+              isActive ? "is-active" : "",
+              option.inStock ? "" : "is-oos",
+              isPending ? "is-pending" : "",
+            ]
+              .filter(Boolean)
+              .join(" ")}
             aria-pressed={isActive}
             onClick={() => {
               if (isActive) return;
