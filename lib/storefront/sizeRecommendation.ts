@@ -5,6 +5,8 @@ export type SizeRecommenderMeasurements = {
   weight: string;
   chest: string;
   waist: string;
+  sleeveLength: string;
+  shoulderWidth: string;
 };
 
 /** Parses admin / storefront cells: decimals, optional ranges like "42-43" or "42 - 43". */

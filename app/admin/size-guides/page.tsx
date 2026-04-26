@@ -2,13 +2,21 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import type { SizeGuideSettings } from "@/lib/catalog/sizeGuides";
+import type { SizeGuideCategoryImages, SizeGuideGroup, SizeGuideSettings } from "@/lib/catalog/sizeGuides";
 
 const emptySettings: SizeGuideSettings = {
   updatedAt: null,
   imageSrc: null,
   imageAlt: "",
+  categoryImages: {},
   tables: [],
+};
+
+const CATEGORY_LABELS: Record<SizeGuideGroup, string> = {
+  blazer: "Sako",
+  trousers: "Pantalone",
+  shirt: "Košulja",
+  shoes: "Obuća",
 };
 
 export default function AdminSizeGuidesPage() {
@@ -16,6 +24,7 @@ export default function AdminSizeGuidesPage() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [uploadingCategoryImage, setUploadingCategoryImage] = useState<SizeGuideGroup | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -123,6 +132,35 @@ export default function AdminSizeGuidesPage() {
     }
   };
 
+  const uploadCategoryImage = async (group: SizeGuideGroup, files: FileList | null) => {
+    const file = files?.[0];
+    if (!file) return;
+    setUploadingCategoryImage(group);
+    setError(null);
+    setNotice(null);
+    try {
+      const fd = new FormData();
+      fd.append("files", file);
+      const res = await fetch("/api/admin/webshop/site-assets", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!json?.success || !Array.isArray(json.urls) || !json.urls[0]) {
+        throw new Error(json?.message || "Upload nije uspeo.");
+      }
+      setSettings((prev) => ({
+        ...prev,
+        categoryImages: {
+          ...prev.categoryImages,
+          [group]: json.urls[0],
+        },
+      }));
+      setNotice(`Slika za kategoriju "${CATEGORY_LABELS[group]}" uploadovana. Klikni Sacuvaj sve.`);
+    } catch (e: any) {
+      setError(e?.message || "Upload slike nije uspeo.");
+    } finally {
+      setUploadingCategoryImage(null);
+    }
+  };
+
   const save = async () => {
     setSaving(true);
     setError(null);
@@ -134,6 +172,7 @@ export default function AdminSizeGuidesPage() {
         body: JSON.stringify({
           imageSrc: settings.imageSrc,
           imageAlt: settings.imageAlt,
+          categoryImages: settings.categoryImages ?? {},
           tables: settings.tables,
         }),
       });
@@ -247,6 +286,77 @@ export default function AdminSizeGuidesPage() {
               Nema slike
             </div>
           )}
+        </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Slike po kategorijama</p>
+        <h2 className="mt-1 text-lg font-semibold text-slate-900">Slika po vrsti proizvoda</h2>
+        <p className="mt-1 text-sm text-slate-600">
+          Ako je postavljena, ova slika se prikazuje umesto globalne slike za datu kategoriju (sako, pantalone, košulja, obuća).
+        </p>
+        <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+          {(["blazer", "trousers", "shirt", "shoes"] as SizeGuideGroup[]).map((group) => {
+            const src = settings.categoryImages?.[group] || null;
+            const uploading = uploadingCategoryImage === group;
+            return (
+              <div key={group} className="flex flex-col gap-2">
+                <p className="text-sm font-semibold text-slate-800">{CATEGORY_LABELS[group]}</p>
+                {src ? (
+                  <div className="relative">
+                    <Image
+                      src={src}
+                      alt={CATEGORY_LABELS[group]}
+                      width={400}
+                      height={220}
+                      className="h-36 w-full rounded-xl border border-slate-200 object-cover"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          categoryImages: { ...prev.categoryImages, [group]: undefined },
+                        }))
+                      }
+                      className="absolute right-2 top-2 rounded-full border border-rose-200 bg-white/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-700 backdrop-blur-sm"
+                    >
+                      Ukloni
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex h-36 items-center justify-center rounded-xl border border-dashed border-slate-300 text-xs text-slate-500">
+                    Nema slike
+                  </div>
+                )}
+                <div className="grid grid-cols-2 gap-1">
+                  <label className="cursor-pointer rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-700">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        void uploadCategoryImage(group, e.target.files);
+                        e.currentTarget.value = "";
+                      }}
+                    />
+                    {uploading ? "Uploading..." : "Upload"}
+                  </label>
+                  <input
+                    value={src || ""}
+                    onChange={(e) =>
+                      setSettings((prev) => ({
+                        ...prev,
+                        categoryImages: { ...prev.categoryImages, [group]: e.target.value || undefined },
+                      }))
+                    }
+                    placeholder="ili URL"
+                    className="min-w-0 rounded-lg border border-slate-200 px-2 py-1.5 text-[11px]"
+                  />
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 

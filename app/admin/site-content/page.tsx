@@ -808,6 +808,17 @@ export default function AdminSiteContentPage() {
           Osvezi
         </button>
       </div>
+
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex items-center justify-between border-t border-blue-100 bg-white/95 px-6 py-3 shadow-lg backdrop-blur-sm">
+        <span className="text-xs text-slate-500">Site Content</span>
+        <button
+          onClick={save}
+          disabled={saving}
+          className="rounded-full border border-blue-200 bg-blue-50 px-5 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700 transition hover:bg-blue-100 disabled:opacity-50"
+        >
+          {saving ? "Cuvanje..." : "Sacuvaj sve"}
+        </button>
+      </div>
     </div>
   );
 }

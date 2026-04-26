@@ -179,7 +179,7 @@ export default function CartPageClient({
 
             <div className="ss-order-summary__actions">
               <Link href={withLang("/checkout")} className="btn btn-primary w-100 text-uppercase fw-medium">
-                {isEn ? "Continue to checkout" : "Nastavi na checkout"}
+                {isEn ? "Continue to checkout" : "Nastavi kupovinu"}
               </Link>
               <Link href={withLang("/web-shop")} className="btn btn-outline-dark w-100 text-uppercase fw-medium">
                 {isEn ? "Add more products" : "Dodaj jos proizvoda"}

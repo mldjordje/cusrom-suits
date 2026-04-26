@@ -346,7 +346,7 @@ const normalizeFooterGroups = (value: unknown, fallback: SiteFooterGroup[]) => {
       const title = decodeText(row.title, "");
       const titleEn = decodeText(row.titleEn, title);
       const links = normalizeNavItems(row.links, []);
-      if (!title || !links.length) return null;
+      if (!title) return null;
       return { title, titleEn, links };
     })
     .filter((item): item is SiteFooterGroup => Boolean(item))

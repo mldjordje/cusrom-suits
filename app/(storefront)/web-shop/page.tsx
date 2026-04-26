@@ -69,6 +69,7 @@ function sortItems(items: CatalogProductView[], sort: string): CatalogProductVie
   if (sort === "price_desc") return next.sort((a, b) => b.priceFinalGross - a.priceFinalGross);
   if (sort === "name_asc") return next.sort((a, b) => a.name.localeCompare(b.name, "sr"));
   if (sort === "stock_desc") return next.sort((a, b) => stockRank(b) - stockRank(a));
+  if (sort === "newest") return next.sort((a, b) => b.legacyId - a.legacyId);
 
   return next;
 }
@@ -190,6 +191,7 @@ export default async function WebShopPage({
   );
   const sortLabelMap: Record<string, string> = {
     featured: isEn ? "Featured" : "Izdvojeno",
+    newest: isEn ? "Newest" : "Najnovije",
     price_asc: isEn ? "Price: Low to High" : "Cena: od nize ka visoj",
     price_desc: isEn ? "Price: High to Low" : "Cena: od vise ka nizoj",
     name_asc: isEn ? "Name: A-Z" : "Naziv: A-Z",
@@ -197,6 +199,7 @@ export default async function WebShopPage({
   };
   const sortOptions = [
     { value: "featured", label: sortLabelMap.featured },
+    { value: "newest", label: sortLabelMap.newest },
     { value: "price_asc", label: sortLabelMap.price_asc },
     { value: "price_desc", label: sortLabelMap.price_desc },
     { value: "name_asc", label: sortLabelMap.name_asc },

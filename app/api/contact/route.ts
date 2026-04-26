@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
   let name = "";
   let email = "";
   let phone = "";
+  let company = "";
   let subject = "";
   let message = "";
   let preferredStore = "";
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
     name = sanitize(body?.name ?? "");
     email = sanitize(body?.email ?? "");
     phone = sanitize(body?.phone ?? "");
+    company = sanitize(body?.company ?? "");
     subject = sanitize(body?.subject ?? "");
     message = sanitize(body?.message ?? "");
     preferredStore = sanitize(body?.preferredStore ?? "");
@@ -40,6 +42,7 @@ export async function POST(req: NextRequest) {
     name = sanitize(form.get("name"));
     email = sanitize(form.get("email"));
     phone = sanitize(form.get("phone"));
+    company = sanitize(form.get("company"));
     subject = sanitize(form.get("subject"));
     message = sanitize(form.get("message"));
     preferredStore = sanitize(form.get("preferredStore"));
@@ -55,6 +58,7 @@ export async function POST(req: NextRequest) {
     name,
     email,
     phone,
+    ...(company ? { company } : {}),
     subject,
     message,
     preferredStore,

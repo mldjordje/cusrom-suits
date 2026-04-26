@@ -166,6 +166,8 @@ export type LandingSettings = {
   arrivalsProductIds: number[];
   saleProductIds: number[];
   trendingProductIds: number[];
+  heroVideoUrl: string;
+  heroVideoPosterUrl: string;
 };
 
 const DEFAULT_SETTINGS: LandingSettings = {
@@ -336,6 +338,8 @@ const DEFAULT_SETTINGS: LandingSettings = {
   arrivalsProductIds: [],
   saleProductIds: [],
   trendingProductIds: [],
+  heroVideoUrl: "",
+  heroVideoPosterUrl: "",
 };
 
 /** Za čuvanje: uvek bar jedna sekcija sa podrazumevanom slikom. */
@@ -601,6 +605,8 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
     arrivalsProductIds: normalizeLegacyIdList(settings.arrivalsProductIds),
     saleProductIds: normalizeLegacyIdList(settings.saleProductIds),
     trendingProductIds: normalizeLegacyIdList(settings.trendingProductIds),
+    heroVideoUrl: String(settings.heroVideoUrl || "").trim(),
+    heroVideoPosterUrl: String(settings.heroVideoPosterUrl || "").trim(),
   };
 }
 
@@ -951,6 +957,8 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
     saleProductIds: patch.saleProductIds == null ? current.saleProductIds : normalizeLegacyIdList(patch.saleProductIds),
     trendingProductIds:
       patch.trendingProductIds == null ? current.trendingProductIds : normalizeLegacyIdList(patch.trendingProductIds),
+    heroVideoUrl: patch.heroVideoUrl == null ? current.heroVideoUrl : String(patch.heroVideoUrl || "").trim(),
+    heroVideoPosterUrl: patch.heroVideoPosterUrl == null ? current.heroVideoPosterUrl : String(patch.heroVideoPosterUrl || "").trim(),
   };
   await writePersistentJsonFile(LANDING_SETTINGS_PATH, next);
   revalidateTag(LANDING_SETTINGS_CACHE_TAG);

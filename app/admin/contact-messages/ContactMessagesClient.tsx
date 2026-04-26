@@ -139,6 +139,11 @@ export default function ContactMessagesClient({ initialMessages }: Props) {
                     "-"
                   )}
                 </p>
+                {message.company ? (
+                  <p className="mb-1 text-sm text-slate-700">
+                    <strong>Firma:</strong> {message.company}
+                  </p>
+                ) : null}
                 <p className="mb-1 text-sm text-slate-700">
                   <strong>Tema:</strong> {message.subject || "-"}
                 </p>

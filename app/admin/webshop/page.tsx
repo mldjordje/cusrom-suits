@@ -187,6 +187,8 @@ type LandingSettings = {
   arrivalsProductIds: number[];
   saleProductIds: number[];
   trendingProductIds: number[];
+  heroVideoUrl: string;
+  heroVideoPosterUrl: string;
 };
 type PromotionScopeType = "all" | "category" | "brand" | "product";
 type PromotionDiscountType = "percent" | "fixed";
@@ -402,6 +404,8 @@ const defaultLandingSettings: LandingSettings = {
   arrivalsProductIds: [],
   saleProductIds: [],
   trendingProductIds: [],
+  heroVideoUrl: "",
+  heroVideoPosterUrl: "",
 };
 
 const defaultPromotionDraft: PromotionDraft = {
@@ -2260,6 +2264,71 @@ export default function AdminWebshopPage() {
               <input value={landingSettings.heroSecondaryCtaLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, heroSecondaryCtaLabel: e.target.value }))} placeholder="Secondary CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={landingSettings.heroSecondaryCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, heroSecondaryCtaHref: e.target.value }))} placeholder="Secondary CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
             </div>
+            <div className="mt-4 border-t border-slate-100 pt-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Hero video pozadina (upload)</p>
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="flex gap-2">
+                  <input
+                    value={landingSettings.heroVideoUrl || ""}
+                    onChange={(e) => setLandingSettings((p) => ({ ...p, heroVideoUrl: e.target.value }))}
+                    placeholder="URL videa ili upload desno"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  />
+                  <label className="cursor-pointer rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-blue-700 whitespace-nowrap">
+                    <input
+                      type="file"
+                      accept="video/mp4,video/webm,video/quicktime"
+                      className="hidden"
+                      onChange={async (e) => {
+                        if (!e.target.files?.length) return;
+                        setUploadingAssetKind("productVideo");
+                        try {
+                          const [url] = await uploadSiteAssets(e.target.files);
+                          if (url) setLandingSettings((p) => ({ ...p, heroVideoUrl: url }));
+                          e.currentTarget.value = "";
+                        } finally {
+                          setUploadingAssetKind(null);
+                        }
+                      }}
+                    />
+                    {uploadingAssetKind === "productVideo" ? "Uploading..." : "Upload video"}
+                  </label>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    value={landingSettings.heroVideoPosterUrl || ""}
+                    onChange={(e) => setLandingSettings((p) => ({ ...p, heroVideoPosterUrl: e.target.value }))}
+                    placeholder="Poster slika (thumbnail) - opciono"
+                    className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                  />
+                  <label className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 whitespace-nowrap">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={async (e) => {
+                        if (!e.target.files?.length) return;
+                        setUploadingAssetKind("shopHero");
+                        try {
+                          const [url] = await uploadSiteAssets(e.target.files);
+                          if (url) setLandingSettings((p) => ({ ...p, heroVideoPosterUrl: url }));
+                          e.currentTarget.value = "";
+                        } finally {
+                          setUploadingAssetKind(null);
+                        }
+                      }}
+                    />
+                    Upload poster
+                  </label>
+                </div>
+              </div>
+              {landingSettings.heroVideoUrl ? (
+                <div className="mt-3 flex items-center gap-3">
+                  <video src={landingSettings.heroVideoUrl} controls preload="metadata" className="max-h-36 rounded-xl bg-slate-950" />
+                  <button type="button" onClick={() => setLandingSettings((p) => ({ ...p, heroVideoUrl: "" }))} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700">Ukloni video</button>
+                </div>
+              ) : <p className="mt-2 text-xs text-slate-500">Bez custom videa — koristi se YouTube embed.</p>}
+            </div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -3054,14 +3123,38 @@ export default function AdminWebshopPage() {
             </p>
 
             <div className="grid gap-3 md:grid-cols-2">
-              <input value={drafts[currentEditorItem.legacyId]?.name || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { name: e.target.value })} placeholder="Naziv" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
-              <input value={drafts[currentEditorItem.legacyId]?.brand || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { brand: e.target.value })} placeholder="Brend (opciono)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-              <input value={drafts[currentEditorItem.legacyId]?.priceGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceGross: e.target.value })} placeholder="Regularna cena (RSD)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
-              <input value={drafts[currentEditorItem.legacyId]?.priceFinalGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceFinalGross: e.target.value })} placeholder="Prodajna cena (RSD)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
-              <input value={drafts[currentEditorItem.legacyId]?.rebatePercent || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { rebatePercent: e.target.value })} placeholder="Popust % (0-100)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
-              <input value={drafts[currentEditorItem.legacyId]?.stockWarehouse1 || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { stockWarehouse1: e.target.value })} placeholder="Lager magacin 1" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
-              <input value={drafts[currentEditorItem.legacyId]?.stockTotal || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { stockTotal: e.target.value })} placeholder="Ukupan lager" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
-              <input value={drafts[currentEditorItem.legacyId]?.videoUrl || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { videoUrl: e.target.value })} placeholder="URL product videa" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
+              <label className="flex flex-col gap-1 md:col-span-2">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Naziv proizvoda</span>
+                <input value={drafts[currentEditorItem.legacyId]?.name || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { name: e.target.value })} placeholder="Naziv" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Brend</span>
+                <input value={drafts[currentEditorItem.legacyId]?.brand || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { brand: e.target.value })} placeholder="Brend (opciono)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Regularna cena (RSD) — puna bez popusta</span>
+                <input value={drafts[currentEditorItem.legacyId]?.priceGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceGross: e.target.value })} placeholder="npr. 15000" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Prodajna cena (RSD) — cena na sajtu</span>
+                <input value={drafts[currentEditorItem.legacyId]?.priceFinalGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceFinalGross: e.target.value })} placeholder="npr. 12000" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Popust % (0–100) — alternativa za akcijsku cenu</span>
+                <input value={drafts[currentEditorItem.legacyId]?.rebatePercent || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { rebatePercent: e.target.value })} placeholder="npr. 20" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Stanje magacin 1 (kom)</span>
+                <input value={drafts[currentEditorItem.legacyId]?.stockWarehouse1 || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { stockWarehouse1: e.target.value })} placeholder="npr. 5" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Ukupan lager (kom) — zbir svih magacina</span>
+                <input value={drafts[currentEditorItem.legacyId]?.stockTotal || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { stockTotal: e.target.value })} placeholder="npr. 10" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+              </label>
+              <label className="flex flex-col gap-1 md:col-span-2">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Video URL — YouTube link ili upload ispod</span>
+                <input value={drafts[currentEditorItem.legacyId]?.videoUrl || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { videoUrl: e.target.value })} placeholder="https://youtube.com/... ili /site-assets/..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              </label>
             </div>
 
             <div className="mt-4 rounded-2xl border border-slate-200 p-3">

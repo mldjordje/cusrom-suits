@@ -428,7 +428,15 @@ export const getProductSizeGuide = async (
     bullets: getSizeGuideBullets(lang, hasNumericSizes),
     buttonLabel: lang === "en" ? "Determine size" : "Odredite velicinu",
     modalTitle: lang === "en" ? "Size guide" : "Tabela velicina",
-    imageSrc: settings.imageSrc,
+    imageSrc: (() => {
+      if (settings.categoryImages && groups.length) {
+        for (const group of groups) {
+          const src = settings.categoryImages[group as import("@/lib/catalog/sizeGuides").SizeGuideGroup];
+          if (src) return src;
+        }
+      }
+      return settings.imageSrc;
+    })(),
     imageAlt: settings.imageAlt,
     tables: visibleTables,
     fallbackNote: visibleTables.length ? null : localizedFallback,

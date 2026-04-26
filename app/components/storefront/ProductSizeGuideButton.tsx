@@ -22,12 +22,15 @@ export default function ProductSizeGuideButton({
     weight: "",
     chest: "",
     waist: "",
+    sleeveLength: "",
+    shoulderWidth: "",
   });
+  const [submitted, setSubmitted] = useState(false);
   const isEn = lang === "en";
 
   if (!sizeGuide) return null;
 
-  const recommendation = computeRecommendedSize(sizeGuide.tables, measurements);
+  const recommendation = submitted ? computeRecommendedSize(sizeGuide.tables, measurements) : null;
 
   return (
     <>
@@ -94,7 +97,7 @@ export default function ProductSizeGuideButton({
                           src={sizeGuide.imageSrc}
                           alt={sizeGuide.imageAlt || sizeGuide.modalTitle}
                           width={980}
-                          height={420}
+                          height={600}
                           className="ss-size-guide-modal__image"
                         />
                       </div>
@@ -116,10 +119,12 @@ export default function ProductSizeGuideButton({
                       </div>
                       <div className="ss-size-guide-recommender__grid">
                         {[
-                          { key: "height", label: isEn ? "Height" : "Visina" },
-                          { key: "weight", label: isEn ? "Weight" : "Tezina" },
-                          { key: "chest", label: isEn ? "Chest" : "Obim grudi" },
-                          { key: "waist", label: isEn ? "Waist" : "Obim struka" },
+                          { key: "height", label: isEn ? "Height (cm)" : "Visina (cm)" },
+                          { key: "weight", label: isEn ? "Weight (kg)" : "Tezina (kg)" },
+                          { key: "chest", label: isEn ? "Chest circumference (cm)" : "Obim grudi (cm)" },
+                          { key: "waist", label: isEn ? "Waist circumference (cm)" : "Obim struka (cm)" },
+                          { key: "sleeveLength", label: isEn ? "Sleeve length (cm)" : "Duzina rukava (cm)" },
+                          { key: "shoulderWidth", label: isEn ? "Shoulder width (cm)" : "Sirina ramena (cm)" },
                         ].map((field) => (
                           <label key={field.key}>
                             <span>{field.label}</span>
@@ -137,13 +142,22 @@ export default function ProductSizeGuideButton({
                           </label>
                         ))}
                       </div>
-                      <div className="ss-size-guide-recommender__result">
-                        {recommendation
-                          ? `${isEn ? "Recommended size" : "Preporucena velicina"}: ${recommendation}`
-                          : isEn
-                            ? "Enter chest and/or waist. For shoes, enter foot length in cm in any field."
-                            : "Unesite obim grudi i/ili struka (za obucu duzinu stopala u cm u bilo koje polje)."}
-                      </div>
+                      <button
+                        type="button"
+                        className="ss-size-guide-recommender__btn"
+                        onClick={() => setSubmitted(true)}
+                      >
+                        {isEn ? "Find my size" : "Odredi mi velicinu"}
+                      </button>
+                      {submitted ? (
+                        <div className="ss-size-guide-recommender__result">
+                          {recommendation
+                            ? `${isEn ? "Recommended size" : "Preporucena velicina"}: ${recommendation}`
+                            : isEn
+                              ? "No match found — try entering chest and/or waist measurements."
+                              : "Nije pronadjena preporuka — unesite obim grudi i/ili struka."}
+                        </div>
+                      ) : null}
                     </div>
 
                     {sizeGuide.bullets.length ? (
