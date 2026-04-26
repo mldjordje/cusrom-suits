@@ -770,6 +770,8 @@ export default async function HomePage({
           categories={catalog.categories}
           showProductCards={heroStripEnabled}
           featuredProducts={heroStripProducts}
+          heroVideoUrl={landingSettings.heroVideoUrl || undefined}
+          heroVideoPosterUrl={landingSettings.heroVideoPosterUrl || undefined}
           content={{
             heroEyebrow: tx(landingSettings.heroEyebrow, "Santos & Santorini"),
             heroTitleLine1: tx(landingSettings.heroTitleLine1, "New Collection"),

@@ -37,6 +37,7 @@ const navItems: NavItem[] = [
   },
   { href: "/admin/tutorial", label: "Tutorial", icon: "HD" },
   { href: "/admin/site-content", label: "Site Content", icon: "SC" },
+  { href: "/admin/fonts", label: "Fontovi", icon: "FN" },
   { href: "/admin/fulfillment", label: "Fulfillment", icon: "FL" },
   { href: "/admin/integrations", label: "Integracije", icon: "IN" },
   { href: "/admin/fabrics", label: "Fabrics", icon: "FB" },

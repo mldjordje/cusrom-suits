@@ -20,10 +20,13 @@ export type SizeGuideTable = {
   notes: string[];
 };
 
+export type SizeGuideCategoryImages = Partial<Record<SizeGuideGroup, string>>;
+
 export type SizeGuideSettings = {
   updatedAt: string | null;
   imageSrc: string | null;
   imageAlt: string;
+  categoryImages?: SizeGuideCategoryImages;
   tables: SizeGuideTable[];
 };
 
@@ -218,6 +221,17 @@ const normalizeTable = (value: unknown, index: number): SizeGuideTable | null =>
   };
 };
 
+const normalizeCategoryImages = (value: unknown): SizeGuideCategoryImages => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const obj = value as Record<string, unknown>;
+  const result: SizeGuideCategoryImages = {};
+  for (const group of ["blazer", "trousers", "shirt", "shoes"] as SizeGuideGroup[]) {
+    const src = normalizeString(obj[group]);
+    if (src) result[group] = src;
+  }
+  return result;
+};
+
 export async function getSizeGuideSettings(): Promise<SizeGuideSettings> {
   const settings = await readPersistentJsonFile<Partial<SizeGuideSettings>>(SIZE_GUIDES_PATH, DEFAULT_SIZE_GUIDE_SETTINGS);
   const tables = Array.isArray(settings.tables)
@@ -233,6 +247,7 @@ export async function getSizeGuideSettings(): Promise<SizeGuideSettings> {
         ? null
         : normalizeString(settings.imageSrc) || DEFAULT_SIZE_GUIDE_SETTINGS.imageSrc,
     imageAlt: normalizeString(settings.imageAlt) || DEFAULT_SIZE_GUIDE_SETTINGS.imageAlt,
+    categoryImages: normalizeCategoryImages(settings.categoryImages),
     tables: tables.length ? tables : DEFAULT_SIZE_GUIDE_SETTINGS.tables,
   };
 }
@@ -245,6 +260,7 @@ export async function updateSizeGuideSettings(
     updatedAt: patch.updatedAt === null ? null : normalizeString(patch.updatedAt) || nowIso(),
     imageSrc: patch.imageSrc === null ? null : normalizeString(patch.imageSrc) || current.imageSrc,
     imageAlt: normalizeString(patch.imageAlt) || current.imageAlt,
+    categoryImages: patch.categoryImages !== undefined ? normalizeCategoryImages(patch.categoryImages) : (current.categoryImages ?? {}),
     tables: Array.isArray(patch.tables)
       ? patch.tables
           .map((item, index) => normalizeTable(item, index))

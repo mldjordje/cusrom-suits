@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
@@ -63,8 +63,42 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
   }, [images, videoUrl]);
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const { reduceMotion } = useAnimationBudget();
   const activeItem = gallery[activeIndex] || gallery[0];
+
+  const imageItems = gallery.filter((item) => item.kind === "image");
+
+  const openLightbox = useCallback((index: number) => {
+    const imageIndex = gallery.slice(0, index + 1).filter((item) => item.kind === "image").length - 1;
+    if (imageIndex >= 0) setLightboxIndex(imageIndex);
+  }, [gallery]);
+
+  const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+
+  const lightboxPrev = useCallback(() => {
+    setLightboxIndex((i) => (i == null || i <= 0 ? imageItems.length - 1 : i - 1));
+  }, [imageItems.length]);
+
+  const lightboxNext = useCallback(() => {
+    setLightboxIndex((i) => (i == null || i >= imageItems.length - 1 ? 0 : i + 1));
+  }, [imageItems.length]);
+
+  useEffect(() => {
+    if (lightboxIndex == null) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowLeft") lightboxPrev();
+      if (e.key === "ArrowRight") lightboxNext();
+    };
+    window.addEventListener("keydown", handler);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", handler);
+      document.body.style.overflow = "";
+    };
+  }, [lightboxIndex, closeLightbox, lightboxPrev, lightboxNext]);
+
   if (!activeItem) return null;
 
   return (
@@ -80,16 +114,24 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
             transition={{ duration: reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
           >
             {activeItem.kind === "image" ? (
-              <StorefrontSmartImage
-                sources={[activeItem.src, ...gallery.filter((item) => item.kind === "image").map((item) => item.src)]}
-                width={900}
-                height={1000}
-                alt={name}
-                className="ss-product-gallery__main-image"
-                priority
-                quality={78}
-                sizes="(max-width: 575px) 100vw, (max-width: 991px) 92vw, 58vw"
-              />
+              <button
+                type="button"
+                className="ss-product-gallery__main-image-btn"
+                onClick={() => openLightbox(activeIndex)}
+                aria-label="Otvori sliku u punom ekranu"
+                style={{ display: "block", width: "100%", height: "100%", padding: 0, border: "none", background: "none", cursor: "zoom-in" }}
+              >
+                <StorefrontSmartImage
+                  sources={[activeItem.src, ...gallery.filter((item) => item.kind === "image").map((item) => item.src)]}
+                  width={900}
+                  height={1000}
+                  alt={name}
+                  className="ss-product-gallery__main-image"
+                  priority
+                  quality={78}
+                  sizes="(max-width: 575px) 100vw, (max-width: 991px) 92vw, 58vw"
+                />
+              </button>
             ) : activeItem.embedUrl ? (
               <iframe
                 src={activeItem.embedUrl}
@@ -111,6 +153,77 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
           </m.div>
         </AnimatePresence>
       </div>
+
+      {lightboxIndex != null ? (
+        <div
+          className="ss-product-gallery__lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Pregled slike"
+          style={{
+            position: "fixed", inset: 0, zIndex: 9999, background: "rgba(0,0,0,0.93)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+          onClick={closeLightbox}
+        >
+          <button
+            type="button"
+            onClick={closeLightbox}
+            aria-label="Zatvori"
+            style={{
+              position: "absolute", top: 16, right: 20, background: "none", border: "none",
+              color: "#fff", fontSize: 32, lineHeight: 1, cursor: "pointer", zIndex: 1,
+            }}
+          >
+            ×
+          </button>
+          {imageItems.length > 1 ? (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); lightboxPrev(); }}
+                aria-label="Prethodna slika"
+                style={{
+                  position: "absolute", left: 16, top: "50%", transform: "translateY(-50%)",
+                  background: "rgba(255,255,255,0.12)", border: "none", color: "#fff",
+                  fontSize: 28, lineHeight: 1, padding: "12px 16px", cursor: "pointer", borderRadius: 4,
+                }}
+              >
+                ‹
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); lightboxNext(); }}
+                aria-label="Sledeća slika"
+                style={{
+                  position: "absolute", right: 16, top: "50%", transform: "translateY(-50%)",
+                  background: "rgba(255,255,255,0.12)", border: "none", color: "#fff",
+                  fontSize: 28, lineHeight: 1, padding: "12px 16px", cursor: "pointer", borderRadius: 4,
+                }}
+              >
+                ›
+              </button>
+            </>
+          ) : null}
+          <div
+            style={{ maxWidth: "90vw", maxHeight: "90vh", position: "relative" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {imageItems[lightboxIndex] ? (
+              <img
+                src={(imageItems[lightboxIndex] as { kind: "image"; src: string }).src}
+                alt={`${name} ${lightboxIndex + 1}`}
+                style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain", display: "block" }}
+              />
+            ) : null}
+          </div>
+          {imageItems.length > 1 ? (
+            <div style={{ position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)", color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
+              {lightboxIndex + 1} / {imageItems.length}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
 
       {gallery.length > 1 ? (
         <div className="ss-product-gallery__thumbs" role="listbox" aria-label="Product media thumbnails">

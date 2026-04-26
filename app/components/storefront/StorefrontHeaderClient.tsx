@@ -204,10 +204,10 @@ export default function StorefrontHeaderClient({
   ]
     .filter(Boolean)
     .join(" ");
-  // Default (non-contrast) header is dark until scrolled; use the "dark" logo variant
-  // (white Santorini) for readability. When scrolled, header becomes light so we switch
-  // back to the standard logo.
-  const shouldUseDarkLogo = !isContrast && !isScrolled;
+  // Home page starts with a transparent dark hero header — use the white logo variant for
+  // readability on that dark background. On all other pages (contrast or non-home) the
+  // header is always on a light background, so use the standard dark logo.
+  const shouldUseDarkLogo = isHome && !isContrast && !isScrolled;
   const desktopLogoSrc = shouldUseDarkLogo ? "/img/logo-header-dark.png" : "/img/logo-header.png";
   const mobileLogoSrc = shouldUseDarkLogo ? "/img/logo-header-dark-mobile.png" : "/img/logo-header-mobile.png";
   const shopMenuLinks = [

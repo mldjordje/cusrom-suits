@@ -10,6 +10,8 @@ type HomeHeroMediaProps = {
   mobileVideoId?: string;
   desktopPosterSrc: string;
   mobilePosterSrc: string;
+  /** If provided, overrides YouTube embeds with a direct video file. */
+  heroVideoUrl?: string;
 };
 
 const DESKTOP_MQ = "(min-width: 768px)";
@@ -22,6 +24,7 @@ export default function HomeHeroMedia({
   mobileVideoId,
   desktopPosterSrc,
   mobilePosterSrc,
+  heroVideoUrl,
 }: HomeHeroMediaProps) {
   /** Hero video: skip only on save-data / 2G (not OS reduce-motion). */
   const { lowPower } = useAnimationBudget();
@@ -82,30 +85,47 @@ export default function HomeHeroMedia({
         className="ss-home18-hero__poster"
         sizes="100vw"
       />
-      {showDesktopVideo ? (
-        <iframe
-          title="Santos and Santorini hero desktop video"
-          src={buildEmbed(desktopVideoId)}
-          className="ss-home18-hero__iframe ss-home18-hero__iframe--desktop ss-home18-hero__video-frame"
-          loading="lazy"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-          allowFullScreen
-          tabIndex={-1}
+      {heroVideoUrl && shouldLoadVideo ? (
+        <video
+          src={heroVideoUrl}
+          autoPlay
+          muted
+          loop
+          playsInline
+          poster={desktopPosterSrc}
+          className="ss-home18-hero__iframe ss-home18-hero__video-frame"
           aria-hidden="true"
-        />
-      ) : null}
-      {showMobileVideo && mobileVideoId ? (
-        <iframe
-          title="Santos and Santorini hero mobile video"
-          src={buildEmbed(mobileVideoId)}
-          className="ss-home18-hero__iframe ss-home18-hero__iframe--mobile ss-home18-hero__video-frame"
-          loading="lazy"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-          allowFullScreen
           tabIndex={-1}
-          aria-hidden="true"
+          style={{ objectFit: "cover", width: "100%", height: "100%" }}
         />
-      ) : null}
+      ) : (
+        <>
+          {showDesktopVideo ? (
+            <iframe
+              title="Santos and Santorini hero desktop video"
+              src={buildEmbed(desktopVideoId)}
+              className="ss-home18-hero__iframe ss-home18-hero__iframe--desktop ss-home18-hero__video-frame"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              allowFullScreen
+              tabIndex={-1}
+              aria-hidden="true"
+            />
+          ) : null}
+          {showMobileVideo && mobileVideoId ? (
+            <iframe
+              title="Santos and Santorini hero mobile video"
+              src={buildEmbed(mobileVideoId)}
+              className="ss-home18-hero__iframe ss-home18-hero__iframe--mobile ss-home18-hero__video-frame"
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
+              allowFullScreen
+              tabIndex={-1}
+              aria-hidden="true"
+            />
+          ) : null}
+        </>
+      )}
     </div>
   );
 }

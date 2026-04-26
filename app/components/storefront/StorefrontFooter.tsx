@@ -82,7 +82,7 @@ export default async function StorefrontFooter({
               </div>
             </div>
 
-            {footer.groups.map((group) => (
+            {footer.groups.filter((g) => g.links.length > 0).map((group) => (
               <div key={group.title} className="col-6 col-lg-2">
                 <div className="ss-footer__group">
                   <h5 className="ss-footer__title">{isEn ? group.titleEn : group.title}</h5>

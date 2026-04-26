@@ -327,24 +327,15 @@ export default function WebShopFilters({
     <div className="ss-shop-layout">
       <aside className="ss-shop-sidebar d-none d-lg-block">
         <div className="ss-filter-panel ss-shop-sidebar__panel">
-          <div className="ss-shop-sidebar__intro">
-            <p className="ss-shop-sidebar__eyebrow">{isEn ? "Refine" : "Precizan izbor"}</p>
-            <h3>{isEn ? "Keep the selection clean." : "Zadrzi pregled cistim."}</h3>
-            <p>
-              {isEn
-                ? "Search, category, stock and sale controls stay in one calm, minimal block."
-                : "Pretraga, kategorije, stanje i akcije su u jednom mirnom, preglednom bloku."}
-            </p>
-          </div>
-
-          <div className="ss-shop-sidebar__meta">
-            <div>
-              <span className="ss-shop-sidebar__meta-label">{isEn ? "Showing" : "Prikazano"}</span>
-              <strong>{showingCount}</strong>
+          <div className="ss-shop-sidebar__header">
+            <div className="ss-shop-sidebar__header-left">
+              <p className="ss-shop-sidebar__eyebrow">{isEn ? "Refine" : "Filtriraj"}</p>
+              <h3 className="ss-shop-sidebar__title">{isEn ? "Filters" : "Filteri"}</h3>
             </div>
-            <div>
-              <span className="ss-shop-sidebar__meta-label">{isEn ? "Total" : "Ukupno"}</span>
-              <strong>{totalCount}</strong>
+            <div className="ss-shop-sidebar__count">
+              <span>{showingCount}</span>
+              <span className="ss-shop-sidebar__count-sep">/</span>
+              <span>{totalCount}</span>
             </div>
           </div>
 

@@ -16,6 +16,14 @@ import { unstable_cache } from "next/cache";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
 
+const DIACRITIC_MAP: Record<string, string> = {
+  š: "s", Š: "s", č: "c", Č: "c", ć: "c", Ć: "c",
+  ž: "z", Ž: "z", đ: "dj", Đ: "dj", dž: "dz", Dž: "dz",
+};
+
+const normalizeDiacritics = (str: string) =>
+  str.replace(/[šŠčČćĆžŽđĐdžDž]/g, (ch) => DIACRITIC_MAP[ch] ?? ch);
+
 type CatalogCategory = {
   id: number;
   name: string;
@@ -418,6 +426,7 @@ const applyFilters = (
   }
 
   if (query.length > 0) {
+    const normalizedQuery = normalizeDiacritics(query);
     filtered = filtered.filter((item) => {
       const exactOrStartsWithCode =
         item.sku.toLowerCase() === query ||
@@ -440,7 +449,9 @@ const applyFilters = (
       ]
         .join(" ")
         .toLowerCase();
-      return exactOrStartsWithCode || haystack.includes(query);
+
+      const normalizedHaystack = normalizeDiacritics(haystack);
+      return exactOrStartsWithCode || haystack.includes(query) || normalizedHaystack.includes(normalizedQuery);
     });
   }
   return filtered;

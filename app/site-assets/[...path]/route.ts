@@ -9,6 +9,28 @@ const passthroughHeaders = [
   "content-length",
 ];
 
+const MIME_BY_EXT: Record<string, string> = {
+  ".mp4": "video/mp4",
+  ".webm": "video/webm",
+  ".mov": "video/quicktime",
+  ".avi": "video/x-msvideo",
+  ".m4v": "video/mp4",
+  ".mpeg": "video/mpeg",
+  ".mpg": "video/mpeg",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".pdf": "application/pdf",
+};
+
+const inferContentType = (storagePath: string, blobType?: string) => {
+  if (blobType) return blobType;
+  const ext = path.extname(storagePath).toLowerCase();
+  return MIME_BY_EXT[ext] || "application/octet-stream";
+};
+
 type RouteContext = {
   params: Promise<{ path: string[] }>;
 };
@@ -42,10 +64,8 @@ export async function GET(_req: NextRequest, context: RouteContext) {
 
   if (stored) {
     const headers = new Headers();
-    for (const key of passthroughHeaders) {
-      const value = key === "content-type" ? stored.type : null;
-      if (value) headers.set(key, value);
-    }
+    const ct = inferContentType(storagePath, stored.type || "");
+    headers.set("content-type", ct);
     return buildCachedResponse(stored.stream(), 200, headers);
   }
 
@@ -53,6 +73,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
   if (local) {
     const headers = new Headers();
     headers.set("content-length", String(local.stats.size));
+    headers.set("content-type", inferContentType(storagePath));
     return buildCachedResponse(local.buffer, 200, headers);
   }
 

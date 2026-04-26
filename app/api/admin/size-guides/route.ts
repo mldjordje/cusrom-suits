@@ -91,6 +91,7 @@ export async function PATCH(req: NextRequest) {
     tables,
     imageSrc: row.imageSrc === null ? null : parseString(row.imageSrc),
     imageAlt: parseString(row.imageAlt),
+    categoryImages: row.categoryImages && typeof row.categoryImages === "object" ? row.categoryImages : undefined,
     updatedAt: new Date().toISOString(),
   });
 

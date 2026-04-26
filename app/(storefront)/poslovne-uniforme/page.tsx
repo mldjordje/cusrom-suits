@@ -200,6 +200,9 @@ export default async function BusinessUniformsPage({
                 <input name="phone" className="form-control" placeholder={isEn ? "Phone" : "Telefon"} />
               </div>
               <div className="col-md-6">
+                <input name="company" className="form-control" placeholder={isEn ? "Company name" : "Naziv firme"} />
+              </div>
+              <div className="col-12">
                 <input
                   name="subject"
                   className="form-control"

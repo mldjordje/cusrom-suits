@@ -1528,20 +1528,49 @@
 }
 
 .ss-shop-sidebar__panel {
-  padding: 1.15rem;
+  padding: 1.25rem 1.15rem;
   border-radius: 1.5rem;
 }
 
-.ss-shop-sidebar__intro h3 {
-  margin-bottom: 0.65rem;
-  font-size: 1.5rem;
-  line-height: 1.05;
+.ss-shop-sidebar__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
 }
 
-.ss-shop-sidebar__intro p {
-  margin-bottom: 0;
-  color: #58606c;
-  line-height: 1.7;
+.ss-shop-sidebar__header-left {
+  min-width: 0;
+}
+
+.ss-shop-sidebar__title {
+  margin: 0.2rem 0 0;
+  font-size: 1.3rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #181414;
+}
+
+.ss-shop-sidebar__count {
+  display: flex;
+  align-items: center;
+  gap: 0.15rem;
+  flex-shrink: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #181414;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid rgba(24, 20, 20, 0.1);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.ss-shop-sidebar__count-sep {
+  font-weight: 400;
+  color: #9ca3af;
+  margin: 0 0.1rem;
 }
 
 .ss-shop-sidebar__eyebrow,
@@ -1557,31 +1586,6 @@
   color: #7b6642;
 }
 
-.ss-shop-sidebar__meta {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin: 1rem 0 1.05rem;
-}
-
-.ss-shop-sidebar__meta > div {
-  padding: 0.8rem 0.95rem;
-  border-radius: 1.1rem;
-  background: rgba(255, 255, 255, 0.7);
-  border: 1px solid rgba(24, 20, 20, 0.08);
-}
-
-.ss-shop-sidebar__meta-label {
-  display: block;
-  margin-bottom: 0.2rem;
-  font-size: 0.72rem;
-  color: #6b7280;
-}
-
-.ss-shop-sidebar__meta strong {
-  font-size: 1.2rem;
-  color: #181414;
-}
 
 .ss-shop-sidebar__categories,
 .ss-shop-mobile-drawer__categories {
@@ -2971,8 +2975,8 @@
   width: 100%;
   aspect-ratio: 0.9;
   max-height: 76vh;
-  background: #f7f7f7;
-  border: 1px solid rgba(24, 20, 20, 0.09);
+  background: #fff;
+  border: 1px solid rgba(24, 20, 20, 0.06);
   overflow: hidden;
 }
 
@@ -5213,8 +5217,9 @@ body.mobile-menu-opened {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 420px;
-  object-fit: cover;
+  max-height: 460px;
+  object-fit: contain;
+  object-position: center;
 }
 
 .ss-size-guide-recommender {
@@ -5264,7 +5269,28 @@ body.mobile-menu-opened {
   font-size: 0.95rem;
 }
 
+.ss-size-guide-recommender__btn {
+  display: inline-block;
+  margin-top: 0.75rem;
+  padding: 0.6rem 1.4rem;
+  background: #111827;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background 0.2s;
+
+  &:hover {
+    background: #374151;
+  }
+}
+
 .ss-size-guide-recommender__result {
+  margin-top: 0.75rem;
   border-radius: 8px;
   background: #111827;
   padding: 0.85rem 1rem;
@@ -5387,39 +5413,45 @@ body.mobile-menu-opened {
   border-bottom: 0;
 }
 
-.ss-care-icon-wrap {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 64px;
-  height: 64px;
-  margin-bottom: 1rem;
-  border-radius: 999px;
-  border: 1px solid rgba(214, 0, 28, 0.18);
-  background: rgba(214, 0, 28, 0.06);
-  color: #8a1020;
-  font-size: 2rem;
+.ss-care-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.5rem 2rem;
+  padding: 1.25rem 0 0.5rem;
 }
 
-.ss-care-icon-stack {
-  position: relative;
-  display: inline-flex;
+.ss-care-strip__item {
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
+  gap: 0.55rem;
+  color: #1a1a1a;
 }
 
-.ss-care-icon-stack__base,
-.ss-care-icon-stack__slash {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.ss-care-svg {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
 }
 
-.ss-care-icon-stack__slash {
-  position: absolute;
-  inset: 0;
-  color: #dc2626;
-  font-size: 2.15rem;
+.ss-care-strip__label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+  color: #4b4b4b;
+  max-width: 80px;
+  line-height: 1.3;
+}
+
+.ss-care-note {
+  margin-top: 1.25rem;
+  font-size: 0.78rem;
+  color: #888;
+  font-style: italic;
+  border-top: 1px solid rgba(0, 0, 0, 0.07);
+  padding-top: 0.75rem;
 }
 
 @media (min-width: 992px) and (max-width: 1399px) {

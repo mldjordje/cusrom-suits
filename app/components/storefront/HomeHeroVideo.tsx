@@ -37,6 +37,8 @@ type Props = {
     heroSecondaryCtaHref: string;
   };
   lang?: StorefrontLanguage;
+  heroVideoUrl?: string;
+  heroVideoPosterUrl?: string;
 };
 
 const normalize = (value: string) =>
@@ -57,7 +59,7 @@ const findCategoryId = (categories: HomeCategory[], terms: string[]) => {
 
 const hrefForCategory = (categoryId?: number) => (categoryId ? `/web-shop?categoryId=${categoryId}` : "/web-shop");
 
-export default function HomeHeroVideo({ categories, showProductCards = true, featuredProducts, content, lang = "sr" }: Props) {
+export default function HomeHeroVideo({ categories, showProductCards = true, featuredProducts, content, lang = "sr", heroVideoUrl, heroVideoPosterUrl }: Props) {
   const tx = (value: string, fallbackEn?: string) => localizeDynamicStorefrontText(value, lang, fallbackEn);
   const withLang = (href: string) => {
     if (lang !== "en" || !href.startsWith("/")) return href;
@@ -117,8 +119,9 @@ export default function HomeHeroVideo({ categories, showProductCards = true, fea
       <HomeHeroMedia
         desktopVideoId="18WbTwdI0Vs"
         mobileVideoId="U8g-651j3yo"
-        desktopPosterSrc="/img/hero2.jpg"
-        mobilePosterSrc="/img/hero.jpg"
+        desktopPosterSrc={heroVideoPosterUrl || "/img/hero2.jpg"}
+        mobilePosterSrc={heroVideoPosterUrl || "/img/hero.jpg"}
+        heroVideoUrl={heroVideoUrl || undefined}
       />
       <div className="ss-home18-hero__overlay position-absolute top-0 start-0 w-100 h-100" />
 
