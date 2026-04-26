@@ -231,6 +231,45 @@
   background: rgba(30, 41, 59, 0.82);
 }
 
+/* PWA install button */
+.admin-pwa-install-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid rgba(99, 179, 237, 0.45);
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.12);
+  color: #93c5fd;
+  padding: 0.28rem 0.75rem;
+  font-size: 0.73rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  white-space: nowrap;
+}
+
+.admin-pwa-install-btn:hover {
+  border-color: rgba(99, 179, 237, 0.7);
+  background: rgba(59, 130, 246, 0.22);
+  color: #bfdbfe;
+}
+
+.admin-pwa-install-btn:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.admin-pwa-installed {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.73rem;
+  font-weight: 600;
+  color: #6ee7b7;
+  letter-spacing: 0.04em;
+}
+
 .admin-template-content {
   padding: 1rem 1.1rem 1.6rem;
   min-height: calc(100vh - 73px);

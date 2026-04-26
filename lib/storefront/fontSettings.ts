@@ -1,27 +1,15 @@
+/**
+ * SERVER-ONLY font settings module.
+ * Do NOT import values from this file in "use client" components —
+ * import defaults from fontSettingsDefaults.ts instead.
+ */
 import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
+import { DEFAULT_FONT_SETTINGS } from "@/lib/storefront/fontSettingsDefaults";
+import type { FontSettingsShape as FontSettings } from "@/lib/storefront/fontSettingsDefaults";
+
+export type { FontSettingsShape as FontSettings } from "@/lib/storefront/fontSettingsDefaults";
 
 const FONT_SETTINGS_PATH = "data/font-settings.json";
-
-export type FontSettings = {
-  updatedAt: string | null;
-  /** Google Fonts family name for the body/base font (e.g. "Montserrat", "Lato", "Open Sans") */
-  bodyFont: string;
-  /** Google Fonts family name for display/heading (e.g. "Playfair Display", "Cormorant Garamond") */
-  displayFont: string;
-  /** Extra CSS variable overrides injected into :root, e.g. letter-spacing, font-size-base */
-  bodyFontWeight: string;
-  displayFontWeight: string;
-  letterSpacingBase: string;
-};
-
-export const DEFAULT_FONT_SETTINGS: FontSettings = {
-  updatedAt: null,
-  bodyFont: "Montserrat",
-  displayFont: "Playfair Display",
-  bodyFontWeight: "400",
-  displayFontWeight: "700",
-  letterSpacingBase: "0",
-};
 
 const str = (v: unknown, fallback = "") => String(v || "").trim() || fallback;
 
@@ -66,7 +54,6 @@ export function buildFontOverrideCss(settings: FontSettings): string {
   const body = settings.bodyFont;
   const display = settings.displayFont;
 
-  // Only override when custom fonts differ from the hardcoded defaults
   const isDefaultBody = body.toLowerCase() === "montserrat";
   const isDefaultDisplay = display.toLowerCase() === "playfair display";
 
@@ -74,7 +61,7 @@ export function buildFontOverrideCss(settings: FontSettings): string {
 
   if (!isDefaultBody || settings.bodyFontWeight !== DEFAULT_FONT_SETTINGS.bodyFontWeight) {
     lines.push(`body { font-family: "${body}", sans-serif !important; font-weight: ${settings.bodyFontWeight}; }`);
-    lines.push(`--font-family-base: "${body}", sans-serif;`);
+    lines.push(`:root { --font-family-base: "${body}", sans-serif; }`);
   }
   if (!isDefaultDisplay || settings.displayFontWeight !== DEFAULT_FONT_SETTINGS.displayFontWeight) {
     lines.push(`:root { --font-display: "${display}", serif; }`);

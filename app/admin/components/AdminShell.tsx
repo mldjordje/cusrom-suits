@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useState } from "react";
+import AdminPwaInstallButton from "./AdminPwaInstallButton";
 
 type AdminShellProps = {
   generatedAt: string;
@@ -82,6 +83,7 @@ export default function AdminShell({ generatedAt, viewerName, viewerRoles, sideb
               <Link href="/admin/tutorial" onClick={closeDrawer}>
                 Tutorial
               </Link>
+              <AdminPwaInstallButton />
               <span>{generatedAt}</span>
               <form action="/api/admin/logout" method="post">
                 <button type="submit" className="admin-template-logout">

@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import type { FontSettings } from "@/lib/storefront/fontSettings";
-import { DEFAULT_FONT_SETTINGS } from "@/lib/storefront/fontSettings";
+// Import from the client-safe defaults file — fontSettings.ts has server-only (fs) imports
+import type { FontSettingsShape as FontSettings } from "@/lib/storefront/fontSettingsDefaults";
+import { DEFAULT_FONT_SETTINGS } from "@/lib/storefront/fontSettingsDefaults";
 
 const POPULAR_BODY_FONTS = [
   "Montserrat",

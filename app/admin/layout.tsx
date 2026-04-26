@@ -8,12 +8,17 @@ import { buildSeoMetadata } from "@/lib/seo";
 import { getAdminViewerFromCookieStore } from "@/lib/adminAuth";
 import "./admin-template.css";
 
-export const metadata: Metadata = buildSeoMetadata({
-  title: "Admin | Santos & Santorini",
-  description: "Administracija za Santos & Santorini web shop i operacije.",
-  path: "/admin",
-  noIndex: true,
-});
+export const metadata: Metadata = {
+  ...buildSeoMetadata({
+    title: "Admin | Santos & Santorini",
+    description: "Administracija za Santos & Santorini web shop i operacije.",
+    path: "/admin",
+    noIndex: true,
+  }),
+  // Override the root storefront manifest so that installing from /admin
+  // creates a separate "Santos Admin" PWA that opens at /admin, not at /.
+  manifest: "/admin-manifest.webmanifest",
+};
 
 export default async function AdminLayout({ children }: { children: ReactNode }) {
   const generatedAt = new Date().toLocaleString("sr-RS");

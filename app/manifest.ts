@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Santos & Santorini",
     short_name: "Santos",
     description: "Santos & Santorini web shop i poslovne uniforme.",
-    start_url: "/",
+    start_url: "/web-shop",
     scope: "/",
     display: "standalone",
     background_color: "#ffffff",
