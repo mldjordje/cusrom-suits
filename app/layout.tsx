@@ -44,6 +44,8 @@ export const metadata: Metadata = {
   creator: SITE_NAME,
   publisher: SITE_NAME,
   metadataBase: new URL(SITE_URL),
+  // Storefront PWA manifest — admin layout overrides this with /admin-manifest.webmanifest
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: [
       { url: "/android-icon-192.png", type: "image/png", sizes: "192x192" },

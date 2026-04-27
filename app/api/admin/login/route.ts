@@ -29,6 +29,8 @@ const createAuthedResponse = (
     sameSite: "lax",
     secure: req.nextUrl.protocol === "https:",
     path: "/",
+    // 30-day persistent cookie — survives PWA app restarts and browser restarts
+    maxAge: 60 * 60 * 24 * 30,
   });
   response.cookies.delete(ADMIN_LEGACY_TOKEN_COOKIE);
   return response;
