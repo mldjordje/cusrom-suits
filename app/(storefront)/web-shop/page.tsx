@@ -349,6 +349,10 @@ export default async function WebShopPage({
       imageWidth >= 600
         ? "(max-width: 991px) 100vw, (max-width: 1399px) 50vw, 42vw"
         : "(max-width: 575px) 50vw, (max-width: 991px) 33vw, 25vw";
+    const stockValue = !businessUniform
+      ? Math.max(0, Number(item.stockTotal || 0), Number(item.stockWarehouse1 || 0))
+      : 0;
+    const isLowStock = stockValue > 0 && stockValue <= 5;
 
     return (
       <ProductItemMotion key={key} className={wrapperClassName} index={motionIndex}>
@@ -368,6 +372,10 @@ export default async function WebShopPage({
             {discountPercent > 0 ? (
               <span className="ss-product-card__badge">
                 -{discountPercent}% {isEn ? "off" : "popust"}
+              </span>
+            ) : isLowStock ? (
+              <span className="ss-product-card__badge ss-product-card__badge--stock">
+                {isEn ? "Last items" : "Zadnje komade"}
               </span>
             ) : null}
               <div className="pc__info hover__content position-absolute text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
@@ -429,6 +437,10 @@ export default async function WebShopPage({
             {discountPercent > 0 && !businessUniform ? (
               <p className="ss-product-card__discount mb-0">
                 {isEn ? "Save" : "Usteda"} {discountPercent}%
+              </p>
+            ) : isLowStock ? (
+              <p className="ss-shop-card-stock-note">
+                {isEn ? `Only ${stockValue} left` : `Samo ${stockValue} komada`}
               </p>
             ) : null}
           </div>

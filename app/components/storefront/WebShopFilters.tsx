@@ -455,26 +455,6 @@ export default function WebShopFilters({
           ) : null}
         </div>
 
-        <div className="ss-shop-results-bar">
-          <div className="ss-shop-results-bar__copy">
-            <p className="ss-shop-results-bar__eyebrow">{isEn ? "Selection" : "Izbor"}</p>
-            <strong>
-              {activeFilterChips.length > 0
-                ? `${activeFilterChips.length} ${isEn ? "active filter" : "aktivnih filtera"}${activeFilterChips.length > 1 ? (isEn ? "s" : "") : ""}`
-                : isEn
-                  ? "All products"
-                  : "Svi proizvodi"}
-            </strong>
-          </div>
-
-          <Link
-            href={rootHref}
-            className={`ss-filter-reset-link text-uppercase ${activeFilterChips.length === 0 ? "disabled pe-none opacity-50" : ""}`}
-          >
-            {isEn ? "Reset all" : "Resetuj sve"}
-          </Link>
-        </div>
-
         {activeFilterChips.length > 0 ? (
           <div className="ss-filter-chip-list ss-filter-chip-list--desktop mb-3 d-none d-lg-flex">
             {activeFilterChips.map((chip) => (
