@@ -402,7 +402,7 @@ export default async function HomePage({
         <section key={key} className="container pb-5 ss-editorial-section ss-editorial-section--featured">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <SectionHeadingReveal className="section-title text-uppercase">
-              {sectionContent?.title ? tx(sectionContent.title) : ""}
+              {tx(sectionContent?.title || (isEn ? "Editor's picks" : "Izdvojeni modeli"), "Editor's picks")}
             </SectionHeadingReveal>
             {sectionContent?.ctaLabel ? (
               <Link href={withOptionalLang(sectionContent.ctaHref)} className="btn-link default-underline text-uppercase fw-medium">
@@ -472,7 +472,7 @@ export default async function HomePage({
         <section key={key} className="products-grid container ss-editorial-section ss-editorial-section--products">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <SectionHeadingReveal className="section-title text-uppercase">
-              {sectionContent?.title ? tx(sectionContent.title) : ""}
+              {tx(sectionContent?.title || (isEn ? "Popular styles" : "Popularni modeli"), "Popular styles")}
             </SectionHeadingReveal>
             {sectionContent?.ctaLabel ? (
               <Link href={withOptionalLang(sectionContent.ctaHref)} className="btn-link default-underline text-uppercase fw-medium">
@@ -528,7 +528,7 @@ export default async function HomePage({
         <section key={key} className="products-grid container ss-editorial-section ss-editorial-section--arrivals">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <SectionHeadingReveal className="section-title text-uppercase">
-              {sectionContent?.title ? tx(sectionContent.title) : ""}
+              {tx(sectionContent?.title || (isEn ? "New arrivals" : "Nove kolekcije"), "New arrivals")}
             </SectionHeadingReveal>
             {sectionContent?.ctaLabel ? (
               <Link href={withOptionalLang(sectionContent.ctaHref)} className="btn-link default-underline text-uppercase fw-medium">
@@ -553,6 +553,7 @@ export default async function HomePage({
                     </Link>
                   </div>
                   <div className="pc__info position-relative">
+                    <p className="pc__category">{getProductCategoryLabel(item, contentLang)}</p>
                     <h6 className="pc__title">
                       <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
                         {getProductDisplayName(item, contentLang)}
@@ -610,6 +611,7 @@ export default async function HomePage({
                     </Link>
                   </div>
                   <div className="pc__info position-relative">
+                    <p className="pc__category">{getProductCategoryLabel(item, contentLang)}</p>
                     <h6 className="pc__title">
                       <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
                         {getProductDisplayName(item, contentLang)}
@@ -634,7 +636,7 @@ export default async function HomePage({
         <section key={key} className="products-grid container ss-editorial-section ss-editorial-section--trending">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <SectionHeadingReveal className="section-title text-uppercase">
-              {sectionContent?.title ? tx(sectionContent.title) : ""}
+              {tx(sectionContent?.title || (isEn ? "Trending now" : "Trendovi sezone"), "Trending now")}
             </SectionHeadingReveal>
             {sectionContent?.ctaLabel ? (
               <Link href={withOptionalLang(sectionContent.ctaHref)} className="btn-link default-underline text-uppercase fw-medium">
@@ -659,6 +661,7 @@ export default async function HomePage({
                     </Link>
                   </div>
                   <div className="pc__info position-relative">
+                    <p className="pc__category">{getProductCategoryLabel(item, contentLang)}</p>
                     <h6 className="pc__title">
                       <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
                         {getProductDisplayName(item, contentLang)}

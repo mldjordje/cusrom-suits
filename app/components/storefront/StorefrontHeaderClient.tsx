@@ -478,21 +478,30 @@ export default function StorefrontHeaderClient({
                                 <path d="M3.5 6L8 10.5L12.5 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                             </button>
-                            {mobileShopExpanded ? (
-                              <div className="ss-mobile-nav-submenu">
-                                {shopMenuLinks.map((link) => (
-                                  <Link
-                                    key={`mobile-${link.href}`}
-                                    href={withLang(link.href)}
-                                    prefetch={link.href.startsWith("/web-shop")}
-                                    className="ss-mobile-nav-submenu__link"
-                                    onClick={closeMobileMenu}
-                                  >
-                                    {link.label}
-                                  </Link>
-                                ))}
-                              </div>
-                            ) : null}
+                            <AnimatePresence initial={false}>
+                              {mobileShopExpanded ? (
+                                <m.div
+                                  className="ss-mobile-nav-submenu"
+                                  initial={reduceMotion ? false : { height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
+                                  transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
+                                  style={{ overflow: "hidden" }}
+                                >
+                                  {shopMenuLinks.map((link) => (
+                                    <Link
+                                      key={`mobile-${link.href}`}
+                                      href={withLang(link.href)}
+                                      prefetch={link.href.startsWith("/web-shop")}
+                                      className="ss-mobile-nav-submenu__link"
+                                      onClick={closeMobileMenu}
+                                    >
+                                      {link.label}
+                                    </Link>
+                                  ))}
+                                </m.div>
+                              ) : null}
+                            </AnimatePresence>
                           </>
                         ) : (
                           <Link

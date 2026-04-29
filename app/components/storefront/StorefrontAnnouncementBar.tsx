@@ -56,17 +56,29 @@ export default function StorefrontAnnouncementBar({ lang = "sr", content }: Prop
           maxWidth: "1200px",
           margin: "0 auto",
           display: "flex",
-          flexWrap: "wrap",
+          flexWrap: "nowrap",
           justifyContent: "center",
-          gap: "4px 24px",
+          alignItems: "center",
+          gap: "0 20px",
+          overflow: "hidden",
+          minWidth: 0,
         }}
       >
         {items.map((text, index) => (
-          <span key={`${index}-${text}`} style={{ whiteSpace: "nowrap" }}>
+          <span
+            key={`${index}-${text}`}
+            style={{
+              whiteSpace: "nowrap",
+              flexShrink: index === 0 ? 1 : 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              minWidth: 0,
+            }}
+          >
             {index > 0 ? (
               <span
                 aria-hidden
-                style={{ opacity: 0.35, marginRight: "24px", display: "inline-block" }}
+                style={{ opacity: 0.35, marginRight: "20px", display: "inline-block" }}
               >
                 &bull;
               </span>

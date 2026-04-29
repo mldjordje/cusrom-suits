@@ -160,7 +160,7 @@ export default function CartPageClient({
               </div>
               <div className="ss-order-summary__row">
                 <span>{isEn ? "Delivery" : "Dostava"}</span>
-                <strong>{isEn ? "Confirmed later" : "Potvrda naknadno"}</strong>
+                <strong>{isEn ? "Confirmed on order" : "Potvrda pri porudzbini"}</strong>
               </div>
             </div>
 
@@ -172,8 +172,13 @@ export default function CartPageClient({
             <div className="ss-order-summary__note">
               <p>
                 {isEn
-                  ? "Checkout sends the order directly to your admin as an inquiry, so the customer does not get blocked by online payment or hidden steps."
-                  : "Checkout salje porudzbinu direktno u admin kao upit, tako da kupac ne zapinje na online placanju ili skrivenim koracima."}
+                  ? "Delivery cost (typically 350–500 RSD) is confirmed by our team when they call to verify your order."
+                  : "Troskovi dostave (obicno 350–500 RSD) potvrduju se kada nas tim pozove radi provere porudzbine."}
+              </p>
+              <p className="mt-2 mb-0">
+                {isEn
+                  ? "Free delivery on orders over 15,000 RSD."
+                  : "Besplatna dostava za porudzbine preko 15.000 RSD."}
               </p>
             </div>
 

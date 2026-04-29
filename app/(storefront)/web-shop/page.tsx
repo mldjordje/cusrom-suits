@@ -553,17 +553,19 @@ export default async function WebShopPage({
                 <div>
                   <p className="ss-shop-gallery__eyebrow">{isEn ? "Collection" : "Kolekcija"}</p>
                   <h2 className="ss-shop-gallery__title">
-                    {items.length > 0
-                      ? isEn
-                        ? "Current offer"
-                        : "Aktuelna ponuda"
-                      : isEn
-                        ? "No products found"
-                        : "Nema pronadjenih proizvoda"}
+                    {items.length === 0
+                      ? isEn ? "No products found" : "Nema pronadjenih proizvoda"
+                      : q.trim()
+                        ? `"${q.trim()}"`
+                        : onSale && categoryId <= 0
+                          ? isEn ? "Sale items" : "Akcija"
+                          : selectedCategoryName
+                            ? selectedCategoryName
+                            : isEn ? "All products" : "Svi proizvodi"}
                   </h2>
                 </div>
                 <p className="ss-shop-gallery__meta">
-                  {isEn ? "Showing" : "Prikazano"} <strong>{items.length}</strong> / {result.total}
+                  {items.length} / {result.total} {isEn ? "products" : "proizvoda"}
                 </p>
               </div>
 
@@ -600,10 +602,7 @@ export default async function WebShopPage({
 
           <div className="ss-shop-pagination">
             <p className="ss-shop-pagination__summary">
-              {isEn ? "SHOWING" : "PRIKAZANO"} {items.length} {isEn ? "OF" : "OD"} {result.total} {isEn ? "PRODUCTS" : "PROIZVODA"}
-              <span className="ms-2 text-secondary">
-                ({result.page}/{result.totalPages})
-              </span>
+              {isEn ? "Page" : "Stranica"} {result.page} {isEn ? "of" : "od"} {result.totalPages}
             </p>
             <Link
               href={makeHref({ page: Math.min(result.totalPages, result.page + 1) })}

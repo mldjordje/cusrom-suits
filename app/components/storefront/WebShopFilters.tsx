@@ -448,7 +448,7 @@ export default function WebShopFilters({
               {activeFilterChips.map((chip) => (
                 <Link key={`mobile-${chip.key}`} href={chip.href} className="ss-filter-chip" aria-label={`${isEn ? "Remove" : "Ukloni"} ${chip.label}`}>
                   <span>{chip.label}</span>
-                  <span className="ss-filter-chip__x">x</span>
+                  <span className="ss-filter-chip__x" aria-hidden>×</span>
                 </Link>
               ))}
             </div>
@@ -460,10 +460,10 @@ export default function WebShopFilters({
             <p className="ss-shop-results-bar__eyebrow">{isEn ? "Selection" : "Izbor"}</p>
             <strong>
               {activeFilterChips.length > 0
-                ? `${activeFilterChips.length} ${isEn ? "selected" : "izabrano"}`
+                ? `${activeFilterChips.length} ${isEn ? "active filter" : "aktivnih filtera"}${activeFilterChips.length > 1 ? (isEn ? "s" : "") : ""}`
                 : isEn
-                  ? "Clean catalog view"
-                  : "Cist prikaz kataloga"}
+                  ? "All products"
+                  : "Svi proizvodi"}
             </strong>
           </div>
 
@@ -480,7 +480,7 @@ export default function WebShopFilters({
             {activeFilterChips.map((chip) => (
               <Link key={chip.key} href={chip.href} className="ss-filter-chip" aria-label={`${isEn ? "Remove" : "Ukloni"} ${chip.label}`}>
                 <span>{chip.label}</span>
-                <span className="ss-filter-chip__x">x</span>
+                <span className="ss-filter-chip__x" aria-hidden>×</span>
               </Link>
             ))}
           </div>

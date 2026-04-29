@@ -349,6 +349,41 @@ export default async function WebShopProductPage({
                     {isEn ? "You save" : "Stedite"} {formatRsd(discountAmount)} ({discountPercent}%)
                   </p>
                 ) : null}
+                {!businessUniform && stockValue > 0 && stockValue <= 5 ? (
+                  <p className="ss-stock-badge ss-stock-badge--low mt-2">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                      <path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    {isEn ? `Only ${stockValue} left in stock` : `Samo ${stockValue} na stanju`}
+                  </p>
+                ) : !businessUniform && stockValue > 5 ? (
+                  <p className="ss-stock-badge ss-stock-badge--ok mt-2">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {isEn ? "In stock" : "Na stanju"}
+                  </p>
+                ) : null}
+                {!businessUniform && product.priceFinalGross < 15000 ? (
+                  <p className="ss-shipping-nudge">
+                    <svg className="ss-shipping-nudge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+                      <circle cx="5.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.8" />
+                      <circle cx="18.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.8" />
+                    </svg>
+                    {isEn
+                      ? `Add ${formatRsd(15000 - product.priceFinalGross)} more for free delivery`
+                      : `Dodaj jos ${formatRsd(15000 - product.priceFinalGross)} za besplatnu dostavu`}
+                  </p>
+                ) : !businessUniform && product.priceFinalGross >= 15000 ? (
+                  <p className="ss-shipping-nudge">
+                    <svg className="ss-shipping-nudge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                    {isEn ? "Free delivery included" : "Besplatna dostava ukljucena"}
+                  </p>
+                ) : null}
                 <div className="product-single__short-desc">
                   <p>
                     {shortDescription ||
@@ -429,6 +464,34 @@ export default async function WebShopProductPage({
                     )}
                   </div>
                 </div>
+
+                {!businessUniform ? (
+                  <div className="ss-pdp-trust-strip">
+                    <div className="ss-pdp-trust-strip__item">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.36 2.64L3 8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <path d="M3 3v5h5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <span>{isEn ? "14-day returns" : "Povrat 14 dana"}</span>
+                    </div>
+                    <span className="ss-pdp-trust-strip__sep" aria-hidden>·</span>
+                    <div className="ss-pdp-trust-strip__item">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+                        <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                      <span>{isEn ? "Confirmed within 2h" : "Potvrda za 2h"}</span>
+                    </div>
+                    <span className="ss-pdp-trust-strip__sep" aria-hidden>·</span>
+                    <div className="ss-pdp-trust-strip__item">
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                        <path d="M2 10h20" stroke="currentColor" strokeWidth="1.8" />
+                      </svg>
+                      <span>{isEn ? "Pay on delivery" : "Placanje pouzecam"}</span>
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="product-single__addtolinks">
                   <Link href={withLang("/web-shop")} className="menu-link menu-link_us-s add-to-wishlist">

@@ -75,6 +75,7 @@ export default function CheckoutPageClient({
   const [orderId, setOrderId] = useState<string | null>(null);
   const [submittedTotal, setSubmittedTotal] = useState<number | null>(null);
   const [appliedVoucherCode, setAppliedVoucherCode] = useState<string | null>(null);
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   const isEn = lang === "en";
 
   const withLang = (href: string) => {
@@ -109,8 +110,19 @@ export default function CheckoutPageClient({
     }));
   }, [authUser]);
 
+  const markTouched = (field: string) =>
+    setTouched((prev) => ({ ...prev, [field]: true }));
+
+  const fieldError = (field: keyof typeof form, required = true): boolean => {
+    if (!touched[field]) return false;
+    if (required && !form[field].trim()) return true;
+    if (field === "email" && form.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return true;
+    return false;
+  };
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    setTouched({ fullName: true, email: true, phone: true });
     if (!canSubmit) {
       setError(isEn ? "Enter name, email and phone before submitting the order." : "Unesi ime, email i telefon pre slanja porudzbine.");
       return;
@@ -313,11 +325,15 @@ export default function CheckoutPageClient({
                     id="checkout-full-name"
                     value={form.fullName}
                     onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
-                    className="form-control"
+                    onBlur={() => markTouched("fullName")}
+                    className={`form-control${fieldError("fullName") ? " is-invalid" : touched.fullName && form.fullName.trim() ? " is-valid" : ""}`}
                     placeholder={isEn ? "First and last name" : "Ime i prezime"}
                     autoComplete="name"
                     required
                   />
+                  {fieldError("fullName") ? (
+                    <div className="invalid-feedback">{isEn ? "Name is required." : "Ime je obavezno."}</div>
+                  ) : null}
                 </div>
                 <div className="col-md-6">
                   <label htmlFor="checkout-phone" className="form-label">{isEn ? "Phone" : "Telefon"}</label>
@@ -326,12 +342,16 @@ export default function CheckoutPageClient({
                     type="tel"
                     value={form.phone}
                     onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
-                    className="form-control"
+                    onBlur={() => markTouched("phone")}
+                    className={`form-control${fieldError("phone") ? " is-invalid" : touched.phone && form.phone.trim() ? " is-valid" : ""}`}
                     placeholder={isEn ? "Mobile or landline number" : "Mobilni ili fiksni broj"}
                     autoComplete="tel"
                     inputMode="tel"
                     required
                   />
+                  {fieldError("phone") ? (
+                    <div className="invalid-feedback">{isEn ? "Phone is required." : "Telefon je obavezan."}</div>
+                  ) : null}
                 </div>
                 <div className="col-12">
                   <label htmlFor="checkout-email" className="form-label">Email</label>
@@ -340,11 +360,15 @@ export default function CheckoutPageClient({
                     type="email"
                     value={form.email}
                     onChange={(e) => setForm((prev) => ({ ...prev, email: e.target.value }))}
-                    className="form-control"
+                    onBlur={() => markTouched("email")}
+                    className={`form-control${fieldError("email") ? " is-invalid" : touched.email && form.email.trim() ? " is-valid" : ""}`}
                     placeholder="ime@email.com"
                     autoComplete="email"
                     required
                   />
+                  {fieldError("email") ? (
+                    <div className="invalid-feedback">{isEn ? "Enter a valid email address." : "Unesite ispravnu email adresu."}</div>
+                  ) : null}
                 </div>
               </div>
             </div>
@@ -436,7 +460,10 @@ export default function CheckoutPageClient({
               </p>
               <div className="row g-3">
                 <div className="col-12">
-                  <label htmlFor="checkout-address" className="form-label">{isEn ? "Address" : "Adresa"}</label>
+                  <label htmlFor="checkout-address" className="form-label">
+                    {isEn ? "Address" : "Adresa"}{" "}
+                    <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({isEn ? "optional" : "opciono"})</span>
+                  </label>
                   <input
                     id="checkout-address"
                     value={form.address}
@@ -447,7 +474,10 @@ export default function CheckoutPageClient({
                   />
                 </div>
                 <div className="col-md-7">
-                  <label htmlFor="checkout-city" className="form-label">{isEn ? "City" : "Grad"}</label>
+                  <label htmlFor="checkout-city" className="form-label">
+                    {isEn ? "City" : "Grad"}{" "}
+                    <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({isEn ? "optional" : "opciono"})</span>
+                  </label>
                   <input
                     id="checkout-city"
                     value={form.city}
@@ -458,7 +488,10 @@ export default function CheckoutPageClient({
                   />
                 </div>
                 <div className="col-md-5">
-                  <label htmlFor="checkout-postal-code" className="form-label">{isEn ? "Postal code" : "Postanski broj"}</label>
+                  <label htmlFor="checkout-postal-code" className="form-label">
+                    {isEn ? "Postal code" : "Postanski broj"}{" "}
+                    <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({isEn ? "optional" : "opciono"})</span>
+                  </label>
                   <input
                     id="checkout-postal-code"
                     value={form.postalCode}
@@ -492,25 +525,6 @@ export default function CheckoutPageClient({
               />
             </div>
 
-            <div className="ss-order-form-section">
-              <h3>{isEn ? "Voucher" : "Vaucer"}</h3>
-              <p className="ss-order-form-section__copy">
-                {isEn
-                  ? "If you have a code, enter it here. It will be validated during order creation."
-                  : "Ako imas kod, unesi ga ovde. Validacija se radi prilikom kreiranja porudzbine."}
-              </p>
-              <label htmlFor="checkout-voucher" className="visually-hidden">
-                {isEn ? "Voucher code" : "Vaucer kod"}
-              </label>
-              <input
-                id="checkout-voucher"
-                value={form.voucherCode}
-                onChange={(e) => setForm((prev) => ({ ...prev, voucherCode: e.target.value.toUpperCase() }))}
-                className="form-control"
-                placeholder={isEn ? "Voucher code" : "Vaucer kod"}
-              />
-            </div>
-
             {error ? <p className="text-danger mt-3 mb-0">{error}</p> : null}
 
             <div className="ss-order-panel__footer">
@@ -518,6 +532,11 @@ export default function CheckoutPageClient({
                 {isEn
                   ? "Submitting creates an order inquiry in admin. The team confirms availability and next steps afterward."
                   : "Slanjem kreiras upit za porudzbinu u adminu. Tim potom potvrdjuje dostupnost i sledece korake."}
+              </p>
+              <p className="ss-order-panel__hint mt-1">
+                {isEn
+                  ? "We accept: cash on delivery, card, bank transfer."
+                  : "Prihvatamo: placanje pouzecam, karticom, uplatnicom."}
               </p>
               <div className="d-flex flex-wrap gap-2">
                 <button type="submit" disabled={!canSubmit || submitting} className="btn btn-primary text-uppercase fw-medium">
@@ -534,7 +553,7 @@ export default function CheckoutPageClient({
         <div className="col-lg-5">
           <div className="ss-order-summary ss-order-summary--sticky">
             <p className="ss-order-panel__eyebrow">{isEn ? "Order summary" : "Pregled porudzbine"}</p>
-            <h2>{isEn ? "Everything the customer is sending." : "Sve sto kupac upravo salje."}</h2>
+            <h2>{isEn ? "Everything you're sending." : "Sve sto upravo saljes."}</h2>
 
             <div className="ss-order-summary__items">
               {items.map((item) => (
@@ -557,17 +576,26 @@ export default function CheckoutPageClient({
               <strong>{formatRsd(checkoutTotal)}</strong>
             </div>
 
+            <div className="ss-order-summary__voucher">
+              <label htmlFor="checkout-voucher" className="form-label">
+                {isEn ? "Voucher code" : "Vaucer kod"}{" "}
+                <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({isEn ? "optional" : "opciono"})</span>
+              </label>
+              <input
+                id="checkout-voucher"
+                value={form.voucherCode}
+                onChange={(e) => setForm((prev) => ({ ...prev, voucherCode: e.target.value.toUpperCase() }))}
+                className="form-control form-control-sm"
+                placeholder={isEn ? "Enter voucher code" : "Unesi vaucer kod"}
+              />
+            </div>
+
             <div className="ss-order-summary__note">
               <p>
                 {isEn
                   ? "There is no online payment in this flow. That makes checkout simpler and keeps the focus on sending the request fast."
                   : "U ovom toku nema online placanja. To checkout cini jednostavnijim i drzi fokus na brzom slanju zahteva."}
               </p>
-              {form.voucherCode ? (
-                <p className="mt-2 mb-0">
-                  {isEn ? "Voucher to validate:" : "Vaucer za proveru:"} <strong>{form.voucherCode}</strong>
-                </p>
-              ) : null}
             </div>
           </div>
         </div>
