@@ -83,6 +83,7 @@ type CatalogListInput = {
   priceMin?: number;
   priceMax?: number;
   sizes?: string[];
+  requireImages?: boolean;
 };
 
 type CatalogSnapshotCacheEntry = {
@@ -161,6 +162,7 @@ const makeCatalogListCacheKey = (input: {
   priceMin: number;
   priceMax: number;
   sizes: string[];
+  requireImages: boolean;
 }) =>
   [
     CATALOG_LIST_CACHE_VERSION,
@@ -177,6 +179,7 @@ const makeCatalogListCacheKey = (input: {
     input.priceMin || 0,
     input.priceMax || 0,
     input.sizes.join(",").toUpperCase(),
+    input.requireImages ? 1 : 0,
   ].join("|");
 
 const maybeLogCatalogPerformance = (payload: {
@@ -818,6 +821,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const applyPromotions = input.applyPromotions !== false;
   const priceMin = Number.isFinite(Number(input.priceMin)) ? Math.max(0, Number(input.priceMin)) : 0;
   const priceMax = Number.isFinite(Number(input.priceMax)) ? Math.max(0, Number(input.priceMax)) : 0;
+  const requireImages = Boolean(input.requireImages);
   const sizes = Array.isArray(input.sizes)
     ? input.sizes.map((value) => String(value || "").trim()).filter(Boolean)
     : [];
@@ -836,6 +840,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     priceMin,
     priceMax,
     sizes,
+    requireImages,
   });
   const listCache = getCatalogListCache();
   const cached = listCache.get(cacheKey);
@@ -889,7 +894,8 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const filterMs = Date.now() - filterStart;
 
   const collapseStart = Date.now();
-  const filtered = collapseBySku ? collapseCatalogProductsBySku(filteredSource) : filteredSource;
+  const collapsed = collapseBySku ? collapseCatalogProductsBySku(filteredSource) : filteredSource;
+  const filtered = requireImages ? collapsed.filter((item) => hasCatalogProductMedia(item)) : collapsed;
   const collapseMs = Date.now() - collapseStart;
 
   const paginateStart = Date.now();
