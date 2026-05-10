@@ -543,6 +543,34 @@ const mergeCatalogProductMedia = (
   };
 };
 
+const getCatalogProductModelKey = (item: CatalogProductView) => {
+  const displayName = getCatalogProductDisplayName({
+    name: item.name,
+    sku: item.sku,
+    manufCode: item.manufCode,
+    categories: item.categories,
+    brand: item.brand,
+  });
+  const categoryLabel = getCatalogProductCategoryLabel({
+    name: item.name,
+    sku: item.sku,
+    manufCode: item.manufCode,
+    categories: item.categories,
+    brand: item.brand,
+  });
+  const normalizedName = normalizeDiacritics(displayName)
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+  const normalizedCategory = normalizeDiacritics(categoryLabel)
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalizedName) return `legacy:${item.legacyId}`;
+  return `${normalizedCategory || "collection"}:${normalizedName}`;
+};
+
 const scoreCollapsedRepresentative = (item: CatalogProductView) => {
   const displayName = getCatalogProductDisplayName({
     name: item.name,
@@ -608,12 +636,11 @@ const pickCollapsedPricingLeader = (left: CatalogProductView, right: CatalogProd
   return pickCollapsedRepresentative(left, right);
 };
 
-const collapseCatalogProductsBySku = (items: CatalogProductView[]): CatalogProductView[] => {
+const collapseCatalogProductsByModel = (items: CatalogProductView[]): CatalogProductView[] => {
   const map = new Map<string, CatalogProductView>();
 
   for (const item of items) {
-    const skuKey = String(item.sku || "").trim().toLowerCase();
-    const key = skuKey.length > 0 ? `sku:${skuKey}` : `legacy:${item.legacyId}`;
+    const key = getCatalogProductModelKey(item);
     const current = map.get(key);
     if (!current) {
       map.set(key, {
@@ -894,7 +921,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const filterMs = Date.now() - filterStart;
 
   const collapseStart = Date.now();
-  const collapsed = collapseBySku ? collapseCatalogProductsBySku(filteredSource) : filteredSource;
+  const collapsed = collapseBySku ? collapseCatalogProductsByModel(filteredSource) : filteredSource;
   const filtered = requireImages ? collapsed.filter((item) => hasCatalogProductMedia(item)) : collapsed;
   const collapseMs = Date.now() - collapseStart;
 
@@ -1000,9 +1027,14 @@ export async function getCatalogProductVariantsBySku(
     promotionRules.length > 0
       ? applyPromotionRulesToProducts(baseItems, promotionRules)
       : baseItems;
+  const current = displayItems.find(
+    (item) => String(item.sku || "").trim().toLowerCase() === normalizedSku,
+  );
+  if (!current) return [];
+  const modelKey = getCatalogProductModelKey(current);
 
   return displayItems
-    .filter((item) => String(item.sku || "").trim().toLowerCase() === normalizedSku)
+    .filter((item) => getCatalogProductModelKey(item) === modelKey)
     .sort((left, right) => left.legacyId - right.legacyId);
 }
 
