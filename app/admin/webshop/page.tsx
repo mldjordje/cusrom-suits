@@ -43,6 +43,7 @@ type CatalogProduct = {
   categories: CatalogCategory[];
   coverImage?: string | null;
   images?: string[];
+  hasDirectMedia?: boolean;
   videoUrl?: string | null;
   rawPayload?: Record<string, unknown> | null;
 };
@@ -687,6 +688,12 @@ export default function AdminWebshopPage() {
   const [activeOnly, setActiveOnly] = useState(true);
   const [exportOnly, setExportOnly] = useState(true);
   const [onSaleOnly, setOnSaleOnly] = useState(false);
+  const [mediaStatus, setMediaStatus] = useState("all");
+  const [contentStatus, setContentStatus] = useState("all");
+  const [visibilityStatus, setVisibilityStatus] = useState("all");
+  const [sourceStatus, setSourceStatus] = useState("all");
+  const [sort, setSort] = useState("featured");
+  const [createPanelOpen, setCreatePanelOpen] = useState(false);
   const [saleQ, setSaleQ] = useState("");
   const [saleOnSaleOnly, setSaleOnSaleOnly] = useState(true);
   const [promotionRules, setPromotionRules] = useState<PromotionRule[]>([]);
@@ -779,10 +786,11 @@ export default function AdminWebshopPage() {
   }, [landingSettings.productSections]);
   const productPageStats = useMemo(() => {
     const needsImage = items.filter((item) => !item.images?.length || item.rawPayload?.imageFallback).length;
+    const directMedia = items.filter((item) => item.hasDirectMedia).length;
     const needsDescription = items.filter((item) => !item.description?.trim()).length;
     const hidden = items.filter((item) => !item.isActive || !item.isExported).length;
     const withVideo = items.filter((item) => Boolean(item.videoUrl)).length;
-    return { needsImage, needsDescription, hidden, withVideo };
+    return { needsImage, directMedia, needsDescription, hidden, withVideo };
   }, [items]);
 
   useEffect(() => {
@@ -853,6 +861,11 @@ export default function AdminWebshopPage() {
       if (activeOnly) params.set("activeOnly", "1");
       if (exportOnly) params.set("exportOnly", "1");
       if (onSaleOnly) params.set("onSaleOnly", "1");
+      if (mediaStatus !== "all") params.set("mediaStatus", mediaStatus);
+      if (contentStatus !== "all") params.set("contentStatus", contentStatus);
+      if (visibilityStatus !== "all") params.set("visibilityStatus", visibilityStatus);
+      if (sourceStatus !== "all") params.set("sourceStatus", sourceStatus);
+      if (sort !== "featured") params.set("sort", sort);
 
       const res = await fetch(`/api/admin/webshop/products?${params.toString()}`);
       const json = await res.json();
@@ -1942,6 +1955,7 @@ export default function AdminWebshopPage() {
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {[
               { label: "Treba slika", value: productPageStats.needsImage, tone: "rose" as const },
+              { label: "Direktne slike", value: productPageStats.directMedia, tone: "emerald" as const },
               { label: "Treba opis", value: productPageStats.needsDescription, tone: "amber" as const },
               { label: "Sakriveno", value: productPageStats.hidden, tone: "slate" as const },
               { label: "Ima video", value: productPageStats.withVideo, tone: "emerald" as const },
@@ -1954,14 +1968,28 @@ export default function AdminWebshopPage() {
             ))}
           </div>
 
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-            <p className="mb-0 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dodavanje proizvoda</p>
-            <Link href="/admin/categories" className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
-              Upravljaj kategorijama
-            </Link>
-          </div>
-          <div className="grid gap-3 md:grid-cols-6">
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="mb-0 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dodavanje proizvoda</p>
+                <p className="mt-1 text-xs text-slate-500">Za rucne artikle i nove slike/video. Pregled lagera ostaje ispod u listi proizvoda.</p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Link href="/admin/categories" className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                  Upravljaj kategorijama
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => setCreatePanelOpen((open) => !open)}
+                  className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700"
+                >
+                  {createPanelOpen ? "Sakrij unos" : "Dodaj proizvod"}
+                </button>
+              </div>
+            </div>
+            {createPanelOpen ? (
+              <>
+                <div className="grid gap-3 md:grid-cols-6">
               <input value={createDraft.sku} onChange={(e) => setCreateDraft((p) => ({ ...p, sku: e.target.value }))} placeholder="SKU*" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={createDraft.name} onChange={(e) => setCreateDraft((p) => ({ ...p, name: e.target.value }))} placeholder="Naziv proizvoda*" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
               <textarea value={createDraft.description} onChange={(e) => setCreateDraft((p) => ({ ...p, description: e.target.value }))} rows={3} placeholder="Opis proizvoda za web shop" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
@@ -2144,9 +2172,9 @@ export default function AdminWebshopPage() {
                   </div>
                 ) : null}
               </div>
-            </div>
+                </div>
 
-            <div className="mt-3 flex flex-wrap items-center gap-3">
+                <div className="mt-3 flex flex-wrap items-center gap-3">
               <label className="inline-flex items-center gap-2 text-sm">
                 <input
                   type="checkbox"
@@ -2172,17 +2200,81 @@ export default function AdminWebshopPage() {
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={createDraft.isActive} onChange={(e) => setCreateDraft((p) => ({ ...p, isActive: e.target.checked }))} />Aktivan (vidljiv na sajtu)</label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={createDraft.isExported} onChange={(e) => setCreateDraft((p) => ({ ...p, isExported: e.target.checked }))} />Export (sinhronizacija)</label>
               <button onClick={createProduct} disabled={creating} className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">{creating ? "Kreiranje..." : "Kreiraj proizvod"}</button>
-            </div>
+                </div>
+              </>
+            ) : (
+              <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 text-xs text-slate-600">
+                Panel je sklopljen da bi pretraga, filteri i izmene lager artikala bili dostupni odmah na desktopu i telefonu.
+              </div>
+            )}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="grid gap-3 md:grid-cols-7">
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Pretraga po SKU / sifri / nazivu" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pretraga i filteri</p>
+                <p className="mt-1 text-xs text-slate-500">Search radi po SKU, EAN, ID, nazivu, brendu i opisu. Enter odmah primenjuje filter.</p>
+              </div>
+              <select
+                value={pagination.pageSize}
+                onChange={(e) => setPagination((prev) => ({ ...prev, pageSize: Number(e.target.value || 30) }))}
+                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"
+              >
+                <option value={24}>24 po strani</option>
+                <option value={30}>30 po strani</option>
+                <option value={60}>60 po strani</option>
+                <option value={120}>120 po strani</option>
+              </select>
+            </div>
+            <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-6">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void loadProducts(1);
+                }}
+                placeholder="SKU, EAN, ID, naziv, brend..."
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
+              />
               <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
                 <option value="">Sve kategorije</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.id}>{c.path.join(" / ")}</option>
                 ))}
+              </select>
+              <select value={mediaStatus} onChange={(e) => setMediaStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="all">Sve slike</option>
+                <option value="missing">Bez direktne slike</option>
+                <option value="direct">Ima direktnu sliku</option>
+                <option value="fallback">Pozajmljena/fallback slika</option>
+                <option value="video">Ima video</option>
+              </select>
+              <select value={contentStatus} onChange={(e) => setContentStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="all">Sav sadrzaj</option>
+                <option value="missing_description">Nema opis</option>
+                <option value="missing_price">Nema cenu</option>
+                <option value="missing_category">Bez kategorije</option>
+              </select>
+              <select value={visibilityStatus} onChange={(e) => setVisibilityStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="all">Sva vidljivost</option>
+                <option value="visible">Vidljivo na sajtu</option>
+                <option value="hidden">Sakriveno</option>
+              </select>
+              <select value={sourceStatus} onChange={(e) => setSourceStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="all">Svi izvori</option>
+                <option value="moffice">Moffice/lager</option>
+                <option value="manual">Rucni/stari unos</option>
+              </select>
+              <select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="featured">Podrazumevano</option>
+                <option value="stock_desc">Lager najveci</option>
+                <option value="stock_asc">Lager najmanji</option>
+                <option value="price_desc">Cena najveca</option>
+                <option value="price_asc">Cena najmanja</option>
+                <option value="name_asc">Naziv A-Z</option>
+                <option value="name_desc">Naziv Z-A</option>
+                <option value="newest">Najnoviji ID</option>
+                <option value="oldest">Najstariji ID</option>
               </select>
               <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={inStock} onChange={(e) => setInStock(e.target.checked)} />Na stanju</label>
               <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} />Samo aktivni</label>
@@ -2192,6 +2284,25 @@ export default function AdminWebshopPage() {
             <div className="mt-3 flex flex-wrap items-center gap-2">
               <button onClick={() => loadProducts(1)} className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Primeni filtere</button>
               <button onClick={() => loadProducts(pagination.page)} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">Osvezi</button>
+              <button
+                type="button"
+                onClick={() => {
+                  setQ("");
+                  setCategoryId("");
+                  setInStock(false);
+                  setActiveOnly(true);
+                  setExportOnly(true);
+                  setOnSaleOnly(false);
+                  setMediaStatus("all");
+                  setContentStatus("all");
+                  setVisibilityStatus("all");
+                  setSourceStatus("all");
+                  setSort("featured");
+                }}
+                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
+              >
+                Reset filtera
+              </button>
               <div className="ml-auto hidden flex-wrap items-center gap-1 lg:flex">
                 <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Desktop</span>
                 <button

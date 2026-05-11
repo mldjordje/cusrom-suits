@@ -27,6 +27,7 @@ const navItems: NavItem[] = [
     matchPaths: ["/admin/webshop", "/admin/landing", "/admin/shop-hero", "/admin/categories", "/admin/orders", "/admin/size-guides"],
     children: [
       { href: "/admin/webshop?tab=products", label: "Proizvodi i lager" },
+      { href: "/admin/sync", label: "Sync status" },
       { href: "/admin/landing", label: "Pocetna i sekcije" },
       { href: "/admin/shop-hero", label: "Web Shop Hero" },
       { href: "/admin/webshop?tab=akcije", label: "Akcije i snizenja" },
@@ -39,6 +40,7 @@ const navItems: NavItem[] = [
   { href: "/admin/site-content", label: "Site Content", icon: "SC" },
   { href: "/admin/fonts", label: "Fontovi", icon: "FN" },
   { href: "/admin/fulfillment", label: "Fulfillment", icon: "FL" },
+  { href: "/admin/sync", label: "Sync", icon: "SY", matchPaths: ["/admin/sync"] },
   { href: "/admin/integrations", label: "Integracije", icon: "IN" },
   { href: "/admin/fabrics", label: "Fabrics", icon: "FB" },
   { href: "/admin/linings", label: "Linings", icon: "LN" },

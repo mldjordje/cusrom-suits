@@ -70,7 +70,7 @@ export type CatalogListResult = {
   categories: CatalogCategory[];
 };
 
-type CatalogListInput = {
+export type CatalogListInput = {
   query?: string;
   categoryId?: number;
   inStock?: boolean;
@@ -86,6 +86,11 @@ type CatalogListInput = {
   sizes?: string[];
   requireImages?: boolean;
   requireDirectImages?: boolean;
+  mediaStatus?: "all" | "missing" | "direct" | "fallback" | "video";
+  contentStatus?: "all" | "missing_description" | "missing_price" | "missing_category";
+  visibilityStatus?: "all" | "visible" | "hidden";
+  sourceStatus?: "all" | "moffice" | "manual";
+  sort?: "featured" | "name_asc" | "name_desc" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "newest" | "oldest";
 };
 
 type CatalogSnapshotCacheEntry = {
@@ -166,6 +171,11 @@ const makeCatalogListCacheKey = (input: {
   sizes: string[];
   requireImages: boolean;
   requireDirectImages: boolean;
+  mediaStatus: string;
+  contentStatus: string;
+  visibilityStatus: string;
+  sourceStatus: string;
+  sort: string;
 }) =>
   [
     CATALOG_LIST_CACHE_VERSION,
@@ -184,6 +194,11 @@ const makeCatalogListCacheKey = (input: {
     input.sizes.join(",").toUpperCase(),
     input.requireImages ? 1 : 0,
     input.requireDirectImages ? 1 : 0,
+    input.mediaStatus,
+    input.contentStatus,
+    input.visibilityStatus,
+    input.sourceStatus,
+    input.sort,
   ].join("|");
 
 const maybeLogCatalogPerformance = (payload: {
@@ -270,6 +285,9 @@ const compactRawPayload = (
   if (source.attributes && typeof source.attributes === "object") compact.attributes = source.attributes;
   if (source.media && typeof source.media === "object") compact.media = source.media;
   if (source.productType) compact.productType = source.productType;
+  if (source.source) compact.source = source.source;
+  if (source.moffice && typeof source.moffice === "object") compact.moffice = source.moffice;
+  if (source.syncSource) compact.syncSource = source.syncSource;
   if (source.imageFallback && typeof source.imageFallback === "object") {
     compact.imageFallback = source.imageFallback;
   }
@@ -531,6 +549,11 @@ const hasCatalogProductDirectMedia = (
   item: Pick<CatalogProductView, "coverImage" | "images" | "hasDirectMedia"> | null | undefined,
 ) => Boolean(item?.hasDirectMedia && hasCatalogProductMedia(item));
 
+const getCatalogProductSource = (item: Pick<CatalogProductView, "rawPayload">) => {
+  const raw = item.rawPayload || {};
+  return String(raw.source || raw.syncSource || "").trim().toLowerCase();
+};
+
 const mergeCatalogProductMedia = (
   primary: CatalogProductView,
   fallback: CatalogProductView | null,
@@ -740,6 +763,78 @@ const collapseCatalogProductsByModel = (items: CatalogProductView[]): CatalogPro
   return Array.from(map.values());
 };
 
+const applyAdminQualityFilters = (
+  items: CatalogProductView[],
+  input: Pick<CatalogListInput, "mediaStatus" | "contentStatus" | "visibilityStatus" | "sourceStatus">,
+) => {
+  let filtered = [...items];
+  const mediaStatus = input.mediaStatus || "all";
+  const contentStatus = input.contentStatus || "all";
+  const visibilityStatus = input.visibilityStatus || "all";
+  const sourceStatus = input.sourceStatus || "all";
+
+  if (mediaStatus === "missing") {
+    filtered = filtered.filter((item) => !hasCatalogProductDirectMedia(item));
+  } else if (mediaStatus === "direct") {
+    filtered = filtered.filter((item) => hasCatalogProductDirectMedia(item));
+  } else if (mediaStatus === "fallback") {
+    filtered = filtered.filter((item) => Boolean(item.rawPayload?.imageFallback));
+  } else if (mediaStatus === "video") {
+    filtered = filtered.filter((item) => Boolean(item.videoUrl));
+  }
+
+  if (contentStatus === "missing_description") {
+    filtered = filtered.filter((item) => !item.description?.trim());
+  } else if (contentStatus === "missing_price") {
+    filtered = filtered.filter((item) => Number(item.priceFinalGross || 0) <= 0);
+  } else if (contentStatus === "missing_category") {
+    filtered = filtered.filter((item) => item.categories.length === 0);
+  }
+
+  if (visibilityStatus === "visible") {
+    filtered = filtered.filter((item) => item.isActive && item.isExported);
+  } else if (visibilityStatus === "hidden") {
+    filtered = filtered.filter((item) => !item.isActive || !item.isExported);
+  }
+
+  if (sourceStatus === "moffice") {
+    filtered = filtered.filter((item) => getCatalogProductSource(item) === "moffice" || Boolean(item.rawPayload?.moffice));
+  } else if (sourceStatus === "manual") {
+    filtered = filtered.filter((item) => getCatalogProductSource(item) !== "moffice" && !item.rawPayload?.moffice);
+  }
+
+  return filtered;
+};
+
+const sortCatalogProducts = (
+  items: CatalogProductView[],
+  sort: NonNullable<CatalogListInput["sort"]>,
+) => {
+  const list = [...items];
+  if (sort === "name_asc" || sort === "name_desc") {
+    return list.sort((a, b) => {
+      const diff = a.name.localeCompare(b.name, "sr", { numeric: true, sensitivity: "base" });
+      return sort === "name_asc" ? diff : -diff;
+    });
+  }
+  if (sort === "price_asc" || sort === "price_desc") {
+    return list.sort((a, b) => {
+      const diff = Number(a.priceFinalGross || 0) - Number(b.priceFinalGross || 0);
+      return sort === "price_asc" ? diff : -diff;
+    });
+  }
+  if (sort === "stock_asc" || sort === "stock_desc") {
+    return list.sort((a, b) => {
+      const diff = getAvailableStockValue(a) - getAvailableStockValue(b);
+      return sort === "stock_asc" ? diff : -diff;
+    });
+  }
+  if (sort === "newest" || sort === "oldest") {
+    return list.sort((a, b) => (sort === "newest" ? b.legacyId - a.legacyId : a.legacyId - b.legacyId));
+  }
+  return list;
+};
+
 async function fetchCatalogSnapshotFromSupabase(filters: {
   activeOnly: boolean;
   exportOnly: boolean;
@@ -864,6 +959,11 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const priceMax = Number.isFinite(Number(input.priceMax)) ? Math.max(0, Number(input.priceMax)) : 0;
   const requireImages = Boolean(input.requireImages);
   const requireDirectImages = Boolean(input.requireDirectImages);
+  const mediaStatus = input.mediaStatus || "all";
+  const contentStatus = input.contentStatus || "all";
+  const visibilityStatus = input.visibilityStatus || "all";
+  const sourceStatus = input.sourceStatus || "all";
+  const sort = input.sort || "featured";
   const sizes = Array.isArray(input.sizes)
     ? input.sizes.map((value) => String(value || "").trim()).filter(Boolean)
     : [];
@@ -884,6 +984,11 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     sizes,
     requireImages,
     requireDirectImages,
+    mediaStatus,
+    contentStatus,
+    visibilityStatus,
+    sourceStatus,
+    sort,
   });
   const listCache = getCatalogListCache();
   const cached = listCache.get(cacheKey);
@@ -938,11 +1043,18 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
 
   const collapseStart = Date.now();
   const collapsed = collapseBySku ? collapseCatalogProductsByModel(filteredSource) : filteredSource;
-  const filtered = requireDirectImages
+  const mediaFiltered = requireDirectImages
     ? collapsed.filter((item) => hasCatalogProductDirectMedia(item))
     : requireImages
       ? collapsed.filter((item) => hasCatalogProductMedia(item))
       : collapsed;
+  const qualityFiltered = applyAdminQualityFilters(mediaFiltered, {
+    mediaStatus,
+    contentStatus,
+    visibilityStatus,
+    sourceStatus,
+  });
+  const filtered = sortCatalogProducts(qualityFiltered, sort);
   const collapseMs = Date.now() - collapseStart;
 
   const paginateStart = Date.now();

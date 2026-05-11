@@ -1,12 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
-import { invalidateCatalogCaches, listCatalogProducts } from "@/lib/catalog/store";
+import { invalidateCatalogCaches, listCatalogProducts, type CatalogListInput } from "@/lib/catalog/store";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 import { BUSINESS_UNIFORM_PRODUCT_TYPE } from "@/lib/catalog/productTypes";
 import type { LegacyCatalogProduct, LegacyCategory } from "@/lib/legacy/types";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
+
+const parseCatalogFilter = <T extends string>(
+  value: string | null,
+  allowed: readonly T[],
+  fallback: T,
+) => (allowed.includes(value as T) ? (value as T) : fallback);
 
 type ProductUpdatePayload = {
   legacyId: number;
@@ -556,6 +562,31 @@ export async function GET(req: NextRequest) {
   const onSaleOnly = params.get("onSaleOnly") === "1";
   const requireImages = params.get("requireImages") === "1";
   const requireDirectImages = params.get("requireDirectImages") === "1";
+  const mediaStatus = parseCatalogFilter<CatalogListInput["mediaStatus"] & string>(
+    params.get("mediaStatus"),
+    ["all", "missing", "direct", "fallback", "video"],
+    "all",
+  );
+  const contentStatus = parseCatalogFilter<CatalogListInput["contentStatus"] & string>(
+    params.get("contentStatus"),
+    ["all", "missing_description", "missing_price", "missing_category"],
+    "all",
+  );
+  const visibilityStatus = parseCatalogFilter<CatalogListInput["visibilityStatus"] & string>(
+    params.get("visibilityStatus"),
+    ["all", "visible", "hidden"],
+    "all",
+  );
+  const sourceStatus = parseCatalogFilter<CatalogListInput["sourceStatus"] & string>(
+    params.get("sourceStatus"),
+    ["all", "moffice", "manual"],
+    "all",
+  );
+  const sort = parseCatalogFilter<CatalogListInput["sort"] & string>(
+    params.get("sort"),
+    ["featured", "name_asc", "name_desc", "price_asc", "price_desc", "stock_asc", "stock_desc", "newest", "oldest"],
+    "featured",
+  );
 
   const result = await listCatalogProducts({
     page,
@@ -569,6 +600,11 @@ export async function GET(req: NextRequest) {
     applyPromotions: onSaleOnly,
     requireImages,
     requireDirectImages,
+    mediaStatus,
+    contentStatus,
+    visibilityStatus,
+    sourceStatus,
+    sort,
   });
 
   return NextResponse.json({
