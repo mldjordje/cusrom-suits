@@ -153,6 +153,17 @@ const sortLandingProducts = (items: CatalogProductView[], lang: "sr" | "en") =>
     return right.legacyId - left.legacyId;
   });
 
+const hasVisibleProductImage = (item: CatalogProductView) =>
+  Boolean(
+    (item.coverImage && item.coverImage.trim().length > 0) ||
+      item.images.some((image) => String(image || "").trim().length > 0),
+  );
+
+const preferDirectMediaProducts = (items: CatalogProductView[], minimumCount: number) => {
+  const direct = items.filter((item) => item.hasDirectMedia);
+  return direct.length >= minimumCount ? direct : items.filter(hasVisibleProductImage);
+};
+
 const pickProductsForSectionManaged = <T extends { legacyId: number; sku?: string | null }>(
   source: T[],
   preferredIds: number[],
@@ -219,7 +230,7 @@ export default async function HomePage({
       activeOnly: true,
       exportOnly: true,
       collapseBySku: true,
-      requireDirectImages: true,
+      requireImages: true,
     }),
     listCatalogProducts({
       page: 1,
@@ -228,7 +239,7 @@ export default async function HomePage({
       exportOnly: true,
       collapseBySku: true,
       onSale: true,
-      requireDirectImages: true,
+      requireImages: true,
     }),
     listPosts({
       type: "all",
@@ -276,11 +287,11 @@ export default async function HomePage({
   );
   const pinnedProducts = (
     await Promise.all(pinnedProductIds.map((id) => getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: false })))
-  ).filter((item): item is CatalogProductView => Boolean(item?.isActive && item?.isExported && item.hasDirectMedia));
+  ).filter((item): item is CatalogProductView => Boolean(item?.isActive && item?.isExported && hasVisibleProductImage(item)));
   const pinnedProductsById = new Map(pinnedProducts.map((item) => [item.legacyId, item]));
 
   const landingPoolUnique = sortLandingProducts(
-    dedupeProductsBySku([...pinnedProducts, ...catalog.items]),
+    dedupeProductsBySku(preferDirectMediaProducts([...pinnedProducts, ...catalog.items], 12)),
     contentLang,
   );
 
@@ -288,7 +299,7 @@ export default async function HomePage({
     .map((id) => pinnedProductsById.get(id))
     .filter((item): item is CatalogProductView => Boolean(item));
   const salePool = sortLandingProducts(
-    dedupeProductsBySku([...pinnedProducts, ...saleCatalog.items]).filter(
+    preferDirectMediaProducts(dedupeProductsBySku([...pinnedProducts, ...saleCatalog.items]), 4).filter(
       (item) =>
         landingSettings.saleProductIds.includes(item.legacyId) ||
         item.priceGross > item.priceFinalGross ||
