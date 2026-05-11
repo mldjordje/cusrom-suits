@@ -219,6 +219,7 @@ export default async function HomePage({
       activeOnly: true,
       exportOnly: true,
       collapseBySku: true,
+      requireDirectImages: true,
     }),
     listCatalogProducts({
       page: 1,
@@ -227,6 +228,7 @@ export default async function HomePage({
       exportOnly: true,
       collapseBySku: true,
       onSale: true,
+      requireDirectImages: true,
     }),
     listPosts({
       type: "all",
@@ -273,8 +275,8 @@ export default async function HomePage({
     ),
   );
   const pinnedProducts = (
-    await Promise.all(pinnedProductIds.map((id) => getCatalogProductByLegacyId(id)))
-  ).filter((item): item is CatalogProductView => Boolean(item?.isActive && item?.isExported));
+    await Promise.all(pinnedProductIds.map((id) => getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: false })))
+  ).filter((item): item is CatalogProductView => Boolean(item?.isActive && item?.isExported && item.hasDirectMedia));
   const pinnedProductsById = new Map(pinnedProducts.map((item) => [item.legacyId, item]));
 
   const landingPoolUnique = sortLandingProducts(

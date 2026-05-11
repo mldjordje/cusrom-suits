@@ -55,6 +55,7 @@ export type CatalogProductView = {
   categories: CatalogCategory[];
   coverImage: string | null;
   images: string[];
+  hasDirectMedia: boolean;
   videoUrl: string | null;
   attributes: Record<string, unknown>;
   rawPayload: Record<string, unknown>;
@@ -84,6 +85,7 @@ type CatalogListInput = {
   priceMax?: number;
   sizes?: string[];
   requireImages?: boolean;
+  requireDirectImages?: boolean;
 };
 
 type CatalogSnapshotCacheEntry = {
@@ -163,6 +165,7 @@ const makeCatalogListCacheKey = (input: {
   priceMax: number;
   sizes: string[];
   requireImages: boolean;
+  requireDirectImages: boolean;
 }) =>
   [
     CATALOG_LIST_CACHE_VERSION,
@@ -180,6 +183,7 @@ const makeCatalogListCacheKey = (input: {
     input.priceMax || 0,
     input.sizes.join(",").toUpperCase(),
     input.requireImages ? 1 : 0,
+    input.requireDirectImages ? 1 : 0,
   ].join("|");
 
 const maybeLogCatalogPerformance = (payload: {
@@ -332,6 +336,7 @@ const normalizeCatalogRow = (
     categories,
     coverImage,
     images,
+    hasDirectMedia: images.length > 0,
     videoUrl: extractProductVideoUrl(rawPayload),
     attributes:
       rawPayload && typeof rawPayload.attributes === "object"
@@ -372,6 +377,7 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
   })),
   coverImage: item.coverImage,
   images: Array.isArray(item.images) ? item.images : [],
+  hasDirectMedia: Array.isArray(item.images) && item.images.some((img) => String(img || "").trim().length > 0),
   videoUrl: extractProductVideoUrl(item.raw as Record<string, unknown>),
   attributes: item.attributes as unknown as Record<string, unknown>,
   rawPayload: compactRawPayload({
@@ -499,6 +505,7 @@ const applySkuImageFallbacks = (items: CatalogProductView[]): CatalogProductView
       ...item,
       coverImage: donor.coverImage,
       images: [...donor.images],
+      hasDirectMedia: false,
       rawPayload: {
         ...item.rawPayload,
         imageFallback: {
@@ -520,6 +527,10 @@ const hasCatalogProductMedia = (
           item.images.some((img) => String(img || "").trim().length > 0))),
   );
 
+const hasCatalogProductDirectMedia = (
+  item: Pick<CatalogProductView, "coverImage" | "images" | "hasDirectMedia"> | null | undefined,
+) => Boolean(item?.hasDirectMedia && hasCatalogProductMedia(item));
+
 const mergeCatalogProductMedia = (
   primary: CatalogProductView,
   fallback: CatalogProductView | null,
@@ -532,6 +543,7 @@ const mergeCatalogProductMedia = (
     ...primary,
     coverImage: fallback.coverImage || primary.coverImage,
     images: fallback.images.length > 0 ? [...fallback.images] : primary.images,
+    hasDirectMedia: primary.hasDirectMedia || fallback.hasDirectMedia,
     videoUrl: primary.videoUrl || fallback.videoUrl,
     rawPayload: {
       ...primary.rawPayload,
@@ -647,6 +659,7 @@ const collapseCatalogProductsByModel = (items: CatalogProductView[]): CatalogPro
         ...item,
         categories: [...item.categories],
         images: [...item.images],
+        hasDirectMedia: item.hasDirectMedia,
         attributes: { ...item.attributes },
         rawPayload: { ...item.rawPayload, collapsedVariantIds: [item.legacyId] },
       });
@@ -705,6 +718,7 @@ const collapseCatalogProductsByModel = (items: CatalogProductView[]): CatalogPro
       rebatePercent: mergedDiscountPercent,
       coverImage: representative.coverImage || current.coverImage || item.coverImage,
       videoUrl: representative.videoUrl || current.videoUrl || item.videoUrl,
+      hasDirectMedia: current.hasDirectMedia || item.hasDirectMedia,
       isActive: current.isActive || item.isActive,
       isExported: current.isExported || item.isExported,
       landingFeatured: current.landingFeatured || item.landingFeatured,
@@ -849,6 +863,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const priceMin = Number.isFinite(Number(input.priceMin)) ? Math.max(0, Number(input.priceMin)) : 0;
   const priceMax = Number.isFinite(Number(input.priceMax)) ? Math.max(0, Number(input.priceMax)) : 0;
   const requireImages = Boolean(input.requireImages);
+  const requireDirectImages = Boolean(input.requireDirectImages);
   const sizes = Array.isArray(input.sizes)
     ? input.sizes.map((value) => String(value || "").trim()).filter(Boolean)
     : [];
@@ -868,6 +883,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     priceMax,
     sizes,
     requireImages,
+    requireDirectImages,
   });
   const listCache = getCatalogListCache();
   const cached = listCache.get(cacheKey);
@@ -922,7 +938,11 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
 
   const collapseStart = Date.now();
   const collapsed = collapseBySku ? collapseCatalogProductsByModel(filteredSource) : filteredSource;
-  const filtered = requireImages ? collapsed.filter((item) => hasCatalogProductMedia(item)) : collapsed;
+  const filtered = requireDirectImages
+    ? collapsed.filter((item) => hasCatalogProductDirectMedia(item))
+    : requireImages
+      ? collapsed.filter((item) => hasCatalogProductMedia(item))
+      : collapsed;
   const collapseMs = Date.now() - collapseStart;
 
   const paginateStart = Date.now();
@@ -980,17 +1000,18 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
 
 export async function getCatalogProductByLegacyId(
   legacyId: number,
-  options?: { applyPromotions?: boolean },
+  options?: { applyPromotions?: boolean; allowLegacyMediaFallback?: boolean },
 ): Promise<CatalogProductView | null> {
   const id = Number(legacyId);
   if (!Number.isFinite(id)) return null;
   const applyPromotions = options?.applyPromotions !== false;
+  const allowLegacyMediaFallback = options?.allowLegacyMediaFallback !== false;
 
   const supabase = getServiceSupabase() || getAnonSupabase();
   if (supabase) {
     const normalized = await getCatalogProductByLegacyIdCached(id);
     if (normalized) {
-      const withMedia = hasCatalogProductMedia(normalized)
+      const withMedia = hasCatalogProductMedia(normalized) || !allowLegacyMediaFallback
         ? normalized
         : mergeCatalogProductMedia(normalized, await loadCatalogProductFromFileByLegacyId(id));
       if (!applyPromotions) return withMedia;

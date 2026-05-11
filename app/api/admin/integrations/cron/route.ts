@@ -8,15 +8,15 @@ const runCron = async (req: NextRequest) => {
   }
 
   const payload = await req.json().catch(() => ({}));
-  const environment = payload?.environment || "stage";
-  const mode = payload?.mode || "delta";
+  const environment = payload?.environment || req.nextUrl.searchParams.get("environment") || "production";
+  const mode = payload?.mode || req.nextUrl.searchParams.get("mode") || "delta";
 
   const result = await executeDomainSync("orchestrator", {
     environment,
     mode,
     trigger: "cron",
     meta: {
-      schedule: "*/30 * * * *",
+      schedule: "0 */2 * * *",
       source: "cron_endpoint",
     },
   });

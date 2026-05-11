@@ -554,6 +554,8 @@ export async function GET(req: NextRequest) {
   const activeOnly = params.get("activeOnly") === "1";
   const exportOnly = params.get("exportOnly") === "1";
   const onSaleOnly = params.get("onSaleOnly") === "1";
+  const requireImages = params.get("requireImages") === "1";
+  const requireDirectImages = params.get("requireDirectImages") === "1";
 
   const result = await listCatalogProducts({
     page,
@@ -565,6 +567,8 @@ export async function GET(req: NextRequest) {
     activeOnly,
     exportOnly,
     applyPromotions: onSaleOnly,
+    requireImages,
+    requireDirectImages,
   });
 
   return NextResponse.json({

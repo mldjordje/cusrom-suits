@@ -78,3 +78,11 @@ create table if not exists public.integration_stock_raw_rows (
 create index if not exists idx_integration_stock_raw_rows_file
   on public.integration_stock_raw_rows (raw_file_id, row_index asc);
 
+alter table public.integration_sync_runs enable row level security;
+alter table public.integration_sync_items enable row level security;
+alter table public.integration_stock_delta_state enable row level security;
+alter table public.integration_stock_raw_files enable row level security;
+alter table public.integration_stock_raw_rows enable row level security;
+
+-- These operational tables are written through the Next.js backend with the
+-- service role. No anon/authenticated policy is intentionally created here.

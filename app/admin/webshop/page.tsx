@@ -1102,6 +1102,7 @@ export default function AdminWebshopPage() {
       params.set("pageSize", "60");
       params.set("activeOnly", "1");
       params.set("exportOnly", "1");
+      params.set("requireDirectImages", "1");
       const qValue = queryValue.trim();
       if (qValue) params.set("q", qValue);
 
