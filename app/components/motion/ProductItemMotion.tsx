@@ -13,8 +13,7 @@ export default function ProductItemMotion({ children, index = 0, className }: Pr
   const prefersReduced = useReducedMotion();
   const { reduceMotion: budgetReduce } = useAnimationBudget();
   const reduceMotion = Boolean(prefersReduced || budgetReduce);
-  const delay = reduceMotion ? 0 : Math.min((index % 12) * 0.05, 0.4);
-  const xShift = reduceMotion ? 0 : (index % 2 === 0 ? -10 : 10);
+  const delay = reduceMotion ? 0 : Math.min((index % 8) * 0.035, 0.22);
 
   if (reduceMotion) {
     return <div className={className}>{children}</div>;
@@ -25,19 +24,15 @@ export default function ProductItemMotion({ children, index = 0, className }: Pr
       className={className}
       initial={{
         opacity: 0,
-        y: 22,
-        x: xShift,
-        scale: 0.97,
+        y: 14,
       }}
       whileInView={{
         opacity: 1,
         y: 0,
-        x: 0,
-        scale: 1,
       }}
-      viewport={{ once: true, amount: 0.12, margin: "0px 0px 12% 0px" }}
+      viewport={{ once: true, amount: 0.12, margin: "0px 0px 8% 0px" }}
       transition={{
-        duration: 0.68,
+        duration: 0.52,
         delay,
         ease: [0.22, 1, 0.36, 1],
       }}

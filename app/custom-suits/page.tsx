@@ -12,11 +12,60 @@ import { computePrice } from "./utils/price";
 import { buildBackendUrl } from "./utils/backend";
 import StickyMiniNav from "../components/landing/StickyMiniNav";
 import Image from "next/image";
+import Link from "next/link";
 
 type PreviewView = "both" | "jacket" | "pants";
 type PreviewLayer = "fabric" | "style" | "ao" | "vignette";
 
+function CustomSuitsComingSoon() {
+  return (
+    <main className="min-h-screen bg-[#f4f0eb] text-[#11161d]">
+      <StickyMiniNav />
+      <section className="mx-auto flex min-h-screen w-full max-w-6xl flex-col justify-center px-5 py-28">
+        <div className="grid items-center gap-10 lg:grid-cols-[0.95fr_1.05fr]">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.32em] text-[#9b7a48]">Custom suits</p>
+            <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-[0.02em] text-[#11161d] sm:text-5xl">
+              Krojacki konfigurator se trenutno doradjuje.
+            </h1>
+            <p className="mt-5 max-w-xl text-base leading-7 text-[#5f6670]">
+              Radimo na boljem prikazu tkanina, preciznijem preview-u i sigurnijem toku narucivanja. Do tada, fokus je na
+              web shop kolekciji i direktnom kontaktu sa Santos timom.
+            </p>
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link href="/web-shop" className="rounded-full bg-[#11161d] px-6 py-3 text-sm font-semibold text-white shadow-[0_18px_40px_rgba(17,22,29,0.18)]">
+                Pogledaj web shop
+              </Link>
+              <Link href="/kontakt" className="rounded-full border border-[#c9bda9] bg-white/70 px-6 py-3 text-sm font-semibold text-[#11161d]">
+                Kontakt za odelo po meri
+              </Link>
+            </div>
+          </div>
+          <div className="relative overflow-hidden rounded-[28px] bg-[#11161d] p-5 shadow-[0_28px_80px_rgba(17,22,29,0.18)]">
+            <div className="relative aspect-[4/5] overflow-hidden rounded-[22px] bg-[#222831]">
+              <Image src="/img/odela2.jpg" alt="Santos custom suits atelier" fill sizes="(max-width: 1024px) 100vw, 520px" className="object-cover opacity-80" />
+            </div>
+            <div className="absolute bottom-8 left-8 right-8 rounded-2xl border border-white/10 bg-black/35 p-4 text-white backdrop-blur-md">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-white/60">Coming soon</p>
+              <p className="mt-1 text-lg font-semibold">Premium configurator u pripremi</p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 export default function CustomSuitsPage() {
+  const [showInternalConfigurator, setShowInternalConfigurator] = React.useState(false);
+  React.useEffect(() => {
+    setShowInternalConfigurator(new URLSearchParams(window.location.search).get("atelier") === "1");
+  }, []);
+  if (!showInternalConfigurator) return <CustomSuitsComingSoon />;
+  return <CustomSuitsConfigurator />;
+}
+
+function CustomSuitsConfigurator() {
   const [config, dispatch] = useSuitConfigurator({
     styleId: "single_2btn",
   });
@@ -46,7 +95,7 @@ export default function CustomSuitsPage() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
+      transition: { duration: 0.52, ease: [0.22, 1, 0.36, 1] },
     },
   };
 
@@ -55,7 +104,7 @@ export default function CustomSuitsPage() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.35, ease: [0.4, 0, 0.2, 1] },
+      transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
     },
   };
 
@@ -64,7 +113,7 @@ export default function CustomSuitsPage() {
     visible: {
       opacity: 1,
       y: 0,
-      transition: { duration: 0.3, ease: [0.4, 0, 0.2, 1] },
+      transition: { duration: 0.36, ease: [0.22, 1, 0.36, 1] },
     },
   };
   const price = React.useMemo(() => computePrice(config, suits), [config]);
@@ -162,10 +211,10 @@ export default function CustomSuitsPage() {
   };
 
   return (
-    <div className="bg-gradient-to-br from-[#f6f6f4] via-white to-[#ececec] text-[#111]">
-      <div className="fixed left-3 top-3 z-30 flex items-center gap-1.5 rounded-full bg-white/85 px-2 py-1.5 shadow-md backdrop-blur">
+    <div className="bg-[radial-gradient(circle_at_50%_0%,rgba(170,124,67,0.11),transparent_32%),linear-gradient(135deg,#f4f0eb,#ffffff_42%,#e8e5df)] text-[#111]">
+      <div className="fixed left-3 top-3 z-30 flex items-center gap-1.5 rounded-full border border-white/30 bg-[#11161d]/90 px-2 py-1.5 shadow-[0_12px_36px_rgba(8,11,16,0.18)] backdrop-blur">
         <Image src="/img/logo.png" alt="Santos & Santorini" width={18} height={18} className="h-5 w-5 object-contain" />
-        <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#1d1b1b]">Custom suits</span>
+        <span className="text-[9px] font-semibold uppercase tracking-[0.16em] text-white/82">Custom suits</span>
       </div>
       <div className="relative z-20">
         <StickyMiniNav variant="compact" />
@@ -266,7 +315,7 @@ export default function CustomSuitsPage() {
                   <button
                     onClick={handleAddToCart}
                     disabled={savingCart}
-                    className="w-full rounded-full bg-[#ff7a00] px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
+                    className="w-full rounded-full bg-[#15171b] px-4 py-3 text-sm font-semibold text-white shadow-[0_16px_34px_rgba(8,11,16,0.18)] transition hover:bg-[#2a1b19] disabled:cursor-not-allowed disabled:opacity-70"
                   >
                     Sacuvaj dizajn
                   </button>

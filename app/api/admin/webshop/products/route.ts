@@ -27,6 +27,8 @@ type ProductUpdatePayload = {
   landingFeatured?: boolean;
   landingPriority?: number | null;
   videoUrl?: string | null;
+  images?: string[];
+  coverImage?: string | null;
   businessUniform?: boolean;
 };
 
@@ -103,6 +105,10 @@ const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
   }
   if (hasOwn(row, "videoUrl")) {
     out.videoUrl = row.videoUrl == null ? null : String(row.videoUrl || "").trim() || null;
+  }
+  if (hasOwn(row, "images")) out.images = parseStringList(row.images);
+  if (hasOwn(row, "coverImage")) {
+    out.coverImage = row.coverImage == null ? null : String(row.coverImage || "").trim() || null;
   }
   if (hasOwn(row, "businessUniform")) out.businessUniform = Boolean(row.businessUniform);
   return out;
@@ -236,6 +242,13 @@ const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
       active: patch.isActive !== undefined ? (patch.isActive ? "y" : "n") : current.status.active,
       export: patch.isExported !== undefined ? (patch.isExported ? "y" : "n") : current.status.export,
     },
+    images: patch.images !== undefined ? patch.images : current.images,
+    coverImage:
+      patch.coverImage !== undefined
+        ? patch.coverImage
+        : patch.images !== undefined
+          ? patch.images[0] || null
+          : current.coverImage,
     raw: nextRaw as LegacyCatalogProduct["raw"],
   };
 
@@ -316,6 +329,40 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
 
   if (error) {
     return { success: false, message: error.message };
+  }
+
+  if (patch.images !== undefined || patch.coverImage !== undefined) {
+    const now = new Date().toISOString();
+    const imageUrls = Array.from(
+      new Set((patch.images || []).map((url) => String(url || "").trim()).filter(Boolean)),
+    );
+    const cover = patch.coverImage && imageUrls.includes(patch.coverImage)
+      ? patch.coverImage
+      : imageUrls[0] || null;
+
+    const { error: deleteError } = await supabase
+      .from("catalog_product_media")
+      .delete()
+      .eq("legacy_product_id", patch.legacyId);
+    if (deleteError) {
+      return { success: false, message: deleteError.message };
+    }
+
+    if (imageUrls.length > 0) {
+      const mediaRows = imageUrls.map((url, index) => ({
+        legacy_product_id: patch.legacyId,
+        url,
+        is_cover: cover ? url === cover : index === 0,
+        sort: index,
+        updated_at: now,
+      }));
+      const { error: mediaError } = await supabase
+        .from("catalog_product_media")
+        .upsert(mediaRows as never, { onConflict: "legacy_product_id,url" });
+      if (mediaError) {
+        return { success: false, message: mediaError.message };
+      }
+    }
   }
   return { success: true };
 };

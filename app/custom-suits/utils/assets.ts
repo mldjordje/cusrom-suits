@@ -38,9 +38,21 @@ const FALLBACK_SOURCES: Record<string, Partial<Record<LayerFolder, string | null
 };
 
 const PHOTO_FALLBACK_SOURCES: Partial<Record<PhotoVariant, Record<string, string>>> = {
+  blue: {
+    "length_long+cut_slim-cleaned": "length_long+cut_slim",
+  },
   black: {
     "interior+sleeves": "sleeves",
+    "length_long+cut_slim-cleaned": "length_long+cut_slim",
   },
+  light: {
+    "length_long+cut_slim-cleaned": "length_long+cut_slim",
+  },
+};
+
+const photoBaseName = (src: string, variant: PhotoVariant = "blue") => {
+  const requestedBaseName = spriteFileBase(src);
+  return PHOTO_FALLBACK_SOURCES[variant]?.[requestedBaseName] ?? requestedBaseName;
 };
 
 type ManifestData = { files: Set<string> };
@@ -97,8 +109,7 @@ export const photoPair = (
   src: string,
   variant: PhotoVariant = "blue"
 ) => {
-  const requestedBaseName = spriteFileBase(src);
-  const baseName = PHOTO_FALLBACK_SOURCES[variant]?.[requestedBaseName] ?? requestedBaseName;
+  const baseName = photoBaseName(src, variant);
   const prefix = getPhotoCdnBase(variant);
   return {
     webp: appendVersion(`${prefix}${baseName}.webp`),
@@ -165,7 +176,7 @@ export const fabricSpecificPair = ({
 }): SpritePair | null => {
   const template = renderBasePath?.trim();
   if (!template) return null;
-  const baseName = spriteFileBase(src);
+  const baseName = photoBaseName(src, variant);
   const tokens: PairTokens = {
     basename: baseName,
     layer: baseName,

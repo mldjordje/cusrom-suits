@@ -75,7 +75,11 @@ export default function StorefrontCartDrawer({
 
         <div className="aside-content cart-drawer-items-list flex-grow-1 ss-cart-drawer__scroll">
           {!isReady ? (
-            <div className="fs-18 mt-5 px-4">{isEn ? "Loading cart..." : "Ucitavam korpu..."}</div>
+            <div className="ss-cart-drawer__loading" aria-busy="true">
+              <span />
+              <span />
+              <span />
+            </div>
           ) : items.length ? (
             items.map((item) => (
               <div key={item.legacyId} className="ss-cart-drawer__item-wrap">

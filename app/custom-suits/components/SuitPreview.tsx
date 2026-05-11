@@ -2719,10 +2719,10 @@ const SuitPreview = ({
     pantsRightUpperZoneRotationDeg,
     pantsStripeDetectedForZones,
   ]);
-  const pantsZoneTextureActive = pantsStripeZoneConfig.mode !== "single";
+  const pantsZoneTextureActive = false;
   const pantsTextureFallbackRotationDeg =
-    pantsStripeDetectedForZones && !pantsZoneTextureActive
-      ? pantsRightUpperZoneRotationDeg
+    pantsStripeDetectedForZones
+      ? 0
       : pantsStripeZoneConfig.rotations.single;
   const pantsAutoStripeOffsets = useMemo(() => {
     if (!pantsStripeDetectedForZones || !pantsZoneBounds) return null;
@@ -2795,10 +2795,10 @@ const SuitPreview = ({
     const stripeZoneEnhanced = pantsZoneTextureActive && (hasTextureStripes || isStripeFabric);
     const usesRealStripeTexture = hasTextureStripes || isStripeFabric;
     if (usePhotoBase) {
-      const blend: React.CSSProperties["mixBlendMode"] = usesRealStripeTexture ? "normal" : "soft-light";
-      const preserveMul = usesRealStripeTexture ? 1 : stripeZoneEnhanced ? 0.88 : pantsZoneTextureActive ? 0.66 : 0.7;
-      const maxOpacity = usesRealStripeTexture ? 0.58 : stripeZoneEnhanced ? 0.48 : 0.32;
-      const opacity = clamp(baseOpacity * preserveMul, usesRealStripeTexture ? 0.18 : 0.14, maxOpacity);
+      const blend: React.CSSProperties["mixBlendMode"] = "soft-light";
+      const preserveMul = usesRealStripeTexture ? 0.72 : stripeZoneEnhanced ? 0.82 : pantsZoneTextureActive ? 0.66 : 0.7;
+      const maxOpacity = usesRealStripeTexture ? 0.32 : stripeZoneEnhanced ? 0.42 : 0.32;
+      const opacity = clamp(baseOpacity * preserveMul, usesRealStripeTexture ? 0.1 : 0.14, maxOpacity);
       return {
         ...pantsZoneTextureStyle,
         mixBlendMode: blend,

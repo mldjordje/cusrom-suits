@@ -37,13 +37,13 @@ const toneLabels: Record<"all" | "light" | "medium" | "dark", string> = {
 };
 
 const drawerPanelVariants: Variants = {
-  hidden: { x: "-35%", opacity: 0 },
+  hidden: { x: "-18%", opacity: 0 },
   visible: {
     x: 0,
     opacity: 1,
-    transition: { type: "spring" as const, stiffness: 170, damping: 26 },
+    transition: { type: "spring" as const, stiffness: 210, damping: 30 },
   },
-  exit: { x: "-35%", opacity: 0, transition: { duration: 0.2 } },
+  exit: { x: "-14%", opacity: 0, transition: { duration: 0.18 } },
 };
 
 const drawerOverlayVariants: Variants = {
@@ -56,7 +56,7 @@ const drawerOverlayVariants: Variants = {
 };
 
 const Badge = ({ label }: { label: string }) => (
-  <span className="rounded-full bg-emerald-500 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
+  <span className="rounded-full bg-[#15171b] px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-white">
     {label}
   </span>
 );
@@ -111,14 +111,14 @@ const DrawerHeader = ({
   title: string;
   onClose: () => void;
 }) => (
-  <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3">
+  <div className="flex items-center justify-between border-b border-white/10 bg-[#11161d] px-4 py-3 text-white">
     <div>
-      <p className="text-[11px] uppercase tracking-[0.25em] text-gray-400">Prilagodi</p>
-      <p className="text-lg font-semibold text-gray-900">{title}</p>
+      <p className="text-[11px] uppercase tracking-[0.25em] text-white/42">Prilagodi</p>
+      <p className="text-lg font-semibold text-white">{title}</p>
     </div>
     <button
       onClick={onClose}
-      className="flex h-10 w-10 items-center justify-center rounded-full bg-gray-100 text-gray-600 transition hover:bg-gray-200"
+      className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/70 transition hover:bg-white/10 hover:text-white"
       aria-label="Close panel"
     >
       &times;
@@ -129,7 +129,9 @@ const DrawerHeader = ({
 const PanelLoading = ({ title, onClose }: { title: string; onClose: () => void }) => (
   <>
     <DrawerHeader title={title} onClose={onClose} />
-    <div className="flex flex-1 items-center justify-center text-sm text-gray-500">Pripremam panel...</div>
+    <div className="flex flex-1 items-center justify-center bg-[#f7f4ef] px-6 text-center text-[11px] font-semibold uppercase tracking-[0.26em] text-[#71665f]">
+      Pripremam atelier
+    </div>
   </>
 );
 
@@ -208,7 +210,7 @@ const Drawer = ({
   return (
     <div className="fixed inset-0 z-[60] flex lg:hidden">
       <m.div
-        className="pointer-events-auto flex h-full w-[56vw] min-w-[210px] max-w-[280px] flex-col overflow-hidden transform bg-white shadow-2xl"
+        className="pointer-events-auto flex h-full w-[82vw] min-w-[284px] max-w-[390px] flex-col overflow-hidden transform bg-[#f7f4ef] shadow-[24px_0_60px_rgba(8,11,16,0.26)]"
         initial="hidden"
         animate="visible"
         exit="exit"
@@ -219,7 +221,7 @@ const Drawer = ({
       <m.button
         aria-label="Close"
         onClick={onClose}
-        className="pointer-events-auto h-full flex-1 bg-black/25"
+        className="pointer-events-auto h-full flex-1 bg-black/40 backdrop-blur-[1px]"
         initial="hidden"
         animate="visible"
         exit="exit"
@@ -785,7 +787,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
     <>
       <div className="lg:hidden">
         <div className="fixed bottom-0 left-0 right-0 z-30">
-          <div className="mx-auto w-full max-w-md border-t border-black/5 bg-white/95 px-3 pb-3 pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.12)] backdrop-blur-sm">
+          <div className="mx-auto w-full max-w-md border-t border-white/10 bg-[#10141a]/95 px-3 pb-3 pt-2 text-white shadow-[0_-18px_42px_rgba(8,11,16,0.26)] backdrop-blur-md">
             <div className="flex items-center justify-between gap-2">
               {NAV.map((item) => {
                 const active = currentPanel === item.id;
@@ -794,10 +796,10 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
                     key={item.id}
                     onClick={() => setPanel(item.id)}
                     className={`flex flex-1 flex-col items-center gap-1 py-1 transition ${
-                      active ? "text-gray-900" : "text-gray-400 hover:text-gray-600"
+                      active ? "text-white" : "text-white/44 hover:text-white/70"
                     }`}
                   >
-                    <span className="flex h-8 w-8 items-center justify-center">
+                    <span className={`flex h-8 w-8 items-center justify-center rounded-full ${active ? "bg-white/10" : "bg-transparent"}`}>
                       <img src={item.icon} alt={item.label} className="h-5 w-5 object-contain opacity-80" />
                     </span>
                     <span className="text-[9px] font-semibold tracking-[0.2em] uppercase">{item.label}</span>
@@ -805,28 +807,30 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
                 );
               })}
             </div>
-            <div className="mt-2 flex items-center justify-between gap-3">
+            <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(138px,42%)] items-end gap-3">
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold text-gray-900">Vase odelo</p>
-                <p className="text-xl font-semibold text-gray-900">{price.total} EUR</p>
-                <p className="text-[10px] text-gray-500">Tkanina {fabricPrice} EUR</p>
+                <p className="text-[10px] font-semibold text-white/62">Vase odelo</p>
+                <p className="text-xl font-semibold text-white">{price.total} EUR</p>
+                <p className="text-[10px] text-white/48">Tkanina {fabricPrice} EUR</p>
+              </div>
+              <div className="grid gap-1.5">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={savingCart}
+                  className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-[#11161d] shadow-[0_12px_28px_rgba(0,0,0,0.22)] transition hover:bg-[#e9dcc8] disabled:cursor-not-allowed disabled:opacity-70"
+                >
+                  Sacuvaj dizajn
+                </button>
                 <button
                   type="button"
                   onClick={() => {
                     window.location.href = measurementUrl;
                   }}
-                  className="mt-0.5 text-[9px] font-semibold uppercase tracking-[0.2em] text-gray-500 underline-offset-4 hover:text-gray-900"
+                  className="rounded-full border border-white/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/72 transition hover:border-white/40 hover:text-white"
                 >
-                  Nastavi na merenje
+                  Merenje
                 </button>
               </div>
-              <button
-                onClick={handleAddToCart}
-                disabled={savingCart}
-                className="rounded-full bg-[#ff7a00] px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-[#e86d00] disabled:cursor-not-allowed disabled:opacity-70"
-              >
-                Sacuvaj dizajn
-              </button>
             </div>
           </div>
         </div>
@@ -845,6 +849,3 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
 }
 
 export default MobileControls;
-
-
-

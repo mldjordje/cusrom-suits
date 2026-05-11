@@ -216,6 +216,8 @@ const FabricUnionComponent: React.FC<Props> = ({
           <div
             className="absolute inset-0 pointer-events-none"
             style={{
+              overflow: "hidden",
+              contain: "paint",
               WebkitMaskImage: maskImage,
               WebkitMaskRepeat: maskRepeatValue,
               WebkitMaskSize: maskSizeValue,
@@ -274,6 +276,8 @@ const FabricUnionComponent: React.FC<Props> = ({
             key={`fabric-weave-${layer.id}`}
             className="absolute inset-0 pointer-events-none"
             style={{
+              overflow: "hidden",
+              contain: "paint",
               WebkitMaskImage: maskImage,
               WebkitMaskRepeat: maskRepeatValue,
               WebkitMaskSize: maskSizeValue,

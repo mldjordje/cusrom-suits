@@ -100,7 +100,7 @@ export const suits: SuitModel[] = [
       {
         id: "pants",
         name: "Pantalone",
-        src: "/assets/suits/transparent/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim-cleaned.png",
       },
     ],
 
@@ -235,7 +235,7 @@ export const suits: SuitModel[] = [
       {
         id: "plain",
         name: "Without Cuffs",
-        src: "/assets/suits/transparent/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim-cleaned.png",
       },
       {
         id: "cuffed",
@@ -267,7 +267,7 @@ export const suits: SuitModel[] = [
       {
         id: "pants",
         name: "Pantalone",
-        src: "/assets/suits/transparent/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim-cleaned.png",
       },
     ],
 
@@ -325,7 +325,7 @@ export const suits: SuitModel[] = [
     ],
 
     cuffs: [
-      { id: "plain", name: "Without Cuffs", src: "/assets/suits/transparent/length_long+cut_slim.png" },
+      { id: "plain", name: "Without Cuffs", src: "/assets/suits/transparent/length_long+cut_slim-cleaned.png" },
       { id: "cuffed", name: "With Cuffs", src: "/assets/suits/transparent/cuffs+length_long+cut_slim.png" },
     ],
   },
@@ -355,7 +355,7 @@ export const suits: SuitModel[] = [
       {
         id: "pants",
         name: "Pantalone",
-        src: "/assets/suits/transparent/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim-cleaned.png",
       },
     ],
 
@@ -490,7 +490,7 @@ export const suits: SuitModel[] = [
       {
         id: "plain",
         name: "Without Cuffs",
-        src: "/assets/suits/transparent/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim-cleaned.png",
       },
       {
         id: "cuffed",
@@ -522,7 +522,7 @@ export const suits: SuitModel[] = [
       {
         id: "pants",
         name: "Pantalone",
-        src: "/assets/suits/transparent/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim-cleaned.png",
       },
     ],
 
@@ -633,7 +633,7 @@ export const suits: SuitModel[] = [
       {
         id: "plain",
         name: "Without Cuffs",
-        src: "/assets/suits/transparent/length_long+cut_slim.png",
+        src: "/assets/suits/transparent/length_long+cut_slim-cleaned.png",
       },
       {
         id: "cuffed",

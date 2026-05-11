@@ -28,6 +28,8 @@ type CatalogProduct = {
   legacyId: number;
   sku: string;
   name: string;
+  description?: string | null;
+  specification?: string | null;
   priceGross: number;
   priceFinalGross: number;
   rebatePercent: number;
@@ -47,6 +49,8 @@ type CatalogProduct = {
 type ProductDraft = {
   name: string;
   brand: string;
+  description: string;
+  specification: string;
   priceGross: string;
   priceFinalGross: string;
   rebatePercent: string;
@@ -57,6 +61,8 @@ type ProductDraft = {
   landingFeatured: boolean;
   landingPriority: string;
   videoUrl: string;
+  images: string[];
+  coverImage: string;
   businessUniform: boolean;
 };
 type Pagination = { page: number; pageSize: number; total: number; totalPages: number };
@@ -65,6 +71,8 @@ type CreateDraft = {
   name: string;
   categoryId: string;
   brand: string;
+  description: string;
+  specification: string;
   priceGross: string;
   priceFinalGross: string;
   rebatePercent: string;
@@ -270,6 +278,8 @@ const defaultCreateDraft: CreateDraft = {
   name: "",
   categoryId: "",
   brand: "",
+  description: "",
+  specification: "",
   priceGross: "",
   priceFinalGross: "",
   rebatePercent: "",
@@ -595,6 +605,8 @@ const scopeValuesLabel = (rule: PromotionRule) => {
 const toDraft = (item: CatalogProduct): ProductDraft => ({
   name: item.name,
   brand: item.brand || "",
+  description: item.description || "",
+  specification: item.specification || "",
   priceGross: String(item.priceGross),
   priceFinalGross: String(item.priceFinalGross),
   rebatePercent: String(item.rebatePercent || 0),
@@ -605,6 +617,8 @@ const toDraft = (item: CatalogProduct): ProductDraft => ({
   landingFeatured: Boolean(item.landingFeatured),
   landingPriority: item.landingPriority == null ? "" : String(item.landingPriority),
   videoUrl: item.videoUrl || "",
+  images: item.rawPayload?.imageFallback ? [] : Array.isArray(item.images) ? item.images.filter(Boolean) : [],
+  coverImage: item.rawPayload?.imageFallback ? "" : item.coverImage || item.images?.[0] || "",
   businessUniform: isBusinessUniformProduct(item),
 });
 
@@ -622,6 +636,29 @@ const formatRsd = (value: number) =>
   }).format(Number(value || 0));
 
 const cardImage = (item: CatalogProduct) => item.coverImage || item.images?.[0] || "/img/odela2.jpg";
+
+const productQualityFlags = (item: CatalogProduct) => {
+  const flags: Array<{ label: string; tone: "rose" | "amber" | "emerald" | "slate" }> = [];
+  const hasOnlyFallbackImage = Boolean(item.rawPayload?.imageFallback);
+  const images = hasOnlyFallbackImage ? [] : Array.isArray(item.images) ? item.images.filter(Boolean) : [];
+  if (!images.length) flags.push({ label: "Nema sliku", tone: "rose" });
+  if (hasOnlyFallbackImage) flags.push({ label: "Pozajmljena slika", tone: "amber" });
+  else if (!item.coverImage) flags.push({ label: "Nema cover", tone: "amber" });
+  if (!item.description?.trim()) flags.push({ label: "Nema opis", tone: "amber" });
+  if (!item.priceFinalGross && !isBusinessUniformProduct(item)) flags.push({ label: "Nema cenu", tone: "rose" });
+  if (!item.categories?.length) flags.push({ label: "Bez kategorije", tone: "amber" });
+  if (item.videoUrl) flags.push({ label: "Ima video", tone: "emerald" });
+  if (!item.isActive || !item.isExported) flags.push({ label: "Sakriven", tone: "slate" });
+  if (!flags.length) flags.push({ label: "Spremno", tone: "emerald" });
+  return flags;
+};
+
+const flagClass = (tone: "rose" | "amber" | "emerald" | "slate") => {
+  if (tone === "rose") return "border-rose-200 bg-rose-50 text-rose-700";
+  if (tone === "amber") return "border-amber-200 bg-amber-50 text-amber-800";
+  if (tone === "emerald") return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  return "border-slate-200 bg-slate-50 text-slate-600";
+};
 
 export default function AdminWebshopPage() {
   const pathname = usePathname();
@@ -642,6 +679,7 @@ export default function AdminWebshopPage() {
   const [createDraft, setCreateDraft] = useState<CreateDraft>(defaultCreateDraft);
   const [createImages, setCreateImages] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingEditorImages, setUploadingEditorImages] = useState<number | null>(null);
 
   const [q, setQ] = useState("");
   const [categoryId, setCategoryId] = useState("");
@@ -739,6 +777,13 @@ export default function AdminWebshopPage() {
     }
     return map;
   }, [landingSettings.productSections]);
+  const productPageStats = useMemo(() => {
+    const needsImage = items.filter((item) => !item.images?.length || item.rawPayload?.imageFallback).length;
+    const needsDescription = items.filter((item) => !item.description?.trim()).length;
+    const hidden = items.filter((item) => !item.isActive || !item.isExported).length;
+    const withVideo = items.filter((item) => Boolean(item.videoUrl)).length;
+    return { needsImage, needsDescription, hidden, withVideo };
+  }, [items]);
 
   useEffect(() => {
     const sync = () => {
@@ -1428,6 +1473,8 @@ export default function AdminWebshopPage() {
           legacyId,
           name: draft.name,
           brand: draft.brand || null,
+          description: draft.description.trim() || null,
+          specification: draft.specification.trim() || null,
           priceGross: toNumberOrNull(draft.priceGross),
           priceFinalGross: toNumberOrNull(draft.priceFinalGross),
           rebatePercent: toNumberOrNull(draft.rebatePercent),
@@ -1438,6 +1485,8 @@ export default function AdminWebshopPage() {
           landingFeatured: draft.landingFeatured,
           landingPriority: draft.landingPriority.trim() ? toNumberOrNull(draft.landingPriority) : null,
           videoUrl: draft.videoUrl.trim() || null,
+          images: draft.images,
+          coverImage: draft.coverImage || draft.images[0] || null,
           businessUniform: draft.businessUniform,
         }),
       });
@@ -1477,6 +1526,8 @@ export default function AdminWebshopPage() {
             categoryName: category?.name ?? null,
             categoryPath: category?.path ?? null,
             brand: createDraft.brand || null,
+            description: createDraft.description.trim() || null,
+            specification: createDraft.specification.trim() || null,
             priceGross: toNumberOrNull(createDraft.priceGross) ?? 0,
             priceFinalGross: toNumberOrNull(createDraft.priceFinalGross) ?? 0,
             rebatePercent: toNumberOrNull(createDraft.rebatePercent) ?? 0,
@@ -1537,6 +1588,63 @@ export default function AdminWebshopPage() {
     } finally {
       setUploadingImages(false);
     }
+  };
+
+  const uploadEditorImages = async (legacyId: number, files: FileList | null) => {
+    const list = Array.from(files || []);
+    if (!list.length) return;
+
+    setUploadingEditorImages(legacyId);
+    setError(null);
+    setNotice(null);
+
+    try {
+      const fd = new FormData();
+      for (const file of list) fd.append("files", file);
+      const res = await fetch("/api/admin/webshop/media", { method: "POST", body: fd });
+      const json = await res.json();
+      if (!json?.success) {
+        setError(json?.message || "Image upload failed");
+        return;
+      }
+      const urls = Array.isArray(json.urls) ? (json.urls as string[]) : [];
+      if (!urls.length) {
+        setError("Upload nije vratio URL.");
+        return;
+      }
+      setDrafts((prev) => {
+        const current = prev[legacyId];
+        if (!current) return prev;
+        const images = Array.from(new Set([...current.images, ...urls].filter(Boolean)));
+        return {
+          ...prev,
+          [legacyId]: {
+            ...current,
+            images,
+            coverImage: current.coverImage || images[0] || "",
+          },
+        };
+      });
+      setNotice(`${urls.length} slika uploadovano za artikal #${legacyId}. Klikni Sacuvaj.`);
+    } catch (e: any) {
+      setError(e?.message || "Image upload failed");
+    } finally {
+      setUploadingEditorImages(null);
+    }
+  };
+
+  const setEditorCoverImage = (legacyId: number, url: string) => {
+    updateDraft(legacyId, { coverImage: url });
+  };
+
+  const removeEditorImage = (legacyId: number, url: string) => {
+    setDrafts((prev) => {
+      const current = prev[legacyId];
+      if (!current) return prev;
+      const images = current.images.filter((imageUrl) => imageUrl !== url);
+      const coverImage = current.coverImage === url ? images[0] || "" : current.coverImage;
+      return { ...prev, [legacyId]: { ...current, images, coverImage } };
+    });
   };
 
   const applyBulk = async () => {
@@ -1688,9 +1796,16 @@ export default function AdminWebshopPage() {
               <span className="rounded-full border border-slate-200 px-2 py-1">{formatRsd(item.priceFinalGross)}</span>
               <span className="rounded-full border border-slate-200 px-2 py-1">Lager {item.stockWarehouse1}</span>
             </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              {productQualityFlags(item).slice(0, 4).map((flag) => (
+                <span key={`${item.legacyId}-${flag.label}`} className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold ${flagClass(flag.tone)}`}>
+                  {flag.label}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-2">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
           <button
             type="button"
             onClick={() => setEditorId(item.legacyId)}
@@ -1698,6 +1813,20 @@ export default function AdminWebshopPage() {
           >
             Izmeni
           </button>
+          <label className="rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-700">
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                void uploadEditorImages(item.legacyId, e.target.files);
+                e.currentTarget.value = "";
+              }}
+            />
+            {uploadingEditorImages === item.legacyId ? "Upload..." : "Slike"}
+          </label>
           <button
             type="button"
             onClick={() => saveProduct(item.legacyId)}
@@ -1809,6 +1938,21 @@ export default function AdminWebshopPage() {
             </p>
           </div>
 
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {[
+              { label: "Treba slika", value: productPageStats.needsImage, tone: "rose" as const },
+              { label: "Treba opis", value: productPageStats.needsDescription, tone: "amber" as const },
+              { label: "Sakriveno", value: productPageStats.hidden, tone: "slate" as const },
+              { label: "Ima video", value: productPageStats.withVideo, tone: "emerald" as const },
+            ].map((stat) => (
+              <div key={stat.label} className={`rounded-2xl border p-4 ${flagClass(stat.tone)}`}>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em]">{stat.label}</p>
+                <p className="mt-2 text-3xl font-semibold">{stat.value}</p>
+                <p className="mt-1 text-xs opacity-75">Na trenutno ucitanoj strani</p>
+              </div>
+            ))}
+          </div>
+
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
             <p className="mb-0 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Dodavanje proizvoda</p>
@@ -1819,6 +1963,8 @@ export default function AdminWebshopPage() {
           <div className="grid gap-3 md:grid-cols-6">
               <input value={createDraft.sku} onChange={(e) => setCreateDraft((p) => ({ ...p, sku: e.target.value }))} placeholder="SKU*" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={createDraft.name} onChange={(e) => setCreateDraft((p) => ({ ...p, name: e.target.value }))} placeholder="Naziv proizvoda*" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
+              <textarea value={createDraft.description} onChange={(e) => setCreateDraft((p) => ({ ...p, description: e.target.value }))} rows={3} placeholder="Opis proizvoda za web shop" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
+              <textarea value={createDraft.specification} onChange={(e) => setCreateDraft((p) => ({ ...p, specification: e.target.value }))} rows={3} placeholder="Specifikacija, materijal, dimenzije..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
               <select value={createDraft.categoryId} onChange={(e) => setCreateDraft((p) => ({ ...p, categoryId: e.target.value }))} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
                 <option value="">Bez kategorije</option>
                 {categories.map((c) => (
@@ -3131,6 +3277,14 @@ export default function AdminWebshopPage() {
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Brend</span>
                 <input value={drafts[currentEditorItem.legacyId]?.brand || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { brand: e.target.value })} placeholder="Brend (opciono)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               </label>
+              <label className="flex flex-col gap-1 md:col-span-2">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Opis proizvoda</span>
+                <textarea value={drafts[currentEditorItem.legacyId]?.description || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { description: e.target.value })} rows={4} placeholder="Opis koji kupac vidi na stranici proizvoda." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              </label>
+              <label className="flex flex-col gap-1 md:col-span-2">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Specifikacija / materijal</span>
+                <textarea value={drafts[currentEditorItem.legacyId]?.specification || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { specification: e.target.value })} rows={3} placeholder="Materijal, kroj, dimenzije, napomene iz radnje..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              </label>
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Regularna cena (RSD) — puna bez popusta</span>
                 <input value={drafts[currentEditorItem.legacyId]?.priceGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceGross: e.target.value })} placeholder="npr. 15000" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
@@ -3155,6 +3309,56 @@ export default function AdminWebshopPage() {
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Video URL — YouTube link ili upload ispod</span>
                 <input value={drafts[currentEditorItem.legacyId]?.videoUrl || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { videoUrl: e.target.value })} placeholder="https://youtube.com/... ili /site-assets/..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               </label>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-slate-200 p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Slike proizvoda</p>
+                  <p className="mt-1 text-xs text-slate-500">Dodaj slike sa telefona, izaberi glavnu sliku i sacuvaj proizvod.</p>
+                </div>
+                <label className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-700">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    capture="environment"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => {
+                      void uploadEditorImages(currentEditorItem.legacyId, e.target.files);
+                      e.currentTarget.value = "";
+                    }}
+                  />
+                  {uploadingEditorImages === currentEditorItem.legacyId ? "Upload..." : "Dodaj slike"}
+                </label>
+              </div>
+              {drafts[currentEditorItem.legacyId]?.images?.length ? (
+                <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
+                  {drafts[currentEditorItem.legacyId].images.map((url, index) => {
+                    const isCover = (drafts[currentEditorItem.legacyId]?.coverImage || drafts[currentEditorItem.legacyId]?.images?.[0]) === url;
+                    return (
+                      <div key={`${url}-${index}`} className={`overflow-hidden rounded-xl border bg-white ${isCover ? "border-emerald-300 ring-2 ring-emerald-100" : "border-slate-200"}`}>
+                        <div className="relative aspect-square bg-slate-100">
+                          <Image src={url} alt={`Slika ${index + 1}`} fill sizes="160px" className="object-cover" unoptimized />
+                          {isCover ? <span className="absolute left-2 top-2 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white">Cover</span> : null}
+                        </div>
+                        <div className="grid grid-cols-2 gap-1 p-1.5">
+                          <button type="button" onClick={() => setEditorCoverImage(currentEditorItem.legacyId, url)} className="rounded-lg border border-slate-200 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-700">
+                            Glavna
+                          </button>
+                          <button type="button" onClick={() => removeEditorImage(currentEditorItem.legacyId, url)} className="rounded-lg border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-rose-700">
+                            Ukloni
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="mt-3 rounded-xl border border-dashed border-amber-200 bg-amber-50 px-3 py-3 text-xs text-amber-800">
+                  Ovaj artikal nema slike. Dodaj bar jednu fotografiju pre objave.
+                </p>
+              )}
             </div>
 
             <div className="mt-4 rounded-2xl border border-slate-200 p-3">

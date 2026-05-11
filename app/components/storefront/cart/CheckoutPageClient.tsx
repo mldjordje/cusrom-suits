@@ -184,7 +184,7 @@ export default function CheckoutPageClient({
   };
 
   if (!isReady) {
-    return <p className="text-center text-secondary">{isEn ? "Loading checkout..." : "Ucitavam checkout..."}</p>;
+    return <div className="ss-commerce-loading" aria-busy="true" aria-label={isEn ? "Loading checkout" : "Ucitavam checkout"} />;
   }
 
   if (orderId) {

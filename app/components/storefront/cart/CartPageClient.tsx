@@ -29,7 +29,7 @@ export default function CartPageClient({
   };
 
   if (!isReady) {
-    return <p className="text-center text-secondary">{isEn ? "Loading cart..." : "Ucitavam korpu..."}</p>;
+    return <div className="ss-commerce-loading" aria-busy="true" aria-label={isEn ? "Loading cart" : "Ucitavam korpu"} />;
   }
 
   if (items.length === 0) {

@@ -33,6 +33,7 @@ export default function Reveal({
   const reduceMotion = Boolean(prefersReduced || budgetReduce);
   const Tag = tagMap[as];
   const viewAmount = Math.min(Math.max(amount, 0.05), 0.22);
+  const resolvedY = Math.min(y, 14);
 
   if (reduceMotion) {
     return (
@@ -46,10 +47,10 @@ export default function Reveal({
     <Tag
       className={className}
       id={id}
-      initial={{ opacity: 0, y, scale: 0.988 }}
-      whileInView={{ opacity: 1, y: 0, scale: 1 }}
-      viewport={{ once: true, amount: viewAmount, margin: "0px 0px 14% 0px" }}
-      transition={{ duration: 0.78, delay, ease: [0.22, 1, 0.36, 1] }}
+      initial={{ opacity: 0, y: resolvedY }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: viewAmount, margin: "0px 0px 10% 0px" }}
+      transition={{ duration: 0.56, delay, ease: [0.22, 1, 0.36, 1] }}
     >
       {children}
     </Tag>
