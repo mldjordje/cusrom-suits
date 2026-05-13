@@ -596,6 +596,10 @@ const getCatalogProductModelKey = (item: CatalogProductView) => {
   const normalizedName = normalizeDiacritics(displayName)
     .toLowerCase()
     .replace(/\s+/g, " ")
+    .trim()
+    .replace(/^[mzd]\.\s+/, "")
+    .replace(/^(muska|muski|zenska|zenski|decija|deciji)\s+/, "")
+    .replace(/^(kosulja|pantalone|odelo|sako|kaput|kais|cipele|kratke|majica|dzemper)\s+/i, "")
     .trim();
   const normalizedCategory = normalizeDiacritics(categoryLabel)
     .toLowerCase()
@@ -603,7 +607,14 @@ const getCatalogProductModelKey = (item: CatalogProductView) => {
     .trim();
 
   if (!normalizedName) return `legacy:${item.legacyId}`;
-  return `${normalizedCategory || "collection"}:${normalizedName}`;
+
+  const skuPrefix = item.sku && item.sku.length >= 4
+    ? item.sku.slice(0, item.sku.length - 2)
+    : null;
+  const skuPart = skuPrefix ? `sku:${skuPrefix}` : null;
+
+  const nameKey = `${normalizedCategory || "collection"}:${normalizedName}`;
+  return skuPart && !normalizedName.match(/\p{L}{3,}/u) ? skuPart : nameKey;
 };
 
 const scoreCollapsedRepresentative = (item: CatalogProductView) => {

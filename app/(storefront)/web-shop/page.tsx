@@ -60,6 +60,30 @@ export async function generateMetadata({
   });
 }
 
+const CATEGORY_PRIORITY: Record<string, number> = {
+  odelo: 1, odela: 1,
+  pantalone: 2,
+  sako: 3, sakoi: 3,
+  cipele: 4,
+  kosulja: 5, kosulje: 5,
+  kravata: 6, kravate: 6,
+  kais: 7, kaisevi: 7,
+  kaput: 8, kaputi: 8,
+  dzemper: 9,
+  majica: 10,
+  kratke: 11,
+};
+
+const getCategoryPriority = (item: CatalogProductView): number => {
+  const name = (item.name || "").toLowerCase();
+  const cats = item.categories.map((c) => c.name.toLowerCase());
+  const combined = [...cats, name].join(" ");
+  for (const [key, priority] of Object.entries(CATEGORY_PRIORITY)) {
+    if (combined.includes(key)) return priority;
+  }
+  return 99;
+};
+
 function sortItems(items: CatalogProductView[], sort: string): CatalogProductView[] {
   const next = [...items];
   const stockRank = (item: CatalogProductView) =>
@@ -71,7 +95,7 @@ function sortItems(items: CatalogProductView[], sort: string): CatalogProductVie
   if (sort === "stock_desc") return next.sort((a, b) => stockRank(b) - stockRank(a));
   if (sort === "newest") return next.sort((a, b) => b.legacyId - a.legacyId);
 
-  return next;
+  return next.sort((a, b) => getCategoryPriority(a) - getCategoryPriority(b));
 }
 
 export default async function WebShopPage({
@@ -376,7 +400,7 @@ export default async function WebShopPage({
               </span>
             ) : isLowStock ? (
               <span className="ss-product-card__badge ss-product-card__badge--stock">
-                {isEn ? "Last items" : "Zadnje komade"}
+                {isEn ? "Last items" : "Poslednji komad"}
               </span>
             ) : null}
               <div className="pc__info hover__content position-absolute text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
@@ -386,7 +410,7 @@ export default async function WebShopPage({
                     {displayName}
                   </Link>
                 </h6>
-              {businessUniform ? (
+              {businessUniform || !item.priceFinalGross ? (
                 <div className="product-card__price d-flex justify-content-center">
                   <span className="money price">{isEn ? "Inquiry only" : "Na upit"}</span>
                 </div>
@@ -419,7 +443,7 @@ export default async function WebShopPage({
                 {displayName}
               </Link>
             </h6>
-            {businessUniform ? (
+            {businessUniform || !item.priceFinalGross ? (
               <div className="product-card__price d-flex">
                 <span className="money price">{isEn ? "Inquiry only" : "Na upit"}</span>
               </div>
@@ -617,12 +641,22 @@ export default async function WebShopPage({
             <p className="ss-shop-pagination__summary">
               {isEn ? "Page" : "Stranica"} {result.page} {isEn ? "of" : "od"} {result.totalPages}
             </p>
-            <Link
-              href={makeHref({ page: Math.min(result.totalPages, result.page + 1) })}
-              className={`btn btn-primary text-uppercase fw-medium fs-base ss-shop-pagination__cta ${result.page >= result.totalPages ? "disabled pe-none opacity-50" : ""}`}
-            >
-              {isEn ? "Show more" : "Prikazi jos"}
-            </Link>
+            <div className="ss-shop-pagination__nav">
+              <Link
+                href={makeHref({ page: Math.max(1, result.page - 1) })}
+                className={`btn btn-outline-dark text-uppercase fw-medium fs-base ss-shop-pagination__prev ${result.page <= 1 ? "disabled pe-none opacity-50" : ""}`}
+                aria-disabled={result.page <= 1}
+              >
+                ← {isEn ? "Previous" : "Prethodna"}
+              </Link>
+              <Link
+                href={makeHref({ page: Math.min(result.totalPages, result.page + 1) })}
+                className={`btn btn-primary text-uppercase fw-medium fs-base ss-shop-pagination__next ${result.page >= result.totalPages ? "disabled pe-none opacity-50" : ""}`}
+                aria-disabled={result.page >= result.totalPages}
+              >
+                {isEn ? "Next" : "Sledeca"} →
+              </Link>
+            </div>
           </div>
           </Reveal>
         </section>
