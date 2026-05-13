@@ -608,13 +608,7 @@ const getCatalogProductModelKey = (item: CatalogProductView) => {
 
   if (!normalizedName) return `legacy:${item.legacyId}`;
 
-  const skuPrefix = item.sku && item.sku.length >= 4
-    ? item.sku.slice(0, item.sku.length - 2)
-    : null;
-  const skuPart = skuPrefix ? `sku:${skuPrefix}` : null;
-
-  const nameKey = `${normalizedCategory || "collection"}:${normalizedName}`;
-  return skuPart && !normalizedName.match(/\p{L}{3,}/u) ? skuPart : nameKey;
+  return `${normalizedCategory || "collection"}:${normalizedName}`;
 };
 
 const scoreCollapsedRepresentative = (item: CatalogProductView) => {
