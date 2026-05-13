@@ -578,6 +578,28 @@ const mergeCatalogProductMedia = (
   };
 };
 
+/** Infer a stable product-type token from raw name + categories.
+ *  Used only for the collapse key — must be consistent across all size
+ *  variants of the same model regardless of whether cats[] is populated. */
+const inferProductTypeToken = (name: string, categories: { name: string }[]): string => {
+  const haystack = normalizeDiacritics([name, ...categories.map((c) => c.name)].join(" "))
+    .toLowerCase();
+  if (/kosulja|kosulj/.test(haystack)) return "kosulja";
+  if (/pantalone/.test(haystack)) return "pantalone";
+  if (/odelo/.test(haystack)) return "odelo";
+  if (/\bsako\b/.test(haystack)) return "sako";
+  if (/cipele|cipela|obuca/.test(haystack)) return "cipele";
+  if (/kravata/.test(haystack)) return "kravata";
+  if (/kais/.test(haystack)) return "kais";
+  if (/kaput/.test(haystack)) return "kaput";
+  if (/dzemper|dzemp/.test(haystack)) return "dzemper";
+  if (/majica/.test(haystack)) return "majica";
+  // fallback: use first category name if present
+  const firstCat = categories[0]?.name;
+  if (firstCat) return normalizeDiacritics(firstCat).toLowerCase().replace(/\s+/g, "_");
+  return "collection";
+};
+
 const getCatalogProductModelKey = (item: CatalogProductView) => {
   const displayName = getCatalogProductDisplayName({
     name: item.name,
@@ -586,13 +608,12 @@ const getCatalogProductModelKey = (item: CatalogProductView) => {
     categories: item.categories,
     brand: item.brand,
   });
-  const categoryLabel = getCatalogProductCategoryLabel({
-    name: item.name,
-    sku: item.sku,
-    manufCode: item.manufCode,
-    categories: item.categories,
-    brand: item.brand,
-  });
+
+  // Always derive type from raw name — never from getCatalogProductCategoryLabel
+  // which returns inconsistent strings ("Košulje" vs "Kosulja") depending on
+  // whether the cats[] array is populated.
+  const typeToken = inferProductTypeToken(item.name || "", item.categories);
+
   const normalizedName = normalizeDiacritics(displayName)
     .toLowerCase()
     .replace(/\s+/g, " ")
@@ -601,14 +622,10 @@ const getCatalogProductModelKey = (item: CatalogProductView) => {
     .replace(/^(muska|muski|zenska|zenski|decija|deciji)\s+/, "")
     .replace(/^(kosulja|pantalone|odelo|sako|kaput|kais|cipele|kratke|majica|dzemper)\s+/i, "")
     .trim();
-  const normalizedCategory = normalizeDiacritics(categoryLabel)
-    .toLowerCase()
-    .replace(/\s+/g, " ")
-    .trim();
 
   if (!normalizedName) return `legacy:${item.legacyId}`;
 
-  return `${normalizedCategory || "collection"}:${normalizedName}`;
+  return `${typeToken}:${normalizedName}`;
 };
 
 const scoreCollapsedRepresentative = (item: CatalogProductView) => {
