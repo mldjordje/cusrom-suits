@@ -108,7 +108,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 const CATALOG_SNAPSHOT_TTL_MS = 300_000;
 const CATALOG_LIST_TTL_MS = 45_000;
 const CATALOG_LIST_CACHE_MAX_ENTRIES = 220;
-const CATALOG_LIST_CACHE_VERSION = "v1";
+const CATALOG_LIST_CACHE_VERSION = "v2";
 const CATALOG_PERF_LOG_THRESHOLD_MS = Math.max(
   0,
   Number(process.env.CATALOG_PERF_LOG_THRESHOLD_MS || 350),
@@ -628,6 +628,22 @@ const getCatalogProductModelKey = (item: CatalogProductView) => {
   return `${typeToken}:${normalizedName}`;
 };
 
+const normalizeCatalogImageKey = (value: string | null | undefined) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "";
+  const withoutQuery = raw.split(/[?#]/u)[0] || raw;
+  const fileName = withoutQuery.split("/").filter(Boolean).pop() || withoutQuery;
+  return fileName.trim().toLowerCase();
+};
+
+const getCatalogProductVisualModelKey = (item: CatalogProductView) => {
+  const imageKey = normalizeCatalogImageKey(item.coverImage || item.images[0]);
+  if (!imageKey) return "";
+
+  const typeToken = inferProductTypeToken(item.name || "", item.categories);
+  return `visual:${typeToken}:${imageKey}`;
+};
+
 const scoreCollapsedRepresentative = (item: CatalogProductView) => {
   const displayName = getCatalogProductDisplayName({
     name: item.name,
@@ -693,11 +709,14 @@ const pickCollapsedPricingLeader = (left: CatalogProductView, right: CatalogProd
   return pickCollapsedRepresentative(left, right);
 };
 
-const collapseCatalogProductsByModel = (items: CatalogProductView[]): CatalogProductView[] => {
+const collapseCatalogProductsByKey = (
+  items: CatalogProductView[],
+  getKey: (item: CatalogProductView) => string,
+): CatalogProductView[] => {
   const map = new Map<string, CatalogProductView>();
 
   for (const item of items) {
-    const key = getCatalogProductModelKey(item);
+    const key = getKey(item) || `legacy:${item.legacyId}`;
     const current = map.get(key);
     if (!current) {
       map.set(key, {
@@ -783,6 +802,14 @@ const collapseCatalogProductsByModel = (items: CatalogProductView[]): CatalogPro
   }
 
   return Array.from(map.values());
+};
+
+const collapseCatalogProductsByModel = (items: CatalogProductView[]): CatalogProductView[] => {
+  const modelCollapsed = collapseCatalogProductsByKey(items, getCatalogProductModelKey);
+  return collapseCatalogProductsByKey(
+    modelCollapsed,
+    (item) => getCatalogProductVisualModelKey(item) || getCatalogProductModelKey(item),
+  );
 };
 
 const applyAdminQualityFilters = (
@@ -1187,9 +1214,14 @@ export async function getCatalogProductVariantsBySku(
   );
   if (!current) return [];
   const modelKey = getCatalogProductModelKey(current);
+  const visualModelKey = getCatalogProductVisualModelKey(current);
 
   return displayItems
-    .filter((item) => getCatalogProductModelKey(item) === modelKey)
+    .filter(
+      (item) =>
+        getCatalogProductModelKey(item) === modelKey ||
+        (visualModelKey && getCatalogProductVisualModelKey(item) === visualModelKey),
+    )
     .sort((left, right) => left.legacyId - right.legacyId);
 }
 
