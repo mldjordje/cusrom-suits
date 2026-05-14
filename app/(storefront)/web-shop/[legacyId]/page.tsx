@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import JsonLd from "@/app/components/seo/JsonLd";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
@@ -64,6 +64,9 @@ const getDiscountPercent = (priceGross: number, priceFinalGross: number) => {
 
 const stripHtml = (value: string | null) =>
   decodeHtmlEntities((value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
+
+const toStringParam = (value: string | string[] | undefined) =>
+  Array.isArray(value) ? value[0] || "" : value || "";
 
 export async function generateMetadata({
   params,
@@ -151,18 +154,38 @@ export default async function WebShopProductPage({
   };
 
   const displayProduct = getPreferredCatalogProductForDisplay(product, variants, lang);
+  const requestedSize = toStringParam(pageSearchParams.size).trim();
+  const routeSize = getSelectedProductSize(product);
+  const canonicalSize = requestedSize || routeSize || "";
+  if (displayProduct.legacyId !== product.legacyId) {
+    const query = new URLSearchParams();
+    if (canonicalSize) query.set("size", canonicalSize);
+    if (isEn) query.set("lang", "en");
+    const queryString = query.toString();
+    redirect(`/web-shop/${displayProduct.legacyId}${queryString ? `?${queryString}` : ""}`);
+  }
+
   const displayName = getLocalizedCatalogProductName(displayProduct, lang);
   const displayDescription = getLocalizedCatalogDescription(displayProduct, lang);
   const displaySpecification = getLocalizedCatalogSpecification(displayProduct, lang);
   const material = getProductMaterial(displayProduct, lang);
-  const gallery = getCatalogProductImageSources(product, [], ["/img/odela.jpg"]);
+  const gallery = getCatalogProductImageSources(displayProduct, variants, ["/img/odela.jpg"]);
   const productVideoUrl = displayProduct.videoUrl || product.videoUrl || null;
   const sizeOptions = getProductSizeOptions(product, variants);
-  const selectedSize =
-    sizeOptions.find((option) => option.legacyId === product.legacyId)?.label ||
-    getSelectedProductSize(product) ||
-    sizeOptions[0]?.label ||
+  const selectedSizeOption =
+    (requestedSize
+      ? sizeOptions.find((option) => option.label.toLowerCase() === requestedSize.toLowerCase())
+      : null) ||
+    sizeOptions.find((option) => option.legacyId === product.legacyId) ||
+    (routeSize ? sizeOptions.find((option) => option.label.toLowerCase() === routeSize.toLowerCase()) : null) ||
+    sizeOptions[0] ||
     null;
+  const selectedSize = selectedSizeOption?.label || routeSize || null;
+  const selectedProduct =
+    (selectedSizeOption
+      ? variants.find((variant) => variant.legacyId === selectedSizeOption.legacyId)
+      : null) ||
+    product;
   const sizeGuide = await getProductSizeGuide(product, lang, sizeOptions);
   const showSizeGuide = productSupportsSizeGuide(product) && Boolean(sizeGuide?.tables.length);
   const declaration = getProductDeclaration(
@@ -175,12 +198,14 @@ export default async function WebShopProductPage({
   const washCare = getProductWashCare(product, lang);
   const businessUniform = isBusinessUniformProduct(displayProduct) || isBusinessUniformProduct(product);
 
-  const discountAmount = Math.max(0, product.priceGross - product.priceFinalGross);
-  const discountPercent = getDiscountPercent(product.priceGross, product.priceFinalGross);
-  const stockValue = Math.max(
-    0,
-    Math.floor(product.stockTotal > 0 ? product.stockTotal : product.stockWarehouse1),
-  );
+  const discountAmount = Math.max(0, selectedProduct.priceGross - selectedProduct.priceFinalGross);
+  const discountPercent = getDiscountPercent(selectedProduct.priceGross, selectedProduct.priceFinalGross);
+  const stockValue = selectedSizeOption
+    ? selectedSizeOption.stock
+    : Math.max(
+        0,
+        Math.floor(selectedProduct.stockTotal > 0 ? selectedProduct.stockTotal : selectedProduct.stockWarehouse1),
+      );
   const categoryLabel =
     product.categories[0]?.path.join(" / ") ||
     (isEn ? "Santos selection" : "Santos izbor");
@@ -188,24 +213,31 @@ export default async function WebShopProductPage({
   const attributeItems = Object.entries(product.attributes || {})
     .filter(([key]) => key !== "size")
     .slice(0, 6);
+  const canonicalProductHref = (size?: string | null) => {
+    const query = new URLSearchParams();
+    if (size) query.set("size", size);
+    if (isEn) query.set("lang", "en");
+    const queryString = query.toString();
+    return `/web-shop/${displayProduct.legacyId}${queryString ? `?${queryString}` : ""}`;
+  };
   const variantHref = (variantId: number) =>
     isEn ? `/web-shop/${variantId}?lang=en` : `/web-shop/${variantId}`;
   const sizePickerOptions = sizeOptions.map((option) => ({
     ...option,
-    href: variantHref(option.legacyId),
+    href: canonicalProductHref(option.label),
   }));
   const cartItem = {
-    legacyId: product.legacyId,
-    sku: product.sku,
+    legacyId: selectedProduct.legacyId,
+    sku: selectedProduct.sku,
     name: displayName,
     size: selectedSize,
     material,
-    price: product.priceFinalGross,
+    price: selectedProduct.priceFinalGross,
     image: gallery[0] || product.coverImage || null,
     maxQuantity: stockValue > 0 ? stockValue : null,
     categoryLabel: displayProduct.categories[0]?.name || product.categories[0]?.name || null,
   };
-  const canonicalPath = isEn ? `/web-shop/${product.legacyId}?lang=en` : `/web-shop/${product.legacyId}`;
+  const canonicalPath = canonicalProductHref(selectedSize);
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
     { name: isEn ? "Home" : "Pocetna", path: "/" },
     { name: "Web Shop", path: "/web-shop" },
@@ -218,7 +250,7 @@ export default async function WebShopProductPage({
     "@id": productJsonLdId,
     name: displayName,
     url: absoluteUrl(canonicalPath),
-    sku: product.sku,
+    sku: selectedProduct.sku,
     image: gallery.map((image) => absoluteUrl(image)),
     description: truncateText(shortDescription || displayName, 320),
     brand: {
@@ -241,7 +273,7 @@ export default async function WebShopProductPage({
           "@type": "Offer",
           url: absoluteUrl(canonicalPath),
           priceCurrency: "RSD",
-          price: Number(product.priceFinalGross || 0),
+          price: Number(selectedProduct.priceFinalGross || 0),
           availability:
             stockValue > 0
               ? "https://schema.org/InStock"
@@ -334,9 +366,9 @@ export default async function WebShopProductPage({
                     <span className="current-price">{isEn ? "Inquiry only" : "Na upit"}</span>
                   ) : (
                     <>
-                      <span className="current-price">{formatRsd(product.priceFinalGross)}</span>
+                      <span className="current-price">{formatRsd(selectedProduct.priceFinalGross)}</span>
                       {discountAmount > 0 ? (
-                        <span className="old-price ms-2">{formatRsd(product.priceGross)}</span>
+                        <span className="old-price ms-2">{formatRsd(selectedProduct.priceGross)}</span>
                       ) : null}
                       {discountPercent > 0 ? (
                         <span className="ss-product-price-badge">-{discountPercent}%</span>
@@ -365,7 +397,7 @@ export default async function WebShopProductPage({
                     {isEn ? "In stock" : "Na stanju"}
                   </p>
                 ) : null}
-                {!businessUniform && product.priceFinalGross < 15000 ? (
+                {!businessUniform && selectedProduct.priceFinalGross < 15000 ? (
                   <p className="ss-shipping-nudge">
                     <svg className="ss-shipping-nudge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
@@ -373,10 +405,10 @@ export default async function WebShopProductPage({
                       <circle cx="18.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.8" />
                     </svg>
                     {isEn
-                      ? `Add ${formatRsd(15000 - product.priceFinalGross)} more for free delivery`
-                      : `Dodaj jos ${formatRsd(15000 - product.priceFinalGross)} za besplatnu dostavu`}
+                      ? `Add ${formatRsd(15000 - selectedProduct.priceFinalGross)} more for free delivery`
+                      : `Dodaj jos ${formatRsd(15000 - selectedProduct.priceFinalGross)} za besplatnu dostavu`}
                   </p>
-                ) : !businessUniform && product.priceFinalGross >= 15000 ? (
+                ) : !businessUniform && selectedProduct.priceFinalGross >= 15000 ? (
                   <p className="ss-shipping-nudge">
                     <svg className="ss-shipping-nudge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -420,7 +452,7 @@ export default async function WebShopProductPage({
                       <label>{isEn ? "Choose size" : "Odaberite velicinu"}</label>
                       <ProductSizePicker
                         options={sizePickerOptions}
-                        currentLegacyId={product.legacyId}
+                        currentLegacyId={selectedSizeOption?.legacyId || product.legacyId}
                       />
                       <p className="small text-secondary mt-2 mb-0">
                         {selectedSize
@@ -580,11 +612,11 @@ export default async function WebShopProductPage({
                 <p className="ss-mobile-product-bar__eyebrow">{isEn ? "Santos & Santorini" : "Santos & Santorini"}</p>
                 <div className="ss-mobile-product-bar__prices">
                   <strong className="ss-mobile-product-bar__price">
-                    {businessUniform ? (isEn ? "Inquiry" : "Na upit") : formatRsd(product.priceFinalGross)}
+                    {businessUniform ? (isEn ? "Inquiry" : "Na upit") : formatRsd(selectedProduct.priceFinalGross)}
                   </strong>
                   {discountPercent > 0 && !businessUniform ? (
                     <>
-                      <span className="ss-mobile-product-bar__old-price">{formatRsd(product.priceGross)}</span>
+                      <span className="ss-mobile-product-bar__old-price">{formatRsd(selectedProduct.priceGross)}</span>
                       <span className="ss-product-price-badge ss-product-price-badge--mobile">-{discountPercent}%</span>
                     </>
                   ) : null}

@@ -328,6 +328,26 @@ export const getProductSizeOptions = (
   variants: CatalogProductView[],
 ) => {
   const map = new Map<string, ProductSizeOption>();
+  const variantHasMedia = (variant: CatalogProductView) =>
+    Boolean(
+      (Array.isArray(variant.images) &&
+        variant.images.some((img) => String(img || "").trim().length > 0)) ||
+        String(variant.coverImage || "").trim().length > 0,
+    );
+
+  const shouldUseVariantForSize = (
+    existing: ProductSizeOption,
+    existingVariant: CatalogProductView | undefined,
+    candidate: CatalogProductView,
+    candidateStock: number,
+  ) => {
+    const existingHasMedia = existingVariant ? variantHasMedia(existingVariant) : false;
+    const candidateHasMedia = variantHasMedia(candidate);
+    if (candidateHasMedia !== existingHasMedia) return candidateHasMedia;
+    if ((candidateStock > 0) !== existing.inStock) return candidateStock > 0;
+    if (candidateStock !== existing.stock) return candidateStock > existing.stock;
+    return candidate.legacyId > existing.legacyId;
+  };
 
   for (const variant of variants) {
     const stock = Math.max(
@@ -346,12 +366,19 @@ export const getProductSizeOptions = (
       const key = normalizeKey(size);
       if (map.has(key)) {
         const existing = map.get(key)!;
-        if (stock > existing.stock) {
+        const existingVariant = variants.find((item) => item.legacyId === existing.legacyId);
+        if (shouldUseVariantForSize(existing, existingVariant, variant, stock)) {
           map.set(key, {
             label: size,
             legacyId: variant.legacyId,
-            stock,
-            inStock: stock > 0,
+            stock: Math.max(existing.stock, stock),
+            inStock: existing.inStock || stock > 0,
+          });
+        } else {
+          map.set(key, {
+            ...existing,
+            stock: Math.max(existing.stock, stock),
+            inStock: existing.inStock || stock > 0,
           });
         }
         continue;
