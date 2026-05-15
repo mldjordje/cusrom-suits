@@ -364,7 +364,8 @@ export default async function WebShopPage({
     const imageWidth = options?.imageWidth || 690;
     const imageHeight = options?.imageHeight || 714;
     const fallbackImage = options?.fallbackImage || "/img/odela2.jpg";
-    const motionIndex = options?.motionIndex || 0;
+    const motionIndex = options?.motionIndex ?? 0;
+    const isAboveFold = motionIndex < 4;
     const imageSources = getCatalogProductImageSources(item, [], [fallbackImage]);
     const displayName = getLocalizedCatalogProductName(item, lang);
     const detailHref = isEn ? `/web-shop/${item.legacyId}?lang=en` : `/web-shop/${item.legacyId}`;
@@ -392,6 +393,8 @@ export default async function WebShopPage({
                 className="pc__img object-position-top"
                 sizes={imageSizes}
                 quality={68}
+                priority={isAboveFold}
+                loading={isAboveFold ? undefined : "lazy"}
               />
             </Link>
             {discountPercent > 0 ? (
@@ -472,6 +475,18 @@ export default async function WebShopPage({
         </div>
       </ProductItemMotion>
     );
+  };
+
+  const getPageRange = (current: number, total: number): (number | "…")[] => {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: (number | "…")[] = [1];
+    if (current > 3) pages.push("…");
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) {
+      pages.push(i);
+    }
+    if (current < total - 2) pages.push("…");
+    pages.push(total);
+    return pages;
   };
 
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -609,6 +624,11 @@ export default async function WebShopPage({
               {items.length === 0 ? (
                 <div className="ss-shop-empty-state">
                   <div className="ss-shop-empty-state__card">
+                    <div className="ss-shop-empty-state__icon" aria-hidden="true">
+                      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/><path d="M11 8v6M8 11h6"/>
+                      </svg>
+                    </div>
                     <p className="ss-shop-empty-state__eyebrow">{isEn ? "No results" : "Nema rezultata"}</p>
                     <h3>{isEn ? "No products match the selected filters." : "Nijedan proizvod ne odgovara izabranim filterima."}</h3>
                     <p>
@@ -637,27 +657,45 @@ export default async function WebShopPage({
             </div>
           </WebShopFilters>
 
-          <div className="ss-shop-pagination">
-            <p className="ss-shop-pagination__summary">
-              {isEn ? "Page" : "Stranica"} {result.page} {isEn ? "of" : "od"} {result.totalPages}
-            </p>
-            <div className="ss-shop-pagination__nav">
-              <Link
-                href={makeHref({ page: Math.max(1, result.page - 1) })}
-                className={`btn btn-outline-dark text-uppercase fw-medium fs-base ss-shop-pagination__prev ${result.page <= 1 ? "disabled pe-none opacity-50" : ""}`}
-                aria-disabled={result.page <= 1}
-              >
-                ← {isEn ? "Previous" : "Prethodna"}
-              </Link>
-              <Link
-                href={makeHref({ page: Math.min(result.totalPages, result.page + 1) })}
-                className={`btn btn-primary text-uppercase fw-medium fs-base ss-shop-pagination__next ${result.page >= result.totalPages ? "disabled pe-none opacity-50" : ""}`}
-                aria-disabled={result.page >= result.totalPages}
-              >
-                {isEn ? "Next" : "Sledeca"} →
-              </Link>
+          {result.totalPages > 1 && (
+            <div className="ss-shop-pagination">
+              <div className="ss-shop-pagination__nav">
+                <Link
+                  href={makeHref({ page: Math.max(1, result.page - 1) })}
+                  className="ss-shop-pagination__arrow"
+                  aria-label={isEn ? "Previous page" : "Prethodna stranica"}
+                  aria-disabled={result.page <= 1}
+                >
+                  ←
+                </Link>
+                {getPageRange(result.page, result.totalPages).map((p, i) =>
+                  p === "…" ? (
+                    <span key={`ellipsis-${i}`} className="ss-shop-pagination__ellipsis" aria-hidden>…</span>
+                  ) : (
+                    <Link
+                      key={p}
+                      href={makeHref({ page: p })}
+                      className={`ss-shop-pagination__page${result.page === p ? " is-active" : ""}`}
+                      aria-current={result.page === p ? "page" : undefined}
+                    >
+                      {p}
+                    </Link>
+                  ),
+                )}
+                <Link
+                  href={makeHref({ page: Math.min(result.totalPages, result.page + 1) })}
+                  className="ss-shop-pagination__arrow"
+                  aria-label={isEn ? "Next page" : "Sledeca stranica"}
+                  aria-disabled={result.page >= result.totalPages}
+                >
+                  →
+                </Link>
+              </div>
+              <p className="ss-shop-pagination__summary">
+                {isEn ? "Page" : "Stranica"} {result.page} / {result.totalPages}
+              </p>
             </div>
-          </div>
+          )}
           </Reveal>
         </section>
 
