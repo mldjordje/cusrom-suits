@@ -37,6 +37,7 @@ export default function StorefrontAnnouncementBar({ lang = "sr", content }: Prop
 
   return (
     <div
+      id="ss-announcement-bar"
       aria-label={isEn ? "Site announcement" : "Obavestenje"}
       style={{
         backgroundColor: "#0f0f0f",

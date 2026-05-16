@@ -198,8 +198,11 @@ export default async function WebShopProductPage({
   const washCare = getProductWashCare(product, lang);
   const businessUniform = isBusinessUniformProduct(displayProduct) || isBusinessUniformProduct(product);
 
-  const discountAmount = Math.max(0, selectedProduct.priceGross - selectedProduct.priceFinalGross);
-  const discountPercent = getDiscountPercent(selectedProduct.priceGross, selectedProduct.priceFinalGross);
+  const allPriceVariants = variants.length > 0 ? variants : [product];
+  const displayPriceFinalGross = Math.max(...allPriceVariants.map((v) => Number(v.priceFinalGross || 0)));
+  const displayPriceGross = Math.max(...allPriceVariants.map((v) => Number(v.priceGross || 0)));
+  const discountAmount = Math.max(0, displayPriceGross - displayPriceFinalGross);
+  const discountPercent = getDiscountPercent(displayPriceGross, displayPriceFinalGross);
   const stockValue = selectedSizeOption
     ? selectedSizeOption.stock
     : Math.max(
@@ -366,9 +369,9 @@ export default async function WebShopProductPage({
                     <span className="current-price">{isEn ? "Inquiry only" : "Na upit"}</span>
                   ) : (
                     <>
-                      <span className="current-price">{formatRsd(selectedProduct.priceFinalGross)}</span>
+                      <span className="current-price">{formatRsd(displayPriceFinalGross)}</span>
                       {discountAmount > 0 ? (
-                        <span className="old-price ms-2">{formatRsd(selectedProduct.priceGross)}</span>
+                        <span className="old-price ms-2">{formatRsd(displayPriceGross)}</span>
                       ) : null}
                       {discountPercent > 0 ? (
                         <span className="ss-product-price-badge">-{discountPercent}%</span>
@@ -397,7 +400,7 @@ export default async function WebShopProductPage({
                     {isEn ? "In stock" : "Na stanju"}
                   </p>
                 ) : null}
-                {!businessUniform && selectedProduct.priceFinalGross < 15000 ? (
+                {!businessUniform && displayPriceFinalGross < 15000 ? (
                   <p className="ss-shipping-nudge">
                     <svg className="ss-shipping-nudge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
@@ -405,10 +408,10 @@ export default async function WebShopProductPage({
                       <circle cx="18.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.8" />
                     </svg>
                     {isEn
-                      ? `Add ${formatRsd(15000 - selectedProduct.priceFinalGross)} more for free delivery`
-                      : `Dodaj jos ${formatRsd(15000 - selectedProduct.priceFinalGross)} za besplatnu dostavu`}
+                      ? `Add ${formatRsd(15000 - displayPriceFinalGross)} more for free delivery`
+                      : `Dodaj jos ${formatRsd(15000 - displayPriceFinalGross)} za besplatnu dostavu`}
                   </p>
-                ) : !businessUniform && selectedProduct.priceFinalGross >= 15000 ? (
+                ) : !businessUniform && displayPriceFinalGross >= 15000 ? (
                   <p className="ss-shipping-nudge">
                     <svg className="ss-shipping-nudge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
