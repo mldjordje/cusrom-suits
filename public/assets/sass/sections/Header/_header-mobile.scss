@@ -19,7 +19,7 @@
 
 .header-mobile_sticky {
   position: fixed;
-  top: var(--ss-mobile-header-top, 0px);
+  top: var(--ss-mobile-header-top, 33px);
   left: 0;
   width: 100%;
   box-shadow: $header-sticky-box-shadow;

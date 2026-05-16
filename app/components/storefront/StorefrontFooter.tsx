@@ -66,8 +66,9 @@ export default async function StorefrontFooter({
                     </svg>
                     <span>Instagram</span>
                   </a>
+                  {footer.facebookUrl ? (
                   <a
-                    href={footer.facebookUrl || "https://www.facebook.com/share/1GqmAg7ENk/?mibextid=wwXIfr"}
+                    href={footer.facebookUrl}
                     target="_blank"
                     rel="noreferrer"
                     className="ss-footer__social-link"
@@ -78,6 +79,7 @@ export default async function StorefrontFooter({
                     </svg>
                     <span>Facebook</span>
                   </a>
+                  ) : null}
                 </div>
               </div>
             </div>

@@ -3,6 +3,7 @@ import { Analytics } from "@vercel/analytics/next";
 import StorefrontAuthProvider from "@/app/components/storefront/StorefrontAuthProvider";
 import StorefrontCartProvider from "@/app/components/storefront/cart/StorefrontCartProvider";
 import StorefrontRuntimeShell from "@/app/components/storefront/StorefrontRuntimeShell";
+import CookieConsent from "@/app/components/storefront/CookieConsent";
 import "./uomo.scss";
 
 export default function StorefrontLayout({ children }: { children: ReactNode }) {
@@ -11,6 +12,7 @@ export default function StorefrontLayout({ children }: { children: ReactNode }) 
       <StorefrontCartProvider>
         <StorefrontRuntimeShell />
         {children}
+        <CookieConsent />
         <Analytics />
       </StorefrontCartProvider>
     </StorefrontAuthProvider>
