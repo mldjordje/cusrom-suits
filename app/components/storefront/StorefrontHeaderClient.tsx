@@ -122,25 +122,16 @@ export default function StorefrontHeaderClient({
 
   useEffect(() => {
     let frameId = 0;
-    const announcementBar = document.getElementById("ss-announcement-bar");
-
-    const updateMobileHeaderTop = (scrollY: number) => {
-      const barHeight = announcementBar ? announcementBar.offsetHeight : 0;
-      const top = Math.max(0, barHeight - scrollY);
-      document.documentElement.style.setProperty("--ss-mobile-header-top", `${top}px`);
-    };
 
     const onScroll = () => {
       if (frameId !== 0) return;
       frameId = window.requestAnimationFrame(() => {
         frameId = 0;
         updateScrolledStateRef.current(window.scrollY);
-        updateMobileHeaderTop(window.scrollY);
       });
     };
 
     updateScrolledStateRef.current(window.scrollY);
-    updateMobileHeaderTop(window.scrollY);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => {
       window.removeEventListener("scroll", onScroll);

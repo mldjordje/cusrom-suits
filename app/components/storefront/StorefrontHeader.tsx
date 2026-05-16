@@ -36,9 +36,9 @@ export default async function StorefrontHeader({
   }));
 
   return (
-    <>
+    <div className="ss-top-bar-wrapper">
       <StorefrontAnnouncementBar lang={lang} content={siteContent.announcements} />
       <StorefrontHeaderClient lang={lang} variant={variant} navItems={navItems} />
-    </>
+    </div>
   );
 }

@@ -19,10 +19,25 @@
 
 .header-mobile_sticky {
   position: fixed;
-  top: var(--ss-mobile-header-top, 33px);
+  top: 0;
   left: 0;
   width: 100%;
   box-shadow: $header-sticky-box-shadow;
+}
+
+.ss-top-bar-wrapper {
+  @include media-breakpoint-down(lg) {
+    position: sticky;
+    top: 0;
+    z-index: $mobile-header-z-index;
+
+    .header-mobile_sticky {
+      position: relative;
+      top: auto;
+      left: auto;
+      width: 100%;
+    }
+  }
 }
 
 .header-mobile__navigation {
