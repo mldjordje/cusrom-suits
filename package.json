@@ -22,6 +22,8 @@
         "normalize:transparent:all": "node scripts/normalize-transparent-all.mjs",
         "check:sprites": "node scripts/check-missing-sprites.mjs",
         "capture:parity": "node scripts/capture-parity-snapshots.mjs",
+        "test": "vitest run",
+        "test:watch": "vitest",
         "test:parity": "node --experimental-strip-types --test scripts/parity.test.mjs scripts/pants-stripe-tuning.test.mjs scripts/preview-regression.test.mjs",
         "test:preview-reference": "node --test scripts/preview-reference.test.mjs",
         "test:preview-lining": "node --test scripts/preview-lining.test.mjs",
@@ -68,6 +70,7 @@
         "postcss": "^8.5.8",
         "sass": "^1.98.0",
         "tailwindcss": "^4.2.1",
-        "typescript": "^5"
+        "typescript": "^5",
+        "vitest": "^4.1.6"
     }
 }

@@ -12,6 +12,7 @@ import {
   applyPromotionRulesToProducts,
   listPromotionRules,
 } from "@/lib/catalog/promotions";
+import { selectMaxPriceVariant } from "@/lib/catalog/pricing";
 import { unstable_cache } from "next/cache";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
@@ -765,7 +766,7 @@ const collapseCatalogProductsByKey = (
       getCatalogDiscountPercent(pricingLeader),
     );
     // Always display the highest final price across all collapsed variants
-    const maxPriceVariant = current.priceFinalGross >= item.priceFinalGross ? current : item;
+    const maxPriceVariant = selectMaxPriceVariant([current, item]) ?? current;
 
     map.set(key, {
       ...current,

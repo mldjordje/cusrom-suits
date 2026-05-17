@@ -22,6 +22,7 @@ import CompleteTheLook from "@/app/components/storefront/CompleteTheLook";
 import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
 import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
+import { resolveDisplayFinalPrice, resolveDisplayGrossPrice, calcDiscountPercent } from "@/lib/catalog/pricing";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getSiteContent } from "@/lib/storefront/siteContent";
 import {
@@ -198,11 +199,10 @@ export default async function WebShopProductPage({
   const washCare = getProductWashCare(product, lang);
   const businessUniform = isBusinessUniformProduct(displayProduct) || isBusinessUniformProduct(product);
 
-  const allPriceVariants = variants.length > 0 ? variants : [product];
-  const displayPriceFinalGross = Math.max(...allPriceVariants.map((v) => Number(v.priceFinalGross || 0)));
-  const displayPriceGross = Math.max(...allPriceVariants.map((v) => Number(v.priceGross || 0)));
+  const displayPriceFinalGross = resolveDisplayFinalPrice(product, variants);
+  const displayPriceGross = resolveDisplayGrossPrice(product, variants);
   const discountAmount = Math.max(0, displayPriceGross - displayPriceFinalGross);
-  const discountPercent = getDiscountPercent(displayPriceGross, displayPriceFinalGross);
+  const discountPercent = calcDiscountPercent(displayPriceGross, displayPriceFinalGross);
   const stockValue = selectedSizeOption
     ? selectedSizeOption.stock
     : Math.max(

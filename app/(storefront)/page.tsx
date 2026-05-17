@@ -9,6 +9,7 @@ import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import SectionHeadingReveal from "@/app/components/motion/SectionHeadingReveal";
 import { getCatalogProductByLegacyId, listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
+import { buildMaxPriceBySkuMap, applyMaxPriceFromMap } from "@/lib/catalog/pricing";
 import {
   getCatalogProductCategoryLabel,
   getCatalogProductDisplayName,
@@ -290,22 +291,9 @@ export default async function HomePage({
   ).filter((item): item is CatalogProductView => Boolean(item?.isActive && item?.isExported && hasVisibleProductImage(item)));
 
   // Pinned products are fetched by a single legacyId (one size variant) so their price
-  // may be lower than the highest variant. Build a max-price map from the already-collapsed
-  // catalog list and apply it so pinned cards show the same price as the listing grid.
-  const maxPriceBySku = new Map<string, { priceFinalGross: number; priceGross: number }>();
-  for (const ci of catalog.items) {
-    const key = String(ci.sku || ci.legacyId).trim().toLowerCase();
-    const ex = maxPriceBySku.get(key);
-    if (!ex || ci.priceFinalGross > ex.priceFinalGross) {
-      maxPriceBySku.set(key, { priceFinalGross: ci.priceFinalGross, priceGross: ci.priceGross });
-    }
-  }
-  const pinnedProducts = pinnedProductsRaw.map((item) => {
-    const key = String(item.sku || item.legacyId).trim().toLowerCase();
-    const mp = maxPriceBySku.get(key);
-    if (!mp || item.priceFinalGross >= mp.priceFinalGross) return item;
-    return { ...item, priceFinalGross: mp.priceFinalGross, priceGross: mp.priceGross };
-  });
+  // may be lower than the highest variant. Use shared pricing utilities to override.
+  const maxPriceBySku = buildMaxPriceBySkuMap(catalog.items);
+  const pinnedProducts = pinnedProductsRaw.map((item) => applyMaxPriceFromMap(item, maxPriceBySku));
 
   const pinnedProductsById = new Map(pinnedProducts.map((item) => [item.legacyId, item]));
 
