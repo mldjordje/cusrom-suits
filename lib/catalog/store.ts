@@ -764,6 +764,8 @@ const collapseCatalogProductsByKey = (
       getCatalogDiscountPercent(item),
       getCatalogDiscountPercent(pricingLeader),
     );
+    // Always display the highest final price across all collapsed variants
+    const maxPriceVariant = current.priceFinalGross >= item.priceFinalGross ? current : item;
 
     map.set(key, {
       ...current,
@@ -777,8 +779,8 @@ const collapseCatalogProductsByKey = (
       specificationEn: representative.specificationEn || current.specificationEn || item.specificationEn,
       manufCode: representative.manufCode || current.manufCode || item.manufCode,
       brand: representative.brand || current.brand || item.brand,
-      priceGross: pricingLeader.priceGross,
-      priceFinalGross: pricingLeader.priceFinalGross,
+      priceGross: maxPriceVariant.priceGross,
+      priceFinalGross: maxPriceVariant.priceFinalGross,
       rebatePercent: mergedDiscountPercent,
       coverImage: representative.coverImage || current.coverImage || item.coverImage,
       videoUrl: representative.videoUrl || current.videoUrl || item.videoUrl,
