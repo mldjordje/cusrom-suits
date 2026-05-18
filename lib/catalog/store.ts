@@ -1277,6 +1277,7 @@ export async function getRelatedCatalogProducts(
     page: 1,
     pageSize: Math.max(limit + 8, 24),
     collapseBySku: true,
+    requireDirectImages: true,
   });
   return result.items.filter((candidate) => candidate.legacyId !== item.legacyId).slice(0, limit);
 }
@@ -1326,6 +1327,7 @@ export async function getCompleteTheLookProducts(
     collapseBySku: true,
     activeOnly: true,
     exportOnly: true,
+    requireDirectImages: true,
   });
 
   const primaryCategoryId = item.categories[0]?.id || 0;

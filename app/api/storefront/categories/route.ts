@@ -11,6 +11,7 @@ export async function GET() {
     activeOnly: true,
     exportOnly: true,
     collapseBySku: true,
+    requireDirectImages: true,
   });
 
   const categories = result.categories

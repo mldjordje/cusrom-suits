@@ -38,6 +38,7 @@ async function loadAllCatalogProductPaths() {
     activeOnly: true,
     exportOnly: true,
     collapseBySku: true,
+    requireDirectImages: true,
   });
 
   const pages = Array.from({ length: Math.max(0, firstPage.totalPages - 1) }, (_, index) => index + 2);
@@ -49,6 +50,7 @@ async function loadAllCatalogProductPaths() {
         activeOnly: true,
         exportOnly: true,
         collapseBySku: true,
+        requireDirectImages: true,
       }),
     ),
   );

@@ -20,6 +20,7 @@ export async function GET(req: NextRequest) {
     activeOnly: true,
     exportOnly: true,
     collapseBySku: true,
+    requireDirectImages: true,
   });
 
   const results = result.items.map((item) => ({

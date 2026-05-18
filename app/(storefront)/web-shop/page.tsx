@@ -141,7 +141,7 @@ export default async function WebShopPage({
       priceMin: priceMin || undefined,
       priceMax: priceMax || undefined,
       sizes: selectedSizes.length ? selectedSizes : undefined,
-      requireImages: true,
+      requireDirectImages: true,
     }),
     getLandingSettings(),
   ]);
