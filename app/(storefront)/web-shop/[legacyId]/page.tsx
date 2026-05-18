@@ -69,6 +69,17 @@ const stripHtml = (value: string | null) =>
 const toStringParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] || "" : value || "";
 
+const hasDirectProductImage = (product: {
+  coverImage: string | null;
+  images: string[];
+  hasDirectMedia: boolean;
+}) =>
+  product.hasDirectMedia &&
+  Boolean(
+    (product.coverImage && product.coverImage.trim().length > 0) ||
+      product.images.some((image) => String(image || "").trim().length > 0),
+  );
+
 export async function generateMetadata({
   params,
   searchParams,
@@ -87,8 +98,8 @@ export async function generateMetadata({
       lang,
     });
   }
-  const product = await getCatalogProductByLegacyId(id);
-  if (!product) {
+  const product = await getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: false });
+  if (!product || !product.isActive || !product.isExported || !hasDirectProductImage(product)) {
     return buildSeoMetadata({
       title: "Product not found",
       description: "Trazeni proizvod nije pronadjen u Santos & Santorini web shopu.",
@@ -134,8 +145,8 @@ export default async function WebShopProductPage({
   const id = Number.parseInt(legacyId, 10);
   if (!Number.isFinite(id)) notFound();
 
-  const product = await getCatalogProductByLegacyId(id);
-  if (!product) notFound();
+  const product = await getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: false });
+  if (!product || !product.isActive || !product.isExported || !hasDirectProductImage(product)) notFound();
 
   const [related, variants, siteContent, completeTheLook] = await Promise.all([
     getRelatedCatalogProducts(product, 4),

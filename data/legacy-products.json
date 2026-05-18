@@ -83329,10 +83329,8 @@
         ]
       }
     ],
-    "images": [
-      "https://santos.rs/fajlovi/product/11.jpg"
-    ],
-    "coverImage": "https://santos.rs/fajlovi/product/11.jpg",
+    "images": [],
+    "coverImage": null,
     "attributes": {
       "size": []
     },
