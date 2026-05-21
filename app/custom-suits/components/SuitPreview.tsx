@@ -1385,6 +1385,13 @@ const SuitPreview = ({
       ),
     [selectedFabric]
   );
+  const pantsStripeAngleDelta = useMemo(
+    () =>
+      parseNumber(
+        (selectedFabric as any)?.pantsStripeAngleDelta ?? (selectedFabric as any)?.pants_stripe_angle_delta
+      ) ?? 0,
+    [selectedFabric]
+  );
   const stripeRotationActive =
     stripeBoost || stripeAnalysis.strength > PANTS_STRIPE_TUNING.stripeRotationMinStrength;
   const pantsStripeRotationDeg = useMemo(() => {
@@ -2513,7 +2520,9 @@ const SuitPreview = ({
     pantsZoneOverlayReady && pantsStripeDetectedForZones && usePantsTexture
   );
   const pantsZoneRotationBaseDeg =
-    pantsStripeDetectedForZones && isStripeFabric ? 0 : pantsTextureRotationResolved;
+    pantsStripeDetectedForZones && isStripeFabric
+      ? pantsStripeAngleDelta
+      : pantsTextureRotationResolved;
   const pantsLeftZoneRotationDeg = normalizeRotation(
     pantsZoneRotationBaseDeg + (PANTS_STRIPE_TUNING.zone?.leftMainAbsDeg ?? PANTS_STRIPE_TUNING.diagAbsDeg)
   );
@@ -2719,7 +2728,9 @@ const SuitPreview = ({
     pantsRightUpperZoneRotationDeg,
     pantsStripeDetectedForZones,
   ]);
-  const pantsZoneTextureActive = false;
+  const pantsZoneTextureActive =
+    pantsStripeDetectedForZones &&
+    (pantsStripeZoneConfig.mode === "primary" || pantsStripeZoneConfig.mode === "secondary");
   const pantsTextureFallbackRotationDeg =
     pantsStripeDetectedForZones
       ? 0
@@ -4063,8 +4074,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("leftMain")}
                     />
                   )}
@@ -4084,8 +4095,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("leftUnderlap")}
                     />
                   )}
@@ -4105,8 +4116,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightUpper}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("rightFly")}
                     />
                   )}
@@ -4126,8 +4137,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightLower}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("rightUnder")}
                     />
                   )}
@@ -4147,8 +4158,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.waist}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("waist")}
                     />
                   )}
@@ -4171,8 +4182,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("leftMain")}
                     />
                   )}
@@ -4192,8 +4203,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightUpper}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("rightFly")}
                     />
                   )}
@@ -4213,8 +4224,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.waist}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("waist")}
                     />
                   )}
@@ -4260,8 +4271,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("leftMain")}
                     />
                   )}
@@ -4281,8 +4292,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("leftUnderlap")}
                     />
                   )}
@@ -4302,8 +4313,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightUpper}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("rightFly")}
                     />
                   )}
@@ -4323,8 +4334,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightLower}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("rightUnder")}
                     />
                   )}
@@ -4344,8 +4355,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.waist}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("waist")}
                     />
                   )}
@@ -4368,8 +4379,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("leftMain")}
                     />
                   )}
@@ -4389,8 +4400,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightUpper}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("rightFly")}
                     />
                   )}
@@ -4410,8 +4421,8 @@ const SuitPreview = ({
                       textureTileSizePx={stripeTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.waist}
                       rotationScaleMode="none"
-                      backgroundAnchor="top-left"
-                      rotationOrigin="top left"
+                      backgroundAnchor="center"
+                      rotationOrigin="center"
                       backgroundOffset={getZoneTextureOffset("waist")}
                     />
                   )}

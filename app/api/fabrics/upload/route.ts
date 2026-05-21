@@ -136,6 +136,7 @@ export async function POST(req: NextRequest) {
   const textureContrast = parseNumber(form.get("textureContrast") ?? form.get("texture_contrast"));
   const textureBrightness = parseNumber(form.get("textureBrightness") ?? form.get("texture_brightness"));
   const pantsTextureRotation = parseNumber(form.get("pantsTextureRotation") ?? form.get("pants_texture_rotation"));
+  const pantsStripeAngleDelta = parseNumber(form.get("pantsStripeAngleDelta") ?? form.get("pants_stripe_angle_delta"));
   const stripeSpacing = parseNumber(form.get("stripeSpacing") ?? form.get("stripe_spacing"));
   const stripeSpacingJacket = parseNumber(
     form.get("stripeSpacingJacket") ?? form.get("stripe_spacing_jacket")
@@ -212,6 +213,7 @@ export async function POST(req: NextRequest) {
   if (textureContrast !== null) payload.texture_contrast = textureContrast;
   if (textureBrightness !== null) payload.texture_brightness = textureBrightness;
   if (pantsTextureRotation !== null) payload.pants_texture_rotation = pantsTextureRotation;
+  if (pantsStripeAngleDelta !== null) payload.pants_stripe_angle_delta = pantsStripeAngleDelta;
   if (stripeSpacing !== null) payload.stripe_spacing = stripeSpacing;
   if (stripeSpacingJacket !== null) payload.stripe_spacing_jacket = stripeSpacingJacket;
   if (stripeSpacingPants !== null) payload.stripe_spacing_pants = stripeSpacingPants;

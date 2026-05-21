@@ -18,6 +18,7 @@ type Fabric = {
   stripeSpacing?: number | null;
   stripeSpacingJacket?: number | null;
   stripeSpacingPants?: number | null;
+  pantsStripeAngleDelta?: number | null;
   detailImage?: string | null;
   detailText?: string | null;
 };
@@ -94,6 +95,7 @@ export default function FabricsAdminPage() {
     stripeSpacing: "",
     stripeSpacingJacket: "",
     stripeSpacingPants: "",
+    pantsStripeAngleDelta: "",
     detailImage: "",
     detailText: "",
   });
@@ -306,6 +308,7 @@ export default function FabricsAdminPage() {
     if (form.stripeSpacing.trim()) fd.set("stripeSpacing", form.stripeSpacing.trim());
     if (form.stripeSpacingJacket.trim()) fd.set("stripeSpacingJacket", form.stripeSpacingJacket.trim());
     if (form.stripeSpacingPants.trim()) fd.set("stripeSpacingPants", form.stripeSpacingPants.trim());
+    if (form.pantsStripeAngleDelta.trim()) fd.set("pantsStripeAngleDelta", form.pantsStripeAngleDelta.trim());
     if (form.detailImage.trim()) fd.set("detailImage", form.detailImage.trim());
     if (form.detailText.trim()) fd.set("detailText", form.detailText.trim());
     if (file) fd.set("file", file);
@@ -333,6 +336,7 @@ export default function FabricsAdminPage() {
       stripeSpacing: "",
       stripeSpacingJacket: "",
       stripeSpacingPants: "",
+      pantsStripeAngleDelta: "",
       detailImage: "",
       detailText: "",
     });
@@ -379,6 +383,8 @@ export default function FabricsAdminPage() {
         typeof fab.stripeSpacingJacket === "number" ? String(fab.stripeSpacingJacket) : "",
       stripeSpacingPants:
         typeof fab.stripeSpacingPants === "number" ? String(fab.stripeSpacingPants) : "",
+      pantsStripeAngleDelta:
+        typeof fab.pantsStripeAngleDelta === "number" ? String(fab.pantsStripeAngleDelta) : "",
       detailImage: fab.detailImage || (fab as any).detail_image || "",
       detailText: fab.detailText || (fab as any).detail_text || "",
     });
@@ -635,6 +641,18 @@ export default function FabricsAdminPage() {
                 step={1}
               />
             </div>
+            <div className="space-y-1">
+              <label className="text-xs font-semibold text-gray-700">Ugao pruga pantalone (delta °)</label>
+              <input
+                type="number"
+                value={form.pantsStripeAngleDelta}
+                onChange={(e) => setForm((s) => ({ ...s, pantsStripeAngleDelta: e.target.value }))}
+                className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-gray-400 focus:outline-none"
+                placeholder="prazno = auto"
+                inputMode="numeric"
+                step={1}
+              />
+            </div>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-2">
             <button
@@ -749,6 +767,7 @@ export default function FabricsAdminPage() {
               typeof f.stripeSpacing === "number" ? `stripe spacing ${f.stripeSpacing}` : null,
               typeof f.stripeSpacingJacket === "number" ? `stripe jacket ${f.stripeSpacingJacket}` : null,
               typeof f.stripeSpacingPants === "number" ? `stripe pants ${f.stripeSpacingPants}` : null,
+              typeof f.pantsStripeAngleDelta === "number" ? `angle delta ${f.pantsStripeAngleDelta}` : null,
               f.detailImage || f.detailText ? "detail" : null,
             ]
               .filter(Boolean)

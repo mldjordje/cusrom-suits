@@ -64,6 +64,7 @@ const normalizeFabric = (fabric: any) => ({
   textureContrast: fabric.textureContrast ?? fabric.texture_contrast ?? null,
   textureBrightness: fabric.textureBrightness ?? fabric.texture_brightness ?? null,
   pantsTextureRotation: fabric.pantsTextureRotation ?? fabric.pants_texture_rotation ?? null,
+  pantsStripeAngleDelta: fabric.pantsStripeAngleDelta ?? fabric.pants_stripe_angle_delta ?? null,
   stripeSpacing: fabric.stripeSpacing ?? fabric.stripe_spacing ?? null,
   stripeSpacingJacket: fabric.stripeSpacingJacket ?? fabric.stripe_spacing_jacket ?? null,
   stripeSpacingPants: fabric.stripeSpacingPants ?? fabric.stripe_spacing_pants ?? null,
