@@ -57,11 +57,6 @@ function CustomSuitsComingSoon() {
 }
 
 export default function CustomSuitsPage() {
-  const [showInternalConfigurator, setShowInternalConfigurator] = React.useState(false);
-  React.useEffect(() => {
-    setShowInternalConfigurator(new URLSearchParams(window.location.search).get("atelier") === "1");
-  }, []);
-  if (!showInternalConfigurator) return <CustomSuitsComingSoon />;
   return <CustomSuitsConfigurator />;
 }
 

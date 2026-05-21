@@ -15,7 +15,7 @@ const transparentBase = () => {
 const transparentVersion =
   (process.env.NEXT_PUBLIC_TRANSPARENT_VERSION &&
     process.env.NEXT_PUBLIC_TRANSPARENT_VERSION.trim()) ||
-  "ultra-2";
+  "ultra-3";
 
 const appendVersion = (url: string) => {
   if (!transparentVersion) return url;

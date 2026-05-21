@@ -111,7 +111,7 @@ const FAST_PREVIEW = true;
 const ENABLE_PANTS_SYNTHETIC_STRIPES = false;
 const PARITY_DEBUG_OVERLAY = process.env.NEXT_PUBLIC_PARITY_DEBUG === "1";
 const VEST_FEATURE_ENABLED = process.env.NEXT_PUBLIC_VEST_FEATURE !== "0";
-const PANTS_MASK_VERSION = "v25";
+const PANTS_MASK_VERSION = "v26";
 const ZERO_OFFSET = { x: 0, y: 0 } as const;
 
 const FABRIC_AVG_CACHE = new Map<string, string | null>();
