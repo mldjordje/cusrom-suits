@@ -1224,6 +1224,15 @@ const SuitPreview = ({
     if (patternStripe) return STRIPE_TILE_PX;
     return TEXTURE_TILE_PX;
   }, [hasTextureStripes, isStripeFabric, patternStripe, stripeProfile.tileScaleMul]);
+  // Pants zones use a larger tile than jacket so fabric stripes appear wider
+  // and match the reference look. 2.4× base gives ~4-5 visible stripes across
+  // the 600 px canvas which mirrors the Hockerty reference proportion.
+  const pantsTileSizePx = useMemo(() => {
+    if (isStripeFabric && hasTextureStripes) {
+      return Math.round(TEXTURE_TILE_PX * 2.4 * stripeProfile.tileScaleMul);
+    }
+    return stripeTileSizePx;
+  }, [isStripeFabric, hasTextureStripes, stripeProfile.tileScaleMul, stripeTileSizePx]);
 
   const tb = toneBlend(selectedFabric?.tone, level);
   const toneVis = getToneConfig(selectedFabric?.tone, level);
@@ -2806,15 +2815,15 @@ const SuitPreview = ({
     const baseOpacity = Number(pantsZoneTextureStyle.opacity ?? tunedTextureOpacity);
     if (usePhotoBase) {
       const blend: React.CSSProperties["mixBlendMode"] = "soft-light";
-      const preserveMul = isStripeFabric ? (fabricTone === "dark" ? 0.82 : 0.74) : 0.72;
-      const opacity = clamp(baseOpacity * preserveMul, 0.10, isStripeFabric ? 0.28 : 0.3);
+      const preserveMul = isStripeFabric ? (fabricTone === "dark" ? 0.90 : 0.84) : 0.72;
+      const opacity = clamp(baseOpacity * preserveMul, 0.16, isStripeFabric ? 0.44 : 0.3);
       return {
         ...pantsZoneTextureStyle,
         mixBlendMode: blend,
         opacity,
       };
     }
-    const opacity = clamp(baseOpacity * 0.82, 0.06, 0.52);
+    const opacity = clamp(baseOpacity * 0.90, 0.06, 0.56);
     const blend: React.CSSProperties["mixBlendMode"] =
       fabricTone === "dark" ? "soft-light" : pantsZoneTextureStyle.mixBlendMode;
     return {
@@ -4050,7 +4059,7 @@ const SuitPreview = ({
             canvas={PANTS_CANVAS}
             mask={pantsMask}
             textureScale={pantsTextureScale}
-            textureTileSizePx={stripeTileSizePx}
+            textureTileSizePx={pantsTileSizePx}
           />
         )}
         {showLayer("fabric") && usePantsTexture && (
@@ -4065,13 +4074,13 @@ const SuitPreview = ({
                       fabricTexture={fabricTextureSourcePants}
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.leftMain}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4086,13 +4095,13 @@ const SuitPreview = ({
                       fabricTexture={fabricTextureSourcePants}
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.leftUnder}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4107,13 +4116,13 @@ const SuitPreview = ({
                       fabricTexture={fabricTextureSourcePants}
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.rightUpper}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightUpper}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4128,13 +4137,13 @@ const SuitPreview = ({
                       fabricTexture={fabricTextureSourcePants}
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.rightLower}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightLower}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4149,13 +4158,13 @@ const SuitPreview = ({
                       fabricTexture={fabricTextureSourcePants}
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.waist}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.waist}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4173,13 +4182,13 @@ const SuitPreview = ({
                       fabricTexture={fabricTextureSourcePants}
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.leftLeg}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4194,13 +4203,13 @@ const SuitPreview = ({
                       fabricTexture={fabricTextureSourcePants}
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.rightLeg}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightUpper}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4215,13 +4224,13 @@ const SuitPreview = ({
                       fabricTexture={fabricTextureSourcePants}
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.waist}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.waist}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4245,7 +4254,7 @@ const SuitPreview = ({
               canvas={PANTS_CANVAS}
               mask={pantsMask}
               textureScale={pantsTextureScale}
-              textureTileSizePx={stripeTileSizePx}
+              textureTileSizePx={pantsTileSizePx}
               textureRotationDeg={pantsTextureFallbackRotationDeg}
             />
           )
@@ -4262,13 +4271,13 @@ const SuitPreview = ({
                       fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.leftMain}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4283,13 +4292,13 @@ const SuitPreview = ({
                       fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.leftUnder}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4304,13 +4313,13 @@ const SuitPreview = ({
                       fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.rightUpper}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightUpper}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4325,13 +4334,13 @@ const SuitPreview = ({
                       fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.rightLower}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightLower}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4346,13 +4355,13 @@ const SuitPreview = ({
                       fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.waist}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.waist}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4370,13 +4379,13 @@ const SuitPreview = ({
                       fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.leftLeg}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.leftMain}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4391,13 +4400,13 @@ const SuitPreview = ({
                       fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.rightLeg}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.rightUpper}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4412,13 +4421,13 @@ const SuitPreview = ({
                       fabricTexture={useTexture ? fabricTextureSourcePants : undefined}
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
-                      baseBlendMode="normal"
-                      baseOpacity={0}
+                      baseBlendMode="color"
+                      baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
                       mask={pantsStripeZoneConfig.masks.waist}
                       textureScale={pantsTextureScale}
-                      textureTileSizePx={stripeTileSizePx}
+                      textureTileSizePx={pantsTileSizePx}
                       textureRotationDeg={pantsStripeZoneConfig.rotations.waist}
                       rotationScaleMode="none"
                       backgroundAnchor="center"
@@ -4442,7 +4451,7 @@ const SuitPreview = ({
               canvas={PANTS_CANVAS}
               mask={pantsMask}
               textureScale={pantsTextureScale}
-              textureTileSizePx={stripeTileSizePx}
+              textureTileSizePx={pantsTileSizePx}
               textureRotationDeg={pantsStripeRotationDeg}
             />
           )
@@ -4466,7 +4475,7 @@ const SuitPreview = ({
             canvas={PANTS_CANVAS}
             mask={pantsMask}
             textureScale={pantsTextureScale}
-            textureTileSizePx={stripeTileSizePx}
+            textureTileSizePx={pantsTileSizePx}
             textureRotationDeg={pantsTextureFallbackRotationDeg}
           />
         )}
@@ -4485,7 +4494,7 @@ const SuitPreview = ({
                 canvas={PANTS_CANVAS}
                 mask={pantsLeftZoneMask}
                 textureScale={pantsTextureScale}
-                textureTileSizePx={stripeTileSizePx}
+                textureTileSizePx={pantsTileSizePx}
                 textureRotationDeg={0}
               />
             )}
@@ -4502,7 +4511,7 @@ const SuitPreview = ({
                 canvas={PANTS_CANVAS}
                 mask={pantsRightZoneMask}
                 textureScale={pantsTextureScale}
-                textureTileSizePx={stripeTileSizePx}
+                textureTileSizePx={pantsTileSizePx}
                 textureRotationDeg={0}
               />
             )}
@@ -4521,7 +4530,7 @@ const SuitPreview = ({
                 canvas={PANTS_CANVAS}
                 mask={pantsStripeZoneConfig.masks.rightLower}
                 textureScale={pantsTextureScale}
-                textureTileSizePx={stripeTileSizePx}
+                textureTileSizePx={pantsTileSizePx}
                 textureRotationDeg={0}
               />
             )}
@@ -4538,7 +4547,7 @@ const SuitPreview = ({
                 canvas={PANTS_CANVAS}
                 mask={pantsStripeZoneConfig.masks.waist}
                 textureScale={pantsTextureScale}
-                textureTileSizePx={stripeTileSizePx}
+                textureTileSizePx={pantsTileSizePx}
                 textureRotationDeg={0}
               />
             )}

@@ -45,7 +45,7 @@ export const PANTS_STRIPE_MANUAL_TUNING = {
     beltBottomYRatio: 0.98,
 
     // Feather to soften hard seams between masks.
-    boundaryFeatherPx: 0.65,
+    boundaryFeatherPx: 10,
   },
 
   offsets: {
