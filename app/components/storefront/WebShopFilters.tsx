@@ -80,10 +80,23 @@ export default function WebShopFilters({
     const shouldLockScroll = mobileSortOpen || mobileFilterOpen;
     if (!shouldLockScroll) return;
 
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+    const scrollY = window.scrollY;
+    const { body } = document;
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+
     return () => {
-      document.body.style.overflow = previousOverflow;
+      body.style.overflow = "";
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      window.scrollTo(0, scrollY);
     };
   }, [mobileFilterOpen, mobileSortOpen]);
 
@@ -125,13 +138,13 @@ export default function WebShopFilters({
   const renderCategoryLinks = (className: string) => (
     <div className={className}>
       <Link
-        href={makeHref({ categoryId: null, onSale: null })}
+        href={makeHref({ categoryId: null, onSale: null, q: null })}
         className={`ss-shop-filter-chip ${categoryId <= 0 && !onSale ? "is-active" : ""}`}
       >
         {isEn ? "All products" : "Svi proizvodi"}
       </Link>
       <Link
-        href={makeHref({ categoryId: null, onSale: onSale && categoryId <= 0 ? null : 1 })}
+        href={makeHref({ categoryId: null, onSale: onSale && categoryId <= 0 ? null : 1, q: null })}
         className={`ss-shop-filter-chip ${onSale && categoryId <= 0 ? "is-active" : ""}`}
       >
         {isEn ? "Sale" : "Akcija"}
@@ -142,6 +155,7 @@ export default function WebShopFilters({
           href={makeHref({
             categoryId: categoryId === category.id ? null : category.id,
             onSale: null,
+            q: null,
           })}
           className={`ss-shop-filter-chip ${categoryId === category.id ? "is-active" : ""}`}
         >

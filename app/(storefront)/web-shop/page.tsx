@@ -330,17 +330,17 @@ export default async function WebShopPage({
   const heroCategoryLinks = [
     {
       label: isEn ? "All products" : "Svi proizvodi",
-      href: makeHref({ categoryId: null, onSale: null, page: 1 }),
+      href: makeHref({ categoryId: null, onSale: null, page: 1, q: null }),
       active: categoryId <= 0 && !onSale,
     },
     {
       label: isEn ? "Sale" : "Akcija",
-      href: makeHref({ categoryId: null, onSale: 1, page: 1 }),
+      href: makeHref({ categoryId: null, onSale: 1, page: 1, q: null }),
       active: onSale && categoryId <= 0,
     },
     ...topCategories.slice(0, 5).map((category) => ({
       label: localizeCategory(category.name),
-      href: makeHref({ categoryId: category.id, onSale: null, page: 1 }),
+      href: makeHref({ categoryId: category.id, onSale: null, page: 1, q: null }),
       active: categoryId === category.id,
     })),
   ];
@@ -394,7 +394,7 @@ export default async function WebShopPage({
                 quality={68}
               />
             </Link>
-            {discountPercent > 0 ? (
+            {discountPercent > 0 && item.priceFinalGross > 0 ? (
               <span className="ss-product-card__badge">
                 -{discountPercent}% {isEn ? "off" : "popust"}
               </span>

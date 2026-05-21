@@ -12,7 +12,6 @@ import {
   applyPromotionRulesToProducts,
   listPromotionRules,
 } from "@/lib/catalog/promotions";
-import { selectMaxPriceVariant } from "@/lib/catalog/pricing";
 import { unstable_cache } from "next/cache";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
@@ -473,7 +472,7 @@ const applyFilters = (
         item.name,
         item.nameEn || "",
         item.brand || "",
-        item.description || "",
+        ...item.categories.map((c) => c.name),
       ]
         .join(" ")
         .toLowerCase();
@@ -765,8 +764,6 @@ const collapseCatalogProductsByKey = (
       getCatalogDiscountPercent(item),
       getCatalogDiscountPercent(pricingLeader),
     );
-    // Always display the highest final price across all collapsed variants
-    const maxPriceVariant = selectMaxPriceVariant([current, item]) ?? current;
 
     map.set(key, {
       ...current,
@@ -780,8 +777,8 @@ const collapseCatalogProductsByKey = (
       specificationEn: representative.specificationEn || current.specificationEn || item.specificationEn,
       manufCode: representative.manufCode || current.manufCode || item.manufCode,
       brand: representative.brand || current.brand || item.brand,
-      priceGross: maxPriceVariant.priceGross,
-      priceFinalGross: maxPriceVariant.priceFinalGross,
+      priceGross: representative.priceGross,
+      priceFinalGross: representative.priceFinalGross,
       rebatePercent: mergedDiscountPercent,
       coverImage: representative.coverImage || current.coverImage || item.coverImage,
       videoUrl: representative.videoUrl || current.videoUrl || item.videoUrl,

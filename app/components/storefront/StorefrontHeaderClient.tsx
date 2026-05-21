@@ -350,6 +350,7 @@ export default function StorefrontHeaderClient({
             </div>
 
             <div className="ss-mobile-tools">
+              <StorefrontLanguageSwitcher lang={lang} compact className="ss-mobile-lang" />
               <button
                 type="button"
                 className="ss-mobile-slot ss-mobile-link"

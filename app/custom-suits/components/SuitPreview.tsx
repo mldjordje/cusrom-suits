@@ -2719,7 +2719,9 @@ const SuitPreview = ({
     pantsRightUpperZoneRotationDeg,
     pantsStripeDetectedForZones,
   ]);
-  const pantsZoneTextureActive = false;
+  const pantsZoneTextureActive =
+    pantsStripeDetectedForZones &&
+    (pantsStripeZoneConfig.mode === "primary" || pantsStripeZoneConfig.mode === "secondary");
   const pantsTextureFallbackRotationDeg =
     pantsStripeDetectedForZones
       ? 0

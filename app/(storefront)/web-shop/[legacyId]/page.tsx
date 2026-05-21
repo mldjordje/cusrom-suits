@@ -384,13 +384,13 @@ export default async function WebShopProductPage({
                       {discountAmount > 0 ? (
                         <span className="old-price ms-2">{formatRsd(displayPriceGross)}</span>
                       ) : null}
-                      {discountPercent > 0 ? (
+                      {discountPercent > 0 && displayPriceFinalGross > 0 ? (
                         <span className="ss-product-price-badge">-{discountPercent}%</span>
                       ) : null}
                     </>
                   )}
                 </div>
-                {discountPercent > 0 && !businessUniform ? (
+                {discountPercent > 0 && displayPriceFinalGross > 0 && !businessUniform ? (
                   <p className="ss-product-price-note">
                     {isEn ? "You save" : "Stedite"} {formatRsd(discountAmount)} ({discountPercent}%)
                   </p>
@@ -628,7 +628,7 @@ export default async function WebShopProductPage({
                   <strong className="ss-mobile-product-bar__price">
                     {businessUniform ? (isEn ? "Inquiry" : "Na upit") : formatRsd(selectedProduct.priceFinalGross)}
                   </strong>
-                  {discountPercent > 0 && !businessUniform ? (
+                  {discountPercent > 0 && displayPriceFinalGross > 0 && !businessUniform ? (
                     <>
                       <span className="ss-mobile-product-bar__old-price">{formatRsd(selectedProduct.priceGross)}</span>
                       <span className="ss-product-price-badge ss-product-price-badge--mobile">-{discountPercent}%</span>
