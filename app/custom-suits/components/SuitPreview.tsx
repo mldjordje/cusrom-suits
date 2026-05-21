@@ -2719,9 +2719,7 @@ const SuitPreview = ({
     pantsRightUpperZoneRotationDeg,
     pantsStripeDetectedForZones,
   ]);
-  const pantsZoneTextureActive =
-    pantsStripeDetectedForZones &&
-    (pantsStripeZoneConfig.mode === "primary" || pantsStripeZoneConfig.mode === "secondary");
+  const pantsZoneTextureActive = false;
   const pantsTextureFallbackRotationDeg =
     pantsStripeDetectedForZones
       ? 0
@@ -2794,39 +2792,39 @@ const SuitPreview = ({
   const jacketStripeZoneActive = Boolean(isStripeFabric && jacketStripeZones?.stats.valid);
   const pantsTextureStyleReal = useMemo<React.CSSProperties>(() => {
     const baseOpacity = Number(pantsZoneTextureStyle.opacity ?? tunedTextureOpacity);
-    const stripeZoneEnhanced = pantsZoneTextureActive && (hasTextureStripes || isStripeFabric);
     const usesRealStripeTexture = hasTextureStripes || isStripeFabric;
     if (usePhotoBase) {
-      const blend: React.CSSProperties["mixBlendMode"] = "soft-light";
-      const preserveMul = usesRealStripeTexture ? 0.72 : stripeZoneEnhanced ? 0.82 : pantsZoneTextureActive ? 0.66 : 0.7;
-      const maxOpacity = usesRealStripeTexture ? 0.32 : stripeZoneEnhanced ? 0.42 : 0.32;
-      const opacity = clamp(baseOpacity * preserveMul, usesRealStripeTexture ? 0.1 : 0.14, maxOpacity);
+      // Stripe/patterned fabrics: tile the real fabric photo at multiply blend.
+      // Multiply preserves the photo's shading/structure (white in fabric = photo unchanged)
+      // while dark stripes in the fabric image become clearly visible stripes on the suit.
+      if (usesRealStripeTexture) {
+        return {
+          ...pantsZoneTextureStyle,
+          mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"],
+          opacity: 0.82,
+        };
+      }
       return {
         ...pantsZoneTextureStyle,
-        mixBlendMode: blend,
-        opacity,
+        mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
+        opacity: clamp(baseOpacity * 0.7, 0.14, 0.32),
       };
     }
-    const preserveMul = stripeZoneEnhanced ? 0.98 : pantsZoneTextureActive ? 0.56 : 0.72;
-    const opacity = clamp(baseOpacity * preserveMul, stripeZoneEnhanced ? 0.14 : 0.05, 0.56);
+    // Non-photo base: normal blend for stripe fabrics at elevated opacity so the
+    // fabric image's natural stripes tile visibly across the pants silhouette.
     const blend: React.CSSProperties["mixBlendMode"] =
-      usesRealStripeTexture
-        ? "normal"
-        : pantsZoneTextureActive && hasTextureStripes
-          ? fabricTone === "dark"
-            ? "soft-light"
-            : "overlay"
-        : pantsZoneTextureStyle.mixBlendMode;
+      usesRealStripeTexture ? "normal" : pantsZoneTextureStyle.mixBlendMode;
+    const opacity = usesRealStripeTexture
+      ? clamp(baseOpacity, 0.62, 0.78)
+      : clamp(baseOpacity * 0.72, 0.05, 0.56);
     return {
       ...pantsZoneTextureStyle,
       mixBlendMode: blend,
       opacity,
     };
   }, [
-    fabricTone,
     hasTextureStripes,
     isStripeFabric,
-    pantsZoneTextureActive,
     pantsZoneTextureStyle,
     tunedTextureOpacity,
     usePhotoBase,
