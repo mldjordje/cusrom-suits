@@ -2791,44 +2791,27 @@ const SuitPreview = ({
   );
   const jacketStripeZoneActive = Boolean(isStripeFabric && jacketStripeZones?.stats.valid);
   const pantsTextureStyleReal = useMemo<React.CSSProperties>(() => {
+    // Mirror jacket texture rendering so pants and jacket look consistent.
     const baseOpacity = Number(pantsZoneTextureStyle.opacity ?? tunedTextureOpacity);
-    const usesRealStripeTexture = hasTextureStripes || isStripeFabric;
     if (usePhotoBase) {
-      // Stripe/patterned fabrics: tile the real fabric photo at multiply blend.
-      // Multiply preserves the photo's shading/structure (white in fabric = photo unchanged)
-      // while dark stripes in the fabric image become clearly visible stripes on the suit.
-      if (usesRealStripeTexture) {
-        return {
-          ...pantsZoneTextureStyle,
-          mixBlendMode: "multiply" as React.CSSProperties["mixBlendMode"],
-          opacity: 0.82,
-        };
-      }
+      const blend: React.CSSProperties["mixBlendMode"] = "soft-light";
+      const preserveMul = isStripeFabric ? (fabricTone === "dark" ? 0.82 : 0.74) : 0.72;
+      const opacity = clamp(baseOpacity * preserveMul, 0.10, isStripeFabric ? 0.28 : 0.3);
       return {
         ...pantsZoneTextureStyle,
-        mixBlendMode: "soft-light" as React.CSSProperties["mixBlendMode"],
-        opacity: clamp(baseOpacity * 0.7, 0.14, 0.32),
+        mixBlendMode: blend,
+        opacity,
       };
     }
-    // Non-photo base: normal blend for stripe fabrics at elevated opacity so the
-    // fabric image's natural stripes tile visibly across the pants silhouette.
+    const opacity = clamp(baseOpacity * 0.82, 0.06, 0.52);
     const blend: React.CSSProperties["mixBlendMode"] =
-      usesRealStripeTexture ? "normal" : pantsZoneTextureStyle.mixBlendMode;
-    const opacity = usesRealStripeTexture
-      ? clamp(baseOpacity, 0.62, 0.78)
-      : clamp(baseOpacity * 0.72, 0.05, 0.56);
+      fabricTone === "dark" ? "soft-light" : pantsZoneTextureStyle.mixBlendMode;
     return {
       ...pantsZoneTextureStyle,
       mixBlendMode: blend,
       opacity,
     };
-  }, [
-    hasTextureStripes,
-    isStripeFabric,
-    pantsZoneTextureStyle,
-    tunedTextureOpacity,
-    usePhotoBase,
-  ]);
+  }, [fabricTone, isStripeFabric, pantsZoneTextureStyle, tunedTextureOpacity, usePhotoBase]);
   const pantsDetailProtectTextureStyle = useMemo<React.CSSProperties>(() => {
     return pantsTextureStyleReal;
   }, [pantsTextureStyleReal]);
