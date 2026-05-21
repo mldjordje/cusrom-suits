@@ -11,6 +11,8 @@ const transparentBase = () => {
   if (!cachedBase) cachedBase = getTransparentCdnBase();
   return cachedBase;
 };
+const bundledTransparentBase = "/assets/suits/transparent/";
+const bundledTransparentSprites = new Set(["length_long+cut_slim-cleaned"]);
 
 const transparentVersion =
   (process.env.NEXT_PUBLIC_TRANSPARENT_VERSION &&
@@ -93,7 +95,11 @@ const remapBaseName = (name: string, folder?: LayerFolder) => {
 const buildPair = (src: string, folder?: LayerFolder) => {
   const baseName = remapBaseName(spriteFileBase(src), folder);
   if (!baseName) return null;
-  const prefix = folder ? `${transparentBase()}${folder}/` : transparentBase();
+  const base =
+    !folder && bundledTransparentSprites.has(baseName)
+      ? bundledTransparentBase
+      : transparentBase();
+  const prefix = folder ? `${base}${folder}/` : base;
   return {
     webp: appendVersion(`${prefix}${baseName}.webp`),
     png: appendVersion(`${prefix}${baseName}.png`),
