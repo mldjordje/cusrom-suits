@@ -4,7 +4,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import {
   ArrowsPointingOutIcon,
   BriefcaseIcon,
-  BuildingStorefrontIcon,
   ChevronDownIcon,
   EnvelopeIcon,
   MapPinIcon,
