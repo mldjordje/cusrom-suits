@@ -67,6 +67,48 @@ const normalizeHex = (value: string | null) => {
   return `#${raw}`;
 };
 
+/**
+ * Offset-method seamless tile: rearrange the four quadrants so that the
+ * original edge seams move to the centre of the image.  The result tiles
+ * perfectly at any scale without visible grid lines.
+ *
+ * Q layout (before → after):
+ *   TL TR          BR BL
+ *   BL BR    →     TR TL
+ */
+const makeSeamlessTextureBuffer = async (input: Buffer): Promise<Buffer> => {
+  try {
+    const meta = await sharp(input, { failOn: "none" }).metadata();
+    const w = meta.width ?? 0;
+    const h = meta.height ?? 0;
+    if (w < 8 || h < 8) return input;
+
+    const hw = Math.floor(w / 2);
+    const hh = Math.floor(h / 2);
+
+    const [tl, tr, bl, br] = await Promise.all([
+      sharp(input).extract({ left: 0,  top: 0,  width: hw,     height: hh     }).toBuffer(),
+      sharp(input).extract({ left: hw, top: 0,  width: w - hw, height: hh     }).toBuffer(),
+      sharp(input).extract({ left: 0,  top: hh, width: hw,     height: h - hh }).toBuffer(),
+      sharp(input).extract({ left: hw, top: hh, width: w - hw, height: h - hh }).toBuffer(),
+    ]);
+
+    return await sharp({
+      create: { width: w, height: h, channels: 3, background: "#000000" },
+    })
+      .composite([
+        { input: br, left: 0,  top: 0  },   // BR → top-left
+        { input: bl, left: hw, top: 0  },   // BL → top-right
+        { input: tr, left: 0,  top: hh },   // TR → bottom-left
+        { input: tl, left: hw, top: hh },   // TL → bottom-right
+      ])
+      .jpeg({ quality: 94, chromaSubsampling: "4:4:4" })
+      .toBuffer();
+  } catch {
+    return input; // fall back to original on any error
+  }
+};
+
 const buildAutoDetailBuffer = async (input: Buffer) => {
   const pipeline = sharp(input, { failOn: "none" }).rotate();
   const meta = await pipeline.metadata();
@@ -168,8 +210,14 @@ export async function POST(req: NextRequest) {
 
   if (!textureUrl && file) {
     await ensureBucket(supabase);
-    const path = `fabrics/${id}-${Date.now()}-${file.name}`;
-    const { error: uploadError } = await supabase.storage.from(bucketName).upload(path, file, { upsert: true });
+    // Always produce a seamless tile so rotated CSS tiling has no visible grid seams.
+    const rawBuffer = Buffer.from(await file.arrayBuffer());
+    const seamlessBuffer = await makeSeamlessTextureBuffer(rawBuffer);
+    const uploadName = file.name.replace(/\.[^.]+$/, "") + "_seamless.jpg";
+    const path = `fabrics/${id}-${Date.now()}-${uploadName}`;
+    const { error: uploadError } = await supabase.storage
+      .from(bucketName)
+      .upload(path, seamlessBuffer, { upsert: true, contentType: "image/jpeg" });
     if (uploadError) {
       return NextResponse.json({ success: false, message: uploadError.message }, { status: 500 });
     }

@@ -122,13 +122,27 @@ export default function FabricsAdminPage() {
     }
   }, [status.type, status.message]);
 
-  // Live texture preview URL
+  // Live texture preview URL — show seamless version when enabled so the
+  // preview matches what will actually be uploaded and tiled in the configurator.
   useEffect(() => {
     if (!file) { setPreviewUrl(null); return; }
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    (async () => {
+      let previewFile: File = file;
+      if (seamlessEnabled) {
+        try { previewFile = await makeSeamlessTile(file); } catch { /* fallback to original */ }
+      }
+      if (cancelled) return;
+      objectUrl = URL.createObjectURL(previewFile);
+      setPreviewUrl(objectUrl);
+    })();
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      setPreviewUrl(null);
+    };
+  }, [file, seamlessEnabled]);
 
   // ── Data ──────────────────────────────────────────────────────────────────
 
@@ -295,6 +309,29 @@ export default function FabricsAdminPage() {
     setForm(EMPTY_FORM);
     setFile(null); setDetailFile(null); setAutoTone(null);
     setSuggestStatus({ type: "idle" });
+  };
+
+  /** Fetch the existing texture URL, run seamless-tile offset transform,
+   *  then stage it as the upload file so the next Save replaces the texture. */
+  const regenSeamless = async () => {
+    const url = form.texture;
+    if (!url || !url.startsWith("http")) {
+      setStatus({ type: "error", message: "Nema texture URL-a za regenerisanje." });
+      return;
+    }
+    setStatus({ type: "loading", message: "Preuzimam teksturu..." });
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const ext = blob.type.includes("png") ? "png" : "jpg";
+      const fetched = new File([blob], `regen.${ext}`, { type: blob.type || "image/jpeg" });
+      const seamless = await makeSeamlessTile(fetched);
+      setFile(seamless);
+      setStatus({ type: "success", message: "Seamless tekstura pripremljena — klikni Sačuvaj za primjenu." });
+    } catch (err) {
+      setStatus({ type: "error", message: "Greška pri preuzimanju teksture." });
+    }
   };
 
   const onEdit = (fab: Fabric) => {
@@ -598,14 +635,34 @@ export default function FabricsAdminPage() {
                   </label>
                   <input value={form.texture} onChange={e => f("texture")(e.target.value)}
                     className={inputCls} placeholder="https://..." />
+                  {/* Regen seamless — shown when editing an existing fabric with a texture URL and no new file staged */}
+                  {isEditing && form.texture.startsWith("http") && !file && (
+                    <button
+                      type="button"
+                      onClick={regenSeamless}
+                      className="mt-1.5 flex items-center gap-1.5 rounded-lg border border-blue-200 bg-blue-50 px-2.5 py-1.5 text-xs font-semibold text-blue-700 transition hover:border-blue-300 hover:bg-blue-100"
+                    >
+                      <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                      </svg>
+                      Regeneriši seamless teksturu
+                    </button>
+                  )}
                 </div>
 
-                {/* Live tiled preview */}
+                {/* Live tiled preview — tile size ~116px matches configurator scale */}
                 {previewSrc && (
                   <div>
-                    <p className="mb-1 text-[11px] font-semibold text-gray-500">Live preview (tiled)</p>
-                    <div className="h-20 w-full overflow-hidden rounded-lg border border-gray-100"
-                      style={{ backgroundImage: `url(${previewSrc})`, backgroundRepeat: "repeat", backgroundSize: "80px 80px" }} />
+                    <p className="mb-1 text-[11px] font-semibold text-gray-500">
+                      Live preview (tiled)
+                      {file && seamlessEnabled && (
+                        <span className="ml-1.5 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-700">seamless</span>
+                      )}
+                    </p>
+                    <div
+                      className="h-24 w-full overflow-hidden rounded-lg border border-gray-100"
+                      style={{ backgroundImage: `url(${previewSrc})`, backgroundRepeat: "repeat", backgroundSize: "116px 116px" }}
+                    />
                   </div>
                 )}
               </div>
