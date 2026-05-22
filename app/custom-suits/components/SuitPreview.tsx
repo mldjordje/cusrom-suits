@@ -1224,15 +1224,11 @@ const SuitPreview = ({
     if (patternStripe) return STRIPE_TILE_PX;
     return TEXTURE_TILE_PX;
   }, [hasTextureStripes, isStripeFabric, patternStripe, stripeProfile.tileScaleMul]);
-  // Pants zones use a larger tile than jacket so fabric stripes appear wider
-  // and match the reference look. 2.4× base gives ~4-5 visible stripes across
-  // the 600 px canvas which mirrors the Hockerty reference proportion.
-  const pantsTileSizePx = useMemo(() => {
-    if (isStripeFabric && hasTextureStripes) {
-      return Math.round(TEXTURE_TILE_PX * 2.4 * stripeProfile.tileScaleMul);
-    }
-    return stripeTileSizePx;
-  }, [isStripeFabric, hasTextureStripes, stripeProfile.tileScaleMul, stripeTileSizePx]);
+  // Pants tile size: use the same base tile as jacket (stripeTileSizePx) so
+  // that tile-seam frequency matches on both garments. A 2.4× multiplier was
+  // tried but created only ~3 visible tiles on the 520 px container, making
+  // seam lines obvious. Keeping 1× gives ~6-8 tiles — same density as jacket.
+  const pantsTileSizePx = useMemo(() => stripeTileSizePx, [stripeTileSizePx]);
 
   const tb = toneBlend(selectedFabric?.tone, level);
   const toneVis = getToneConfig(selectedFabric?.tone, level);
@@ -1794,6 +1790,14 @@ const SuitPreview = ({
     return `grayscale(1) brightness(${brightness}) contrast(${contrast}) saturate(${saturate})`;
   }, [autoTuning.photo.brightness, autoTuning.photo.contrast, autoTuning.photo.saturate, photoExposure, usePhotoBase]);
   const photoOpacity = useMemo(() => (usePhotoBase ? 1 : autoTuning.photo.opacity), [autoTuning.photo.opacity, usePhotoBase]);
+  // Pants base photo is typically shot with a darker exposure than the jacket.
+  // Applying a +12 % brightness boost brings the pants tone in line with jacket.
+  const pantsPhotoFilter = useMemo(() => {
+    if (!usePhotoBase || !photoFilter) return photoFilter;
+    return photoFilter.replace(/brightness\(([^)]+)\)/, (_, v) =>
+      `brightness(${(parseFloat(v) * 1.12).toFixed(3)})`
+    );
+  }, [photoFilter, usePhotoBase]);
   const photoBaseOpacity = useMemo(() => {
     if (!usePhotoBase) return 0.95;
     const lum = fabricMetrics.lightness;
@@ -4032,7 +4036,7 @@ const SuitPreview = ({
               resolve={resolvePantsPhoto}
             blendMode="normal"
             opacity={photoOpacity}
-            filter={photoFilter}
+            filter={pantsPhotoFilter}
             mask={pantsMask}
           />
         )}

@@ -102,6 +102,7 @@ export default function FabricsAdminPage() {
   const [file, setFile] = useState<File | null>(null);
   const [detailFile, setDetailFile] = useState<File | null>(null);
   const [autoTone, setAutoTone] = useState<string | null>(null);
+  const [seamlessEnabled, setSeamlessEnabled] = useState(true);
   const stripeSpacingValue = Number.parseFloat(form.stripeSpacing);
   const stripeSpacingDisplay = Number.isFinite(stripeSpacingValue)
     ? clamp(stripeSpacingValue, 1, 10)
@@ -126,6 +127,48 @@ export default function FabricsAdminPage() {
     window.localStorage.setItem("fabrics:rev", stamp);
     window.dispatchEvent(new Event("fabrics:updated"));
   };
+
+  /**
+   * Offset-method seamless tile generator.
+   * Splits the image into 4 quadrants and rearranges them so the tile's
+   * natural seam (its outer edges) moves to the center, where the eye
+   * reads it as fabric texture rather than a repeated-pattern boundary.
+   */
+  const makeSeamlessTile = (file: File): Promise<File> =>
+    new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(file);
+      const img = new Image();
+      img.onload = () => {
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        const hw = Math.floor(w / 2);
+        const hh = Math.floor(h / 2);
+        const canvas = document.createElement("canvas");
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) { URL.revokeObjectURL(url); reject(new Error("no 2d context")); return; }
+        // Rearrange quadrants: shift image by (hw, hh) with wrap-around
+        // TL ← BR of original
+        ctx.drawImage(img, hw, hh, w - hw, h - hh, 0,        0,        w - hw, h - hh);
+        // TR ← BL of original
+        ctx.drawImage(img, 0,  hh, hw,     h - hh, w - hw,   0,        hw,     h - hh);
+        // BL ← TR of original
+        ctx.drawImage(img, hw, 0,  w - hw, hh,     0,        h - hh,   w - hw, hh);
+        // BR ← TL of original
+        ctx.drawImage(img, 0,  0,  hw,     hh,     w - hw,   h - hh,   hw,     hh);
+        URL.revokeObjectURL(url);
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) { reject(new Error("toBlob failed")); return; }
+            resolve(new File([blob], file.name.replace(/\.[^.]+$/, "") + "_seamless.png", { type: "image/png" }));
+          },
+          "image/png"
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("image load failed")); };
+      img.src = url;
+    });
 
   const analyzeTexture = async (blob: File) => {
     const arrayBuffer = await blob.arrayBuffer();
@@ -311,7 +354,12 @@ export default function FabricsAdminPage() {
     if (form.pantsStripeAngleDelta.trim()) fd.set("pantsStripeAngleDelta", form.pantsStripeAngleDelta.trim());
     if (form.detailImage.trim()) fd.set("detailImage", form.detailImage.trim());
     if (form.detailText.trim()) fd.set("detailText", form.detailText.trim());
-    if (file) fd.set("file", file);
+    if (file) {
+      const uploadFile = seamlessEnabled
+        ? await makeSeamlessTile(file).catch(() => file)
+        : file;
+      fd.set("file", uploadFile);
+    }
     if (detailFile) fd.set("detailFile", detailFile);
 
     const res = await fetch("/api/fabrics/upload", { method: "POST", body: fd });
@@ -703,6 +751,18 @@ export default function FabricsAdminPage() {
             <span className="rounded-full bg-gray-900 px-3 py-1 text-xs font-semibold text-white shadow-sm">Izaberi fajl</span>
           </label>
           {autoTone && <p className="text-xs text-gray-500">Auto ton: {autoTone}</p>}
+          <label className="flex cursor-pointer items-center gap-2 text-xs text-gray-600 select-none">
+            <input
+              type="checkbox"
+              checked={seamlessEnabled}
+              onChange={(e) => setSeamlessEnabled(e.target.checked)}
+              className="h-3.5 w-3.5 rounded border-gray-300 accent-gray-900"
+            />
+            <span>
+              Automatski napravi seamless tile pre upload-a
+              <span className="ml-1 text-gray-400">(preporučeno)</span>
+            </span>
+          </label>
         </div>
         <div className="space-y-2">
           <label className="text-xs font-semibold text-gray-700">Upload detaljne slike (opciono)</label>
