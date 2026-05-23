@@ -736,7 +736,14 @@ const collapseCatalogProductsByKey = (
       if (!categoriesById.has(cat.id)) categoriesById.set(cat.id, cat);
     }
 
-    const images = Array.from(new Set([...current.images, ...item.images].filter((img) => img.trim().length > 0)));
+    // Compute representative first so its images are ordered first in the merged pool.
+    // This ensures the listing card's first image always matches the detail page.
+    const representative = pickCollapsedRepresentative(current, item);
+    const pricingLeader = pickCollapsedPricingLeader(current, item);
+
+    const repImages = representative.legacyId === current.legacyId ? current.images : item.images;
+    const otherImages = representative.legacyId === current.legacyId ? item.images : current.images;
+    const images = Array.from(new Set([...repImages, ...otherImages].filter((img) => img.trim().length > 0)));
 
     const mergedAttributes: Record<string, unknown> = { ...current.attributes };
     for (const [attrKey, attrValue] of Object.entries(item.attributes || {})) {
@@ -757,8 +764,6 @@ const collapseCatalogProductsByKey = (
       ...((current.rawPayload?.collapsedVariantIds as number[] | undefined) || [current.legacyId]),
       ...((item.rawPayload?.collapsedVariantIds as number[] | undefined) || [item.legacyId]),
     ]);
-    const representative = pickCollapsedRepresentative(current, item);
-    const pricingLeader = pickCollapsedPricingLeader(current, item);
     const mergedDiscountPercent = Math.max(
       getCatalogDiscountPercent(current),
       getCatalogDiscountPercent(item),

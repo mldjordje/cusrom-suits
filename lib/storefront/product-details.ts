@@ -253,10 +253,12 @@ export const getCatalogProductImageSources = (
   variants: CatalogProductView[] = [],
   fallbackImages: string[] = [],
 ) => {
+  // coverImage is the canonical representative image — always first so listing
+  // and detail page always agree on which image appears first.
   const sources = [
-    ...currentProduct.images,
     currentProduct.coverImage,
-    ...variants.flatMap((variant) => [...variant.images, variant.coverImage]),
+    ...currentProduct.images,
+    ...variants.flatMap((variant) => [variant.coverImage, ...variant.images]),
   ]
     .map(normalizeImageCandidate)
     .filter((value) => value.length > 0);

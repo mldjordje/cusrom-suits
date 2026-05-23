@@ -169,7 +169,10 @@ export default async function WebShopProductPage({
   const requestedSize = toStringParam(pageSearchParams.size).trim();
   const routeSize = getSelectedProductSize(product);
   const canonicalSize = requestedSize || routeSize || "";
-  if (displayProduct.legacyId !== product.legacyId) {
+  // Only redirect to the preferred variant when this product has NO images of its own.
+  // If it has images, the user intentionally navigated here (e.g. clicked a listing card)
+  // and must NOT be silently swapped to a different product.
+  if (displayProduct.legacyId !== product.legacyId && !hasDirectProductImage(product)) {
     const query = new URLSearchParams();
     if (canonicalSize) query.set("size", canonicalSize);
     if (isEn) query.set("lang", "en");
@@ -181,7 +184,9 @@ export default async function WebShopProductPage({
   const displayDescription = getLocalizedCatalogDescription(displayProduct, lang);
   const displaySpecification = getLocalizedCatalogSpecification(displayProduct, lang);
   const material = getProductMaterial(displayProduct, lang);
-  const gallery = getCatalogProductImageSources(displayProduct, [], ["/img/odela.jpg"]).slice(0, 8);
+  // Use the requested product's own images so the listing thumbnail matches what's
+  // shown on the detail page. displayProduct may be a different size variant.
+  const gallery = getCatalogProductImageSources(product, [], ["/img/odela.jpg"]).slice(0, 8);
   const productVideoUrl = displayProduct.videoUrl || product.videoUrl || null;
   const sizeOptions = getProductSizeOptions(product, variants);
   const selectedSizeOption =
