@@ -237,7 +237,11 @@ export default async function WebShopProductPage({
     if (size) query.set("size", size);
     if (isEn) query.set("lang", "en");
     const queryString = query.toString();
-    return `/web-shop/${displayProduct.legacyId}${queryString ? `?${queryString}` : ""}`;
+    // Always use product.legacyId (the page the user originally navigated to) so
+    // that switching size never changes the base product — only ?size= changes.
+    // Using displayProduct.legacyId here caused the size picker to jump to a
+    // completely different product's URL (and images).
+    return `/web-shop/${product.legacyId}${queryString ? `?${queryString}` : ""}`;
   };
   const variantHref = (variantId: number) =>
     isEn ? `/web-shop/${variantId}?lang=en` : `/web-shop/${variantId}`;
