@@ -122,7 +122,7 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
                 style={{ display: "block", width: "100%", height: "100%", padding: 0, border: "none", background: "none", cursor: "zoom-in" }}
               >
                 <StorefrontSmartImage
-                  sources={[activeItem.src, ...gallery.filter((item) => item.kind === "image").map((item) => item.src)]}
+                  sources={[activeItem.src]}
                   width={900}
                   height={1000}
                   alt={name}

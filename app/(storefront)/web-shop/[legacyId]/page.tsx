@@ -181,7 +181,7 @@ export default async function WebShopProductPage({
   const displayDescription = getLocalizedCatalogDescription(displayProduct, lang);
   const displaySpecification = getLocalizedCatalogSpecification(displayProduct, lang);
   const material = getProductMaterial(displayProduct, lang);
-  const gallery = getCatalogProductImageSources(displayProduct, variants, ["/img/odela.jpg"]);
+  const gallery = getCatalogProductImageSources(displayProduct, [], ["/img/odela.jpg"]).slice(0, 8);
   const productVideoUrl = displayProduct.videoUrl || product.videoUrl || null;
   const sizeOptions = getProductSizeOptions(product, variants);
   const selectedSizeOption =
