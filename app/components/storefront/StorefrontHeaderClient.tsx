@@ -256,18 +256,42 @@ export default function StorefrontHeaderClient({
                     </Link>
                     {item.href === "/web-shop" && shopMenuLinks.length > 0 ? (
                       <div className="default-menu ss-header-shop-submenu">
-                        <div className="ss-header-shop-submenu__inner">
-                          {shopMenuLinks.map((link) => (
-                            <Link
-                              key={link.href}
-                              href={withLang(link.href)}
-                              prefetch={link.href.startsWith("/web-shop")}
-                              className="menu-link menu-link_us-s"
-                            >
-                              {link.label}
-                            </Link>
-                          ))}
+                        <div className="ss-shop-dd-featured">
+                          <Link
+                            href={withLang("/web-shop")}
+                            prefetch
+                            className="ss-shop-dd-all"
+                          >
+                            <span>{isEn ? "All products" : "Svi proizvodi"}</span>
+                            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </Link>
+                          <Link
+                            href={withLang("/web-shop?categoryId=sale")}
+                            prefetch
+                            className="ss-shop-dd-sale"
+                          >
+                            {isEn ? "Sale" : "Akcija"}
+                          </Link>
                         </div>
+                        {shopCategories.length > 0 && (
+                          <>
+                            <div className="ss-shop-dd-divider" />
+                            <div className="ss-shop-dd-cats">
+                              {shopCategories.map((category) => (
+                                <Link
+                                  key={`/web-shop?categoryId=${category.id}`}
+                                  href={withLang(`/web-shop?categoryId=${category.id}`)}
+                                  prefetch
+                                  className="ss-shop-dd-cat"
+                                >
+                                  {category.name}
+                                </Link>
+                              ))}
+                            </div>
+                          </>
+                        )}
                       </div>
                     ) : null}
                   </li>

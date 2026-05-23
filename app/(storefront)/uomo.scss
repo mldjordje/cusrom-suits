@@ -4972,24 +4972,110 @@ body.mobile-menu-opened {
 .ss-header-shop-submenu {
   left: auto !important;
   right: 0;
-  width: min(720px, calc(100vw - 2rem));
-  padding: 1.1rem 1.2rem 1rem;
-  max-height: min(70vh, 28rem);
-  overflow: auto;
-  overscroll-behavior: contain;
+  width: min(640px, calc(100vw - 2rem));
+  padding: 1.4rem 1.5rem 1.5rem;
+  border-radius: 0 0 12px 12px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-top: 2px solid var(--ss-brand-red-800, #d6001c);
+  overflow: visible;
 }
 
-.ss-header-shop-submenu__inner {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 10.5rem), 1fr));
-  gap: 0.35rem 0.85rem;
+/* Featured top row: "Svi proizvodi" + "Akcija" */
+.ss-shop-dd-featured {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.1rem;
 }
 
-.ss-header-shop-submenu__inner .menu-link {
-  min-width: 0;
-  white-space: normal;
-  line-height: 1.35;
-  hyphens: auto;
+.ss-shop-dd-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: #1a1a1a;
+  text-decoration: none;
+  padding: 0.55rem 1rem 0.55rem 0.9rem;
+  border: 1.5px solid rgba(0, 0, 0, 0.14);
+  border-radius: 999px;
+  transition: border-color 0.18s ease, background 0.18s ease, color 0.18s ease;
+  flex-shrink: 0;
+
+  svg {
+    transition: transform 0.18s ease;
+    opacity: 0.7;
+  }
+
+  &:hover {
+    background: #1a1a1a;
+    border-color: #1a1a1a;
+    color: #fff;
+
+    svg {
+      transform: translateX(3px);
+      opacity: 1;
+    }
+  }
+}
+
+.ss-shop-dd-sale {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #fff;
+  text-decoration: none;
+  padding: 0.55rem 1rem;
+  background: var(--ss-brand-red-800, #d6001c);
+  border: 1.5px solid var(--ss-brand-red-800, #d6001c);
+  border-radius: 999px;
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  flex-shrink: 0;
+
+  &:hover {
+    opacity: 0.88;
+    transform: translateY(-1px);
+  }
+}
+
+.ss-shop-dd-divider {
+  height: 1px;
+  background: rgba(0, 0, 0, 0.08);
+  margin-bottom: 1rem;
+}
+
+/* Category pills grid */
+.ss-shop-dd-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.ss-shop-dd-cat {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: #333;
+  text-decoration: none;
+  padding: 0.38rem 0.8rem;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.09);
+  border-radius: 999px;
+  transition: background 0.16s ease, border-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+  white-space: nowrap;
+
+  &:hover {
+    background: rgba(214, 0, 28, 0.07);
+    border-color: rgba(214, 0, 28, 0.25);
+    color: var(--ss-brand-red-800, #d6001c);
+    transform: translateY(-1px);
+  }
 }
 
 .ss-mobile-nav-submenu {
@@ -5696,15 +5782,9 @@ body.mobile-menu-opened {
   padding-top: 0.75rem;
 }
 
-@media (min-width: 992px) and (max-width: 1399px) {
-  .ss-header-shop-submenu__inner {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-}
-
 @media (max-width: 991px) {
-  .ss-header-shop-submenu__inner {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .ss-header-shop-submenu {
+    display: none;
   }
 
   .ss-shop-banner-simple {
