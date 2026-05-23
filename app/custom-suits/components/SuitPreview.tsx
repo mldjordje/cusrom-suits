@@ -1313,12 +1313,14 @@ const SuitPreview = ({
   const photoToneLift = useMemo(() => {
     if (!usePhotoBase) return 1;
     const rgb = hexToRgb(fabricFillColorBase);
-    if (!rgb) return 1.08;
+    if (!rgb) return 1.04;
     const hsl = rgbToHsl(rgb);
-    const base = fabricTone === "dark" ? 1.14 : fabricTone === "medium" ? 1.1 : 1.06;
-    const saturationLift = hsl.s > 0.18 ? 0.04 : hsl.s < 0.08 ? 0.02 : 0.03;
-    const darknessLift = hsl.l < 0.34 ? 0.02 : 0;
-    return clamp(base + saturationLift + darknessLift, 1.02, 1.2);
+    // Reduced base lift so phone-photo colors stay closer to the real fabric tone.
+    // Dark fabrics still get a small lift to compensate for underexposure.
+    const base = fabricTone === "dark" ? 1.08 : fabricTone === "medium" ? 1.04 : 1.02;
+    const saturationLift = hsl.s > 0.18 ? 0.02 : hsl.s < 0.08 ? 0.01 : 0.015;
+    const darknessLift = hsl.l < 0.34 ? 0.01 : 0;
+    return clamp(base + saturationLift + darknessLift, 1.01, 1.12);
   }, [fabricFillColorBase, fabricTone, usePhotoBase]);
   const fabricFillColor = useMemo(() => {
     const base = usePhotoBase ? fabricFillColorBase : enhanceFabricColor(fabricFillColorBase, fabricTone);
@@ -1438,18 +1440,18 @@ const SuitPreview = ({
       parityModeEnabled && parityPreset ? parityPreset.textureSaturateMul ?? 1 : 1;
     const stripeSaturateMul = stripeProfile.active ? stripeProfile.saturateMul : 1;
     if (usePhotoBase) {
-      // Keep photo textures neutral but avoid crushing stripe contrast on dark tones.
+      // Stripe fabrics need higher contrast so woven lines remain legible through the photo base.
       const darkStripe = stripeProfile.active && fabricTone === "dark";
-      const brightnessBase = textureBrightnessOverride ?? (darkStripe ? 1.01 : 1.04);
-      const contrastBase = textureContrastOverride ?? (darkStripe ? 1.0 : 0.99);
+      const brightnessBase = textureBrightnessOverride ?? (darkStripe ? 1.0 : 1.02);
+      const contrastBase = textureContrastOverride ?? (stripeProfile.active ? (darkStripe ? 1.08 : 1.12) : 0.99);
       const brightness = clamp(brightnessBase * PREVIEW_EXPOSURE, 0.72, 1.55);
       const contrast = clamp(
-        contrastBase + (stripeProfile.active ? stripeProfile.contrastBias * 0.24 : 0),
+        contrastBase + (stripeProfile.active ? stripeProfile.contrastBias * 0.36 : 0),
         0.72,
-        1.7
+        1.85
       );
       const saturate = clamp(
-        (darkStripe ? 0.2 : 0.24) * paritySaturate * stripeSaturateMul,
+        (darkStripe ? 0.22 : 0.26) * paritySaturate * stripeSaturateMul,
         0.08,
         0.9
       );
@@ -2819,15 +2821,16 @@ const SuitPreview = ({
     const baseOpacity = Number(pantsZoneTextureStyle.opacity ?? tunedTextureOpacity);
     if (usePhotoBase) {
       const blend: React.CSSProperties["mixBlendMode"] = "soft-light";
-      const preserveMul = isStripeFabric ? (fabricTone === "dark" ? 0.90 : 0.84) : 0.72;
-      const opacity = clamp(baseOpacity * preserveMul, 0.16, isStripeFabric ? 0.44 : 0.3);
+      // Raise opacity floor for stripe fabrics so woven lines read clearly on pants.
+      const preserveMul = isStripeFabric ? (fabricTone === "dark" ? 0.96 : 0.90) : 0.72;
+      const opacity = clamp(baseOpacity * preserveMul, isStripeFabric ? 0.22 : 0.16, isStripeFabric ? 0.52 : 0.3);
       return {
         ...pantsZoneTextureStyle,
         mixBlendMode: blend,
         opacity,
       };
     }
-    const opacity = clamp(baseOpacity * 0.90, 0.06, 0.56);
+    const opacity = clamp(baseOpacity * 0.92, 0.06, 0.58);
     const blend: React.CSSProperties["mixBlendMode"] =
       fabricTone === "dark" ? "soft-light" : pantsZoneTextureStyle.mixBlendMode;
     return {

@@ -6,46 +6,46 @@ export type ManualOffset = { x: number; y: number };
 export const PANTS_STRIPE_MANUAL_TUNING = {
   directions: {
     // Single-split fallback angles (used when deterministic zone masks are not available).
-    singleLeftAbsDeg: -62,
+    // Left leg folds at ~55° diagonal; right body stripes near-vertical.
+    singleLeftAbsDeg: -55,
     singleFlyAbsDeg: -88,
-    singleRightAbsDeg: -74,
+    singleRightAbsDeg: -70,
 
     // Deterministic zone directions.
-    // leftMain  = left-leg diagonal fold
-    // rightUpper = centre / fly area (near-vertical to match how stripes read on folded fabric)
-    // rightLower = lower-right fold (steeper diagonal)
-    // waist      = waistband strip on far right
-    leftMainAbsDeg: -62,
+    // leftMain  = left-leg diagonal fold (folded at ~55° from horizontal)
+    // rightUpper = centre / fly area (near-vertical, slight tilt right)
+    // rightLower = lower-right fold (steeper diagonal toward bottom crease)
+    // waist      = horizontal waistband strip on far right
+    leftMainAbsDeg: -55,
     rightUpperAbsDeg: -88,
-    rightLowerAbsDeg: -74,
+    rightLowerAbsDeg: -68,
     waistAbsDeg: 0,
   },
 
   boundaries: {
     // Main boundary between left-main and right-upper zones.
-    // 0 = far left, 1 = far right (within pants union bbox).
-    boundaryTopXRatio: 0.31,
-    boundaryBottomXRatio: 0.44,
+    // Moved slightly right so the left leg zone captures the full diagonal fold.
+    boundaryTopXRatio: 0.34,
+    boundaryBottomXRatio: 0.47,
 
     // Right-lower split line controls.
-    rightLowerStartYRatio: 0.44,
-    rightLowerSlopeRatio: 0.32,
+    rightLowerStartYRatio: 0.48,
+    rightLowerSlopeRatio: 0.28,
 
     // Legacy/fallback clamps still used by split logic.
-    boundaryMinXRatio: 0.26,
-    boundaryMaxXRatio: 0.5,
+    boundaryMinXRatio: 0.28,
+    boundaryMaxXRatio: 0.52,
 
-    // Waist partition: slightly wider than original (0.94) so the belt strip
-    // is more visible, but not so wide it swallows the body zone.
-    waistXRatio: 0.88,
+    // Waist partition: narrow belt strip on far right.
+    waistXRatio: 0.87,
 
     // Extra belt strip on far right.
-    beltStartXRatio: 0.90,
+    beltStartXRatio: 0.89,
     beltTopYRatio: 0.02,
     beltBottomYRatio: 0.98,
 
     // Feather to soften hard seams between masks.
-    boundaryFeatherPx: 10,
+    boundaryFeatherPx: 12,
   },
 
   offsets: {
