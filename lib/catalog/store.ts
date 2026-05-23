@@ -1320,7 +1320,7 @@ export async function getCompleteTheLookProducts(
 
   const result = await listCatalogProducts({
     page: 1,
-    pageSize: 80,
+    pageSize: 20,
     collapseBySku: true,
     activeOnly: true,
     exportOnly: true,

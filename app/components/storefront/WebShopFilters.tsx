@@ -191,7 +191,7 @@ export default function WebShopFilters({
       <label htmlFor={fieldId} className="ss-shop-form-label">
         {isEn ? "Sort by" : "Sortiranje"}
       </label>
-      <select id={fieldId} className="form-select fw-medium" name="sort" defaultValue={sort}>
+      <select id={fieldId} className="form-select fw-medium" name="sort" defaultValue={sort} onChange={(e) => e.currentTarget.form?.requestSubmit()}>
         {sortOptions.map((option) => (
           <option key={option.value} value={option.value}>
             {option.label}
@@ -211,6 +211,7 @@ export default function WebShopFilters({
         className="form-select fw-medium"
         name="categoryId"
         defaultValue={selectedCategoryValue}
+        onChange={(e) => e.currentTarget.form?.requestSubmit()}
       >
         <option value="">{isEn ? "All categories" : "Sve kategorije"}</option>
         <option value="sale">{isEn ? "Sale" : "Akcija"}</option>

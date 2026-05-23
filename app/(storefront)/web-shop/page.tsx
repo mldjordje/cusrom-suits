@@ -142,6 +142,7 @@ export default async function WebShopPage({
       priceMax: priceMax || undefined,
       sizes: selectedSizes.length ? selectedSizes : undefined,
       requireDirectImages: true,
+      sort: sort as "featured" | "name_asc" | "price_asc" | "price_desc" | "stock_desc" | "newest",
     }),
     getLandingSettings(),
   ]);
@@ -394,6 +395,18 @@ export default async function WebShopPage({
                 quality={68}
               />
             </Link>
+            {imageSources.length > 1 ? (
+              <StorefrontImage
+                sources={[imageSources[1]]}
+                width={imageWidth}
+                height={imageHeight}
+                alt=""
+                aria-hidden="true"
+                className="pc__img pc__img-second object-position-top"
+                sizes={imageSizes}
+                quality={68}
+              />
+            ) : null}
             {discountPercent > 0 && item.priceFinalGross > 0 ? (
               <span className="ss-product-card__badge">
                 -{discountPercent}% {isEn ? "off" : "popust"}
@@ -428,7 +441,7 @@ export default async function WebShopPage({
               )}
               {discountPercent > 0 && !businessUniform ? (
                 <p className="ss-product-card__discount mb-0">
-                  {isEn ? "Save" : "Usteda"} {discountPercent}%
+                  {isEn ? "Save" : "Ušteda"} {discountPercent}%
                 </p>
               ) : null}
               <Link href={detailHref} prefetch={false} className="pc__atc anim_appear-bottom btn mt-3 border-0 text-uppercase fw-medium">
@@ -461,7 +474,7 @@ export default async function WebShopPage({
             )}
             {discountPercent > 0 && !businessUniform ? (
               <p className="ss-product-card__discount mb-0">
-                {isEn ? "Save" : "Usteda"} {discountPercent}%
+                {isEn ? "Save" : "Ušteda"} {discountPercent}%
               </p>
             ) : isLowStock ? (
               <p className="ss-shop-card-stock-note">
@@ -499,6 +512,16 @@ export default async function WebShopPage({
   function variantHrefFromId(legacyId: number, english: boolean) {
     return english ? `/web-shop/${legacyId}?lang=en` : `/web-shop/${legacyId}`;
   }
+
+  const getPaginationPages = (current: number, total: number): (number | "...")[] => {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+    const pages: (number | "...")[] = [1];
+    if (current > 3) pages.push("...");
+    for (let i = Math.max(2, current - 1); i <= Math.min(total - 1, current + 1); i++) pages.push(i);
+    if (current < total - 2) pages.push("...");
+    pages.push(total);
+    return pages;
+  };
 
   return (
     <>
@@ -637,27 +660,47 @@ export default async function WebShopPage({
             </div>
           </WebShopFilters>
 
+          {result.totalPages > 1 ? (
           <div className="ss-shop-pagination">
             <p className="ss-shop-pagination__summary">
               {isEn ? "Page" : "Stranica"} {result.page} {isEn ? "of" : "od"} {result.totalPages}
             </p>
-            <div className="ss-shop-pagination__nav">
+            <nav className="ss-shop-pagination__nav" aria-label={isEn ? "Pagination" : "Stranice"}>
               <Link
                 href={makeHref({ page: Math.max(1, result.page - 1) })}
-                className={`btn btn-outline-dark text-uppercase fw-medium fs-base ss-shop-pagination__prev ${result.page <= 1 ? "disabled pe-none opacity-50" : ""}`}
+                className={`ss-shop-pagination__arrow ${result.page <= 1 ? "is-disabled" : ""}`}
                 aria-disabled={result.page <= 1}
+                aria-label={isEn ? "Previous page" : "Prethodna strana"}
               >
-                ← {isEn ? "Previous" : "Prethodna"}
+                ←
               </Link>
+              <div className="ss-shop-pagination__pages">
+                {getPaginationPages(result.page, result.totalPages).map((p, i) =>
+                  p === "..." ? (
+                    <span key={`ell-${i}`} className="ss-shop-pagination__ellipsis">…</span>
+                  ) : (
+                    <Link
+                      key={p}
+                      href={makeHref({ page: p })}
+                      className={`ss-shop-pagination__page ${result.page === p ? "is-active" : ""}`}
+                      aria-current={result.page === p ? "page" : undefined}
+                    >
+                      {p}
+                    </Link>
+                  )
+                )}
+              </div>
               <Link
                 href={makeHref({ page: Math.min(result.totalPages, result.page + 1) })}
-                className={`btn btn-primary text-uppercase fw-medium fs-base ss-shop-pagination__next ${result.page >= result.totalPages ? "disabled pe-none opacity-50" : ""}`}
+                className={`ss-shop-pagination__arrow ${result.page >= result.totalPages ? "is-disabled" : ""}`}
                 aria-disabled={result.page >= result.totalPages}
+                aria-label={isEn ? "Next page" : "Sledeca strana"}
               >
-                {isEn ? "Next" : "Sledeca"} →
+                →
               </Link>
-            </div>
+            </nav>
           </div>
+          ) : null}
           </Reveal>
         </section>
 
