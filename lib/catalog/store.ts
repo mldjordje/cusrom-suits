@@ -695,7 +695,7 @@ const pickCollapsedPricingLeader = (left: CatalogProductView, right: CatalogProd
   }
 
   if (left.priceFinalGross !== right.priceFinalGross) {
-    return right.priceFinalGross < left.priceFinalGross ? right : left;
+    return right.priceFinalGross > left.priceFinalGross ? right : left;
   }
 
   if (left.priceGross !== right.priceGross) {
@@ -782,8 +782,8 @@ const collapseCatalogProductsByKey = (
       specificationEn: representative.specificationEn || current.specificationEn || item.specificationEn,
       manufCode: representative.manufCode || current.manufCode || item.manufCode,
       brand: representative.brand || current.brand || item.brand,
-      priceGross: representative.priceGross,
-      priceFinalGross: representative.priceFinalGross,
+      priceGross: pricingLeader.priceGross,
+      priceFinalGross: pricingLeader.priceFinalGross,
       rebatePercent: mergedDiscountPercent,
       coverImage: representative.coverImage || current.coverImage || item.coverImage,
       videoUrl: representative.videoUrl || current.videoUrl || item.videoUrl,
@@ -810,11 +810,10 @@ const collapseCatalogProductsByKey = (
 };
 
 const collapseCatalogProductsByModel = (items: CatalogProductView[]): CatalogProductView[] => {
-  const modelCollapsed = collapseCatalogProductsByKey(items, getCatalogProductModelKey);
-  return collapseCatalogProductsByKey(
-    modelCollapsed,
-    (item) => getCatalogProductVisualModelKey(item) || getCatalogProductModelKey(item),
-  );
+  return collapseCatalogProductsByKey(items, (item) => {
+    const sku = String(item.sku || "").trim().toLowerCase();
+    return sku ? `sku:${sku}` : `legacy:${item.legacyId}`;
+  });
 };
 
 const applyAdminQualityFilters = (
@@ -1214,19 +1213,8 @@ export async function getCatalogProductVariantsBySku(
     promotionRules.length > 0
       ? applyPromotionRulesToProducts(baseItems, promotionRules)
       : baseItems;
-  const current = displayItems.find(
-    (item) => String(item.sku || "").trim().toLowerCase() === normalizedSku,
-  );
-  if (!current) return [];
-  const modelKey = getCatalogProductModelKey(current);
-  const visualModelKey = getCatalogProductVisualModelKey(current);
-
   return displayItems
-    .filter(
-      (item) =>
-        getCatalogProductModelKey(item) === modelKey ||
-        (visualModelKey && getCatalogProductVisualModelKey(item) === visualModelKey),
-    )
+    .filter((item) => String(item.sku || "").trim().toLowerCase() === normalizedSku)
     .sort((left, right) => left.legacyId - right.legacyId);
 }
 

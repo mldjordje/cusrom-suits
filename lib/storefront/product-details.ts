@@ -1,4 +1,9 @@
-import { decodeHtmlEntities, getCatalogProductDisplayName, isCatalogProductNameSuspicious } from "@/lib/catalog/presentation";
+import {
+  decodeHtmlEntities,
+  getCatalogProductCategoryLabel,
+  getCatalogProductDisplayName,
+  isCatalogProductNameSuspicious,
+} from "@/lib/catalog/presentation";
 import {
   getSizeGuideSettings,
   type SizeGuideFit,
@@ -226,17 +231,60 @@ export const productSupportsSizeGuide = (_product: CatalogProductView) => true;
 export const getLocalizedCatalogProductName = (
   product: CatalogProductView,
   lang: StorefrontLanguage,
-) =>
-  getCatalogProductDisplayName(
+) => {
+  const baseInput = {
+    sku: product.sku,
+    manufCode: product.manufCode,
+    categories: product.categories,
+    brand: product.brand,
+  };
+
+  const localizedName = getCatalogProductDisplayName(
     {
+      ...baseInput,
       name: productText(product, lang).name,
-      sku: product.sku,
-      manufCode: product.manufCode,
-      categories: product.categories,
-      brand: product.brand,
     },
     lang,
   );
+
+  if (lang !== "sr" || !product.nameEn) return localizedName;
+
+  const fallbackName = getCatalogProductDisplayName(
+    {
+      ...baseInput,
+      name: product.nameEn,
+    },
+    lang,
+  );
+  const categoryLabel = getCatalogProductCategoryLabel(
+    {
+      ...baseInput,
+      name: product.name,
+    },
+    lang,
+  );
+  const normalize = (value: string) =>
+    value
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/\p{Diacritic}/gu, "");
+  const localizedIsGeneric = normalize(localizedName) === normalize(categoryLabel);
+  const localizedLooksLikeTruncatedCategory =
+    localizedName.trim().length <= 3 &&
+    normalize(categoryLabel).startsWith(normalize(localizedName));
+  const fallbackIsUsable =
+    fallbackName &&
+    normalize(fallbackName) !== normalize(categoryLabel) &&
+    !isCatalogProductNameSuspicious(fallbackName);
+
+  return fallbackIsUsable &&
+    (localizedIsGeneric ||
+      localizedLooksLikeTruncatedCategory ||
+      isCatalogProductNameSuspicious(localizedName))
+    ? fallbackName
+    : localizedName;
+};
 
 export const getLocalizedCatalogDescription = (
   product: CatalogProductView,

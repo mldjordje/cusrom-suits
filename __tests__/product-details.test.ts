@@ -13,6 +13,7 @@
 import { describe, it, expect } from "vitest";
 import {
   getCatalogProductImageSources,
+  getLocalizedCatalogProductName,
   getProductSizeOptions,
 } from "@/lib/storefront/product-details";
 import type { CatalogProductView } from "@/lib/catalog/store";
@@ -120,6 +121,34 @@ describe("getCatalogProductImageSources", () => {
       ["/img/odela.jpg", "/img/odela.jpg"],
     );
     expect(result).toHaveLength(1);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// getLocalizedCatalogProductName
+// ---------------------------------------------------------------------------
+
+describe("getLocalizedCatalogProductName", () => {
+  it("uses the cleaner legacy name when Serbian name is only a generic suit label", () => {
+    const product = makeProduct({
+      sku: "129135",
+      name: "24/33/2                                       M.Odelo",
+      nameEn: "Allesio",
+      categories: [{ id: 289, name: "Odelo", path: ["Odeca", "Odelo"] }],
+    });
+
+    expect(getLocalizedCatalogProductName(product, "sr")).toBe("Allesio");
+  });
+
+  it("keeps the Serbian name when it is already meaningful", () => {
+    const product = makeProduct({
+      sku: "129932",
+      name: "FABRICIO",
+      nameEn: "FABRICIO",
+      categories: [{ id: 289, name: "Odelo", path: ["Odeca", "Odelo"] }],
+    });
+
+    expect(getLocalizedCatalogProductName(product, "sr")).toBe("Fabricio");
   });
 });
 
