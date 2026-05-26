@@ -1,5 +1,5 @@
 import Image, { type ImageProps } from "next/image";
-import { isRemoteStorefrontImageSrc, sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
+import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 
 type StorefrontImageProps = Omit<ImageProps, "src" | "alt"> & {
   alt: string;
@@ -25,9 +25,7 @@ export default function StorefrontImage({
   const shouldBypassOptimization =
     props.unoptimized == null &&
     (activeSrc.startsWith("data:image/") ||
-      isRemoteStorefrontImageSrc(activeSrc) ||
-      activeSrc.toLowerCase().includes(".svg") ||
-      (isRemoteStorefrontImageSrc(activeSrc) && activeSrc.toLowerCase().includes(".svg")));
+      activeSrc.toLowerCase().includes(".svg"));
 
   return (
     <Image

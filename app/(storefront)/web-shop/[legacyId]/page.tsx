@@ -635,11 +635,11 @@ export default async function WebShopProductPage({
                 <p className="ss-mobile-product-bar__eyebrow">{isEn ? "Santos & Santorini" : "Santos & Santorini"}</p>
                 <div className="ss-mobile-product-bar__prices">
                   <strong className="ss-mobile-product-bar__price">
-                    {businessUniform ? (isEn ? "Inquiry" : "Na upit") : formatRsd(selectedProduct.priceFinalGross)}
+                    {businessUniform ? (isEn ? "Inquiry" : "Na upit") : formatRsd(displayPriceFinalGross)}
                   </strong>
                   {discountPercent > 0 && displayPriceFinalGross > 0 && !businessUniform ? (
                     <>
-                      <span className="ss-mobile-product-bar__old-price">{formatRsd(selectedProduct.priceGross)}</span>
+                      <span className="ss-mobile-product-bar__old-price">{formatRsd(displayPriceGross)}</span>
                       <span className="ss-product-price-badge ss-product-price-badge--mobile">-{discountPercent}%</span>
                     </>
                   ) : null}

@@ -2,7 +2,7 @@
 
 import Image, { type ImageProps } from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { isRemoteStorefrontImageSrc, sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
+import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 
 type StorefrontSmartImageProps = Omit<ImageProps, "src" | "alt"> & {
   alt: string;
@@ -40,9 +40,7 @@ export default function StorefrontSmartImage({
   const shouldBypassOptimization =
     props.unoptimized == null &&
     (activeSrc.startsWith("data:image/") ||
-      isRemoteStorefrontImageSrc(activeSrc) ||
-      activeSrc.toLowerCase().includes(".svg") ||
-      (isRemoteStorefrontImageSrc(activeSrc) && activeSrc.toLowerCase().includes(".svg")));
+      activeSrc.toLowerCase().includes(".svg"));
 
   return (
     <Image

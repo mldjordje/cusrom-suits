@@ -24,14 +24,6 @@ export default function ProductSizePicker({
     setPendingLegacyId(null);
   }, [currentLegacyId]);
 
-  useEffect(() => {
-    for (const option of options) {
-      if (option.legacyId !== currentLegacyId) {
-        router.prefetch(option.href);
-      }
-    }
-  }, [currentLegacyId, options, router]);
-
   return (
     <div className="swatch-list d-flex flex-wrap gap-2 ss-product-size-picker">
       {options.map((option) => {
