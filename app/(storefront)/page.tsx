@@ -8,8 +8,20 @@ import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import SectionHeadingReveal from "@/app/components/motion/SectionHeadingReveal";
-import { getCatalogProductByLegacyId, listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
-import { buildMaxPriceBySkuMap, applyMaxPriceFromMap } from "@/lib/catalog/pricing";
+import {
+  getCatalogProductByLegacyId,
+  getCatalogProductVariantsBySku,
+  listCatalogProducts,
+  type CatalogProductView,
+} from "@/lib/catalog/store";
+import {
+  applyMaxPriceFromMap,
+  buildMaxPriceBySkuMap,
+  calcDiscountPercent,
+  hasUsableDisplayPrice,
+  resolveDisplayFinalPrice,
+  resolveDisplayGrossPrice,
+} from "@/lib/catalog/pricing";
 import {
   getCatalogProductCategoryLabel,
   getCatalogProductDisplayName,
@@ -160,6 +172,27 @@ const hasVisibleProductImage = (item: CatalogProductView) =>
       item.images.some((image) => String(image || "").trim().length > 0),
   );
 
+const resolveAnomalousProductPrice = async (item: CatalogProductView): Promise<CatalogProductView> => {
+  if (hasUsableDisplayPrice(item)) return item;
+  const variants = await getCatalogProductVariantsBySku(item.sku, {
+    applyPromotions: true,
+    activeOnly: true,
+    exportOnly: true,
+  });
+  if (!variants.length) return item;
+
+  const priceFinalGross = resolveDisplayFinalPrice(item, variants);
+  const priceGross = Math.max(resolveDisplayGrossPrice(item, variants), priceFinalGross);
+  if (!hasUsableDisplayPrice({ priceGross, priceFinalGross })) return item;
+
+  return {
+    ...item,
+    priceGross,
+    priceFinalGross,
+    rebatePercent: calcDiscountPercent(priceGross, priceFinalGross),
+  };
+};
+
 const preferDirectMediaProducts = (items: CatalogProductView[], minimumCount: number) => {
   const direct = items.filter((item) => item.hasDirectMedia);
   return direct.length >= minimumCount ? direct : items.filter(hasVisibleProductImage);
@@ -227,7 +260,7 @@ export default async function HomePage({
   const [catalog, saleCatalog, posts, landingSettings] = await Promise.all([
     listCatalogProducts({
       page: 1,
-      pageSize: 120,
+      pageSize: 1000,
       activeOnly: true,
       exportOnly: true,
       collapseBySku: true,
@@ -235,7 +268,7 @@ export default async function HomePage({
     }),
     listCatalogProducts({
       page: 1,
-      pageSize: 120,
+      pageSize: 1000,
       activeOnly: true,
       exportOnly: true,
       collapseBySku: true,
@@ -293,7 +326,12 @@ export default async function HomePage({
   // Pinned products are fetched by a single legacyId (one size variant) so their price
   // may be lower than the highest variant. Use shared pricing utilities to override.
   const maxPriceBySku = buildMaxPriceBySkuMap(catalog.items);
-  const pinnedProducts = pinnedProductsRaw.map((item) => applyMaxPriceFromMap(item, maxPriceBySku));
+  const pinnedProducts = await Promise.all(
+    pinnedProductsRaw.map((item) => resolveAnomalousProductPrice(applyMaxPriceFromMap(item, maxPriceBySku))),
+  );
+  const saleCatalogItems = await Promise.all(
+    saleCatalog.items.map((item) => resolveAnomalousProductPrice(applyMaxPriceFromMap(item, maxPriceBySku))),
+  );
 
   const pinnedProductsById = new Map(pinnedProducts.map((item) => [item.legacyId, item]));
 
@@ -306,11 +344,10 @@ export default async function HomePage({
     .map((id) => pinnedProductsById.get(id))
     .filter((item): item is CatalogProductView => Boolean(item));
   const salePool = sortLandingProducts(
-    preferDirectMediaProducts(dedupeProductsBySku([...pinnedProducts, ...saleCatalog.items]), 4).filter(
+    preferDirectMediaProducts(dedupeProductsBySku([...pinnedProducts, ...saleCatalogItems]), 4).filter(
       (item) =>
         landingSettings.saleProductIds.includes(item.legacyId) ||
-        item.priceGross > item.priceFinalGross ||
-        item.rebatePercent > 0,
+        item.priceGross > item.priceFinalGross,
     ),
     contentLang,
   );
@@ -638,8 +675,14 @@ export default async function HomePage({
                       </Link>
                     </h6>
                     <div className="product-card__price d-flex">
-                      <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                      <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
+                      {item.priceGross > item.priceFinalGross ? (
+                        <>
+                          <span className="money price price-old">{formatRsd(item.priceGross)}</span>
+                          <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
+                        </>
+                      ) : (
+                        <span className="money price">{formatRsd(item.priceFinalGross)}</span>
+                      )}
                     </div>
                   </div>
                 </div>

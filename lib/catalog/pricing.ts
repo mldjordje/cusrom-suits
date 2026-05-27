@@ -75,6 +75,12 @@ export const calcDiscountPercent = (
  * catalog items.  Used on the landing page to override individual
  * pinned-product prices so they always show the highest variant price.
  */
+export const hasUsableDisplayPrice = (item: PriceVariant): boolean => {
+  const gross = Number(item.priceGross || 0);
+  const finalGross = Number(item.priceFinalGross || 0);
+  return gross > 1 && finalGross > 0;
+};
+
 export const buildMaxPriceBySkuMap = (
   catalogItems: (PriceVariant & { sku: string; legacyId: number })[],
 ): Map<string, PriceVariant> => {

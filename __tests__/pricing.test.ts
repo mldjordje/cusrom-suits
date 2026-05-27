@@ -17,6 +17,7 @@ import {
   resolveDisplayFinalPrice,
   resolveDisplayGrossPrice,
   calcDiscountPercent,
+  hasUsableDisplayPrice,
   buildMaxPriceBySkuMap,
   applyMaxPriceFromMap,
   type PriceVariant,
@@ -156,6 +157,21 @@ describe("calcDiscountPercent", () => {
   it("rounds to nearest integer", () => {
     // 1/3 discount ≈ 33.33 % → rounds to 33
     expect(calcDiscountPercent(3000, 2000)).toBe(33);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// hasUsableDisplayPrice
+// ---------------------------------------------------------------------------
+
+describe("hasUsableDisplayPrice", () => {
+  it("rejects 0/1 RSD catalog anomalies", () => {
+    expect(hasUsableDisplayPrice(variant(0, 1))).toBe(false);
+    expect(hasUsableDisplayPrice(variant(0, 9900))).toBe(false);
+  });
+
+  it("accepts normal product prices", () => {
+    expect(hasUsableDisplayPrice(variant(8756, 9950))).toBe(true);
   });
 });
 

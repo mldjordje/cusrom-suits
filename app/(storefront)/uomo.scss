@@ -6776,7 +6776,16 @@ button.ss-mobile-nav-quicklink,
   .ss-product-page,
   .product-single,
   .product-single .row {
-    overflow-x: clip;
+    max-width: 100vw;
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+  }
+
+  .ss-product-gallery,
+  .product-single__media,
+  .ss-product-glass-card {
+    max-width: 100%;
+    min-width: 0;
   }
 
   .ss-cart-drawer {

@@ -12,6 +12,7 @@ import {
   applyPromotionRulesToProducts,
   listPromotionRules,
 } from "@/lib/catalog/promotions";
+import { hasUsableDisplayPrice } from "@/lib/catalog/pricing";
 import { unstable_cache } from "next/cache";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
@@ -687,6 +688,13 @@ const pickCollapsedRepresentative = (left: CatalogProductView, right: CatalogPro
 };
 
 const pickCollapsedPricingLeader = (left: CatalogProductView, right: CatalogProductView) => {
+  const leftUsable = hasUsableDisplayPrice(left);
+  const rightUsable = hasUsableDisplayPrice(right);
+
+  if (leftUsable !== rightUsable) {
+    return rightUsable ? right : left;
+  }
+
   const leftDiscount = getCatalogDiscountPercent(left);
   const rightDiscount = getCatalogDiscountPercent(right);
 
