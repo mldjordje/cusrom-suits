@@ -17,7 +17,7 @@ type HomeHeroMediaProps = {
 const DESKTOP_MQ = "(min-width: 768px)";
 
 const buildEmbed = (id: string) =>
-  `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0`;
+  `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0`;
 
 export default function HomeHeroMedia({
   desktopVideoId,
@@ -31,6 +31,10 @@ export default function HomeHeroMedia({
   const [viewportReady, setViewportReady] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
+  // showVideo je odvojen od loadVideo — video se učitava u pozadini,
+  // ali postaje vidljiv tek nakon 3.2s da YouTube stigne da autoplay-uje
+  // pre nego što poster nestane (sprečava bljesak play button-a)
+  const [showVideo, setShowVideo] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia(DESKTOP_MQ);
@@ -45,32 +49,42 @@ export default function HomeHeroMedia({
   useEffect(() => {
     if (!viewportReady || lowPower) {
       setShouldLoadVideo(false);
+      setShowVideo(false);
       return;
     }
 
-    let timeoutId: number | null = null;
     let idleId: number | null = null;
-    const activate = () => setShouldLoadVideo(true);
+    let loadTimeoutId: number | null = null;
+    let showTimeoutId: number | null = null;
+
+    const activate = () => {
+      // Korak 1: dodaj iframe u DOM da počne učitavanje
+      setShouldLoadVideo(true);
+      // Korak 2: tek nakon 3.2s postavi is-video-ready (YouTube treba vremena
+      // da autoplay-uje — ovo sprečava bljesak play button-a)
+      showTimeoutId = window.setTimeout(() => setShowVideo(true), 3200);
+    };
 
     if (typeof window.requestIdleCallback === "function") {
       idleId = window.requestIdleCallback(activate, { timeout: 1400 });
     } else {
-      timeoutId = window.setTimeout(activate, 900);
+      loadTimeoutId = window.setTimeout(activate, 900);
     }
 
     return () => {
       if (idleId !== null && typeof window.cancelIdleCallback === "function") {
         window.cancelIdleCallback(idleId);
       }
-      if (timeoutId !== null) {
-        window.clearTimeout(timeoutId);
-      }
+      if (loadTimeoutId !== null) window.clearTimeout(loadTimeoutId);
+      if (showTimeoutId !== null) window.clearTimeout(showTimeoutId);
     };
   }, [lowPower, viewportReady]);
 
   const showDesktopVideo = shouldLoadVideo && viewportReady && isDesktop && !lowPower;
   const showMobileVideo = shouldLoadVideo && viewportReady && !isDesktop && Boolean(mobileVideoId) && !lowPower;
-  const videoReady = showDesktopVideo || showMobileVideo;
+  // videoReady (is-video-ready CSS class) sada čeka showVideo — YouTube mora
+  // da autoplay-uje pre nego što poster nestane
+  const videoReady = showVideo && (showDesktopVideo || showMobileVideo);
   const posterSrc = !viewportReady || isDesktop ? desktopPosterSrc : mobilePosterSrc;
 
   return (

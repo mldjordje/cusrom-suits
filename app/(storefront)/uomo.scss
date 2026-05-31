@@ -3398,10 +3398,30 @@
   .ss-home18-hero__intro {
     padding-top: 1.25rem;
     margin-bottom: 1rem;
+    /* Centering na mobilnom */
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
   }
 
   .ss-home18-hero__intro h2 {
     font-size: clamp(1.9rem, 10vw, 2.8rem);
+  }
+
+  /* Gold linija — centrirana */
+  .ss-home18-hero__intro .ss-hero-gold-line {
+    margin-left: auto;
+    margin-right: auto;
+    background: linear-gradient(90deg, rgba(201, 169, 110, 0), var(--ss-gold, #c9a96e), rgba(201, 169, 110, 0));
+  }
+
+  /* CTA dugme — centrirano */
+  .ss-home18-hero__cta {
+    justify-content: center !important;
+  }
+
+  .ss-home18-hero__cta .ss-cta-btn {
+    min-width: 11rem !important;
   }
 
   .ss-home18-hero__card-title {
