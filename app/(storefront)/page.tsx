@@ -451,7 +451,7 @@ export default async function HomePage({
     const carousel = landingSectionStateMap.get(key)?.layout === "carousel";
     const gridProducts = carousel
       ? "ss-landing-product-row ss-landing-product-row--carousel"
-      : "row row-cols-2 row-cols-lg-4 g-2 g-md-3";
+      : "row row-cols-2 row-cols-lg-4 g-3 g-md-4";
     const gridFeatured = carousel
       ? "ss-landing-product-row ss-landing-product-row--carousel"
       : "row row-cols-2 row-cols-md-4 g-2 g-md-3 ss-feature-strip";
@@ -541,7 +541,7 @@ export default async function HomePage({
             ) : null}
           </div>
           {sectionContent?.subtitle ? <p className="text-secondary mb-4">{tx(sectionContent.subtitle)}</p> : null}
-          <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
+          <div className="row row-cols-2 row-cols-lg-4 g-3 g-md-4">
             {featured.map((item, index) => {
               const srcs = getCatalogProductImageSources(item, [], ["/img/odela2.jpg"]);
               const isSale = item.priceGross > item.priceFinalGross;
@@ -588,7 +588,7 @@ export default async function HomePage({
             ) : null}
           </div>
           {sectionContent?.subtitle ? <p className="text-secondary mb-4">{tx(sectionContent.subtitle)}</p> : null}
-          <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
+          <div className="row row-cols-2 row-cols-lg-4 g-3 g-md-4">
             {arrivals.map((item, index) => {
               const srcs = getCatalogProductImageSources(item, [], ["/img/hero2.jpg"]);
               const isSale = item.priceGross > item.priceFinalGross;
@@ -742,7 +742,7 @@ export default async function HomePage({
     const carousel = section.layout === "carousel";
     const gridProducts = carousel
       ? "ss-landing-product-row ss-landing-product-row--carousel"
-      : "row row-cols-2 row-cols-lg-4 g-2 g-md-3";
+      : "row row-cols-2 row-cols-lg-4 g-3 g-md-4";
     return (
     <section key={section.id} className="products-grid container ss-editorial-section ss-editorial-section--custom">
       <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">

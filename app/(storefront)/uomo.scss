@@ -1094,31 +1094,52 @@
 
 .ss-featured-tile {
   display: block;
-  padding: 0.7rem;
-  border-radius: 1.55rem;
+  padding: 0;
+  border-radius: 0;
   text-decoration: none;
-  color: #181414;
-  background:
-    linear-gradient(145deg, rgba(255, 255, 255, 0.86), rgba(255, 255, 255, 0.56)),
-    rgba(255, 255, 255, 0.64);
-  border: 1px solid rgba(255, 255, 255, 0.72);
-  box-shadow:
-    0 18px 40px rgba(8, 11, 16, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(14px);
+  color: #0f0e0c;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ss-featured-tile:hover {
+  transform: translateY(-4px);
 }
 
 .ss-featured-tile__meta {
   display: block;
-  margin-top: 0.35rem;
-  color: rgba(24, 20, 20, 0.72);
-  font-size: 0.9rem;
+  margin-top: 0.5rem;
+  color: rgba(15, 14, 12, 0.72);
+  font-size: 0.8rem;
+  font-weight: 500;
+  letter-spacing: 0.06em;
 }
 
 .ss-featured-tile__meta .price-old {
   margin-right: 0.45rem;
-  opacity: 0.7;
+  opacity: 0.55;
   text-decoration: line-through;
+  font-weight: 400;
+}
+
+/* Naziv na featured tile — premium stil */
+.ss-editorial-section .ss-featured-tile .menu-link {
+  font-size: 0.84rem !important;
+  font-weight: 400 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  color: #0f0e0c !important;
+  min-height: auto !important;
+  padding-top: 0.85rem;
+  border-top: 1px solid rgba(15, 14, 12, 0.07);
+  margin-top: 0;
+}
+
+.ss-editorial-section .ss-featured-tile:hover .menu-link {
+  color: #3a3530 !important;
 }
 
 .ss-featured-tile__overlay {
@@ -2111,6 +2132,22 @@
   overflow: hidden;
   border-radius: 1.45rem;
   background: linear-gradient(180deg, #f3efe8, #e8e2d7);
+}
+
+/* Premium sekcije — čist, bez rounded i bez gradijenta */
+.ss-editorial-section .ss-product-card .pc__img-wrapper {
+  border-radius: 0 !important;
+  background: var(--ss-bg-cream, #f5f0e8) !important;
+  overflow: hidden;
+}
+
+.ss-editorial-section .ss-uniform-tile {
+  border-radius: 0 !important;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+.ss-editorial-section .ss-featured-tile:hover .ss-uniform-tile {
+  transform: scale(1.04);
 }
 
 /* Tema (_product-card): ::before na hover-container prekriva sliku i blokira klik na Link; hover sloj ispod sive maske. */
@@ -7232,46 +7269,69 @@ button.ss-mobile-nav-quicklink,
 .ss-editorial-section--featured,
 .ss-editorial-section--products,
 .ss-editorial-section--arrivals {
-  padding-top: 4rem !important;
-  padding-bottom: 4rem !important;
+  padding-top: 5rem !important;
+  padding-bottom: 5rem !important;
 }
 
 /* Section heading — Playfair Display */
 .ss-editorial-section .section-title,
 .ss-section-title--premium {
   font-family: var(--font-playfair-display), "Playfair Display", serif !important;
-  font-size: clamp(1.5rem, 2.8vw, 2.4rem) !important;
+  font-size: clamp(1.75rem, 3.2vw, 2.8rem) !important;
   font-weight: 600 !important;
-  letter-spacing: -0.01em !important;
+  letter-spacing: -0.02em !important;
   color: var(--ss-text-dark, #0f0e0c) !important;
   text-transform: none !important;
+  line-height: 1.1 !important;
 }
 
-/* Gold underline na section headings */
+/* Tanka zlatna linija ispod headinga */
 .ss-editorial-section .section-title::after {
   content: "";
   display: block;
-  width: 2.4rem;
-  height: 2px;
+  width: 2rem;
+  height: 1px;
   background: var(--ss-gold, #c9a96e);
-  margin-top: 0.6rem;
+  margin-top: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Heading red — više vazduha */
+.ss-editorial-section .d-flex.align-items-center.justify-content-between {
+  margin-bottom: 2.5rem !important;
+  padding-bottom: 0 !important;
+  border-bottom: none;
+}
+
+/* "Pogledaj sve" link — diskretnije */
+.ss-editorial-section .btn-link.default-underline {
+  color: #7a7369;
+  font-size: 0.62rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.ss-editorial-section .btn-link.default-underline:hover {
+  color: var(--ss-gold-dark, #a07d45);
+}
+
+.ss-editorial-section .btn-link.default-underline::after {
+  border-color: currentColor;
 }
 
 /* Product card upgrade za premium sekcije */
 .ss-editorial-section .product-card.ss-product-card {
-  background: var(--ss-bg-cream-lt, #fdfcf9);
+  background: transparent;
   border-radius: 0;
   border: none;
-  border-bottom: 1px solid rgba(15, 14, 12, 0.08);
   overflow: hidden;
-  transition:
-    border-color 0.3s ease,
-    transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .ss-editorial-section .product-card.ss-product-card:hover {
-  border-color: rgba(201, 169, 110, 0.4);
-  transform: translateY(-2px);
+  transform: translateY(-3px);
 }
 
 .ss-editorial-section .pc__category {
@@ -7378,7 +7438,8 @@ button.ss-mobile-nav-quicklink,
 .ss-premium-card__img-wrap {
   position: relative;
   overflow: hidden;
-  background: #f0ece6;
+  /* Ista boja kao pozadina sekcije — placeholder je nevidljiv */
+  background: var(--ss-bg-cream, #f5f0e8);
   aspect-ratio: 0.82;
 }
 
@@ -7415,46 +7476,23 @@ button.ss-mobile-nav-quicklink,
   transform: scale(1.04);
 }
 
-/* Quick view overlay */
+/* Hover overlay — minimalan tamni veo, bez pill dugmeta */
 .ss-premium-card__overlay {
   position: absolute;
   inset: 0;
   z-index: 3;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding-bottom: 1.25rem;
   background: rgba(10, 9, 8, 0);
-  transition: background 0.35s ease;
+  transition: background 0.5s ease;
   pointer-events: none;
 }
 
 .ss-premium-card:hover .ss-premium-card__overlay {
-  background: rgba(10, 9, 8, 0.18);
+  background: rgba(10, 9, 8, 0.1);
 }
 
+/* Label skriven — čist look bez overlay teksta */
 .ss-premium-card__overlay-label {
-  display: inline-block;
-  font-size: 0.62rem;
-  font-weight: 700;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: #fff;
-  padding: 0.45rem 1.25rem;
-  border: 1px solid rgba(255, 255, 255, 0.7);
-  border-radius: 999px;
-  background: rgba(10, 9, 8, 0.45);
-  backdrop-filter: blur(6px);
-  opacity: 0;
-  transform: translateY(8px);
-  transition:
-    opacity 0.3s ease,
-    transform 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.ss-premium-card:hover .ss-premium-card__overlay-label {
-  opacity: 1;
-  transform: translateY(0);
+  display: none;
 }
 
 /* Badge */
@@ -7484,28 +7522,29 @@ button.ss-mobile-nav-quicklink,
 
 /* Info */
 .ss-premium-card__info {
-  padding: 0.85rem 0.1rem 1rem;
+  padding: 1rem 0 1.25rem;
+  border-top: 1px solid rgba(15, 14, 12, 0.07);
+  margin-top: 0;
 }
 
 .ss-premium-card__category {
-  font-size: 0.6rem;
-  font-weight: 700;
-  letter-spacing: 0.24em;
+  font-size: 0.58rem;
+  font-weight: 600;
+  letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: var(--ss-gold-dark, #a07d45);
-  margin-bottom: 0.3rem;
+  color: #9a8f84;
+  margin-bottom: 0.4rem;
 }
 
 .ss-premium-card__title {
-  font-size: 0.88rem;
-  font-weight: 500;
+  font-size: 0.84rem;
+  font-weight: 400;
   color: var(--ss-text-dark, #0f0e0c);
-  margin-bottom: 0.3rem;
-  line-height: 1.3;
-  letter-spacing: 0.01em;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+  letter-spacing: 0.02em;
   transition: color 0.25s ease;
 
-  /* Clamp na 2 linije */
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -7513,17 +7552,17 @@ button.ss-mobile-nav-quicklink,
 }
 
 .ss-premium-card:hover .ss-premium-card__title {
-  color: var(--ss-gold-dark, #a07d45);
+  color: #3a3530;
 }
 
 .ss-premium-card__price {
-  font-size: 0.82rem;
-  font-weight: 600;
+  font-size: 0.8rem;
+  font-weight: 500;
   color: var(--ss-text-dark, #0f0e0c);
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   flex-wrap: wrap;
 }
 
