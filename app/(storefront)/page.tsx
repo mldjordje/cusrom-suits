@@ -4,6 +4,9 @@ import JsonLd from "@/app/components/seo/JsonLd";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import HomeHeroVideo from "@/app/components/storefront/HomeHeroVideo";
+import HomeCategoryTiles from "@/app/components/storefront/HomeCategoryTiles";
+import CustomSuitsEditorialBanner from "@/app/components/storefront/CustomSuitsEditorialBanner";
+import PremiumProductCard from "@/app/components/storefront/PremiumProductCard";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
@@ -528,7 +531,7 @@ export default async function HomePage({
       return (
         <section key={key} className="products-grid container ss-editorial-section ss-editorial-section--products">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <SectionHeadingReveal className="section-title text-uppercase">
+            <SectionHeadingReveal className="section-title">
               {tx(sectionContent?.title || (isEn ? "Popular styles" : "Popularni modeli"), "Popular styles")}
             </SectionHeadingReveal>
             {sectionContent?.ctaLabel ? (
@@ -538,42 +541,33 @@ export default async function HomePage({
             ) : null}
           </div>
           {sectionContent?.subtitle ? <p className="text-secondary mb-4">{tx(sectionContent.subtitle)}</p> : null}
-          <div className={gridProducts}>
-            {featured.map((item, index) => (
-              <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
-                <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
-                  <div className="pc__img-wrapper">
-                    <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
-                      <StorefrontImage
-                        sources={getCatalogProductImageSources(item, [], ["/img/odela2.jpg"])}
-                        width={330}
-                        height={400}
-                        alt={getProductDisplayName(item, contentLang)}
-                        className="pc__img"
-                      />
-                    </Link>
-                  </div>
-                  <div className="pc__info position-relative">
-                    <p className="pc__category">{getProductCategoryLabel(item, contentLang)}</p>
-                    <h6 className="pc__title">
-                      <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
-                        {getProductDisplayName(item, contentLang)}
-                      </Link>
-                    </h6>
-                    <div className="product-card__price d-flex">
-                      {item.priceGross > item.priceFinalGross ? (
+          <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
+            {featured.map((item, index) => {
+              const srcs = getCatalogProductImageSources(item, [], ["/img/odela2.jpg"]);
+              const isSale = item.priceGross > item.priceFinalGross;
+              return (
+                <ProductItemMotion key={item.legacyId} className="col" index={index}>
+                  <PremiumProductCard
+                    href={withLang(`/web-shop/${item.legacyId}`)}
+                    primarySrc={srcs[0] ?? "/img/odela2.jpg"}
+                    hoverSrc={srcs[1]}
+                    title={getProductDisplayName(item, contentLang)}
+                    categoryLabel={getProductCategoryLabel(item, contentLang)}
+                    isSale={isSale}
+                    price={
+                      isSale ? (
                         <>
-                          <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                          <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
+                          <span className="price-old">{formatRsd(item.priceGross)}</span>
+                          <span className="price-sale">{formatRsd(item.priceFinalGross)}</span>
                         </>
                       ) : (
-                        <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </ProductItemMotion>
-            ))}
+                        <span>{formatRsd(item.priceFinalGross)}</span>
+                      )
+                    }
+                  />
+                </ProductItemMotion>
+              );
+            })}
           </div>
         </section>
       );
@@ -584,7 +578,7 @@ export default async function HomePage({
       return (
         <section key={key} className="products-grid container ss-editorial-section ss-editorial-section--arrivals">
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <SectionHeadingReveal className="section-title text-uppercase">
+            <SectionHeadingReveal className="section-title">
               {tx(sectionContent?.title || (isEn ? "New arrivals" : "Nove kolekcije"), "New arrivals")}
             </SectionHeadingReveal>
             {sectionContent?.ctaLabel ? (
@@ -594,42 +588,34 @@ export default async function HomePage({
             ) : null}
           </div>
           {sectionContent?.subtitle ? <p className="text-secondary mb-4">{tx(sectionContent.subtitle)}</p> : null}
-          <div className={gridProducts}>
-            {arrivals.map((item, index) => (
-              <ProductItemMotion key={item.legacyId} className="product-card-wrapper" index={index}>
-                <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
-                  <div className="pc__img-wrapper">
-                    <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
-                      <StorefrontImage
-                        sources={getCatalogProductImageSources(item, [], ["/img/hero2.jpg"])}
-                        width={330}
-                        height={400}
-                        alt={getProductDisplayName(item, contentLang)}
-                        className="pc__img"
-                      />
-                    </Link>
-                  </div>
-                  <div className="pc__info position-relative">
-                    <p className="pc__category">{getProductCategoryLabel(item, contentLang)}</p>
-                    <h6 className="pc__title">
-                      <Link href={withLang(`/web-shop/${item.legacyId}`)} prefetch={false}>
-                        {getProductDisplayName(item, contentLang)}
-                      </Link>
-                    </h6>
-                    <div className="product-card__price d-flex">
-                      {item.priceGross > item.priceFinalGross ? (
+          <div className="row row-cols-2 row-cols-lg-4 g-2 g-md-3">
+            {arrivals.map((item, index) => {
+              const srcs = getCatalogProductImageSources(item, [], ["/img/hero2.jpg"]);
+              const isSale = item.priceGross > item.priceFinalGross;
+              return (
+                <ProductItemMotion key={item.legacyId} className="col" index={index}>
+                  <PremiumProductCard
+                    href={withLang(`/web-shop/${item.legacyId}`)}
+                    primarySrc={srcs[0] ?? "/img/hero2.jpg"}
+                    hoverSrc={srcs[1]}
+                    title={getProductDisplayName(item, contentLang)}
+                    categoryLabel={getProductCategoryLabel(item, contentLang)}
+                    isNew={true}
+                    isSale={isSale}
+                    price={
+                      isSale ? (
                         <>
-                          <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                          <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
+                          <span className="price-old">{formatRsd(item.priceGross)}</span>
+                          <span className="price-sale">{formatRsd(item.priceFinalGross)}</span>
                         </>
                       ) : (
-                        <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </ProductItemMotion>
-            ))}
+                        <span>{formatRsd(item.priceFinalGross)}</span>
+                      )
+                    }
+                  />
+                </ProductItemMotion>
+              );
+            })}
           </div>
         </section>
       );
@@ -849,6 +835,8 @@ export default async function HomePage({
           }}
         />
 
+        <HomeCategoryTiles categories={catalog.categories} lang={lang} />
+
         <Reveal as="section" className="container pb-5 ss-editorial-section ss-editorial-section--story" delay={0.02}>
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
             <SectionHeadingReveal className="section-title text-uppercase">
@@ -958,6 +946,12 @@ export default async function HomePage({
           </div>
         </Reveal>
 
+        {/* Custom Suits Editorial Banner — izmedju product sekcija */}
+        <CustomSuitsEditorialBanner
+          lang={lang}
+          backgroundImage={landingSettings.heroVideoPosterUrl || undefined}
+        />
+
         {bottomGridSections.length > 0 ? <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" /> : null}
 
         {bottomGridSections.length > 0
@@ -981,7 +975,7 @@ export default async function HomePage({
           <div className="row g-4 align-items-stretch">
             <div className="col-12 col-lg-7">
               <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>
                   {tx(landingSettings.aboutEyebrow, "About")}
                 </p>
                 <div className="row g-3">
@@ -1007,7 +1001,7 @@ export default async function HomePage({
             </div>
             <div className="col-12 col-lg-5">
               <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>
                   {tx(landingSettings.contactEyebrow, "Contact")}
                 </p>
                 <h3 className="h4 text-uppercase mb-3">{tx(landingSettings.contactTitle, "Support and personal recommendations")}</h3>
@@ -1015,7 +1009,7 @@ export default async function HomePage({
                 <div className="d-grid gap-2">
                   {contactPoints.map((point) => (
                     <div key={point.label} className="border px-3 py-2" style={{ borderRadius: 14 }}>
-                      <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
+                      <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
                         {tx(point.label)}
                       </div>
                       <div>{point.value}</div>
@@ -1045,7 +1039,7 @@ export default async function HomePage({
           <div className="row g-4">
             <div className="col-12 col-lg-7">
               <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>
                   {tx(landingSettings.customerInfoEyebrow, "Customer Information")}
                 </p>
                 <SectionHeadingReveal className="section-title text-uppercase mb-4">
@@ -1054,7 +1048,7 @@ export default async function HomePage({
                 <div className="row g-3">
                   <div className="col-12 col-md-6">
                     <div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}>
-                      <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
+                      <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
                         {tx(landingSettings.customerRightsTitle, "Customer Rights")}
                       </p>
                       <p className="text-secondary mb-0">{tx(landingSettings.customerRightsText)}</p>
@@ -1062,7 +1056,7 @@ export default async function HomePage({
                   </div>
                   <div className="col-12 col-md-6">
                     <div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}>
-                      <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
+                      <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
                         {tx(landingSettings.purchaseGuideTitle, "Purchase Guide")}
                       </p>
                       <p className="text-secondary mb-0">{tx(landingSettings.purchaseGuideText)}</p>
@@ -1085,25 +1079,25 @@ export default async function HomePage({
             </div>
             <div className="col-12 col-lg-5">
               <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>
                   {tx(landingSettings.companyDetailsEyebrow, "Company Details")}
                 </p>
                 <div className="d-grid gap-2">
                   <div className="border px-3 py-2" style={{ borderRadius: 14 }}>
-                    <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
+                    <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
                       {tx(landingSettings.companyPibLabel, "Tax ID")}
                     </div>
                     <div>{landingSettings.companyPib}</div>
                   </div>
                   <div className="border px-3 py-2" style={{ borderRadius: 14 }}>
-                    <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
+                    <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
                       {tx(landingSettings.companyMbLabel, "Registration No.")}
                     </div>
                     <div>{landingSettings.companyMb}</div>
                   </div>
                 </div>
                 <div className="mt-4">
-                  <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}>
+                  <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
                     {tx(landingSettings.documentsTitle, "Documents")}
                   </p>
                   <p className="text-secondary mb-3">{tx(landingSettings.documentsSubtitle)}</p>
@@ -1139,7 +1133,7 @@ export default async function HomePage({
         <Reveal as="section" className="container pb-5 ss-editorial-section" delay={0.175}>
           <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
             <div>
-              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>
                 {tx(landingSettings.uniformsEyebrow, "Business Uniforms")}
               </p>
               <SectionHeadingReveal className="section-title text-uppercase mb-0">
@@ -1182,7 +1176,7 @@ export default async function HomePage({
 
         <Reveal as="section" className="blog-grid container ss-editorial-section ss-editorial-section--blog" delay={0.18}>
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <SectionHeadingReveal className="section-title text-uppercase">
+            <SectionHeadingReveal className="section-title">
               {tx(landingSettings.blogSectionTitle, "Latest Blog")}
             </SectionHeadingReveal>
             {landingSettings.blogSectionCtaLabel ? (

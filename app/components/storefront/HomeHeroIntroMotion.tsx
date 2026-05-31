@@ -30,27 +30,21 @@ export default function HomeHeroIntroMotion({
 
   if (prefersReduced) {
     return (
-      <div className="ss-home18-hero__intro text-center text-white" data-hero-intro>
-        <p className="text-uppercase fs-13 fw-normal mb-2 text-white ss-home18-hero__eyebrow">{eyebrow}</p>
-        <h2 className="text-uppercase h1 fw-semi-bold lh-1 mb-4 text-white">
+      <div className="ss-home18-hero__intro text-white" data-hero-intro>
+        <p className="fw-semi-bold mb-0 ss-home18-hero__eyebrow text-uppercase">{eyebrow}</p>
+        <span className="ss-hero-gold-line" aria-hidden="true" />
+        <h2 className="hero-display fw-semi-bold lh-1 mb-5 text-white">
           {titleLine1}
           <br />
           {titleLine2}
         </h2>
-        <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap ss-home18-hero__cta">
+        <div className="d-flex align-items-center gap-3 flex-wrap ss-home18-hero__cta">
           <Link
             href={primaryHref}
             prefetch={prefetchIfWebShop(primaryHref)}
-            className="btn btn-light border-0 fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn"
+            className="btn border-0 fw-semi-bold text-uppercase px-5 ss-cta-btn"
           >
             {primaryLabel}
-          </Link>
-          <Link
-            href={secondaryHref}
-            prefetch={prefetchIfWebShop(secondaryHref)}
-            className="btn btn-outline-light fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn ss-cta-btn--ghost-light"
-          >
-            {secondaryLabel}
           </Link>
         </div>
       </div>
@@ -59,58 +53,67 @@ export default function HomeHeroIntroMotion({
 
   return (
     <m.div
-      className="ss-home18-hero__intro text-center text-white"
+      className="ss-home18-hero__intro text-white"
       data-hero-intro
       initial="hidden"
       animate="visible"
       variants={{
         hidden: {},
-        visible: { transition: { staggerChildren: 0.11, delayChildren: 0.06 } },
+        visible: { transition: { staggerChildren: 0.13, delayChildren: 0.1 } },
       }}
     >
       <m.p
-        className="text-uppercase fs-13 fw-normal mb-2 text-white ss-home18-hero__eyebrow"
+        className="fw-semi-bold mb-0 ss-home18-hero__eyebrow text-uppercase"
         variants={{
-          hidden: { opacity: 0, y: 16 },
-          visible: { opacity: 1, y: 0, transition: { duration: 0.68, ease } },
+          hidden: { opacity: 0, y: 12 },
+          visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease } },
         }}
       >
         {eyebrow}
       </m.p>
-      <m.h2
-        className="text-uppercase h1 fw-semi-bold lh-1 mb-4 text-white"
+
+      {/* Zlatna dekorativna linija */}
+      <m.span
+        className="ss-hero-gold-line"
+        aria-hidden="true"
         variants={{
-          hidden: { opacity: 0, y: 32 },
-          visible: { opacity: 1, y: 0, transition: { duration: 0.82, ease } },
+          hidden: { scaleX: 0, opacity: 0 },
+          visible: { scaleX: 1, opacity: 1, transition: { duration: 0.7, ease, delay: 0.05 } },
+        }}
+        style={{ transformOrigin: "left" }}
+      />
+
+      <m.h2
+        className="hero-display fw-semi-bold lh-1 mb-5 text-white"
+        variants={{
+          hidden: { opacity: 0, y: 36 },
+          visible: { opacity: 1, y: 0, transition: { duration: 0.88, ease } },
         }}
       >
         {titleLine1}
         <br />
         {titleLine2}
       </m.h2>
+
       <m.div
-        className="d-flex align-items-center justify-content-center gap-2 flex-wrap ss-home18-hero__cta"
+        className="d-flex align-items-center gap-3 flex-wrap ss-home18-hero__cta"
         variants={{
-          hidden: { opacity: 0, y: 20 },
-          visible: { opacity: 1, y: 0, transition: { duration: 0.64, ease } },
+          hidden: { opacity: 0, y: 18 },
+          visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease } },
         }}
       >
-        <m.span className="d-inline-flex" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
+        <m.span
+          className="d-inline-flex"
+          whileHover={{ y: -2 }}
+          whileTap={{ scale: 0.97 }}
+          transition={{ duration: 0.22 }}
+        >
           <Link
             href={primaryHref}
             prefetch={prefetchIfWebShop(primaryHref)}
-            className="btn btn-light border-0 fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn"
+            className="btn border-0 fw-semi-bold text-uppercase px-5 ss-cta-btn"
           >
             {primaryLabel}
-          </Link>
-        </m.span>
-        <m.span className="d-inline-flex" whileHover={{ y: -2 }} whileTap={{ scale: 0.98 }} transition={{ duration: 0.2 }}>
-          <Link
-            href={secondaryHref}
-            prefetch={prefetchIfWebShop(secondaryHref)}
-            className="btn btn-outline-light fs-13 fw-semi-bold text-uppercase px-4 ss-cta-btn ss-cta-btn--ghost-light"
-          >
-            {secondaryLabel}
           </Link>
         </m.span>
       </m.div>

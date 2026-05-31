@@ -117,9 +117,16 @@ export const photoPair = (
 ) => {
   const baseName = photoBaseName(src, variant);
   const prefix = getPhotoCdnBase(variant);
+  const png = appendVersion(`${prefix}${baseName}.png`);
+  if (prefix.startsWith("/assets/suits/")) {
+    return {
+      webp: png,
+      png,
+    } as SpritePair;
+  }
   return {
     webp: appendVersion(`${prefix}${baseName}.webp`),
-    png: appendVersion(`${prefix}${baseName}.png`),
+    png,
   } as SpritePair;
 };
 

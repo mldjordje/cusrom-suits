@@ -42,10 +42,10 @@ if (legacyAssetUrl) {
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
-    formats: ["image/webp"],
-    minimumCacheTTL: 86400,
+    formats: ["image/avif", "image/webp"],
+    minimumCacheTTL: 604800, // 7 dana — produktne slike se retko menjaju
     deviceSizes: [640, 750, 828, 1080, 1200, 1600, 1920],
-    imageSizes: [48, 64, 96, 112, 120, 180, 330, 420, 690, 900],
+    imageSizes: [48, 64, 96, 120, 180, 330, 420, 690, 900],
     qualities: [60, 75],
     remotePatterns,
   },
@@ -87,6 +87,24 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: securityHeaders,
+      },
+      {
+        source: "/_next/static/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/img/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
+        source: "/assets/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=604800, stale-while-revalidate=86400" },
+        ],
       },
     ];
   },
