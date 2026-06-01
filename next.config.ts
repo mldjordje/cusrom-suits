@@ -42,7 +42,7 @@ if (legacyAssetUrl) {
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   images: {
-    formats: ["image/avif", "image/webp"],
+    formats: ["image/webp"],
     minimumCacheTTL: 604800, // 7 dana — produktne slike se retko menjaju
     deviceSizes: [640, 750, 828, 1080, 1200, 1600, 1920],
     imageSizes: [48, 64, 96, 120, 180, 330, 420, 690, 900],
