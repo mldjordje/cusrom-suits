@@ -524,7 +524,9 @@ const applySkuImageFallbacks = (items: CatalogProductView[]): CatalogProductView
       ...item,
       coverImage: donor.coverImage,
       images: [...donor.images],
-      hasDirectMedia: false,
+      // SKU donor = same product in a different record — treat as direct media
+      // so requireDirectImages filter passes (same as when the product had its own entry).
+      hasDirectMedia: true,
       rawPayload: {
         ...item.rawPayload,
         imageFallback: {
@@ -907,15 +909,16 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
   const products: Record<string, unknown>[] = [];
   for (let from = 0; ; from += pageSize) {
     const to = from + pageSize - 1;
-    let query = supabase
+    // Load ALL products (no active/exported filter here) so that inactive products
+    // can serve as image donors for active products via applySkuImageFallbacks.
+    // The active/exported filter is applied in-memory below after fallbacks are resolved.
+    const query = supabase
       .from("catalog_products")
       .select(
         "legacy_id,sku,ean,manuf_code,brand,is_active,is_exported,name_sr,name_en,description_sr,description_en,specification_sr,specification_en,price_gross,price_final_gross,tax_percent,rebate_percent,stock_warehouse_1,stock_total,raw_payload",
       )
       .order("legacy_id", { ascending: true })
       .range(from, to);
-    if (filters.activeOnly) query = query.eq("is_active", true);
-    if (filters.exportOnly) query = query.eq("is_exported", true);
     const { data, error } = await query;
     if (error) return null;
     const batch = (data || []) as Record<string, unknown>[];
@@ -951,7 +954,14 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
   }
 
   const normalized = products.map((row: Record<string, unknown>) => normalizeCatalogRow(row, imagesByProductId));
-  return applySkuImageFallbacks(normalized);
+  const withFallbacks = applySkuImageFallbacks(normalized);
+
+  // Apply active/exported filters in-memory after image fallbacks are resolved.
+  return withFallbacks.filter((item) => {
+    if (filters.activeOnly && !item.isActive) return false;
+    if (filters.exportOnly && !item.isExported) return false;
+    return true;
+  });
 }
 
 async function loadFromSupabase(filters: {
