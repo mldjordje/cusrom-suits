@@ -150,17 +150,16 @@ export async function GET(req: NextRequest) {
   const CHUNK = 100;
   for (let i = 0; i < rows.length; i += CHUNK) {
     const batch = rows.slice(i, i + CHUNK);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { error } = await (supabase.from("catalog_products") as any)
-      .upsert(batch, { onConflict: "legacy_id", ignoreDuplicates: false });
+    const table = supabase.from("catalog_products");
+    // Cast needed: Supabase generated types may not match dynamic upsert shape
+    const { error } = await (table.upsert as Function)(batch, { onConflict: "legacy_id", ignoreDuplicates: false });
     if (!error) upserted += batch.length;
   }
 
   // 5. Disable stale mOffice duplicates
   if (duplicatesToDisable.length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await (supabase.from("catalog_products") as any)
-      .update({ is_active: false, is_exported: false })
+    const table = supabase.from("catalog_products");
+    await (table.update as Function)({ is_active: false, is_exported: false })
       .in("legacy_id", duplicatesToDisable);
   }
 
