@@ -603,7 +603,7 @@ const inferProductTypeToken = (name: string, categories: { name: string }[]): st
   return "collection";
 };
 
-const getCatalogProductModelKey = (item: CatalogProductView) => {
+export const getCatalogProductModelKey = (item: CatalogProductView) => {
   const displayName = getCatalogProductDisplayName({
     name: item.name,
     sku: item.sku,
@@ -1216,6 +1216,7 @@ export async function getCatalogProductVariantsBySku(
     activeOnly?: boolean;
     exportOnly?: boolean;
   },
+  _modelKeyHint?: string,
 ): Promise<CatalogProductView[]> {
   const normalizedSku = String(sku || "").trim().toLowerCase();
   if (!normalizedSku) return [];
@@ -1231,9 +1232,21 @@ export async function getCatalogProductVariantsBySku(
     promotionRules.length > 0
       ? applyPromotionRulesToProducts(baseItems, promotionRules)
       : baseItems;
-  return displayItems
+
+  const bySkuMatches = displayItems
     .filter((item) => String(item.sku || "").trim().toLowerCase() === normalizedSku)
     .sort((left, right) => left.legacyId - right.legacyId);
+
+  // When each size has its own SKU (common in legacy catalogs), the SKU lookup
+  // returns only 1 product. Fall back to model-name grouping to find all sizes.
+  if (bySkuMatches.length <= 1 && _modelKeyHint) {
+    const byModelKey = displayItems
+      .filter((item) => getCatalogProductModelKey(item) === _modelKeyHint)
+      .sort((left, right) => left.legacyId - right.legacyId);
+    if (byModelKey.length > bySkuMatches.length) return byModelKey;
+  }
+
+  return bySkuMatches;
 }
 
 async function fetchCatalogProductByLegacyIdFromSupabase(

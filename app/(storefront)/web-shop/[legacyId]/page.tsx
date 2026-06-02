@@ -17,6 +17,7 @@ import {
   getCatalogProductVariantsBySku,
   getCompleteTheLookProducts,
   getRelatedCatalogProducts,
+  getCatalogProductModelKey,
 } from "@/lib/catalog/store";
 import CompleteTheLook from "@/app/components/storefront/CompleteTheLook";
 import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
@@ -154,7 +155,7 @@ export default async function WebShopProductPage({
       applyPromotions: true,
       activeOnly: true,
       exportOnly: true,
-    }),
+    }, getCatalogProductModelKey(product)),
     getSiteContent(),
     getCompleteTheLookProducts(product, 4),
   ]);
