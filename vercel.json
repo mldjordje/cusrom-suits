@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/moffice",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/ananas",
+      "schedule": "*/30 * * * *"
+    }
+  ]
+}
