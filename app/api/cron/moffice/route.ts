@@ -65,17 +65,19 @@ export async function GET(req: NextRequest) {
   }
 
   // 2. Load existing products by EAN and SKU for matching
-  const { data: existing } = await supabase
+  type ExistingRow = { legacy_id: number; sku: string; ean: string; name_sr: string; raw_payload: Record<string, unknown> };
+  const { data: existingRaw } = await supabase
     .from("catalog_products")
     .select("legacy_id,sku,ean,name_sr,raw_payload");
+  const existing = (existingRaw ?? []) as unknown as ExistingRow[];
 
-  const byEan = new Map<string, { legacy_id: number; name_sr: string; raw_payload: Record<string, unknown> }>();
-  const bySku = new Map<string, { legacy_id: number; name_sr: string; raw_payload: Record<string, unknown> }>();
-  for (const row of existing ?? []) {
+  const byEan = new Map<string, ExistingRow>();
+  const bySku = new Map<string, ExistingRow>();
+  for (const row of existing) {
     const ean = normalizeKey(row.ean);
     const sku = normalizeKey(row.sku);
-    if (ean) byEan.set(ean, row as { legacy_id: number; name_sr: string; raw_payload: Record<string, unknown> });
-    if (sku) bySku.set(sku, row as { legacy_id: number; name_sr: string; raw_payload: Record<string, unknown> });
+    if (ean) byEan.set(ean, row);
+    if (sku) bySku.set(sku, row);
   }
 
   // 3. Build upsert rows
@@ -100,8 +102,9 @@ export async function GET(req: NextRequest) {
     const stock = Math.max(0, Number(item.ARTIKAL_ZALIHE ?? 0));
     const legacyId = existingRow ? existingRow.legacy_id : mofficeId;
 
+    const existingPayload = existingRow && typeof existingRow === "object" ? (existingRow.raw_payload ?? {}) : {};
     const payload: Record<string, unknown> = {
-      ...(existingRow?.raw_payload ?? {}),
+      ...existingPayload,
       moffice: {
         id: mofficeId,
         category: item.ARTIKAL_GRUPA ?? "",
@@ -147,16 +150,16 @@ export async function GET(req: NextRequest) {
   const CHUNK = 100;
   for (let i = 0; i < rows.length; i += CHUNK) {
     const batch = rows.slice(i, i + CHUNK);
-    const { error } = await supabase
-      .from("catalog_products")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from("catalog_products") as any)
       .upsert(batch, { onConflict: "legacy_id", ignoreDuplicates: false });
     if (!error) upserted += batch.length;
   }
 
   // 5. Disable stale mOffice duplicates
   if (duplicatesToDisable.length > 0) {
-    await supabase
-      .from("catalog_products")
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.from("catalog_products") as any)
       .update({ is_active: false, is_exported: false })
       .in("legacy_id", duplicatesToDisable);
   }
