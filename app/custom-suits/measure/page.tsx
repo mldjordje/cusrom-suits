@@ -1,7 +1,7 @@
 "use client";
 import React, { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
-import { Slider, Switch, TextField, FormControlLabel } from "@mui/material";
+// MUI uklonjeno — zamenjeno nativnim HTML elementima (ušteda ~400 KB bundle)
 import { m } from "framer-motion";
 import { suits, fabrics as fallbackFabrics } from "../data/options";
 import { useFabrics } from "../hooks/useFabrics";
@@ -42,41 +42,17 @@ type MeasureFieldProps = {
 
 const clampNumber = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
-const sliderSx = {
-  color: "#1a1716",
-  height: 6,
-  "& .MuiSlider-rail": {
-    opacity: 0.22,
-  },
-  "& .MuiSlider-thumb": {
-    width: 18,
-    height: 18,
-    border: "2px solid #1a1716",
-    backgroundColor: "#f7f1eb",
-  },
-};
+// Nativni stilovi za range input (zamena za MUI Slider)
+const rangeInputClassName =
+  "w-full h-[6px] appearance-none rounded-full bg-[#e6dbd3] accent-[#1a1716] cursor-pointer " +
+  "[&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-[18px] [&::-webkit-slider-thumb]:h-[18px] " +
+  "[&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-[#f7f1eb] [&::-webkit-slider-thumb]:border-2 " +
+  "[&::-webkit-slider-thumb]:border-[#1a1716] [&::-webkit-slider-thumb]:shadow-sm";
 
-const textFieldSx = {
-  "& .MuiInputBase-root": {
-    fontFamily: "var(--font-sans)",
-    borderRadius: "14px",
-    backgroundColor: "#fbf9f7",
-  },
-  "& .MuiInputBase-input": {
-    fontFamily: "var(--font-sans)",
-    fontSize: "14px",
-    padding: "10px 12px",
-  },
-  "& fieldset": {
-    borderColor: "#e6dbd3",
-  },
-  "&:hover fieldset": {
-    borderColor: "#c7b8b0",
-  },
-  "& .Mui-focused fieldset": {
-    borderColor: "#1a1716",
-  },
-};
+// Nativni stilovi za text input (zamena za MUI TextField)
+const nativeInputClassName =
+  "w-full rounded-[14px] border border-[#e6dbd3] bg-[#fbf9f7] px-3 py-2 text-sm font-[var(--font-sans)] text-[#1a1716] " +
+  "outline-none transition hover:border-[#c7b8b0] focus:border-[#1a1716]";
 
 const MetricSlider = ({ label, value, onChange, min, max, step, unit, hint }: MetricSliderProps) => {
   return (
@@ -88,28 +64,30 @@ const MetricSlider = ({ label, value, onChange, min, max, step, unit, hint }: Me
             {value} <span className="text-sm font-normal text-[#7b6f67]">{unit}</span>
           </p>
         </div>
-        <TextField
+        <input
           type="number"
-          value={value}
-          size="small"
-          onChange={(event) => {
-            if (event.target.value === "") return;
-            const next = Number(event.target.value);
-            if (!Number.isFinite(next)) return;
-            onChange(clampNumber(next, min, max));
-          }}
-          inputProps={{ min, max, step }}
-          sx={textFieldSx}
-        />
-      </div>
-      <div className="mt-4">
-        <Slider
           value={value}
           min={min}
           max={max}
           step={step}
-          onChange={(_, next) => onChange(next as number)}
-          sx={sliderSx}
+          onChange={(e) => {
+            if (e.target.value === "") return;
+            const next = Number(e.target.value);
+            if (!Number.isFinite(next)) return;
+            onChange(clampNumber(next, min, max));
+          }}
+          className={`${nativeInputClassName} w-20 text-center`}
+        />
+      </div>
+      <div className="mt-4">
+        <input
+          type="range"
+          value={value}
+          min={min}
+          max={max}
+          step={step}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className={rangeInputClassName}
         />
       </div>
       <p className="mt-2 text-xs text-[#8a7e76]">{hint}</p>
@@ -137,17 +115,16 @@ const MeasureField = ({ label, value, recommended, unit, onChange }: MeasureFiel
             Preporuka: {recommended} {unit}
           </p>
         </div>
-        <TextField
+        <input
           type="number"
           value={value}
-          size="small"
-          onChange={(event) => {
-            if (event.target.value === "") return;
-            const next = Number(event.target.value);
+          onChange={(e) => {
+            if (e.target.value === "") return;
+            const next = Number(e.target.value);
             if (!Number.isFinite(next)) return;
             onChange(next);
           }}
-          sx={textFieldSx}
+          className={`${nativeInputClassName} w-20 text-center`}
         />
       </div>
     </div>
@@ -499,24 +476,24 @@ function MeasurePageContent() {
                       Preporuka + rucna korekcija
                     </h2>
                   </div>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={autoFill}
-                        onChange={(event) => setAutoFill(event.target.checked)}
-                        sx={{
-                          "& .MuiSwitch-switchBase.Mui-checked": {
-                            color: "#1c1917",
-                          },
-                          "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-                            backgroundColor: "#1c1917",
-                          },
-                        }}
+                  <label className="flex cursor-pointer items-center gap-2">
+                    <span className="text-[12px] text-[#6f625b]">Auto sync sa preporukom</span>
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={autoFill}
+                      onClick={() => setAutoFill((v) => !v)}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 rounded-full border-2 border-transparent transition-colors duration-200 focus:outline-none ${
+                        autoFill ? "bg-[#1c1917]" : "bg-[#d4c9c2]"
+                      }`}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ${
+                          autoFill ? "translate-x-5" : "translate-x-0"
+                        }`}
                       />
-                    }
-                    label="Auto sync sa preporukom"
-                    sx={{ "& .MuiFormControlLabel-label": { fontSize: "12px", color: "#6f625b" } }}
-                  />
+                    </button>
+                  </label>
                 </div>
                 <p className="mt-3 text-sm text-[#6f625b]">
                   Preporuke se menjaju dok podesavate visinu, tezinu i godine. Ako znate svoje mere,
@@ -567,46 +544,60 @@ function MeasurePageContent() {
                 </div>
                 <form onSubmit={handleSubmit} className="mt-6 space-y-4">
                   <div className="grid gap-4 md:grid-cols-2">
-                    <TextField
-                      label="Ime i prezime"
-                      value={ime}
-                      onChange={(event) => setIme(event.target.value)}
-                      required
-                      fullWidth
-                      sx={textFieldSx}
-                    />
-                    <TextField
-                      label="Email"
-                      type="email"
-                      value={email}
-                      onChange={(event) => setEmail(event.target.value)}
-                      required
-                      fullWidth
-                      error={!emailValid}
-                      helperText={!emailValid ? "Neispravan email." : ""}
-                      sx={textFieldSx}
-                    />
-                    <TextField
-                      label="Telefon"
-                      type="tel"
-                      value={telefon}
-                      onChange={(event) => setTelefon(event.target.value)}
-                      placeholder="+381..."
-                      required
-                      fullWidth
-                      error={!phoneValid}
-                      helperText={!phoneValid ? "Unesite validan broj telefona." : ""}
-                      sx={textFieldSx}
-                    />
-                    <TextField
-                      label="Napomena"
-                      value={napomena}
-                      onChange={(event) => setNapomena(event.target.value)}
-                      multiline
-                      rows={2}
-                      fullWidth
-                      sx={textFieldSx}
-                    />
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#6f625b]">
+                        Ime i prezime <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={ime}
+                        onChange={(e) => setIme(e.target.value)}
+                        required
+                        className={nativeInputClassName}
+                      />
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#6f625b]">
+                        Email <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        required
+                        className={`${nativeInputClassName} ${!emailValid ? "border-amber-400 focus:border-amber-500" : ""}`}
+                      />
+                      {!emailValid && (
+                        <p className="text-xs text-amber-600">Neispravan email.</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#6f625b]">
+                        Telefon <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="tel"
+                        value={telefon}
+                        onChange={(e) => setTelefon(e.target.value)}
+                        placeholder="+381..."
+                        required
+                        className={`${nativeInputClassName} ${!phoneValid ? "border-amber-400 focus:border-amber-500" : ""}`}
+                      />
+                      {!phoneValid && (
+                        <p className="text-xs text-amber-600">Unesite validan broj telefona.</p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[11px] font-semibold uppercase tracking-[0.25em] text-[#6f625b]">
+                        Napomena
+                      </label>
+                      <textarea
+                        value={napomena}
+                        onChange={(e) => setNapomena(e.target.value)}
+                        rows={2}
+                        className={`${nativeInputClassName} resize-none`}
+                      />
+                    </div>
                   </div>
 
                   <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">

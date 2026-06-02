@@ -17,6 +17,17 @@ const CDN_TRANSPARENT = "/assets/suits/transparent/";
 const LOCAL_DEV_TRANSPARENT = "/assets/suits/transparent/";
 const LEGACY_REMOTE = "https://customsuits.adspire.rs/uploads/transparent/";
 const isDevelopment = process.env.NODE_ENV === "development";
+const LEGACY_REMOTE_HOST = "customsuits.adspire.rs";
+
+const pointsToLegacyRemote = (value?: string | null) => {
+  if (!value) return false;
+  if (value.startsWith("/uploads/") || value === "/uploads") return true;
+  try {
+    return new URL(value).hostname === LEGACY_REMOTE_HOST;
+  } catch {
+    return value.includes(LEGACY_REMOTE_HOST);
+  }
+};
 
 export function getTransparentCdnBase() {
   const explicit = process.env.NEXT_PUBLIC_TRANSPARENT_CDN_BASE?.trim();
@@ -24,7 +35,7 @@ export function getTransparentCdnBase() {
     const localDev = process.env.NEXT_PUBLIC_TRANSPARENT_LOCAL_BASE?.trim();
     return ensureTrailingSlash(localDev || LOCAL_DEV_TRANSPARENT);
   }
-  if (explicit) return ensureTrailingSlash(explicit);
+  if (explicit && !pointsToLegacyRemote(explicit)) return ensureTrailingSlash(explicit);
 
   // Default to bundled static assets; legacy remote as last resort
   return ensureTrailingSlash(CDN_TRANSPARENT || explicit || LEGACY_REMOTE);
@@ -48,7 +59,7 @@ export function getPhotoCdnBase(variant: PhotoVariant = "blue") {
     return ensureTrailingSlash(PHOTO_BASES[variant]);
   }
   const explicit = process.env.NEXT_PUBLIC_PHOTO_CDN_BASE?.trim();
-  if (explicit) {
+  if (explicit && !pointsToLegacyRemote(explicit)) {
     const withVariant = explicit.includes("{variant}")
       ? explicit.replace("{variant}", variant)
       : explicit;

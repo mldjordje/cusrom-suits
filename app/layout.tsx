@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono, Playfair_Display } from "next/font/google";
+import { Geist, Playfair_Display } from "next/font/google";
 import { Montserrat } from "next/font/google";
 import AppMotionShell from "@/app/components/motion/AppMotionShell";
 import { SITE_NAME, SITE_URL, buildSeoMetadata } from "@/lib/seo";
@@ -8,22 +8,20 @@ import "./globals.css";
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
   subsets: ["latin"],
+  display: "swap",
 });
 
 const playfairDisplay = Playfair_Display({
   variable: "--font-playfair-display",
   subsets: ["latin"],
   weight: ["600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -71,7 +69,7 @@ export default function RootLayout({
   return (
     <html
       lang="sr"
-      className={`${geistSans.variable} ${geistMono.variable} ${montserrat.variable} ${playfairDisplay.variable}`}
+      className={`${geistSans.variable} ${montserrat.variable} ${playfairDisplay.variable}`}
     >
       <body className="antialiased">
         <AppMotionShell>{children}</AppMotionShell>
