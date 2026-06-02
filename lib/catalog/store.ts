@@ -624,6 +624,9 @@ export const getCatalogProductModelKey = (item: CatalogProductView) => {
     .replace(/^[mzd]\.\s+/, "")
     .replace(/^(muska|muski|zenska|zenski|decija|deciji)\s+/, "")
     .replace(/^(kosulja|pantalone|odelo|sako|kaput|kais|cipele|kratke|majica|dzemper)\s+/i, "")
+    // Strip trailing mOffice type annotation: "m.kosulja", "m.sako", "m.cipele", etc.
+    // These are appended inconsistently and cause same-model products to get different keys.
+    .replace(/\s+[mzd]\.[a-z]+$/, "")
     .trim();
 
   if (!normalizedName) return `legacy:${item.legacyId}`;
