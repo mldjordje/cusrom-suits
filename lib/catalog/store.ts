@@ -627,6 +627,9 @@ export const getCatalogProductModelKey = (item: CatalogProductView) => {
     // Strip trailing mOffice type annotation: "m.kosulja", "m.sako", "m.cipele", etc.
     // These are appended inconsistently and cause same-model products to get different keys.
     .replace(/\s+[mzd]\.[a-z]+$/, "")
+    // Strip trailing color/variant code (last /NUMBER segment) so that the same model
+    // in different colors collapses to one catalog card (e.g. C8/51, C8/53 → C8).
+    .replace(/\/\d+$/, "")
     .trim();
 
   if (!normalizedName) return `legacy:${item.legacyId}`;
