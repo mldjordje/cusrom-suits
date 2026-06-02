@@ -1,7 +1,9 @@
+"use client";
 import Image, { type ImageProps } from "next/image";
+import { useCallback, useState } from "react";
 import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 
-type StorefrontImageProps = Omit<ImageProps, "src" | "alt"> & {
+type StorefrontImageProps = Omit<ImageProps, "src" | "alt" | "onError"> & {
   alt: string;
   sources: string[];
   fallbackSrc?: string;
@@ -16,7 +18,15 @@ export default function StorefrontImage({
   const candidates = [...sources, fallbackSrc]
     .map((value) => sanitizeStorefrontImageSrc(value))
     .filter((value) => value.length > 0);
-  const activeSrc = candidates[0] || fallbackSrc;
+
+  const [index, setIndex] = useState(0);
+  const activeSrc = candidates[index] || fallbackSrc;
+
+  const handleError = useCallback(() => {
+    // Try the next candidate; if exhausted, stay on the last one (local fallback)
+    setIndex((prev) => Math.min(prev + 1, candidates.length - 1));
+  }, [candidates.length]);
+
   const requestedQuality = typeof props.quality === "number" ? props.quality : 75;
   const normalizedQuality = requestedQuality <= 64 ? 60 : 75;
   const normalizedSizes =
@@ -35,6 +45,7 @@ export default function StorefrontImage({
       quality={normalizedQuality}
       sizes={normalizedSizes}
       unoptimized={shouldBypassOptimization ? true : props.unoptimized}
+      onError={handleError}
     />
   );
 }
