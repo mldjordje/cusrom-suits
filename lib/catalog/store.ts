@@ -1265,7 +1265,47 @@ async function fetchCatalogProductByLegacyIdFromSupabase(
   const imagesByProductId = new Map<number, string[]>();
   imagesByProductId.set(legacyId, imageUrls);
   const normalized = normalizeCatalogRow(row as Record<string, unknown>, imagesByProductId);
-  return applySkuImageFallbacks([normalized])[0] || null;
+
+  if (hasCatalogProductMedia(normalized)) {
+    return normalized;
+  }
+
+  // No direct images — look up other records with the same SKU that have images.
+  const sku = String((row as Record<string, unknown>).sku || "").trim();
+  if (sku) {
+    const { data: skuRows } = await supabase
+      .from("catalog_products")
+      .select("legacy_id")
+      .eq("sku", sku)
+      .neq("legacy_id", legacyId)
+      .limit(20);
+
+    const skuIds = (skuRows || []).map((r) => Number((r as Record<string, unknown>).legacy_id)).filter(Boolean);
+    if (skuIds.length > 0) {
+      const { data: skuMedia } = await supabase
+        .from("catalog_product_media")
+        .select("legacy_product_id,url,sort")
+        .in("legacy_product_id", skuIds)
+        .order("sort", { ascending: true })
+        .limit(20);
+
+      const donorUrls = (skuMedia || [])
+        .map((m) => String((m as Record<string, unknown>).url || ""))
+        .filter((u) => u.length > 0);
+
+      if (donorUrls.length > 0) {
+        return {
+          ...normalized,
+          coverImage: donorUrls[0],
+          images: donorUrls,
+          hasDirectMedia: true,
+          rawPayload: { ...normalized.rawPayload, imageFallback: { type: "sku", sku } },
+        };
+      }
+    }
+  }
+
+  return normalized;
 }
 
 const getCatalogProductByLegacyIdCached = unstable_cache(
