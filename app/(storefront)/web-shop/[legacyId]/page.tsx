@@ -145,8 +145,8 @@ export default async function WebShopProductPage({
   const id = Number.parseInt(legacyId, 10);
   if (!Number.isFinite(id)) notFound();
 
-  const product = await getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: false });
-  if (!product || !product.isActive || !product.isExported || !hasDirectProductImage(product)) notFound();
+  const product = await getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: true });
+  if (!product || !product.isActive || !product.isExported) notFound();
 
   const [related, variants, siteContent, completeTheLook] = await Promise.all([
     getRelatedCatalogProducts(product, 4),
