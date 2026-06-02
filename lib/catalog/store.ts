@@ -825,8 +825,11 @@ const collapseCatalogProductsByKey = (
   return Array.from(map.values());
 };
 
-const collapseCatalogProductsByModel = (items: CatalogProductView[]): CatalogProductView[] => {
+export const collapseCatalogProductsByModel = (items: CatalogProductView[]): CatalogProductView[] => {
   return collapseCatalogProductsByKey(items, (item) => {
+    const modelKey = getCatalogProductModelKey(item);
+    if (modelKey && !modelKey.startsWith("legacy:")) return `model:${modelKey}`;
+
     const sku = String(item.sku || "").trim().toLowerCase();
     return sku ? `sku:${sku}` : `legacy:${item.legacyId}`;
   });
