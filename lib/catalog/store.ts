@@ -524,7 +524,7 @@ const applySkuImageFallbacks = (items: CatalogProductView[]): CatalogProductView
       ...item,
       coverImage: donor.coverImage,
       images: [...donor.images],
-      hasDirectMedia: true,
+      hasDirectMedia: false,
       rawPayload: {
         ...item.rawPayload,
         imageFallback: {
@@ -907,16 +907,15 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
   const products: Record<string, unknown>[] = [];
   for (let from = 0; ; from += pageSize) {
     const to = from + pageSize - 1;
-    // Load ALL products without active/exported filter so that inactive products
-    // can serve as image donors for active products via applySkuImageFallbacks.
-    // The active/exported filter is applied in-memory after fallbacks are resolved.
-    const query = supabase
+    let query = supabase
       .from("catalog_products")
       .select(
         "legacy_id,sku,ean,manuf_code,brand,is_active,is_exported,name_sr,name_en,description_sr,description_en,specification_sr,specification_en,price_gross,price_final_gross,tax_percent,rebate_percent,stock_warehouse_1,stock_total,raw_payload",
       )
       .order("legacy_id", { ascending: true })
       .range(from, to);
+    if (filters.activeOnly) query = query.eq("is_active", true);
+    if (filters.exportOnly) query = query.eq("is_exported", true);
     const { data, error } = await query;
     if (error) return null;
     const batch = (data || []) as Record<string, unknown>[];
@@ -952,13 +951,7 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
   }
 
   const normalized = products.map((row: Record<string, unknown>) => normalizeCatalogRow(row, imagesByProductId));
-  const withFallbacks = applySkuImageFallbacks(normalized);
-
-  return withFallbacks.filter((item) => {
-    if (filters.activeOnly && !item.isActive) return false;
-    if (filters.exportOnly && !item.isExported) return false;
-    return true;
-  });
+  return applySkuImageFallbacks(normalized);
 }
 
 async function loadFromSupabase(filters: {
