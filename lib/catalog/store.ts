@@ -581,6 +581,60 @@ const mergeCatalogProductMedia = (
   };
 };
 
+const isReachableCatalogImage = async (src: string) => {
+  const url = String(src || "").trim();
+  if (!url) return false;
+  if (url.startsWith("/") || url.startsWith("data:image/")) return true;
+  if (!/^https?:\/\//i.test(url)) return true;
+
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 3500);
+  try {
+    const response = await fetch(url, {
+      method: "HEAD",
+      redirect: "follow",
+      signal: controller.signal,
+    });
+    const contentType = response.headers.get("content-type") || "";
+    return response.ok && (contentType.startsWith("image/") || contentType.length === 0);
+  } catch {
+    return false;
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+export const filterReachableCatalogImages = async (images: Array<string | null | undefined>) => {
+  const candidates = Array.from(
+    new Set(
+      images
+        .map((image) => String(image || "").trim())
+        .filter((image) => image.length > 0),
+    ),
+  );
+
+  const checks = await Promise.all(
+    candidates.slice(0, 12).map(async (image) => ({
+      image,
+      reachable: await isReachableCatalogImage(image),
+    })),
+  );
+  return checks.filter((item) => item.reachable).map((item) => item.image);
+};
+
+export const filterReachableCatalogMedia = async (
+  product: CatalogProductView,
+): Promise<CatalogProductView> => {
+  const images = await filterReachableCatalogImages([product.coverImage, ...product.images]);
+
+  return {
+    ...product,
+    coverImage: images[0] || null,
+    images,
+    hasDirectMedia: images.length > 0,
+  };
+};
+
 /** Infer a stable product-type token from raw name + categories.
  *  Used only for the collapse key — must be consistent across all size
  *  variants of the same model regardless of whether cats[] is populated. */
@@ -1203,9 +1257,14 @@ export async function getCatalogProductByLegacyId(
   if (supabase) {
     const normalized = await getCatalogProductByLegacyIdCached(id);
     if (normalized) {
-      const withMedia = hasCatalogProductMedia(normalized) || !allowLegacyMediaFallback
-        ? normalized
-        : mergeCatalogProductMedia(normalized, await loadCatalogProductFromFileByLegacyId(id));
+      let withMedia = normalized;
+      if (!hasCatalogProductMedia(normalized) && allowLegacyMediaFallback) {
+        const legacyFileProduct = await loadCatalogProductFromFileByLegacyId(id);
+        const reachableLegacyFileProduct = legacyFileProduct
+          ? await filterReachableCatalogMedia(legacyFileProduct)
+          : null;
+        withMedia = mergeCatalogProductMedia(normalized, reachableLegacyFileProduct);
+      }
       if (!applyPromotions) return withMedia;
       const rules = await listPromotionRulesCached();
       return rules.length ? applyPromotionRulesToProduct(withMedia, rules) : withMedia;
@@ -1292,6 +1351,14 @@ async function fetchCatalogProductByLegacyIdFromSupabase(
     return normalized;
   }
 
+  const legacyFileProduct = await loadCatalogProductFromFileByLegacyId(legacyId);
+  if (legacyFileProduct && hasCatalogProductMedia(legacyFileProduct)) {
+    const reachableLegacyFileProduct = await filterReachableCatalogMedia(legacyFileProduct);
+    if (hasCatalogProductMedia(reachableLegacyFileProduct)) {
+      return mergeCatalogProductMedia(normalized, reachableLegacyFileProduct);
+    }
+  }
+
   // No direct images — look up other records with the same SKU that have images.
   const sku = String((row as Record<string, unknown>).sku || "").trim();
   if (sku) {
@@ -1332,7 +1399,7 @@ async function fetchCatalogProductByLegacyIdFromSupabase(
 
 const getCatalogProductByLegacyIdCached = unstable_cache(
   async (legacyId: number) => fetchCatalogProductByLegacyIdFromSupabase(legacyId),
-  ["catalog-product-by-id-v1"],
+  ["catalog-product-by-id-v4"],
   { revalidate: 180 },
 );
 

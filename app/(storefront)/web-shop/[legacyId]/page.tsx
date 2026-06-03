@@ -18,6 +18,7 @@ import {
   getCompleteTheLookProducts,
   getRelatedCatalogProducts,
   getCatalogProductModelKey,
+  filterReachableCatalogImages,
 } from "@/lib/catalog/store";
 import CompleteTheLook from "@/app/components/storefront/CompleteTheLook";
 import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
@@ -187,7 +188,8 @@ export default async function WebShopProductPage({
   const material = getProductMaterial(displayProduct, lang);
   // Use the requested product's own images so the listing thumbnail matches what's
   // shown on the detail page. displayProduct may be a different size variant.
-  const gallery = getCatalogProductImageSources(product, [], ["/img/odela.jpg"]).slice(0, 8);
+  const galleryCandidates = getCatalogProductImageSources(product, [], ["/img/odela.jpg"]).slice(0, 8);
+  const gallery = await filterReachableCatalogImages(galleryCandidates);
   const productVideoUrl = displayProduct.videoUrl || product.videoUrl || null;
   const sizeOptions = getProductSizeOptions(product, variants);
   const selectedSizeOption =
