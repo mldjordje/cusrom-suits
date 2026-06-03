@@ -212,21 +212,55 @@ const DEFAULT_SETTINGS: LandingSettings = {
   uniformsImages: [
     {
       title: "Hospitality kolekcija",
-      image: "https://santos.rs/fajlovi/product/BRI04649.jpg",
+      image: "/fajlovi/uniforme/BRI04849.jpg",
       alt: "Santos poslovna uniforma za hospitality tim",
     },
     {
       title: "Recepcija i menadzment",
-      image: "https://santos.rs/fajlovi/product/BRI00455.jpg",
+      image: "/fajlovi/uniforme/BRI04875.jpg",
       alt: "Santos poslovna uniforma za recepciju",
     },
     {
       title: "Timski setovi",
-      image: "https://santos.rs/fajlovi/product/BRI00777.jpg",
+      image: "/fajlovi/uniforme/BRI04963.jpg",
       alt: "Santos poslovne uniforme za kompanijske timove",
     },
+    {
+      title: "Zenska uniforma mantil",
+      image: "/fajlovi/uniforme/BRI04899.jpg",
+      alt: "Santos zenska poslovna uniforma mantil",
+    },
+    {
+      title: "Pantalone i jakna",
+      image: "/fajlovi/uniforme/BRI04939.jpg",
+      alt: "Santos poslovna uniforma pantalone i jakna",
+    },
+    {
+      title: "Uniforma za timove",
+      image: "/fajlovi/uniforme/BRI04988.jpg",
+      alt: "Santos komplet poslovne uniforme za timove",
+    },
   ],
-  uniformsVideos: [],
+  uniformsVideos: [
+    {
+      title: "Zenska uniforma mantil",
+      video: "/fajlovi/uniforme/Santos%20zenska%20uniforma%20mantil.mp4",
+      poster: "/fajlovi/uniforme/BRI04849.jpg",
+      alt: "Santos video prezentacija zenske poslovne uniforme",
+    },
+    {
+      title: "Kosulja kratak rukav",
+      video: "/fajlovi/uniforme/Santos%20uniforma%20kosulja%20kratak%20rukav.mp4",
+      poster: "/fajlovi/uniforme/BRI04899.jpg",
+      alt: "Santos video prezentacija poslovne kosulje kratkog rukava",
+    },
+    {
+      title: "Pantalone i jakna",
+      video: "/fajlovi/uniforme/Santos%20uniforma%20pantalone%20jakna.mp4",
+      poster: "/fajlovi/uniforme/BRI04939.jpg",
+      alt: "Santos video prezentacija kompleta pantalone i jakna",
+    },
+  ],
   shopHeroEyebrow: "Kurirani izbor krojeva",
   shopHeroTitle: "Web shop kolekcija spremna za porucivanje",
   shopHeroLead:
@@ -368,17 +402,36 @@ const normalizeLandingDocuments = (value: unknown, max = 24) => {
 };
 
 const UNIFORM_MEDIA_REPAIRS: Record<string, string> = {
-  "https://santos.rs/fajlovi/uniforme/BRI04849.jpg": "https://santos.rs/fajlovi/product/BRI04649.jpg",
-  "https://santos.rs/fajlovi/uniforme/BRI04875.jpg": "https://santos.rs/fajlovi/product/BRI00455.jpg",
-  "https://santos.rs/fajlovi/uniforme/BRI04963.jpg": "https://santos.rs/fajlovi/product/BRI00777.jpg",
-  "https://santos.rs/fajlovi/uniforme/BRI04899.jpg": "https://santos.rs/fajlovi/product/BRI09671.jpg",
-  "https://santos.rs/fajlovi/uniforme/BRI04939.jpg": "https://santos.rs/fajlovi/product/BRI09525.jpg",
-  "https://santos.rs/fajlovi/uniforme/Santos%20zenska%20uniforma%20mantil.mp4": "",
-  "https://santos.rs/fajlovi/uniforme/Santos%20uniforma%20kosulja%20kratak%20rukav.mp4": "",
-  "https://santos.rs/fajlovi/uniforme/Santos%20uniforma%20pantalone%20jakna.mp4": "",
+  "https://santos.rs/fajlovi/uniforme/BRI04849.jpg": "/fajlovi/uniforme/BRI04849.jpg",
+  "https://santos.rs/fajlovi/uniforme/BRI04875.jpg": "/fajlovi/uniforme/BRI04875.jpg",
+  "https://santos.rs/fajlovi/uniforme/BRI04963.jpg": "/fajlovi/uniforme/BRI04963.jpg",
+  "https://santos.rs/fajlovi/uniforme/BRI04899.jpg": "/fajlovi/uniforme/BRI04899.jpg",
+  "https://santos.rs/fajlovi/uniforme/BRI04939.jpg": "/fajlovi/uniforme/BRI04939.jpg",
+  "https://santos.rs/fajlovi/uniforme/Santos%20zenska%20uniforma%20mantil.mp4":
+    "/fajlovi/uniforme/Santos%20zenska%20uniforma%20mantil.mp4",
+  "https://santos.rs/fajlovi/uniforme/Santos%20uniforma%20kosulja%20kratak%20rukav.mp4":
+    "/fajlovi/uniforme/Santos%20uniforma%20kosulja%20kratak%20rukav.mp4",
+  "https://santos.rs/fajlovi/uniforme/Santos%20uniforma%20pantalone%20jakna.mp4":
+    "/fajlovi/uniforme/Santos%20uniforma%20pantalone%20jakna.mp4",
 };
 
-const repairUniformMediaUrl = (url: string) => UNIFORM_MEDIA_REPAIRS[url] ?? url;
+const repairUniformMediaUrl = (url: string) => {
+  const trimmed = String(url || "").trim();
+  if (!trimmed) return "";
+  const directRepair = UNIFORM_MEDIA_REPAIRS[trimmed];
+  if (directRepair != null) return directRepair;
+
+  try {
+    const parsed = new URL(trimmed, "https://santos.rs");
+    if (parsed.hostname === "santos.rs" && parsed.pathname.startsWith("/fajlovi/uniforme/")) {
+      return parsed.pathname;
+    }
+  } catch {
+    // Keep the original value below.
+  }
+
+  return trimmed;
+};
 
 const normalizeLandingUniformImage = (value: unknown): LandingUniformImage | null => {
   if (!value || typeof value !== "object") return null;
@@ -606,7 +659,7 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
 
 const getLandingSettingsCached = unstable_cache(
   async () => readLandingSettingsUncached(),
-  ["landing-settings-v1"],
+  ["landing-settings-v2"],
   { revalidate: 300, tags: [LANDING_SETTINGS_CACHE_TAG] },
 );
 

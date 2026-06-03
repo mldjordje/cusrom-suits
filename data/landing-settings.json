@@ -83,18 +83,53 @@
   "uniformsImages": [
     {
       "title": "Hospitality kolekcija",
-      "image": "https://santos.rs/fajlovi/product/BRI04649.jpg",
+      "image": "/fajlovi/uniforme/BRI04849.jpg",
       "alt": "Santos poslovna uniforma za hospitality tim"
     },
     {
       "title": "Recepcija i menadzment",
-      "image": "https://santos.rs/fajlovi/product/BRI00455.jpg",
+      "image": "/fajlovi/uniforme/BRI04875.jpg",
       "alt": "Santos poslovna uniforma za recepciju"
     },
     {
       "title": "Timski setovi",
-      "image": "https://santos.rs/fajlovi/product/BRI00777.jpg",
+      "image": "/fajlovi/uniforme/BRI04963.jpg",
       "alt": "Santos poslovne uniforme za kompanijske timove"
+    },
+    {
+      "title": "Zenska uniforma mantil",
+      "image": "/fajlovi/uniforme/BRI04899.jpg",
+      "alt": "Santos zenska poslovna uniforma mantil"
+    },
+    {
+      "title": "Pantalone i jakna",
+      "image": "/fajlovi/uniforme/BRI04939.jpg",
+      "alt": "Santos poslovna uniforma pantalone i jakna"
+    },
+    {
+      "title": "Uniforma za timove",
+      "image": "/fajlovi/uniforme/BRI04988.jpg",
+      "alt": "Santos komplet poslovne uniforme za timove"
+    }
+  ],
+  "uniformsVideos": [
+    {
+      "title": "Zenska uniforma mantil",
+      "video": "/fajlovi/uniforme/Santos%20zenska%20uniforma%20mantil.mp4",
+      "poster": "/fajlovi/uniforme/BRI04849.jpg",
+      "alt": "Santos video prezentacija zenske poslovne uniforme"
+    },
+    {
+      "title": "Kosulja kratak rukav",
+      "video": "/fajlovi/uniforme/Santos%20uniforma%20kosulja%20kratak%20rukav.mp4",
+      "poster": "/fajlovi/uniforme/BRI04899.jpg",
+      "alt": "Santos video prezentacija poslovne kosulje kratkog rukava"
+    },
+    {
+      "title": "Pantalone i jakna",
+      "video": "/fajlovi/uniforme/Santos%20uniforma%20pantalone%20jakna.mp4",
+      "poster": "/fajlovi/uniforme/BRI04939.jpg",
+      "alt": "Santos video prezentacija kompleta pantalone i jakna"
     }
   ],
   "shopHeroEyebrow": "Kurirani izbor krojeva",

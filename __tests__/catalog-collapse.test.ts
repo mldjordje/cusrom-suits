@@ -114,4 +114,69 @@ describe("catalog model collapse", () => {
     expect(collapsed[0].coverImage).toBe("https://santos.rs/fajlovi/product/or1.jpg");
     expect(collapsed[0].rawPayload.collapsedVariantIds).toEqual([13257152, 13257156]);
   });
+
+  it("collapses orphan SKU variants that only received a borrowed image", () => {
+    const collapsed = collapseCatalogProductsByModel([
+      makeProduct({
+        legacyId: 13044090,
+        sku: "130440",
+        name: "M. Sako Alessio 22",
+        manufCode: "M. Sako Alessio 22",
+        categories: [{ id: 288, name: "Sako", path: ["Odeca", "Sako"] }],
+        coverImage: "https://santos.rs/fajlovi/product/alessio22.jpg",
+        images: ["https://santos.rs/fajlovi/product/alessio22.jpg"],
+        attributes: { size: ["50"] },
+        stockTotal: 1,
+      }),
+      makeProduct({
+        legacyId: 13044099,
+        sku: "130440",
+        name: "Alessio 22",
+        manufCode: "Alessio 22",
+        categories: [],
+        coverImage: "https://santos.rs/fajlovi/product/alessio22.jpg",
+        images: ["https://santos.rs/fajlovi/product/alessio22.jpg"],
+        hasDirectMedia: true,
+        attributes: { size: [] },
+        rawPayload: { imageFallback: { type: "sku", sku: "130440" } },
+        stockTotal: 0,
+      }),
+    ]);
+
+    expect(collapsed).toHaveLength(1);
+    expect(collapsed[0].legacyId).toBe(13044090);
+    expect(collapsed[0].rawPayload.collapsedVariantIds).toEqual([13044090, 13044099]);
+  });
+
+  it("collapses duplicate catalog rows with the same visual model even when names differ", () => {
+    const collapsed = collapseCatalogProductsByModel([
+      makeProduct({
+        legacyId: 12913552,
+        sku: "12913552",
+        name: "24/33/2",
+        nameEn: "Allesio",
+        manufCode: "24/33/2",
+        categories: [{ id: 289, name: "Odelo", path: ["Odeca", "Odelo"] }],
+        coverImage: "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+        images: ["https://santos.rs/fajlovi/product/ANS_5497.jpg"],
+        attributes: { size: ["52"] },
+        stockTotal: 2,
+      }),
+      makeProduct({
+        legacyId: 12913556,
+        sku: "12913556",
+        name: "24/33/2 M.Odelo",
+        nameEn: "Allesio",
+        manufCode: "24/33/2 M.Od",
+        categories: [{ id: 289, name: "Odelo", path: ["Odeca", "Odelo"] }],
+        coverImage: "https://santos.rs/fajlovi/product/ANS_5497.jpg",
+        images: ["https://santos.rs/fajlovi/product/ANS_5497.jpg"],
+        attributes: { size: ["56"] },
+        stockTotal: 3,
+      }),
+    ]);
+
+    expect(collapsed).toHaveLength(1);
+    expect(collapsed[0].rawPayload.collapsedVariantIds).toEqual([12913552, 12913556]);
+  });
 });

@@ -124,7 +124,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 const CATALOG_SNAPSHOT_TTL_MS = 300_000;
 const CATALOG_LIST_TTL_MS = 45_000;
 const CATALOG_LIST_CACHE_MAX_ENTRIES = 220;
-const CATALOG_LIST_CACHE_VERSION = "v4";
+const CATALOG_LIST_CACHE_VERSION = "v5";
 const IMAGE_REACHABILITY_TTL_MS = 3_600_000;
 const CATALOG_PERF_LOG_THRESHOLD_MS = Math.max(
   0,
@@ -997,13 +997,15 @@ const collapseCatalogProductsByKey = (
     const key = getKey(item) || `legacy:${item.legacyId}`;
     const current = map.get(key);
     if (!current) {
+      const existingCollapsedVariantIds =
+        (item.rawPayload?.collapsedVariantIds as number[] | undefined) || [item.legacyId];
       map.set(key, {
         ...item,
         categories: [...item.categories],
         images: [...item.images],
         hasDirectMedia: item.hasDirectMedia,
         attributes: { ...item.attributes },
-        rawPayload: { ...item.rawPayload, collapsedVariantIds: [item.legacyId] },
+        rawPayload: { ...item.rawPayload, collapsedVariantIds: existingCollapsedVariantIds },
       });
       continue;
     }
@@ -1088,12 +1090,31 @@ const collapseCatalogProductsByKey = (
 };
 
 export const collapseCatalogProductsByModel = (items: CatalogProductView[]): CatalogProductView[] => {
-  return collapseCatalogProductsByKey(items, (item) => {
+  const collapsedByModel = collapseCatalogProductsByKey(items, (item) => {
     const modelKey = getCatalogProductModelKey(item);
     if (modelKey && !modelKey.startsWith("legacy:")) return `model:${modelKey}`;
 
     const sku = String(item.sku || "").trim().toLowerCase();
     return sku ? `sku:${sku}` : `legacy:${item.legacyId}`;
+  });
+
+  const collapsedBySku = collapseCatalogProductsByKey(collapsedByModel, (item) => {
+    const sku = String(item.sku || "").trim().toLowerCase();
+    if (sku) return `sku:${sku}`;
+
+    const modelKey = getCatalogProductModelKey(item);
+    return modelKey && !modelKey.startsWith("legacy:") ? `model:${modelKey}` : `legacy:${item.legacyId}`;
+  });
+
+  return collapseCatalogProductsByKey(collapsedBySku, (item) => {
+    const visualKey = getCatalogProductVisualModelKey(item);
+    if (visualKey) return visualKey;
+
+    const sku = String(item.sku || "").trim().toLowerCase();
+    if (sku) return `sku:${sku}`;
+
+    const modelKey = getCatalogProductModelKey(item);
+    return modelKey && !modelKey.startsWith("legacy:") ? `model:${modelKey}` : `legacy:${item.legacyId}`;
   });
 };
 
