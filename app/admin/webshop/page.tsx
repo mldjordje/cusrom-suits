@@ -1116,6 +1116,7 @@ export default function AdminWebshopPage() {
       params.set("activeOnly", "1");
       params.set("exportOnly", "1");
       params.set("requireDirectImages", "1");
+      params.set("requireReachableImages", "1");
       const qValue = queryValue.trim();
       if (qValue) params.set("q", qValue);
 
@@ -2247,6 +2248,7 @@ export default function AdminWebshopPage() {
                 <option value="missing">Bez direktne slike</option>
                 <option value="direct">Ima direktnu sliku</option>
                 <option value="fallback">Pozajmljena/fallback slika</option>
+                <option value="broken">Nema validne svoje slike</option>
                 <option value="video">Ima video</option>
               </select>
               <select value={contentStatus} onChange={(e) => setContentStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">

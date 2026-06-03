@@ -221,6 +221,7 @@ export default function AdminLandingSectionsPage() {
       params.set("activeOnly", "1");
       params.set("exportOnly", "1");
       params.set("requireDirectImages", "1");
+      params.set("requireReachableImages", "1");
       const normalizedQuery = queryValue.trim();
       if (normalizedQuery) params.set("q", normalizedQuery);
 

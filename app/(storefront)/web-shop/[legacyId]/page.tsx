@@ -101,7 +101,10 @@ export async function generateMetadata({
     });
   }
   const product = await getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: false });
-  if (!product || !product.isActive || !product.isExported || !hasDirectProductImage(product)) {
+  const metadataGallery = product
+    ? await filterReachableCatalogImages(getCatalogProductImageSources(product, [], []).slice(0, 8))
+    : [];
+  if (!product || !product.isActive || !product.isExported || !hasDirectProductImage(product) || !metadataGallery.length) {
     return buildSeoMetadata({
       title: "Product not found",
       description: "Trazeni proizvod nije pronadjen u Santos & Santorini web shopu.",
@@ -190,23 +193,8 @@ export default async function WebShopProductPage({
   // shown on the detail page. displayProduct may be a different size variant.
   const productGalleryCandidates = getCatalogProductImageSources(product, [], []).slice(0, 8);
   const productGallery = await filterReachableCatalogImages(productGalleryCandidates);
-  const variantGallery = productGallery.length
-    ? []
-    : await filterReachableCatalogImages(getCatalogProductImageSources(product, variants, []).slice(0, 12));
-  const relatedGallery = productGallery.length || variantGallery.length
-    ? []
-    : await filterReachableCatalogImages(
-        related.flatMap((item) => getCatalogProductImageSources(item, [], []).slice(0, 2)).slice(0, 12),
-      );
-  const gallery = (
-    productGallery.length
-      ? productGallery
-      : variantGallery.length
-        ? variantGallery
-        : relatedGallery.length
-          ? relatedGallery
-          : ["/img/odela.jpg"]
-  ).slice(0, 8);
+  if (!productGallery.length) notFound();
+  const gallery = productGallery.slice(0, 8);
   const productVideoUrl = displayProduct.videoUrl || product.videoUrl || null;
   const sizeOptions = getProductSizeOptions(product, variants);
   const selectedSizeOption =

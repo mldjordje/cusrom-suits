@@ -87,7 +87,8 @@ export type CatalogListInput = {
   sizes?: string[];
   requireImages?: boolean;
   requireDirectImages?: boolean;
-  mediaStatus?: "all" | "missing" | "direct" | "fallback" | "video";
+  requireReachableImages?: boolean;
+  mediaStatus?: "all" | "missing" | "direct" | "fallback" | "broken" | "video";
   contentStatus?: "all" | "missing_description" | "missing_price" | "missing_category";
   visibilityStatus?: "all" | "visible" | "hidden";
   sourceStatus?: "all" | "moffice" | "manual";
@@ -105,11 +106,17 @@ type CatalogListCacheEntry = {
   source: "supabase" | "file";
 };
 
+type ImageReachabilityCacheEntry = {
+  expiresAt: number;
+  reachable: boolean;
+};
+
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const CATALOG_SNAPSHOT_TTL_MS = 300_000;
 const CATALOG_LIST_TTL_MS = 45_000;
 const CATALOG_LIST_CACHE_MAX_ENTRIES = 220;
-const CATALOG_LIST_CACHE_VERSION = "v2";
+const CATALOG_LIST_CACHE_VERSION = "v3";
+const IMAGE_REACHABILITY_TTL_MS = 3_600_000;
 const CATALOG_PERF_LOG_THRESHOLD_MS = Math.max(
   0,
   Number(process.env.CATALOG_PERF_LOG_THRESHOLD_MS || 350),
@@ -134,6 +141,16 @@ const getCatalogListCache = () => {
     globalWithCache.__catalogListCache = new Map<string, CatalogListCacheEntry>();
   }
   return globalWithCache.__catalogListCache;
+};
+
+const getImageReachabilityCache = () => {
+  const globalWithCache = globalThis as typeof globalThis & {
+    __catalogImageReachabilityCache?: Map<string, ImageReachabilityCacheEntry>;
+  };
+  if (!globalWithCache.__catalogImageReachabilityCache) {
+    globalWithCache.__catalogImageReachabilityCache = new Map<string, ImageReachabilityCacheEntry>();
+  }
+  return globalWithCache.__catalogImageReachabilityCache;
 };
 
 const getCatalogCacheBypassUntil = () => {
@@ -172,6 +189,7 @@ const makeCatalogListCacheKey = (input: {
   sizes: string[];
   requireImages: boolean;
   requireDirectImages: boolean;
+  requireReachableImages: boolean;
   mediaStatus: string;
   contentStatus: string;
   visibilityStatus: string;
@@ -195,6 +213,7 @@ const makeCatalogListCacheKey = (input: {
     input.sizes.join(",").toUpperCase(),
     input.requireImages ? 1 : 0,
     input.requireDirectImages ? 1 : 0,
+    input.requireReachableImages ? 1 : 0,
     input.mediaStatus,
     input.contentStatus,
     input.visibilityStatus,
@@ -549,8 +568,8 @@ const hasCatalogProductMedia = (
   );
 
 const hasCatalogProductDirectMedia = (
-  item: Pick<CatalogProductView, "coverImage" | "images" | "hasDirectMedia"> | null | undefined,
-) => Boolean(item?.hasDirectMedia && hasCatalogProductMedia(item));
+  item: Pick<CatalogProductView, "coverImage" | "images" | "hasDirectMedia" | "rawPayload"> | null | undefined,
+) => Boolean(item?.hasDirectMedia && !item.rawPayload?.imageFallback && hasCatalogProductMedia(item));
 
 const getCatalogProductSource = (item: Pick<CatalogProductView, "rawPayload">) => {
   const raw = item.rawPayload || {};
@@ -587,8 +606,14 @@ const isReachableCatalogImage = async (src: string) => {
   if (url.startsWith("/") || url.startsWith("data:image/")) return true;
   if (!/^https?:\/\//i.test(url)) return true;
 
+  const cache = getImageReachabilityCache();
+  const cached = cache.get(url);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.reachable;
+  }
+
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 3500);
+  const timeout = setTimeout(() => controller.abort(), 2500);
   try {
     const response = await fetch(url, {
       method: "HEAD",
@@ -596,8 +621,11 @@ const isReachableCatalogImage = async (src: string) => {
       signal: controller.signal,
     });
     const contentType = response.headers.get("content-type") || "";
-    return response.ok && (contentType.startsWith("image/") || contentType.length === 0);
+    const reachable = response.ok && (contentType.startsWith("image/") || contentType.length === 0);
+    cache.set(url, { reachable, expiresAt: Date.now() + IMAGE_REACHABILITY_TTL_MS });
+    return reachable;
   } catch {
+    cache.set(url, { reachable: false, expiresAt: Date.now() + Math.min(IMAGE_REACHABILITY_TTL_MS, 300_000) });
     return false;
   } finally {
     clearTimeout(timeout);
@@ -633,6 +661,35 @@ export const filterReachableCatalogMedia = async (
     images,
     hasDirectMedia: images.length > 0,
   };
+};
+
+const filterCatalogProductsByReachableOwnImages = async (
+  items: CatalogProductView[],
+  mode: "valid" | "broken",
+) => {
+  const checked: Array<{ item: CatalogProductView; images: string[] }> = [];
+  const batchSize = 8;
+  for (let index = 0; index < items.length; index += batchSize) {
+    const batch = items.slice(index, index + batchSize);
+    checked.push(...(await Promise.all(batch.map(async (item) => {
+      if (item.rawPayload?.imageFallback) {
+        return { item, images: [] };
+      }
+      return {
+        item,
+        images: await filterReachableCatalogImages([item.coverImage, ...item.images]),
+      };
+    }))));
+  }
+
+  return checked
+    .filter(({ images }) => (mode === "valid" ? images.length > 0 : images.length === 0))
+    .map(({ item, images }) => ({
+      ...item,
+      coverImage: images[0] || null,
+      images,
+      hasDirectMedia: images.length > 0,
+    }));
 };
 
 /** Infer a stable product-type token from raw name + categories.
@@ -1093,6 +1150,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const priceMax = Number.isFinite(Number(input.priceMax)) ? Math.max(0, Number(input.priceMax)) : 0;
   const requireImages = Boolean(input.requireImages);
   const requireDirectImages = Boolean(input.requireDirectImages);
+  const requireReachableImages = Boolean(input.requireReachableImages);
   const mediaStatus = input.mediaStatus || "all";
   const contentStatus = input.contentStatus || "all";
   const visibilityStatus = input.visibilityStatus || "all";
@@ -1118,6 +1176,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     sizes,
     requireImages,
     requireDirectImages,
+    requireReachableImages,
     mediaStatus,
     contentStatus,
     visibilityStatus,
@@ -1188,7 +1247,11 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     visibilityStatus,
     sourceStatus,
   });
-  const filtered = sortCatalogProducts(qualityFiltered, sort);
+  const reachableFiltered =
+    requireReachableImages || mediaStatus === "broken"
+      ? await filterCatalogProductsByReachableOwnImages(qualityFiltered, mediaStatus === "broken" ? "broken" : "valid")
+      : qualityFiltered;
+  const filtered = sortCatalogProducts(reachableFiltered, sort);
   const collapseMs = Date.now() - collapseStart;
 
   const paginateStart = Date.now();
@@ -1415,6 +1478,7 @@ export async function getRelatedCatalogProducts(
     pageSize: Math.max(limit + 8, 24),
     collapseBySku: true,
     requireDirectImages: true,
+    requireReachableImages: true,
   });
   return result.items.filter((candidate) => candidate.legacyId !== item.legacyId).slice(0, limit);
 }
@@ -1465,6 +1529,7 @@ export async function getCompleteTheLookProducts(
     activeOnly: true,
     exportOnly: true,
     requireDirectImages: true,
+    requireReachableImages: true,
   });
 
   const primaryCategoryId = item.categories[0]?.id || 0;

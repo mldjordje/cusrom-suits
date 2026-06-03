@@ -21,6 +21,7 @@ export async function GET(req: NextRequest) {
     exportOnly: true,
     collapseBySku: true,
     requireDirectImages: true,
+    requireReachableImages: true,
   });
 
   const results = result.items.map((item) => ({

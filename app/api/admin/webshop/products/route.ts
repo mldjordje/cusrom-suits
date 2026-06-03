@@ -562,9 +562,10 @@ export async function GET(req: NextRequest) {
   const onSaleOnly = params.get("onSaleOnly") === "1";
   const requireImages = params.get("requireImages") === "1";
   const requireDirectImages = params.get("requireDirectImages") === "1";
+  const requireReachableImages = params.get("requireReachableImages") === "1";
   const mediaStatus = parseCatalogFilter<CatalogListInput["mediaStatus"] & string>(
     params.get("mediaStatus"),
-    ["all", "missing", "direct", "fallback", "video"],
+    ["all", "missing", "direct", "fallback", "broken", "video"],
     "all",
   );
   const contentStatus = parseCatalogFilter<CatalogListInput["contentStatus"] & string>(
@@ -600,6 +601,7 @@ export async function GET(req: NextRequest) {
     applyPromotions: onSaleOnly,
     requireImages,
     requireDirectImages,
+    requireReachableImages,
     mediaStatus,
     contentStatus,
     visibilityStatus,
