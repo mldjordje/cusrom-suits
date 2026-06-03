@@ -14,9 +14,10 @@ export async function GET() {
     requireDirectImages: true,
   });
 
-  const categories = result.categories
-    .map((category) => ({ id: category.id, name: category.name }))
-    .sort((left, right) => left.name.localeCompare(right.name, "sr"));
+  const categories = result.categoryGroups.map((category) => ({
+    id: category.key,
+    name: category.name,
+  }));
 
   return applyPublicCache(NextResponse.json({ success: true, categories }), {
     maxAge: 300,

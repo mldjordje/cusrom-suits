@@ -9,7 +9,7 @@ import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import Reveal from "@/app/components/motion/Reveal";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
-import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
+import { listCatalogProducts, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
 import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { localizeDynamicCategoryLabel, localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
@@ -62,10 +62,10 @@ export async function generateMetadata({
 
 const CATEGORY_PRIORITY: Record<string, number> = {
   odelo: 1, odela: 1,
-  pantalone: 2,
-  sako: 3, sakoi: 3,
-  cipele: 4,
-  kosulja: 5, kosulje: 5,
+  sako: 2, sakoi: 2,
+  pantalone: 3,
+  kosulja: 4, kosulje: 4,
+  cipele: 5,
   kravata: 6, kravate: 6,
   kais: 7, kaisevi: 7,
   kaput: 8, kaputi: 8,
@@ -83,6 +83,22 @@ const getCategoryPriority = (item: CatalogProductView): number => {
   }
   return 99;
 };
+
+const getCategorySortPriority = (name: string) => {
+  const normalized = name.toLowerCase();
+  for (const [key, priority] of Object.entries(CATEGORY_PRIORITY)) {
+    if (normalized.includes(key)) return priority;
+  }
+  if (normalized.includes("nova kolekcija")) return 98;
+  return 99;
+};
+
+const sortCategoriesForShop = <T extends { name: string }>(categories: T[]) =>
+  [...categories].sort((a, b) => {
+    const priorityDiff = getCategorySortPriority(a.name) - getCategorySortPriority(b.name);
+    if (priorityDiff !== 0) return priorityDiff;
+    return a.name.localeCompare(b.name, "sr", { numeric: true, sensitivity: "base" });
+  });
 
 function sortItems(items: CatalogProductView[], sort: string): CatalogProductView[] {
   const next = [...items];
@@ -109,6 +125,7 @@ export default async function WebShopPage({
   const page = Number.parseInt(toStringParam(params.page), 10) || 1;
   const q = toStringParam(params.q);
   const rawCategoryId = toStringParam(params.categoryId);
+  const categoryGroup = toStringParam(params.categoryGroup);
   const selectedCategoryValue = rawCategoryId === "sale" ? "sale" : rawCategoryId;
   const categoryId = Number.parseInt(rawCategoryId, 10) || 0;
   const inStock = toStringParam(params.inStock) === "1";
@@ -133,6 +150,7 @@ export default async function WebShopPage({
       pageSize: 24,
       query: q,
       categoryId: categoryId || undefined,
+      categoryGroup: categoryGroup || undefined,
       inStock,
       onSale,
       activeOnly: true,
@@ -163,7 +181,8 @@ export default async function WebShopPage({
   const localizeCategory = (value: string) => localizeDynamicCategoryLabel(value, isEn ? "en" : "sr");
 
   const items = sortItems(result.items, sort);
-  const topCategories = result.categories.slice(0, 7);
+  const sortedCategoryGroups = sortCategoriesForShop(result.categoryGroups);
+  const topCategories = sortedCategoryGroups.slice(0, 7);
 
   const DEFAULT_SIZES = [
     "XS",
@@ -239,6 +258,7 @@ export default async function WebShopPage({
       lang: isEn ? "en" : "",
       q,
       categoryId: categoryId > 0 ? String(categoryId) : "",
+      categoryGroup,
       inStock: inStock ? "1" : "",
       page: String(result.page),
       sort: sort !== "featured" ? sort : "",
@@ -265,7 +285,9 @@ export default async function WebShopPage({
   };
 
   const categoryNameById = new Map(result.categories.map((category) => [category.id, category.name]));
+  const categoryNameByGroup = new Map(result.categoryGroups.map((category) => [category.key, category.name]));
   const selectedCategoryName = categoryId > 0 ? localizeCategory(categoryNameById.get(categoryId) || `Category ${categoryId}`) : "";
+  const selectedCategoryGroupName = categoryGroup ? localizeCategory(categoryNameByGroup.get(categoryGroup) || categoryGroup) : "";
   const activeFilterChips: ActiveFilterChip[] = [];
 
   if (q.trim()) {
@@ -281,6 +303,14 @@ export default async function WebShopPage({
       key: "category",
       label: `${isEn ? "Category" : "Kategorija"}: ${selectedCategoryName}`,
       href: makeHref({ categoryId: null, page: 1 }),
+    });
+  }
+
+  if (categoryGroup) {
+    activeFilterChips.push({
+      key: "categoryGroup",
+      label: `${isEn ? "Category" : "Kategorija"}: ${selectedCategoryGroupName}`,
+      href: makeHref({ categoryGroup: null, page: 1 }),
     });
   }
 
@@ -332,18 +362,18 @@ export default async function WebShopPage({
   const heroCategoryLinks = [
     {
       label: isEn ? "All products" : "Svi proizvodi",
-      href: makeHref({ categoryId: null, onSale: null, page: 1, q: null }),
-      active: categoryId <= 0 && !onSale,
+      href: makeHref({ categoryId: null, categoryGroup: null, onSale: null, page: 1, q: null }),
+      active: categoryId <= 0 && !categoryGroup && !onSale,
     },
     {
       label: isEn ? "Sale" : "Akcija",
-      href: makeHref({ categoryId: null, onSale: 1, page: 1, q: null }),
-      active: onSale && categoryId <= 0,
+      href: makeHref({ categoryId: null, categoryGroup: null, onSale: 1, page: 1, q: null }),
+      active: onSale && categoryId <= 0 && !categoryGroup,
     },
-    ...topCategories.slice(0, 5).map((category) => ({
+    ...topCategories.slice(0, 5).map((category: CatalogCategoryGroup) => ({
       label: localizeCategory(category.name),
-      href: makeHref({ categoryId: category.id, onSale: null, page: 1, q: null }),
-      active: categoryId === category.id,
+      href: makeHref({ categoryGroup: category.key, categoryId: null, onSale: null, page: 1, q: null }),
+      active: categoryGroup === category.key,
     })),
   ];
 
@@ -592,11 +622,12 @@ export default async function WebShopPage({
             lang={lang}
             query={q}
             categoryId={categoryId}
-            selectedCategoryValue={selectedCategoryValue || (onSale && categoryId <= 0 ? "sale" : "")}
+            categoryGroup={categoryGroup}
+            selectedCategoryValue={categoryGroup || selectedCategoryValue || ""}
             inStock={inStock}
             onSale={onSale}
             sort={sort}
-            categories={result.categories}
+            categories={sortedCategoryGroups}
             featuredCategories={topCategories.slice(0, 6)}
             activeFilterChips={activeFilterChips}
             showingCount={items.length}
@@ -620,8 +651,8 @@ export default async function WebShopPage({
                         ? `"${q.trim()}"`
                         : onSale && categoryId <= 0
                           ? isEn ? "Sale items" : "Akcija"
-                          : selectedCategoryName
-                            ? selectedCategoryName
+                          : selectedCategoryGroupName || selectedCategoryName
+                            ? selectedCategoryGroupName || selectedCategoryName
                             : isEn ? "All products" : "Svi proizvodi"}
                   </h2>
                 </div>
@@ -640,7 +671,7 @@ export default async function WebShopPage({
                         ? "Clear one or more filters and try another combination."
                         : "Uklonite jedan ili vise filtera i pokusajte drugu kombinaciju."}
                     </p>
-                    <Link href={makeHref({ q: null, categoryId: null, inStock: null, onSale: null, sort: null, page: 1 })} className="btn btn-primary text-uppercase fw-medium">
+                    <Link href={makeHref({ q: null, categoryId: null, categoryGroup: null, inStock: null, onSale: null, sort: null, page: 1 })} className="btn btn-primary text-uppercase fw-medium">
                       {isEn ? "Reset filters" : "Resetuj filtere"}
                     </Link>
                   </div>

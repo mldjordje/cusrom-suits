@@ -76,4 +76,42 @@ describe("catalog model collapse", () => {
     expect(collapsed[0].attributes.size).toEqual(["S", "M", "L"]);
     expect(collapsed[0].rawPayload.collapsedVariantIds).toEqual([101, 102, 103]);
   });
+
+  it("prefers a representative with cleaner direct media over a broken copy cover", () => {
+    const collapsed = collapseCatalogProductsByModel([
+      makeProduct({
+        legacyId: 13257156,
+        sku: "132571",
+        name: "40/105/19 FWE 7-23 M.Odelo",
+        manufCode: "40/105/19 FWE 7-23 M.Odelo",
+        categories: [{ id: 289, name: "Odelo", path: ["Odeca", "Odelo"] }],
+        coverImage: "https://santos.rs/fajlovi/product/or2 copy.jpg",
+        images: [
+          "https://santos.rs/fajlovi/product/or2 copy.jpg",
+          "https://santos.rs/fajlovi/product/or3.jpg",
+        ],
+        attributes: { size: ["56"] },
+        stockTotal: 4,
+      }),
+      makeProduct({
+        legacyId: 13257152,
+        sku: "132571",
+        name: "40/105/19 FWE 7-23 M.Odelo",
+        manufCode: "40/105/19 FWE 7-23 M.Odelo",
+        categories: [{ id: 289, name: "Odelo", path: ["Odeca", "Odelo"] }],
+        coverImage: "https://santos.rs/fajlovi/product/or1.jpg",
+        images: [
+          "https://santos.rs/fajlovi/product/or1.jpg",
+          "https://santos.rs/fajlovi/product/or3.jpg",
+        ],
+        attributes: { size: ["52"] },
+        stockTotal: 1,
+      }),
+    ]);
+
+    expect(collapsed).toHaveLength(1);
+    expect(collapsed[0].legacyId).toBe(13257152);
+    expect(collapsed[0].coverImage).toBe("https://santos.rs/fajlovi/product/or1.jpg");
+    expect(collapsed[0].rawPayload.collapsedVariantIds).toEqual([13257152, 13257156]);
+  });
 });

@@ -19,6 +19,7 @@ import {
   getRelatedCatalogProducts,
   getCatalogProductModelKey,
   filterReachableCatalogImages,
+  listCatalogProducts,
 } from "@/lib/catalog/store";
 import CompleteTheLook from "@/app/components/storefront/CompleteTheLook";
 import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
@@ -151,7 +152,56 @@ export default async function WebShopProductPage({
   if (!Number.isFinite(id)) notFound();
 
   const product = await getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: true });
-  if (!product || !product.isActive || !product.isExported) notFound();
+  if (!product) notFound();
+
+  const requestedSize = toStringParam(pageSearchParams.size).trim();
+  const routeSize = getSelectedProductSize(product);
+  const canonicalSize = requestedSize || routeSize || "";
+
+  if (!product.isActive || !product.isExported) {
+    const visibleVariants = await getCatalogProductVariantsBySku(product.sku, {
+      applyPromotions: true,
+      activeOnly: true,
+      exportOnly: true,
+    }, getCatalogProductModelKey(product));
+
+    for (const candidate of visibleVariants) {
+      if (candidate.legacyId === product.legacyId) continue;
+      const candidateGallery = await filterReachableCatalogImages(
+        getCatalogProductImageSources(candidate, [], []).slice(0, 8),
+      );
+      if (candidateGallery.length > 0) {
+        const query = new URLSearchParams();
+        if (canonicalSize) query.set("size", canonicalSize);
+        if (isEn) query.set("lang", "en");
+        const queryString = query.toString();
+        redirect(`/web-shop/${candidate.legacyId}${queryString ? `?${queryString}` : ""}`);
+      }
+    }
+
+    const fallbackResult = await listCatalogProducts({
+      page: 1,
+      pageSize: 12,
+      query: product.sku,
+      activeOnly: true,
+      exportOnly: true,
+      collapseBySku: true,
+      requireDirectImages: true,
+      requireReachableImages: true,
+    });
+    const fallbackProduct =
+      fallbackResult.items.find((candidate) => candidate.legacyId !== product.legacyId) ||
+      fallbackResult.items[0];
+    if (fallbackProduct) {
+      const query = new URLSearchParams();
+      if (canonicalSize) query.set("size", canonicalSize);
+      if (isEn) query.set("lang", "en");
+      const queryString = query.toString();
+      redirect(`/web-shop/${fallbackProduct.legacyId}${queryString ? `?${queryString}` : ""}`);
+    }
+
+    notFound();
+  }
 
   const [related, variants, siteContent, completeTheLook] = await Promise.all([
     getRelatedCatalogProducts(product, 4),
@@ -171,9 +221,6 @@ export default async function WebShopProductPage({
   };
 
   const displayProduct = getPreferredCatalogProductForDisplay(product, variants, lang);
-  const requestedSize = toStringParam(pageSearchParams.size).trim();
-  const routeSize = getSelectedProductSize(product);
-  const canonicalSize = requestedSize || routeSize || "";
   // Only redirect to the preferred variant when this product has NO images of its own.
   // If it has images, the user intentionally navigated here (e.g. clicked a listing card)
   // and must NOT be silently swapped to a different product.
@@ -193,7 +240,44 @@ export default async function WebShopProductPage({
   // shown on the detail page. displayProduct may be a different size variant.
   const productGalleryCandidates = getCatalogProductImageSources(product, [], []).slice(0, 8);
   const productGallery = await filterReachableCatalogImages(productGalleryCandidates);
-  if (!productGallery.length) notFound();
+  if (!productGallery.length) {
+    for (const candidate of [displayProduct, ...variants]) {
+      if (candidate.legacyId === product.legacyId || !candidate.isActive || !candidate.isExported) continue;
+      const candidateGallery = await filterReachableCatalogImages(
+        getCatalogProductImageSources(candidate, [], []).slice(0, 8),
+      );
+      if (candidateGallery.length > 0) {
+        const query = new URLSearchParams();
+        if (canonicalSize) query.set("size", canonicalSize);
+        if (isEn) query.set("lang", "en");
+        const queryString = query.toString();
+        redirect(`/web-shop/${candidate.legacyId}${queryString ? `?${queryString}` : ""}`);
+      }
+    }
+
+    const fallbackResult = await listCatalogProducts({
+      page: 1,
+      pageSize: 12,
+      query: product.sku,
+      activeOnly: true,
+      exportOnly: true,
+      collapseBySku: true,
+      requireDirectImages: true,
+      requireReachableImages: true,
+    });
+    const fallbackProduct =
+      fallbackResult.items.find((candidate) => candidate.legacyId !== product.legacyId) ||
+      fallbackResult.items[0];
+    if (fallbackProduct) {
+      const query = new URLSearchParams();
+      if (canonicalSize) query.set("size", canonicalSize);
+      if (isEn) query.set("lang", "en");
+      const queryString = query.toString();
+      redirect(`/web-shop/${fallbackProduct.legacyId}${queryString ? `?${queryString}` : ""}`);
+    }
+
+    notFound();
+  }
   const gallery = productGallery.slice(0, 8);
   const productVideoUrl = displayProduct.videoUrl || product.videoUrl || null;
   const sizeOptions = getProductSizeOptions(product, variants);

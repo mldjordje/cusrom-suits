@@ -31,6 +31,13 @@ type CatalogCategory = {
   path: string[];
 };
 
+export type CatalogCategoryGroup = {
+  key: string;
+  name: string;
+  ids: number[];
+  count: number;
+};
+
 export type CatalogProductView = {
   legacyId: number;
   sku: string;
@@ -69,11 +76,13 @@ export type CatalogListResult = {
   pageSize: number;
   totalPages: number;
   categories: CatalogCategory[];
+  categoryGroups: CatalogCategoryGroup[];
 };
 
 export type CatalogListInput = {
   query?: string;
   categoryId?: number;
+  categoryGroup?: string;
   inStock?: boolean;
   onSale?: boolean;
   activeOnly?: boolean;
@@ -115,7 +124,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 const CATALOG_SNAPSHOT_TTL_MS = 300_000;
 const CATALOG_LIST_TTL_MS = 45_000;
 const CATALOG_LIST_CACHE_MAX_ENTRIES = 220;
-const CATALOG_LIST_CACHE_VERSION = "v3";
+const CATALOG_LIST_CACHE_VERSION = "v4";
 const IMAGE_REACHABILITY_TTL_MS = 3_600_000;
 const CATALOG_PERF_LOG_THRESHOLD_MS = Math.max(
   0,
@@ -178,6 +187,7 @@ const makeCatalogListCacheKey = (input: {
   pageSize: number;
   query: string;
   categoryId: number;
+  categoryGroup: string;
   inStock: boolean;
   onSale: boolean;
   activeOnly: boolean;
@@ -202,6 +212,7 @@ const makeCatalogListCacheKey = (input: {
     input.pageSize,
     input.query.trim().toLowerCase(),
     input.categoryId,
+    input.categoryGroup,
     input.inStock ? 1 : 0,
     input.onSale ? 1 : 0,
     input.activeOnly ? 1 : 0,
@@ -434,9 +445,79 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
 
 const normalizeSizeValue = (value: unknown) => String(value ?? "").trim().toUpperCase().replace(/\s+/g, "");
 
+export const normalizeCatalogCategoryGroupKey = (value: string) => {
+  const normalized = normalizeDiacritics(String(value || ""))
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!normalized || normalized.includes("nova kolekcija")) return "";
+  if (/elegantn|sportsk/.test(normalized)) return "";
+  if (/odel/.test(normalized)) return "odelo";
+  if (/sako|sakoi|blazer/.test(normalized)) return "sako";
+  if (/pantal/.test(normalized)) return "pantalone";
+  if (/kosulj|shirt/.test(normalized)) return "kosulja";
+  if (/kaput/.test(normalized)) return "kaput";
+  if (/jakn|jacket/.test(normalized)) return "jakna";
+  if (/dzemper|džemper|knit|sweater/.test(normalized)) return "dzemper";
+  if (/kais|kaisevi|kai/.test(normalized)) return "kais";
+  if (/kravat/.test(normalized)) return "kravata";
+  if (/cipel|obuc|shoe/.test(normalized)) return "obuca";
+  if (/novcan|wallet/.test(normalized)) return "novcanik";
+  if (/card holder/.test(normalized)) return "card-holder";
+  if (/torb/.test(normalized)) return "torba";
+  if (/prsluk|vest/.test(normalized)) return "prsluk";
+  return "";
+};
+
+const CATEGORY_GROUP_LABELS: Record<string, string> = {
+  odelo: "Odela",
+  sako: "Sakoi",
+  pantalone: "Pantalone",
+  kosulja: "Kosulje",
+  kaput: "Kaputi",
+  jakna: "Jakne",
+  dzemper: "Dzemperi",
+  obuca: "Obuca",
+  kais: "Kaisevi",
+  kravata: "Kravate",
+  prsluk: "Prsluci",
+  novcanik: "Novcanici",
+  "card-holder": "Card holder",
+  torba: "Torbe",
+};
+
+const CATEGORY_GROUP_PRIORITY: Record<string, number> = {
+  odelo: 1,
+  sako: 2,
+  pantalone: 3,
+  kosulja: 4,
+  kaput: 5,
+  jakna: 6,
+  dzemper: 7,
+  obuca: 8,
+  kais: 9,
+  kravata: 10,
+  prsluk: 11,
+  novcanik: 12,
+  "card-holder": 13,
+  torba: 14,
+};
+
+const productMatchesCategoryGroup = (item: CatalogProductView, groupKey: string) => {
+  const wanted = normalizeCatalogCategoryGroupKey(groupKey);
+  if (!wanted) return false;
+  return item.categories.some((cat) =>
+    [cat.name, ...(cat.path || [])].some((value) => normalizeCatalogCategoryGroupKey(value) === wanted),
+  );
+};
+
 const applyFilters = (
   items: CatalogProductView[],
   input: Required<Pick<CatalogListInput, "query" | "categoryId" | "inStock" | "onSale" | "activeOnly" | "exportOnly">> & {
+    categoryGroup?: string;
     priceMin?: number;
     priceMax?: number;
     sizes?: string[];
@@ -450,6 +531,9 @@ const applyFilters = (
   if (input.onSale) filtered = filtered.filter((item) => item.priceGross > item.priceFinalGross || item.rebatePercent > 0);
   if (input.categoryId > 0) {
     filtered = filtered.filter((item) => item.categories.some((cat) => cat.id === input.categoryId));
+  }
+  if (input.categoryGroup) {
+    filtered = filtered.filter((item) => productMatchesCategoryGroup(item, input.categoryGroup || ""));
   }
 
   if (typeof input.priceMin === "number" && Number.isFinite(input.priceMin) && input.priceMin > 0) {
@@ -512,6 +596,39 @@ const collectCategories = (items: CatalogProductView[]): CatalogCategory[] => {
     }
   }
   return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "sr"));
+};
+
+const collectCategoryGroups = (items: CatalogProductView[]): CatalogCategoryGroup[] => {
+  const map = new Map<string, CatalogCategoryGroup>();
+
+  for (const item of items) {
+    const itemKeys = new Set<string>();
+    for (const cat of item.categories) {
+      const key = [cat.name, ...(cat.path || [])].map(normalizeCatalogCategoryGroupKey).find(Boolean) || "";
+      if (!key) continue;
+      const existing = map.get(key) || {
+        key,
+        name: CATEGORY_GROUP_LABELS[key] || cat.name,
+        ids: [],
+        count: 0,
+      };
+      if (!existing.ids.includes(cat.id)) existing.ids.push(cat.id);
+      map.set(key, existing);
+      itemKeys.add(key);
+    }
+
+    for (const key of itemKeys) {
+      const existing = map.get(key);
+      if (existing) existing.count += 1;
+    }
+  }
+
+  return Array.from(map.values()).sort((a, b) => {
+    const priorityDiff =
+      (CATEGORY_GROUP_PRIORITY[a.key] || 99) - (CATEGORY_GROUP_PRIORITY[b.key] || 99);
+    if (priorityDiff !== 0) return priorityDiff;
+    return a.name.localeCompare(b.name, "sr", { numeric: true, sensitivity: "base" });
+  });
 };
 
 const applySkuImageFallbacks = (items: CatalogProductView[]): CatalogProductView[] => {
@@ -714,6 +831,20 @@ const inferProductTypeToken = (name: string, categories: { name: string }[]): st
   return "collection";
 };
 
+const getCatalogProductTypePriority = (item: CatalogProductView) => {
+  const categoryText = (item.categories || [])
+    .flatMap((category) => [category.name, ...(category.path || [])])
+    .join(" ");
+  const haystack = normalizeDiacritics(`${item.name || ""} ${item.manufCode || ""} ${categoryText}`)
+    .toLowerCase();
+
+  if (/odel|suit/.test(haystack)) return 1;
+  if (/sako|blazer/.test(haystack)) return 2;
+  if (/pantal|trouser|pants/.test(haystack)) return 3;
+  if (/kosulj|shirt/.test(haystack)) return 4;
+  return 99;
+};
+
 export const getCatalogProductModelKey = (item: CatalogProductView) => {
   const displayName = getCatalogProductDisplayName({
     name: item.name,
@@ -764,6 +895,26 @@ const getCatalogProductVisualModelKey = (item: CatalogProductView) => {
   return `visual:${typeToken}:${imageKey}`;
 };
 
+const scoreCatalogImageQuality = (item: CatalogProductView) => {
+  const cover = String(item.coverImage || "").trim();
+  const imageCount = Array.isArray(item.images)
+    ? item.images.filter((image) => String(image || "").trim().length > 0).length
+    : 0;
+  let score = 0;
+
+  if (hasCatalogProductDirectMedia(item)) score += 70;
+  else if (hasCatalogProductMedia(item)) score += 20;
+  if (cover) score += 18;
+  score += Math.min(imageCount, 6) * 3;
+
+  const normalizedCover = cover.toLowerCase();
+  if (/\s/.test(cover)) score -= 18;
+  if (/\bcopy\b|\(\d+\)|%20copy/.test(normalizedCover)) score -= 22;
+  if (item.rawPayload?.imageFallback) score -= 30;
+
+  return score;
+};
+
 const scoreCollapsedRepresentative = (item: CatalogProductView) => {
   const displayName = getCatalogProductDisplayName({
     name: item.name,
@@ -788,7 +939,7 @@ const scoreCollapsedRepresentative = (item: CatalogProductView) => {
   if (displayName && displayName !== categoryLabel) score += 24;
   if (item.nameEn && item.nameEn.trim()) score += 8;
   if (item.categories.length > 0) score += 12;
-  if (item.coverImage) score += 8;
+  score += scoreCatalogImageQuality(item);
   if (item.videoUrl) score += 10;
   if (item.brand) score += 4;
   if (stock > 0) score += Math.min(stock, 10);
@@ -1015,7 +1166,22 @@ const sortCatalogProducts = (
   if (sort === "newest" || sort === "oldest") {
     return list.sort((a, b) => (sort === "newest" ? b.legacyId - a.legacyId : a.legacyId - b.legacyId));
   }
-  return list;
+  return list.sort((a, b) => {
+    const typeDiff = getCatalogProductTypePriority(a) - getCatalogProductTypePriority(b);
+    if (typeDiff !== 0) return typeDiff;
+
+    const featuredDiff = Number(b.landingFeatured) - Number(a.landingFeatured);
+    if (featuredDiff !== 0) return featuredDiff;
+
+    const aPriority = Number.isFinite(Number(a.landingPriority)) ? Number(a.landingPriority) : Number.MAX_SAFE_INTEGER;
+    const bPriority = Number.isFinite(Number(b.landingPriority)) ? Number(b.landingPriority) : Number.MAX_SAFE_INTEGER;
+    if (aPriority !== bPriority) return aPriority - bPriority;
+
+    const stockDiff = getAvailableStockValue(b) - getAvailableStockValue(a);
+    if (stockDiff !== 0) return stockDiff;
+
+    return a.name.localeCompare(b.name, "sr", { numeric: true, sensitivity: "base" });
+  });
 };
 
 async function fetchCatalogSnapshotFromSupabase(filters: {
@@ -1140,6 +1306,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const pageSize = clamp(Number(input.pageSize || 24), 1, 120);
   const query = String(input.query || "");
   const categoryId = Number(input.categoryId || 0);
+  const categoryGroup = normalizeCatalogCategoryGroupKey(String(input.categoryGroup || ""));
   const inStock = Boolean(input.inStock);
   const onSale = Boolean(input.onSale);
   const activeOnly = input.activeOnly !== false;
@@ -1165,6 +1332,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     pageSize,
     query,
     categoryId,
+    categoryGroup,
     inStock,
     onSale,
     activeOnly,
@@ -1224,6 +1392,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const filteredSource = applyFilters(displayItems, {
     query,
     categoryId,
+    categoryGroup,
     inStock,
     onSale,
     activeOnly,
@@ -1261,6 +1430,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const start = (clampedPage - 1) * pageSize;
   const paged = filtered.slice(start, start + pageSize);
   const categories = collectCategories(filtered);
+  const categoryGroups = collectCategoryGroups(filtered);
   const paginateMs = Date.now() - paginateStart;
 
   const result: CatalogListResult = {
@@ -1270,6 +1440,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     pageSize,
     totalPages,
     categories,
+    categoryGroups,
   };
 
   listCache.set(cacheKey, {

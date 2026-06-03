@@ -41,33 +41,15 @@ type Props = {
   heroVideoPosterUrl?: string;
 };
 
-const normalize = (value: string) =>
-  value
-    .trim()
-    .toLowerCase()
-    .normalize("NFD")
-    .replace(/\p{Diacritic}/gu, "");
+const hrefForCategoryGroup = (categoryGroup: string) => `/web-shop?categoryGroup=${categoryGroup}`;
 
-const findCategoryId = (categories: HomeCategory[], terms: string[]) => {
-  const normalizedTerms = terms.map(normalize);
-  const found = categories.find((category) => {
-    const values = [category.name, ...(category.path || [])].map(normalize);
-    return values.some((value) => normalizedTerms.some((term) => value.includes(term)));
-  });
-  return found?.id;
-};
-
-const hrefForCategory = (categoryId?: number) => (categoryId ? `/web-shop?categoryId=${categoryId}` : "/web-shop");
-
-export default function HomeHeroVideo({ categories, showProductCards = true, featuredProducts, content, lang = "sr", heroVideoUrl, heroVideoPosterUrl }: Props) {
+export default function HomeHeroVideo({ categories: _categories, showProductCards = true, featuredProducts, content, lang = "sr", heroVideoUrl, heroVideoPosterUrl }: Props) {
   const tx = (value: string, fallbackEn?: string) => localizeDynamicStorefrontText(value, lang, fallbackEn);
   const withLang = (href: string) => {
     if (lang !== "en" || !href.startsWith("/")) return href;
     if (href.includes("?")) return `${href}&lang=en`;
     return `${href}?lang=en`;
   };
-  const suitsCategoryId = findCategoryId(categories, ["odel", "suit"]);
-  const shoesCategoryId = findCategoryId(categories, ["obuc", "cipel", "shoe"]);
   const cards =
     featuredProducts.length > 0
       ? featuredProducts.slice(0, 4).map((product) => ({
@@ -89,13 +71,13 @@ export default function HomeHeroVideo({ categories, showProductCards = true, fea
             id: "fallback-1",
             title: tx("Kolekcija odela", "Suit Collection"),
             image: "/img/odela2.jpg",
-            href: withLang(hrefForCategory(suitsCategoryId)),
+            href: withLang(hrefForCategoryGroup("odelo")),
           },
           {
             id: "fallback-2",
             title: tx("Premium obuca", "Premium Footwear"),
             image: "/img/obuca.jpg",
-            href: withLang(hrefForCategory(shoesCategoryId)),
+            href: withLang(hrefForCategoryGroup("obuca")),
           },
           {
             id: "fallback-3",

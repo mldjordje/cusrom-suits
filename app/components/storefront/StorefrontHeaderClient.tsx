@@ -12,7 +12,7 @@ import StorefrontCartLink from "@/app/components/storefront/cart/StorefrontCartL
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 type ShopCategory = {
-  id: number;
+  id: string;
   name: string;
 };
 
@@ -21,7 +21,7 @@ type HeaderNavItem = {
   label: string;
 };
 
-const SHOP_CATEGORIES_SESSION_KEY = "ss-shop-categories-v1";
+const SHOP_CATEGORIES_SESSION_KEY = "ss-shop-categories-v2";
 
 export default function StorefrontHeaderClient({
   lang = "sr",
@@ -214,7 +214,7 @@ export default function StorefrontHeaderClient({
     { href: "/web-shop", label: isEn ? "All products" : "Svi proizvodi" },
     { href: "/web-shop?categoryId=sale", label: isEn ? "Sale" : "Akcija" },
     ...shopCategories.map((category) => ({
-      href: `/web-shop?categoryId=${category.id}`,
+      href: `/web-shop?categoryGroup=${category.id}`,
       label: category.name,
     })),
   ];
@@ -281,8 +281,8 @@ export default function StorefrontHeaderClient({
                             <div className="ss-shop-dd-cats">
                               {shopCategories.map((category) => (
                                 <Link
-                                  key={`/web-shop?categoryId=${category.id}`}
-                                  href={withLang(`/web-shop?categoryId=${category.id}`)}
+                                  key={`/web-shop?categoryGroup=${category.id}`}
+                                  href={withLang(`/web-shop?categoryGroup=${category.id}`)}
                                   prefetch
                                   className="ss-shop-dd-cat"
                                 >

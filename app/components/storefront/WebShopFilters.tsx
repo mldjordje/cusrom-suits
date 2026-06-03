@@ -6,7 +6,8 @@ import type { StorefrontLanguage } from "@/lib/storefront/language";
 import { localizeDynamicCategoryLabel } from "@/lib/storefront/dynamicCopy";
 
 type ShopCategory = {
-  id: number;
+  id?: number;
+  key?: string;
   name: string;
 };
 
@@ -25,6 +26,7 @@ type WebShopFiltersProps = {
   lang: StorefrontLanguage;
   query: string;
   categoryId: number;
+  categoryGroup: string;
   selectedCategoryValue: string;
   inStock: boolean;
   onSale: boolean;
@@ -53,6 +55,7 @@ export default function WebShopFilters({
   lang,
   query,
   categoryId,
+  categoryGroup,
   selectedCategoryValue,
   inStock,
   onSale,
@@ -110,6 +113,7 @@ export default function WebShopFilters({
     const current: Record<string, string> = {
       q: query.trim(),
       categoryId: categoryId > 0 ? String(categoryId) : "",
+      categoryGroup,
       inStock: inStock ? "1" : "",
       onSale: onSale ? "1" : "",
       sort: sort !== "featured" ? sort : "",
@@ -138,28 +142,47 @@ export default function WebShopFilters({
   const renderCategoryLinks = (className: string) => (
     <div className={className}>
       <Link
-        href={makeHref({ categoryId: null, onSale: null, q: null })}
-        className={`ss-shop-filter-chip ${categoryId <= 0 && !onSale ? "is-active" : ""}`}
+        href={makeHref({ categoryId: null, categoryGroup: null, onSale: null, q: null })}
+        className={`ss-shop-filter-chip ${categoryId <= 0 && !categoryGroup && !onSale ? "is-active" : ""}`}
       >
         {isEn ? "All products" : "Svi proizvodi"}
       </Link>
       <Link
-        href={makeHref({ categoryId: null, onSale: onSale && categoryId <= 0 ? null : 1, q: null })}
-        className={`ss-shop-filter-chip ${onSale && categoryId <= 0 ? "is-active" : ""}`}
+        href={makeHref({ categoryId: null, categoryGroup: null, onSale: onSale && categoryId <= 0 ? null : 1, q: null })}
+        className={`ss-shop-filter-chip ${onSale && categoryId <= 0 && !categoryGroup ? "is-active" : ""}`}
       >
         {isEn ? "Sale" : "Akcija"}
       </Link>
-      {featuredCategories.map((category) => (
+      {featuredCategories.map((category) => {
+        const key = category.key || String(category.id || "");
+        const isActive = categoryGroup === key;
+        return (
+          <Link
+            key={key}
+            href={makeHref({
+              categoryGroup: isActive ? null : key,
+              categoryId: null,
+              onSale: null,
+              q: null,
+            })}
+            className={`ss-shop-filter-chip ${isActive ? "is-active" : ""}`}
+          >
+            {localizeCategory(category.name)}
+          </Link>
+        );
+      })}
+    </div>
+  );
+
+  const renderSortPills = (className: string) => (
+    <div className={className} aria-label={isEn ? "Quick sort options" : "Brzo sortiranje"}>
+      {sortOptions.map((option) => (
         <Link
-          key={category.id}
-          href={makeHref({
-            categoryId: categoryId === category.id ? null : category.id,
-            onSale: null,
-            q: null,
-          })}
-          className={`ss-shop-filter-chip ${categoryId === category.id ? "is-active" : ""}`}
+          key={option.value}
+          href={makeHref({ sort: option.value === "featured" ? null : option.value })}
+          className={`ss-shop-sort-pill ${sort === option.value ? "is-active" : ""}`}
         >
-          {localizeCategory(category.name)}
+          {option.label}
         </Link>
       ))}
     </div>
@@ -209,14 +232,13 @@ export default function WebShopFilters({
       <select
         id={fieldId}
         className="form-select fw-medium"
-        name="categoryId"
+        name="categoryGroup"
         defaultValue={selectedCategoryValue}
         onChange={(e) => e.currentTarget.form?.requestSubmit()}
       >
         <option value="">{isEn ? "All categories" : "Sve kategorije"}</option>
-        <option value="sale">{isEn ? "Sale" : "Akcija"}</option>
         {categories.map((category) => (
-          <option key={category.id} value={category.id}>
+          <option key={category.key || category.id} value={category.key || category.id}>
             {localizeCategory(category.name)}
           </option>
         ))}
@@ -355,6 +377,10 @@ export default function WebShopFilters({
           </div>
 
           {renderCategoryLinks("ss-shop-sidebar__categories")}
+          <div className="ss-shop-sidebar__section">
+            <p className="ss-shop-sidebar__section-label">{isEn ? "Sort" : "Sort"}</p>
+            {renderSortPills("ss-shop-sidebar__sort-pills")}
+          </div>
           {renderForm("ss-shop-desktop-filters")}
         </div>
       </aside>

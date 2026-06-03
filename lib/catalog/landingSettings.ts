@@ -212,40 +212,21 @@ const DEFAULT_SETTINGS: LandingSettings = {
   uniformsImages: [
     {
       title: "Hospitality kolekcija",
-      image: "https://santos.rs/fajlovi/uniforme/BRI04849.jpg",
+      image: "https://santos.rs/fajlovi/product/BRI04649.jpg",
       alt: "Santos poslovna uniforma za hospitality tim",
     },
     {
       title: "Recepcija i menadzment",
-      image: "https://santos.rs/fajlovi/uniforme/BRI04875.jpg",
+      image: "https://santos.rs/fajlovi/product/BRI00455.jpg",
       alt: "Santos poslovna uniforma za recepciju",
     },
     {
       title: "Timski setovi",
-      image: "https://santos.rs/fajlovi/uniforme/BRI04963.jpg",
+      image: "https://santos.rs/fajlovi/product/BRI00777.jpg",
       alt: "Santos poslovne uniforme za kompanijske timove",
     },
   ],
-  uniformsVideos: [
-    {
-      title: "Zenska uniforma mantil",
-      video: "https://santos.rs/fajlovi/uniforme/Santos%20zenska%20uniforma%20mantil.mp4",
-      poster: "https://santos.rs/fajlovi/uniforme/BRI04849.jpg",
-      alt: "Santos video prezentacija zenske poslovne uniforme",
-    },
-    {
-      title: "Kosulja kratak rukav",
-      video: "https://santos.rs/fajlovi/uniforme/Santos%20uniforma%20kosulja%20kratak%20rukav.mp4",
-      poster: "https://santos.rs/fajlovi/uniforme/BRI04899.jpg",
-      alt: "Santos video prezentacija poslovne kosulje kratkog rukava",
-    },
-    {
-      title: "Pantalone i jakna",
-      video: "https://santos.rs/fajlovi/uniforme/Santos%20uniforma%20pantalone%20jakna.mp4",
-      poster: "https://santos.rs/fajlovi/uniforme/BRI04939.jpg",
-      alt: "Santos video prezentacija kompleta pantalone i jakna",
-    },
-  ],
+  uniformsVideos: [],
   shopHeroEyebrow: "Kurirani izbor krojeva",
   shopHeroTitle: "Web shop kolekcija spremna za porucivanje",
   shopHeroLead:
@@ -386,11 +367,24 @@ const normalizeLandingDocuments = (value: unknown, max = 24) => {
   return value.map(normalizeLandingDocument).filter((item): item is LandingDocument => Boolean(item)).slice(0, max);
 };
 
+const UNIFORM_MEDIA_REPAIRS: Record<string, string> = {
+  "https://santos.rs/fajlovi/uniforme/BRI04849.jpg": "https://santos.rs/fajlovi/product/BRI04649.jpg",
+  "https://santos.rs/fajlovi/uniforme/BRI04875.jpg": "https://santos.rs/fajlovi/product/BRI00455.jpg",
+  "https://santos.rs/fajlovi/uniforme/BRI04963.jpg": "https://santos.rs/fajlovi/product/BRI00777.jpg",
+  "https://santos.rs/fajlovi/uniforme/BRI04899.jpg": "https://santos.rs/fajlovi/product/BRI09671.jpg",
+  "https://santos.rs/fajlovi/uniforme/BRI04939.jpg": "https://santos.rs/fajlovi/product/BRI09525.jpg",
+  "https://santos.rs/fajlovi/uniforme/Santos%20zenska%20uniforma%20mantil.mp4": "",
+  "https://santos.rs/fajlovi/uniforme/Santos%20uniforma%20kosulja%20kratak%20rukav.mp4": "",
+  "https://santos.rs/fajlovi/uniforme/Santos%20uniforma%20pantalone%20jakna.mp4": "",
+};
+
+const repairUniformMediaUrl = (url: string) => UNIFORM_MEDIA_REPAIRS[url] ?? url;
+
 const normalizeLandingUniformImage = (value: unknown): LandingUniformImage | null => {
   if (!value || typeof value !== "object") return null;
   const row = value as Record<string, unknown>;
   const title = String(row.title || "").trim();
-  const image = String(row.image || "").trim();
+  const image = repairUniformMediaUrl(String(row.image || "").trim());
   const alt = String(row.alt || "").trim();
   if (!title && !image && !alt) return null;
   return { title, image, alt };
@@ -408,8 +402,8 @@ const normalizeLandingUniformVideo = (value: unknown): LandingUniformVideo | nul
   if (!value || typeof value !== "object") return null;
   const row = value as Record<string, unknown>;
   const title = String(row.title || "").trim();
-  const video = String(row.video || "").trim();
-  const poster = String(row.poster || "").trim();
+  const video = repairUniformMediaUrl(String(row.video || "").trim());
+  const poster = repairUniformMediaUrl(String(row.poster || "").trim());
   const alt = String(row.alt || "").trim();
   if (!title && !video && !poster && !alt) return null;
   return { title, video, poster, alt };
