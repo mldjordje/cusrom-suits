@@ -324,22 +324,20 @@ export default async function WebShopProductPage({
   const attributeItems = Object.entries(product.attributes || {})
     .filter(([key]) => key !== "size")
     .slice(0, 6);
-  const canonicalProductHref = (size?: string | null) => {
+  const productSizeHref = (legacyId: number, size?: string | null) => {
     const query = new URLSearchParams();
     if (size) query.set("size", size);
     if (isEn) query.set("lang", "en");
     const queryString = query.toString();
-    // Always use product.legacyId (the page the user originally navigated to) so
-    // that switching size never changes the base product — only ?size= changes.
-    // Using displayProduct.legacyId here caused the size picker to jump to a
-    // completely different product's URL (and images).
-    return `/web-shop/${product.legacyId}${queryString ? `?${queryString}` : ""}`;
+    return `/web-shop/${legacyId}${queryString ? `?${queryString}` : ""}`;
   };
+  const canonicalProductHref = (size?: string | null) =>
+    productSizeHref(product.legacyId, size);
   const variantHref = (variantId: number) =>
     isEn ? `/web-shop/${variantId}?lang=en` : `/web-shop/${variantId}`;
   const sizePickerOptions = sizeOptions.map((option) => ({
     ...option,
-    href: canonicalProductHref(option.label),
+    href: productSizeHref(option.legacyId, option.label),
   }));
   const cartItem = {
     legacyId: selectedProduct.legacyId,

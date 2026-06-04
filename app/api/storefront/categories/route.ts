@@ -11,7 +11,7 @@ export async function GET() {
     activeOnly: true,
     exportOnly: true,
     collapseBySku: true,
-    requireDirectImages: true,
+    requireImages: true,
   });
 
   const categories = result.categoryGroups.map((category) => ({

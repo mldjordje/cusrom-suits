@@ -39,7 +39,7 @@ export default async function LegacyStorefrontCatchAll({
     activeOnly: true,
     exportOnly: true,
     collapseBySku: true,
-    requireDirectImages: true,
+    requireImages: true,
   });
 
   const requestedKey = requestedPath.map(normalizeLegacyToken).join("/");

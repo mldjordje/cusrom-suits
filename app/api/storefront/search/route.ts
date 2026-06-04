@@ -20,8 +20,8 @@ export async function GET(req: NextRequest) {
     activeOnly: true,
     exportOnly: true,
     collapseBySku: true,
-    requireDirectImages: true,
-    requireReachableImages: true,
+    requireImages: true,
+    requireReachableImages: false,
   });
 
   const results = result.items.map((item) => ({

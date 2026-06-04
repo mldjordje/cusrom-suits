@@ -159,8 +159,8 @@ export default async function WebShopPage({
       priceMin: priceMin > 0 ? priceMin : 2000, // never show items under 2 000 RSD (data errors)
       priceMax: priceMax || undefined,
       sizes: selectedSizes.length ? selectedSizes : undefined,
-      requireDirectImages: true,
-      requireReachableImages: true,
+      requireImages: true,
+      requireReachableImages: false,
       sort: sort as "featured" | "name_asc" | "price_asc" | "price_desc" | "stock_desc" | "newest",
     }),
     getLandingSettings(),

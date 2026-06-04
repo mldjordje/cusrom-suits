@@ -267,8 +267,8 @@ export default async function HomePage({
       activeOnly: true,
       exportOnly: true,
       collapseBySku: true,
-      requireDirectImages: true,
-      requireReachableImages: true,
+      requireImages: true,
+      requireReachableImages: false,
     }),
     listCatalogProducts({
       page: 1,
@@ -277,8 +277,8 @@ export default async function HomePage({
       exportOnly: true,
       collapseBySku: true,
       onSale: true,
-      requireDirectImages: true,
-      requireReachableImages: true,
+      requireImages: true,
+      requireReachableImages: false,
     }),
     listPosts({
       type: "all",

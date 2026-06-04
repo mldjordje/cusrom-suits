@@ -122,7 +122,7 @@ type ImageReachabilityCacheEntry = {
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const CATALOG_SNAPSHOT_TTL_MS = 300_000;
-const CATALOG_LIST_TTL_MS = 45_000;
+const CATALOG_LIST_TTL_MS = 300_000;
 const CATALOG_LIST_CACHE_MAX_ENTRIES = 220;
 const CATALOG_LIST_CACHE_VERSION = "v6";
 const IMAGE_REACHABILITY_TTL_MS = 3_600_000;
@@ -1205,17 +1205,17 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
   const products: Record<string, unknown>[] = [];
   for (let from = 0; ; from += pageSize) {
     const to = from + pageSize - 1;
-    // Load ALL products (no active/exported filter here) so that inactive products
-    // can serve as image donors for active products via applySkuImageFallbacks.
-    // The active/exported filter is applied in-memory below after fallbacks are resolved.
-    const query = supabase
+    let query = supabase
       .from("catalog_products")
       .select(
         "legacy_id,sku,ean,manuf_code,brand,is_active,is_exported,name_sr,name_en,description_sr,description_en,specification_sr,specification_en,price_gross,price_final_gross,tax_percent,rebate_percent,stock_warehouse_1,stock_total,raw_payload",
       )
-      .order("legacy_id", { ascending: true })
-      .range(from, to);
-    const { data, error } = await query;
+      .order("legacy_id", { ascending: true });
+
+    if (filters.activeOnly) query = query.eq("is_active", true);
+    if (filters.exportOnly) query = query.eq("is_exported", true);
+
+    const { data, error } = await query.range(from, to);
     if (error) return null;
     const batch = (data || []) as Record<string, unknown>[];
     products.push(...batch);
@@ -1230,21 +1230,33 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
   const imagesByProductId = new Map<number, string[]>();
   if (legacyIds.length > 0) {
     const idChunkSize = 500;
+    const mediaConcurrency = 6;
+    const idChunks: number[][] = [];
     for (let i = 0; i < legacyIds.length; i += idChunkSize) {
-      const idChunk = legacyIds.slice(i, i + idChunkSize);
-      const { data: media } = await supabase
-        .from("catalog_product_media")
-        .select("legacy_product_id,url,sort")
-        .in("legacy_product_id", idChunk)
-        .order("sort", { ascending: true });
+      idChunks.push(legacyIds.slice(i, i + idChunkSize));
+    }
 
-      for (const row of media || []) {
-        const productId = Number((row as Record<string, unknown>).legacy_product_id);
-        const url = String((row as Record<string, unknown>).url || "");
-        if (!productId || !url) continue;
-        const list = imagesByProductId.get(productId) || [];
-        list.push(url);
-        imagesByProductId.set(productId, list);
+    for (let i = 0; i < idChunks.length; i += mediaConcurrency) {
+      const chunkGroup = idChunks.slice(i, i + mediaConcurrency);
+      const mediaResults = await Promise.all(
+        chunkGroup.map((idChunk) =>
+          supabase
+            .from("catalog_product_media")
+            .select("legacy_product_id,url,sort")
+            .in("legacy_product_id", idChunk)
+            .order("sort", { ascending: true }),
+        ),
+      );
+
+      for (const { data: media } of mediaResults) {
+        for (const row of media || []) {
+          const productId = Number((row as Record<string, unknown>).legacy_product_id);
+          const url = String((row as Record<string, unknown>).url || "");
+          if (!productId || !url) continue;
+          const list = imagesByProductId.get(productId) || [];
+          list.push(url);
+          imagesByProductId.set(productId, list);
+        }
       }
     }
   }
@@ -1252,7 +1264,6 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
   const normalized = products.map((row: Record<string, unknown>) => normalizeCatalogRow(row, imagesByProductId));
   const withFallbacks = applySkuImageFallbacks(normalized);
 
-  // Apply active/exported filters in-memory after image fallbacks are resolved.
   return withFallbacks.filter((item) => {
     if (filters.activeOnly && !item.isActive) return false;
     if (filters.exportOnly && !item.isExported) return false;

@@ -6,6 +6,9 @@ create extension if not exists pg_trgm;
 create index if not exists idx_catalog_products_active_exported
   on public.catalog_products (is_active, is_exported);
 
+create index if not exists idx_catalog_products_active_exported_legacy
+  on public.catalog_products (is_active, is_exported, legacy_id);
+
 create index if not exists idx_catalog_products_active_exported_stock_total
   on public.catalog_products (is_active, is_exported, stock_total desc);
 
