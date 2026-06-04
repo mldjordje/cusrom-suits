@@ -65,6 +65,7 @@ type ProductDraft = {
   images: string[];
   coverImage: string;
   businessUniform: boolean;
+  priceOverride: boolean;
 };
 type Pagination = { page: number; pageSize: number; total: number; totalPages: number };
 type CreateDraft = {
@@ -621,6 +622,7 @@ const toDraft = (item: CatalogProduct): ProductDraft => ({
   images: item.rawPayload?.imageFallback ? [] : Array.isArray(item.images) ? item.images.filter(Boolean) : [],
   coverImage: item.rawPayload?.imageFallback ? "" : item.coverImage || item.images?.[0] || "",
   businessUniform: isBusinessUniformProduct(item),
+  priceOverride: Boolean((item.rawPayload?.commerceOverrides as Record<string, unknown> | undefined)?.price),
 });
 
 const normalizeTab = (value: string | null | undefined): TabKey => {
@@ -638,6 +640,12 @@ const formatRsd = (value: number) =>
 
 const cardImage = (item: CatalogProduct) => item.coverImage || item.images?.[0] || "/img/odela2.jpg";
 
+const isMofficeProduct = (item: CatalogProduct) =>
+  Boolean(item.rawPayload?.moffice) || item.rawPayload?.source === "moffice";
+
+const hasManualPriceOverride = (item: CatalogProduct) =>
+  Boolean((item.rawPayload?.commerceOverrides as Record<string, unknown> | undefined)?.price);
+
 const productQualityFlags = (item: CatalogProduct) => {
   const flags: Array<{ label: string; tone: "rose" | "amber" | "emerald" | "slate" }> = [];
   const hasOnlyFallbackImage = Boolean(item.rawPayload?.imageFallback);
@@ -649,6 +657,8 @@ const productQualityFlags = (item: CatalogProduct) => {
   if (!item.priceFinalGross && !isBusinessUniformProduct(item)) flags.push({ label: "Nema cenu", tone: "rose" });
   if (!item.categories?.length) flags.push({ label: "Bez kategorije", tone: "amber" });
   if (item.videoUrl) flags.push({ label: "Ima video", tone: "emerald" });
+  if (isMofficeProduct(item)) flags.push({ label: "mOffice", tone: "slate" });
+  if (hasManualPriceOverride(item)) flags.push({ label: "Rucna cena", tone: "amber" });
   if (!item.isActive || !item.isExported) flags.push({ label: "Sakriven", tone: "slate" });
   if (!flags.length) flags.push({ label: "Spremno", tone: "emerald" });
   return flags;
@@ -790,7 +800,20 @@ export default function AdminWebshopPage() {
     const needsDescription = items.filter((item) => !item.description?.trim()).length;
     const hidden = items.filter((item) => !item.isActive || !item.isExported).length;
     const withVideo = items.filter((item) => Boolean(item.videoUrl)).length;
-    return { needsImage, directMedia, needsDescription, hidden, withVideo };
+    const moffice = items.filter(isMofficeProduct).length;
+    const mofficeHidden = items.filter((item) => isMofficeProduct(item) && (!item.isActive || !item.isExported)).length;
+    const manualPrice = items.filter(hasManualPriceOverride).length;
+    const readyToPublish = items.filter(
+      (item) =>
+        isMofficeProduct(item) &&
+        item.images?.length &&
+        !item.rawPayload?.imageFallback &&
+        item.description?.trim() &&
+        item.categories?.length &&
+        item.priceFinalGross > 0 &&
+        (!item.isActive || !item.isExported),
+    ).length;
+    return { needsImage, directMedia, needsDescription, hidden, withVideo, moffice, mofficeHidden, manualPrice, readyToPublish };
   }, [items]);
 
   useEffect(() => {
@@ -1503,6 +1526,7 @@ export default function AdminWebshopPage() {
           images: draft.images,
           coverImage: draft.coverImage || draft.images[0] || null,
           businessUniform: draft.businessUniform,
+          priceOverride: draft.priceOverride,
         }),
       });
       const json = await res.json();
@@ -1810,6 +1834,12 @@ export default function AdminWebshopPage() {
             <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
               <span className="rounded-full border border-slate-200 px-2 py-1">{formatRsd(item.priceFinalGross)}</span>
               <span className="rounded-full border border-slate-200 px-2 py-1">Lager {item.stockWarehouse1}</span>
+              <span className={`rounded-full border px-2 py-1 ${isMofficeProduct(item) ? "border-blue-200 bg-blue-50 text-blue-800" : "border-slate-200 text-slate-600"}`}>
+                {isMofficeProduct(item) ? "mOffice sync" : "Rucni unos"}
+              </span>
+              {hasManualPriceOverride(item) ? (
+                <span className="rounded-full border border-amber-200 bg-amber-50 px-2 py-1 text-amber-800">Rucna cena</span>
+              ) : null}
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
               {productQualityFlags(item).slice(0, 4).map((flag) => (
@@ -1858,6 +1888,19 @@ export default function AdminWebshopPage() {
             Pregled
           </Link>
         </div>
+        {isMofficeProduct(item) ? (
+          <label className="mt-3 flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            <input
+              type="checkbox"
+              checked={Boolean(draft?.priceOverride)}
+              onChange={(e) => updateDraft(item.legacyId, { priceOverride: e.target.checked })}
+              className="mt-0.5"
+            />
+            <span>
+              <strong>Pregazi mOffice cenu.</strong> Sync i dalje menja lager, ali cena ostaje rucno uneta.
+            </span>
+          </label>
+        ) : null}
       </article>
     );
   };
@@ -1959,6 +2002,10 @@ export default function AdminWebshopPage() {
               { label: "Direktne slike", value: productPageStats.directMedia, tone: "emerald" as const },
               { label: "Treba opis", value: productPageStats.needsDescription, tone: "amber" as const },
               { label: "Sakriveno", value: productPageStats.hidden, tone: "slate" as const },
+              { label: "mOffice", value: productPageStats.moffice, tone: "slate" as const },
+              { label: "mOffice skriveno", value: productPageStats.mofficeHidden, tone: "amber" as const },
+              { label: "Spremno za objavu", value: productPageStats.readyToPublish, tone: "emerald" as const },
+              { label: "Rucna cena", value: productPageStats.manualPrice, tone: "amber" as const },
               { label: "Ima video", value: productPageStats.withVideo, tone: "emerald" as const },
             ].map((stat) => (
               <div key={stat.label} className={`rounded-2xl border p-4 ${flagClass(stat.tone)}`}>
@@ -1967,6 +2014,74 @@ export default function AdminWebshopPage() {
                 <p className="mt-1 text-xs opacity-75">Na trenutno ucitanoj strani</p>
               </div>
             ))}
+          </div>
+
+          <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 shadow-sm">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em]">Red rada za katalog</p>
+                <p className="mt-1 max-w-4xl text-sm">
+                  Prvo sredi artikle koji imaju mOffice lager ali nisu spremni za web-shop. Klikni red, zatim `Primeni filtere`.
+                </p>
+              </div>
+              <Link href="/admin/tutorial" className="rounded-full border border-blue-300 bg-white px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-blue-800">
+                Tutorial za strica
+              </Link>
+            </div>
+            <div className="mt-3 grid gap-2 md:grid-cols-4">
+              {[
+                {
+                  title: "1. Dodaj slike",
+                  desc: "mOffice artikli bez svoje slike.",
+                  apply: () => {
+                    setSourceStatus("moffice");
+                    setMediaStatus("broken");
+                    setContentStatus("all");
+                    setVisibilityStatus("all");
+                  },
+                },
+                {
+                  title: "2. Dodaj opis",
+                  desc: "Artikli spremni za opis i detalje.",
+                  apply: () => {
+                    setSourceStatus("moffice");
+                    setMediaStatus("all");
+                    setContentStatus("missing_description");
+                    setVisibilityStatus("all");
+                  },
+                },
+                {
+                  title: "3. Objavi spremno",
+                  desc: "Sakriveni mOffice artikli za proveru.",
+                  apply: () => {
+                    setSourceStatus("moffice");
+                    setMediaStatus("direct");
+                    setContentStatus("all");
+                    setVisibilityStatus("hidden");
+                  },
+                },
+                {
+                  title: "4. Proveri rucne cene",
+                  desc: "Cena ostaje rucna, lager dolazi iz mOffice.",
+                  apply: () => {
+                    setSourceStatus("moffice");
+                    setMediaStatus("all");
+                    setContentStatus("all");
+                    setVisibilityStatus("all");
+                  },
+                },
+              ].map((step) => (
+                <button
+                  key={step.title}
+                  type="button"
+                  onClick={step.apply}
+                  className="rounded-xl border border-blue-200 bg-white px-3 py-3 text-left transition hover:border-blue-300"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.12em] text-blue-900">{step.title}</p>
+                  <p className="mt-1 text-xs text-blue-900/75">{step.desc}</p>
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -2398,7 +2513,18 @@ export default function AdminWebshopPage() {
                         <td className="px-2 py-2 text-xs">{item.categories[0]?.path.join(" / ") || "-"}</td>
                         <td className="px-2 py-2"><input value={draft?.priceFinalGross || ""} onChange={(e) => updateDraft(item.legacyId, { priceFinalGross: e.target.value })} className="mb-1 w-28 rounded border border-slate-200 px-2 py-1 text-xs" /><input value={draft?.priceGross || ""} onChange={(e) => updateDraft(item.legacyId, { priceGross: e.target.value })} className="w-28 rounded border border-slate-200 px-2 py-1 text-xs" /></td>
                         <td className="px-2 py-2"><input value={draft?.stockWarehouse1 || ""} onChange={(e) => updateDraft(item.legacyId, { stockWarehouse1: e.target.value })} className="mb-1 w-24 rounded border border-slate-200 px-2 py-1 text-xs" /><input value={draft?.stockTotal || ""} onChange={(e) => updateDraft(item.legacyId, { stockTotal: e.target.value })} className="w-24 rounded border border-slate-200 px-2 py-1 text-xs" /></td>
-                        <td className="px-2 py-2 text-xs"><label className="mb-1 flex items-center gap-2"><input type="checkbox" checked={Boolean(draft?.isActive)} onChange={(e) => updateDraft(item.legacyId, { isActive: e.target.checked })} />Aktivan</label><label className="mb-1 flex items-center gap-2"><input type="checkbox" checked={Boolean(draft?.isExported)} onChange={(e) => updateDraft(item.legacyId, { isExported: e.target.checked })} />Export</label></td>
+                        <td className="px-2 py-2 text-xs">
+                          <label className="mb-1 flex items-center gap-2"><input type="checkbox" checked={Boolean(draft?.isActive)} onChange={(e) => updateDraft(item.legacyId, { isActive: e.target.checked })} />Aktivan</label>
+                          <label className="mb-1 flex items-center gap-2"><input type="checkbox" checked={Boolean(draft?.isExported)} onChange={(e) => updateDraft(item.legacyId, { isExported: e.target.checked })} />Export</label>
+                          {isMofficeProduct(item) ? (
+                            <label className="mt-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-amber-900">
+                              <input type="checkbox" checked={Boolean(draft?.priceOverride)} onChange={(e) => updateDraft(item.legacyId, { priceOverride: e.target.checked })} />
+                              Rucna cena
+                            </label>
+                          ) : (
+                            <span className="mt-2 inline-flex rounded-lg border border-slate-200 px-2 py-1 text-[10px] text-slate-500">Rucni unos</span>
+                          )}
+                        </td>
                         <td className="px-2 py-2"><div className="flex flex-col gap-1"><button onClick={() => saveProduct(item.legacyId)} disabled={savingId === item.legacyId || !draft} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">{savingId === item.legacyId ? "Cuvanje..." : "Sacuvaj"}</button><button onClick={() => setEditorId(item.legacyId)} className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">Otvori editor</button><Link href={`/web-shop/${item.legacyId}`} target="_blank" className="rounded border border-slate-200 px-2 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Pregled</Link></div></td>
                       </tr>
                     );
@@ -3381,6 +3507,23 @@ export default function AdminWebshopPage() {
               `Regularna cena` je puna cena, `Prodajna cena` je cena na sajtu. Za prikaz na pocetnoj koristi poseban tab
               `Pocetna i sekcije`, kako raspored na home ne bi bio pomesan sa osnovnim uredjivanjem proizvoda.
             </p>
+
+            {isMofficeProduct(currentEditorItem) ? (
+              <div className="mb-3 rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs text-blue-950">
+                <p className="font-semibold uppercase tracking-[0.12em]">mOffice povezan artikal</p>
+                <p className="mt-1">
+                  Sync osvezava lager i cenu. Ako ukljucis `Pregazi mOffice cenu`, cena ostaje rucna, a lager nastavlja da dolazi iz mOffice.
+                </p>
+                <label className="mt-2 inline-flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-2 py-1 text-amber-900">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(drafts[currentEditorItem.legacyId]?.priceOverride)}
+                    onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceOverride: e.target.checked })}
+                  />
+                  Pregazi mOffice cenu za ovaj artikal
+                </label>
+              </div>
+            ) : null}
 
             <div className="grid gap-3 md:grid-cols-2">
               <label className="flex flex-col gap-1 md:col-span-2">

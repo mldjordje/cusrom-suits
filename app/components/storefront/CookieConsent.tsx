@@ -19,7 +19,11 @@ export default function CookieConsent() {
   }, []);
 
   const accept = () => {
-    try { localStorage.setItem(STORAGE_KEY, "1"); } catch { /* ignore */ }
+    try {
+      localStorage.setItem(STORAGE_KEY, "1");
+    } catch {
+      // ignore
+    }
     setVisible(false);
   };
 
@@ -28,68 +32,28 @@ export default function CookieConsent() {
   return (
     <div
       role="dialog"
-      aria-label="Obaveštenje o kolačićima"
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9000,
-        backgroundColor: "#1a1a1a",
-        color: "#f5f3ee",
-        padding: "1rem 1.25rem",
-        display: "flex",
-        flexWrap: "wrap",
-        alignItems: "center",
-        gap: "0.75rem 1.5rem",
-        fontSize: "0.8125rem",
-        lineHeight: 1.5,
-        boxShadow: "0 -2px 16px rgba(0,0,0,0.18)",
-      }}
+      aria-label="Obavestenje o kolacicima"
+      className="ss-cookie-consent"
     >
-      <p style={{ margin: 0, flex: "1 1 280px" }}>
-        Koristimo kolačiće kako bismo poboljšali vaše iskustvo na sajtu i analizirali posete.{" "}
-        <Link
-          href="/politika-privatnosti"
-          style={{ color: "#f5f3ee", textDecoration: "underline" }}
-        >
-          Saznajte više
+      <p className="ss-cookie-consent__text">
+        Koristimo kolacice kako bismo poboljsali vase iskustvo na sajtu i analizirali posete.{" "}
+        <Link href="/politika-privatnosti" className="ss-cookie-consent__link">
+          Saznajte vise
         </Link>
         .
       </p>
-      <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
+      <div className="ss-cookie-consent__actions">
         <button
           type="button"
           onClick={accept}
-          style={{
-            padding: "0.5rem 1.25rem",
-            backgroundColor: "#fff",
-            color: "#1a1a1a",
-            border: "none",
-            fontSize: "0.75rem",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            fontWeight: 600,
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
+          className="ss-cookie-consent__button ss-cookie-consent__button--primary"
         >
           Prihvatam
         </button>
         <button
           type="button"
           onClick={accept}
-          style={{
-            padding: "0.5rem 1.25rem",
-            backgroundColor: "transparent",
-            color: "#f5f3ee",
-            border: "1px solid rgba(245,243,238,0.35)",
-            fontSize: "0.75rem",
-            letterSpacing: "0.08em",
-            textTransform: "uppercase",
-            cursor: "pointer",
-            whiteSpace: "nowrap",
-          }}
+          className="ss-cookie-consent__button ss-cookie-consent__button--ghost"
         >
           Zatvori
         </button>

@@ -16,9 +16,13 @@ const sections = [
   {
     title: "2. Proizvodi i lager",
     body: [
+      "mOffice sync donosi sirove redove lagera. Web shop ne prikazuje sve redove: admin ih grupise, filtrira i prikazuje samo spremne artikle.",
+      "U vrhu `Proizvodi i lager` gledaj kartice: `mOffice`, `mOffice skriveno`, `Spremno za objavu`, `Treba slika`, `Treba opis` i `Rucna cena`.",
+      "Najvazniji red rada je: prvo dodaj slike, zatim opis/kategoriju, zatim objavi proizvod.",
       "`Aktivan` znaci da proizvod sme da se prikaze na sajtu.",
       "`Export` znaci da je ukljucen u sinhronizacije i spoljne tokove.",
       "`Prodajna cena` je cena koju kupac vidi na sajtu. `Regularna cena` je puna, precrtana cena.",
+      "Ako je artikal iz mOffice-a, cena se normalno osvezava iz mOffice sync-a. Ako ukljucis `Pregazi mOffice cenu`, cena ostaje rucno uneta, a lager se i dalje osvezava.",
       "`Lager magacin 1` i `Ukupan lager` su kolicine. Ako je lager 0, proizvod moze ostati vidljiv ali bez trenutne dostupnosti.",
       "Kategorije sluze za filtriranje, organizaciju i potencijalna promo pravila po grupama proizvoda.",
       "Svaki artikal sada moze da ima i video klip. Dodajes ga u editoru proizvoda kroz URL ili `Upload video`, a posle obavezno kliknes `Sacuvaj`.",
@@ -88,14 +92,16 @@ const sections = [
     ],
   },
   {
-    title: "9. Preporuceni dnevni checklist",
+    title: "9. Preporuceni dnevni checklist za strica",
     body: [
-      "Dodaj ili izmeni proizvod i lager.",
-      "Ako treba, podesi akcijsku cenu ili promo pravilo.",
-      "Ako treba da bude na home, dodaj ga u odgovarajucu sekciju pocetne ili custom landing sekciju.",
-      "Proveri porudzbine, kontakt poruke i newsletter prijave.",
-      "Ako si menjao prodajna mesta, footer ili dokumenta, proveri i javne stranice.",
-      "Po potrebi proveri `Integracije` ako ima sync problema.",
+      "1. Otvori `Web Shop Hub -> Proizvodi i lager`.",
+      "2. Klikni red rada `1. Dodaj slike`, zatim `Primeni filtere`. Otvori artikal, dodaj slike sa telefona, izaberi glavnu sliku i klikni `Sacuvaj`.",
+      "3. Klikni red rada `2. Dodaj opis`, zatim `Primeni filtere`. Dodaj kratak opis, materijal/specifikaciju i proveri kategoriju.",
+      "4. Klikni red rada `3. Objavi spremno`, zatim `Primeni filtere`. Proveri artikal i ukljuci `Aktivan` + `Export`.",
+      "5. Ako cena iz mOffice-a nije dobra, ukljuci `Pregazi mOffice cenu`, unesi cenu i sacuvaj. Ovo koristi samo kad stvarno treba.",
+      "6. Proveri `Akcije i snizenja` samo za popuste. Ne koristi akcije za obicnu korekciju pogresne cene.",
+      "7. Ako treba da bude na pocetnoj, idi na `Pocetna i sekcije` i dodaj proizvod u odgovarajucu sekciju.",
+      "8. Na kraju proveri javni proizvod preko dugmeta `Pregled` i proveri porudzbine.",
     ],
   },
 ];

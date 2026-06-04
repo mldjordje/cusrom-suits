@@ -36,6 +36,7 @@ type ProductUpdatePayload = {
   images?: string[];
   coverImage?: string | null;
   businessUniform?: boolean;
+  priceOverride?: boolean;
 };
 
 type ProductCreatePayload = {
@@ -117,6 +118,7 @@ const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
     out.coverImage = row.coverImage == null ? null : String(row.coverImage || "").trim() || null;
   }
   if (hasOwn(row, "businessUniform")) out.businessUniform = Boolean(row.businessUniform);
+  if (hasOwn(row, "priceOverride")) out.priceOverride = Boolean(row.priceOverride);
   return out;
 };
 
@@ -286,7 +288,8 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
     patch.landingFeatured !== undefined ||
     patch.landingPriority !== undefined ||
     patch.videoUrl !== undefined ||
-    patch.businessUniform !== undefined
+    patch.businessUniform !== undefined ||
+    patch.priceOverride !== undefined
   ) {
     const { data: existing, error: rawError } = await supabase
       .from("catalog_products")
@@ -314,6 +317,13 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
     update.raw_payload = withProductType(
       {
         ...currentRawPayload,
+        commerceOverrides: {
+          ...((currentRawPayload.commerceOverrides && typeof currentRawPayload.commerceOverrides === "object"
+            ? currentRawPayload.commerceOverrides
+            : {}) as Record<string, unknown>),
+          ...(patch.priceOverride !== undefined ? { price: patch.priceOverride } : {}),
+          ...(patch.priceOverride !== undefined ? { priceUpdatedAt: new Date().toISOString() } : {}),
+        },
         landing: {
           ...currentLanding,
           ...(patch.landingFeatured !== undefined ? { featured: patch.landingFeatured } : {}),

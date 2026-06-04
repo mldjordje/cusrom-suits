@@ -102,7 +102,15 @@ export async function GET(req: NextRequest) {
     const stock = Math.max(0, Number(item.ARTIKAL_ZALIHE ?? 0));
     const legacyId = existingRow ? existingRow.legacy_id : mofficeId;
 
-    const existingPayload = existingRow && typeof existingRow === "object" ? (existingRow.raw_payload ?? {}) : {};
+    const existingPayload =
+      existingRow && existingRow.raw_payload && typeof existingRow.raw_payload === "object"
+        ? existingRow.raw_payload
+        : {};
+    const commerceOverrides =
+      existingPayload.commerceOverrides && typeof existingPayload.commerceOverrides === "object"
+        ? (existingPayload.commerceOverrides as Record<string, unknown>)
+        : {};
+    const keepManualPrice = commerceOverrides.price === true;
     const payload: Record<string, unknown> = {
       ...existingPayload,
       moffice: {
@@ -130,17 +138,21 @@ export async function GET(req: NextRequest) {
       sku,
       ean,
       name_sr: existingRow ? String(existingRow.name_sr ?? name) : name,
-      price_net: Math.round(vpPrice * 100) / 100,
-      price_gross: Math.round(mpPrice * 100) / 100,
-      price_final_gross: Math.round(mpPrice * 100) / 100,
       tax_percent: tax,
-      rebate_percent: 0,
       stock_warehouse_1: stock,
       stock_total: stock,
       is_active: stock > 0,
       is_exported: true,
       raw_payload: payload,
       updated_at: new Date().toISOString(),
+      ...(keepManualPrice
+        ? {}
+        : {
+            price_net: Math.round(vpPrice * 100) / 100,
+            price_gross: Math.round(mpPrice * 100) / 100,
+            price_final_gross: Math.round(mpPrice * 100) / 100,
+            rebate_percent: 0,
+          }),
     });
   }
 
