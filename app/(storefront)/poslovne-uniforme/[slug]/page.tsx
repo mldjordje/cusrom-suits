@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import Reveal from "@/app/components/motion/Reveal";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
-import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
@@ -110,15 +109,15 @@ export default async function BusinessUniformDetailPage({
             <div className="row g-4 align-items-start">
               <div className="col-lg-7">
                 <div className="border bg-white p-3" style={{ borderRadius: 24 }}>
-                  <StorefrontSmartImage
-                    sources={[product.cover, "/img/hero2.jpg"]}
-                    fallbackSrc="/img/hero2.jpg"
+                  <img
+                    src={product.cover}
                     alt={product.title}
                     width={900}
                     height={1120}
                     className="w-100 h-auto"
                     style={{ borderRadius: 18, objectFit: "cover" }}
-                    quality={75}
+                    loading="eager"
+                    decoding="async"
                   />
                 </div>
               </div>
@@ -189,4 +188,3 @@ export default async function BusinessUniformDetailPage({
     </>
   );
 }
-

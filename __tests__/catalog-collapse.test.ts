@@ -148,11 +148,11 @@ describe("catalog model collapse", () => {
     expect(collapsed[0].rawPayload.collapsedVariantIds).toEqual([13044090, 13044099]);
   });
 
-  it("collapses duplicate catalog rows with the same visual model even when names differ", () => {
+  it("collapses duplicate catalog rows with the same SKU even when names differ", () => {
     const collapsed = collapseCatalogProductsByModel([
       makeProduct({
         legacyId: 12913552,
-        sku: "12913552",
+        sku: "129135",
         name: "24/33/2",
         nameEn: "Allesio",
         manufCode: "24/33/2",
@@ -164,7 +164,7 @@ describe("catalog model collapse", () => {
       }),
       makeProduct({
         legacyId: 12913556,
-        sku: "12913556",
+        sku: "129135",
         name: "24/33/2 M.Odelo",
         nameEn: "Allesio",
         manufCode: "24/33/2 M.Od",

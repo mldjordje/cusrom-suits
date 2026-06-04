@@ -124,7 +124,7 @@ const clamp = (value: number, min: number, max: number) => Math.max(min, Math.mi
 const CATALOG_SNAPSHOT_TTL_MS = 300_000;
 const CATALOG_LIST_TTL_MS = 45_000;
 const CATALOG_LIST_CACHE_MAX_ENTRIES = 220;
-const CATALOG_LIST_CACHE_VERSION = "v5";
+const CATALOG_LIST_CACHE_VERSION = "v6";
 const IMAGE_REACHABILITY_TTL_MS = 3_600_000;
 const CATALOG_PERF_LOG_THRESHOLD_MS = Math.max(
   0,
@@ -1098,18 +1098,7 @@ export const collapseCatalogProductsByModel = (items: CatalogProductView[]): Cat
     return sku ? `sku:${sku}` : `legacy:${item.legacyId}`;
   });
 
-  const collapsedBySku = collapseCatalogProductsByKey(collapsedByModel, (item) => {
-    const sku = String(item.sku || "").trim().toLowerCase();
-    if (sku) return `sku:${sku}`;
-
-    const modelKey = getCatalogProductModelKey(item);
-    return modelKey && !modelKey.startsWith("legacy:") ? `model:${modelKey}` : `legacy:${item.legacyId}`;
-  });
-
-  return collapseCatalogProductsByKey(collapsedBySku, (item) => {
-    const visualKey = getCatalogProductVisualModelKey(item);
-    if (visualKey) return visualKey;
-
+  return collapseCatalogProductsByKey(collapsedByModel, (item) => {
     const sku = String(item.sku || "").trim().toLowerCase();
     if (sku) return `sku:${sku}`;
 

@@ -2,7 +2,6 @@ import Link from "next/link";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import Reveal from "@/app/components/motion/Reveal";
-import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
@@ -98,15 +97,14 @@ export default async function BusinessUniformsPage({
                     <div className="product-card ss-card-hover ss-product-card mb-0">
                       <div className="pc__img-wrapper hover-container">
                         <Link href={withLang(`/poslovne-uniforme/${product.slug}`)} prefetch={false}>
-                          <StorefrontSmartImage
-                            sources={[product.cover, "/img/hero2.jpg"]}
-                            fallbackSrc="/img/hero2.jpg"
+                          <img
+                            src={product.cover}
                             alt={product.title}
                             width={330}
                             height={400}
                             className="pc__img object-position-top"
-                            sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
-                            quality={70}
+                            loading="lazy"
+                            decoding="async"
                           />
                         </Link>
                         <Link
@@ -146,14 +144,15 @@ export default async function BusinessUniformsPage({
               <div key={`${item.type}-${item.src}-${index}`} className="col-12 col-md-6 col-xl-4">
                 <div className="border bg-white p-3 h-100" style={{ borderRadius: 24 }}>
                   {item.type === "image" ? (
-                    <StorefrontSmartImage
-                      sources={[item.src, "/img/hero2.jpg"]}
-                      fallbackSrc="/img/hero2.jpg"
+                    <img
+                      src={item.src}
                       alt={item.alt || tx(item.title || landingSettings.uniformsTitle, "Business Uniforms")}
                       width={600}
                       height={760}
                       className="w-100 h-auto"
                       style={{ borderRadius: 18, objectFit: "cover" }}
+                      loading="lazy"
+                      decoding="async"
                     />
                   ) : (
                     <video

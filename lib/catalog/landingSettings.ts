@@ -659,7 +659,7 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
 
 const getLandingSettingsCached = unstable_cache(
   async () => readLandingSettingsUncached(),
-  ["landing-settings-v2"],
+  ["landing-settings-v3"],
   { revalidate: 300, tags: [LANDING_SETTINGS_CACHE_TAG] },
 );
 
