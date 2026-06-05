@@ -17,6 +17,7 @@ import {
   listCatalogProducts,
   type CatalogProductView,
 } from "@/lib/catalog/store";
+import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import {
   applyMaxPriceFromMap,
   buildMaxPriceBySkuMap,
@@ -260,6 +261,8 @@ export default async function HomePage({
   };
   const withOptionalLang = (href: string) => (href.startsWith("/") ? withLang(href) : href);
 
+  const brokenProductIds = await getBrokenProductIdSet();
+  const excludeLegacyIds = brokenProductIds.size ? Array.from(brokenProductIds) : undefined;
   const [catalog, saleCatalog, posts, landingSettings] = await Promise.all([
     listCatalogProducts({
       page: 1,
@@ -267,8 +270,9 @@ export default async function HomePage({
       activeOnly: true,
       exportOnly: true,
       collapseBySku: true,
-      requireImages: true,
+      requireDirectImages: true,
       requireReachableImages: false,
+      excludeLegacyIds,
     }),
     listCatalogProducts({
       page: 1,
@@ -277,8 +281,9 @@ export default async function HomePage({
       exportOnly: true,
       collapseBySku: true,
       onSale: true,
-      requireImages: true,
+      requireDirectImages: true,
       requireReachableImages: false,
+      excludeLegacyIds,
     }),
     listPosts({
       type: "all",
@@ -326,7 +331,14 @@ export default async function HomePage({
   );
   const pinnedProductsRaw = (
     await Promise.all(pinnedProductIds.map((id) => getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: false })))
-  ).filter((item): item is CatalogProductView => Boolean(item?.isActive && item?.isExported && hasVisibleProductImage(item)));
+  ).filter((item): item is CatalogProductView =>
+    Boolean(
+      item?.isActive &&
+        item?.isExported &&
+        hasVisibleProductImage(item) &&
+        !brokenProductIds.has(item.legacyId),
+    ),
+  );
 
   // Pinned products are fetched by a single legacyId (one size variant) so their price
   // may be lower than the highest variant. Use shared pricing utilities to override.

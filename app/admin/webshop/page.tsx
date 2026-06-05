@@ -21,6 +21,7 @@ import {
 } from "@/lib/catalog/landingSectionOrder";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import AdminLandingProductPickGrid from "@/app/admin/components/AdminLandingProductPickGrid";
+import MediaHealthPanel from "@/app/admin/webshop/MediaHealthPanel";
 
 type TabKey = "products" | "landing" | "akcije";
 type CatalogCategory = { id: number; name: string; path: string[] };
@@ -2015,6 +2016,8 @@ export default function AdminWebshopPage() {
               </div>
             ))}
           </div>
+
+          <MediaHealthPanel />
 
           <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-950 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3">

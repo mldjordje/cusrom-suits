@@ -101,6 +101,9 @@ export type CatalogListInput = {
   contentStatus?: "all" | "missing_description" | "missing_price" | "missing_category";
   visibilityStatus?: "all" | "visible" | "hidden";
   sourceStatus?: "all" | "moffice" | "manual";
+  /** Collapsed-representative legacyIds to drop from the result (e.g. products with
+   *  broken/unreachable images flagged by the persisted media-health scan). */
+  excludeLegacyIds?: number[];
   sort?: "featured" | "name_asc" | "name_desc" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "newest" | "oldest";
 };
 
@@ -204,6 +207,7 @@ const makeCatalogListCacheKey = (input: {
   contentStatus: string;
   visibilityStatus: string;
   sourceStatus: string;
+  excludeKey: string;
   sort: string;
 }) =>
   [
@@ -229,6 +233,7 @@ const makeCatalogListCacheKey = (input: {
     input.contentStatus,
     input.visibilityStatus,
     input.sourceStatus,
+    input.excludeKey,
     input.sort,
   ].join("|");
 
@@ -778,6 +783,73 @@ export const filterReachableCatalogMedia = async (
     images,
     hasDirectMedia: images.length > 0,
   };
+};
+
+/**
+ * One-shot, admin/cron-triggered scan of catalog image reachability.
+ * Walks the collapsed catalog (representative per model) and flags products whose
+ * images are ALL unreachable on the remote host. Results are persisted by the caller
+ * and read cheaply by the storefront (via `excludeLegacyIds`), so NO reachability
+ * HEAD requests ever happen during a normal page render.
+ *
+ * Deliberately gentle (small concurrency + spacing) so it never floods santos.rs the
+ * way per-render checks did. Only products with their own direct media are checked —
+ * products without direct media are already hidden via `requireDirectImages`.
+ */
+export const scanCatalogMediaHealth = async (options?: {
+  concurrency?: number;
+  spacingMs?: number;
+  imagesPerProduct?: number;
+}): Promise<{ totalChecked: number; brokenLegacyIds: number[] }> => {
+  const concurrency = Math.max(1, Math.min(8, options?.concurrency ?? 4));
+  const spacingMs = Math.max(0, options?.spacingMs ?? 90);
+  const imagesPerProduct = Math.max(1, Math.min(6, options?.imagesPerProduct ?? 3));
+
+  // listCatalogProducts clamps pageSize to 120, so page through the whole catalog.
+  const items: CatalogProductView[] = [];
+  let page = 1;
+  let totalPages = 1;
+  do {
+    const listed = await listCatalogProducts({
+      page,
+      pageSize: 120,
+      activeOnly: true,
+      exportOnly: true,
+      collapseBySku: true,
+      requireDirectImages: true,
+    });
+    items.push(...listed.items);
+    totalPages = Math.max(1, Number(listed.totalPages) || 1);
+    page += 1;
+  } while (page <= totalPages && page <= 200);
+  const broken: number[] = [];
+
+  for (let index = 0; index < items.length; index += concurrency) {
+    const batch = items.slice(index, index + concurrency);
+    const results = await Promise.all(
+      batch.map(async (item) => {
+        const candidates = [item.coverImage, ...item.images]
+          .map((value) => String(value || "").trim())
+          .filter((value) => value.length > 0)
+          .slice(0, imagesPerProduct);
+        if (candidates.length === 0) return { legacyId: item.legacyId, broken: true };
+        for (const candidate of candidates) {
+          if (await isReachableCatalogImage(candidate)) {
+            return { legacyId: item.legacyId, broken: false };
+          }
+        }
+        return { legacyId: item.legacyId, broken: true };
+      }),
+    );
+    for (const result of results) {
+      if (result.broken) broken.push(result.legacyId);
+    }
+    if (spacingMs > 0 && index + concurrency < items.length) {
+      await new Promise((resolve) => setTimeout(resolve, spacingMs));
+    }
+  }
+
+  return { totalChecked: items.length, brokenLegacyIds: broken };
 };
 
 const filterCatalogProductsByReachableOwnImages = async (
@@ -1347,6 +1419,14 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const sizes = Array.isArray(input.sizes)
     ? input.sizes.map((value) => String(value || "").trim()).filter(Boolean)
     : [];
+  const excludeLegacyIds = new Set(
+    (Array.isArray(input.excludeLegacyIds) ? input.excludeLegacyIds : [])
+      .map((value) => Number(value))
+      .filter((value) => Number.isFinite(value)),
+  );
+  const excludeKey = excludeLegacyIds.size
+    ? `x${excludeLegacyIds.size}:${Array.from(excludeLegacyIds).sort((a, b) => a - b).join(",")}`
+    : "";
 
   const cacheKey = makeCatalogListCacheKey({
     page,
@@ -1370,6 +1450,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     contentStatus,
     visibilityStatus,
     sourceStatus,
+    excludeKey,
     sort,
   });
   const listCache = getCatalogListCache();
@@ -1426,11 +1507,14 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
 
   const collapseStart = Date.now();
   const collapsed = collapseBySku ? collapseCatalogProductsByModel(filteredSource) : filteredSource;
+  const excludeFiltered = excludeLegacyIds.size
+    ? collapsed.filter((item) => !excludeLegacyIds.has(item.legacyId))
+    : collapsed;
   const mediaFiltered = requireDirectImages
-    ? collapsed.filter((item) => hasCatalogProductDirectMedia(item))
+    ? excludeFiltered.filter((item) => hasCatalogProductDirectMedia(item))
     : requireImages
-      ? collapsed.filter((item) => hasCatalogProductMedia(item))
-      : collapsed;
+      ? excludeFiltered.filter((item) => hasCatalogProductMedia(item))
+      : excludeFiltered;
   const qualityFiltered = applyAdminQualityFilters(mediaFiltered, {
     mediaStatus,
     contentStatus,

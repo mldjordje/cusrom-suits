@@ -10,6 +10,7 @@ import Reveal from "@/app/components/motion/Reveal";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { listCatalogProducts, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
+import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { localizeDynamicCategoryLabel, localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
@@ -144,6 +145,7 @@ export default async function WebShopPage({
     .filter(Boolean);
   const selectedSizes = Array.from(new Set(rawSizes.map((v) => v.toUpperCase().replace(/\s+/g, ""))));
 
+  const brokenProductIds = await getBrokenProductIdSet();
   const [result, landingSettings] = await Promise.all([
     listCatalogProducts({
       page,
@@ -159,8 +161,12 @@ export default async function WebShopPage({
       priceMin: priceMin > 0 ? priceMin : 2000, // never show items under 2 000 RSD (data errors)
       priceMax: priceMax || undefined,
       sizes: selectedSizes.length ? selectedSizes : undefined,
-      requireImages: true,
+      // Hide products with no own image (borrowed/fallback) and products flagged by the
+      // media-health scan as having all images unreachable. Filtering happens before
+      // pagination so counts/pages stay correct.
+      requireDirectImages: true,
       requireReachableImages: false,
+      excludeLegacyIds: brokenProductIds.size ? Array.from(brokenProductIds) : undefined,
       sort: sort as "featured" | "name_asc" | "price_asc" | "price_desc" | "stock_desc" | "newest",
     }),
     getLandingSettings(),
