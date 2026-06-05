@@ -27,6 +27,13 @@ export type MofficeExistingRow = {
   raw_payload: Record<string, unknown> | null;
 };
 
+type MofficePostSyncRow = MofficeExistingRow & {
+  is_active: boolean | null;
+  is_exported: boolean | null;
+  stock_total: number | null;
+  stock_warehouse_1: number | null;
+};
+
 export type MofficeSyncPlan = {
   rows: Record<string, unknown>[];
   staleLegacyIds: number[];
@@ -111,6 +118,28 @@ const buildDebugItems = (items: MofficeItem[]) =>
       category: item.ARTIKAL_GRUPA ?? "",
       name: item.ARTIKAL_NAZIV ?? "",
     }));
+
+const getMofficeSyncedRunId = (payload: Record<string, unknown>) => {
+  const moffice =
+    payload.moffice && typeof payload.moffice === "object"
+      ? (payload.moffice as Record<string, unknown>)
+      : {};
+  return String(moffice.syncedRunId || "");
+};
+
+const buildPostSyncStaleIds = (rows: MofficePostSyncRow[], runId: string) =>
+  rows
+    .filter((row) => isLegacyLagerManagedRow(row))
+    .filter((row) => getMofficeSyncedRunId(getRawPayload(row.raw_payload)) !== runId)
+    .filter(
+      (row) =>
+        row.is_active !== false ||
+        row.is_exported !== false ||
+        Number(row.stock_total || 0) !== 0 ||
+        Number(row.stock_warehouse_1 || 0) !== 0,
+    )
+    .map((row) => Number(row.legacy_id))
+    .filter((legacyId) => Number.isFinite(legacyId));
 
 export function buildMofficeSyncPlan(params: {
   items: MofficeItem[];
@@ -398,9 +427,10 @@ async function executeMofficeSync(input: {
     }
 
     let deactivated = 0;
-    const staleIds = Array.from(new Set([...plan.staleLegacyIds, ...plan.duplicateLegacyIds]));
-    for (let i = 0; i < staleIds.length; i += chunkSize) {
-      const ids = staleIds.slice(i, i + chunkSize);
+    const staleIds = new Set([...plan.staleLegacyIds, ...plan.duplicateLegacyIds]);
+    const initialStaleIds = Array.from(staleIds);
+    for (let i = 0; i < initialStaleIds.length; i += chunkSize) {
+      const ids = initialStaleIds.slice(i, i + chunkSize);
       const table = supabase.from("catalog_products");
       const { error } = await (table.update as Function)({
         stock_warehouse_1: 0,
@@ -425,6 +455,43 @@ async function executeMofficeSync(input: {
       deactivated += ids.length;
     }
 
+    const { data: postSyncRaw, error: postSyncError } = await supabase
+      .from("catalog_products")
+      .select("legacy_id,sku,ean,name_sr,is_active,is_exported,stock_total,stock_warehouse_1,raw_payload");
+    if (postSyncError) throw new Error(`Post-sync catalog load failed: ${postSyncError.message}`);
+
+    const postSyncStaleIds = buildPostSyncStaleIds(
+      (postSyncRaw ?? []) as unknown as MofficePostSyncRow[],
+      run.id,
+    ).filter((legacyId) => !staleIds.has(legacyId));
+
+    for (let i = 0; i < postSyncStaleIds.length; i += chunkSize) {
+      const ids = postSyncStaleIds.slice(i, i + chunkSize);
+      const table = supabase.from("catalog_products");
+      const { error } = await (table.update as Function)({
+        stock_warehouse_1: 0,
+        stock_total: 0,
+        is_active: false,
+        is_exported: false,
+        updated_at: new Date().toISOString(),
+      }).in("legacy_id", ids);
+      if (error) {
+        await addSyncRunItem(run.id, {
+          domain: "stock_inbound",
+          entityType: "moffice_post_sync_stale_cleanup",
+          entityId: `post-cleanup-${i / chunkSize}`,
+          status: "failed",
+          message: error.message,
+          payloadHash: null,
+          payload: { ids },
+          response: null,
+        });
+        continue;
+      }
+      deactivated += ids.length;
+      ids.forEach((id) => staleIds.add(id));
+    }
+
     invalidateCatalogCaches();
     const counters: SyncCounters = {
       total: plan.counters.total,
@@ -446,6 +513,7 @@ async function executeMofficeSync(input: {
         created: plan.counters.created,
         stale: plan.counters.stale,
         duplicates: plan.counters.duplicates,
+        postSyncStale: postSyncStaleIds.length,
         deactivated,
         debugItems,
       },
@@ -459,6 +527,7 @@ async function executeMofficeSync(input: {
       created: plan.counters.created,
       stale: plan.counters.stale,
       duplicates: plan.counters.duplicates,
+      postSyncStale: postSyncStaleIds.length,
       deactivated,
       debugItems,
     };
