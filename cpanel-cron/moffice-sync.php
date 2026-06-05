@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const ENDPOINT_URL = 'https://santos.rs/api/cron/moffice';
+const ENDPOINT_URL = 'https://www.santos.rs/api/cron/moffice';
 const MOFFICE_API_URL = 'https://api.moffice.co.rs/api/LagerTekstil';
 const CRON_SECRET = 'PASTE_CRON_SECRET_HERE';
 const MOFFICE_API_KEY = 'PASTE_MOFFICE_API_KEY_HERE';
@@ -25,6 +25,7 @@ $ch = curl_init();
 curl_setopt_array($ch, [
     CURLOPT_URL => MOFFICE_API_URL,
     CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_FOLLOWLOCATION => true,
     CURLOPT_TIMEOUT => 900,
     CURLOPT_CONNECTTIMEOUT => 30,
     CURLOPT_HTTPHEADER => [
@@ -61,6 +62,8 @@ curl_setopt_array($ch, [
     CURLOPT_POST => true,
     CURLOPT_POSTFIELDS => $payload,
     CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_POSTREDIR => 3,
     CURLOPT_TIMEOUT => 900,
     CURLOPT_CONNECTTIMEOUT => 30,
     CURLOPT_HTTPHEADER => [
