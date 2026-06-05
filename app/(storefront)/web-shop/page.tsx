@@ -9,7 +9,7 @@ import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import Reveal from "@/app/components/motion/Reveal";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
-import { filterReachableCatalogMedia, listCatalogProducts, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
+import { listCatalogProducts, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
 import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { localizeDynamicCategoryLabel, localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
@@ -180,11 +180,7 @@ export default async function WebShopPage({
     localizeDynamicStorefrontText(value, isEn ? "en" : "sr", fallbackEn);
   const localizeCategory = (value: string) => localizeDynamicCategoryLabel(value, isEn ? "en" : "sr");
 
-  // Drop dead remote image URLs (santos.rs/fajlovi/product/*.jpg that 404) for the
-  // products on this page only, so the browser never requests a broken image. Results
-  // are cached, so this stays cheap. Unreachable → local fallback in renderOverlayCard.
-  const reachableItems = await Promise.all(result.items.map((item) => filterReachableCatalogMedia(item)));
-  const items = sortItems(reachableItems, sort);
+  const items = sortItems(result.items, sort);
   const sortedCategoryGroups = sortCategoriesForShop(result.categoryGroups);
   const topCategories = sortedCategoryGroups.slice(0, 7);
 

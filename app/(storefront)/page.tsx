@@ -12,7 +12,6 @@ import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import SectionHeadingReveal from "@/app/components/motion/SectionHeadingReveal";
 import {
-  filterReachableCatalogMedia,
   getCatalogProductByLegacyId,
   getCatalogProductVariantsBySku,
   listCatalogProducts,
@@ -359,42 +358,42 @@ export default async function HomePage({
   );
 
   const usedSkuKeys = new Set<string>();
-  let heroStripProducts = pickProductsForSectionManaged(
+  const heroStripProducts = pickProductsForSectionManaged(
     landingPoolUnique,
     landingSettings.heroStripProductIds,
     4,
     landingPoolUnique.slice(0, 12),
     usedSkuKeys,
   );
-  let heroProducts = pickProductsForSectionManaged(
+  const heroProducts = pickProductsForSectionManaged(
     landingPoolUnique,
     landingSettings.highlightedProductIds,
     8,
     landingPoolUnique.slice(0, 24),
     usedSkuKeys,
   );
-  let featured = pickProductsForSectionManaged(
+  const featured = pickProductsForSectionManaged(
     landingPoolUnique,
     landingSettings.popularProductIds,
     4,
     landingPoolUnique.slice(0, 24),
     usedSkuKeys,
   );
-  let arrivals = pickProductsForSectionManaged(
+  const arrivals = pickProductsForSectionManaged(
     landingPoolUnique,
     landingSettings.arrivalsProductIds,
     4,
     landingPoolUnique.slice(8, 32),
     usedSkuKeys,
   );
-  let trending = pickProductsForSectionManaged(
+  const trending = pickProductsForSectionManaged(
     landingPoolUnique,
     landingSettings.trendingProductIds,
     4,
     landingPoolUnique.slice(16, 40),
     usedSkuKeys,
   );
-  let saleItems = pickProductsForSection(
+  const saleItems = pickProductsForSection(
     [...saleManualPool, ...salePool],
     landingSettings.saleProductIds,
     Math.max(6, landingSettings.saleProductIds.length || 0),
@@ -402,7 +401,7 @@ export default async function HomePage({
   );
   const landingSectionStateMap = buildLandingProductSectionMap(landingSettings.productSections);
   const heroStripEnabled = landingSectionStateMap.get("heroStripProductIds")?.enabled !== false;
-  let customGridSections = normalizeLandingCustomSections(landingSettings.customSections)
+  const customGridSections = normalizeLandingCustomSections(landingSettings.customSections)
     .map((section) => ({
       section,
       items: pickProductsForSectionManaged(
@@ -414,37 +413,6 @@ export default async function HomePage({
       ),
     }))
     .filter(({ section, items }) => section.enabled && items.length > 0);
-
-  // Eliminate dead remote image requests (e.g. santos.rs/fajlovi/product/*.jpg that 404).
-  // Only the small set of products actually rendered is checked, and results are cached,
-  // so this stays cheap. Products whose images are all unreachable fall back to the local
-  // placeholder via getCatalogProductImageSources instead of emitting a 404 in the browser.
-  const displayedForMediaCheck = [
-    ...heroStripProducts,
-    ...heroProducts,
-    ...featured,
-    ...arrivals,
-    ...trending,
-    ...saleItems,
-    ...customGridSections.flatMap((entry) => entry.items),
-  ];
-  const reachableMediaEntries = await Promise.all(
-    Array.from(new Map(displayedForMediaCheck.map((item) => [item.legacyId, item])).values()).map(
-      async (item) => [item.legacyId, await filterReachableCatalogMedia(item)] as const,
-    ),
-  );
-  const reachableMediaMap = new Map<number, CatalogProductView>(reachableMediaEntries);
-  const fixMedia = (item: CatalogProductView) => reachableMediaMap.get(item.legacyId) ?? item;
-  heroStripProducts = heroStripProducts.map(fixMedia);
-  heroProducts = heroProducts.map(fixMedia);
-  featured = featured.map(fixMedia);
-  arrivals = arrivals.map(fixMedia);
-  trending = trending.map(fixMedia);
-  saleItems = saleItems.map(fixMedia);
-  customGridSections = customGridSections.map((entry) => ({
-    ...entry,
-    items: entry.items.map(fixMedia),
-  }));
 
   const orderedGridSections: Array<
     | { kind: "builtin"; key: LandingProductSectionKey; order: number }
