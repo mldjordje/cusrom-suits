@@ -29,7 +29,6 @@ export type MofficeExistingRow = {
 
 export type MofficeSyncPlan = {
   rows: Record<string, unknown>[];
-  eanRows: Record<string, unknown>[];
   staleLegacyIds: number[];
   duplicateLegacyIds: number[];
   counters: {
@@ -146,7 +145,6 @@ export function buildMofficeSyncPlan(params: {
   }
 
   const rowsByLegacyId = new Map<number, Record<string, unknown>>();
-  const rowsByEan = new Map<string, Record<string, unknown>>();
   const duplicateLegacyIds = new Set<number>();
   const feedSkuSet = new Set<string>();
   const feedEanSet = new Set<string>();
@@ -233,7 +231,6 @@ export function buildMofficeSyncPlan(params: {
     };
 
     rowsByLegacyId.set(legacyId, upsertRow);
-    if (eanKey) rowsByEan.set(eanKey, upsertRow);
   }
 
   const upsertIds = new Set(Array.from(rowsByLegacyId.keys()));
@@ -277,7 +274,6 @@ export function buildMofficeSyncPlan(params: {
 
   return {
     rows: Array.from(rowsByLegacyId.values()),
-    eanRows: Array.from(rowsByEan.values()),
     staleLegacyIds: Array.from(staleLegacyIds).sort((a, b) => a - b),
     duplicateLegacyIds: Array.from(duplicateLegacyIds).sort((a, b) => a - b),
     counters: {
@@ -401,29 +397,6 @@ async function executeMofficeSync(input: {
       upserted += batch.length;
     }
 
-    let eanUpdated = 0;
-    for (const row of plan.eanRows) {
-      const ean = normalizeKey(row.ean);
-      if (!ean) continue;
-      const { legacy_id: _legacyId, ...patch } = row;
-      const table = supabase.from("catalog_products");
-      const { error } = await (table.update as Function)(patch).eq("ean", ean);
-      if (error) {
-        await addSyncRunItem(run.id, {
-          domain: "stock_inbound",
-          entityType: "moffice_ean_update",
-          entityId: `ean-${ean}`,
-          status: "failed",
-          message: error.message,
-          payloadHash: null,
-          payload: { ean },
-          response: null,
-        });
-        continue;
-      }
-      eanUpdated += 1;
-    }
-
     let deactivated = 0;
     const staleIds = Array.from(new Set([...plan.staleLegacyIds, ...plan.duplicateLegacyIds]));
     for (let i = 0; i < staleIds.length; i += chunkSize) {
@@ -455,12 +428,12 @@ async function executeMofficeSync(input: {
     invalidateCatalogCaches();
     const counters: SyncCounters = {
       total: plan.counters.total,
-      success: upserted + eanUpdated + deactivated,
+      success: upserted + deactivated,
       failed: plan.rows.length - upserted,
       skipped: 0,
     };
     const status = counters.failed > 0 ? "partial_success" : "success";
-    const summary = `mOffice synced ${upserted} rows, updated ${eanUpdated} by EAN, deactivated ${deactivated} stale rows (${plan.counters.matched} matched, ${plan.counters.created} new).`;
+    const summary = `mOffice synced ${upserted} rows, deactivated ${deactivated} stale rows (${plan.counters.matched} matched, ${plan.counters.created} new).`;
     await completeSyncRun(run.id, {
       status,
       counters,
@@ -473,7 +446,6 @@ async function executeMofficeSync(input: {
         created: plan.counters.created,
         stale: plan.counters.stale,
         duplicates: plan.counters.duplicates,
-        eanUpdated,
         deactivated,
         debugItems,
       },
@@ -487,7 +459,6 @@ async function executeMofficeSync(input: {
       created: plan.counters.created,
       stale: plan.counters.stale,
       duplicates: plan.counters.duplicates,
-      eanUpdated,
       deactivated,
       debugItems,
     };
