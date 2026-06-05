@@ -1,5 +1,9 @@
 const IMAGE_PATH_EXTENSION_RE = /\.(avif|webp|png|jpe?g|gif|svg|ico|bmp)(?:$|[?#])/i;
 const KNOWN_EXTENSIONLESS_IMAGE_PATHS = ["/storage/v1/object/public/", "/uploads/"];
+const LEGACY_SANTOS_HOSTS = new Set(["santos.rs", "www.santos.rs"]);
+
+const toLegacyAssetPath = (pathname: string, search = "") =>
+  pathname.startsWith("/fajlovi/") ? `${pathname}${search}` : "";
 
 export const sanitizeStorefrontImageSrc = (value: unknown): string => {
   const raw = String(value || "").trim();
@@ -10,9 +14,10 @@ export const sanitizeStorefrontImageSrc = (value: unknown): string => {
   }
 
   // Legacy content sometimes stores paths or protocol-less hostnames.
-  // Normalize them into absolute URLs so next/image treats them as remote.
+  // Keep /fajlovi paths local so next.config rewrites can proxy them to the
+  // cPanel asset origin. santos.rs now points to Vercel, not public_html.
   if (raw.startsWith("/fajlovi/")) {
-    return `https://santos.rs${raw}`;
+    return raw;
   }
 
   if (/^(santos\.rs|www\.santos\.rs)\//i.test(raw)) {
@@ -27,6 +32,17 @@ export const sanitizeStorefrontImageSrc = (value: unknown): string => {
     const url = new URL(raw);
     const pathname = url.pathname.toLowerCase();
     const hasExtension = IMAGE_PATH_EXTENSION_RE.test(pathname);
+    const legacyAssetPath = LEGACY_SANTOS_HOSTS.has(url.hostname.toLowerCase())
+      ? toLegacyAssetPath(url.pathname, url.search)
+      : "";
+
+    if (legacyAssetPath) {
+      if (pathname.startsWith("/fajlovi/product/") && !hasExtension) {
+        return "";
+      }
+
+      return legacyAssetPath;
+    }
 
     if (
       url.hostname === "santos.rs" &&

@@ -10,10 +10,8 @@ type UniformGalleryProps = {
 /**
  * Gallery for business-uniform images. Uses plain <img> with the bundled local
  * paths (public/fajlovi/uniforme/...) directly, not next/image / StorefrontImage,
- * because sanitizeStorefrontImageSrc rewrites every "/fajlovi/*" path to
- * https://santos.rs/fajlovi/* which 404s for uniforms (they only exist locally),
- * making the storefront fall back to a generic placeholder. Here the real images
- * always render and there is no placeholder fallback.
+ * because these assets are already bundled locally and should not depend on
+ * legacy cPanel image rewrites.
  */
 export default function UniformGallery({ images, name }: UniformGalleryProps) {
   const gallery = Array.from(
