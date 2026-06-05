@@ -5635,12 +5635,18 @@ body.mobile-menu-opened {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 2.35rem;
+  min-height: 2.35rem;
+  height: auto;
+  min-width: 2.85rem;
+  max-width: 100%;
   padding: 0 0.95rem;
   border-radius: 999px;
   border: 1px solid rgba(15, 23, 42, 0.12);
   background: rgba(255, 255, 255, 0.86);
   color: rgba(17, 24, 39, 0.9);
+  line-height: 1.05;
+  text-align: center;
+  overflow-wrap: anywhere;
   font-weight: 700;
   letter-spacing: 0.12em;
   transition:
@@ -5654,7 +5660,7 @@ body.mobile-menu-opened {
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
-.ss-product-size-picker .ss-size-swatch:hover {
+.ss-product-size-picker .ss-size-swatch:not(:disabled):hover {
   transform: translateY(-1px);
   border-color: rgba(181, 143, 73, 0.45);
   box-shadow:
@@ -5680,7 +5686,11 @@ body.mobile-menu-opened {
 }
 
 .ss-product-size-picker .ss-size-swatch.is-oos {
-  opacity: 0.55;
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: grayscale(1);
+  text-decoration: line-through;
+  box-shadow: none;
 }
 
 .ss-product-size-picker .ss-size-swatch.is-pending {

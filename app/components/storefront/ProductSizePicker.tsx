@@ -29,6 +29,7 @@ export default function ProductSizePicker({
       {options.map((option) => {
         const isActive = option.legacyId === currentLegacyId;
         const isPending = pendingLegacyId === option.legacyId;
+        const isDisabled = !option.inStock;
 
         return (
           <button
@@ -45,8 +46,10 @@ export default function ProductSizePicker({
               .filter(Boolean)
               .join(" ")}
             aria-pressed={isActive}
+            aria-disabled={isDisabled}
+            disabled={isDisabled}
             onClick={() => {
-              if (isActive) return;
+              if (isActive || isDisabled) return;
               setPendingLegacyId(option.legacyId);
               startTransition(() => {
                 router.replace(option.href, { scroll: false });

@@ -318,10 +318,15 @@ export default async function WebShopProductPage({
     notFound();
   }
 
-  const [variants] = await Promise.all([
+  const [variants, sizeVariants] = await Promise.all([
     getCatalogProductVariantsBySku(product.sku, {
       applyPromotions: true,
       activeOnly: true,
+      exportOnly: true,
+    }, getCatalogProductModelKey(product)),
+    getCatalogProductVariantsBySku(product.sku, {
+      applyPromotions: true,
+      activeOnly: false,
       exportOnly: true,
     }, getCatalogProductModelKey(product)),
   ]);
@@ -399,19 +404,22 @@ export default async function WebShopProductPage({
   }
   const gallery = productGallery.slice(0, 8);
   const productVideoUrl = displayProduct.videoUrl || product.videoUrl || null;
-  const sizeOptions = getProductSizeOptions(product, variants);
+  const sizeOptions = getProductSizeOptions(product, sizeVariants);
+  const findRequestedSizeOption = () => {
+    if (!requestedSize) return null;
+    const matching = sizeOptions.find((option) => option.label.toLowerCase() === requestedSize.toLowerCase());
+    return matching?.inStock ? matching : null;
+  };
   const selectedSizeOption =
-    (requestedSize
-      ? sizeOptions.find((option) => option.label.toLowerCase() === requestedSize.toLowerCase())
-      : null) ||
-    sizeOptions.find((option) => option.legacyId === product.legacyId) ||
-    (routeSize ? sizeOptions.find((option) => option.label.toLowerCase() === routeSize.toLowerCase()) : null) ||
-    sizeOptions[0] ||
+    findRequestedSizeOption() ||
+    sizeOptions.find((option) => option.legacyId === product.legacyId && option.inStock) ||
+    (routeSize ? sizeOptions.find((option) => option.label.toLowerCase() === routeSize.toLowerCase() && option.inStock) : null) ||
+    sizeOptions.find((option) => option.inStock) ||
     null;
-  const selectedSize = selectedSizeOption?.label || routeSize || null;
+  const selectedSize = selectedSizeOption?.label || null;
   const selectedProduct =
     (selectedSizeOption
-      ? variants.find((variant) => variant.legacyId === selectedSizeOption.legacyId)
+      ? [product, ...variants, ...sizeVariants].find((variant) => variant.legacyId === selectedSizeOption.legacyId)
       : null) ||
     product;
   const sizeGuide = await getProductSizeGuide(product, lang, sizeOptions);

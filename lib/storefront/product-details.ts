@@ -423,17 +423,20 @@ export const getProductSizeOptions = (
         variant.images.some((img) => String(img || "").trim().length > 0)) ||
         String(variant.coverImage || "").trim().length > 0,
     );
+  const isVariantOrderable = (variant: CatalogProductView, stock: number) =>
+    stock > 0 && variant.isActive && variant.isExported;
 
   const shouldUseVariantForSize = (
     existing: ProductSizeOption,
     existingVariant: CatalogProductView | undefined,
     candidate: CatalogProductView,
     candidateStock: number,
+    candidateInStock: boolean,
   ) => {
     const existingHasMedia = existingVariant ? variantHasMedia(existingVariant) : false;
     const candidateHasMedia = variantHasMedia(candidate);
+    if (candidateInStock !== existing.inStock) return candidateInStock;
     if (candidateHasMedia !== existingHasMedia) return candidateHasMedia;
-    if ((candidateStock > 0) !== existing.inStock) return candidateStock > 0;
     if (candidateStock !== existing.stock) return candidateStock > existing.stock;
     return candidate.legacyId > existing.legacyId;
   };
@@ -447,6 +450,7 @@ export const getProductSizeOptions = (
           : Number(variant.stockWarehouse1 || 0),
       ),
     );
+    const inStock = isVariantOrderable(variant, stock);
     const sizes = getDisplaySizesForVariant(variant, dominantKind);
 
     if (!sizes.length) continue;
@@ -456,18 +460,18 @@ export const getProductSizeOptions = (
       if (map.has(key)) {
         const existing = map.get(key)!;
         const existingVariant = variants.find((item) => item.legacyId === existing.legacyId);
-        if (shouldUseVariantForSize(existing, existingVariant, variant, stock)) {
+        if (shouldUseVariantForSize(existing, existingVariant, variant, stock, inStock)) {
           map.set(key, {
             label: size,
             legacyId: variant.legacyId,
             stock: Math.max(existing.stock, stock),
-            inStock: existing.inStock || stock > 0,
+            inStock: existing.inStock || inStock,
           });
         } else {
           map.set(key, {
             ...existing,
             stock: Math.max(existing.stock, stock),
-            inStock: existing.inStock || stock > 0,
+            inStock: existing.inStock || inStock,
           });
         }
         continue;
@@ -477,7 +481,7 @@ export const getProductSizeOptions = (
         label: size,
         legacyId: variant.legacyId,
         stock,
-        inStock: stock > 0,
+        inStock,
       });
     }
   }
@@ -485,18 +489,19 @@ export const getProductSizeOptions = (
   if (!map.size) {
     for (const size of getDisplaySizesForVariant(currentProduct, dominantKind)) {
       const key = normalizeKey(size);
+      const stock = Math.max(
+        0,
+        Math.floor(
+          Number(currentProduct.stockTotal || 0) > 0
+            ? Number(currentProduct.stockTotal || 0)
+            : Number(currentProduct.stockWarehouse1 || 0),
+        ),
+      );
       map.set(key, {
         label: size,
         legacyId: currentProduct.legacyId,
-        stock: Math.max(
-          0,
-          Math.floor(
-            Number(currentProduct.stockTotal || 0) > 0
-              ? Number(currentProduct.stockTotal || 0)
-              : Number(currentProduct.stockWarehouse1 || 0),
-          ),
-        ),
-        inStock: true,
+        stock,
+        inStock: isVariantOrderable(currentProduct, stock),
       });
     }
   }
