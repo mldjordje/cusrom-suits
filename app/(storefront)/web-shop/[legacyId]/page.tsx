@@ -1,5 +1,5 @@
-import Image from "next/image";
 import Link from "next/link";
+import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import JsonLd from "@/app/components/seo/JsonLd";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
@@ -28,6 +28,7 @@ import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { resolveDisplayFinalPrice, resolveDisplayGrossPrice, calcDiscountPercent } from "@/lib/catalog/pricing";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getSiteContent } from "@/lib/storefront/siteContent";
+import type { StorefrontLanguage } from "@/lib/storefront/language";
 import {
   getCatalogProductImageSources,
   getPreferredCatalogProductForDisplay,
@@ -83,6 +84,129 @@ const hasDirectProductImage = (product: {
       product.images.some((image) => String(image || "").trim().length > 0),
   );
 
+async function ProductTestimonialsSection({
+  lang,
+  productSku,
+}: {
+  lang: StorefrontLanguage;
+  productSku: string;
+}) {
+  const siteContent = await getSiteContent();
+  return (
+    <StorefrontTestimonials
+      lang={lang}
+      content={siteContent.testimonials}
+      productSku={productSku}
+    />
+  );
+}
+
+async function ProductRecommendationSections({
+  product,
+  lang,
+  isEn,
+}: {
+  product: Awaited<ReturnType<typeof getCatalogProductByLegacyId>>;
+  lang: StorefrontLanguage;
+  isEn: boolean;
+}) {
+  if (!product) return null;
+
+  const [completeTheLook, related] = await Promise.all([
+    getCompleteTheLookProducts(product, 4),
+    getRelatedCatalogProducts(product, 4),
+  ]);
+
+  const withLang = (href: string) => {
+    if (!isEn) return href;
+    if (href.includes("?")) return `${href}&lang=en`;
+    return `${href}?lang=en`;
+  };
+  const variantHref = (variantId: number) =>
+    isEn ? `/web-shop/${variantId}?lang=en` : `/web-shop/${variantId}`;
+
+  return (
+    <>
+      <CompleteTheLook lang={lang} products={completeTheLook} />
+
+      {related.length > 0 ? (
+        <Reveal as="section" className="products-carousel container mt-5 pt-4 ss-related-products" delay={0.06}>
+          <div className="ss-related-products__header">
+            <div>
+              <p className="ss-related-products__eyebrow">{isEn ? "You may also like" : "Mozda ce vam se dopasti"}</p>
+              <h2 className="h3 text-uppercase mb-0">
+                {isEn ? "Related " : "Povezani "}
+                <strong>{isEn ? "Products" : "Proizvodi"}</strong>
+              </h2>
+            </div>
+            <p className="ss-related-products__copy">
+              {isEn
+                ? "More models from the current Santos & Santorini offer."
+                : "Jos modela iz aktuelne Santos & Santorini ponude."}
+            </p>
+            <Link href={withLang("/web-shop")} className="btn btn-outline-dark text-uppercase fw-medium ss-related-products__cta">
+              {isEn ? "All products" : "Svi proizvodi"}
+            </Link>
+          </div>
+          <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4">
+            {related.map((item) => {
+              const relatedImageSources = getCatalogProductImageSources(item, [], []);
+              const coverImage = relatedImageSources[0];
+              const secondImage = relatedImageSources[1] || coverImage;
+              const relatedName = getLocalizedCatalogProductName(item, lang);
+              if (!coverImage) return null;
+
+              return (
+                <div key={item.legacyId} className="product-card-wrapper">
+                  <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
+                    <div className="pc__img-wrapper hover-container">
+                      <Link href={variantHref(item.legacyId)}>
+                        <StorefrontSmartImage
+                          sources={[coverImage]}
+                          width={330}
+                          height={400}
+                          alt={relatedName}
+                          className="pc__img"
+                          sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
+                          quality={70}
+                        />
+                        <StorefrontSmartImage
+                          sources={[secondImage]}
+                          width={330}
+                          height={400}
+                          alt={`${relatedName} preview`}
+                          className="pc__img pc__img-second"
+                          sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
+                          quality={60}
+                        />
+                      </Link>
+                      <Link
+                        href={variantHref(item.legacyId)}
+                        className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium ss-cta-btn d-none d-md-inline-flex"
+                      >
+                        {isEn ? "Open product" : "Otvori proizvod"}
+                      </Link>
+                    </div>
+                    <div className="pc__info position-relative">
+                      <p className="pc__category">{item.categories[0]?.name || item.sku}</p>
+                      <h6 className="pc__title">
+                        <Link href={variantHref(item.legacyId)}>{relatedName}</Link>
+                      </h6>
+                      <div className="product-card__price d-flex">
+                        <span className="money price">{formatRsd(item.priceFinalGross)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </Reveal>
+      ) : null}
+    </>
+  );
+}
+
 export async function generateMetadata({
   params,
   searchParams,
@@ -102,10 +226,7 @@ export async function generateMetadata({
     });
   }
   const product = await getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: false });
-  const metadataGallery = product
-    ? await filterReachableCatalogImages(getCatalogProductImageSources(product, [], []).slice(0, 8))
-    : [];
-  if (!product || !product.isActive || !product.isExported || !hasDirectProductImage(product) || !metadataGallery.length) {
+  if (!product || !product.isActive || !product.isExported || !hasDirectProductImage(product)) {
     return buildSeoMetadata({
       title: "Product not found",
       description: "Trazeni proizvod nije pronadjen u Santos & Santorini web shopu.",
@@ -114,15 +235,9 @@ export async function generateMetadata({
       noIndex: true,
     });
   }
-  const variants = await getCatalogProductVariantsBySku(product.sku, {
-    applyPromotions: true,
-    activeOnly: true,
-    exportOnly: true,
-  });
-  const displayProduct = getPreferredCatalogProductForDisplay(product, variants, lang);
-  const displayName = getLocalizedCatalogProductName(displayProduct, lang);
+  const displayName = getLocalizedCatalogProductName(product, lang);
   const description =
-    stripHtml(getLocalizedCatalogDescription(displayProduct, lang)) ||
+    stripHtml(getLocalizedCatalogDescription(product, lang)) ||
     (lang === "en"
       ? `Product details, material information and available sizes for ${displayName}.`
       : `Detalji proizvoda, sastav i dostupne velicine za model ${displayName}.`);
@@ -132,7 +247,7 @@ export async function generateMetadata({
     description,
     path: `/web-shop/${product.legacyId}`,
     lang,
-    image: displayProduct.coverImage || product.coverImage || "/img/odela.jpg",
+    image: product.coverImage || product.images[0] || "/img/odela.jpg",
     keywords: [product.sku, displayName, product.categories[0]?.name || "web shop proizvod"],
   });
 }
@@ -203,15 +318,12 @@ export default async function WebShopProductPage({
     notFound();
   }
 
-  const [related, variants, siteContent, completeTheLook] = await Promise.all([
-    getRelatedCatalogProducts(product, 4),
+  const [variants] = await Promise.all([
     getCatalogProductVariantsBySku(product.sku, {
       applyPromotions: true,
       activeOnly: true,
       exportOnly: true,
     }, getCatalogProductModelKey(product)),
-    getSiteContent(),
-    getCompleteTheLookProducts(product, 4),
   ]);
 
   const withLang = (href: string) => {
@@ -770,86 +882,13 @@ export default async function WebShopProductPage({
           </div>
         </div>
 
-        <CompleteTheLook lang={lang} products={completeTheLook} />
+        <Suspense fallback={null}>
+          <ProductRecommendationSections product={product} lang={lang} isEn={isEn} />
+        </Suspense>
 
-        <StorefrontTestimonials
-          lang={lang}
-          content={siteContent.testimonials}
-          productSku={product.sku}
-        />
-
-        {related.length > 0 ? (
-          <Reveal as="section" className="products-carousel container mt-5 pt-4 ss-related-products" delay={0.06}>
-            <div className="ss-related-products__header">
-              <div>
-                <p className="ss-related-products__eyebrow">{isEn ? "You may also like" : "Mozda ce vam se dopasti"}</p>
-                <h2 className="h3 text-uppercase mb-0">
-                  {isEn ? "Related " : "Povezani "}
-                  <strong>{isEn ? "Products" : "Proizvodi"}</strong>
-                </h2>
-              </div>
-              <p className="ss-related-products__copy">
-                {isEn
-                  ? "More models from the current Santos & Santorini offer."
-                  : "Jos modela iz aktuelne Santos & Santorini ponude."}
-              </p>
-              <Link href={withLang("/web-shop")} className="btn btn-outline-dark text-uppercase fw-medium ss-related-products__cta">
-                {isEn ? "All products" : "Svi proizvodi"}
-              </Link>
-            </div>
-            <div className="row row-cols-2 row-cols-md-3 row-cols-lg-4">
-              {related.map((item) => {
-                const relatedImageSources = getCatalogProductImageSources(item, [], ["/img/odela2.jpg"]);
-                const coverImage = relatedImageSources[0] || "/img/odela2.jpg";
-                const secondImage = relatedImageSources[1] || coverImage;
-                const relatedName = getLocalizedCatalogProductName(item, lang);
-                return (
-                  <div key={item.legacyId} className="product-card-wrapper">
-                    <div className="product-card ss-card-hover ss-product-card mb-3 mb-md-4">
-                      <div className="pc__img-wrapper hover-container">
-                        <Link href={variantHref(item.legacyId)}>
-                          <StorefrontSmartImage
-                            sources={[coverImage]}
-                            width={330}
-                            height={400}
-                            alt={relatedName}
-                            className="pc__img"
-                            sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
-                            quality={70}
-                          />
-                          <StorefrontSmartImage
-                            sources={[secondImage, coverImage]}
-                            width={330}
-                            height={400}
-                            alt={`${relatedName} preview`}
-                            className="pc__img pc__img-second"
-                            sizes="(max-width: 767px) 50vw, (max-width: 1199px) 33vw, 25vw"
-                            quality={60}
-                          />
-                        </Link>
-                        <Link
-                          href={variantHref(item.legacyId)}
-                          className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium ss-cta-btn d-none d-md-inline-flex"
-                        >
-                          {isEn ? "Open product" : "Otvori proizvod"}
-                        </Link>
-                      </div>
-                      <div className="pc__info position-relative">
-                        <p className="pc__category">{item.categories[0]?.name || item.sku}</p>
-                        <h6 className="pc__title">
-                          <Link href={variantHref(item.legacyId)}>{relatedName}</Link>
-                        </h6>
-                        <div className="product-card__price d-flex">
-                          <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Reveal>
-        ) : null}
+        <Suspense fallback={null}>
+          <ProductTestimonialsSection lang={lang} productSku={product.sku} />
+        </Suspense>
 
         <StorefrontTrustStrip lang={lang} compact />
 

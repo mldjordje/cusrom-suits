@@ -13,6 +13,7 @@ import {
   listPromotionRules,
 } from "@/lib/catalog/promotions";
 import { hasUsableDisplayPrice } from "@/lib/catalog/pricing";
+import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { unstable_cache } from "next/cache";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
@@ -1747,6 +1748,7 @@ export async function getRelatedCatalogProducts(
   limit = 8,
 ): Promise<CatalogProductView[]> {
   const primaryCategory = item.categories[0]?.id || 0;
+  const brokenProductIds = await getBrokenProductIdSet();
   const result = await listCatalogProducts({
     categoryId: primaryCategory || undefined,
     inStock: false,
@@ -1754,7 +1756,7 @@ export async function getRelatedCatalogProducts(
     pageSize: Math.max(limit + 8, 24),
     collapseBySku: true,
     requireDirectImages: true,
-    requireReachableImages: true,
+    excludeLegacyIds: Array.from(brokenProductIds),
   });
   return result.items.filter((candidate) => candidate.legacyId !== item.legacyId).slice(0, limit);
 }
@@ -1798,14 +1800,15 @@ export async function getCompleteTheLookProducts(
   const pattern = COMPLETE_THE_LOOK_PATTERNS.find((entry) => entry.match.test(haystack));
   if (!pattern) return [];
 
+  const brokenProductIds = await getBrokenProductIdSet();
   const result = await listCatalogProducts({
     page: 1,
-    pageSize: 20,
+    pageSize: 48,
     collapseBySku: true,
     activeOnly: true,
     exportOnly: true,
     requireDirectImages: true,
-    requireReachableImages: true,
+    excludeLegacyIds: Array.from(brokenProductIds),
   });
 
   const primaryCategoryId = item.categories[0]?.id || 0;
