@@ -239,7 +239,14 @@ export default async function WebShopProductPage({
   // Use the requested product's own images so the listing thumbnail matches what's
   // shown on the detail page. displayProduct may be a different size variant.
   const productGalleryCandidates = getCatalogProductImageSources(product, [], []).slice(0, 8);
-  const productGallery = await filterReachableCatalogImages(productGalleryCandidates);
+  // Do NOT gate the detail page on server-side image reachability. When the remote
+  // image host (santos.rs) is slow/blocked/returning 404, reachability HEAD checks
+  // empty this list and the page falls through to notFound() — so a product the user
+  // explicitly clicked renders "product not found" with an endless spinner. Instead,
+  // render whatever image URLs the product has and let ProductImageGallery fall back to
+  // the local placeholder client-side on a genuine load error. Only the true
+  // "no images at all" case (empty candidates) still uses the variant/fallback path.
+  const productGallery = productGalleryCandidates;
   if (!productGallery.length) {
     for (const candidate of [displayProduct, ...variants]) {
       if (candidate.legacyId === product.legacyId || !candidate.isActive || !candidate.isExported) continue;
