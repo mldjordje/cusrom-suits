@@ -46,6 +46,7 @@ export async function GET(req: NextRequest) {
         supabaseUrl: Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL),
         supabaseServiceRole: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
         cronSecret: Boolean(process.env.CRON_SECRET),
+        mofficeApiKey: Boolean(process.env.MOFFICE_API_KEY),
         stockZipUrl: Boolean(process.env.STOCK_SYNC_SOURCE_ZIP_URL),
         stockMd5Url: Boolean(process.env.STOCK_SYNC_SOURCE_MD5_URL),
         configBucket: process.env.SUPABASE_CONFIG_BUCKET || "site-config",

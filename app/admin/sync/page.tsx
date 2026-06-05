@@ -117,7 +117,8 @@ export default function AdminSyncPage() {
     ["Supabase URL", data?.env?.supabaseUrl],
     ["Service role", data?.env?.supabaseServiceRole],
     ["Cron secret", data?.env?.cronSecret],
-    ["ZIP sync URL", data?.env?.stockZipUrl],
+    ["mOffice API key", data?.env?.mofficeApiKey],
+    ["Legacy ZIP sync URL", data?.env?.stockZipUrl],
     ["MD5 URL", data?.env?.stockMd5Url],
     ["Config bucket", data?.env?.configBucket],
   ];
@@ -178,11 +179,11 @@ export default function AdminSyncPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Run istorija</p>
             <div className="flex flex-wrap gap-2">
               <button
-                onClick={() => runManual("/api/admin/integrations/stock/inbound/sync", "stock")}
+                onClick={() => runManual("/api/admin/integrations/moffice/sync", "moffice")}
                 disabled={Boolean(runningAction)}
                 className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
               >
-                {runningAction === "stock" ? "Pokrecem..." : "Pokreni stock sync"}
+                {runningAction === "moffice" ? "Pokrecem..." : "Pokreni mOffice lager"}
               </button>
               <Link href="/admin/integrations" className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
                 Napredne integracije
@@ -262,7 +263,7 @@ export default function AdminSyncPage() {
 
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
             <p className="font-semibold uppercase tracking-[0.12em]">Sta proveriti na cPanelu</p>
-            <p className="mt-2">Cron treba da ostane na `0 */2 * * *` i da komanda pokrece `moffice-sync.php`.</p>
+            <p className="mt-2">Cron treba da ostane na `0 */2 * * *` i da komanda pokrece `moffice-sync.php` kao tanak poziv ka `/api/cron/moffice`.</p>
             <p className="mt-2">Ako nema novih run zapisa ovde, proveri `moffice-sync.log` i `moffice-cron-output.log` na cPanelu.</p>
           </div>
         </div>

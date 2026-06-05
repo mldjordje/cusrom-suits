@@ -154,11 +154,18 @@ export default function IntegrationsAdminPage() {
             {runningAction === "full-cycle" ? "Running..." : "Run Full Cycle"}
           </button>
           <button
-            onClick={() => runSync("/api/admin/integrations/stock/inbound/sync", "stock-inbound")}
+            onClick={() => runSync("/api/admin/integrations/moffice/sync", "moffice")}
             disabled={Boolean(runningAction)}
             className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 hover:border-slate-300"
           >
-            {runningAction === "stock-inbound" ? "Running..." : "Run Stock Inbound"}
+            {runningAction === "moffice" ? "Running..." : "Run mOffice Lager"}
+          </button>
+          <button
+            onClick={() => runSync("/api/admin/integrations/stock/inbound/sync", "legacy-stock-inbound")}
+            disabled={Boolean(runningAction)}
+            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 hover:border-slate-300"
+          >
+            {runningAction === "legacy-stock-inbound" ? "Running..." : "Run Legacy ZIP Sync"}
           </button>
           <button
             onClick={() => runSync("/api/admin/integrations/ananas/sync", "ananas")}
@@ -241,4 +248,3 @@ export default function IntegrationsAdminPage() {
     </div>
   );
 }
-
