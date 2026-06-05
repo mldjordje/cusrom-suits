@@ -18,7 +18,8 @@ export default function StorefrontSmartImage({
   ...props
 }: StorefrontSmartImageProps) {
   const candidates = useMemo(() => {
-    const normalized = [...sources, fallbackSrc]
+    const rawCandidates = fallbackSrc ? [...sources, fallbackSrc] : sources;
+    const normalized = rawCandidates
       .map((value) => sanitizeStorefrontImageSrc(value))
       .filter((value) => value.length > 0);
 
