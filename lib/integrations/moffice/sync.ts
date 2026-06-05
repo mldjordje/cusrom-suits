@@ -4,6 +4,7 @@ import type { SyncCounters, SyncEnvironment, SyncMode, SyncTrigger } from "@/lib
 import { getServiceSupabase } from "@/lib/supabase/server";
 
 const MOFFICE_API_URL = "https://api.moffice.co.rs/api/LagerTekstil";
+const DEBUG_SKUS = new Set(["129513", "130406", "133051"]);
 
 export type MofficeItem = {
   ARTIKAL_ID?: number;
@@ -97,6 +98,19 @@ const makeVariantKeys = (input: { sku: unknown; ean: unknown; size: unknown; leg
   if (input.legacyId) keys.add(`legacy:${Number(input.legacyId)}`);
   return keys;
 };
+
+const buildDebugItems = (items: MofficeItem[]) =>
+  items
+    .filter((item) => DEBUG_SKUS.has(normalizeKey(item.ARTIKAL_SIFRA)))
+    .map((item) => ({
+      id: item.ARTIKAL_ID ?? null,
+      sku: normalizeKey(item.ARTIKAL_SIFRA),
+      ean: normalizeKey(item.ARTIKAL_BARKOD),
+      size: normalizeKey(item.ARTIKAL_VELICINA),
+      stock: Number(item.ARTIKAL_ZALIHE ?? 0),
+      category: item.ARTIKAL_GRUPA ?? "",
+      name: item.ARTIKAL_NAZIV ?? "",
+    }));
 
 export function buildMofficeSyncPlan(params: {
   items: MofficeItem[];
@@ -246,12 +260,12 @@ export function buildMofficeSyncPlan(params: {
     const belongsToCurrentMofficeSku = (sku && feedSkuSet.has(sku)) || (ean && feedEanSet.has(ean));
     const hasCurrentVariant = Array.from(variantKeys).some((key) => feedVariantKeys.has(key));
     const oldNumericLegacyRowAbsentFromFeed = sku && !feedSkuSet.has(sku) && !feedEanSet.has(ean);
-    if (!syncedInCurrentRun) {
+    if ((belongsToCurrentMofficeSku && !hasCurrentVariant) || oldNumericLegacyRowAbsentFromFeed) {
       staleLegacyIds.add(legacyId);
       continue;
     }
 
-    if ((belongsToCurrentMofficeSku && !hasCurrentVariant) || oldNumericLegacyRowAbsentFromFeed) {
+    if (!syncedInCurrentRun) {
       staleLegacyIds.add(legacyId);
     }
   }
@@ -343,6 +357,7 @@ async function executeMofficeSync(input: {
   try {
     const items = await input.loadItems();
     if (!Array.isArray(items)) throw new Error("mOffice payload must be an array.");
+    const debugItems = buildDebugItems(items);
 
     const { data: existingRaw, error: existingError } = await supabase
       .from("catalog_products")
@@ -430,6 +445,7 @@ async function executeMofficeSync(input: {
         stale: plan.counters.stale,
         duplicates: plan.counters.duplicates,
         deactivated,
+        debugItems,
       },
     });
     return {
@@ -442,6 +458,7 @@ async function executeMofficeSync(input: {
       stale: plan.counters.stale,
       duplicates: plan.counters.duplicates,
       deactivated,
+      debugItems,
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
