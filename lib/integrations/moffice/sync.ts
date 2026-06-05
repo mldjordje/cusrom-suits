@@ -106,13 +106,28 @@ export function buildMofficeSyncPlan(params: {
 }): MofficeSyncPlan {
   const syncedAt = params.syncedAt || nowIso();
   const byEan = new Map<string, MofficeExistingRow>();
-  const bySku = new Map<string, MofficeExistingRow>();
+  const bySkuSize = new Map<string, MofficeExistingRow>();
+  const bySkuUnambiguous = new Map<string, MofficeExistingRow | null>();
 
   for (const row of params.existing) {
     const ean = normalizeLower(row.ean);
     const sku = normalizeLower(row.sku);
+    const payload = getRawPayload(row.raw_payload);
+    const attrs = getPayloadAttributes(payload);
+    const sizes = Array.isArray(attrs.size) ? attrs.size : [];
+    const moffice =
+      payload.moffice && typeof payload.moffice === "object"
+        ? (payload.moffice as Record<string, unknown>)
+        : {};
+    const candidateSizes = [payload.size, moffice.size, ...sizes].map(normalizeSize).filter(Boolean);
     if (ean && !byEan.has(ean)) byEan.set(ean, row);
-    if (sku && !bySku.has(sku)) bySku.set(sku, row);
+    if (sku) {
+      for (const size of candidateSizes) {
+        const key = `${sku}:${size}`;
+        if (!bySkuSize.has(key)) bySkuSize.set(key, row);
+      }
+      bySkuUnambiguous.set(sku, bySkuUnambiguous.has(sku) ? null : row);
+    }
   }
 
   const rowsByLegacyId = new Map<number, Record<string, unknown>>();
@@ -136,7 +151,11 @@ export function buildMofficeSyncPlan(params: {
     if (eanKey) feedEanSet.add(eanKey);
     makeVariantKeys({ sku, ean, size, legacyId: mofficeId }).forEach((key) => feedVariantKeys.add(key));
 
-    const existingRow = (eanKey && byEan.get(eanKey)) || (skuKey && bySku.get(skuKey)) || null;
+    const sizeKey = normalizeSize(size);
+    const existingRow =
+      (eanKey && byEan.get(eanKey)) ||
+      (skuKey && sizeKey && bySkuSize.get(`${skuKey}:${sizeKey}`)) ||
+      (skuKey ? bySkuUnambiguous.get(skuKey) || null : null);
     const legacyId = existingRow ? Number(existingRow.legacy_id) : mofficeId;
     const existingPayload = getRawPayload(existingRow?.raw_payload);
     const attributes = getPayloadAttributes(existingPayload);

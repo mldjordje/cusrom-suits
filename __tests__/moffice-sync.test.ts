@@ -83,6 +83,26 @@ describe("mOffice sync planning", () => {
     expect(plan.staleLegacyIds).toEqual([13305145]);
   });
 
+  it("keeps size variants separate when mOffice reuses the same article id", () => {
+    const plan = buildMofficeSyncPlan({
+      runId: "run-size-id",
+      items: [
+        item({ ARTIKAL_ID: 79404, ARTIKAL_BARKOD: "013305140", ARTIKAL_VELICINA: "40", ARTIKAL_ZALIHE: 2 }),
+        item({ ARTIKAL_ID: 79404, ARTIKAL_BARKOD: "013305141", ARTIKAL_VELICINA: "41", ARTIKAL_ZALIHE: 3 }),
+        item({ ARTIKAL_ID: 79404, ARTIKAL_BARKOD: "013305144", ARTIKAL_VELICINA: "44", ARTIKAL_ZALIHE: 1 }),
+      ],
+      existing: [
+        row({ legacy_id: 13305140, ean: "013305140", raw_payload: { legacyRaw: {}, attributes: { size: ["40"] } } }),
+        row({ legacy_id: 13305141, ean: "013305141", raw_payload: { legacyRaw: {}, attributes: { size: ["41"] } } }),
+        row({ legacy_id: 13305144, ean: "013305144", raw_payload: { legacyRaw: {}, attributes: { size: ["44"] } } }),
+        row({ legacy_id: 13305145, ean: "013305145", raw_payload: { legacyRaw: {}, attributes: { size: ["45"] } } }),
+      ],
+    });
+
+    expect(plan.rows.map((entry) => entry.legacy_id).sort()).toEqual([13305140, 13305141, 13305144]);
+    expect(plan.staleLegacyIds).toEqual([13305145]);
+  });
+
   it("writes mOffice size into raw_payload.attributes.size for belts and other sized products", () => {
     const plan = buildMofficeSyncPlan({
       runId: "run-3",
