@@ -41,8 +41,8 @@ export default function CartPageClient({
           <h1>{isEn ? "Start with the products you want to order." : "Kreni od proizvoda koje zelis da porucis."}</h1>
           <p>
             {isEn
-              ? "Once you add items from the web shop, this page becomes your clean review step before checkout."
-              : "Kada dodas artikle iz web shop-a, ovde dobijas pregledan review korak pre checkout-a."}
+              ? "Once you add items from the web shop, this page becomes your clean review step before sending the order."
+              : "Kada dodas artikle iz web shop-a, ovde dobijas pregledan korak pre slanja porudzbine."}
           </p>
           <Link href={withLang("/web-shop")} className="btn btn-primary text-uppercase fw-medium">
             {isEn ? "Back to shop" : "Nazad na shop"}
@@ -60,13 +60,13 @@ export default function CartPageClient({
         <div>
           <p className="ss-commerce-intro__eyebrow">{isEn ? "Step 2" : "Korak 2"}</p>
           <h1 className="ss-commerce-intro__title">
-            {isEn ? "Review your cart before checkout." : "Pregledaj korpu pre checkout-a."}
+            {isEn ? "Review your cart before sending the order." : "Pregledaj korpu pre slanja porudzbine."}
           </h1>
         </div>
         <p className="ss-commerce-intro__copy">
           {isEn
-            ? "Check sizes, quantity and product mix here. Then continue to checkout and send the order as a direct inquiry."
-            : "Ovde proveri velicine, kolicinu i izbor modela. Zatim nastavi na checkout i posalji porudzbinu kao direktan upit."}
+            ? "Check sizes, quantity and product mix here. Then send the order as a direct inquiry."
+            : "Ovde proveri velicine, kolicinu i izbor modela. Zatim posalji porudzbinu kao direktan upit."}
         </p>
       </div>
 
@@ -184,7 +184,7 @@ export default function CartPageClient({
 
             <div className="ss-order-summary__actions">
               <Link href={withLang("/checkout")} className="btn btn-primary w-100 text-uppercase fw-medium">
-                {isEn ? "Continue to checkout" : "Nastavi kupovinu"}
+                {isEn ? "Send order" : "Zavrsi porudzbinu"}
               </Link>
               <Link href={withLang("/web-shop")} className="btn btn-outline-dark w-100 text-uppercase fw-medium">
                 {isEn ? "Add more products" : "Dodaj jos proizvoda"}

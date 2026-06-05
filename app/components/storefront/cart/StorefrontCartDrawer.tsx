@@ -62,7 +62,7 @@ export default function StorefrontCartDrawer({
       >
         <div className="aside-header d-flex align-items-center">
           <h3 className="text-uppercase fs-6 mb-0">
-            {isEn ? "Shopping bag" : "Korpa"} (
+            {isEn ? "Shopping bag" : "Moja korpa"} (
             <span className="cart-amount js-cart-items-count">{itemCount}</span>)
           </h3>
           <button
@@ -159,7 +159,7 @@ export default function StorefrontCartDrawer({
             <div>
               <h6 className="fs-base fw-medium mb-1">{isEn ? "Current total" : "Ukupno za sada"}</h6>
               <p className="ss-cart-drawer__summary-copy mb-0">
-                {isEn ? `${itemCount} item(s) ready for checkout` : `${itemCount} artikala spremno za checkout`}
+                {isEn ? `${itemCount} item(s) ready for order` : `${itemCount} artikala spremno za porudzbinu`}
               </p>
             </div>
             <span className="cart-subtotal fw-medium">{formatRsd(subtotal)}</span>
@@ -167,10 +167,10 @@ export default function StorefrontCartDrawer({
           {items.length ? (
             <>
               <Link href={withLang("/cart")} className="btn btn-light mt-3 d-block">
-                {isEn ? "View cart" : "Pregledaj korpu"}
+                {isEn ? "View cart" : "Otvori celu korpu"}
               </Link>
               <Link href={withLang("/checkout")} className="btn btn-primary mt-3 d-block">
-                {isEn ? "Checkout" : "Nastavi na checkout"}
+                {isEn ? "Send order" : "Zavrsi porudzbinu"}
               </Link>
             </>
           ) : (

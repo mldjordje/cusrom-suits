@@ -6,7 +6,7 @@ import { getSiteContent } from "@/lib/storefront/siteContent";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 
 export const metadata = {
-  title: "Checkout",
+  title: "Porudzbina",
   description: "Unos podataka i slanje webshop porudzbine.",
 };
 

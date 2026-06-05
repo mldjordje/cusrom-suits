@@ -5,7 +5,7 @@ import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 
 export const metadata = {
   title: "Korpa",
-  description: "Pregled odabranih proizvoda i nastavak na checkout.",
+  description: "Pregled odabranih proizvoda i nastavak slanja porudzbine.",
 };
 
 export default async function CartPage({

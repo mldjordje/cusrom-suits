@@ -20,6 +20,38 @@ const toUniformSlug = (value: string) =>
     .replace(/^-+|-+$/g, "")
     .slice(0, 70);
 
+// Spakovani fajlovi iz public/fajlovi/uniforme/ \u2014 koriste se kao fallback ako
+// admin pode\u0161avanja za uniforme nisu popunjena (npr. prazna baza na produkciji).
+const BUNDLED_UNIFORM_IMAGES = [
+  { title: "Hospitality kolekcija", image: "/fajlovi/uniforme/BRI04849.jpg", alt: "Santos poslovna uniforma za hospitality tim" },
+  { title: "Recepcija i menadzment", image: "/fajlovi/uniforme/BRI04875.jpg", alt: "Santos poslovna uniforma za recepciju" },
+  { title: "Zenska uniforma mantil", image: "/fajlovi/uniforme/BRI04899.jpg", alt: "Santos zenska poslovna uniforma mantil" },
+  { title: "Pantalone i jakna", image: "/fajlovi/uniforme/BRI04939.jpg", alt: "Santos poslovna uniforma pantalone i jakna" },
+  { title: "Timski setovi", image: "/fajlovi/uniforme/BRI04963.jpg", alt: "Santos poslovne uniforme za kompanijske timove" },
+  { title: "Uniforma za timove", image: "/fajlovi/uniforme/BRI04988.jpg", alt: "Santos komplet poslovne uniforme za timove" },
+];
+
+const BUNDLED_UNIFORM_VIDEOS = [
+  {
+    title: "Zenska uniforma mantil",
+    video: "/fajlovi/uniforme/Santos%20zenska%20uniforma%20mantil.mp4",
+    poster: "/fajlovi/uniforme/BRI04899.jpg",
+    alt: "Santos video prezentacija zenske poslovne uniforme",
+  },
+  {
+    title: "Kosulja kratak rukav",
+    video: "/fajlovi/uniforme/Santos%20uniforma%20kosulja%20kratak%20rukav.mp4",
+    poster: "/fajlovi/uniforme/BRI04875.jpg",
+    alt: "Santos video prezentacija poslovne kosulje kratkog rukava",
+  },
+  {
+    title: "Pantalone i jakna",
+    video: "/fajlovi/uniforme/Santos%20uniforma%20pantalone%20jakna.mp4",
+    poster: "/fajlovi/uniforme/BRI04939.jpg",
+    alt: "Santos video prezentacija kompleta pantalone i jakna",
+  },
+];
+
 export default async function BusinessUniformsPage({
   searchParams,
 }: {
@@ -30,8 +62,10 @@ export default async function BusinessUniformsPage({
   const tx = (value: string, fallbackEn?: string) =>
     localizeDynamicStorefrontText(value, isEn ? "en" : "sr", fallbackEn);
   const landingSettings = await getLandingSettings();
-  const images = landingSettings.uniformsImages.filter((item) => item.image);
-  const videos = landingSettings.uniformsVideos.filter((item) => item.video);
+  const configuredImages = landingSettings.uniformsImages.filter((item) => item.image);
+  const configuredVideos = landingSettings.uniformsVideos.filter((item) => item.video);
+  const images = configuredImages.length ? configuredImages : BUNDLED_UNIFORM_IMAGES;
+  const videos = configuredVideos.length ? configuredVideos : BUNDLED_UNIFORM_VIDEOS;
   const products = images.map((item, index) => {
     const title = tx(item.title || "", isEn ? "Business uniform" : undefined) || (isEn ? "Business uniform" : "Poslovna uniforma");
     const baseSlug = toUniformSlug(item.title || item.alt || `uniform-${index + 1}`) || `uniform-${index + 1}`;
@@ -42,16 +76,12 @@ export default async function BusinessUniformsPage({
       cover: item.image,
     };
   });
-  const galleryItems = [
-    ...images.map((item) => ({ type: "image" as const, title: item.title, alt: item.alt, src: item.image })),
-    ...videos.map((item) => ({
-      type: "video" as const,
-      title: item.title,
-      alt: item.alt,
-      src: item.video,
-      poster: item.poster,
-    })),
-  ];
+  const galleryItems = images.map((item) => ({
+    type: "image" as const,
+    title: item.title,
+    alt: item.alt,
+    src: item.image,
+  }));
   const withLang = (href: string) => {
     if (!isEn || !href.startsWith("/")) return href;
     if (href.includes("?")) return `${href}&lang=en`;
@@ -139,37 +169,72 @@ export default async function BusinessUniformsPage({
             )}
           </Reveal>
 
-          <Reveal as="div" className="row g-4" delay={0.04} amount={0.08} y={16}>
-            {galleryItems.map((item, index) => (
-              <div key={`${item.type}-${item.src}-${index}`} className="col-12 col-md-6 col-xl-4">
-                <div className="border bg-white p-3 h-100" style={{ borderRadius: 24 }}>
-                  {item.type === "image" ? (
-                    <img
-                      src={item.src}
-                      alt={item.alt || tx(item.title || landingSettings.uniformsTitle, "Business Uniforms")}
-                      width={600}
-                      height={760}
-                      className="w-100 h-auto"
-                      style={{ borderRadius: 18, objectFit: "cover" }}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                  ) : (
-                    <video
-                      src={item.src}
-                      poster={item.poster || undefined}
-                      controls
-                      preload="metadata"
-                      className="w-100 h-auto"
-                      style={{ borderRadius: 18, objectFit: "cover", background: "#0f172a" }}
-                    />
-                  )}
-                  {item.title ? <h2 className="h5 text-uppercase mt-3 mb-1">{tx(item.title)}</h2> : null}
-                  {item.alt ? <p className="text-secondary mb-0 small">{tx(item.alt)}</p> : null}
+          {videos.length ? (
+            <Reveal as="section" className="pb-2 pt-4" delay={0.03} amount={0.08} y={16}>
+              <div className="d-flex align-items-end justify-content-between gap-3 mb-3">
+                <div>
+                  <p className="text-uppercase mb-1" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+                    {isEn ? "Video presentation" : "Video prezentacija"}
+                  </p>
+                  <h2 className="h3 text-uppercase mb-0">{isEn ? "Uniforms in motion" : "Uniforme u pokretu"}</h2>
                 </div>
               </div>
-            ))}
-          </Reveal>
+              <div className="row g-4">
+                {videos.map((item, index) => (
+                  <div key={`video-${item.video}-${index}`} className="col-12 col-md-6 col-xl-4">
+                    <div className="border bg-white p-3 h-100" style={{ borderRadius: 24 }}>
+                      <video
+                        src={item.video}
+                        poster={item.poster || undefined}
+                        controls
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        className="w-100 h-auto"
+                        style={{ borderRadius: 18, objectFit: "cover", background: "#0f172a", aspectRatio: "3 / 4" }}
+                      />
+                      {item.title ? <h3 className="h6 text-uppercase mt-3 mb-1">{tx(item.title)}</h3> : null}
+                      {item.alt ? <p className="text-secondary mb-0 small">{tx(item.alt)}</p> : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          ) : null}
+
+          {galleryItems.length ? (
+            <Reveal as="section" className="pt-4" delay={0.04} amount={0.08} y={16}>
+              <div className="d-flex align-items-end justify-content-between gap-3 mb-3">
+                <div>
+                  <p className="text-uppercase mb-1" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
+                    {isEn ? "Gallery" : "Galerija"}
+                  </p>
+                  <h2 className="h3 text-uppercase mb-0">{isEn ? "Lookbook" : "Lookbook"}</h2>
+                </div>
+              </div>
+              <div className="row g-4">
+                {galleryItems.map((item, index) => (
+                  <div key={`${item.type}-${item.src}-${index}`} className="col-12 col-md-6 col-xl-4">
+                    <div className="border bg-white p-3 h-100" style={{ borderRadius: 24 }}>
+                      <img
+                        src={item.src}
+                        alt={item.alt || tx(item.title || landingSettings.uniformsTitle, "Business Uniforms")}
+                        width={600}
+                        height={760}
+                        className="w-100 h-auto"
+                        style={{ borderRadius: 18, objectFit: "cover", aspectRatio: "3 / 4" }}
+                        loading="lazy"
+                        decoding="async"
+                      />
+                      {item.title ? <h3 className="h6 text-uppercase mt-3 mb-1">{tx(item.title)}</h3> : null}
+                      {item.alt ? <p className="text-secondary mb-0 small">{tx(item.alt)}</p> : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          ) : null}
 
           <Reveal
             as="div"

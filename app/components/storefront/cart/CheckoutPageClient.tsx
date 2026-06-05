@@ -184,7 +184,7 @@ export default function CheckoutPageClient({
   };
 
   if (!isReady) {
-    return <div className="ss-commerce-loading" aria-busy="true" aria-label={isEn ? "Loading checkout" : "Ucitavam checkout"} />;
+    return <div className="ss-commerce-loading" aria-busy="true" aria-label={isEn ? "Loading order form" : "Ucitavam formu za porudzbinu"} />;
   }
 
   if (orderId) {
@@ -239,12 +239,12 @@ export default function CheckoutPageClient({
       <div className="ss-commerce-stack">
         <StorefrontOrderSteps lang={lang} current="checkout" />
         <div className="ss-order-state-card text-center">
-          <p className="ss-order-state-card__eyebrow">{isEn ? "Checkout is empty" : "Checkout je prazan"}</p>
+          <p className="ss-order-state-card__eyebrow">{isEn ? "Order form is empty" : "Forma za porudzbinu je prazna"}</p>
           <h1>{isEn ? "Add products to the cart before sending the order." : "Dodaj proizvode u korpu pre slanja porudzbine."}</h1>
           <p>
             {isEn
-              ? "The simplest route is product, cart review, then this checkout form."
-              : "Najjednostavniji put je proizvod, pregled korpe, pa tek onda ova checkout forma."}
+              ? "The simplest route is product, cart review, then this order form."
+              : "Najjednostavniji put je proizvod, pregled korpe, pa tek onda forma za porudzbinu."}
           </p>
           <Link href={withLang("/web-shop")} className="btn btn-primary text-uppercase fw-medium">
             {isEn ? "Go to web shop" : "Idi na web shop"}
@@ -272,7 +272,7 @@ export default function CheckoutPageClient({
         </p>
       </div>
 
-      <div className="ss-checkout-mini-summary" aria-label={isEn ? "Checkout overview" : "Pregled checkout-a"}>
+      <div className="ss-checkout-mini-summary" aria-label={isEn ? "Order overview" : "Pregled porudzbine"}>
         <div className="ss-checkout-mini-summary__item">
           <span>{isEn ? "Items" : "Artikli"}</span>
           <strong>{totalUnits}</strong>
@@ -296,7 +296,7 @@ export default function CheckoutPageClient({
           <form onSubmit={handleSubmit} className="ss-order-panel ss-order-panel--form">
             <div className="ss-order-panel__header">
               <div>
-                <p className="ss-order-panel__eyebrow">Checkout</p>
+                <p className="ss-order-panel__eyebrow">{isEn ? "Order form" : "Porudzbina"}</p>
                 <h2>{isEn ? "Customer details" : "Podaci kupca"}</h2>
               </div>
               <Link href={withLang("/cart")} className="btn btn-outline-dark text-uppercase fw-medium">
@@ -593,8 +593,8 @@ export default function CheckoutPageClient({
             <div className="ss-order-summary__note">
               <p>
                 {isEn
-                  ? "There is no online payment in this flow. That makes checkout simpler and keeps the focus on sending the request fast."
-                  : "U ovom toku nema online placanja. To checkout cini jednostavnijim i drzi fokus na brzom slanju zahteva."}
+                  ? "There is no online payment in this flow. The form stays simple and focused on sending the request fast."
+                  : "U ovom toku nema online placanja. Forma ostaje jednostavna i fokusirana na brzo slanje zahteva."}
               </p>
             </div>
           </div>

@@ -69,3 +69,6 @@ transparent-upload/
 /preview*.png
 /pants*.png
 /pantspreview*.png
+
+# Local Claude state (worktrees, launch config)
+.claude/
