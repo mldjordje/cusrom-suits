@@ -287,7 +287,6 @@ export default async function WebShopProductPage({
       );
       if (candidateGallery.length > 0) {
         const query = new URLSearchParams();
-        if (canonicalSize) query.set("size", canonicalSize);
         if (isEn) query.set("lang", "en");
         const queryString = query.toString();
         redirect(`/web-shop/${candidate.legacyId}${queryString ? `?${queryString}` : ""}`);
@@ -309,7 +308,6 @@ export default async function WebShopProductPage({
       fallbackResult.items[0];
     if (fallbackProduct) {
       const query = new URLSearchParams();
-      if (canonicalSize) query.set("size", canonicalSize);
       if (isEn) query.set("lang", "en");
       const queryString = query.toString();
       redirect(`/web-shop/${fallbackProduct.legacyId}${queryString ? `?${queryString}` : ""}`);
@@ -343,7 +341,6 @@ export default async function WebShopProductPage({
   // and must NOT be silently swapped to a different product.
   if (displayProduct.legacyId !== product.legacyId && !hasDirectProductImage(product)) {
     const query = new URLSearchParams();
-    if (canonicalSize) query.set("size", canonicalSize);
     if (isEn) query.set("lang", "en");
     const queryString = query.toString();
     redirect(`/web-shop/${displayProduct.legacyId}${queryString ? `?${queryString}` : ""}`);
@@ -372,7 +369,6 @@ export default async function WebShopProductPage({
       );
       if (candidateGallery.length > 0) {
         const query = new URLSearchParams();
-        if (canonicalSize) query.set("size", canonicalSize);
         if (isEn) query.set("lang", "en");
         const queryString = query.toString();
         redirect(`/web-shop/${candidate.legacyId}${queryString ? `?${queryString}` : ""}`);
@@ -394,7 +390,6 @@ export default async function WebShopProductPage({
       fallbackResult.items[0];
     if (fallbackProduct) {
       const query = new URLSearchParams();
-      if (canonicalSize) query.set("size", canonicalSize);
       if (isEn) query.set("lang", "en");
       const queryString = query.toString();
       redirect(`/web-shop/${fallbackProduct.legacyId}${queryString ? `?${queryString}` : ""}`);
