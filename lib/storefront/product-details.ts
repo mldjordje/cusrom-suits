@@ -95,6 +95,43 @@ const sizeOrder = [
   "6XL",
 ];
 
+type SizeKind = "numeric" | "alpha";
+
+const getSizeKind = (value: string): SizeKind | null => {
+  const normalized = normalizeKey(value);
+  if (/^\d+(?:[.,]\d+)?$/.test(normalized)) return "numeric";
+  if (sizeOrder.includes(normalized) || /^\d*X*S$/i.test(normalized) || /^\d*X*L$/i.test(normalized)) {
+    return "alpha";
+  }
+  return null;
+};
+
+const getDominantSizeKind = (variants: CatalogProductView[]) => {
+  const counts: Record<SizeKind, number> = { numeric: 0, alpha: 0 };
+
+  for (const variant of variants) {
+    for (const size of extractSizes(variant)) {
+      const kind = getSizeKind(size);
+      if (kind) counts[kind] += 1;
+    }
+  }
+
+  if (counts.numeric === 0 || counts.alpha === 0) return null;
+  if (counts.numeric === counts.alpha) return null;
+  return counts.numeric > counts.alpha ? "numeric" : "alpha";
+};
+
+const getDisplaySizesForVariant = (
+  variant: CatalogProductView,
+  dominantKind: SizeKind | null,
+) => {
+  const sizes = extractSizes(variant);
+  if (!dominantKind || sizes.length <= 1) return sizes;
+
+  const matching = sizes.filter((size) => getSizeKind(size) === dominantKind);
+  return matching.length > 0 ? matching : sizes;
+};
+
 const getSizeSortValue = (value: string) => {
   const normalized = normalizeKey(value);
   const intlIndex = sizeOrder.indexOf(normalized);
@@ -378,6 +415,8 @@ export const getProductSizeOptions = (
   variants: CatalogProductView[],
 ) => {
   const map = new Map<string, ProductSizeOption>();
+  const sizeVariants = variants.length ? variants : [currentProduct];
+  const dominantKind = getDominantSizeKind(sizeVariants);
   const variantHasMedia = (variant: CatalogProductView) =>
     Boolean(
       (Array.isArray(variant.images) &&
@@ -408,7 +447,7 @@ export const getProductSizeOptions = (
           : Number(variant.stockWarehouse1 || 0),
       ),
     );
-    const sizes = extractSizes(variant);
+    const sizes = getDisplaySizesForVariant(variant, dominantKind);
 
     if (!sizes.length) continue;
 
@@ -444,7 +483,7 @@ export const getProductSizeOptions = (
   }
 
   if (!map.size) {
-    for (const size of extractSizes(currentProduct)) {
+    for (const size of getDisplaySizesForVariant(currentProduct, dominantKind)) {
       const key = normalizeKey(size);
       map.set(key, {
         label: size,

@@ -1,7 +1,7 @@
 <?php
 declare(strict_types=1);
 
-const ENDPOINT_URL = 'https://custom-suits.vercel.app/api/cron/ananas';
+const ENDPOINT_URL = 'https://santos.rs/api/cron/ananas';
 const CRON_SECRET = 'PASTE_CRON_SECRET_HERE';
 const LOG_FILE = __DIR__ . '/ananas-sync.log';
 

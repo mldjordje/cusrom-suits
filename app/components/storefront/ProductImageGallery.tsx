@@ -45,34 +45,59 @@ const getYoutubeEmbedUrl = (value: string) => {
 };
 
 export default function ProductImageGallery({ images, name, videoUrl }: ProductImageGalleryProps) {
+  const [failedImageSrcs, setFailedImageSrcs] = useState<Set<string>>(() => new Set());
+  const cleanImages = useMemo(
+    () =>
+      Array.from(
+        new Set(images.map((img) => String(img || "").trim()).filter((img) => img.length > 0)),
+      ),
+    [images],
+  );
+
+  useEffect(() => {
+    setFailedImageSrcs(new Set());
+  }, [cleanImages]);
+
+  const markImageFailed = useCallback((src: string) => {
+    setFailedImageSrcs((current) => {
+      if (current.has(src)) return current;
+      const next = new Set(current);
+      next.add(src);
+      return next;
+    });
+  }, []);
+
   const gallery = useMemo<GalleryItem[]>(() => {
-    const cleanImages = Array.from(
-      new Set(images.map((img) => String(img || "").trim()).filter((img) => img.length > 0)),
-    );
-    const items: GalleryItem[] = cleanImages.map((src) => ({ kind: "image", src }));
+    const visibleImages = cleanImages.filter((src) => !failedImageSrcs.has(src));
+    const items: GalleryItem[] = visibleImages.map((src) => ({ kind: "image", src }));
     const cleanVideoUrl = String(videoUrl || "").trim();
     if (cleanVideoUrl) {
       items.push({
         kind: "video",
         src: cleanVideoUrl,
-        thumbnail: cleanImages[0] || null,
+        thumbnail: visibleImages[0] || null,
         embedUrl: getYoutubeEmbedUrl(cleanVideoUrl),
       });
     }
     return items;
-  }, [images, videoUrl]);
+  }, [cleanImages, failedImageSrcs, videoUrl]);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const { reduceMotion } = useAnimationBudget();
-  const activeItem = gallery[activeIndex] || gallery[0];
+  const activeGallery = gallery;
+  const activeItem = activeGallery[Math.min(activeIndex, Math.max(activeGallery.length - 1, 0))] || activeGallery[0];
 
-  const imageItems = gallery.filter((item) => item.kind === "image");
+  const imageItems = activeGallery.filter((item) => item.kind === "image");
+
+  useEffect(() => {
+    setActiveIndex((current) => Math.min(current, Math.max(activeGallery.length - 1, 0)));
+  }, [activeGallery.length]);
 
   const openLightbox = useCallback((index: number) => {
-    const imageIndex = gallery.slice(0, index + 1).filter((item) => item.kind === "image").length - 1;
+    const imageIndex = activeGallery.slice(0, index + 1).filter((item) => item.kind === "image").length - 1;
     if (imageIndex >= 0) setLightboxIndex(imageIndex);
-  }, [gallery]);
+  }, [activeGallery]);
 
   const closeLightbox = useCallback(() => setLightboxIndex(null), []);
 
@@ -130,6 +155,8 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
                   priority
                   quality={78}
                   sizes="(max-width: 575px) 100vw, (max-width: 991px) 92vw, 58vw"
+                  fallbackSrc=""
+                  onError={() => markImageFailed(activeItem.src)}
                 />
               </button>
             ) : activeItem.embedUrl ? (
@@ -225,9 +252,9 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
         </div>
       ) : null}
 
-      {gallery.length > 1 ? (
+      {activeGallery.length > 1 ? (
         <div className="ss-product-gallery__thumbs" role="listbox" aria-label="Product media thumbnails">
-          {gallery.map((item, index) => (
+          {activeGallery.map((item, index) => (
             <m.button
               key={`${item.kind}-${item.src}-${index}`}
               type="button"
@@ -246,7 +273,8 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
                   className="ss-product-gallery__thumb-image"
                   quality={64}
                   sizes="96px"
-                  fallbackSrc="/img/odela.jpg"
+                  fallbackSrc=""
+                  onError={() => markImageFailed(item.src)}
                 />
               ) : (
                 <div className="ss-product-gallery__thumb-video">
@@ -259,7 +287,8 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
                       className="ss-product-gallery__thumb-image"
                       quality={64}
                       sizes="96px"
-                      fallbackSrc="/img/odela.jpg"
+                      fallbackSrc=""
+                      onError={() => item.thumbnail && markImageFailed(item.thumbnail)}
                     />
                   ) : (
                     <span className="ss-product-gallery__thumb-video-label">VIDEO</span>

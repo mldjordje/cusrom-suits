@@ -253,6 +253,25 @@ describe("getProductSizeOptions", () => {
     expect(result.map((o) => o.label)).toContain("S");
     expect(result.map((o) => o.label)).toContain("M");
   });
+
+  it("drops secondary numeric labels when alpha sizes dominate the model", () => {
+    const product = makeProduct({
+      legacyId: 12963281,
+      attributes: { size: ["40", "M"] },
+      stockTotal: 4,
+    });
+    const variants = [
+      product,
+      makeVariantWithSize("S", 12963282, 6),
+      makeVariantWithSize("XXL", 12963285, 7),
+      makeVariantWithSize("3XL", 12963286, 1),
+      makeVariantWithSize("4XL", 12963287, 5),
+    ];
+
+    const result = getProductSizeOptions(product, variants);
+    expect(result.map((o) => o.label)).toEqual(["S", "M", "XXL", "3XL", "4XL"]);
+    expect(result.filter((o) => o.legacyId === 12963281)).toHaveLength(1);
+  });
 });
 
 // Small helper that mirrors the sizeAliases in product-details.ts
