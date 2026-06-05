@@ -215,6 +215,7 @@ export function buildMofficeSyncPlan(params: {
       payload.moffice && typeof payload.moffice === "object"
         ? (payload.moffice as Record<string, unknown>)
         : {};
+    const syncedInCurrentRun = String(moffice.syncedRunId || "") === params.runId;
     const candidateSizes = [payloadSize, moffice.size, ...sizes].map(normalizeSize).filter(Boolean);
     const variantKeys = new Set<string>();
     if (ean) variantKeys.add(`ean:${ean}`);
@@ -226,6 +227,11 @@ export function buildMofficeSyncPlan(params: {
     const belongsToCurrentMofficeSku = (sku && feedSkuSet.has(sku)) || (ean && feedEanSet.has(ean));
     const hasCurrentVariant = Array.from(variantKeys).some((key) => feedVariantKeys.has(key));
     const oldNumericLegacyRowAbsentFromFeed = sku && !feedSkuSet.has(sku) && !feedEanSet.has(ean);
+    if (!syncedInCurrentRun) {
+      staleLegacyIds.add(legacyId);
+      continue;
+    }
+
     if ((belongsToCurrentMofficeSku && !hasCurrentVariant) || oldNumericLegacyRowAbsentFromFeed) {
       staleLegacyIds.add(legacyId);
     }

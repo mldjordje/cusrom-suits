@@ -14,7 +14,7 @@ import {
 } from "@/lib/catalog/promotions";
 import { hasUsableDisplayPrice } from "@/lib/catalog/pricing";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
-import { unstable_cache } from "next/cache";
+import { revalidateTag, unstable_cache } from "next/cache";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
 
@@ -184,6 +184,7 @@ export const invalidateCatalogCaches = (bypassMs = 60_000) => {
   getCatalogSnapshotCache().clear();
   getCatalogListCache().clear();
   setCatalogCacheBypassUntil(Date.now() + Math.max(1_000, bypassMs));
+  revalidateTag("catalog-product-by-id");
 };
 
 const makeCatalogListCacheKey = (input: {
@@ -1740,7 +1741,7 @@ async function fetchCatalogProductByLegacyIdFromSupabase(
 const getCatalogProductByLegacyIdCached = unstable_cache(
   async (legacyId: number) => fetchCatalogProductByLegacyIdFromSupabase(legacyId),
   ["catalog-product-by-id-v4"],
-  { revalidate: 180 },
+  { revalidate: 180, tags: ["catalog-product-by-id"] },
 );
 
 export async function getRelatedCatalogProducts(
