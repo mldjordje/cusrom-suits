@@ -269,8 +269,40 @@ export async function runMofficeSync(input: {
 }) {
   const apiKey = process.env.MOFFICE_API_KEY?.trim();
   if (!apiKey) throw new Error("MOFFICE_API_KEY is not configured.");
+  return executeMofficeSync({
+    ...input,
+    source: "moffice-api",
+    endpoint: MOFFICE_API_URL,
+    loadItems: () => fetchMofficeItems(apiKey),
+  });
+}
+
+export async function runMofficeSyncWithItems(input: {
+  items: MofficeItem[];
+  environment?: SyncEnvironment;
+  mode?: SyncMode;
+  trigger?: SyncTrigger;
+  source?: string;
+  endpoint?: string;
+}) {
+  if (!Array.isArray(input.items)) throw new Error("mOffice payload must be an array.");
+  return executeMofficeSync({
+    ...input,
+    loadItems: async () => input.items,
+  });
+}
+
+async function executeMofficeSync(input: {
+  environment?: SyncEnvironment;
+  mode?: SyncMode;
+  trigger?: SyncTrigger;
+  source?: string;
+  endpoint?: string;
+  loadItems: () => Promise<MofficeItem[]>;
+}) {
   const supabase = getServiceSupabase();
   if (!supabase) throw new Error("Supabase service role client is not configured.");
+  const source = input.source || "moffice-api";
 
   const run = await startSyncRun({
     domain: "stock_inbound",
@@ -278,13 +310,15 @@ export async function runMofficeSync(input: {
     mode: input.mode || "full",
     trigger: input.trigger || "manual",
     meta: {
-      source: "moffice-api",
-      endpoint: MOFFICE_API_URL,
+      source,
+      endpoint: input.endpoint || MOFFICE_API_URL,
     },
   });
 
   try {
-    const items = await fetchMofficeItems(apiKey);
+    const items = await input.loadItems();
+    if (!Array.isArray(items)) throw new Error("mOffice payload must be an array.");
+
     const { data: existingRaw, error: existingError } = await supabase
       .from("catalog_products")
       .select("legacy_id,sku,ean,name_sr,raw_payload");
@@ -363,7 +397,7 @@ export async function runMofficeSync(input: {
       counters,
       summary,
       meta: {
-        source: "moffice-api",
+        source,
         total: plan.counters.total,
         rows: plan.counters.rows,
         matched: plan.counters.matched,
@@ -390,7 +424,7 @@ export async function runMofficeSync(input: {
       status: "failed",
       counters: { total: 0, success: 0, failed: 1, skipped: 0 },
       summary: `mOffice sync failed: ${message}`,
-      meta: { source: "moffice-api", fatalError: message },
+      meta: { source, fatalError: message },
     });
     throw error;
   }
