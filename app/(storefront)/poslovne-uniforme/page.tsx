@@ -5,52 +5,16 @@ import Reveal from "@/app/components/motion/Reveal";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
+import {
+  buildUniformProducts,
+  resolveUniformImages,
+  resolveUniformVideos,
+} from "@/lib/storefront/uniforms";
 
 export const metadata = {
   title: "Poslovne uniforme | Santos & Santorini",
   description: "Poslovne uniforme i galerija modela za kompanije i timove.",
 };
-
-const toUniformSlug = (value: string) =>
-  (value || "")
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 70);
-
-// Spakovani fajlovi iz public/fajlovi/uniforme/ \u2014 koriste se kao fallback ako
-// admin pode\u0161avanja za uniforme nisu popunjena (npr. prazna baza na produkciji).
-const BUNDLED_UNIFORM_IMAGES = [
-  { title: "Hospitality kolekcija", image: "/fajlovi/uniforme/BRI04849.jpg", alt: "Santos poslovna uniforma za hospitality tim" },
-  { title: "Recepcija i menadzment", image: "/fajlovi/uniforme/BRI04875.jpg", alt: "Santos poslovna uniforma za recepciju" },
-  { title: "Zenska uniforma mantil", image: "/fajlovi/uniforme/BRI04899.jpg", alt: "Santos zenska poslovna uniforma mantil" },
-  { title: "Pantalone i jakna", image: "/fajlovi/uniforme/BRI04939.jpg", alt: "Santos poslovna uniforma pantalone i jakna" },
-  { title: "Timski setovi", image: "/fajlovi/uniforme/BRI04963.jpg", alt: "Santos poslovne uniforme za kompanijske timove" },
-  { title: "Uniforma za timove", image: "/fajlovi/uniforme/BRI04988.jpg", alt: "Santos komplet poslovne uniforme za timove" },
-];
-
-const BUNDLED_UNIFORM_VIDEOS = [
-  {
-    title: "Zenska uniforma mantil",
-    video: "/fajlovi/uniforme/Santos%20zenska%20uniforma%20mantil.mp4",
-    poster: "/fajlovi/uniforme/BRI04899.jpg",
-    alt: "Santos video prezentacija zenske poslovne uniforme",
-  },
-  {
-    title: "Kosulja kratak rukav",
-    video: "/fajlovi/uniforme/Santos%20uniforma%20kosulja%20kratak%20rukav.mp4",
-    poster: "/fajlovi/uniforme/BRI04875.jpg",
-    alt: "Santos video prezentacija poslovne kosulje kratkog rukava",
-  },
-  {
-    title: "Pantalone i jakna",
-    video: "/fajlovi/uniforme/Santos%20uniforma%20pantalone%20jakna.mp4",
-    poster: "/fajlovi/uniforme/BRI04939.jpg",
-    alt: "Santos video prezentacija kompleta pantalone i jakna",
-  },
-];
 
 export default async function BusinessUniformsPage({
   searchParams,
@@ -62,127 +26,102 @@ export default async function BusinessUniformsPage({
   const tx = (value: string, fallbackEn?: string) =>
     localizeDynamicStorefrontText(value, isEn ? "en" : "sr", fallbackEn);
   const landingSettings = await getLandingSettings();
-  const configuredImages = landingSettings.uniformsImages.filter((item) => item.image);
-  const configuredVideos = landingSettings.uniformsVideos.filter((item) => item.video);
-  const images = configuredImages.length ? configuredImages : BUNDLED_UNIFORM_IMAGES;
-  const videos = configuredVideos.length ? configuredVideos : BUNDLED_UNIFORM_VIDEOS;
-  const products = images.map((item, index) => {
-    const title = tx(item.title || "", isEn ? "Business uniform" : undefined) || (isEn ? "Business uniform" : "Poslovna uniforma");
-    const baseSlug = toUniformSlug(item.title || item.alt || `uniform-${index + 1}`) || `uniform-${index + 1}`;
-    return {
-      slug: `${baseSlug}-${index + 1}`,
-      title,
-      description: item.alt ? tx(item.alt) : "",
-      cover: item.image,
-    };
-  });
-  const galleryItems = images.map((item) => ({
-    type: "image" as const,
-    title: item.title,
-    alt: item.alt,
-    src: item.image,
-  }));
+  const images = resolveUniformImages(landingSettings);
+  const videos = resolveUniformVideos(landingSettings);
+  const products = buildUniformProducts(images, tx, isEn);
+  const galleryImages = images.map((item) => ({ title: item.title, alt: item.alt, src: item.image }));
   const withLang = (href: string) => {
     if (!isEn || !href.startsWith("/")) return href;
     if (href.includes("?")) return `${href}&lang=en`;
     return `${href}?lang=en`;
   };
+  const heroImage = images[0]?.image || "/img/hero2.jpg";
 
   return (
     <>
       <StorefrontHeader lang={lang} variant="contrast" />
-      <main className="page-wrapper">
-        <section className="container py-5">
-          <div className="border bg-white p-4 p-md-5 mb-4" style={{ borderRadius: 24 }}>
-            <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-              {tx(landingSettings.uniformsEyebrow, "Business Uniforms")}
-            </p>
-            <h1 className="section-title text-uppercase mb-3">{tx(landingSettings.uniformsTitle, "Business Uniforms")}</h1>
-            <p className="text-secondary mb-0">{tx(landingSettings.uniformsText)}</p>
-            <div className="d-flex flex-wrap gap-2 mt-4">
-              <a href="#uniforme-upit" className="btn btn-dark btn-sm text-uppercase fw-medium">
-                {isEn ? "Send inquiry" : "Posalji upit"}
-              </a>
-              <Link href={withLang("/dokumenta")} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                {isEn ? "Documents" : "Dokumenta"}
-              </Link>
-            </div>
+      <main className="page-wrapper ss-uniform-page">
+        {/* HERO */}
+        <section className="ss-uniform-hero">
+          <div className="ss-uniform-hero__media">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={heroImage} alt={tx(landingSettings.uniformsTitle, "Business Uniforms")} loading="eager" decoding="async" />
+            <div className="ss-uniform-hero__scrim" />
           </div>
-
-          <Reveal as="section" className="pb-4" delay={0.02} amount={0.1} y={14}>
-            <div className="d-flex align-items-end justify-content-between gap-3 mb-3">
-              <div>
-                <p className="text-uppercase mb-1" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-                  {isEn ? "Uniform collection" : "Kolekcija uniformi"}
-                </p>
-                <h2 className="h3 text-uppercase mb-0">{isEn ? "Business uniforms" : "Poslovne uniforme"}</h2>
+          <div className="container ss-uniform-hero__inner">
+            <Reveal as="div" className="ss-uniform-hero__content" delay={0.02} amount={0.2} y={18}>
+              <p className="ss-uniform-hero__eyebrow">{tx(landingSettings.uniformsEyebrow, "Business Uniforms")}</p>
+              <h1 className="ss-uniform-hero__title">{tx(landingSettings.uniformsTitle, "Business Uniforms")}</h1>
+              <p className="ss-uniform-hero__lead">{tx(landingSettings.uniformsText)}</p>
+              <div className="d-flex flex-wrap gap-2 mt-4">
+                <a href="#uniforme-upit" className="btn btn-primary text-uppercase fw-medium">
+                  {isEn ? "Send inquiry" : "Posalji upit"}
+                </a>
+                <Link href={withLang("/dokumenta")} className="btn btn-light text-uppercase fw-medium">
+                  {isEn ? "Documents" : "Dokumenta"}
+                </Link>
               </div>
-              <span className="text-secondary small">{products.length ? `${products.length} ${isEn ? "models" : "modela"}` : ""}</span>
+            </Reveal>
+          </div>
+        </section>
+
+        <section className="container py-5">
+          {/* MODELS GRID */}
+          <Reveal as="section" className="pb-2" delay={0.02} amount={0.1} y={14}>
+            <div className="ss-uniform-section-head">
+              <div>
+                <p className="ss-uniform-eyebrow">{isEn ? "Uniform collection" : "Kolekcija uniformi"}</p>
+                <h2 className="ss-uniform-section-title mb-0">{isEn ? "Models" : "Modeli"}</h2>
+              </div>
+              <span className="ss-uniform-count">
+                {products.length ? `${products.length} ${isEn ? "models" : "modela"}` : ""}
+              </span>
             </div>
 
             {products.length ? (
-              <div className="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 g-md-3">
+              <div className="row row-cols-2 row-cols-md-3 row-cols-xl-4 g-3 g-md-4">
                 {products.map((product) => (
-                  <div key={product.slug} className="product-card-wrapper">
-                    <div className="product-card ss-card-hover ss-product-card mb-0">
-                      <div className="pc__img-wrapper hover-container">
-                        <Link href={withLang(`/poslovne-uniforme/${product.slug}`)} prefetch={false}>
-                          <img
-                            src={product.cover}
-                            alt={product.title}
-                            width={330}
-                            height={400}
-                            className="pc__img object-position-top"
-                            loading="lazy"
-                            decoding="async"
-                          />
-                        </Link>
-                        <Link
-                          href={withLang(`/poslovne-uniforme/${product.slug}`)}
-                          prefetch={false}
-                          className="pc__atc btn anim_appear-bottom btn position-absolute border-0 text-uppercase fw-medium ss-cta-btn d-none d-md-inline-flex"
-                        >
-                          {isEn ? "Open" : "Otvori"}
-                        </Link>
-                      </div>
-                      <div className="pc__info position-relative">
-                        <p className="pc__category">{isEn ? "Uniform" : "Uniforma"}</p>
-                        <h6 className="pc__title mb-1">
-                          <Link href={withLang(`/poslovne-uniforme/${product.slug}`)} prefetch={false}>
-                            {product.title}
-                          </Link>
-                        </h6>
-                        {product.description ? <p className="text-secondary small mb-0">{product.description}</p> : null}
-                      </div>
-                    </div>
+                  <div key={product.slug} className="col">
+                    <Link
+                      href={withLang(`/poslovne-uniforme/${product.slug}`)}
+                      prefetch={false}
+                      className="ss-uniform-tile"
+                    >
+                      <span className="ss-uniform-tile__media">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={product.cover} alt={product.title} loading="lazy" decoding="async" />
+                        <span className="ss-uniform-tile__cta">{isEn ? "View" : "Pogledaj"}</span>
+                      </span>
+                      <span className="ss-uniform-tile__body">
+                        <span className="ss-uniform-tile__kicker">{isEn ? "Uniform" : "Uniforma"}</span>
+                        <span className="ss-uniform-tile__title">{product.title}</span>
+                      </span>
+                    </Link>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="border bg-white p-4" style={{ borderRadius: 24 }}>
-                <p className="mb-0 text-secondary">
-                  {isEn
-                    ? "Uniform models will be available soon."
-                    : "Modeli uniformi ce uskoro biti dostupni."}
+              <div className="ss-uniform-empty">
+                <p className="mb-0">
+                  {isEn ? "Uniform models will be available soon." : "Modeli uniformi ce uskoro biti dostupni."}
                 </p>
               </div>
             )}
           </Reveal>
 
+          {/* VIDEO */}
           {videos.length ? (
-            <Reveal as="section" className="pb-2 pt-4" delay={0.03} amount={0.08} y={16}>
-              <div className="d-flex align-items-end justify-content-between gap-3 mb-3">
+            <Reveal as="section" className="pt-5" delay={0.03} amount={0.08} y={16}>
+              <div className="ss-uniform-section-head">
                 <div>
-                  <p className="text-uppercase mb-1" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-                    {isEn ? "Video presentation" : "Video prezentacija"}
-                  </p>
-                  <h2 className="h3 text-uppercase mb-0">{isEn ? "Uniforms in motion" : "Uniforme u pokretu"}</h2>
+                  <p className="ss-uniform-eyebrow">{isEn ? "Video presentation" : "Video prezentacija"}</p>
+                  <h2 className="ss-uniform-section-title mb-0">{isEn ? "Uniforms in motion" : "Uniforme u pokretu"}</h2>
                 </div>
               </div>
               <div className="row g-4">
                 {videos.map((item, index) => (
                   <div key={`video-${item.video}-${index}`} className="col-12 col-md-6 col-xl-4">
-                    <div className="border bg-white p-3 h-100" style={{ borderRadius: 24 }}>
+                    <div className="ss-uniform-video-card">
                       <video
                         src={item.video}
                         poster={item.poster || undefined}
@@ -192,10 +131,10 @@ export default async function BusinessUniformsPage({
                         playsInline
                         preload="metadata"
                         className="w-100 h-auto"
-                        style={{ borderRadius: 18, objectFit: "cover", background: "#0f172a", aspectRatio: "3 / 4" }}
+                        style={{ borderRadius: 12, objectFit: "cover", background: "#0f172a", aspectRatio: "3 / 4" }}
                       />
-                      {item.title ? <h3 className="h6 text-uppercase mt-3 mb-1">{tx(item.title)}</h3> : null}
-                      {item.alt ? <p className="text-secondary mb-0 small">{tx(item.alt)}</p> : null}
+                      {item.title ? <h3 className="ss-uniform-video-card__title">{tx(item.title)}</h3> : null}
+                      {item.alt ? <p className="ss-uniform-video-card__copy">{tx(item.alt)}</p> : null}
                     </div>
                   </div>
                 ))}
@@ -203,32 +142,26 @@ export default async function BusinessUniformsPage({
             </Reveal>
           ) : null}
 
-          {galleryItems.length ? (
-            <Reveal as="section" className="pt-4" delay={0.04} amount={0.08} y={16}>
-              <div className="d-flex align-items-end justify-content-between gap-3 mb-3">
+          {/* LOOKBOOK */}
+          {galleryImages.length ? (
+            <Reveal as="section" className="pt-5" delay={0.04} amount={0.08} y={16}>
+              <div className="ss-uniform-section-head">
                 <div>
-                  <p className="text-uppercase mb-1" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-                    {isEn ? "Gallery" : "Galerija"}
-                  </p>
-                  <h2 className="h3 text-uppercase mb-0">{isEn ? "Lookbook" : "Lookbook"}</h2>
+                  <p className="ss-uniform-eyebrow">{isEn ? "Gallery" : "Galerija"}</p>
+                  <h2 className="ss-uniform-section-title mb-0">Lookbook</h2>
                 </div>
               </div>
-              <div className="row g-4">
-                {galleryItems.map((item, index) => (
-                  <div key={`${item.type}-${item.src}-${index}`} className="col-12 col-md-6 col-xl-4">
-                    <div className="border bg-white p-3 h-100" style={{ borderRadius: 24 }}>
+              <div className="row g-3 g-md-4">
+                {galleryImages.map((item, index) => (
+                  <div key={`gallery-${item.src}-${index}`} className="col-6 col-md-4">
+                    <div className="ss-uniform-shot">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={item.src}
                         alt={item.alt || tx(item.title || landingSettings.uniformsTitle, "Business Uniforms")}
-                        width={600}
-                        height={760}
-                        className="w-100 h-auto"
-                        style={{ borderRadius: 18, objectFit: "cover", aspectRatio: "3 / 4" }}
                         loading="lazy"
                         decoding="async"
                       />
-                      {item.title ? <h3 className="h6 text-uppercase mt-3 mb-1">{tx(item.title)}</h3> : null}
-                      {item.alt ? <p className="text-secondary mb-0 small">{tx(item.alt)}</p> : null}
                     </div>
                   </div>
                 ))}
@@ -236,19 +169,11 @@ export default async function BusinessUniformsPage({
             </Reveal>
           ) : null}
 
-          <Reveal
-            as="div"
-            id="uniforme-upit"
-            className="border bg-white p-4 p-md-5 mt-5"
-            delay={0.06}
-            amount={0.12}
-            y={16}
-          >
-            <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-              {isEn ? "Inquiry" : "Upit"}
-            </p>
-            <h2 className="h4 text-uppercase mb-3">{isEn ? "Business uniforms" : "Poslovne uniforme"}</h2>
-            <p className="text-secondary mb-4">
+          {/* INQUIRY */}
+          <Reveal as="section" id="uniforme-upit" className="ss-uniform-inquiry mt-5" delay={0.06} amount={0.12} y={16}>
+            <p className="ss-uniform-eyebrow">{isEn ? "Inquiry" : "Upit"}</p>
+            <h2 className="ss-uniform-section-title mb-3">{isEn ? "Business uniforms" : "Poslovne uniforme"}</h2>
+            <p className="ss-uniform-lead mb-4">
               {isEn
                 ? "Send team size, activity type and timeline. We will reply with the next steps."
                 : "Posaljite opis potreba, broj ljudi, delatnost i okvirni rok. Tim ce vam odgovoriti sa sledecim koracima."}

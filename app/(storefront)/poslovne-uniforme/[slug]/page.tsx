@@ -3,19 +3,16 @@ import { notFound } from "next/navigation";
 import Reveal from "@/app/components/motion/Reveal";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
+import UniformGallery from "@/app/components/storefront/UniformGallery";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { buildSeoMetadata } from "@/lib/seo";
-
-const toUniformSlug = (value: string) =>
-  (value || "")
-    .toLowerCase()
-    .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 70);
+import {
+  buildUniformProducts,
+  resolveUniformImages,
+  resolveUniformVideos,
+} from "@/lib/storefront/uniforms";
 
 export async function generateMetadata({
   params,
@@ -30,18 +27,7 @@ export async function generateMetadata({
   const tx = (value: string, fallbackEn?: string) =>
     localizeDynamicStorefrontText(value, isEn ? "en" : "sr", fallbackEn);
   const landingSettings = await getLandingSettings();
-  const images = landingSettings.uniformsImages.filter((item) => item.image);
-  const products = images.map((item, index) => {
-    const title =
-      tx(item.title || "", isEn ? "Business uniform" : undefined) || (isEn ? "Business uniform" : "Poslovna uniforma");
-    const baseSlug = toUniformSlug(item.title || item.alt || `uniform-${index + 1}`) || `uniform-${index + 1}`;
-    return {
-      slug: `${baseSlug}-${index + 1}`,
-      title,
-      description: item.alt ? tx(item.alt) : "",
-      cover: item.image,
-    };
-  });
+  const products = buildUniformProducts(resolveUniformImages(landingSettings), tx, isEn);
   const product = products.find((p) => p.slug === slug);
 
   return buildSeoMetadata({
@@ -69,21 +55,11 @@ export default async function BusinessUniformDetailPage({
   const tx = (value: string, fallbackEn?: string) =>
     localizeDynamicStorefrontText(value, isEn ? "en" : "sr", fallbackEn);
   const landingSettings = await getLandingSettings();
-  const images = landingSettings.uniformsImages.filter((item) => item.image);
-  const products = images.map((item, index) => {
-    const title =
-      tx(item.title || "", isEn ? "Business uniform" : undefined) || (isEn ? "Business uniform" : "Poslovna uniforma");
-    const baseSlug = toUniformSlug(item.title || item.alt || `uniform-${index + 1}`) || `uniform-${index + 1}`;
-    return {
-      slug: `${baseSlug}-${index + 1}`,
-      title,
-      description: item.alt ? tx(item.alt) : "",
-      cover: item.image,
-    };
-  });
+  const products = buildUniformProducts(resolveUniformImages(landingSettings), tx, isEn);
   const product = products.find((p) => p.slug === slug);
   if (!product) notFound();
 
+  const videos = resolveUniformVideos(landingSettings);
   const withLang = (href: string) => {
     if (!isEn || !href.startsWith("/")) return href;
     if (href.includes("?")) return `${href}&lang=en`;
@@ -93,48 +69,41 @@ export default async function BusinessUniformDetailPage({
   return (
     <>
       <StorefrontHeader lang={lang} variant="contrast" />
-      <main className="page-wrapper">
+      <main className="page-wrapper ss-uniform-page">
         <section className="container py-5">
           <Reveal as="div" delay={0.02} amount={0.1} y={14}>
-            <nav className="small mb-3">
-              <Link href={withLang("/")} className="text-secondary">
-                {isEn ? "Home" : "Pocetna"}
-              </Link>
-              <span className="text-secondary mx-2">/</span>
-              <Link href={withLang("/poslovne-uniforme")} className="text-secondary">
-                {isEn ? "Business uniforms" : "Poslovne uniforme"}
-              </Link>
+            <nav className="ss-uniform-breadcrumb small mb-4">
+              <Link href={withLang("/")}>{isEn ? "Home" : "Pocetna"}</Link>
+              <span aria-hidden="true">/</span>
+              <Link href={withLang("/poslovne-uniforme")}>{isEn ? "Business uniforms" : "Poslovne uniforme"}</Link>
+              <span aria-hidden="true">/</span>
+              <span className="ss-uniform-breadcrumb__current">{product.title}</span>
             </nav>
 
-            <div className="row g-4 align-items-start">
+            <div className="row g-4 g-lg-5 align-items-start">
               <div className="col-lg-7">
-                <div className="border bg-white p-3" style={{ borderRadius: 24 }}>
-                  <img
-                    src={product.cover}
-                    alt={product.title}
-                    width={900}
-                    height={1120}
-                    className="w-100 h-auto"
-                    style={{ borderRadius: 18, objectFit: "cover" }}
-                    loading="eager"
-                    decoding="async"
-                  />
+                <div className="ss-uniform-gallery-card">
+                  <UniformGallery images={product.gallery} name={product.title} />
                 </div>
               </div>
               <div className="col-lg-5">
-                <div className="border bg-white p-4 p-md-5" style={{ borderRadius: 24 }}>
-                  <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-                    {isEn ? "Uniform" : "Uniforma"}
-                  </p>
-                  <h1 className="h2 text-uppercase mb-3">{product.title}</h1>
-                  {product.description ? <p className="text-secondary mb-4">{product.description}</p> : null}
+                <div className="ss-uniform-info-card">
+                  <p className="ss-uniform-eyebrow">{isEn ? "Business uniform" : "Poslovna uniforma"}</p>
+                  <h1 className="ss-uniform-title">{product.title}</h1>
+                  {product.description ? <p className="ss-uniform-lead">{product.description}</p> : null}
 
-                  <div className="d-flex flex-wrap gap-2">
+                  <ul className="ss-uniform-points">
+                    <li>{isEn ? "Made to your brand & dress code" : "Izrada prema brendu i dress code-u"}</li>
+                    <li>{isEn ? "Men's & women's combinations" : "Muske i zenske kombinacije"}</li>
+                    <li>{isEn ? "Full team capsule collections" : "Kompletne capsule kolekcije za tim"}</li>
+                  </ul>
+
+                  <div className="d-flex flex-wrap gap-2 mt-4">
                     <a href="#upit" className="btn btn-primary text-uppercase fw-medium">
                       {isEn ? "Send inquiry" : "Posalji upit"}
                     </a>
                     <Link href={withLang("/poslovne-uniforme")} className="btn btn-outline-dark text-uppercase fw-medium">
-                      {isEn ? "Back" : "Nazad"}
+                      {isEn ? "Back to collection" : "Nazad na kolekciju"}
                     </Link>
                   </div>
                 </div>
@@ -142,12 +111,37 @@ export default async function BusinessUniformDetailPage({
             </div>
           </Reveal>
 
-          <Reveal as="section" id="upit" className="border bg-white p-4 p-md-5 mt-5" delay={0.06} amount={0.12} y={16}>
-            <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}>
-              {isEn ? "Inquiry" : "Upit"}
-            </p>
-            <h2 className="h4 text-uppercase mb-3">{isEn ? "Send inquiry" : "Posalji upit"}</h2>
-            <p className="text-secondary mb-4">
+          {videos.length ? (
+            <Reveal as="section" className="pt-5" delay={0.05} amount={0.08} y={16}>
+              <p className="ss-uniform-eyebrow">{isEn ? "Video presentation" : "Video prezentacija"}</p>
+              <h2 className="ss-uniform-section-title mb-4">{isEn ? "Uniforms in motion" : "Uniforme u pokretu"}</h2>
+              <div className="row g-4">
+                {videos.map((item, index) => (
+                  <div key={`video-${item.video}-${index}`} className="col-12 col-md-6 col-xl-4">
+                    <div className="ss-uniform-video-card">
+                      <video
+                        src={item.video}
+                        poster={item.poster || undefined}
+                        controls
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        className="w-100 h-auto"
+                        style={{ borderRadius: 12, objectFit: "cover", background: "#0f172a", aspectRatio: "3 / 4" }}
+                      />
+                      {item.title ? <h3 className="ss-uniform-video-card__title">{tx(item.title)}</h3> : null}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </Reveal>
+          ) : null}
+
+          <Reveal as="section" id="upit" className="ss-uniform-inquiry mt-5" delay={0.06} amount={0.12} y={16}>
+            <p className="ss-uniform-eyebrow">{isEn ? "Inquiry" : "Upit"}</p>
+            <h2 className="ss-uniform-section-title mb-3">{isEn ? "Send inquiry" : "Posalji upit"}</h2>
+            <p className="ss-uniform-lead mb-4">
               {isEn
                 ? "Tell us team size, activity type and timeline. We will reply with the next steps."
                 : "Posaljite opis potreba, broj ljudi, delatnost i okvirni rok. Tim ce vam odgovoriti sa sledecim koracima."}
@@ -162,6 +156,9 @@ export default async function BusinessUniformDetailPage({
               </div>
               <div className="col-md-6">
                 <input name="phone" className="form-control" placeholder={isEn ? "Phone" : "Telefon"} />
+              </div>
+              <div className="col-md-6">
+                <input name="company" className="form-control" placeholder={isEn ? "Company name" : "Naziv firme"} />
               </div>
               <div className="col-12">
                 <textarea

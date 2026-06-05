@@ -8360,7 +8360,11 @@ button.ss-mobile-nav-quicklink,
    editorijalnim menswear izgledom (suzdržano, tihi neutralni tonovi, fina linija).
    ========================================================================== */
 
-.theme-18 {
+/* Premium design tokeni — definisani GLOBALNO (:root), ne samo pod .theme-18,
+   jer se .theme-18 primenjuje samo na landingu. Bez ovoga ostale stranice
+   (web-shop, poslovne-uniforme, kontakt, blog…) dobijaju nedefinisane var()
+   vrednosti pa pozadine/dugmici pucaju i tekst postaje nevidljiv. */
+:root {
   --ss-paper: #f4f1ec;
   --ss-ink: #17140f;
   --ss-ink-soft: #6f6557;
@@ -8763,4 +8767,397 @@ button.ss-mobile-nav-quicklink,
 .ss-product-title {
   font-family: var(--font-playfair-display), "Playfair Display", serif;
   letter-spacing: -0.01em;
+}
+
+/* ==========================================================================
+   POSLOVNE UNIFORME — redizajn (visok kontrast, premium, vidljiv tekst)
+   ========================================================================== */
+
+.ss-uniform-page {
+  background: var(--ss-paper, #f4f1ec);
+  color: var(--ss-ink, #17140f);
+}
+
+/* --- HERO --- */
+.ss-uniform-hero {
+  position: relative;
+  min-height: clamp(360px, 56vh, 560px);
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background: #14110c;
+}
+
+.ss-uniform-hero__media {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+.ss-uniform-hero__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 22%;
+}
+
+.ss-uniform-hero__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 9, 7, 0.35) 0%,
+    rgba(10, 9, 7, 0.45) 45%,
+    rgba(10, 9, 7, 0.82) 100%
+  );
+}
+
+.ss-uniform-hero__inner {
+  position: relative;
+  z-index: 1;
+  padding-block: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+.ss-uniform-hero__content {
+  max-width: 46rem;
+}
+
+.ss-uniform-hero__eyebrow {
+  margin-bottom: 0.7rem;
+  color: var(--ss-gold, #c9a96e);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.ss-uniform-hero__title {
+  margin: 0 0 1rem;
+  color: #fff;
+  font-family: var(--font-playfair-display), "Playfair Display", serif;
+  font-size: clamp(2.1rem, 4.6vw, 3.6rem);
+  font-weight: 600;
+  line-height: 1.08;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+}
+
+.ss-uniform-hero__lead {
+  margin: 0;
+  max-width: 40rem;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 1.02rem;
+  line-height: 1.65;
+}
+
+/* --- Sekcijski headeri / eyebrow / naslovi --- */
+.ss-uniform-eyebrow {
+  margin-bottom: 0.4rem;
+  color: var(--ss-gold-dark, #8a6d3f);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.ss-uniform-section-title {
+  color: var(--ss-ink, #17140f);
+  font-family: var(--font-playfair-display), "Playfair Display", serif;
+  font-size: clamp(1.5rem, 3vw, 2.1rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.ss-uniform-section-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.ss-uniform-count {
+  color: var(--ss-ink-soft, #6f6557);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+/* --- Tile (model) --- */
+.ss-uniform-tile {
+  display: block;
+  text-decoration: none;
+  color: inherit;
+}
+
+.ss-uniform-tile__media {
+  position: relative;
+  display: block;
+  border-radius: var(--ss-card-radius, 6px);
+  overflow: hidden;
+  background: #e9e3da;
+  aspect-ratio: 0.82;
+}
+
+.ss-uniform-tile__media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ss-uniform-tile:hover .ss-uniform-tile__media img {
+    transform: scale(1.05);
+  }
+}
+
+.ss-uniform-tile__cta {
+  position: absolute;
+  left: 50%;
+  bottom: 0.85rem;
+  transform: translate(-50%, 0.6rem);
+  padding: 0.5rem 1.1rem;
+  border-radius: 2px;
+  background: rgba(23, 20, 15, 0.92);
+  color: #fff;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ss-uniform-tile:hover .ss-uniform-tile__cta {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+.ss-uniform-tile__body {
+  display: block;
+  padding-top: 0.75rem;
+}
+
+.ss-uniform-tile__kicker {
+  display: block;
+  margin-bottom: 0.2rem;
+  color: var(--ss-ink-soft, #6f6557);
+  font-size: 0.64rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.ss-uniform-tile__title {
+  display: block;
+  color: var(--ss-ink, #17140f);
+  font-size: 0.95rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+/* --- Cards (info, video, gallery, inquiry) --- */
+.ss-uniform-info-card,
+.ss-uniform-inquiry {
+  background: #fff;
+  border: 1px solid var(--ss-hairline, rgba(23, 20, 15, 0.1));
+  border-radius: 16px;
+  padding: clamp(1.4rem, 3vw, 2.2rem);
+}
+
+.ss-uniform-gallery-card {
+  background: #fff;
+  border: 1px solid var(--ss-hairline, rgba(23, 20, 15, 0.1));
+  border-radius: 16px;
+  padding: 0.75rem;
+}
+
+.ss-uniform-title {
+  margin: 0 0 1rem;
+  color: var(--ss-ink, #17140f);
+  font-family: var(--font-playfair-display), "Playfair Display", serif;
+  font-size: clamp(1.7rem, 3.4vw, 2.4rem);
+  font-weight: 600;
+  line-height: 1.12;
+  letter-spacing: -0.015em;
+}
+
+.ss-uniform-lead {
+  color: var(--ss-ink-soft, #6f6557);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.ss-uniform-points {
+  list-style: none;
+  margin: 1.5rem 0 0;
+  padding: 0;
+}
+
+.ss-uniform-points li {
+  position: relative;
+  padding: 0.55rem 0 0.55rem 1.5rem;
+  border-top: 1px solid var(--ss-hairline, rgba(23, 20, 15, 0.1));
+  color: var(--ss-ink, #17140f);
+  font-size: 0.92rem;
+}
+
+.ss-uniform-points li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 1.15rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--ss-gold-dark, #8a6d3f);
+}
+
+.ss-uniform-video-card,
+.ss-uniform-shot {
+  background: #fff;
+  border: 1px solid var(--ss-hairline, rgba(23, 20, 15, 0.1));
+  border-radius: 14px;
+  padding: 0.65rem;
+  height: 100%;
+}
+
+.ss-uniform-shot {
+  padding: 0;
+  overflow: hidden;
+}
+
+.ss-uniform-shot img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  aspect-ratio: 3 / 4;
+  transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ss-uniform-shot:hover img {
+    transform: scale(1.04);
+  }
+}
+
+.ss-uniform-video-card__title {
+  margin: 0.85rem 0 0.2rem;
+  color: var(--ss-ink, #17140f);
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.ss-uniform-video-card__copy {
+  margin: 0;
+  color: var(--ss-ink-soft, #6f6557);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+/* --- Breadcrumb --- */
+.ss-uniform-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ss-uniform-breadcrumb a {
+  color: var(--ss-ink-soft, #6f6557);
+  text-decoration: none;
+}
+
+.ss-uniform-breadcrumb a:hover {
+  color: var(--ss-gold-dark, #8a6d3f);
+}
+
+.ss-uniform-breadcrumb span[aria-hidden] {
+  color: rgba(23, 20, 15, 0.3);
+}
+
+.ss-uniform-breadcrumb__current {
+  color: var(--ss-ink, #17140f);
+}
+
+.ss-uniform-empty {
+  background: #fff;
+  border: 1px solid var(--ss-hairline, rgba(23, 20, 15, 0.1));
+  border-radius: 16px;
+  padding: 1.5rem;
+  color: var(--ss-ink-soft, #6f6557);
+}
+
+/* Form polja — vidljiv tekst i fokus */
+.ss-uniform-inquiry .form-control {
+  border-radius: 4px;
+  border-color: var(--ss-hairline, rgba(23, 20, 15, 0.16));
+  color: var(--ss-ink, #17140f);
+}
+
+.ss-uniform-inquiry .form-control:focus {
+  border-color: var(--ss-gold-dark, #8a6d3f);
+  box-shadow: 0 0 0 0.18rem rgba(138, 109, 63, 0.16);
+}
+
+/* --- Uniform gallery (main + thumbnails), lokalne slike --- */
+.ss-uniform-gallery__main {
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e9e3da;
+  aspect-ratio: 3 / 4;
+}
+
+.ss-uniform-gallery__main img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.ss-uniform-gallery__thumbs {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin-top: 0.6rem;
+}
+
+.ss-uniform-gallery__thumb {
+  position: relative;
+  display: block;
+  padding: 0;
+  border: 1px solid var(--ss-hairline, rgba(23, 20, 15, 0.12));
+  border-radius: 8px;
+  overflow: hidden;
+  background: #e9e3da;
+  aspect-ratio: 3 / 4;
+  cursor: pointer;
+  transition: border-color 0.22s ease, transform 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.ss-uniform-gallery__thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.ss-uniform-gallery__thumb:hover {
+  transform: translateY(-2px);
+}
+
+.ss-uniform-gallery__thumb.is-active {
+  border-color: var(--ss-gold-dark, #8a6d3f);
+  box-shadow: 0 0 0 1px var(--ss-gold-dark, #8a6d3f);
+}
+
+@media (max-width: 575.98px) {
+  .ss-uniform-gallery__thumbs {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
