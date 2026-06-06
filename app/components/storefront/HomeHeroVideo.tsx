@@ -1,14 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { decodeHtmlEntities, getCatalogProductDisplayName } from "@/lib/catalog/presentation";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import HomeHeroMedia from "@/app/components/storefront/HomeHeroMedia";
 import HomeHeroIntroMotion from "@/app/components/storefront/HomeHeroIntroMotion";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
-
-const HeroParallaxFx = dynamic(() => import("@/app/components/storefront/HeroParallaxFx"));
+import HeroParallaxFx from "@/app/components/storefront/HeroParallaxFx";
 
 type HomeCategory = {
   id: number;
@@ -38,12 +36,13 @@ type Props = {
   };
   lang?: StorefrontLanguage;
   heroVideoUrl?: string;
+  heroVideoMobileUrl?: string;
   heroVideoPosterUrl?: string;
 };
 
 const hrefForCategoryGroup = (categoryGroup: string) => `/web-shop?categoryGroup=${categoryGroup}`;
 
-export default function HomeHeroVideo({ categories: _categories, showProductCards = true, featuredProducts, content, lang = "sr", heroVideoUrl, heroVideoPosterUrl }: Props) {
+export default function HomeHeroVideo({ categories: _categories, showProductCards = true, featuredProducts, content, lang = "sr", heroVideoUrl, heroVideoMobileUrl, heroVideoPosterUrl }: Props) {
   const tx = (value: string, fallbackEn?: string) => localizeDynamicStorefrontText(value, lang, fallbackEn);
   const withLang = (href: string) => {
     if (lang !== "en" || !href.startsWith("/")) return href;
@@ -104,6 +103,7 @@ export default function HomeHeroVideo({ categories: _categories, showProductCard
         desktopPosterSrc={heroVideoPosterUrl || "/img/hero2.jpg"}
         mobilePosterSrc={heroVideoPosterUrl || "/img/hero.jpg"}
         heroVideoUrl={heroVideoUrl || undefined}
+        heroVideoMobileUrl={heroVideoMobileUrl || undefined}
       />
       <div className="ss-home18-hero__overlay position-absolute top-0 start-0 w-100 h-100" />
 

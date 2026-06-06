@@ -22,8 +22,8 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { totalChecked, brokenLegacyIds } = await scanCatalogMediaHealth();
-    const doc = await saveMediaHealth({ totalChecked, brokenLegacyIds });
+    const { totalChecked, brokenLegacyIds, noDirectMediaLegacyIds } = await scanCatalogMediaHealth();
+    const doc = await saveMediaHealth({ totalChecked, brokenLegacyIds, noDirectMediaLegacyIds });
     return NextResponse.json({ success: true, mediaHealth: doc });
   } catch (error) {
     return NextResponse.json(

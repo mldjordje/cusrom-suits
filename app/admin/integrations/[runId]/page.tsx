@@ -34,6 +34,25 @@ type Run = {
   meta: Record<string, unknown>;
 };
 
+type MofficeRow = {
+  moffice_id: number | "";
+  sku: string;
+  ean: string;
+  naziv: string;
+  kategorija: string;
+  velicina: string;
+  moffice_kolicina: number;
+  mp_cena: number;
+  vp_cena: number;
+  pdv: number;
+  raw: Record<string, unknown>;
+  site_stock_total?: number;
+  site_active?: boolean;
+  site_exported?: boolean;
+  status?: string;
+  legacy_id?: number;
+};
+
 const statusClass = (status: string) => {
   switch (status) {
     case "success":
@@ -54,6 +73,15 @@ const metaNumber = (meta: Record<string, unknown>, key: string) => {
   return typeof value === "number" ? value : null;
 };
 
+const isMofficeRun = (run: Run | null) =>
+  run?.domain === "stock_inbound" &&
+  (run.meta?.source === "moffice-api" ||
+    run.meta?.source === "moffice-cpanel-payload" ||
+    String(run.meta?.endpoint || "").toLowerCase().includes("moffice"));
+
+const formatNumber = (value: unknown) =>
+  new Intl.NumberFormat("sr-RS", { maximumFractionDigits: 2 }).format(Number(value || 0));
+
 export default function IntegrationRunDetailPage() {
   const params = useParams<{ runId: string }>();
   const runId = String(params?.runId || "");
@@ -62,11 +90,39 @@ export default function IntegrationRunDetailPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState(false);
+  const [mofficeRows, setMofficeRows] = useState<MofficeRow[]>([]);
+  const [mofficeRowsSource, setMofficeRowsSource] = useState<string | null>(null);
+  const [mofficeRowsLoading, setMofficeRowsLoading] = useState(false);
+  const [mofficeQuery, setMofficeQuery] = useState("");
+  const [mofficeStockFilter, setMofficeStockFilter] = useState<"all" | "in_stock" | "zero">("all");
 
   const failedCount = useMemo(
     () => items.filter((item) => item.status === "failed").length,
     [items],
   );
+
+  const visibleLogItems = useMemo(
+    () => items.filter((item) => item.entityType !== "moffice_feed"),
+    [items],
+  );
+
+  const filteredMofficeRows = useMemo(() => {
+    const query = mofficeQuery.trim().toLowerCase();
+    return mofficeRows.filter((row) => {
+      if (mofficeStockFilter === "in_stock" && Number(row.moffice_kolicina || 0) <= 0) return false;
+      if (mofficeStockFilter === "zero" && Number(row.moffice_kolicina || 0) > 0) return false;
+      if (!query) return true;
+      return [row.sku, row.ean, row.naziv, row.kategorija, row.velicina, row.moffice_id]
+        .some((value) => String(value || "").toLowerCase().includes(query));
+    });
+  }, [mofficeQuery, mofficeRows, mofficeStockFilter]);
+
+  const mofficeTotals = useMemo(() => ({
+    rows: mofficeRows.length,
+    inStock: mofficeRows.filter((row) => Number(row.moffice_kolicina || 0) > 0).length,
+    zero: mofficeRows.filter((row) => Number(row.moffice_kolicina || 0) <= 0).length,
+    quantity: mofficeRows.reduce((sum, row) => sum + Number(row.moffice_kolicina || 0), 0),
+  }), [mofficeRows]);
 
   const load = useCallback(async () => {
     if (!runId) return;
@@ -78,8 +134,24 @@ export default function IntegrationRunDetailPage() {
       if (!json?.success) {
         setError(json?.message || "Neuspesno ucitavanje run detalja.");
       } else {
-        setRun(json.data?.run || null);
+        const nextRun = json.data?.run || null;
+        setRun(nextRun);
         setItems(json.data?.items || []);
+        setMofficeRows([]);
+        setMofficeRowsSource(null);
+        if (isMofficeRun(nextRun)) {
+          setMofficeRowsLoading(true);
+          try {
+            const rowsRes = await fetch(`/api/admin/integrations/moffice/run-rows?runId=${encodeURIComponent(runId)}`);
+            const rowsJson = await rowsRes.json();
+            if (rowsJson?.success) {
+              setMofficeRows(rowsJson.data?.rows || []);
+              setMofficeRowsSource(rowsJson.data?.source || null);
+            }
+          } finally {
+            setMofficeRowsLoading(false);
+          }
+        }
       }
     } catch (err: any) {
       setError(err?.message || "Neuspesno ucitavanje run detalja.");
@@ -267,13 +339,144 @@ export default function IntegrationRunDetailPage() {
         </>
       ) : null}
 
+      {isMofficeRun(run) ? (
+        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
+                Sve povuceno sa mOffice-a
+              </h2>
+              <p className="mt-1 text-xs text-slate-400">
+                {mofficeRowsSource === "snapshot"
+                  ? "Snapshot izvornog feed-a sacuvan uz ovaj sync."
+                  : mofficeRowsSource === "reconstructed"
+                    ? "Rekonstruisano iz kataloga za ovaj run."
+                    : "Ucitavanje podataka za ovaj run."}
+              </p>
+            </div>
+            <a
+              href={`/api/admin/integrations/moffice/export?runId=${encodeURIComponent(runId)}`}
+              className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 hover:border-slate-300"
+            >
+              CSV export
+            </a>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <div className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+              <p className="text-2xl font-bold text-slate-900">{formatNumber(mofficeTotals.rows)}</p>
+              <p className="mt-1 text-xs text-slate-500">Povucenih redova</p>
+            </div>
+            <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3">
+              <p className="text-2xl font-bold text-emerald-700">{formatNumber(mofficeTotals.inStock)}</p>
+              <p className="mt-1 text-xs text-emerald-600">Sa lagerom</p>
+            </div>
+            <div className="rounded-xl border border-amber-100 bg-amber-50 p-3">
+              <p className="text-2xl font-bold text-amber-700">{formatNumber(mofficeTotals.zero)}</p>
+              <p className="mt-1 text-xs text-amber-600">Nula lager</p>
+            </div>
+            <div className="rounded-xl border border-blue-100 bg-blue-50 p-3">
+              <p className="text-2xl font-bold text-blue-700">{formatNumber(mofficeTotals.quantity)}</p>
+              <p className="mt-1 text-xs text-blue-600">Ukupna kolicina</p>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-col gap-3 md:flex-row md:items-center">
+            <input
+              value={mofficeQuery}
+              onChange={(event) => setMofficeQuery(event.target.value)}
+              placeholder="Pretraga po SKU, EAN, nazivu, kategoriji..."
+              className="min-h-10 flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 outline-none focus:border-blue-300"
+            />
+            <select
+              value={mofficeStockFilter}
+              onChange={(event) => setMofficeStockFilter(event.target.value as "all" | "in_stock" | "zero")}
+              className="min-h-10 rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700"
+            >
+              <option value="all">Svi redovi</option>
+              <option value="in_stock">Samo sa lagerom</option>
+              <option value="zero">Samo nula lager</option>
+            </select>
+          </div>
+
+          <div className="mt-4 max-h-[680px] overflow-auto rounded-xl border border-slate-200">
+            <table className="min-w-[1180px] w-full text-left text-xs text-slate-700">
+              <thead className="sticky top-0 z-10 bg-slate-50 text-[11px] uppercase tracking-[0.12em] text-slate-500">
+                <tr>
+                  <th className="px-3 py-3">mOffice ID</th>
+                  <th className="px-3 py-3">SKU</th>
+                  <th className="px-3 py-3">EAN</th>
+                  <th className="px-3 py-3">Naziv</th>
+                  <th className="px-3 py-3">Kategorija</th>
+                  <th className="px-3 py-3">Velicina</th>
+                  <th className="px-3 py-3 text-right">Lager</th>
+                  <th className="px-3 py-3 text-right">MP cena</th>
+                  <th className="px-3 py-3 text-right">VP cena</th>
+                  <th className="px-3 py-3 text-right">PDV</th>
+                  <th className="px-3 py-3">Site status</th>
+                  <th className="px-3 py-3">Raw</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredMofficeRows.map((row, index) => (
+                  <tr key={`${row.moffice_id}-${row.sku}-${row.ean}-${row.velicina}-${index}`} className="border-t border-slate-100">
+                    <td className="px-3 py-2 font-mono text-[11px] text-slate-500">{row.moffice_id || "-"}</td>
+                    <td className="px-3 py-2 font-semibold text-slate-900">{row.sku || "-"}</td>
+                    <td className="px-3 py-2 font-mono text-[11px]">{row.ean || "-"}</td>
+                    <td className="px-3 py-2 min-w-[240px]">{row.naziv || "-"}</td>
+                    <td className="px-3 py-2">{row.kategorija || "-"}</td>
+                    <td className="px-3 py-2">{row.velicina || "-"}</td>
+                    <td className={`px-3 py-2 text-right font-bold ${Number(row.moffice_kolicina || 0) > 0 ? "text-emerald-700" : "text-amber-700"}`}>
+                      {formatNumber(row.moffice_kolicina)}
+                    </td>
+                    <td className="px-3 py-2 text-right">{row.mp_cena ? formatNumber(row.mp_cena) : "-"}</td>
+                    <td className="px-3 py-2 text-right">{row.vp_cena ? formatNumber(row.vp_cena) : "-"}</td>
+                    <td className="px-3 py-2 text-right">{row.pdv ? `${formatNumber(row.pdv)}%` : "-"}</td>
+                    <td className="px-3 py-2">
+                      {row.status ? (
+                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase text-slate-600">
+                          {row.status}
+                        </span>
+                      ) : row.site_stock_total != null ? (
+                        <span className="text-[11px] text-slate-500">Site: {formatNumber(row.site_stock_total)}</span>
+                      ) : (
+                        <span className="text-[11px] text-slate-400">-</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2">
+                      {Object.keys(row.raw || {}).length ? (
+                        <details>
+                          <summary className="cursor-pointer text-[11px] font-semibold text-blue-700">Detalji</summary>
+                          <pre className="mt-2 max-h-64 w-[360px] overflow-auto rounded-lg bg-slate-950 p-3 text-[11px] text-slate-100">
+                            {JSON.stringify(row.raw, null, 2)}
+                          </pre>
+                        </details>
+                      ) : (
+                        <span className="text-[11px] text-slate-400">-</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+                {!filteredMofficeRows.length ? (
+                  <tr>
+                    <td colSpan={12} className="px-3 py-8 text-center text-sm text-slate-400">
+                      {mofficeRowsLoading ? "Ucitavanje mOffice redova..." : "Nema redova za izabrani filter."}
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : null}
+
       {/* Item logs */}
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold uppercase tracking-[0.14em] text-slate-500">
-          Log stavki {items.length > 0 ? `(${items.length})` : ""}
+          Log stavki {visibleLogItems.length > 0 ? `(${visibleLogItems.length})` : ""}
         </h2>
         <div className="mt-3 space-y-2">
-          {items.map((item) => (
+          {visibleLogItems.map((item) => (
             <div key={item.id} className="rounded-xl border border-slate-200 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs font-semibold text-slate-600">
@@ -287,10 +490,10 @@ export default function IntegrationRunDetailPage() {
               <p className="mt-1 text-[11px] text-slate-400">{new Date(item.createdAt).toLocaleString("sr-RS")}</p>
             </div>
           ))}
-          {!items.length ? (
+          {!visibleLogItems.length ? (
             <p className="py-4 text-center text-sm text-slate-400">
               Nema detaljnih log stavki za ovaj run.<br />
-              <span className="text-xs">(mOffice sync ne upisuje stavke po artiklu — vidljivo je samo u summary polju iznad.)</span>
+              <span className="text-xs">(Za mOffice run pogledaj tabelu iznad.)</span>
             </p>
           ) : null}
         </div>

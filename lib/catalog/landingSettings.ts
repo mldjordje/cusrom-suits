@@ -167,6 +167,7 @@ export type LandingSettings = {
   saleProductIds: number[];
   trendingProductIds: number[];
   heroVideoUrl: string;
+  heroVideoMobileUrl: string;
   heroVideoPosterUrl: string;
 };
 
@@ -354,6 +355,7 @@ const DEFAULT_SETTINGS: LandingSettings = {
   saleProductIds: [],
   trendingProductIds: [],
   heroVideoUrl: "",
+  heroVideoMobileUrl: "",
   heroVideoPosterUrl: "",
 };
 
@@ -653,6 +655,7 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
     saleProductIds: normalizeLegacyIdList(settings.saleProductIds),
     trendingProductIds: normalizeLegacyIdList(settings.trendingProductIds),
     heroVideoUrl: String(settings.heroVideoUrl || "").trim(),
+    heroVideoMobileUrl: String(settings.heroVideoMobileUrl || "").trim(),
     heroVideoPosterUrl: String(settings.heroVideoPosterUrl || "").trim(),
   };
 }
@@ -1005,6 +1008,7 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
     trendingProductIds:
       patch.trendingProductIds == null ? current.trendingProductIds : normalizeLegacyIdList(patch.trendingProductIds),
     heroVideoUrl: patch.heroVideoUrl == null ? current.heroVideoUrl : String(patch.heroVideoUrl || "").trim(),
+    heroVideoMobileUrl: patch.heroVideoMobileUrl == null ? current.heroVideoMobileUrl : String(patch.heroVideoMobileUrl || "").trim(),
     heroVideoPosterUrl: patch.heroVideoPosterUrl == null ? current.heroVideoPosterUrl : String(patch.heroVideoPosterUrl || "").trim(),
   };
   await writePersistentJsonFile(LANDING_SETTINGS_PATH, next);

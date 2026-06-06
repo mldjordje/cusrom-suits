@@ -39,7 +39,7 @@ export const resolveDisplayFinalPrice = <T extends PriceVariant>(
   product: T,
   variants: T[],
 ): number => {
-  const pool = variants.length > 0 ? variants : [product];
+  const pool = variants.length > 0 ? [product, ...variants] : [product];
   return Math.max(...pool.map((v) => Number(v.priceFinalGross || 0)));
 };
 
@@ -52,7 +52,7 @@ export const resolveDisplayGrossPrice = <T extends PriceVariant>(
   product: T,
   variants: T[],
 ): number => {
-  const pool = variants.length > 0 ? variants : [product];
+  const pool = variants.length > 0 ? [product, ...variants] : [product];
   return Math.max(...pool.map((v) => Number(v.priceGross || 0)));
 };
 

@@ -105,7 +105,7 @@ export type CatalogListInput = {
   /** Collapsed-representative legacyIds to drop from the result (e.g. products with
    *  broken/unreachable images flagged by the persisted media-health scan). */
   excludeLegacyIds?: number[];
-  sort?: "featured" | "name_asc" | "name_desc" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "newest" | "oldest";
+  sort?: "featured" | "name_asc" | "name_desc" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "newest" | "oldest" | "no_image_first";
 };
 
 type CatalogSnapshotCacheEntry = {
@@ -513,12 +513,28 @@ const CATEGORY_GROUP_PRIORITY: Record<string, number> = {
   torba: 14,
 };
 
+/**
+ * Group keys a product belongs to. Derived from its categories AND from its name +
+ * manufacturer code, because most mOffice-sourced rows carry the product type only in
+ * the name ("M. Košulja C8/53", manufCode "BRANDO/74 M.Košulja") with an empty
+ * categories[]. Without the name fallback, selecting a category group (e.g. Košulje)
+ * matched only the handful of rows that happened to have a populated category.
+ */
+const getCatalogProductGroupKeys = (item: CatalogProductView): Set<string> => {
+  const keys = new Set<string>();
+  for (const cat of item.categories) {
+    const key = [cat.name, ...(cat.path || [])].map(normalizeCatalogCategoryGroupKey).find(Boolean);
+    if (key) keys.add(key);
+  }
+  const nameKey = normalizeCatalogCategoryGroupKey(`${item.name || ""} ${item.manufCode || ""}`);
+  if (nameKey) keys.add(nameKey);
+  return keys;
+};
+
 const productMatchesCategoryGroup = (item: CatalogProductView, groupKey: string) => {
   const wanted = normalizeCatalogCategoryGroupKey(groupKey);
   if (!wanted) return false;
-  return item.categories.some((cat) =>
-    [cat.name, ...(cat.path || [])].some((value) => normalizeCatalogCategoryGroupKey(value) === wanted),
-  );
+  return getCatalogProductGroupKeys(item).has(wanted);
 };
 
 const applyFilters = (
@@ -609,24 +625,31 @@ const collectCategoryGroups = (items: CatalogProductView[]): CatalogCategoryGrou
   const map = new Map<string, CatalogCategoryGroup>();
 
   for (const item of items) {
-    const itemKeys = new Set<string>();
+    // Membership is derived from categories + name/manufCode so the group list and its
+    // counts include mOffice rows that only carry the type in the name (see
+    // getCatalogProductGroupKeys). The category id list stays best-effort from categories.
+    const itemKeys = getCatalogProductGroupKeys(item);
+    const catIdsByKey = new Map<string, number[]>();
     for (const cat of item.categories) {
       const key = [cat.name, ...(cat.path || [])].map(normalizeCatalogCategoryGroupKey).find(Boolean) || "";
       if (!key) continue;
-      const existing = map.get(key) || {
-        key,
-        name: CATEGORY_GROUP_LABELS[key] || cat.name,
-        ids: [],
-        count: 0,
-      };
-      if (!existing.ids.includes(cat.id)) existing.ids.push(cat.id);
-      map.set(key, existing);
-      itemKeys.add(key);
+      const list = catIdsByKey.get(key) || [];
+      list.push(cat.id);
+      catIdsByKey.set(key, list);
     }
 
     for (const key of itemKeys) {
-      const existing = map.get(key);
-      if (existing) existing.count += 1;
+      const existing = map.get(key) || {
+        key,
+        name: CATEGORY_GROUP_LABELS[key] || key,
+        ids: [],
+        count: 0,
+      };
+      for (const id of catIdsByKey.get(key) || []) {
+        if (!existing.ids.includes(id)) existing.ids.push(id);
+      }
+      existing.count += 1;
+      map.set(key, existing);
     }
   }
 
@@ -805,28 +828,37 @@ export const scanCatalogMediaHealth = async (options?: {
   concurrency?: number;
   spacingMs?: number;
   imagesPerProduct?: number;
-}): Promise<{ totalChecked: number; brokenLegacyIds: number[] }> => {
+}): Promise<{ totalChecked: number; brokenLegacyIds: number[]; noDirectMediaLegacyIds: number[] }> => {
   const concurrency = Math.max(1, Math.min(8, options?.concurrency ?? 4));
   const spacingMs = Math.max(0, options?.spacingMs ?? 90);
   const imagesPerProduct = Math.max(1, Math.min(6, options?.imagesPerProduct ?? 3));
 
   // listCatalogProducts clamps pageSize to 120, so page through the whole catalog.
-  const items: CatalogProductView[] = [];
-  let page = 1;
-  let totalPages = 1;
-  do {
-    const listed = await listCatalogProducts({
-      page,
-      pageSize: 120,
-      activeOnly: true,
-      exportOnly: true,
-      collapseBySku: true,
-      requireDirectImages: true,
-    });
-    items.push(...listed.items);
-    totalPages = Math.max(1, Number(listed.totalPages) || 1);
-    page += 1;
-  } while (page <= totalPages && page <= 200);
+  // First pass: all active+exported products (to find those without direct media).
+  const allItems: CatalogProductView[] = [];
+  {
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const listed = await listCatalogProducts({
+        page,
+        pageSize: 120,
+        activeOnly: true,
+        exportOnly: true,
+        collapseBySku: true,
+      });
+      allItems.push(...listed.items);
+      totalPages = Math.max(1, Number(listed.totalPages) || 1);
+      page += 1;
+    } while (page <= totalPages && page <= 200);
+  }
+
+  const noDirectMediaLegacyIds = allItems
+    .filter((item) => !hasCatalogProductDirectMedia(item))
+    .map((item) => item.legacyId);
+
+  // Second pass: only products WITH direct media (to check CDN reachability).
+  const items = allItems.filter((item) => hasCatalogProductDirectMedia(item));
   const broken: number[] = [];
 
   for (let index = 0; index < items.length; index += concurrency) {
@@ -854,7 +886,7 @@ export const scanCatalogMediaHealth = async (options?: {
     }
   }
 
-  return { totalChecked: items.length, brokenLegacyIds: broken };
+  return { totalChecked: items.length, brokenLegacyIds: broken, noDirectMediaLegacyIds };
 };
 
 const filterCatalogProductsByReachableOwnImages = async (
@@ -1126,6 +1158,24 @@ const collapseCatalogProductsByKey = (
       getCatalogDiscountPercent(item),
       getCatalogDiscountPercent(pricingLeader),
     );
+    const mergedHasDirectMedia = current.hasDirectMedia || item.hasDirectMedia;
+    const directMediaSource =
+      hasCatalogProductDirectMedia(representative)
+        ? representative
+        : hasCatalogProductDirectMedia(current)
+          ? current
+          : hasCatalogProductDirectMedia(item)
+            ? item
+            : null;
+    const rawPayload = {
+      ...current.rawPayload,
+      ...(directMediaSource ? { imageFallback: undefined } : {}),
+      collapsedVariantIds: Array.from(collapsedVariantIds).sort((a, b) => a - b),
+      collapsedVariantCount: collapsedVariantIds.size,
+      collapsedRepresentativeLegacyId: representative.legacyId,
+      collapsedPricingSourceLegacyId: pricingLeader.legacyId,
+    };
+    if (directMediaSource) delete rawPayload.imageFallback;
 
     map.set(key, {
       ...current,
@@ -1144,7 +1194,7 @@ const collapseCatalogProductsByKey = (
       rebatePercent: mergedDiscountPercent,
       coverImage: representative.coverImage || current.coverImage || item.coverImage,
       videoUrl: representative.videoUrl || current.videoUrl || item.videoUrl,
-      hasDirectMedia: current.hasDirectMedia || item.hasDirectMedia,
+      hasDirectMedia: mergedHasDirectMedia,
       isActive: current.isActive || item.isActive,
       isExported: current.isExported || item.isExported,
       landingFeatured: current.landingFeatured || item.landingFeatured,
@@ -1153,13 +1203,7 @@ const collapseCatalogProductsByKey = (
       categories: Array.from(categoriesById.values()),
       images,
       attributes: mergedAttributes,
-      rawPayload: {
-        ...current.rawPayload,
-        collapsedVariantIds: Array.from(collapsedVariantIds).sort((a, b) => a - b),
-        collapsedVariantCount: collapsedVariantIds.size,
-        collapsedRepresentativeLegacyId: representative.legacyId,
-        collapsedPricingSourceLegacyId: pricingLeader.legacyId,
-      },
+      rawPayload,
     });
   }
 
@@ -1252,6 +1296,14 @@ const sortCatalogProducts = (
   }
   if (sort === "newest" || sort === "oldest") {
     return list.sort((a, b) => (sort === "newest" ? b.legacyId - a.legacyId : a.legacyId - b.legacyId));
+  }
+  if (sort === "no_image_first") {
+    return list.sort((a, b) => {
+      const aHas = hasCatalogProductDirectMedia(a) ? 1 : 0;
+      const bHas = hasCatalogProductDirectMedia(b) ? 1 : 0;
+      if (aHas !== bHas) return aHas - bHas;
+      return b.legacyId - a.legacyId;
+    });
   }
   return list.sort((a, b) => {
     const typeDiff = getCatalogProductTypePriority(a) - getCatalogProductTypePriority(b);

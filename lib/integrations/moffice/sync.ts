@@ -1,4 +1,5 @@
 import { invalidateCatalogCaches } from "@/lib/catalog/store";
+import { extractModelCode } from "@/lib/integrations/moffice/modelCode";
 import { startSyncRun, completeSyncRun, addSyncRunItem } from "@/lib/integrations/core/store";
 import type { SyncCounters, SyncEnvironment, SyncMode, SyncTrigger } from "@/lib/integrations/core/types";
 import { getServiceSupabase } from "@/lib/supabase/server";
@@ -68,6 +69,20 @@ export type MofficeExportRow = {
   naziv: string;
   kategorija: string;
   last_synced_run: string;
+};
+
+export type MofficePulledRow = {
+  moffice_id: number | "";
+  sku: string;
+  ean: string;
+  naziv: string;
+  kategorija: string;
+  velicina: string;
+  moffice_kolicina: number;
+  mp_cena: number;
+  vp_cena: number;
+  pdv: number;
+  raw: MofficeItem;
 };
 
 const nowIso = () => new Date().toISOString();
@@ -162,6 +177,21 @@ const chunkArray = <T,>(items: T[], size: number) => {
   for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
   return chunks;
 };
+
+export const buildMofficePulledRows = (items: MofficeItem[]): MofficePulledRow[] =>
+  items.map((item) => ({
+    moffice_id: Number(item.ARTIKAL_ID || 0) || "",
+    sku: normalizeKey(item.ARTIKAL_SIFRA),
+    ean: normalizeKey(item.ARTIKAL_BARKOD),
+    naziv: normalizeKey(item.ARTIKAL_NAZIV),
+    kategorija: normalizeKey(item.ARTIKAL_GRUPA),
+    velicina: normalizeKey(item.ARTIKAL_VELICINA),
+    moffice_kolicina: Math.max(0, Math.floor(Number(item.ARTIKAL_ZALIHE ?? 0))),
+    mp_cena: Number(item.ARTIKAL_MP_CENA ?? 0),
+    vp_cena: Number(item.ARTIKAL_VP_CENA ?? 0),
+    pdv: Number(item.ARTIKAL_PDV_STOPA ?? 0),
+    raw: item,
+  }));
 
 async function loadAllCatalogRows<T = Record<string, unknown>>(
   supabase: ReturnType<typeof getServiceSupabase>,
@@ -280,6 +310,98 @@ async function copySkuMediaToActiveMofficeRows(
   return copied;
 }
 
+/**
+ * Faithful to the legacy site: variants were grouped into a model by `manufcode` and
+ * the model's photos lived on one "primary" variant. Here we share photos across the
+ * model: any active, in-stock row that still has NO media borrows the photos of a
+ * media-bearing row with the same model code (extracted from name/manufCode). Exact
+ * code match => same colour, so no wrong-image risk. Runs after the SKU copy as a
+ * second pass that only fills rows the SKU copy could not.
+ */
+async function copyModelCodeMediaToActiveRows(
+  supabase: NonNullable<ReturnType<typeof getServiceSupabase>>,
+  rows: Record<string, unknown>[],
+  existing: MofficeExistingRow[],
+) {
+  const activeRows = rows
+    .map((row) => ({
+      legacyId: Number(row.legacy_id),
+      code: extractModelCode(null, String(row.name_sr || "")),
+      stock: Number(row.stock_total || 0),
+      isActive: row.is_active === true,
+      isExported: row.is_exported === true,
+    }))
+    .filter((row) => Number.isFinite(row.legacyId) && row.code && row.stock > 0 && row.isActive && row.isExported);
+  if (!activeRows.length) return 0;
+
+  const targetIds = Array.from(new Set(activeRows.map((row) => row.legacyId)));
+  const targetMediaIds = new Set<number>();
+  for (const idChunk of chunkArray(targetIds, 500)) {
+    const { data, error } = await supabase
+      .from("catalog_product_media")
+      .select("legacy_product_id")
+      .in("legacy_product_id", idChunk);
+    if (error) throw new Error(`mOffice model-code media target check failed: ${error.message}`);
+    for (const row of data || []) targetMediaIds.add(Number((row as Record<string, unknown>).legacy_product_id));
+  }
+
+  const missingTargets = activeRows.filter((row) => !targetMediaIds.has(row.legacyId));
+  if (!missingTargets.length) return 0;
+
+  const missingCodes = new Set(missingTargets.map((row) => row.code));
+  const donorIdByCode = new Map<number, string>();
+  for (const row of existing) {
+    const code = extractModelCode(null, String(row.name_sr || ""));
+    if (code && missingCodes.has(code)) donorIdByCode.set(Number(row.legacy_id), code);
+  }
+  const donorIds = Array.from(donorIdByCode.keys()).filter((id) => Number.isFinite(id));
+  if (!donorIds.length) return 0;
+
+  const donorMediaByCode = new Map<string, Array<{ url: string; sort: number; isCover: boolean }>>();
+  for (const idChunk of chunkArray(donorIds, 500)) {
+    const { data, error } = await supabase
+      .from("catalog_product_media")
+      .select("legacy_product_id,url,sort,is_cover")
+      .in("legacy_product_id", idChunk)
+      .order("sort", { ascending: true });
+    if (error) throw new Error(`mOffice model-code donor load failed: ${error.message}`);
+    for (const row of data || []) {
+      const record = row as Record<string, unknown>;
+      const code = donorIdByCode.get(Number(record.legacy_product_id)) || "";
+      const url = normalizeKey(record.url);
+      if (!code || !url) continue;
+      const list = donorMediaByCode.get(code) || [];
+      list.push({ url, sort: Number(record.sort || list.length), isCover: record.is_cover === true || list.length === 0 });
+      donorMediaByCode.set(code, list);
+    }
+  }
+
+  const mediaRows: Array<{ legacy_product_id: number; url: string; sort: number; is_cover: boolean }> = [];
+  for (const target of missingTargets) {
+    const donor = donorMediaByCode.get(target.code);
+    if (!donor?.length) continue;
+    donor.slice(0, 8).forEach((media, index) => {
+      mediaRows.push({
+        legacy_product_id: target.legacyId,
+        url: media.url,
+        sort: Number.isFinite(media.sort) ? media.sort : index,
+        is_cover: index === 0,
+      });
+    });
+  }
+
+  let copied = 0;
+  for (const batch of chunkArray(mediaRows, 500)) {
+    const { error } = await supabase
+      .from("catalog_product_media")
+      .upsert(batch as never, { onConflict: "legacy_product_id,url", ignoreDuplicates: true });
+    if (error) throw new Error(`mOffice model-code media copy failed: ${error.message}`);
+    copied += batch.length;
+  }
+
+  return copied;
+}
+
 const getMofficeSyncedRunId = (payload: Record<string, unknown>) => {
   const moffice =
     payload.moffice && typeof payload.moffice === "object"
@@ -312,6 +434,25 @@ export const buildPostSyncStaleIds = (rows: MofficePostSyncRow[], runId: string)
     )
     .map((row) => Number(row.legacy_id))
     .filter((legacyId) => Number.isFinite(legacyId));
+
+/**
+ * Removes any legacy id that was upserted (or already cleaned) in the current run
+ * from the stale-deactivation set. A row upserted this run carries fresh mOffice
+ * stock and must never be zeroed by the stale cleanup — duplicate legacy rows for
+ * the same variant (small id + EAN-derived id) otherwise caused in-stock rows to be
+ * hidden in the same run. Pure + exported so the invariant is regression-tested.
+ */
+export const excludeProtectedStaleIds = (
+  staleCandidates: number[],
+  protectedIds: Iterable<number>,
+): number[] => {
+  const guarded = new Set<number>();
+  for (const id of protectedIds) {
+    const num = Number(id);
+    if (Number.isFinite(num)) guarded.add(num);
+  }
+  return staleCandidates.filter((legacyId) => !guarded.has(Number(legacyId)));
+};
 
 export function buildMofficeSyncPlan(params: {
   items: MofficeItem[];
@@ -648,6 +789,7 @@ async function executeMofficeSync(input: {
     const items = await input.loadItems();
     if (!Array.isArray(items)) throw new Error("mOffice payload must be an array.");
     const debugItems = buildDebugItems(items);
+    const pulledRows = buildMofficePulledRows(items);
 
     const existingRaw = await loadAllCatalogRows<MofficeExistingRow>(
       supabase,
@@ -659,6 +801,19 @@ async function executeMofficeSync(input: {
       existing: (existingRaw ?? []) as unknown as MofficeExistingRow[],
       runId: run.id,
     });
+
+    for (const [index, batch] of chunkArray(pulledRows, 250).entries()) {
+      await addSyncRunItem(run.id, {
+        domain: "stock_inbound",
+        entityType: "moffice_feed",
+        entityId: `feed-${index + 1}`,
+        status: "success",
+        message: `mOffice feed rows ${index * 250 + 1}-${index * 250 + batch.length}`,
+        payloadHash: null,
+        payload: { rows: batch },
+        response: { rowCount: batch.length },
+      });
+    }
 
     let upserted = 0;
     const chunkSize = 100;
@@ -686,6 +841,13 @@ async function executeMofficeSync(input: {
     }
 
     const copiedMediaRows = await copySkuMediaToActiveMofficeRows(
+      supabase,
+      plan.rows,
+      existingRaw as MofficeExistingRow[],
+    );
+    // Second pass: share a model's photos across its in-stock variants (legacy
+    // manufcode behaviour) for rows the SKU copy could not fill.
+    const copiedModelMediaRows = await copyModelCodeMediaToActiveRows(
       supabase,
       plan.rows,
       existingRaw as MofficeExistingRow[],
@@ -732,10 +894,15 @@ async function executeMofficeSync(input: {
       "legacy_id,sku,ean,name_sr,is_active,is_exported,stock_total,stock_warehouse_1,raw_payload",
     );
 
-    const postSyncStaleIds = buildPostSyncStaleIds(
-      (postSyncRaw ?? []) as unknown as MofficePostSyncRow[],
-      run.id,
-    ).filter((legacyId) => !staleIds.has(legacyId));
+    // A row we just upserted this run carries fresh mOffice stock and must NEVER be
+    // deactivated by the stale cleanup. Without this guard, duplicate legacy rows for
+    // the same variant (small legacy id + EAN-derived id from different import
+    // generations) caused upserted-in-stock rows to be zeroed in the same run, hiding
+    // ~600 products that mOffice actually has on stock.
+    const postSyncStaleIds = excludeProtectedStaleIds(
+      buildPostSyncStaleIds((postSyncRaw ?? []) as unknown as MofficePostSyncRow[], run.id),
+      [...staleIds, ...upsertIds],
+    );
 
     for (let i = 0; i < postSyncStaleIds.length; i += chunkSize) {
       const ids = postSyncStaleIds.slice(i, i + chunkSize);
@@ -793,6 +960,7 @@ async function executeMofficeSync(input: {
         hiddenRows: deactivated,
         visibleMismatchRows,
         copiedMediaRows,
+        copiedModelMediaRows,
         rows: plan.counters.rows,
         matched: plan.counters.matched,
         created: plan.counters.created,
@@ -818,6 +986,7 @@ async function executeMofficeSync(input: {
       hiddenRows: deactivated,
       visibleMismatchRows,
       copiedMediaRows,
+      copiedModelMediaRows,
       deactivated,
       debugItems,
     };

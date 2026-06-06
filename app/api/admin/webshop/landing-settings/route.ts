@@ -225,6 +225,9 @@ export async function PATCH(req: NextRequest) {
   if ("blogSectionTitle" in row) patch.blogSectionTitle = String(row.blogSectionTitle || "");
   if ("blogSectionCtaLabel" in row) patch.blogSectionCtaLabel = String(row.blogSectionCtaLabel || "");
   if ("blogSectionCtaHref" in row) patch.blogSectionCtaHref = String(row.blogSectionCtaHref || "");
+  if ("heroVideoUrl" in row) patch.heroVideoUrl = String(row.heroVideoUrl || "");
+  if ("heroVideoMobileUrl" in row) patch.heroVideoMobileUrl = String(row.heroVideoMobileUrl || "");
+  if ("heroVideoPosterUrl" in row) patch.heroVideoPosterUrl = String(row.heroVideoPosterUrl || "");
   if ("heroStripProductIds" in row) patch.heroStripProductIds = parseIdList(row.heroStripProductIds);
   if ("highlightedProductIds" in row) patch.highlightedProductIds = parseIdList(row.highlightedProductIds);
   if ("popularProductIds" in row) patch.popularProductIds = parseIdList(row.popularProductIds);
