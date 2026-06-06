@@ -73,6 +73,7 @@ export default function CheckoutPageClient({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [orderId, setOrderId] = useState<string | null>(null);
+  const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [submittedTotal, setSubmittedTotal] = useState<number | null>(null);
   const [appliedVoucherCode, setAppliedVoucherCode] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
@@ -167,6 +168,7 @@ export default function CheckoutPageClient({
         return;
       }
       setOrderId(String(json.orderId || ""));
+      setOrderNumber(String(json.orderNumber || json.orderId || ""));
       setSubmittedTotal(Number(json.finalTotal || checkoutTotal));
       setAppliedVoucherCode(json.voucherCode ? String(json.voucherCode) : null);
       clearCart();
@@ -204,7 +206,7 @@ export default function CheckoutPageClient({
               : "Nas tim ce te pozvati u roku od 2 sata (Pon-Sub, 09-20h) radi potvrde velicine, dostave i nacina placanja."}
           </p>
           <p className="mt-3">
-            {isEn ? "Order number" : "Broj porudzbine"}: <strong>{orderId}</strong>
+            {isEn ? "Order number" : "Broj porudzbine"}: <strong>{orderNumber || orderId}</strong>
           </p>
           {submittedTotal != null ? (
             <p>

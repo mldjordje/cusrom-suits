@@ -42,6 +42,11 @@ if (legacyAssetUrl) {
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "100mb",
+    },
+  },
   images: {
     formats: ["image/webp"],
     minimumCacheTTL: 604800, // 7 dana — produktne slike se retko menjaju
@@ -57,9 +62,10 @@ const nextConfig: NextConfig = {
         destination: "https://customsuits.adspire.rs/uploads/:path*",
       },
     ];
+    const afterFiles = [];
 
     if (legacyAssetOrigin) {
-      beforeFiles.push({
+      afterFiles.push({
         source: "/fajlovi/:path*",
         destination: `${legacyAssetOrigin}/fajlovi/:path*`,
       });
@@ -67,6 +73,7 @@ const nextConfig: NextConfig = {
 
     return {
       beforeFiles,
+      afterFiles,
     };
   },
   async headers() {

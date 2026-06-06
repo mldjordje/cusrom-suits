@@ -1,6 +1,5 @@
 "use client";
 
-import crypto from "crypto";
 import { useEffect, useState } from "react";
 
 type DeliveryService = {
@@ -50,8 +49,15 @@ const actionClass =
 const dangerClass =
   "rounded-xl border border-rose-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700";
 
+const createBrowserId = () => {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID();
+  }
+  return `local-${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
+};
+
 const emptyService = (): DeliveryService => ({
-  id: crypto.randomUUID(),
+  id: createBrowserId(),
   code: "",
   name: "",
   description: "",
@@ -65,7 +71,7 @@ const emptyService = (): DeliveryService => ({
 });
 
 const emptyVoucher = (): Voucher => ({
-  id: crypto.randomUUID(),
+  id: createBrowserId(),
   code: "",
   email: "",
   amount: 0,

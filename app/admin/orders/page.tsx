@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { formatPublicOrderNumber } from "@/lib/orders/publicOrderNumber";
 
 type Order = {
   id: string;
@@ -47,6 +48,8 @@ const getOrderItems = (order: Order) => {
   return Array.isArray(items) ? items : [];
 };
 
+const getOrderDisplayNumber = (order: Order) => formatPublicOrderNumber(order);
+
 const getOrderFulfillmentSummary = (order: Order) => {
   const fulfillment = order?.config?.fulfillment;
   if (!fulfillment || typeof fulfillment !== "object") return "";
@@ -68,13 +71,14 @@ const formatPrice = (value?: number | null) => {
 };
 
 const buildCsv = (rows: Order[]) => {
-  const headers = ["id", "source", "status", "price", "items", "fabric_id", "created_at", "name", "email", "phone"];
+  const headers = ["order_number", "id", "source", "status", "price", "items", "fabric_id", "created_at", "name", "email", "phone"];
   const escape = (value: any) => `"${String(value ?? "").replace(/"/g, '""')}"`;
   const lines = rows.map((row) => {
     const name = getContactValue(row.contact, "ime");
     const email = getContactValue(row.contact, "email");
     const phone = getContactValue(row.contact, "telefon");
     return [
+      getOrderDisplayNumber(row),
       row.id,
       getOrderSource(row),
       row.status || "draft",
@@ -182,6 +186,7 @@ export default function OrdersAdminPage() {
       const items = getOrderItems(order);
       const haystack = [
         order.id,
+        getOrderDisplayNumber(order),
         order.fabric_id,
         status,
         getOrderSource(order),
@@ -329,6 +334,7 @@ export default function OrdersAdminPage() {
           const source = getOrderSource(o);
           const items = getOrderItems(o);
           const fulfillmentSummary = getOrderFulfillmentSummary(o);
+          const displayNumber = getOrderDisplayNumber(o);
           const isHighlighted = highlightId === o.id;
           return (
             <div
@@ -350,9 +356,11 @@ export default function OrdersAdminPage() {
                     title="Klikni da kopiras ID"
                     className="max-w-full truncate text-left text-sm font-semibold text-gray-900 hover:text-amber-700"
                   >
-                    {o.id}
+                    #{displayNumber}
                   </button>
                   <p className="text-xs text-gray-500">
+                    Interni ID: {o.id}
+                    <br />
                     Izvor: {source === "storefront" || source === "webshop" ? "web shop" : "custom"} | Fabric: {o.fabric_id || "n/a"}
                   </p>
                 </div>
@@ -426,7 +434,7 @@ export default function OrdersAdminPage() {
                 {contactEmail ? (
                   <a
                     href={`mailto:${contactEmail}?subject=${encodeURIComponent(
-                      `Santos & Santorini - porudzbina ${o.id}`,
+                      `Santos & Santorini - porudzbina ${displayNumber}`,
                     )}`}
                     className="rounded-full border border-gray-200 px-3 py-1 font-semibold text-gray-700 transition hover:border-gray-400"
                   >
@@ -462,7 +470,5 @@ export default function OrdersAdminPage() {
     </div>
   );
 }
-
-
 
 

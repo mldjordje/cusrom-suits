@@ -9,6 +9,7 @@ import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/p
 import { buildRateLimitHeaders, checkRateLimit } from "@/lib/security/rateLimit";
 import { sendOrderNotifications, sendOrderStatusUpdate } from "@/lib/email/notifications";
 import type { OrderEmailContext } from "@/lib/email/templates";
+import { formatPublicOrderNumber, getNextPublicOrderNumber } from "@/lib/orders/publicOrderNumber";
 import type { StorefrontCartItem } from "@/lib/cart/types";
 
 const ORDERS_RATE_LIMIT = { limit: 6, windowMs: 60_000, scope: "orders" } as const;
@@ -36,6 +37,12 @@ const readOrdersFile = async () => readPersistentJsonFile<any[]>(ORDERS_PATH, []
 
 const writeOrdersFile = async (orders: any[]) => {
   await writePersistentJsonFile(ORDERS_PATH, orders);
+};
+
+const getNextSupabasePublicOrderNumber = async (supabase: NonNullable<ReturnType<typeof getServiceSupabase>>) => {
+  const { data, error } = await supabase.from("orders").select("config").limit(1000);
+  if (error) throw error;
+  return getNextPublicOrderNumber((data ?? []) as Array<{ config?: Record<string, unknown> | null }>);
 };
 
 const isStorefrontPayload = (payload: any): payload is {
@@ -156,9 +163,17 @@ export async function POST(req: NextRequest) {
       voucher_code: voucherCode || null,
     };
 
+    let publicOrderNumber: number;
+    if (!supabase) {
+      publicOrderNumber = getNextPublicOrderNumber(await readOrdersFile());
+    } else {
+      publicOrderNumber = await getNextSupabasePublicOrderNumber(supabase);
+    }
+
     const config = {
       source: "storefront",
       type: "webshop",
+      publicOrderNumber,
       ...(storefrontUserId ? { storefrontUserId } : {}),
       items,
       totals: {
@@ -204,7 +219,8 @@ export async function POST(req: NextRequest) {
     };
 
     const buildEmailContext = (orderId: string): OrderEmailContext => ({
-      orderId,
+      orderId: String(publicOrderNumber),
+      internalOrderId: orderId,
       customer: {
         fullName,
         email,
@@ -254,7 +270,14 @@ export async function POST(req: NextRequest) {
       void sendOrderNotifications(buildEmailContext(String(entry.id))).catch((err) =>
         console.error("[orders] sendOrderNotifications failed (file fallback):", err),
       );
-      return NextResponse.json({ success: true, orderId: entry.id, storage: "file", finalTotal, voucherCode: voucherCode || null });
+      return NextResponse.json({
+        success: true,
+        orderId: entry.id,
+        orderNumber: publicOrderNumber,
+        storage: "file",
+        finalTotal,
+        voucherCode: voucherCode || null,
+      });
     }
 
     const { data, error } = await supabase
@@ -290,7 +313,7 @@ export async function POST(req: NextRequest) {
         console.error("[orders] sendOrderNotifications failed:", err),
       );
     }
-    return NextResponse.json({ success: true, orderId, finalTotal, voucherCode: voucherCode || null });
+    return NextResponse.json({ success: true, orderId, orderNumber: publicOrderNumber, finalTotal, voucherCode: voucherCode || null });
   }
 
   if (!payload.config) {
@@ -298,9 +321,19 @@ export async function POST(req: NextRequest) {
   }
 
   const { config, price, fabricId, contact, note, status } = payload;
+  let publicOrderNumber: number;
+  if (!supabase) {
+    publicOrderNumber = getNextPublicOrderNumber(await readOrdersFile());
+  } else {
+    publicOrderNumber = await getNextSupabasePublicOrderNumber(supabase);
+  }
+  const configWithPublicNumber = {
+    ...(config && typeof config === "object" ? config : {}),
+    publicOrderNumber,
+  };
   const entry = {
     id: crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
-    config,
+    config: configWithPublicNumber,
     price: price ?? null,
     fabric_id: fabricId ?? null,
     contact: contact ?? null,
@@ -314,12 +347,12 @@ export async function POST(req: NextRequest) {
     const orders = await readOrdersFile();
     orders.unshift(entry);
     await writeOrdersFile(orders);
-    return NextResponse.json({ success: true, orderId: entry.id, storage: "file" });
+    return NextResponse.json({ success: true, orderId: entry.id, orderNumber: publicOrderNumber, storage: "file" });
   }
   const { data, error } = await supabase
     .from("orders")
     .insert({
-      config,
+      config: configWithPublicNumber,
       price: price ?? null,
       fabric_id: fabricId ?? null,
       contact: contact ?? null,
@@ -333,7 +366,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: false, message: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ success: true, orderId: (data as { id?: string | number } | null)?.id });
+  return NextResponse.json({ success: true, orderId: (data as { id?: string | number } | null)?.id, orderNumber: publicOrderNumber });
 }
 
 export async function GET(req: NextRequest) {
@@ -408,7 +441,7 @@ export async function PATCH(req: NextRequest) {
     if (shouldNotifyCustomer) {
       const { data: prev } = await supabase
         .from("orders")
-        .select("status, contact, price")
+        .select("status, contact, price, config")
         .eq("id", id)
         .maybeSingle();
       previousOrder = (prev as Record<string, any> | null) ?? null;
@@ -427,7 +460,8 @@ export async function PATCH(req: NextRequest) {
 
     if (customerEmail) {
       void sendOrderStatusUpdate({
-        orderId: String(id),
+        orderId: formatPublicOrderNumber({ id, config: previousOrder.config || null }),
+        internalOrderId: String(id),
         customerName: customerName || customerEmail,
         customerEmail,
         newStatus: payload.status,

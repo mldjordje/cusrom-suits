@@ -212,7 +212,7 @@
 .ss-home18-hero__card-image {
   aspect-ratio: 0.82;
   object-fit: cover;
-  border-radius: 1.4rem;
+  border-radius: 0.8rem;
 }
 
 .ss-home18-hero__card-title {
@@ -225,17 +225,12 @@
 .ss-home18-hero__card-link {
   position: relative;
   display: block;
-  padding: 0.75rem;
-  border-radius: 1.65rem;
+  border-radius: 0.9rem;
   text-decoration: none;
-  background:
-    linear-gradient(160deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04)),
-    rgba(255, 255, 255, 0.04);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 20px 48px rgba(0, 0, 0, 0.2),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(12px);
+  background: transparent;
+  border: 0;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.24);
+  overflow: hidden;
 }
 
 .ss-home18-hero__card-meta {

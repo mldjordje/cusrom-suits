@@ -1,18 +1,13 @@
 "use client";
 
 import { useState } from "react";
+import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 
 type UniformGalleryProps = {
   images: string[];
   name: string;
 };
 
-/**
- * Gallery for business-uniform images. Uses plain <img> with the bundled local
- * paths (public/fajlovi/uniforme/...) directly, not next/image / StorefrontImage,
- * because these assets are already bundled locally and should not depend on
- * legacy cPanel image rewrites.
- */
 export default function UniformGallery({ images, name }: UniformGalleryProps) {
   const gallery = Array.from(
     new Set(images.map((img) => String(img || "").trim()).filter((img) => img.length > 0)),
@@ -25,8 +20,16 @@ export default function UniformGallery({ images, name }: UniformGalleryProps) {
   return (
     <div className="ss-uniform-gallery">
       <div className="ss-uniform-gallery__main">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={activeSrc} alt={name} loading="eager" decoding="async" />
+        <StorefrontImage
+          sources={[activeSrc]}
+          fallbackSrc="/img/hero2.jpg"
+          alt={name}
+          width={960}
+          height={1160}
+          priority
+          className="h-auto w-100"
+          sizes="(max-width: 991px) 100vw, 58vw"
+        />
       </div>
 
       {gallery.length > 1 ? (
@@ -40,8 +43,15 @@ export default function UniformGallery({ images, name }: UniformGalleryProps) {
               aria-pressed={activeIndex === index}
               aria-label={`${name} ${index + 1}`}
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" loading="lazy" decoding="async" />
+              <StorefrontImage
+                sources={[src]}
+                fallbackSrc="/img/hero2.jpg"
+                alt=""
+                width={160}
+                height={190}
+                className="h-100 w-100"
+                sizes="96px"
+              />
             </button>
           ))}
         </div>

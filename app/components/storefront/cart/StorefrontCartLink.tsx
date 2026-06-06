@@ -1,6 +1,6 @@
 "use client";
 
-import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
+import { useOptionalCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
 
 export default function StorefrontCartLink({
   className,
@@ -9,14 +9,21 @@ export default function StorefrontCartLink({
   className?: string;
   ariaLabel?: string;
 }) {
-  const { itemCount, openCartDrawer } = useCart();
+  const cart = useOptionalCart();
+  const itemCount = cart?.itemCount || 0;
 
   return (
     <button
       type="button"
       className={`ss-cart-trigger-btn ${className || ""}`.trim()}
       aria-label={ariaLabel || "Korpa"}
-      onClick={openCartDrawer}
+      onClick={() => {
+        if (cart) {
+          cart.openCartDrawer();
+          return;
+        }
+        window.location.assign("/cart");
+      }}
     >
       <span className="ss-cart-trigger-btn__inner">
         <svg

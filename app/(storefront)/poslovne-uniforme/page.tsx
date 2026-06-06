@@ -5,6 +5,7 @@ import Reveal from "@/app/components/motion/Reveal";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
+import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 import {
   buildUniformProducts,
   resolveUniformImages,
@@ -26,7 +27,10 @@ export default async function BusinessUniformsPage({
   const tx = (value: string, fallbackEn?: string) =>
     localizeDynamicStorefrontText(value, isEn ? "en" : "sr", fallbackEn);
   const landingSettings = await getLandingSettings();
-  const images = resolveUniformImages(landingSettings);
+  const images = resolveUniformImages(landingSettings).map((item) => ({
+    ...item,
+    image: sanitizeStorefrontImageSrc(item.image) || item.image,
+  }));
   const videos = resolveUniformVideos(landingSettings);
   const products = buildUniformProducts(images, tx, isEn);
   const galleryImages = images.map((item) => ({ title: item.title, alt: item.alt, src: item.image }));

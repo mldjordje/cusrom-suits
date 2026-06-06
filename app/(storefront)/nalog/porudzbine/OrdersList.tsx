@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useStorefrontAuth } from "@/app/components/storefront/StorefrontAuthProvider";
 import type { StorefrontOrderRow } from "@/app/api/storefront/orders/route";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
+import { formatPublicOrderNumber } from "@/lib/orders/publicOrderNumber";
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -167,7 +168,7 @@ export default function OrdersList({ lang }: { lang: StorefrontLanguage }) {
               <tbody>
                 {orders.map((row) => (
                   <tr key={String(row.id)}>
-                    <td className="font-monospace small">{String(row.id)}</td>
+                    <td className="font-monospace small">#{formatPublicOrderNumber(row)}</td>
                     <td>{formatDate(row.created_at)}</td>
                     <td>{statusLabel(row.status, isEn)}</td>
                     <td className="text-end fw-semibold">{formatRsd(Number(row.price || 0))}</td>

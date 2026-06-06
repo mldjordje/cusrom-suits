@@ -170,7 +170,7 @@ export default function StorefrontCartDrawer({
                 {isEn ? "View cart" : "Otvori celu korpu"}
               </Link>
               <Link href={withLang("/checkout")} className="btn btn-primary mt-3 d-block">
-                {isEn ? "Send order" : "Zavrsi porudzbinu"}
+                {isEn ? "Send order" : "Nastavi porudzbinu"}
               </Link>
             </>
           ) : (

@@ -46,6 +46,16 @@ export const toUniformSlug = (value: string) =>
 
 export const resolveUniformImages = (settings: LandingSettings): UniformImage[] => {
   const configured = settings.uniformsImages.filter((item) => item.image);
+  if (!configured.length) {
+    const posterImages = settings.uniformsVideos
+      .filter((item) => item.poster)
+      .map((item) => ({
+        title: item.title,
+        image: String(item.poster || ""),
+        alt: item.alt,
+      }));
+    if (posterImages.length) return posterImages;
+  }
   return configured.length ? configured : BUNDLED_UNIFORM_IMAGES;
 };
 

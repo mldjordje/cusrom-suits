@@ -20,6 +20,7 @@ import {
   type LandingGridOrderRef,
 } from "@/lib/catalog/landingSectionOrder";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
+import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 import AdminLandingProductPickGrid from "@/app/admin/components/AdminLandingProductPickGrid";
 import MediaHealthPanel from "@/app/admin/webshop/MediaHealthPanel";
 
@@ -639,7 +640,8 @@ const formatRsd = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
-const cardImage = (item: CatalogProduct) => item.coverImage || item.images?.[0] || "/img/odela2.jpg";
+const cardImage = (item: CatalogProduct) =>
+  sanitizeStorefrontImageSrc(item.coverImage || item.images?.[0] || "") || "/img/odela2.jpg";
 
 const isMofficeProduct = (item: CatalogProduct) =>
   Boolean(item.rawPayload?.moffice) || item.rawPayload?.source === "moffice";
@@ -3604,7 +3606,7 @@ export default function AdminWebshopPage() {
                     return (
                       <div key={`${url}-${index}`} className={`overflow-hidden rounded-xl border bg-white ${isCover ? "border-emerald-300 ring-2 ring-emerald-100" : "border-slate-200"}`}>
                         <div className="relative aspect-square bg-slate-100">
-                          <Image src={url} alt={`Slika ${index + 1}`} fill sizes="160px" className="object-cover" unoptimized />
+                          <Image src={sanitizeStorefrontImageSrc(url) || url} alt={`Slika ${index + 1}`} fill sizes="160px" className="object-cover" unoptimized />
                           {isCover ? <span className="absolute left-2 top-2 rounded-full bg-emerald-600 px-2 py-0.5 text-[10px] font-semibold text-white">Cover</span> : null}
                         </div>
                         <div className="grid grid-cols-2 gap-1 p-1.5">

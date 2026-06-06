@@ -1,6 +1,6 @@
 const IMAGE_PATH_EXTENSION_RE = /\.(avif|webp|png|jpe?g|gif|svg|ico|bmp)(?:$|[?#])/i;
 const KNOWN_EXTENSIONLESS_IMAGE_PATHS = ["/storage/v1/object/public/", "/uploads/"];
-const LEGACY_SANTOS_HOSTS = new Set(["santos.rs", "www.santos.rs"]);
+const LEGACY_SANTOS_HOSTS = new Set(["santos.rs", "www.santos.rs", "assets.santos.rs", "www.assets.santos.rs"]);
 
 const toLegacyAssetPath = (pathname: string, search = "") =>
   pathname.startsWith("/fajlovi/") ? `${pathname}${search}` : "";

@@ -75,6 +75,7 @@ export type OrderEmailItem = {
 
 export type OrderEmailContext = {
   orderId: string;
+  internalOrderId?: string | null;
   customer: {
     fullName: string;
     email: string;
@@ -283,6 +284,7 @@ export const buildAdminOrderEmail = (ctx: OrderEmailContext, adminOrderUrl: stri
 
 export type OrderStatusUpdateContext = {
   orderId: string;
+  internalOrderId?: string | null;
   customerName: string;
   customerEmail: string;
   newStatus: "pending" | "confirmed" | "completed" | "cancelled" | string;

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import PrintButton from "./PrintButton";
 import { readPersistentJsonFile } from "@/lib/storage/persistentJson";
 import { getServiceSupabase } from "@/lib/supabase/server";
+import { formatPublicOrderNumber } from "@/lib/orders/publicOrderNumber";
 
 export const dynamic = "force-dynamic";
 
@@ -70,6 +71,7 @@ export default async function PackingSlipPage({ params }: { params: Promise<{ id
 
   const contact = (order.contact || {}) as Record<string, unknown>;
   const config = (order.config || {}) as Record<string, unknown>;
+  const displayOrderNumber = formatPublicOrderNumber(order);
 
   const name = getString(contact, "ime") || getString(contact, "name") || "-";
   const lastName = getString(contact, "prezime") || getString(contact, "lastName");
@@ -158,7 +160,13 @@ export default async function PackingSlipPage({ params }: { params: Promise<{ id
           </div>
           <div className="packing-slip__meta">
             <strong>Otpremnica</strong>
-            Porudzbina: {order.id}
+            Porudzbina: {displayOrderNumber}
+            {displayOrderNumber !== String(order.id) ? (
+              <>
+                <br />
+                Interni ID: {order.id}
+              </>
+            ) : null}
             <br />
             Datum: {formatDate(order.created_at)}
             <br />

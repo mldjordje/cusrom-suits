@@ -49,7 +49,7 @@ export async function sendOrderNotifications(ctx: OrderEmailContext): Promise<vo
         text,
         tags: [
           { name: "type", value: "order_customer" },
-          { name: "order_id", value: ctx.orderId },
+          { name: "order_id", value: ctx.internalOrderId || ctx.orderId },
         ],
       }),
     );
@@ -57,7 +57,7 @@ export async function sendOrderNotifications(ctx: OrderEmailContext): Promise<vo
 
   const adminRecipients = getAdminRecipients();
   if (adminRecipients.length) {
-    const { subject, html, text } = buildAdminOrderEmail(ctx, adminOrderLink(ctx.orderId));
+    const { subject, html, text } = buildAdminOrderEmail(ctx, adminOrderLink(ctx.internalOrderId || ctx.orderId));
     tasks.push(
       sendEmail({
         to: adminRecipients,
@@ -67,7 +67,7 @@ export async function sendOrderNotifications(ctx: OrderEmailContext): Promise<vo
         replyTo: ctx.customer.email || undefined,
         tags: [
           { name: "type", value: "order_admin" },
-          { name: "order_id", value: ctx.orderId },
+          { name: "order_id", value: ctx.internalOrderId || ctx.orderId },
         ],
       }),
     );
@@ -90,7 +90,7 @@ export async function sendOrderStatusUpdate(ctx: OrderStatusUpdateContext): Prom
     text,
     tags: [
       { name: "type", value: "order_status" },
-      { name: "order_id", value: ctx.orderId },
+      { name: "order_id", value: ctx.internalOrderId || ctx.orderId },
       { name: "status", value: ctx.newStatus },
     ],
   });

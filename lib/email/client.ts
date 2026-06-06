@@ -19,7 +19,7 @@ const normalize = (value: string | undefined | null) => String(value || "").trim
 
 const getFromAddress = (override?: string) => {
   const fromEnv = normalize(process.env.MAIL_FROM);
-  return override || fromEnv || "Santos & Santorini <no-reply@santos.rs>";
+  return override || fromEnv || "Santos & Santorini <info@santos.rs>";
 };
 
 let cached: Resend | null | undefined;
