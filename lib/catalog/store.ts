@@ -531,7 +531,7 @@ const getCatalogProductGroupKeys = (item: CatalogProductView): Set<string> => {
   return keys;
 };
 
-const productMatchesCategoryGroup = (item: CatalogProductView, groupKey: string) => {
+export const productMatchesCategoryGroup = (item: CatalogProductView, groupKey: string) => {
   const wanted = normalizeCatalogCategoryGroupKey(groupKey);
   if (!wanted) return false;
   return getCatalogProductGroupKeys(item).has(wanted);

@@ -51,21 +51,27 @@ const CATEGORY_TILES: CategoryTile[] = [
 
 type Props = {
   categories: Category[];
+  categoryGroupImages?: Record<string, string>;
   lang?: StorefrontLanguage;
 };
 
-export default function HomeCategoryTiles({ categories: _categories, lang = "sr" }: Props) {
+export default function HomeCategoryTiles({ categories: _categories, categoryGroupImages, lang = "sr" }: Props) {
   const tx = (sr: string, en: string) => localizeDynamicStorefrontText(sr, lang, en);
   const withLang = (href: string) => {
     if (lang !== "en" || !href.startsWith("/")) return href;
     return href.includes("?") ? `${href}&lang=en` : `${href}?lang=en`;
   };
 
-  const tiles = CATEGORY_TILES.map((tile) => ({
-    ...tile,
-    href: withLang(tile.href),
-    label: tx(tile.label, tile.labelEn),
-  }));
+  const tiles = CATEGORY_TILES.map((tile) => {
+    const groupKey = new URLSearchParams(tile.href.split("?")[1] || "").get("categoryGroup") || "";
+    const liveImage = groupKey && categoryGroupImages?.[groupKey];
+    return {
+      ...tile,
+      href: withLang(tile.href),
+      label: tx(tile.label, tile.labelEn),
+      image: liveImage || tile.image,
+    };
+  });
 
   return (
     <section className="ss-category-strip">

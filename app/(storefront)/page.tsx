@@ -15,6 +15,7 @@ import {
   getCatalogProductByLegacyId,
   getCatalogProductVariantsBySku,
   listCatalogProducts,
+  productMatchesCategoryGroup,
   type CatalogProductView,
 } from "@/lib/catalog/store";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
@@ -850,7 +851,21 @@ export default async function HomePage({
           }}
         />
 
-        <HomeCategoryTiles categories={catalog.categories} lang={lang} />
+        <HomeCategoryTiles
+          categories={catalog.categories}
+          categoryGroupImages={(() => {
+            const groups = ["odelo", "sako", "pantalone", "kosulja"];
+            const result: Record<string, string> = {};
+            for (const group of groups) {
+              const match = catalog.items.find(
+                (item) => item.coverImage && productMatchesCategoryGroup(item, group),
+              );
+              if (match?.coverImage) result[group] = match.coverImage;
+            }
+            return result;
+          })()}
+          lang={lang}
+        />
 
         <Reveal as="section" className="container pb-5 ss-editorial-section ss-editorial-section--story" delay={0.02}>
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
