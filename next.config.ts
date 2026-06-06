@@ -1,6 +1,7 @@
 import type { NextConfig } from "next";
 
-const legacyAssetOrigin = process.env.LEGACY_ASSET_ORIGIN?.trim().replace(/\/$/, "");
+const legacyAssetOrigin =
+  process.env.LEGACY_ASSET_ORIGIN?.trim().replace(/\/$/, "") || "https://assets.santos.rs";
 const legacyAssetUrl = legacyAssetOrigin ? new URL(legacyAssetOrigin) : null;
 
 const remotePatterns: NonNullable<NextConfig["images"]>["remotePatterns"] = [
