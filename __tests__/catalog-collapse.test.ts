@@ -148,6 +148,42 @@ describe("catalog model collapse", () => {
     expect(collapsed[0].rawPayload.collapsedVariantIds).toEqual([13044090, 13044099]);
   });
 
+  it("keeps a collapsed SKU listable when one later size has direct media", () => {
+    const collapsed = collapseCatalogProductsByModel([
+      makeProduct({
+        legacyId: 78001,
+        sku: "131808",
+        name: "C49/6",
+        manufCode: "C49/6",
+        categories: [],
+        coverImage: "https://santos.rs/storage/products/c49-6.jpg",
+        images: ["https://santos.rs/storage/products/c49-6.jpg"],
+        hasDirectMedia: true,
+        attributes: { size: ["50"] },
+        rawPayload: { imageFallback: { type: "sku", sku: "131808" } },
+        stockTotal: 9,
+      }),
+      makeProduct({
+        legacyId: 13180880,
+        sku: "131808",
+        name: "C49/6",
+        manufCode: "C49/6",
+        categories: [],
+        coverImage: "https://santos.rs/storage/products/c49-6.jpg",
+        images: ["https://santos.rs/storage/products/c49-6.jpg"],
+        hasDirectMedia: true,
+        attributes: { size: ["52"] },
+        rawPayload: {},
+        stockTotal: 10,
+      }),
+    ]);
+
+    expect(collapsed).toHaveLength(1);
+    expect(collapsed[0].hasDirectMedia).toBe(true);
+    expect(collapsed[0].rawPayload.imageFallback).toBeUndefined();
+    expect(collapsed[0].rawPayload.collapsedVariantIds).toEqual([78001, 13180880]);
+  });
+
   it("collapses duplicate catalog rows with the same SKU even when names differ", () => {
     const collapsed = collapseCatalogProductsByModel([
       makeProduct({

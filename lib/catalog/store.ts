@@ -1149,6 +1149,24 @@ const collapseCatalogProductsByKey = (
       getCatalogDiscountPercent(item),
       getCatalogDiscountPercent(pricingLeader),
     );
+    const mergedHasDirectMedia = current.hasDirectMedia || item.hasDirectMedia;
+    const directMediaSource =
+      hasCatalogProductDirectMedia(representative)
+        ? representative
+        : hasCatalogProductDirectMedia(current)
+          ? current
+          : hasCatalogProductDirectMedia(item)
+            ? item
+            : null;
+    const rawPayload = {
+      ...current.rawPayload,
+      ...(directMediaSource ? { imageFallback: undefined } : {}),
+      collapsedVariantIds: Array.from(collapsedVariantIds).sort((a, b) => a - b),
+      collapsedVariantCount: collapsedVariantIds.size,
+      collapsedRepresentativeLegacyId: representative.legacyId,
+      collapsedPricingSourceLegacyId: pricingLeader.legacyId,
+    };
+    if (directMediaSource) delete rawPayload.imageFallback;
 
     map.set(key, {
       ...current,
@@ -1167,7 +1185,7 @@ const collapseCatalogProductsByKey = (
       rebatePercent: mergedDiscountPercent,
       coverImage: representative.coverImage || current.coverImage || item.coverImage,
       videoUrl: representative.videoUrl || current.videoUrl || item.videoUrl,
-      hasDirectMedia: current.hasDirectMedia || item.hasDirectMedia,
+      hasDirectMedia: mergedHasDirectMedia,
       isActive: current.isActive || item.isActive,
       isExported: current.isExported || item.isExported,
       landingFeatured: current.landingFeatured || item.landingFeatured,
@@ -1176,13 +1194,7 @@ const collapseCatalogProductsByKey = (
       categories: Array.from(categoriesById.values()),
       images,
       attributes: mergedAttributes,
-      rawPayload: {
-        ...current.rawPayload,
-        collapsedVariantIds: Array.from(collapsedVariantIds).sort((a, b) => a - b),
-        collapsedVariantCount: collapsedVariantIds.size,
-        collapsedRepresentativeLegacyId: representative.legacyId,
-        collapsedPricingSourceLegacyId: pricingLeader.legacyId,
-      },
+      rawPayload,
     });
   }
 
