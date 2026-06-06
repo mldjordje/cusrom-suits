@@ -157,6 +157,12 @@ const buildDebugItems = (items: MofficeItem[]) =>
       name: item.ARTIKAL_NAZIV ?? "",
     }));
 
+const chunkArray = <T,>(items: T[], size: number) => {
+  const chunks: T[][] = [];
+  for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
+  return chunks;
+};
+
 async function loadAllCatalogRows<T = Record<string, unknown>>(
   supabase: ReturnType<typeof getServiceSupabase>,
   select: string,
@@ -178,6 +184,100 @@ async function loadAllCatalogRows<T = Record<string, unknown>>(
   }
 
   return rows;
+}
+
+async function copySkuMediaToActiveMofficeRows(
+  supabase: NonNullable<ReturnType<typeof getServiceSupabase>>,
+  rows: Record<string, unknown>[],
+  existing: MofficeExistingRow[],
+) {
+  const activeRows = rows
+    .map((row) => ({
+      legacyId: Number(row.legacy_id),
+      sku: normalizeLower(row.sku),
+      stock: Number(row.stock_total || 0),
+      isActive: row.is_active === true,
+      isExported: row.is_exported === true,
+    }))
+    .filter((row) => Number.isFinite(row.legacyId) && row.sku && row.stock > 0 && row.isActive && row.isExported);
+  if (!activeRows.length) return 0;
+
+  const targetIds = Array.from(new Set(activeRows.map((row) => row.legacyId)));
+  const targetMediaIds = new Set<number>();
+  for (const idChunk of chunkArray(targetIds, 500)) {
+    const { data, error } = await supabase
+      .from("catalog_product_media")
+      .select("legacy_product_id")
+      .in("legacy_product_id", idChunk);
+    if (error) throw new Error(`mOffice media target check failed: ${error.message}`);
+    for (const row of data || []) {
+      targetMediaIds.add(Number((row as Record<string, unknown>).legacy_product_id));
+    }
+  }
+
+  const missingTargets = activeRows.filter((row) => !targetMediaIds.has(row.legacyId));
+  if (!missingTargets.length) return 0;
+
+  const skuSet = new Set(missingTargets.map((row) => row.sku));
+  const donorIds = Array.from(
+    new Set(
+      existing
+        .filter((row) => skuSet.has(normalizeLower(row.sku)))
+        .map((row) => Number(row.legacy_id))
+        .filter((legacyId) => Number.isFinite(legacyId)),
+    ),
+  );
+  if (!donorIds.length) return 0;
+
+  const existingSkuById = new Map(existing.map((row) => [Number(row.legacy_id), normalizeLower(row.sku)]));
+  const donorMediaBySku = new Map<string, Array<{ url: string; sort: number; isCover: boolean }>>();
+  for (const idChunk of chunkArray(donorIds, 500)) {
+    const { data, error } = await supabase
+      .from("catalog_product_media")
+      .select("legacy_product_id,url,sort,is_cover")
+      .in("legacy_product_id", idChunk)
+      .order("sort", { ascending: true });
+    if (error) throw new Error(`mOffice media donor load failed: ${error.message}`);
+    for (const row of data || []) {
+      const record = row as Record<string, unknown>;
+      const legacyId = Number(record.legacy_product_id);
+      const sku = existingSkuById.get(legacyId) || "";
+      const url = normalizeKey(record.url);
+      if (!sku || !url) continue;
+      const list = donorMediaBySku.get(sku) || [];
+      list.push({
+        url,
+        sort: Number(record.sort || list.length),
+        isCover: record.is_cover === true || list.length === 0,
+      });
+      donorMediaBySku.set(sku, list);
+    }
+  }
+
+  const mediaRows: Array<{ legacy_product_id: number; url: string; sort: number; is_cover: boolean }> = [];
+  for (const target of missingTargets) {
+    const donor = donorMediaBySku.get(target.sku);
+    if (!donor?.length) continue;
+    donor.slice(0, 8).forEach((media, index) => {
+      mediaRows.push({
+        legacy_product_id: target.legacyId,
+        url: media.url,
+        sort: Number.isFinite(media.sort) ? media.sort : index,
+        is_cover: index === 0 || media.isCover,
+      });
+    });
+  }
+
+  let copied = 0;
+  for (const batch of chunkArray(mediaRows, 500)) {
+    const { error } = await supabase
+      .from("catalog_product_media")
+      .upsert(batch as never, { onConflict: "legacy_product_id,url", ignoreDuplicates: true });
+    if (error) throw new Error(`mOffice media copy failed: ${error.message}`);
+    copied += batch.length;
+  }
+
+  return copied;
 }
 
 const getMofficeSyncedRunId = (payload: Record<string, unknown>) => {
@@ -585,8 +685,21 @@ async function executeMofficeSync(input: {
       upserted += batch.length;
     }
 
+    const copiedMediaRows = await copySkuMediaToActiveMofficeRows(
+      supabase,
+      plan.rows,
+      existingRaw as MofficeExistingRow[],
+    );
+
     let deactivated = 0;
-    const staleIds = new Set([...plan.staleLegacyIds, ...plan.duplicateLegacyIds]);
+    const upsertIds = new Set(
+      plan.rows
+        .map((row) => Number(row.legacy_id))
+        .filter((legacyId) => Number.isFinite(legacyId)),
+    );
+    const staleIds = new Set(
+      [...plan.staleLegacyIds, ...plan.duplicateLegacyIds].filter((legacyId) => !upsertIds.has(legacyId)),
+    );
     const initialStaleIds = Array.from(staleIds);
     for (let i = 0; i < initialStaleIds.length; i += chunkSize) {
       const ids = initialStaleIds.slice(i, i + chunkSize);
@@ -679,6 +792,7 @@ async function executeMofficeSync(input: {
         upsertRows: upserted,
         hiddenRows: deactivated,
         visibleMismatchRows,
+        copiedMediaRows,
         rows: plan.counters.rows,
         matched: plan.counters.matched,
         created: plan.counters.created,
@@ -703,6 +817,7 @@ async function executeMofficeSync(input: {
       postSyncStale: postSyncStaleIds.length,
       hiddenRows: deactivated,
       visibleMismatchRows,
+      copiedMediaRows,
       deactivated,
       debugItems,
     };
