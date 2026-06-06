@@ -71,6 +71,20 @@ export type MofficeExportRow = {
   last_synced_run: string;
 };
 
+export type MofficePulledRow = {
+  moffice_id: number | "";
+  sku: string;
+  ean: string;
+  naziv: string;
+  kategorija: string;
+  velicina: string;
+  moffice_kolicina: number;
+  mp_cena: number;
+  vp_cena: number;
+  pdv: number;
+  raw: MofficeItem;
+};
+
 const nowIso = () => new Date().toISOString();
 
 const normalizeKey = (value: unknown) => String(value ?? "").trim();
@@ -163,6 +177,21 @@ const chunkArray = <T,>(items: T[], size: number) => {
   for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
   return chunks;
 };
+
+export const buildMofficePulledRows = (items: MofficeItem[]): MofficePulledRow[] =>
+  items.map((item) => ({
+    moffice_id: Number(item.ARTIKAL_ID || 0) || "",
+    sku: normalizeKey(item.ARTIKAL_SIFRA),
+    ean: normalizeKey(item.ARTIKAL_BARKOD),
+    naziv: normalizeKey(item.ARTIKAL_NAZIV),
+    kategorija: normalizeKey(item.ARTIKAL_GRUPA),
+    velicina: normalizeKey(item.ARTIKAL_VELICINA),
+    moffice_kolicina: Math.max(0, Math.floor(Number(item.ARTIKAL_ZALIHE ?? 0))),
+    mp_cena: Number(item.ARTIKAL_MP_CENA ?? 0),
+    vp_cena: Number(item.ARTIKAL_VP_CENA ?? 0),
+    pdv: Number(item.ARTIKAL_PDV_STOPA ?? 0),
+    raw: item,
+  }));
 
 async function loadAllCatalogRows<T = Record<string, unknown>>(
   supabase: ReturnType<typeof getServiceSupabase>,
@@ -760,6 +789,7 @@ async function executeMofficeSync(input: {
     const items = await input.loadItems();
     if (!Array.isArray(items)) throw new Error("mOffice payload must be an array.");
     const debugItems = buildDebugItems(items);
+    const pulledRows = buildMofficePulledRows(items);
 
     const existingRaw = await loadAllCatalogRows<MofficeExistingRow>(
       supabase,
@@ -771,6 +801,19 @@ async function executeMofficeSync(input: {
       existing: (existingRaw ?? []) as unknown as MofficeExistingRow[],
       runId: run.id,
     });
+
+    for (const [index, batch] of chunkArray(pulledRows, 250).entries()) {
+      await addSyncRunItem(run.id, {
+        domain: "stock_inbound",
+        entityType: "moffice_feed",
+        entityId: `feed-${index + 1}`,
+        status: "success",
+        message: `mOffice feed rows ${index * 250 + 1}-${index * 250 + batch.length}`,
+        payloadHash: null,
+        payload: { rows: batch },
+        response: { rowCount: batch.length },
+      });
+    }
 
     let upserted = 0;
     const chunkSize = 100;
