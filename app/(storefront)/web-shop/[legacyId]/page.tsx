@@ -432,13 +432,6 @@ export default async function WebShopProductPage({
         0,
         Math.floor(selectedProduct.stockTotal > 0 ? selectedProduct.stockTotal : selectedProduct.stockWarehouse1),
       );
-  // Total stock across all sizes of this model. The catalog card shows the collapsed
-  // model sum, so the detail headline must show the same figure (otherwise it looks
-  // like the stock "shrank" when really we were showing a single size). Per-size stock
-  // is still used for the cart/CTA below via stockValue / selectedSizeOption.
-  const modelStockTotal = sizeOptions.length
-    ? sizeOptions.reduce((sum, option) => sum + Math.max(0, Number(option.stock || 0)), 0)
-    : stockValue;
   const categoryLabel =
     product.categories[0]?.path.join(" / ") ||
     (isEn ? "Santos selection" : "Santos izbor");
@@ -593,7 +586,7 @@ export default async function WebShopProductPage({
                   <span className="reviews-note text-lowercase text-secondary ms-1">
                     {businessUniform
                       ? (isEn ? "team inquiry" : "upit za timske porudzbine")
-                      : `${modelStockTotal} ${isEn ? "in stock" : "na stanju"}`}
+                      : `${stockValue} ${isEn ? "in stock" : "na stanju"}`}
                   </span>
                 </div>
                 <div className="product-single__price">
