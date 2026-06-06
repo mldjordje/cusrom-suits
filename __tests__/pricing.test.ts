@@ -102,13 +102,10 @@ describe("resolveDisplayFinalPrice", () => {
     expect(resolveDisplayFinalPrice(zero, [])).toBe(0);
   });
 
-  it("uses only the variants pool when variants are non-empty (product is always inside variants in production)", () => {
-    // In production, getCatalogProductVariantsBySku always includes the
-    // product itself, so the product is never "missing" from the pool.
+  it("includes the product itself even when variants are non-empty", () => {
     const product = variant(12000, 12000);
     const variants = [variant(5000, 5000), variant(7000, 7000)];
-    // Pool = variants only → max is 7000
-    expect(resolveDisplayFinalPrice(product, variants)).toBe(7000);
+    expect(resolveDisplayFinalPrice(product, variants)).toBe(12000);
   });
 });
 
