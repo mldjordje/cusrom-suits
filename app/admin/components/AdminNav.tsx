@@ -18,40 +18,73 @@ type NavItem = {
   permission?: AdminPermission;
 };
 
-const navItems: NavItem[] = [
-  { href: "/admin", label: "Pregled", icon: "OV" },
+type NavSection = {
+  label?: string;
+  items: NavItem[];
+};
+
+const navSections: NavSection[] = [
   {
-    href: "/admin/webshop",
-    label: "Web Shop",
-    icon: "WS",
-    matchPaths: ["/admin/webshop", "/admin/landing", "/admin/landing-hero", "/admin/shop-hero", "/admin/categories", "/admin/orders", "/admin/size-guides"],
-    children: [
-      { href: "/admin/webshop?tab=products", label: "Proizvodi i lager" },
-      { href: "/admin/sync", label: "Sync status" },
-      { href: "/admin/landing", label: "Pocetna i sekcije" },
-      { href: "/admin/landing-hero", label: "Landing Hero Video" },
-      { href: "/admin/shop-hero", label: "Web Shop Hero" },
-      { href: "/admin/webshop?tab=akcije", label: "Akcije i snizenja" },
-      { href: "/admin/categories", label: "Kategorije" },
-      { href: "/admin/orders", label: "Porudzbine" },
-      { href: "/admin/size-guides", label: "Tabele velicina" },
+    items: [
+      { href: "/admin", label: "Pregled", icon: "OV" },
     ],
   },
-  { href: "/admin/tutorial", label: "Tutorial", icon: "HD" },
-  { href: "/admin/site-content", label: "Site Content", icon: "SC" },
-  { href: "/admin/fonts", label: "Fontovi", icon: "FN" },
-  { href: "/admin/fulfillment", label: "Fulfillment", icon: "FL" },
-  { href: "/admin/sync", label: "Sync", icon: "SY", matchPaths: ["/admin/sync"] },
-  { href: "/admin/integrations", label: "Integracije", icon: "IN" },
-  { href: "/admin/fabrics", label: "Fabrics", icon: "FB" },
-  { href: "/admin/linings", label: "Linings", icon: "LN" },
-  { href: "/admin/buttons", label: "Buttons", icon: "BT" },
-  { href: "/admin/contact-messages", label: "Kontakt", icon: "CT" },
-  { href: "/admin/newsletter", label: "Newsletter", icon: "NW" },
-  { href: "/admin/blog-posts", label: "Blog", icon: "BL" },
-  { href: "/admin/preview-tuning", label: "Preview Tuning", icon: "PT" },
-  { href: "/admin/stripe-tuning", label: "Stripe Tuning", icon: "ST" },
-  { href: "/admin/users", label: "Users & Roles", icon: "UR", permission: "admin.users.manage" },
+  {
+    label: "Prodavnica",
+    items: [
+      {
+        href: "/admin/webshop",
+        label: "Web Shop",
+        icon: "WS",
+        matchPaths: ["/admin/webshop", "/admin/landing-hero", "/admin/shop-hero"],
+        children: [
+          { href: "/admin/webshop?tab=products", label: "Proizvodi i lager" },
+          { href: "/admin/webshop?tab=akcije", label: "Akcije i snizenja" },
+          { href: "/admin/shop-hero", label: "Web Shop Hero" },
+          { href: "/admin/landing-hero", label: "Landing Hero Video" },
+        ],
+      },
+      { href: "/admin/orders", label: "Porudzbine", icon: "OR", matchPaths: ["/admin/orders"] },
+      { href: "/admin/categories", label: "Kategorije", icon: "KT" },
+      { href: "/admin/size-guides", label: "Tabele velicina", icon: "SZ" },
+    ],
+  },
+  {
+    label: "Sadrzaj",
+    items: [
+      { href: "/admin/landing", label: "Pocetna i sekcije", icon: "LC" },
+      { href: "/admin/site-content", label: "Site Content", icon: "SC" },
+      { href: "/admin/blog-posts", label: "Blog", icon: "BL" },
+    ],
+  },
+  {
+    label: "Operacije",
+    items: [
+      { href: "/admin/sync", label: "Sync status", icon: "SY", matchPaths: ["/admin/sync"] },
+      { href: "/admin/integrations", label: "Integracije", icon: "IN", matchPaths: ["/admin/integrations"] },
+      { href: "/admin/fulfillment", label: "Fulfillment", icon: "FL" },
+    ],
+  },
+  {
+    label: "Konfiguracija",
+    items: [
+      { href: "/admin/fabrics", label: "Fabrics", icon: "FB" },
+      { href: "/admin/linings", label: "Linings", icon: "LN" },
+      { href: "/admin/buttons", label: "Buttons", icon: "BT" },
+      { href: "/admin/fonts", label: "Fontovi", icon: "FN" },
+    ],
+  },
+  {
+    label: "Podrska",
+    items: [
+      { href: "/admin/contact-messages", label: "Kontakt", icon: "CT" },
+      { href: "/admin/newsletter", label: "Newsletter", icon: "NW" },
+      { href: "/admin/tutorial", label: "Tutorial", icon: "HD" },
+      { href: "/admin/preview-tuning", label: "Preview Tuning", icon: "PT" },
+      { href: "/admin/stripe-tuning", label: "Stripe", icon: "ST" },
+      { href: "/admin/users", label: "Users & Roles", icon: "UR", permission: "admin.users.manage" },
+    ],
+  },
 ];
 
 const isActive = (pathname: string, href: string) => {
@@ -60,7 +93,6 @@ const isActive = (pathname: string, href: string) => {
 };
 
 type AdminNavProps = {
-  /** Zatvara mobilni drawer nakon izbora stranice */
   onNavigate?: () => void;
   permissions?: AdminPermission[];
 };
@@ -68,14 +100,15 @@ type AdminNavProps = {
 export default function AdminNav({ onNavigate, permissions = ["*"] }: AdminNavProps) {
   const pathname = usePathname() || "";
   const searchParams = useSearchParams();
+
   const canAccess = (permission?: AdminPermission) =>
     !permission || permissions.includes("*") || permissions.includes(permission);
+
   const childMatchesCurrentLocation = (href: string) => {
     const [childPath, childQuery] = href.split("?");
     const pathMatches = pathname === childPath || pathname.startsWith(`${childPath}/`);
     if (!pathMatches) return false;
     if (!childQuery) return true;
-
     const expectedParams = new URLSearchParams(childQuery);
     for (const [key, value] of expectedParams.entries()) {
       if (searchParams.get(key) !== value) return false;
@@ -83,72 +116,80 @@ export default function AdminNav({ onNavigate, permissions = ["*"] }: AdminNavPr
     return true;
   };
 
+  const renderItem = (item: NavItem) => {
+    const groupActive = item.matchPaths?.some((path) => pathname.startsWith(path)) ?? false;
+    const active = isActive(pathname, item.href) || groupActive;
+
+    if (item.children?.length) {
+      return (
+        <li key={item.href} className={`admin-template-nav-group ${active ? "is-open" : ""}`}>
+          <Link
+            href={item.href}
+            onClick={onNavigate}
+            aria-current={active ? "page" : undefined}
+            className={`admin-template-nav-link ${active ? "is-active" : ""}`}
+          >
+            <span className="admin-template-nav-icon" aria-hidden="true">{item.icon}</span>
+            <span className="admin-template-nav-link__copy">
+              <span>{item.label}</span>
+            </span>
+            <span className="admin-template-nav-caret" aria-hidden="true">▾</span>
+          </Link>
+          <ul className="admin-template-subnav-list">
+            {item.children.map((child) => {
+              const childActive = childMatchesCurrentLocation(child.href);
+              return (
+                <li key={child.href}>
+                  <Link
+                    href={child.href}
+                    onClick={onNavigate}
+                    aria-current={childActive ? "page" : undefined}
+                    className={`admin-template-subnav-link ${childActive ? "is-active" : ""}`}
+                  >
+                    {child.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </li>
+      );
+    }
+
+    return (
+      <li key={item.href}>
+        <Link
+          href={item.href}
+          onClick={onNavigate}
+          aria-current={active ? "page" : undefined}
+          className={`admin-template-nav-link ${active ? "is-active" : ""}`}
+        >
+          <span className="admin-template-nav-icon" aria-hidden="true">{item.icon}</span>
+          <span>{item.label}</span>
+        </Link>
+      </li>
+    );
+  };
+
   return (
     <nav className="admin-template-nav" aria-label="Admin navigation">
-      <ul className="admin-template-nav-list">
-        {navItems.filter((item) => canAccess(item.permission)).map((item) => {
-          const groupActive = item.matchPaths?.some((path) => pathname.startsWith(path)) ?? false;
-          const active = isActive(pathname, item.href) || groupActive;
-
-          if (item.children?.length) {
-            return (
-              <li key={item.href} className={`admin-template-nav-group ${active ? "is-open" : ""}`}>
-                <Link
-                  href={item.href}
-                  onClick={onNavigate}
-                  aria-current={active ? "page" : undefined}
-                  className={`admin-template-nav-link ${active ? "is-active" : ""}`}
-                >
-                  <span className="admin-template-nav-icon" aria-hidden="true">
-                    {item.icon}
-                  </span>
-                  <span className="admin-template-nav-link__copy">
-                    <span>{item.label}</span>
-                    <small>Dropdown sa svim webshop funkcijama</small>
-                  </span>
-                  <span className="admin-template-nav-caret" aria-hidden="true">
-                    ▾
-                  </span>
-                </Link>
-
-                <ul className="admin-template-subnav-list">
-                  {item.children.map((child) => {
-                    const childActive = childMatchesCurrentLocation(child.href);
-                    return (
-                      <li key={child.href}>
-                        <Link
-                          href={child.href}
-                          onClick={onNavigate}
-                          aria-current={childActive ? "page" : undefined}
-                          className={`admin-template-subnav-link ${childActive ? "is-active" : ""}`}
-                        >
-                          {child.label}
-                        </Link>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </li>
-            );
-          }
-
-          return (
-            <li key={item.href}>
-              <Link
-                href={item.href}
-                onClick={onNavigate}
-                aria-current={active ? "page" : undefined}
-                className={`admin-template-nav-link ${active ? "is-active" : ""}`}
-              >
-                <span className="admin-template-nav-icon" aria-hidden="true">
-                  {item.icon}
-                </span>
-                <span>{item.label}</span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
+      {navSections.map((section, sectionIdx) => {
+        const visibleItems = section.items.filter((item) => canAccess(item.permission));
+        if (!visibleItems.length) return null;
+        return (
+          <div
+            key={section.label ?? `section-${sectionIdx}`}
+            className="admin-template-nav-section"
+          >
+            {section.label ? (
+              <span className="admin-template-nav-section-label">{section.label}</span>
+            ) : null}
+            <ul className="admin-template-nav-list">
+              {visibleItems.map(renderItem)}
+            </ul>
+          </div>
+        );
+      })}
     </nav>
   );
 }

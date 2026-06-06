@@ -77,14 +77,14 @@ export default function AdminShell({ generatedAt, viewerName, viewerRoles, sideb
               </div>
             </div>
             <div className="admin-template-topbar-meta">
-              <span>Status: Online</span>
-              <span>{viewerName}</span>
-              <span>{viewerRoles.join(", ") || "admin"}</span>
-              <Link href="/admin/tutorial" onClick={closeDrawer}>
+              <span className="admin-topbar-hide-mobile">Status: Online</span>
+              <span className="admin-topbar-hide-mobile">{viewerName}</span>
+              <span className="admin-topbar-hide-mobile">{viewerRoles.join(", ") || "admin"}</span>
+              <Link href="/admin/tutorial" onClick={closeDrawer} className="admin-topbar-hide-mobile">
                 Tutorial
               </Link>
-              <AdminPwaInstallButton />
-              <span>{generatedAt}</span>
+              <span className="admin-topbar-hide-mobile"><AdminPwaInstallButton /></span>
+              <span className="admin-topbar-hide-mobile">{generatedAt}</span>
               <form action="/api/admin/logout" method="post">
                 <button type="submit" className="admin-template-logout">
                   Logout

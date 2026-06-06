@@ -456,3 +456,97 @@
     display: none !important;
   }
 }
+
+/* Nav sections */
+.admin-template-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.2) transparent;
+}
+
+.admin-template-nav-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  padding-top: 0.45rem;
+}
+
+.admin-template-nav-section:first-child {
+  padding-top: 0;
+}
+
+.admin-template-nav-section + .admin-template-nav-section {
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.admin-template-nav-section-label {
+  padding: 0.25rem 0.62rem 0.05rem;
+  font-size: 0.56rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #475569;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Stronger active indicator with left accent line */
+.admin-template-nav-link.is-active {
+  background: linear-gradient(90deg, rgba(30, 64, 175, 0.45), rgba(30, 41, 59, 0.65)) !important;
+  border-color: rgba(96, 165, 250, 0.45) !important;
+  border-left-color: #60a5fa !important;
+  border-left-width: 2px !important;
+  color: #f8fafc !important;
+  padding-left: calc(0.62rem - 1px) !important;
+}
+
+/* Sidebar scrolling */
+.admin-template-sidebar {
+  overflow-y: auto !important;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(148, 163, 184, 0.15) transparent;
+}
+
+/* Compact mobile topbar — single row */
+@media (max-width: 1024px) {
+  .admin-template-topbar {
+    flex-direction: row !important;
+    align-items: center !important;
+    padding: 0.55rem 0.85rem !important;
+    gap: 0.5rem !important;
+  }
+
+  .admin-template-topbar-row {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .admin-template-topbar-title h1 {
+    font-size: 0.92rem !important;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .admin-template-topbar-title p {
+    display: none;
+  }
+
+  .admin-template-topbar-meta {
+    flex-direction: row !important;
+    flex-wrap: nowrap !important;
+    align-items: center !important;
+    gap: 0.4rem !important;
+    width: auto !important;
+    text-align: right !important;
+  }
+
+  .admin-topbar-hide-mobile {
+    display: none !important;
+  }
+}
