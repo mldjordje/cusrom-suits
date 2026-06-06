@@ -7,12 +7,16 @@ export const MEDIA_HEALTH_CACHE_TAG = "media-health";
 export type MediaHealthDoc = {
   /** ISO timestamp of the last completed scan, or null if never scanned. */
   scannedAt: string | null;
-  /** Number of products examined in the last scan. */
+  /** Number of products examined in the last scan (only products WITH direct media). */
   totalChecked: number;
   /** Number of products with all images unreachable in the last scan. */
   brokenCount: number;
   /** Collapsed-representative legacyIds whose images are all unreachable. */
   brokenLegacyIds: number[];
+  /** Total active+exported products in catalog that have no direct media at all. */
+  noDirectMediaCount: number;
+  /** LegacyIds of active+exported products with no direct media. */
+  noDirectMediaLegacyIds: number[];
 };
 
 const EMPTY_DOC: MediaHealthDoc = {
@@ -20,6 +24,8 @@ const EMPTY_DOC: MediaHealthDoc = {
   totalChecked: 0,
   brokenCount: 0,
   brokenLegacyIds: [],
+  noDirectMediaCount: 0,
+  noDirectMediaLegacyIds: [],
 };
 
 const normalizeDoc = (value: Partial<MediaHealthDoc> | null | undefined): MediaHealthDoc => {
@@ -30,11 +36,20 @@ const normalizeDoc = (value: Partial<MediaHealthDoc> | null | undefined): MediaH
         .filter((item) => Number.isFinite(item)),
     ),
   );
+  const noDirectMediaLegacyIds = Array.from(
+    new Set(
+      (Array.isArray(value?.noDirectMediaLegacyIds) ? value!.noDirectMediaLegacyIds : [])
+        .map((item) => Number(item))
+        .filter((item) => Number.isFinite(item)),
+    ),
+  );
   return {
     scannedAt: value?.scannedAt ? String(value.scannedAt) : null,
     totalChecked: Number.isFinite(Number(value?.totalChecked)) ? Number(value!.totalChecked) : 0,
     brokenCount: brokenLegacyIds.length,
     brokenLegacyIds,
+    noDirectMediaCount: noDirectMediaLegacyIds.length,
+    noDirectMediaLegacyIds,
   };
 };
 
@@ -61,11 +76,13 @@ export async function getBrokenProductIdSet(): Promise<Set<number>> {
 export async function saveMediaHealth(input: {
   totalChecked: number;
   brokenLegacyIds: number[];
+  noDirectMediaLegacyIds: number[];
 }): Promise<MediaHealthDoc> {
   const doc = normalizeDoc({
     scannedAt: new Date().toISOString(),
     totalChecked: input.totalChecked,
     brokenLegacyIds: input.brokenLegacyIds,
+    noDirectMediaLegacyIds: input.noDirectMediaLegacyIds,
   });
   await writePersistentJsonFile(MEDIA_HEALTH_PATH, doc);
   try {

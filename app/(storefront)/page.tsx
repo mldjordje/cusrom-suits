@@ -837,6 +837,7 @@ export default async function HomePage({
           showProductCards={heroStripEnabled}
           featuredProducts={heroStripProducts}
           heroVideoUrl={landingSettings.heroVideoUrl || undefined}
+          heroVideoMobileUrl={landingSettings.heroVideoMobileUrl || undefined}
           heroVideoPosterUrl={landingSettings.heroVideoPosterUrl || undefined}
           content={{
             heroEyebrow: tx(landingSettings.heroEyebrow, "Santos & Santorini"),

@@ -595,7 +595,7 @@ export async function GET(req: NextRequest) {
   );
   const sort = parseCatalogFilter<CatalogListInput["sort"] & string>(
     params.get("sort"),
-    ["featured", "name_asc", "name_desc", "price_asc", "price_desc", "stock_asc", "stock_desc", "newest", "oldest"],
+    ["featured", "name_asc", "name_desc", "price_asc", "price_desc", "stock_asc", "stock_desc", "newest", "oldest", "no_image_first"],
     "featured",
   );
 

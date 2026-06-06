@@ -6,34 +6,29 @@ import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 
 type HomeHeroMediaProps = {
   desktopVideoId: string;
-  /** Optional muted autoplay loop on narrow viewports; skipped on save-data / 2G. */
   mobileVideoId?: string;
   desktopPosterSrc: string;
   mobilePosterSrc: string;
-  /** If provided, overrides YouTube embeds with a direct video file. */
+  /** Uploaded direct video file for desktop. If absent, the hero remains poster-only. */
   heroVideoUrl?: string;
+  /** Uploaded direct video file for mobile. Falls back to heroVideoUrl if absent. */
+  heroVideoMobileUrl?: string;
 };
 
 const DESKTOP_MQ = "(min-width: 768px)";
 
-const buildEmbed = (id: string) =>
-  `https://www.youtube.com/embed/${id}?autoplay=1&mute=1&controls=0&loop=1&playlist=${id}&modestbranding=1&playsinline=1&rel=0&iv_load_policy=3&disablekb=1&fs=0`;
-
 export default function HomeHeroMedia({
-  desktopVideoId,
-  mobileVideoId,
+  desktopVideoId: _desktopVideoId,
+  mobileVideoId: _mobileVideoId,
   desktopPosterSrc,
   mobilePosterSrc,
   heroVideoUrl,
+  heroVideoMobileUrl,
 }: HomeHeroMediaProps) {
-  /** Hero video: skip only on save-data / 2G (not OS reduce-motion). */
   const { lowPower } = useAnimationBudget();
   const [viewportReady, setViewportReady] = useState(false);
   const [isDesktop, setIsDesktop] = useState(true);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
-  // showVideo je odvojen od loadVideo — video se učitava u pozadini,
-  // ali postaje vidljiv tek nakon 3.2s da YouTube stigne da autoplay-uje
-  // pre nego što poster nestane (sprečava bljesak play button-a)
   const [showVideo, setShowVideo] = useState(false);
 
   useEffect(() => {
@@ -47,7 +42,7 @@ export default function HomeHeroMedia({
   }, []);
 
   useEffect(() => {
-    if (!viewportReady || lowPower) {
+    if (!viewportReady || lowPower || !heroVideoUrl) {
       setShouldLoadVideo(false);
       setShowVideo(false);
       return;
@@ -58,11 +53,8 @@ export default function HomeHeroMedia({
     let showTimeoutId: number | null = null;
 
     const activate = () => {
-      // Korak 1: dodaj iframe u DOM da počne učitavanje
       setShouldLoadVideo(true);
-      // Korak 2: tek nakon 3.2s postavi is-video-ready (YouTube treba vremena
-      // da autoplay-uje — ovo sprečava bljesak play button-a)
-      showTimeoutId = window.setTimeout(() => setShowVideo(true), 3200);
+      showTimeoutId = window.setTimeout(() => setShowVideo(true), 900);
     };
 
     if (typeof window.requestIdleCallback === "function") {
@@ -78,14 +70,13 @@ export default function HomeHeroMedia({
       if (loadTimeoutId !== null) window.clearTimeout(loadTimeoutId);
       if (showTimeoutId !== null) window.clearTimeout(showTimeoutId);
     };
-  }, [lowPower, viewportReady]);
+  }, [heroVideoUrl, lowPower, viewportReady]);
 
-  const showDesktopVideo = shouldLoadVideo && viewportReady && isDesktop && !lowPower;
-  const showMobileVideo = shouldLoadVideo && viewportReady && !isDesktop && Boolean(mobileVideoId) && !lowPower;
-  // videoReady (is-video-ready CSS class) sada čeka showVideo — YouTube mora
-  // da autoplay-uje pre nego što poster nestane
-  const videoReady = showVideo && (showDesktopVideo || showMobileVideo);
   const posterSrc = !viewportReady || isDesktop ? desktopPosterSrc : mobilePosterSrc;
+  const activeVideoUrl = !viewportReady || isDesktop
+    ? heroVideoUrl
+    : (heroVideoMobileUrl || heroVideoUrl);
+  const videoReady = showVideo && shouldLoadVideo && Boolean(activeVideoUrl) && !lowPower;
 
   return (
     <div
@@ -99,9 +90,9 @@ export default function HomeHeroMedia({
         className="ss-home18-hero__poster"
         sizes="100vw"
       />
-      {heroVideoUrl && shouldLoadVideo ? (
+      {activeVideoUrl && shouldLoadVideo ? (
         <video
-          src={heroVideoUrl}
+          src={activeVideoUrl}
           autoPlay
           muted
           loop
@@ -112,34 +103,7 @@ export default function HomeHeroMedia({
           tabIndex={-1}
           style={{ objectFit: "cover", width: "100%", height: "100%" }}
         />
-      ) : (
-        <>
-          {showDesktopVideo ? (
-            <iframe
-              title="Santos and Santorini hero desktop video"
-              src={buildEmbed(desktopVideoId)}
-              className="ss-home18-hero__iframe ss-home18-hero__iframe--desktop ss-home18-hero__video-frame"
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              allowFullScreen
-              tabIndex={-1}
-              aria-hidden="true"
-            />
-          ) : null}
-          {showMobileVideo && mobileVideoId ? (
-            <iframe
-              title="Santos and Santorini hero mobile video"
-              src={buildEmbed(mobileVideoId)}
-              className="ss-home18-hero__iframe ss-home18-hero__iframe--mobile ss-home18-hero__video-frame"
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              allowFullScreen
-              tabIndex={-1}
-              aria-hidden="true"
-            />
-          ) : null}
-        </>
-      )}
+      ) : null}
     </div>
   );
 }

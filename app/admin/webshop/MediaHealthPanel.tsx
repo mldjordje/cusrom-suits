@@ -7,6 +7,8 @@ type MediaHealthDoc = {
   totalChecked: number;
   brokenCount: number;
   brokenLegacyIds: number[];
+  noDirectMediaCount: number;
+  noDirectMediaLegacyIds: number[];
 };
 
 const formatWhen = (iso: string | null) => {
@@ -77,14 +79,29 @@ export default function MediaHealthPanel() {
         </button>
       </div>
 
-      <div className="mt-3 grid gap-2 sm:grid-cols-3">
-        <div className="rounded-xl border border-rose-200 bg-white px-3 py-2">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-700">Bez slike (sakriveno)</p>
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
+        <a
+          href="/admin/webshop?mediaStatus=missing&sort=no_image_first"
+          className="rounded-xl border border-rose-300 bg-white px-3 py-2 block hover:bg-rose-50 transition-colors"
+          title="Klikni da vidiš artikle bez sopstvene slike"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-700">Bez sopstvene slike</p>
+          <p className="mt-1 text-2xl font-semibold text-rose-900">{doc?.noDirectMediaCount ?? "-"}</p>
+          <p className="mt-0.5 text-[11px] text-rose-500">Skriveni iz web shopa → klikni</p>
+        </a>
+        <a
+          href="/admin/webshop?mediaStatus=broken&sort=no_image_first"
+          className="rounded-xl border border-rose-200 bg-white px-3 py-2 block hover:bg-rose-50 transition-colors"
+          title="Klikni da vidiš artikle sa nedostupnim slikama"
+        >
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-700">Slike nedostupne (CDN)</p>
           <p className="mt-1 text-2xl font-semibold text-rose-900">{doc?.brokenCount ?? "-"}</p>
-        </div>
+          <p className="mt-0.5 text-[11px] text-rose-500">Imaju slike ali ne učitavaju → klikni</p>
+        </a>
         <div className="rounded-xl border border-rose-200 bg-white px-3 py-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-700">Provereno artikala</p>
           <p className="mt-1 text-2xl font-semibold text-rose-900">{doc?.totalChecked ?? "-"}</p>
+          <p className="mt-0.5 text-[11px] text-rose-500">Sa sopstvenim slikama</p>
         </div>
         <div className="rounded-xl border border-rose-200 bg-white px-3 py-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-rose-700">Poslednje skeniranje</p>

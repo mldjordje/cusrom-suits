@@ -21,9 +21,6 @@ import { absoluteUrl, buildBreadcrumbJsonLd, buildSeoMetadata } from "@/lib/seo"
 type SearchParams = Record<string, string | string[] | undefined>;
 type ActiveFilterChip = { key: string; label: string; href: string };
 
-// Lower bound that only filters out obvious price data errors (missing / near-zero
-// prices) while keeping the full real accessory range visible.
-const MIN_VALID_PRICE_RSD = 500;
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -162,11 +159,7 @@ export default async function WebShopPage({
       activeOnly: true,
       exportOnly: true,
       collapseBySku: true,
-      // Only guard against obvious data errors (missing / near-zero price). A 2 000 RSD
-      // floor was silently hiding all real accessories (kravate, kaisevi, novcanici,
-      // card-holderi, carape) priced below it. Keep a small floor that drops 0/junk prices
-      // but lets the full accessory range through.
-      priceMin: priceMin > 0 ? priceMin : MIN_VALID_PRICE_RSD,
+      priceMin: priceMin > 0 ? priceMin : undefined,
       priceMax: priceMax || undefined,
       sizes: selectedSizes.length ? selectedSizes : undefined,
       // Hide products with no own image (borrowed/fallback) and products flagged by the

@@ -699,11 +699,15 @@ export default function AdminWebshopPage() {
   const [activeOnly, setActiveOnly] = useState(true);
   const [exportOnly, setExportOnly] = useState(true);
   const [onSaleOnly, setOnSaleOnly] = useState(false);
-  const [mediaStatus, setMediaStatus] = useState("all");
+  const [mediaStatus, setMediaStatus] = useState(() =>
+    typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("mediaStatus") || "all") : "all"
+  );
   const [contentStatus, setContentStatus] = useState("all");
   const [visibilityStatus, setVisibilityStatus] = useState("all");
   const [sourceStatus, setSourceStatus] = useState("all");
-  const [sort, setSort] = useState("featured");
+  const [sort, setSort] = useState(() =>
+    typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("sort") || "featured") : "featured"
+  );
   const [createPanelOpen, setCreatePanelOpen] = useState(false);
   const [saleQ, setSaleQ] = useState("");
   const [saleOnSaleOnly, setSaleOnSaleOnly] = useState(true);
@@ -2387,6 +2391,7 @@ export default function AdminWebshopPage() {
               </select>
               <select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
                 <option value="featured">Podrazumevano</option>
+                <option value="no_image_first">Bez slike prvo</option>
                 <option value="stock_desc">Lager najveci</option>
                 <option value="stock_asc">Lager najmanji</option>
                 <option value="price_desc">Cena najveca</option>

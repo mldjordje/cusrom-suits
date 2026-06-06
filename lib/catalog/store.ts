@@ -105,7 +105,7 @@ export type CatalogListInput = {
   /** Collapsed-representative legacyIds to drop from the result (e.g. products with
    *  broken/unreachable images flagged by the persisted media-health scan). */
   excludeLegacyIds?: number[];
-  sort?: "featured" | "name_asc" | "name_desc" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "newest" | "oldest";
+  sort?: "featured" | "name_asc" | "name_desc" | "price_asc" | "price_desc" | "stock_asc" | "stock_desc" | "newest" | "oldest" | "no_image_first";
 };
 
 type CatalogSnapshotCacheEntry = {
@@ -834,22 +834,31 @@ export const scanCatalogMediaHealth = async (options?: {
   const imagesPerProduct = Math.max(1, Math.min(6, options?.imagesPerProduct ?? 3));
 
   // listCatalogProducts clamps pageSize to 120, so page through the whole catalog.
-  const items: CatalogProductView[] = [];
-  let page = 1;
-  let totalPages = 1;
-  do {
-    const listed = await listCatalogProducts({
-      page,
-      pageSize: 120,
-      activeOnly: true,
-      exportOnly: true,
-      collapseBySku: true,
-      requireDirectImages: true,
-    });
-    items.push(...listed.items);
-    totalPages = Math.max(1, Number(listed.totalPages) || 1);
-    page += 1;
-  } while (page <= totalPages && page <= 200);
+  // First pass: all active+exported products (to find those without direct media).
+  const allItems: CatalogProductView[] = [];
+  {
+    let page = 1;
+    let totalPages = 1;
+    do {
+      const listed = await listCatalogProducts({
+        page,
+        pageSize: 120,
+        activeOnly: true,
+        exportOnly: true,
+        collapseBySku: true,
+      });
+      allItems.push(...listed.items);
+      totalPages = Math.max(1, Number(listed.totalPages) || 1);
+      page += 1;
+    } while (page <= totalPages && page <= 200);
+  }
+
+  const noDirectMediaLegacyIds = allItems
+    .filter((item) => !hasCatalogProductDirectMedia(item))
+    .map((item) => item.legacyId);
+
+  // Second pass: only products WITH direct media (to check CDN reachability).
+  const items = allItems.filter((item) => hasCatalogProductDirectMedia(item));
   const broken: number[] = [];
 
   for (let index = 0; index < items.length; index += concurrency) {
@@ -877,7 +886,7 @@ export const scanCatalogMediaHealth = async (options?: {
     }
   }
 
-  return { totalChecked: items.length, brokenLegacyIds: broken };
+  return { totalChecked: items.length, brokenLegacyIds: broken, noDirectMediaLegacyIds };
 };
 
 const filterCatalogProductsByReachableOwnImages = async (
@@ -1287,6 +1296,14 @@ const sortCatalogProducts = (
   }
   if (sort === "newest" || sort === "oldest") {
     return list.sort((a, b) => (sort === "newest" ? b.legacyId - a.legacyId : a.legacyId - b.legacyId));
+  }
+  if (sort === "no_image_first") {
+    return list.sort((a, b) => {
+      const aHas = hasCatalogProductDirectMedia(a) ? 1 : 0;
+      const bHas = hasCatalogProductDirectMedia(b) ? 1 : 0;
+      if (aHas !== bHas) return aHas - bHas;
+      return b.legacyId - a.legacyId;
+    });
   }
   return list.sort((a, b) => {
     const typeDiff = getCatalogProductTypePriority(a) - getCatalogProductTypePriority(b);
