@@ -27,7 +27,7 @@ export type MofficeExistingRow = {
   raw_payload: Record<string, unknown> | null;
 };
 
-type MofficePostSyncRow = MofficeExistingRow & {
+export type MofficePostSyncRow = MofficeExistingRow & {
   is_active: boolean | null;
   is_exported: boolean | null;
   stock_total: number | null;
@@ -46,6 +46,28 @@ export type MofficeSyncPlan = {
     stale: number;
     duplicates: number;
   };
+};
+
+export type MofficeExportRow = {
+  sku: string;
+  ean: string;
+  velicina: string;
+  moffice_kolicina: number | "";
+  site_stock_total: number;
+  site_active: boolean;
+  site_exported: boolean;
+  status:
+    | "OK"
+    | "ZERO_IN_MOFFICE_HIDDEN"
+    | "MISSING_FROM_MOFFICE_HIDDEN"
+    | "VISIBLE_BUT_MISSING_FROM_MOFFICE"
+    | "VISIBLE_WITH_WRONG_STOCK"
+    | "MISSING_SIZE";
+  legacy_id: number;
+  moffice_id: number | "";
+  naziv: string;
+  kategorija: string;
+  last_synced_run: string;
 };
 
 const nowIso = () => new Date().toISOString();
@@ -95,15 +117,31 @@ const isLegacyLagerManagedRow = (row: MofficeExistingRow) => {
   return /^\d{5,}$/.test(sku) || /^0\d{5,}$/.test(ean);
 };
 
-const makeVariantKeys = (input: { sku: unknown; ean: unknown; size: unknown; legacyId?: number | null }) => {
+const makeVariantKeys = (input: { sku: unknown; ean: unknown; size: unknown }) => {
   const sku = normalizeLower(input.sku);
   const ean = normalizeLower(input.ean);
   const size = normalizeSize(input.size);
   const keys = new Set<string>();
   if (ean) keys.add(`ean:${ean}`);
   if (sku && size) keys.add(`sku-size:${sku}:${size}`);
-  if (input.legacyId) keys.add(`legacy:${Number(input.legacyId)}`);
   return keys;
+};
+
+const hashVariantLegacyId = (sku: string, size: string) => {
+  const key = `${normalizeLower(sku)}:${normalizeSize(size)}`;
+  let hash = 2166136261;
+  for (let i = 0; i < key.length; i++) {
+    hash ^= key.charCodeAt(i);
+    hash = Math.imul(hash, 16777619);
+  }
+  return 9_100_000_000_000 + (hash >>> 0);
+};
+
+const resolveNewLegacyId = (input: { mofficeId: number; sku: string; ean: string; size: string }) => {
+  const numericEan = Number(input.ean.replace(/\D/g, ""));
+  if (Number.isSafeInteger(numericEan) && numericEan > 0) return numericEan;
+  if (input.sku && input.size) return hashVariantLegacyId(input.sku, input.size);
+  return input.mofficeId;
 };
 
 const buildDebugItems = (items: MofficeItem[]) =>
@@ -119,6 +157,29 @@ const buildDebugItems = (items: MofficeItem[]) =>
       name: item.ARTIKAL_NAZIV ?? "",
     }));
 
+async function loadAllCatalogRows<T = Record<string, unknown>>(
+  supabase: ReturnType<typeof getServiceSupabase>,
+  select: string,
+): Promise<T[]> {
+  if (!supabase) throw new Error("Supabase service role client is not configured.");
+  const pageSize = 1000;
+  const rows: T[] = [];
+
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase
+      .from("catalog_products")
+      .select(select)
+      .order("legacy_id", { ascending: true })
+      .range(from, from + pageSize - 1);
+    if (error) throw new Error(`Catalog load failed: ${error.message}`);
+    const batch = (data ?? []) as T[];
+    rows.push(...batch);
+    if (batch.length < pageSize) break;
+  }
+
+  return rows;
+}
+
 const getMofficeSyncedRunId = (payload: Record<string, unknown>) => {
   const moffice =
     payload.moffice && typeof payload.moffice === "object"
@@ -127,7 +188,18 @@ const getMofficeSyncedRunId = (payload: Record<string, unknown>) => {
   return String(moffice.syncedRunId || "");
 };
 
-const buildPostSyncStaleIds = (rows: MofficePostSyncRow[], runId: string) =>
+const getMofficePayload = (payload: Record<string, unknown>) =>
+  payload.moffice && typeof payload.moffice === "object"
+    ? (payload.moffice as Record<string, unknown>)
+    : {};
+
+const getFirstSize = (payload: Record<string, unknown>) => {
+  const attrs = getPayloadAttributes(payload);
+  const sizes = Array.isArray(attrs.size) ? attrs.size : [];
+  return normalizeKey(sizes[0] ?? payload.size ?? getMofficePayload(payload).size);
+};
+
+export const buildPostSyncStaleIds = (rows: MofficePostSyncRow[], runId: string) =>
   rows
     .filter((row) => isLegacyLagerManagedRow(row))
     .filter((row) => getMofficeSyncedRunId(getRawPayload(row.raw_payload)) !== runId)
@@ -192,17 +264,22 @@ export function buildMofficeSyncPlan(params: {
     const eanKey = normalizeLower(ean);
     if (skuKey) feedSkuSet.add(skuKey);
     if (eanKey) feedEanSet.add(eanKey);
-    makeVariantKeys({ sku, ean, size, legacyId: mofficeId }).forEach((key) => feedVariantKeys.add(key));
+    makeVariantKeys({ sku, ean, size }).forEach((key) => feedVariantKeys.add(key));
 
     const sizeKey = normalizeSize(size);
     const existingRow =
       (eanKey && byEan.get(eanKey)) ||
       (skuKey && sizeKey && bySkuSize.get(`${skuKey}:${sizeKey}`)) ||
       (skuKey ? bySkuUnambiguous.get(skuKey) || null : null);
-    const legacyId = existingRow ? Number(existingRow.legacy_id) : mofficeId;
+    const legacyId = existingRow ? Number(existingRow.legacy_id) : resolveNewLegacyId({ mofficeId, sku, ean, size });
     const existingPayload = getRawPayload(existingRow?.raw_payload);
     const attributes = getPayloadAttributes(existingPayload);
     if (size) attributes.size = [size];
+    const mpPrice = Number(item.ARTIKAL_MP_CENA ?? 0);
+    const vpPrice = Number(item.ARTIKAL_VP_CENA ?? 0);
+    const tax = Number(item.ARTIKAL_PDV_STOPA ?? 20);
+    const stock = Math.max(0, Math.floor(Number(item.ARTIKAL_ZALIHE ?? 0)));
+    const keepManualPrice = hasManualPriceOverride(existingPayload);
 
     const payload: Record<string, unknown> = {
       ...existingPayload,
@@ -213,6 +290,9 @@ export function buildMofficeSyncPlan(params: {
         ean,
         category: item.ARTIKAL_GRUPA ?? "",
         size,
+        stock,
+        priceGross: mpPrice,
+        priceNet: vpPrice,
         syncedAt,
         syncedRunId: params.runId,
       },
@@ -231,12 +311,6 @@ export function buildMofficeSyncPlan(params: {
       created++;
     }
 
-    const mpPrice = Number(item.ARTIKAL_MP_CENA ?? 0);
-    const vpPrice = Number(item.ARTIKAL_VP_CENA ?? 0);
-    const tax = Number(item.ARTIKAL_PDV_STOPA ?? 20);
-    const stock = Math.max(0, Math.floor(Number(item.ARTIKAL_ZALIHE ?? 0)));
-    const keepManualPrice = hasManualPriceOverride(existingPayload);
-
     const upsertRow = {
       legacy_id: legacyId,
       sku,
@@ -246,7 +320,7 @@ export function buildMofficeSyncPlan(params: {
       stock_warehouse_1: stock,
       stock_total: stock,
       is_active: stock > 0,
-      is_exported: true,
+      is_exported: stock > 0,
       raw_payload: payload,
       updated_at: syncedAt,
       ...(keepManualPrice
@@ -286,8 +360,6 @@ export function buildMofficeSyncPlan(params: {
     for (const size of candidateSizes) {
       if (sku) variantKeys.add(`sku-size:${sku}:${size}`);
     }
-    variantKeys.add(`legacy:${legacyId}`);
-
     const belongsToCurrentMofficeSku = (sku && feedSkuSet.has(sku)) || (ean && feedEanSet.has(ean));
     const hasCurrentVariant = Array.from(variantKeys).some((key) => feedVariantKeys.has(key));
     const oldNumericLegacyRowAbsentFromFeed = sku && !feedSkuSet.has(sku) && !feedEanSet.has(ean);
@@ -313,6 +385,93 @@ export function buildMofficeSyncPlan(params: {
       stale: staleLegacyIds.size,
       duplicates: duplicateLegacyIds.size,
     },
+  };
+}
+
+export function buildMofficeExportRows(params: {
+  rows: MofficePostSyncRow[];
+  latestRunId: string;
+}): MofficeExportRow[] {
+  return params.rows
+    .filter((row) => isLegacyLagerManagedRow(row))
+    .map((row) => {
+      const payload = getRawPayload(row.raw_payload);
+      const moffice = getMofficePayload(payload);
+      const syncedRunId = String(moffice.syncedRunId || "");
+      const mofficeStockRaw = moffice.stock;
+      const hasCurrentMoffice = syncedRunId === params.latestRunId;
+      const mofficeStock: number | "" = hasCurrentMoffice ? Number(mofficeStockRaw ?? 0) : "";
+      const mofficeId: number | "" = hasCurrentMoffice ? Number(moffice.id || 0) || "" : "";
+      const siteStock = Number(row.stock_total || 0);
+      const siteActive = row.is_active === true;
+      const siteExported = row.is_exported === true;
+      const visible = siteActive && siteExported && siteStock > 0;
+      const size = getFirstSize(payload);
+
+      let status: MofficeExportRow["status"] = "OK";
+      if (!hasCurrentMoffice) {
+        status = visible ? "VISIBLE_BUT_MISSING_FROM_MOFFICE" : "MISSING_FROM_MOFFICE_HIDDEN";
+      } else if (!size) {
+        status = "MISSING_SIZE";
+      } else if (Number(mofficeStock) <= 0) {
+        status = visible ? "VISIBLE_WITH_WRONG_STOCK" : "ZERO_IN_MOFFICE_HIDDEN";
+      } else if (!visible || siteStock !== Number(mofficeStock)) {
+        status = "VISIBLE_WITH_WRONG_STOCK";
+      }
+
+      return {
+        sku: normalizeKey(row.sku),
+        ean: normalizeKey(row.ean),
+        velicina: size,
+        moffice_kolicina: mofficeStock,
+        site_stock_total: siteStock,
+        site_active: siteActive,
+        site_exported: siteExported,
+        status,
+        legacy_id: Number(row.legacy_id),
+        moffice_id: mofficeId,
+        naziv: normalizeKey(row.name_sr),
+        kategorija: normalizeKey(moffice.category || payload.category),
+        last_synced_run: syncedRunId,
+      };
+    })
+    .sort((left, right) => {
+      const skuCompare = left.sku.localeCompare(right.sku, "sr", { numeric: true });
+      if (skuCompare !== 0) return skuCompare;
+      return left.velicina.localeCompare(right.velicina, "sr", { numeric: true });
+    });
+}
+
+export async function loadMofficeExportRows(latestRunId?: string): Promise<{
+  latestRunId: string;
+  rows: MofficeExportRow[];
+}> {
+  const supabase = getServiceSupabase();
+  if (!supabase) throw new Error("Supabase service role client is not configured.");
+
+  let runId = latestRunId || "";
+  if (!runId) {
+    const { data, error } = await supabase
+      .from("integration_sync_runs")
+      .select("id")
+      .eq("domain", "stock_inbound")
+      .eq("status", "success")
+      .order("started_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) throw new Error(`Latest mOffice run load failed: ${error.message}`);
+    runId = String((data as Record<string, unknown> | null)?.id || "");
+  }
+  if (!runId) throw new Error("No successful mOffice sync run found.");
+
+  const rows = await loadAllCatalogRows<MofficePostSyncRow>(
+    supabase,
+    "legacy_id,sku,ean,name_sr,is_active,is_exported,stock_total,stock_warehouse_1,raw_payload",
+  );
+
+  return {
+    latestRunId: runId,
+    rows: buildMofficeExportRows({ rows, latestRunId: runId }),
   };
 }
 
@@ -390,10 +549,10 @@ async function executeMofficeSync(input: {
     if (!Array.isArray(items)) throw new Error("mOffice payload must be an array.");
     const debugItems = buildDebugItems(items);
 
-    const { data: existingRaw, error: existingError } = await supabase
-      .from("catalog_products")
-      .select("legacy_id,sku,ean,name_sr,raw_payload");
-    if (existingError) throw new Error(`Catalog load failed: ${existingError.message}`);
+    const existingRaw = await loadAllCatalogRows<MofficeExistingRow>(
+      supabase,
+      "legacy_id,sku,ean,name_sr,raw_payload",
+    );
 
     const plan = buildMofficeSyncPlan({
       items,
@@ -455,10 +614,10 @@ async function executeMofficeSync(input: {
       deactivated += ids.length;
     }
 
-    const { data: postSyncRaw, error: postSyncError } = await supabase
-      .from("catalog_products")
-      .select("legacy_id,sku,ean,name_sr,is_active,is_exported,stock_total,stock_warehouse_1,raw_payload");
-    if (postSyncError) throw new Error(`Post-sync catalog load failed: ${postSyncError.message}`);
+    const postSyncRaw = await loadAllCatalogRows<MofficePostSyncRow>(
+      supabase,
+      "legacy_id,sku,ean,name_sr,is_active,is_exported,stock_total,stock_warehouse_1,raw_payload",
+    );
 
     const postSyncStaleIds = buildPostSyncStaleIds(
       (postSyncRaw ?? []) as unknown as MofficePostSyncRow[],
@@ -492,6 +651,14 @@ async function executeMofficeSync(input: {
       ids.forEach((id) => staleIds.add(id));
     }
 
+    const exportRows = buildMofficeExportRows({
+      rows: postSyncRaw as MofficePostSyncRow[],
+      latestRunId: run.id,
+    });
+    const visibleMismatchRows = exportRows.filter(
+      (row) => row.status === "VISIBLE_BUT_MISSING_FROM_MOFFICE" || row.status === "VISIBLE_WITH_WRONG_STOCK",
+    ).length;
+
     invalidateCatalogCaches();
     const counters: SyncCounters = {
       total: plan.counters.total,
@@ -507,7 +674,11 @@ async function executeMofficeSync(input: {
       summary,
       meta: {
         source,
+        feedRows: plan.counters.total,
         total: plan.counters.total,
+        upsertRows: upserted,
+        hiddenRows: deactivated,
+        visibleMismatchRows,
         rows: plan.counters.rows,
         matched: plan.counters.matched,
         created: plan.counters.created,
@@ -522,12 +693,16 @@ async function executeMofficeSync(input: {
       runId: run.id,
       status,
       total: plan.counters.total,
+      feedRows: plan.counters.total,
       upserted,
+      upsertRows: upserted,
       matched: plan.counters.matched,
       created: plan.counters.created,
       stale: plan.counters.stale,
       duplicates: plan.counters.duplicates,
       postSyncStale: postSyncStaleIds.length,
+      hiddenRows: deactivated,
+      visibleMismatchRows,
       deactivated,
       debugItems,
     };

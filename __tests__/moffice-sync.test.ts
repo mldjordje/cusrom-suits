@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildMofficeSyncPlan, type MofficeExistingRow, type MofficeItem } from "@/lib/integrations/moffice/sync";
+import {
+  buildMofficeExportRows,
+  buildMofficeSyncPlan,
+  buildPostSyncStaleIds,
+  type MofficeExistingRow,
+  type MofficeItem,
+  type MofficePostSyncRow,
+} from "@/lib/integrations/moffice/sync";
 
 const row = (overrides: Partial<MofficeExistingRow> = {}): MofficeExistingRow => ({
   legacy_id: 1,
@@ -125,5 +132,108 @@ describe("mOffice sync planning", () => {
       attributes: { size: ["105"] },
       moffice: { size: "105", syncedRunId: "run-3" },
     });
+  });
+
+  it("keeps mOffice zero-stock rows hidden and not exported", () => {
+    const plan = buildMofficeSyncPlan({
+      runId: "run-zero",
+      items: [
+        item({
+          ARTIKAL_ID: 55501,
+          ARTIKAL_SIFRA: "55501",
+          ARTIKAL_BARKOD: "055501001",
+          ARTIKAL_VELICINA: "XL",
+          ARTIKAL_ZALIHE: 0,
+        }),
+      ],
+      existing: [],
+    });
+
+    expect(plan.rows).toHaveLength(1);
+    expect(plan.rows[0]).toMatchObject({
+      stock_total: 0,
+      stock_warehouse_1: 0,
+      is_active: false,
+      is_exported: false,
+    });
+    expect(plan.rows[0].raw_payload).toMatchObject({
+      moffice: { stock: 0, syncedRunId: "run-zero" },
+    });
+  });
+
+  it("post-sync cleanup still sees stale rows after the first Supabase page", () => {
+    const rows: MofficePostSyncRow[] = Array.from({ length: 1001 }, (_, index) => ({
+      legacy_id: index + 1,
+      sku: String(100000 + index),
+      ean: `0${100000 + index}`,
+      name_sr: `Product ${index + 1}`,
+      raw_payload: { legacyRaw: {}, attributes: { size: ["UNI"] }, stockWarehouses: [] },
+      is_active: true,
+      is_exported: true,
+      stock_total: 1,
+      stock_warehouse_1: 1,
+    }));
+    rows.push({
+      legacy_id: 12951354,
+      sku: "129513",
+      ean: "012951354",
+      name_sr: "Stale product",
+      raw_payload: { legacyRaw: {}, attributes: { size: ["54"] }, stockWarehouses: [] },
+      is_active: true,
+      is_exported: true,
+      stock_total: 2,
+      stock_warehouse_1: 2,
+    });
+
+    expect(buildPostSyncStaleIds(rows, "latest-run")).toContain(12951354);
+  });
+
+  it("exports visible and hidden mOffice mismatches with clear statuses", () => {
+    const rows: MofficePostSyncRow[] = [
+      {
+        legacy_id: 12951354,
+        sku: "129513",
+        ean: "012951354",
+        name_sr: "Missing from feed",
+        raw_payload: { legacyRaw: {}, attributes: { size: ["54"] }, stockWarehouses: [] },
+        is_active: true,
+        is_exported: true,
+        stock_total: 2,
+        stock_warehouse_1: 2,
+      },
+      {
+        legacy_id: 13040699,
+        sku: "130406",
+        ean: "013040699",
+        name_sr: "Already hidden",
+        raw_payload: { legacyRaw: {}, attributes: { size: ["99"] }, stockWarehouses: [] },
+        is_active: false,
+        is_exported: false,
+        stock_total: 0,
+        stock_warehouse_1: 0,
+      },
+      {
+        legacy_id: 13305144,
+        sku: "133051",
+        ean: "013305144",
+        name_sr: "316 BLUE WHITE EVA",
+        raw_payload: {
+          moffice: { id: 79404, size: "44", stock: 2, category: "M.Cipele", syncedRunId: "latest-run" },
+          attributes: { size: ["44"] },
+        },
+        is_active: true,
+        is_exported: true,
+        stock_total: 1,
+        stock_warehouse_1: 1,
+      },
+    ];
+
+    expect(buildMofficeExportRows({ rows, latestRunId: "latest-run" })).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ sku: "129513", status: "VISIBLE_BUT_MISSING_FROM_MOFFICE" }),
+        expect.objectContaining({ sku: "130406", status: "MISSING_FROM_MOFFICE_HIDDEN" }),
+        expect.objectContaining({ sku: "133051", status: "VISIBLE_WITH_WRONG_STOCK" }),
+      ]),
+    );
   });
 });

@@ -29,6 +29,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, data: result });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
+    if (message.includes("mOffice API returned 403")) {
+      return NextResponse.json(
+        {
+          success: false,
+          message:
+            "mOffice je odbio direktan admin/Vercel poziv (403). Pravi sync treba da ide preko cPanel cron-a jer je taj IP whitelistovan kod mOffice-a.",
+        },
+        { status: 502 },
+      );
+    }
     return NextResponse.json({ success: false, message }, { status: 500 });
   }
 }

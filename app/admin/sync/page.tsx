@@ -54,6 +54,22 @@ const getRunAgeHours = (run: SyncRun | null) => {
   return (Date.now() - new Date(run.startedAt).getTime()) / 36e5;
 };
 
+const runCounter = (run: SyncRun, key: string) => {
+  const value = run.meta?.[key];
+  return typeof value === "number" ? value : null;
+};
+
+const formatRunCounters = (run: SyncRun) => {
+  const feedRows = runCounter(run, "feedRows");
+  const upsertRows = runCounter(run, "upsertRows");
+  const hiddenRows = runCounter(run, "hiddenRows");
+  const visibleMismatchRows = runCounter(run, "visibleMismatchRows");
+  if (feedRows != null || upsertRows != null || hiddenRows != null || visibleMismatchRows != null) {
+    return `Feed:${feedRows ?? "-"} Upsert:${upsertRows ?? "-"} Hidden:${hiddenRows ?? "-"} Mismatch:${visibleMismatchRows ?? "-"}`;
+  }
+  return `T:${run.counters.total} S:${run.counters.success} F:${run.counters.failed} K:${run.counters.skipped}`;
+};
+
 export default function AdminSyncPage() {
   const [data, setData] = useState<SyncStatusPayload | null>(null);
   const [loading, setLoading] = useState(false);
@@ -183,13 +199,22 @@ export default function AdminSyncPage() {
                 disabled={Boolean(runningAction)}
                 className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
               >
-                {runningAction === "moffice" ? "Pokrecem..." : "Pokreni mOffice lager"}
+                {runningAction === "moffice" ? "Pokrecem..." : "mOffice sync test"}
               </button>
+              <Link
+                href="/api/admin/integrations/moffice/export"
+                className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700"
+              >
+                Export mOffice lager za Excel
+              </Link>
               <Link href="/admin/integrations" className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
                 Napredne integracije
               </Link>
             </div>
           </div>
+          <p className="mb-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+            Rucni mOffice sync iz admina ide preko Vercel servera i nije pouzdan dok je mOffice whitelist vezan za cPanel IP. Realni sync treba da ide preko cPanel cron-a; admin ovde sluzi za proveru i export stanja.
+          </p>
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
@@ -213,7 +238,7 @@ export default function AdminSyncPage() {
                     <td className="px-2 py-2 text-xs">{run.domain}<br /><span className="text-slate-400">{run.environment} / {run.mode}</span></td>
                     <td className="px-2 py-2 text-xs">{run.trigger}</td>
                     <td className="px-2 py-2 text-xs">{formatDateTime(run.startedAt)}<br /><span className="text-slate-400">{formatDuration(run.durationMs)}</span></td>
-                    <td className="px-2 py-2 text-xs">T:{run.counters.total} S:{run.counters.success} F:{run.counters.failed} K:{run.counters.skipped}</td>
+                    <td className="px-2 py-2 text-xs">{formatRunCounters(run)}</td>
                     <td className="px-2 py-2">
                       <Link href={`/admin/integrations/${run.id}`} className="text-xs font-semibold text-blue-700">Otvori</Link>
                     </td>

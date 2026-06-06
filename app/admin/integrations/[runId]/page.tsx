@@ -49,6 +49,11 @@ const statusClass = (status: string) => {
   }
 };
 
+const metaNumber = (meta: Record<string, unknown>, key: string) => {
+  const value = meta?.[key];
+  return typeof value === "number" ? value : null;
+};
+
 export default function IntegrationRunDetailPage() {
   const params = useParams<{ runId: string }>();
   const runId = String(params?.runId || "");
@@ -226,6 +231,27 @@ export default function IntegrationRunDetailPage() {
                 <p className="mt-1 text-xs text-amber-600">Preskočeno</p>
               </div>
             </div>
+
+            {run.meta?.source === "moffice-api" || run.meta?.source === "moffice-cpanel-payload" ? (
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+                <div className="rounded-xl border border-blue-100 bg-blue-50 p-3 text-center">
+                  <p className="text-2xl font-bold text-blue-700">{metaNumber(run.meta, "feedRows") ?? "-"}</p>
+                  <p className="mt-1 text-xs text-blue-600">mOffice feed redova</p>
+                </div>
+                <div className="rounded-xl border border-slate-100 bg-slate-50 p-3 text-center">
+                  <p className="text-2xl font-bold text-slate-800">{metaNumber(run.meta, "upsertRows") ?? "-"}</p>
+                  <p className="mt-1 text-xs text-slate-500">Upisano u katalog</p>
+                </div>
+                <div className="rounded-xl border border-amber-100 bg-amber-50 p-3 text-center">
+                  <p className="text-2xl font-bold text-amber-700">{metaNumber(run.meta, "hiddenRows") ?? "-"}</p>
+                  <p className="mt-1 text-xs text-amber-600">Sakriveno sa sajta</p>
+                </div>
+                <div className="rounded-xl border border-rose-100 bg-rose-50 p-3 text-center">
+                  <p className="text-2xl font-bold text-rose-700">{metaNumber(run.meta, "visibleMismatchRows") ?? "-"}</p>
+                  <p className="mt-1 text-xs text-rose-600">Vidljivih neslaganja</p>
+                </div>
+              </div>
+            ) : null}
 
             {Object.keys(run.meta || {}).length > 0 ? (
               <details className="mt-4">
