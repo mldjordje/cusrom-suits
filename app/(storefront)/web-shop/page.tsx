@@ -21,6 +21,10 @@ import { absoluteUrl, buildBreadcrumbJsonLd, buildSeoMetadata } from "@/lib/seo"
 type SearchParams = Record<string, string | string[] | undefined>;
 type ActiveFilterChip = { key: string; label: string; href: string };
 
+// Lower bound that only filters out obvious price data errors (missing / near-zero
+// prices) while keeping the full real accessory range visible.
+const MIN_VALID_PRICE_RSD = 500;
+
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
     style: "currency",
@@ -158,14 +162,22 @@ export default async function WebShopPage({
       activeOnly: true,
       exportOnly: true,
       collapseBySku: true,
-      priceMin: priceMin > 0 ? priceMin : 2000, // never show items under 2 000 RSD (data errors)
+      // Only guard against obvious data errors (missing / near-zero price). A 2 000 RSD
+      // floor was silently hiding all real accessories (kravate, kaisevi, novcanici,
+      // card-holderi, carape) priced below it. Keep a small floor that drops 0/junk prices
+      // but lets the full accessory range through.
+      priceMin: priceMin > 0 ? priceMin : MIN_VALID_PRICE_RSD,
       priceMax: priceMax || undefined,
       sizes: selectedSizes.length ? selectedSizes : undefined,
       // Hide products with no own image (borrowed/fallback) and products flagged by the
-      // media-health scan as having all images unreachable. Filtering happens before
-      // pagination so counts/pages stay correct.
+      // persisted media-health scan as having all images unreachable. Filtering happens
+      // before pagination so counts/pages stay correct.
+      //
+      // NOTE: we deliberately do NOT use requireReachableImages here. That ran a live
+      // HEAD probe against assets.santos.rs on every render, so any transient timeout /
+      // rate-limit silently dropped products and made the catalog count flap. Reachability
+      // is handled out-of-band by the media-health scan (excludeLegacyIds) instead.
       requireDirectImages: true,
-      requireReachableImages: true,
       excludeLegacyIds: brokenProductIds.size ? Array.from(brokenProductIds) : undefined,
       sort: sort as "featured" | "name_asc" | "price_asc" | "price_desc" | "stock_desc" | "newest",
     }),

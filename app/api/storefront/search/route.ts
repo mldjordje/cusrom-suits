@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { listCatalogProducts } from "@/lib/catalog/store";
+import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { applyPublicCache } from "@/lib/http/cache";
 
 export const revalidate = 60;
@@ -13,6 +14,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: true, results: [], total: 0 });
   }
 
+  const brokenProductIds = await getBrokenProductIdSet();
   const result = await listCatalogProducts({
     page: 1,
     pageSize: RESULT_LIMIT,
@@ -21,7 +23,10 @@ export async function GET(req: NextRequest) {
     exportOnly: true,
     collapseBySku: true,
     requireDirectImages: true,
-    requireReachableImages: true,
+    // No live reachability HEAD probe here — it added latency to every keystroke and
+    // dropped valid results on transient timeouts. Rely on the persisted media-health
+    // scan instead (same as the web-shop catalog).
+    excludeLegacyIds: brokenProductIds.size ? Array.from(brokenProductIds) : undefined,
   });
 
   const results = result.items.map((item) => ({

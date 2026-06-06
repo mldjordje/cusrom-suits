@@ -513,12 +513,28 @@ const CATEGORY_GROUP_PRIORITY: Record<string, number> = {
   torba: 14,
 };
 
+/**
+ * Group keys a product belongs to. Derived from its categories AND from its name +
+ * manufacturer code, because most mOffice-sourced rows carry the product type only in
+ * the name ("M. Košulja C8/53", manufCode "BRANDO/74 M.Košulja") with an empty
+ * categories[]. Without the name fallback, selecting a category group (e.g. Košulje)
+ * matched only the handful of rows that happened to have a populated category.
+ */
+const getCatalogProductGroupKeys = (item: CatalogProductView): Set<string> => {
+  const keys = new Set<string>();
+  for (const cat of item.categories) {
+    const key = [cat.name, ...(cat.path || [])].map(normalizeCatalogCategoryGroupKey).find(Boolean);
+    if (key) keys.add(key);
+  }
+  const nameKey = normalizeCatalogCategoryGroupKey(`${item.name || ""} ${item.manufCode || ""}`);
+  if (nameKey) keys.add(nameKey);
+  return keys;
+};
+
 const productMatchesCategoryGroup = (item: CatalogProductView, groupKey: string) => {
   const wanted = normalizeCatalogCategoryGroupKey(groupKey);
   if (!wanted) return false;
-  return item.categories.some((cat) =>
-    [cat.name, ...(cat.path || [])].some((value) => normalizeCatalogCategoryGroupKey(value) === wanted),
-  );
+  return getCatalogProductGroupKeys(item).has(wanted);
 };
 
 const applyFilters = (
@@ -609,24 +625,31 @@ const collectCategoryGroups = (items: CatalogProductView[]): CatalogCategoryGrou
   const map = new Map<string, CatalogCategoryGroup>();
 
   for (const item of items) {
-    const itemKeys = new Set<string>();
+    // Membership is derived from categories + name/manufCode so the group list and its
+    // counts include mOffice rows that only carry the type in the name (see
+    // getCatalogProductGroupKeys). The category id list stays best-effort from categories.
+    const itemKeys = getCatalogProductGroupKeys(item);
+    const catIdsByKey = new Map<string, number[]>();
     for (const cat of item.categories) {
       const key = [cat.name, ...(cat.path || [])].map(normalizeCatalogCategoryGroupKey).find(Boolean) || "";
       if (!key) continue;
-      const existing = map.get(key) || {
-        key,
-        name: CATEGORY_GROUP_LABELS[key] || cat.name,
-        ids: [],
-        count: 0,
-      };
-      if (!existing.ids.includes(cat.id)) existing.ids.push(cat.id);
-      map.set(key, existing);
-      itemKeys.add(key);
+      const list = catIdsByKey.get(key) || [];
+      list.push(cat.id);
+      catIdsByKey.set(key, list);
     }
 
     for (const key of itemKeys) {
-      const existing = map.get(key);
-      if (existing) existing.count += 1;
+      const existing = map.get(key) || {
+        key,
+        name: CATEGORY_GROUP_LABELS[key] || key,
+        ids: [],
+        count: 0,
+      };
+      for (const id of catIdsByKey.get(key) || []) {
+        if (!existing.ids.includes(id)) existing.ids.push(id);
+      }
+      existing.count += 1;
+      map.set(key, existing);
     }
   }
 

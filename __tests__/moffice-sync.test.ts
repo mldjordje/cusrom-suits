@@ -3,10 +3,12 @@ import {
   buildMofficeExportRows,
   buildMofficeSyncPlan,
   buildPostSyncStaleIds,
+  excludeProtectedStaleIds,
   type MofficeExistingRow,
   type MofficeItem,
   type MofficePostSyncRow,
 } from "@/lib/integrations/moffice/sync";
+import { extractModelCode } from "@/lib/integrations/moffice/modelCode";
 
 const row = (overrides: Partial<MofficeExistingRow> = {}): MofficeExistingRow => ({
   legacy_id: 1,
@@ -186,6 +188,38 @@ describe("mOffice sync planning", () => {
     });
 
     expect(buildPostSyncStaleIds(rows, "latest-run")).toContain(12951354);
+  });
+
+  it("never deactivates a row that was upserted in the current run", () => {
+    // Regression: a duplicate legacy row for the same variant (small id + EAN-derived
+    // id) used to let an upserted in-stock row be zeroed by the post-sync cleanup.
+    const staleCandidates = [74197, 12824982, 999];
+    const upsertedThisRun = [74197]; // mOffice gave it stock this run -> must survive
+    const alreadyCleaned = new Set([12824982]);
+    const result = excludeProtectedStaleIds(staleCandidates, [...alreadyCleaned, ...upsertedThisRun]);
+    expect(result).toEqual([999]);
+    expect(result).not.toContain(74197);
+  });
+
+  describe("extractModelCode (legacy manufcode grouping)", () => {
+    it("extracts the same code for variants of one model regardless of name noise", () => {
+      expect(extractModelCode(null, "M. Košulja C8/61")).toBe("c8/61");
+      expect(extractModelCode(null, "C8/61")).toBe("c8/61");
+      expect(extractModelCode("BRANDO/74                 M.Košulja", "BRANDO/74")).toBe("brando/74");
+      expect(extractModelCode(null, "CASCAVEL/75 M.Košulja")).toBe("cascavel/75");
+      expect(extractModelCode(null, "M. Pantalone P20/228/3N")).toBe("p20/228/3n");
+    });
+
+    it("keeps different colours of one model separate (no wrong-image merge)", () => {
+      expect(extractModelCode(null, "M. Košulja C8/51")).not.toBe(extractModelCode(null, "M. Košulja C8/53"));
+    });
+
+    it("returns empty for generic names without a distinctive code", () => {
+      expect(extractModelCode(null, "Kravata")).toBe("");
+      expect(extractModelCode(null, "Kapa")).toBe("");
+      expect(extractModelCode(null, "Čarapa")).toBe("");
+      expect(extractModelCode(null, "75")).toBe("");
+    });
   });
 
   it("exports visible and hidden mOffice mismatches with clear statuses", () => {
