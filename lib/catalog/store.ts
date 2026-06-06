@@ -828,7 +828,7 @@ export const scanCatalogMediaHealth = async (options?: {
   concurrency?: number;
   spacingMs?: number;
   imagesPerProduct?: number;
-}): Promise<{ totalChecked: number; brokenLegacyIds: number[] }> => {
+}): Promise<{ totalChecked: number; brokenLegacyIds: number[]; noDirectMediaLegacyIds: number[] }> => {
   const concurrency = Math.max(1, Math.min(8, options?.concurrency ?? 4));
   const spacingMs = Math.max(0, options?.spacingMs ?? 90);
   const imagesPerProduct = Math.max(1, Math.min(6, options?.imagesPerProduct ?? 3));
