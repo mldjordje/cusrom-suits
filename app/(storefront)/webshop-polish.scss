@@ -379,3 +379,176 @@
     border-radius: 4px !important;
   }
 }
+
+/* ─── Product detail: premium gallery layout (desktop) ─────────────────────
+   Switches thumbnails from a horizontal strip below the image to a vertical
+   column on the left — the standard layout on premium fashion sites. */
+
+@media (min-width: 992px) {
+  .ss-product-gallery {
+    display: grid !important;
+    grid-template-columns: 74px 1fr !important;
+    grid-template-rows: auto !important;
+    gap: 10px !important;
+    align-items: start !important;
+  }
+
+  .ss-product-gallery__main {
+    grid-column: 2 !important;
+    grid-row: 1 !important;
+    aspect-ratio: 0.83 !important;
+    max-height: 86vh !important;
+    border-radius: 6px !important;
+  }
+
+  .ss-product-gallery__thumbs {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+    flex-direction: column !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    padding-top: 0 !important;
+    max-height: 76vh !important;
+    gap: 8px !important;
+    scrollbar-width: thin !important;
+  }
+
+  .ss-product-gallery__thumb {
+    width: 66px !important;
+    height: 78px !important;
+    border-radius: 4px !important;
+  }
+}
+
+/* ─── Product detail: info column spacing (desktop) ───────────────────────── */
+
+@media (min-width: 992px) {
+  .ss-product-single-info {
+    padding-left: clamp(20px, 2.5vw, 36px) !important;
+  }
+
+  .ss-product-hero-card {
+    padding: 1.6rem 1.8rem !important;
+  }
+
+  .product-single__name {
+    font-size: clamp(1.45rem, 2.2vw, 2rem) !important;
+    line-height: 1.15 !important;
+    margin-bottom: 0.5rem !important;
+  }
+
+  .product-single.container {
+    max-width: 1320px !important;
+  }
+}
+
+/* ─── Product detail: hero card layout refinements ─────────────────────────
+   Reduce noise, tighten spacing between sections inside the card. */
+
+.ss-product-hero-card .product-single__price {
+  margin-top: 0.6rem !important;
+  margin-bottom: 0.1rem !important;
+}
+
+.ss-product-hero-card .product-single__short-desc {
+  margin-top: 0.85rem !important;
+  padding-top: 0.85rem !important;
+  border-top: 1px solid rgba(23, 20, 15, 0.08) !important;
+}
+
+.ss-product-hero-card .product-single__swatches {
+  margin-top: 0.9rem !important;
+  padding-top: 0.9rem !important;
+  border-top: 1px solid rgba(23, 20, 15, 0.08) !important;
+}
+
+.ss-product-hero-card .product-single__addtocart {
+  margin-top: 1.1rem !important;
+  padding-top: 1.1rem !important;
+  border-top: 1px solid rgba(23, 20, 15, 0.08) !important;
+}
+
+/* ─── Web shop: compact sidebar ────────────────────────────────────────────
+   Tighter spacing so more filters fit without scrolling. */
+
+@media (min-width: 992px) {
+  .ss-shop-layout {
+    grid-template-columns: minmax(240px, 280px) minmax(0, 1fr) !important;
+    gap: clamp(16px, 2.2vw, 28px) !important;
+  }
+
+  .ss-filter-panel.ss-shop-sidebar__panel,
+  .ss-shop-sidebar__panel {
+    padding: 14px !important;
+  }
+
+  .ss-shop-sidebar__header {
+    margin-bottom: 10px !important;
+  }
+
+  .ss-shop-sidebar__title {
+    font-size: clamp(1.1rem, 1.5vw, 1.3rem) !important;
+  }
+
+  .ss-shop-sidebar__categories,
+  .ss-shop-mobile-drawer__categories {
+    gap: 6px !important;
+  }
+
+  .ss-shop-filter-chip {
+    min-height: 32px !important;
+    font-size: 0.7rem !important;
+    padding-inline: 10px !important;
+  }
+
+  .ss-shop-sidebar__section {
+    padding: 10px !important;
+    margin-block: 10px !important;
+  }
+
+  .ss-shop-sidebar__section-label {
+    font-size: 0.68rem !important;
+    margin-bottom: 6px !important;
+  }
+
+  .ss-shop-sort-pill {
+    font-size: 0.7rem !important;
+    min-height: 30px !important;
+    padding-inline: 10px !important;
+  }
+
+  .ss-shop-sidebar__sort-pills {
+    gap: 5px !important;
+  }
+
+  .ss-shop-filter-form .form-control,
+  .ss-shop-filter-form .form-select {
+    font-size: 0.82rem !important;
+    min-height: 36px !important;
+    padding-block: 6px !important;
+  }
+
+  .ss-shop-form-block {
+    margin-bottom: 0.7rem !important;
+  }
+
+  .ss-shop-form-label {
+    font-size: 0.68rem !important;
+    margin-bottom: 4px !important;
+  }
+
+  .ss-shop-form-note {
+    font-size: 0.68rem !important;
+    margin-top: 3px !important;
+  }
+
+  .ss-shop-filter-form .btn {
+    min-height: 36px !important;
+    font-size: 0.72rem !important;
+  }
+
+  .ss-shop-form-actions {
+    gap: 6px !important;
+    margin-top: 10px !important;
+  }
+}

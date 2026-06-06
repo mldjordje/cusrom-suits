@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 type SiteNavItem = { href: string; label: string; labelEn: string };
 type SiteFooterGroup = { title: string; titleEn: string; links: SiteNavItem[] };
@@ -216,6 +216,57 @@ const emptyTestimonial = (): SiteTestimonial => ({
   rating: 5,
 });
 
+function SectionCard({
+  title,
+  description,
+  id,
+  action,
+  badge,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  description: string;
+  id: string;
+  action?: ReactNode;
+  badge?: string | number | null;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div id={id} className={cardClass}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="flex w-full items-start justify-between gap-4 text-left"
+        aria-expanded={open}
+      >
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+            {badge != null && badge !== 0 ? (
+              <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+                {badge}
+              </span>
+            ) : null}
+          </div>
+          <p className="mt-0.5 text-xs text-slate-500">{description}</p>
+        </div>
+        <span
+          className="mt-0.5 shrink-0 select-none text-sm text-slate-400"
+          style={{ display: "inline-block", transition: "transform 0.18s", transform: open ? "rotate(180deg)" : "rotate(0deg)" }}
+          aria-hidden
+        >
+          ▾
+        </span>
+      </button>
+      {open && action ? <div className="mt-3 flex justify-end">{action}</div> : null}
+      {open ? <div className="mt-4">{children}</div> : null}
+    </div>
+  );
+}
+
 export default function AdminSiteContentPage() {
   const [content, setContent] = useState<SiteContent>(defaultContent);
   const [documentsTitle, setDocumentsTitle] = useState("");
@@ -378,24 +429,45 @@ export default function AdminSiteContentPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">CMS</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-900">Site Content</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Meni, footer, dokumenta, prodajna mesta i kljucne staticke stranice sada se vode iz jednog admin mesta.
+          Meni, footer, dokumenta, prodajna mesta i kljucne staticke stranice. Klikni na sekciju da je razvije/sklopi.
         </p>
+        <div className="mt-4 flex flex-wrap gap-2">
+          {[
+            { id: "nav", label: "Header meni" },
+            { id: "footer", label: "Footer" },
+            { id: "stores", label: "Prodajna mesta" },
+            { id: "static-pages", label: "Staticke stranice" },
+            { id: "announcements", label: "Obavestenja" },
+            { id: "testimonials", label: "Recenzije" },
+            { id: "documents", label: "Dokumenta" },
+          ].map(({ id, label }) => (
+            <a
+              key={id}
+              href={`#${id}`}
+              className="rounded-full border border-slate-200 px-3 py-1 text-xs font-semibold text-slate-600 hover:border-slate-400 hover:text-slate-900"
+            >
+              {label}
+            </a>
+          ))}
+        </div>
       </div>
 
       {loading ? <p className="text-sm text-slate-500">Ucitavanje...</p> : null}
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       {notice ? <p className="text-sm text-emerald-600">{notice}</p> : null}
 
-      <div className={cardClass}>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Header meni</h2>
-            <p className="text-sm text-slate-600">Redosled i nazivi glavne navigacije.</p>
-          </div>
+      <SectionCard
+        id="nav"
+        title="Header meni"
+        description="Redosled i nazivi glavne navigacije."
+        badge={content.navigation.items.length}
+        defaultOpen
+        action={
           <button onClick={() => setContent((prev) => ({ ...prev, navigation: { items: [...prev.navigation.items, emptyNav()] } }))} className={actionClass}>
             Dodaj stavku
           </button>
-        </div>
+        }
+      >
         <div className="space-y-3">
           {content.navigation.items.map((item, index) => (
             <div key={`nav-${index}`} className="grid gap-3 rounded-2xl border border-slate-200 p-3 md:grid-cols-[1.2fr_1fr_1fr_auto]">
@@ -408,13 +480,14 @@ export default function AdminSiteContentPage() {
             </div>
           ))}
         </div>
-      </div>
+      </SectionCard>
 
-      <div className={cardClass}>
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-slate-900">Footer</h2>
-          <p className="text-sm text-slate-600">Brend tekst, drustvene mreze i footer navigacija.</p>
-        </div>
+      <SectionCard
+        id="footer"
+        title="Footer"
+        description="Brend tekst, drustvene mreze i footer navigacija."
+        badge={content.footer.groups.length > 0 ? `${content.footer.groups.length} grupe` : null}
+      >
         <div className="grid gap-3 md:grid-cols-2">
           <input value={content.footer.eyebrow} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, eyebrow: e.target.value } }))} placeholder="Eyebrow SR" className={fieldClass} />
           <input value={content.footer.eyebrowEn} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, eyebrowEn: e.target.value } }))} placeholder="Eyebrow EN" className={fieldClass} />
@@ -460,18 +533,19 @@ export default function AdminSiteContentPage() {
             </div>
           ))}
         </div>
-      </div>
+      </SectionCard>
 
-      <div className={cardClass}>
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Prodajna mesta</h2>
-            <p className="text-sm text-slate-600">Radnje, telefoni, mape i radno vreme za storefront i kontakt formu.</p>
-          </div>
+      <SectionCard
+        id="stores"
+        title="Prodajna mesta"
+        description="Radnje, telefoni, mape i radno vreme za storefront i kontakt formu."
+        badge={content.stores.length}
+        action={
           <button onClick={() => setContent((prev) => ({ ...prev, stores: [...prev.stores, emptyStore()] }))} className={actionClass}>
             Dodaj radnju
           </button>
-        </div>
+        }
+      >
         <div className="space-y-4">
           {content.stores.map((store, index) => (
             <div key={`store-${index}`} className="rounded-2xl border border-slate-200 p-4">
@@ -496,12 +570,13 @@ export default function AdminSiteContentPage() {
             </div>
           ))}
         </div>
-      </div>
+      </SectionCard>
 
-      <div className={cardClass}>
-        <h2 className="text-lg font-semibold text-slate-900">Kontakt, prodajna mesta i O nama</h2>
-        <p className="mb-4 text-sm text-slate-600">Najvazniji tekstovi za staticke stranice iz starog CMS sloja.</p>
-
+      <SectionCard
+        id="static-pages"
+        title="Staticke stranice — tekstovi"
+        description="Najvazniji tekstovi za Kontakt, Prodajna mesta i O nama stranicu."
+      >
         <div className="grid gap-5">
           <section className="rounded-2xl border border-slate-200 p-4">
             <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">Kontakt strana</h3>
@@ -536,17 +611,15 @@ export default function AdminSiteContentPage() {
             </div>
           </section>
         </div>
-      </div>
+      </SectionCard>
 
-      <div className={cardClass}>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Traka obavestenja (announcement bar)</h2>
-            <p className="text-sm text-slate-600">
-              Tanka crna traka iznad headera. Ostavi prazno da je sakrijes, ili ukljuci/iskljuci prekidacem.
-            </p>
-          </div>
-          <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
+      <SectionCard
+        id="announcements"
+        title="Traka obavestenja"
+        description="Tanka crna traka iznad headera — rotira poruke na SR i EN."
+        badge={content.announcements?.enabled ? "Ukljucena" : "Iskljucena"}
+        action={
+          <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
             <input
               type="checkbox"
               checked={Boolean(content.announcements?.enabled)}
@@ -563,7 +636,8 @@ export default function AdminSiteContentPage() {
             />
             Prikazi traku
           </label>
-        </div>
+        }
+      >
         <div className="grid gap-3 md:grid-cols-2">
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
@@ -606,18 +680,16 @@ export default function AdminSiteContentPage() {
             />
           </div>
         </div>
-      </div>
+      </SectionCard>
 
-      <div className={cardClass}>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Recenzije / social proof</h2>
-            <p className="text-sm text-slate-600">
-              Prikazuje se na stranici proizvoda (web shop) i na pocetnoj. Prikazi samo one koje imaju tekst i ime.
-            </p>
-          </div>
+      <SectionCard
+        id="testimonials"
+        title="Recenzije / social proof"
+        description="Prikazuje se na stranici proizvoda i na pocetnoj. Prikazi samo one koje imaju tekst i ime."
+        badge={content.testimonials?.items?.length ?? 0}
+        action={
           <div className="flex items-center gap-3">
-            <label className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
+            <label className="flex cursor-pointer items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">
               <input
                 type="checkbox"
                 checked={Boolean(content.testimonials?.enabled)}
@@ -651,7 +723,8 @@ export default function AdminSiteContentPage() {
               Dodaj recenziju
             </button>
           </div>
-        </div>
+        }
+      >
         <div className="mb-4 grid gap-3 md:grid-cols-2">
           <input
             value={content.testimonials?.title || ""}
@@ -770,18 +843,19 @@ export default function AdminSiteContentPage() {
             <p className="text-sm text-slate-500">Nema recenzija. Dodaj prvu klikom na dugme iznad.</p>
           ) : null}
         </div>
-      </div>
+      </SectionCard>
 
-      <div className={cardClass}>
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-900">Dokumenta</h2>
-            <p className="text-sm text-slate-600">Dokument CMS deo je vezan za postojeci landing settings storage.</p>
-          </div>
+      <SectionCard
+        id="documents"
+        title="Dokumenta"
+        description="Preuzimljivi dokumenti (npr. katalog, cenovnik). Vezani za landing settings storage."
+        badge={documents.length}
+        action={
           <button onClick={() => setDocuments((prev) => [...prev, emptyDocument()])} className={actionClass}>
             Dodaj dokument
           </button>
-        </div>
+        }
+      >
         <div className="grid gap-3 md:grid-cols-2">
           <input value={documentsTitle} onChange={(e) => setDocumentsTitle(e.target.value)} placeholder="documentsTitle" className={fieldClass} />
           <input value={documentsSubtitle} onChange={(e) => setDocumentsSubtitle(e.target.value)} placeholder="documentsSubtitle" className={fieldClass} />
@@ -798,7 +872,7 @@ export default function AdminSiteContentPage() {
             </div>
           ))}
         </div>
-      </div>
+      </SectionCard>
 
       <div className="flex flex-wrap gap-3">
         <button onClick={save} disabled={saving} className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">

@@ -1673,6 +1673,19 @@ export async function getCatalogProductByLegacyId(
   return rules.length ? applyPromotionRulesToProduct(found, rules) : found;
 }
 
+// Normalized display name WITHOUT stripping the color/variant suffix (e.g. /51, /52).
+// Used to guard the model-key fallback against grouping different-color products together.
+const getProductStrictDisplayName = (item: CatalogProductView) => {
+  const displayName = getCatalogProductDisplayName({
+    name: item.name,
+    sku: item.sku,
+    manufCode: item.manufCode,
+    categories: item.categories,
+    brand: item.brand,
+  });
+  return normalizeDiacritics(displayName).toLowerCase().replace(/\s+/g, " ").trim();
+};
+
 export async function getCatalogProductVariantsBySku(
   sku: string,
   options?: {
@@ -1681,6 +1694,7 @@ export async function getCatalogProductVariantsBySku(
     exportOnly?: boolean;
   },
   _modelKeyHint?: string,
+  _sourceProduct?: CatalogProductView,
 ): Promise<CatalogProductView[]> {
   const normalizedSku = String(sku || "").trim().toLowerCase();
   if (!normalizedSku) return [];
@@ -1703,9 +1717,17 @@ export async function getCatalogProductVariantsBySku(
 
   // When each size has its own SKU (common in legacy catalogs), the SKU lookup
   // returns only 1 product. Fall back to model-name grouping to find all sizes.
+  // Guard: also require exact strict name match so that different-color products
+  // sharing the same collapsed model key (e.g. "C8/51" and "C8/52" → "C8") are
+  // NOT incorrectly grouped as size variants of each other.
   if (bySkuMatches.length <= 1 && _modelKeyHint) {
+    const sourceStrictName = _sourceProduct ? getProductStrictDisplayName(_sourceProduct) : null;
     const byModelKey = displayItems
-      .filter((item) => getCatalogProductModelKey(item) === _modelKeyHint)
+      .filter((item) => {
+        if (getCatalogProductModelKey(item) !== _modelKeyHint) return false;
+        if (sourceStrictName) return getProductStrictDisplayName(item) === sourceStrictName;
+        return true;
+      })
       .sort((left, right) => left.legacyId - right.legacyId);
     if (byModelKey.length > bySkuMatches.length) return byModelKey;
   }
