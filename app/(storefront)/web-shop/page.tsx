@@ -165,7 +165,7 @@ export default async function WebShopPage({
       // media-health scan as having all images unreachable. Filtering happens before
       // pagination so counts/pages stay correct.
       requireDirectImages: true,
-      requireReachableImages: false,
+      requireReachableImages: true,
       excludeLegacyIds: brokenProductIds.size ? Array.from(brokenProductIds) : undefined,
       sort: sort as "featured" | "name_asc" | "price_asc" | "price_desc" | "stock_desc" | "newest",
     }),

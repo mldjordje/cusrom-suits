@@ -727,11 +727,14 @@ const mergeCatalogProductMedia = (
 const isReachableCatalogImage = async (src: string) => {
   const url = String(src || "").trim();
   if (!url) return false;
-  if (url.startsWith("/") || url.startsWith("data:image/")) return true;
-  if (!/^https?:\/\//i.test(url)) return true;
+  if (url.startsWith("data:image/")) return true;
+  const legacyAssetOrigin =
+    process.env.LEGACY_ASSET_ORIGIN?.trim().replace(/\/$/, "") || "https://assets.santos.rs";
+  const probeUrl = url.startsWith("/fajlovi/") ? `${legacyAssetOrigin}${url}` : url;
+  if (probeUrl.startsWith("/") || !/^https?:\/\//i.test(probeUrl)) return true;
 
   const cache = getImageReachabilityCache();
-  const cached = cache.get(url);
+  const cached = cache.get(probeUrl);
   if (cached && cached.expiresAt > Date.now()) {
     return cached.reachable;
   }
@@ -739,17 +742,17 @@ const isReachableCatalogImage = async (src: string) => {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), 2500);
   try {
-    const response = await fetch(url, {
+    const response = await fetch(probeUrl, {
       method: "HEAD",
       redirect: "follow",
       signal: controller.signal,
     });
     const contentType = response.headers.get("content-type") || "";
     const reachable = response.ok && (contentType.startsWith("image/") || contentType.length === 0);
-    cache.set(url, { reachable, expiresAt: Date.now() + IMAGE_REACHABILITY_TTL_MS });
+    cache.set(probeUrl, { reachable, expiresAt: Date.now() + IMAGE_REACHABILITY_TTL_MS });
     return reachable;
   } catch {
-    cache.set(url, { reachable: false, expiresAt: Date.now() + Math.min(IMAGE_REACHABILITY_TTL_MS, 300_000) });
+    cache.set(probeUrl, { reachable: false, expiresAt: Date.now() + Math.min(IMAGE_REACHABILITY_TTL_MS, 300_000) });
     return false;
   } finally {
     clearTimeout(timeout);

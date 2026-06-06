@@ -60,11 +60,11 @@ export default function MediaHealthPanel() {
     <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-950 shadow-sm">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em]">Provera slika (santos.rs)</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em]">Provera slika (assets.santos.rs)</p>
           <p className="mt-1 max-w-3xl text-sm">
-            Skenira sve artikle i obelezava one cije slike ne mogu da se ucitaju sa servera. Obelezeni
-            artikli se automatski <strong>sakrivaju sa sajta</strong> dok se slike ne uploaduju. Pokreni
-            rucno (skeniranje je namerno sporo da ne optereti server).
+            Skenira sve artikle i obelezava one cije slike ne postoje na asset hostu. Obelezeni
+            artikli se automatski <strong>sakrivaju sa sajta</strong> i ostaju u adminu kao proizvodi kojima treba dodati media.
+            Pokreni rucno posle sync-a.
           </p>
         </div>
         <button
