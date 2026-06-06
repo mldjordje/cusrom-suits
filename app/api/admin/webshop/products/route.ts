@@ -356,22 +356,46 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
       ? patch.coverImage
       : imageUrls[0] || null;
 
+    // Find all variants (sizes) with the same SKU so images are shared across sizes
+    const { data: skuRow } = await supabase
+      .from("catalog_products")
+      .select("sku")
+      .eq("legacy_id", patch.legacyId)
+      .maybeSingle();
+    const sku = skuRow ? String((skuRow as Record<string, unknown>).sku || "") : "";
+
+    let siblingIds: number[] = [patch.legacyId];
+    if (sku) {
+      const { data: siblings } = await supabase
+        .from("catalog_products")
+        .select("legacy_id")
+        .eq("sku", sku);
+      if (siblings && siblings.length > 0) {
+        siblingIds = (siblings as Record<string, unknown>[])
+          .map((r) => Number(r.legacy_id))
+          .filter((id) => Number.isFinite(id) && id > 0);
+      }
+    }
+
+    // Delete existing media for all variants of this SKU
     const { error: deleteError } = await supabase
       .from("catalog_product_media")
       .delete()
-      .eq("legacy_product_id", patch.legacyId);
+      .in("legacy_product_id", siblingIds);
     if (deleteError) {
       return { success: false, message: deleteError.message };
     }
 
     if (imageUrls.length > 0) {
-      const mediaRows = imageUrls.map((url, index) => ({
-        legacy_product_id: patch.legacyId,
-        url,
-        is_cover: cover ? url === cover : index === 0,
-        sort: index,
-        updated_at: now,
-      }));
+      const mediaRows = siblingIds.flatMap((id) =>
+        imageUrls.map((url, index) => ({
+          legacy_product_id: id,
+          url,
+          is_cover: cover ? url === cover : index === 0,
+          sort: index,
+          updated_at: now,
+        })),
+      );
       const { error: mediaError } = await supabase
         .from("catalog_product_media")
         .upsert(mediaRows as never, { onConflict: "legacy_product_id,url" });
