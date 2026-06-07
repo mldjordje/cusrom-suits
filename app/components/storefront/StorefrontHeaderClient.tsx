@@ -422,7 +422,7 @@ export default function StorefrontHeaderClient({
                   <div className="ss-mobile-nav-brand">
                     <Link href={withLang("/")} className="ss-mobile-nav-brand__logo" onClick={closeMobileMenu}>
                       <Image
-                        src="/img/logo-header.png"
+                        src="/img/logo-header-dark.png"
                         alt="Santos and Santorini"
                         width={280}
                         height={79}

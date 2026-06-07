@@ -1103,6 +1103,17 @@
    takeover, large Playfair navigation, gold accents, hairline dividers.
    -------------------------------------------------------------------------- */
 
+/* SCROLL FIX — body.mobile-menu-opened in uomo.scss sets touch-action:manipulation
+   which blocks pan-y on all children. Override to pan-y so the inner panel scrolls. */
+body.mobile-menu-opened {
+  touch-action: pan-y !important;
+}
+
+/* Layer background = failsafe so dark always shows even if panel bg fails */
+.ss-mobile-nav-layer {
+  background: #100d09;
+}
+
 .ss-mobile-nav-backdrop {
   background: rgba(8, 7, 5, 0.72) !important;
   backdrop-filter: blur(6px) !important;
@@ -1122,6 +1133,7 @@
 }
 
 .ss-mobile-nav-panel__inner {
+  touch-action: pan-y !important;
   padding: max(1.4rem, env(safe-area-inset-top)) 1.6rem
     max(1.8rem, env(safe-area-inset-bottom)) 1.6rem !important;
 }
