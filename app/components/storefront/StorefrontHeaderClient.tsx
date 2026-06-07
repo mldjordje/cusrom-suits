@@ -66,33 +66,26 @@ export default function StorefrontHeaderClient({
     const { body, documentElement } = document;
 
     const unlockScroll = () => {
-      const shouldRestoreScroll =
-        body.classList.contains("mobile-menu-opened") || body.style.position === "fixed";
-
       body.classList.remove("mobile-menu-opened");
       documentElement.classList.remove("mobile-menu-opened");
+      documentElement.style.overflow = "";
+      documentElement.style.height = "";
       body.style.overflow = "";
-      body.style.position = "";
-      body.style.top = "";
-      body.style.left = "";
-      body.style.right = "";
-      body.style.width = "";
-
-      if (shouldRestoreScroll) {
-        window.scrollTo(0, lockedScrollY.current);
-      }
+      body.style.height = "";
+      window.scrollTo(0, lockedScrollY.current);
     };
 
     if (mobileOpen) {
       lockedScrollY.current = window.scrollY;
       body.classList.add("mobile-menu-opened");
       documentElement.classList.add("mobile-menu-opened");
+      // Use overflow:hidden on html+body instead of position:fixed.
+      // position:fixed on body breaks overflow-y:auto scroll inside
+      // fixed overlays on iOS Safari.
+      documentElement.style.overflow = "hidden";
+      documentElement.style.height = "100%";
       body.style.overflow = "hidden";
-      body.style.position = "fixed";
-      body.style.top = `-${lockedScrollY.current}px`;
-      body.style.left = "0";
-      body.style.right = "0";
-      body.style.width = "100%";
+      body.style.height = "100%";
     } else {
       unlockScroll();
     }
@@ -398,6 +391,7 @@ export default function StorefrontHeaderClient({
           {mobileOpen ? (
             <m.div
               className="ss-mobile-nav-layer"
+              style={{ background: "#100d09" }}
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -413,6 +407,7 @@ export default function StorefrontHeaderClient({
               <m.nav
                 id="ss-mobile-nav-panel"
                 className="ss-mobile-nav-panel"
+                style={{ background: "#100d09", color: "#f0ece4" }}
                 initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.985 }}
