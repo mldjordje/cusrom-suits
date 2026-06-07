@@ -391,7 +391,7 @@ export default function StorefrontHeaderClient({
           {mobileOpen ? (
             <m.div
               className="ss-mobile-nav-layer"
-              style={{ background: "#100d09" }}
+              style={{ background: "rgba(8,6,4,0.55)" }}
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
@@ -407,17 +407,17 @@ export default function StorefrontHeaderClient({
               <m.nav
                 id="ss-mobile-nav-panel"
                 className="ss-mobile-nav-panel"
-                style={{ background: "#100d09", color: "#f0ece4" }}
-                initial={reduceMotion ? false : { opacity: 0, y: 18, scale: 0.98 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: 12, scale: 0.985 }}
-                transition={{ duration: reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
+                style={{ background: "#faf9f6", color: "#14110c" }}
+                initial={reduceMotion ? false : { opacity: 0, x: "-100%" }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: "-100%" }}
+                transition={{ duration: reduceMotion ? 0 : 0.32, ease: [0.22, 1, 0.36, 1] }}
               >
                 <div className="ss-mobile-nav-panel__inner">
                   <div className="ss-mobile-nav-brand">
                     <Link href={withLang("/")} className="ss-mobile-nav-brand__logo" onClick={closeMobileMenu}>
                       <Image
-                        src="/img/logo-header-dark.png"
+                        src="/img/logo-header.png"
                         alt="Santos and Santorini"
                         width={280}
                         height={79}

@@ -1099,8 +1099,8 @@
 
 /* ----------------------------------------------------------------------------
    D — FULL-SCREEN MOBILE MENU (premium)
-   Replaces the busy red/gold/blue glassmorphism with a calm deep-charcoal
-   takeover, large Playfair navigation, gold accents, hairline dividers.
+   Cream-on-white editorial panel — guaranteed readable on all devices.
+   Dark scrim behind the panel dims the page. Panel slides in from left.
    -------------------------------------------------------------------------- */
 
 /* SCROLL FIX — body.mobile-menu-opened in uomo.scss sets touch-action:manipulation
@@ -1109,23 +1109,32 @@ body.mobile-menu-opened {
   touch-action: pan-y !important;
 }
 
-/* Layer background = failsafe so dark always shows even if panel bg fails */
+/* Semi-dark scrim fills the whole layer behind the panel */
 .ss-mobile-nav-layer {
-  background: #100d09;
+  background: transparent !important;
 }
 
 .ss-mobile-nav-backdrop {
-  background: rgba(8, 7, 5, 0.72) !important;
-  backdrop-filter: blur(6px) !important;
+  background: rgba(8, 6, 4, 0.55) !important;
+  backdrop-filter: none !important;
 }
 
+/* Panel: cream white, full height, left-side slide-in */
 .ss-mobile-nav-panel {
-  background: #100d09 !important;
-  color: var(--ss-text-light, #f0ece4) !important;
-  box-shadow: none !important;
+  position: fixed !important;
+  inset: 0 !important;
+  width: min(88vw, 380px) !important;
+  right: auto !important;
+  background: #faf9f6 !important;
+  color: #14110c !important;
+  box-shadow: 4px 0 32px rgba(0,0,0,0.18) !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  max-height: 100svh !important;
 }
 
-/* Kill the grid texture, colored glows and inner highlights */
+/* Kill all uomo decorations */
 .ss-mobile-nav-panel::before,
 .ss-mobile-nav-panel::after,
 .ss-mobile-nav-panel__glow {
@@ -1134,66 +1143,70 @@ body.mobile-menu-opened {
 
 .ss-mobile-nav-panel__inner {
   touch-action: pan-y !important;
-  padding: max(1.4rem, env(safe-area-inset-top)) 1.6rem
-    max(1.8rem, env(safe-area-inset-bottom)) 1.6rem !important;
+  overflow-y: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  padding: max(1.6rem, env(safe-area-inset-top)) 1.8rem
+    max(1.8rem, env(safe-area-inset-bottom)) 1.8rem !important;
 }
 
-/* Brand row — logo + close, generous space below */
+/* Brand row — logo + close */
 .ss-mobile-nav-brand {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 2.5rem !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  margin-bottom: 2rem !important;
 }
 
 .ss-mobile-nav-close {
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  color: var(--ss-text-light, #f0ece4) !important;
+  color: #14110c !important;
   width: 2.5rem;
   height: 2.5rem;
 }
 
-/* Quick "search products" → refined hairline row, not a glass pill */
+/* Search row */
 .ss-mobile-nav-panel__quick {
   grid-template-columns: 1fr !important;
-  margin-bottom: 1.75rem !important;
+  margin-bottom: 1.5rem !important;
 }
 
 .ss-mobile-nav-quicklink {
   background: transparent !important;
-  border: 1px solid rgba(240, 236, 228, 0.18) !important;
+  border: 1px solid rgba(21, 18, 14, 0.14) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  color: rgba(240, 236, 228, 0.82) !important;
-  min-height: 3.2rem !important;
-  padding-inline: 1.1rem !important;
+  color: #3b362f !important;
+  min-height: 3rem !important;
+  padding-inline: 1rem !important;
   font-family: var(--font-montserrat), sans-serif !important;
   font-size: 0.72rem !important;
   letter-spacing: 0.16em !important;
   text-transform: uppercase;
 }
 
-/* The navigation — large Playfair links, hairline separators, no glass cards */
+/* Nav links — large Playfair, dark ink */
 .ss-mobile-nav-list {
   gap: 0 !important;
-  border-top: 1px solid rgba(240, 236, 228, 0.1);
+  border-top: 1px solid rgba(21, 18, 14, 0.1) !important;
 }
 
 .ss-mobile-nav-link,
 .ss-mobile-nav-link--toggle {
   min-height: auto !important;
   width: 100%;
-  padding: 1.1rem 0.1rem !important;
+  padding: 1rem 0.1rem !important;
   border: none !important;
-  border-bottom: 1px solid rgba(240, 236, 228, 0.1) !important;
+  border-bottom: 1px solid rgba(21, 18, 14, 0.1) !important;
   border-radius: 0 !important;
   background: none !important;
   box-shadow: none !important;
-  color: var(--ss-text-light, #f0ece4) !important;
+  color: #14110c !important;
   font-family: var(--font-playfair-display), "Playfair Display", serif !important;
-  font-size: clamp(1.75rem, 7vw, 2.5rem) !important;
+  font-size: clamp(1.5rem, 6vw, 2.1rem) !important;
   font-weight: 500 !important;
   letter-spacing: -0.01em !important;
   line-height: 1.1 !important;
@@ -1203,31 +1216,31 @@ body.mobile-menu-opened {
 .ss-mobile-nav-link.is-active,
 .ss-mobile-nav-link--toggle.is-active {
   color: var(--ss-gold, #c9a96e) !important;
-  border-color: rgba(240, 236, 228, 0.1) !important;
+  border-color: rgba(21, 18, 14, 0.1) !important;
   background: none !important;
   box-shadow: none !important;
 }
 
 .ss-mobile-nav-link svg,
 .ss-mobile-nav-link--toggle .ss-mobile-nav-link__chevron {
-  opacity: 0.45;
-  color: var(--ss-gold, #c9a96e);
+  opacity: 0.35;
+  color: #14110c !important;
 }
 
-/* Shop submenu — quiet uppercase labels under the big "Web Shop" link */
+/* Submenu */
 .ss-mobile-nav-submenu {
-  padding: 0.4rem 0 0.9rem 0.1rem;
+  padding: 0.4rem 0 0.8rem 0.1rem !important;
 }
 
 .ss-mobile-nav-submenu__link {
   display: block;
-  padding: 0.5rem 0 !important;
+  padding: 0.45rem 0 !important;
   font-family: var(--font-montserrat), sans-serif !important;
-  font-size: 0.8rem !important;
+  font-size: 0.78rem !important;
   font-weight: 500 !important;
   letter-spacing: 0.1em !important;
   text-transform: uppercase;
-  color: rgba(240, 236, 228, 0.55) !important;
+  color: #655b50 !important;
   border: none !important;
   background: none !important;
 }
@@ -1236,22 +1249,23 @@ body.mobile-menu-opened {
   color: var(--ss-gold, #c9a96e) !important;
 }
 
-/* Footer — refined hairline buttons instead of filled pills */
+/* Footer */
 .ss-mobile-nav-footer {
   margin-top: auto;
-  padding-top: 2rem;
+  padding-top: 1.5rem;
   display: flex;
   flex-wrap: wrap;
-  gap: 0.7rem;
+  gap: 0.6rem;
   align-items: center;
+  border-top: 1px solid rgba(21, 18, 14, 0.1);
 }
 
 .ss-mobile-nav-pill {
   background: transparent !important;
-  border: 1px solid rgba(240, 236, 228, 0.2) !important;
+  border: 1px solid rgba(21, 18, 14, 0.18) !important;
   border-radius: 0 !important;
   box-shadow: none !important;
-  color: var(--ss-text-light, #f0ece4) !important;
+  color: #14110c !important;
   font-family: var(--font-montserrat), sans-serif !important;
   font-size: 0.7rem !important;
   font-weight: 500 !important;
@@ -1262,5 +1276,5 @@ body.mobile-menu-opened {
 }
 
 .ss-mobile-nav-pill:active {
-  background: rgba(240, 236, 228, 0.06) !important;
+  background: rgba(21, 18, 14, 0.06) !important;
 }
