@@ -688,7 +688,7 @@ export default async function WebShopPage({
                   </div>
                 </div>
               ) : (
-                <div className="products-grid row row-cols-2 row-cols-md-3 row-cols-xl-4 g-2 g-md-3">
+                <div className="products-grid ss-lux-grid row row-cols-2 row-cols-lg-3 g-3 g-xl-4">
                   {items.map((item, index) =>
                     renderOverlayCard(item, `grid-${item.legacyId}`, {
                       cardClassName: "product-card ss-card-hover ss-product-card ss-shop-grid-card mb-0",

@@ -174,20 +174,6 @@ export default function WebShopFilters({
     </div>
   );
 
-  const renderSortPills = (className: string) => (
-    <div className={className} aria-label={isEn ? "Quick sort options" : "Brzo sortiranje"}>
-      {sortOptions.map((option) => (
-        <Link
-          key={option.value}
-          href={makeHref({ sort: option.value === "featured" ? null : option.value })}
-          className={`ss-shop-sort-pill ${sort === option.value ? "is-active" : ""}`}
-        >
-          {option.label}
-        </Link>
-      ))}
-    </div>
-  );
-
   const renderSearchField = (fieldId: string) => (
     <div className="ss-shop-form-block">
       <label htmlFor={fieldId} className="ss-shop-form-label">
@@ -377,10 +363,6 @@ export default function WebShopFilters({
           </div>
 
           {renderCategoryLinks("ss-shop-sidebar__categories")}
-          <div className="ss-shop-sidebar__section">
-            <p className="ss-shop-sidebar__section-label">{isEn ? "Sort" : "Sort"}</p>
-            {renderSortPills("ss-shop-sidebar__sort-pills")}
-          </div>
           {renderForm("ss-shop-desktop-filters")}
         </div>
       </aside>

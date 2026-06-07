@@ -1,0 +1,1254 @@
+/* ============================================================================
+   SANTOS & SANTORINI — PREMIUM REDESIGN LAYER
+   ----------------------------------------------------------------------------
+   Loaded LAST in the storefront layout so it wins the cascade. The goal is a
+   luxury menswear house feel (Armani whitespace, Tom Ford impact, Zegna
+   refinement) — product imagery dominant, hairline chrome, editorial rhythm.
+   All rules are scoped to the storefront (`.page-wrapper` / `ss-*`) so the
+   admin panel is untouched.
+   ========================================================================== */
+
+/* ----------------------------------------------------------------------------
+   1 + 2 — TYPOGRAPHY FOUNDATION & HIERARCHY
+   Headings move to Playfair Display with tight optical tracking; loud
+   uppercase/bold treatments are softened into refined letter-spacing.
+   -------------------------------------------------------------------------- */
+
+/* Token overrides — uomo.scss redefines a :root palette that loads after
+   globals.css and lightens secondary text. premium.scss loads last, so these
+   win and restore readable contrast. */
+:root {
+  --ss-ink: #14110c;
+  --ss-ink-soft: #3b362f;   /* was #6f6557 — too light to read comfortably */
+  --ss-ink-faint: #655b50;  /* eyebrows/meta — darker, still subdued */
+  --ss-hairline: rgba(21, 18, 14, 0.14);
+}
+
+.page-wrapper {
+  --pf: var(--font-playfair-display), "Playfair Display", Georgia, serif;
+}
+
+.page-wrapper h1,
+.page-wrapper h2,
+.page-wrapper h3,
+.page-wrapper .h1,
+.page-wrapper .h2,
+.page-wrapper .h3 {
+  font-family: var(--pf);
+  font-weight: 500;
+  letter-spacing: var(--ss-tracking-tight);
+  line-height: var(--ss-leading-tight);
+  color: var(--ss-ink);
+}
+
+/* Eyebrow / kicker text — the small caps label above headings */
+.page-wrapper .ss-eyebrow,
+.page-wrapper .section-eyebrow {
+  display: inline-block;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: var(--ss-fs-eyebrow);
+  font-weight: 500;
+  letter-spacing: var(--ss-tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ss-ink-faint);
+}
+
+/* Body copy on storefront reads warmer + more legible */
+.page-wrapper p {
+  line-height: var(--ss-leading-body);
+}
+
+/* Refined text-link underline (replaces chunky buttons in editorial spots) */
+.page-wrapper .ss-text-link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ss-ink);
+  text-decoration: none;
+  padding-bottom: 4px;
+}
+
+.page-wrapper .ss-text-link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(1);
+  transform-origin: left;
+  transition: transform 0.5s var(--ss-ease-out);
+}
+
+.page-wrapper .ss-text-link:hover::after {
+  transform: scaleX(0);
+  transform-origin: right;
+}
+
+/* ----------------------------------------------------------------------------
+   3 + 4 — PRODUCT LISTING GRID (luxury catalogue)
+   3-up on desktop, garments float on a calm panel, info sits quietly BELOW
+   the image (Armani/Zegna), and the hover-veil + "view product" button chrome
+   is removed entirely.
+   -------------------------------------------------------------------------- */
+
+.ss-lux-grid {
+  margin-top: var(--ss-space-sm);
+}
+
+/* The image stage — tall portrait, garment floats on a soft panel */
+.ss-lux-grid .pc__img-wrapper {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 0.78;
+  background: var(--ss-paper-2);
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.ss-lux-grid .pc__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.9s var(--ss-ease-out), opacity 0.6s ease;
+}
+
+/* Quiet hover: slow scale + crossfade to second image. No dark veil. */
+.ss-lux-grid .pc__img-wrapper::after {
+  display: none !important;
+}
+
+.ss-lux-grid .pc__img-second {
+  opacity: 0;
+  z-index: 2;
+}
+
+.ss-lux-grid .product-card:hover .pc__img-second {
+  opacity: 1;
+}
+
+.ss-lux-grid .product-card:hover .pc__img {
+  transform: scale(1.04);
+}
+
+/* Kill the desktop hover overlay (category/title/price/button on top of image) */
+.ss-lux-grid .pc__info.hover__content {
+  display: none !important;
+}
+
+/* Promote the "mobile" info block to the canonical info row at every width */
+.ss-lux-grid .ss-card-mobile-info {
+  display: block !important;
+  padding: var(--ss-space-sm) 0 var(--ss-space-2xs);
+  text-align: left;
+  border: none;
+}
+
+.ss-lux-grid .ss-card-mobile-info .pc__category {
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: var(--ss-tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ss-ink-faint);
+  margin: 0 0 0.45rem;
+}
+
+.ss-lux-grid .ss-card-mobile-info .pc__title {
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.86rem;
+  font-weight: 400;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  margin: 0 0 0.5rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.ss-lux-grid .ss-card-mobile-info .pc__title a {
+  color: var(--ss-ink);
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.ss-lux-grid .product-card:hover .ss-card-mobile-info .pc__title a {
+  color: var(--ss-ink-soft);
+}
+
+.ss-lux-grid .ss-card-mobile-info .product-card__price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+}
+
+.ss-lux-grid .ss-card-mobile-info .money.price {
+  color: var(--ss-ink);
+  font-weight: 500;
+}
+
+.ss-lux-grid .ss-card-mobile-info .price-old {
+  color: var(--ss-ink-faint);
+  font-weight: 400;
+  text-decoration: line-through;
+  font-size: 0.76rem;
+}
+
+.ss-lux-grid .ss-card-mobile-info .price-sale {
+  color: #8a2b2b;
+}
+
+/* Badge — a single discreet hairline tag, not a loud sticker */
+.ss-lux-grid .ss-product-card__badge {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 4;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.56rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.7rem;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ss-ink);
+  pointer-events: none;
+}
+
+.ss-lux-grid .ss-product-card__badge--stock {
+  color: var(--ss-gold-dark);
+}
+
+/* Generous breathing room around the grid container */
+@media (min-width: 992px) {
+  .ss-lux-grid {
+    --bs-gutter-x: 2.5rem;
+    --bs-gutter-y: 3.25rem;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   5 — PREMIUM FILTER RAIL
+   The boxed, pill-heavy sidebar becomes a quiet editorial rail: no panel box,
+   categories as a vertical text list, fields as hairline-underline inputs.
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 992px) {
+  .ss-shop-layout {
+    grid-template-columns: minmax(200px, 224px) minmax(0, 1fr) !important;
+    gap: clamp(32px, 4vw, 64px) !important;
+  }
+}
+
+.ss-filter-panel.ss-shop-sidebar__panel,
+.ss-shop-sidebar__panel {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  position: sticky;
+  top: 6.5rem;
+}
+
+.ss-shop-sidebar__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 1.75rem !important;
+  padding-bottom: 1.1rem;
+  border-bottom: 1px solid var(--ss-hairline);
+}
+
+.ss-shop-sidebar__eyebrow {
+  font-size: 0.58rem !important;
+  letter-spacing: var(--ss-tracking-eyebrow) !important;
+  text-transform: uppercase;
+  color: var(--ss-ink-faint) !important;
+  margin-bottom: 0.4rem !important;
+}
+
+.ss-shop-sidebar__title {
+  font-family: var(--pf) !important;
+  font-weight: 500 !important;
+  font-size: 1.4rem !important;
+  letter-spacing: var(--ss-tracking-tight);
+  color: var(--ss-ink) !important;
+}
+
+.ss-shop-sidebar__count {
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  color: var(--ss-ink-faint);
+}
+
+/* Categories: vertical quiet text links instead of filled chips */
+.ss-shop-sidebar__categories {
+  display: flex !important;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.05rem !important;
+  margin-bottom: 2rem;
+}
+
+.ss-shop-sidebar__categories .ss-shop-filter-chip {
+  background: transparent !important;
+  border: none !important;
+  border-radius: 0 !important;
+  min-height: auto !important;
+  padding: 0.4rem 0 !important;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.82rem !important;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  color: var(--ss-ink-soft) !important;
+  text-transform: none;
+  transition: color 0.3s ease;
+}
+
+.ss-shop-sidebar__categories .ss-shop-filter-chip:hover {
+  color: var(--ss-ink) !important;
+}
+
+.ss-shop-sidebar__categories .ss-shop-filter-chip.is-active {
+  color: var(--ss-ink) !important;
+  font-weight: 600;
+}
+
+/* Form fields → hairline underline inputs (no boxed controls) */
+.ss-shop-filter-form .ss-shop-form-block {
+  margin-bottom: 1.5rem;
+}
+
+.ss-shop-filter-form .ss-shop-form-label,
+.ss-shop-filter-form label.ss-shop-form-label {
+  display: block;
+  font-size: 0.58rem !important;
+  font-weight: 500;
+  letter-spacing: var(--ss-tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ss-ink-faint) !important;
+  margin-bottom: 0.65rem !important;
+}
+
+.ss-shop-filter-form .form-control,
+.ss-shop-filter-form .form-select {
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 1px solid var(--ss-hairline) !important;
+  border-radius: 0 !important;
+  padding: 0.35rem 0 !important;
+  font-size: 0.82rem !important;
+  color: var(--ss-ink) !important;
+  box-shadow: none !important;
+  transition: border-color 0.3s ease;
+}
+
+.ss-shop-filter-form .form-control:focus,
+.ss-shop-filter-form .form-select:focus {
+  border-bottom-color: var(--ss-gold) !important;
+}
+
+.ss-shop-form-note {
+  font-size: 0.62rem;
+  color: var(--ss-ink-faint);
+  letter-spacing: 0.02em;
+  margin-top: 0.5rem;
+}
+
+/* Size chips → small hairline squares */
+.ss-shop-filter-form .ss-shop-filter-chip {
+  background: transparent !important;
+  border: 1px solid var(--ss-hairline) !important;
+  border-radius: 0 !important;
+  color: var(--ss-ink-soft) !important;
+  font-size: 0.72rem !important;
+  min-height: 34px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.25s ease, color 0.25s ease;
+}
+
+.ss-shop-filter-form .ss-shop-filter-chip:hover {
+  border-color: var(--ss-ink) !important;
+  color: var(--ss-ink) !important;
+}
+
+.ss-shop-filter-form .ss-shop-filter-chip.is-active {
+  border-color: var(--ss-ink) !important;
+  background: var(--ss-ink) !important;
+  color: #fff !important;
+}
+
+/* Toggles */
+.ss-shop-toggle-field {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 0.78rem;
+  color: var(--ss-ink-soft);
+  margin-bottom: 0.5rem;
+  cursor: pointer;
+}
+
+/* Filter action buttons inherit the premium button language (task 15) */
+.ss-shop-form-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--ss-hairline);
+}
+
+/* ----------------------------------------------------------------------------
+   11 + 12 — HEADER: frosted paper on scroll, refined nav, taller masthead
+   -------------------------------------------------------------------------- */
+
+/* Scrolled state — warm paper frost + single gold hairline, no heavy shadow */
+.ss-header-scrolled {
+  background: rgba(250, 249, 246, 0.9) !important;
+  backdrop-filter: blur(16px) saturate(1.05) !important;
+  border-bottom: 1px solid var(--ss-border-gold) !important;
+  box-shadow: none !important;
+}
+
+.ss-mobile-header-scrolled {
+  background: rgba(250, 249, 246, 0.94) !important;
+  backdrop-filter: blur(16px) saturate(1.05) !important;
+  border-bottom: 1px solid var(--ss-border-gold) !important;
+  box-shadow: none !important;
+}
+
+/* Homepage floating header: was navy-on-scroll — now the same paper frost */
+.ss-header-home-floating.ss-header-scrolled,
+.ss-mobile-home.ss-mobile-header-scrolled {
+  background: rgba(250, 249, 246, 0.9) !important;
+  border-bottom: 1px solid var(--ss-border-gold) !important;
+  box-shadow: none !important;
+}
+
+/* Switch the home header's text/icons to dark once it lightens on scroll */
+.ss-header-home-floating.ss-header-scrolled .navigation__link,
+.ss-header-home-floating.ss-header-scrolled .ss-inline-link,
+.ss-header-home-floating.ss-header-scrolled .header-tools__item,
+.ss-header-home-floating.ss-header-scrolled .header-tools .btn-link,
+.ss-mobile-home.ss-mobile-header-scrolled .mobile-nav-activator,
+.ss-mobile-home.ss-mobile-header-scrolled .ss-mobile-link {
+  color: var(--ss-ink) !important;
+}
+
+/* Taller, calmer masthead */
+@media (min-width: 992px) {
+  #header .container {
+    padding-top: 0.85rem !important;
+    padding-bottom: 0.85rem !important;
+  }
+
+  #header .header-desk_type_1 .ss-site-logo {
+    width: clamp(178px, 13vw, 232px) !important;
+    max-height: 3.4rem !important;
+  }
+
+  /* Refined nav links — quieter weight, more air, optical tracking */
+  #header .header-desk_type_1 .navigation__link {
+    font-size: clamp(0.8rem, 0.72vw, 0.9rem) !important;
+    font-weight: 400 !important;
+    letter-spacing: 0.07em !important;
+    padding-inline: clamp(0.55rem, 0.95vw, 1.15rem) !important;
+    min-height: 2.75rem !important;
+  }
+
+  #header .header-desk_type_1 .navigation__list {
+    gap: clamp(0.1rem, 0.6vw, 0.7rem) !important;
+  }
+}
+
+/* Active nav link → refined gold, no heavy weight */
+#header .navigation__item.is-active .navigation__link,
+#header .navigation__link.is-active {
+  color: var(--ss-gold-dark) !important;
+}
+
+/* Thin-stroke header icon buttons (search/cart) — drop the filled circle */
+#header .header-tools__item {
+  background: transparent !important;
+  border: none !important;
+  color: var(--ss-ink) !important;
+}
+
+/* Inline links (Sign in / Contact) — refined tracking */
+#header .ss-inline-link {
+  letter-spacing: 0.12em !important;
+  font-weight: 400 !important;
+  font-size: 0.74rem !important;
+}
+
+/* ----------------------------------------------------------------------------
+   6 + 7 + 8 + 9 + 10 — PRODUCT DETAIL PAGE
+   Gallery becomes the hero (col-8), buy panel sits editorially on the page
+   (no glass box) and sticks while images scroll, with a luxury type hierarchy
+   and a premium add-to-cart.
+   -------------------------------------------------------------------------- */
+
+.ss-product-page .product-single.container {
+  max-width: 1440px !important;
+}
+
+@media (min-width: 992px) {
+  /* Sticky, breathing buy panel */
+  .ss-product-single-info {
+    position: sticky;
+    top: 6.5rem;
+    align-self: start;
+    height: fit-content;
+    padding-left: clamp(28px, 3.2vw, 60px) !important;
+  }
+
+  /* Gallery: bigger main image, flat edges, confident thumb rail */
+  .ss-product-gallery {
+    grid-template-columns: 84px 1fr !important;
+    gap: 16px !important;
+  }
+
+  .ss-product-gallery__main {
+    border-radius: 0 !important;
+    aspect-ratio: 0.78 !important;
+    max-height: 92vh !important;
+    background: var(--ss-paper-2) !important;
+  }
+
+  .ss-product-gallery__thumb {
+    width: 78px !important;
+    height: 96px !important;
+    border-radius: 0 !important;
+    border: 1px solid transparent !important;
+    opacity: 0.7;
+    transition: opacity 0.3s ease, border-color 0.3s ease;
+  }
+
+  .ss-product-gallery__thumb:hover {
+    opacity: 1;
+  }
+
+  .ss-product-gallery__thumb.is-active {
+    opacity: 1;
+    border-color: var(--ss-ink) !important;
+  }
+}
+
+.ss-product-gallery__main-image {
+  object-fit: cover !important;
+  object-position: center top !important;
+}
+
+/* Flatten the buy-panel box — name/price/CTA sit directly on the page */
+.ss-product-hero-card.ss-product-glass-card {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+  backdrop-filter: none !important;
+}
+
+.ss-product-hero-card.ss-product-glass-card::before {
+  display: none !important;
+}
+
+/* 9 — Information hierarchy */
+.ss-product-hero-card .product-single__name {
+  font-family: var(--pf) !important;
+  font-weight: 500 !important;
+  font-size: clamp(1.9rem, 2.6vw, 2.7rem) !important;
+  letter-spacing: var(--ss-tracking-tight) !important;
+  line-height: 1.08 !important;
+  color: var(--ss-ink) !important;
+  margin-bottom: 0.85rem !important;
+}
+
+.ss-product-hero-card .product-single__rating {
+  margin-bottom: 1.1rem;
+}
+
+.ss-product-hero-card .reviews-note {
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  color: var(--ss-ink-faint) !important;
+}
+
+.ss-product-hero-card .product-single__price {
+  margin: 0 0 0.35rem !important;
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.ss-product-hero-card .current-price {
+  font-size: clamp(1.3rem, 1.7vw, 1.65rem) !important;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ss-ink) !important;
+}
+
+.ss-product-hero-card .old-price {
+  font-size: 1rem;
+  color: var(--ss-ink-faint) !important;
+  text-decoration: line-through;
+}
+
+.ss-product-hero-card .ss-product-price-badge {
+  font-size: 0.6rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #8a2b2b;
+  background: transparent;
+  padding: 0;
+}
+
+.ss-product-hero-card .product-single__short-desc {
+  margin-top: 1.4rem !important;
+  padding-top: 1.4rem !important;
+  border-top: 1px solid var(--ss-hairline) !important;
+}
+
+.ss-product-hero-card .product-single__short-desc p {
+  font-size: 0.92rem;
+  line-height: var(--ss-leading-body);
+  color: var(--ss-ink-soft);
+}
+
+/* Swatch labels (Material / Status / Size) → quiet eyebrows */
+.ss-product-hero-card .product-swatch label {
+  font-size: 0.58rem !important;
+  font-weight: 500;
+  letter-spacing: var(--ss-tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ss-ink-faint) !important;
+  margin-bottom: 0.5rem;
+}
+
+/* 10 — Premium add-to-cart */
+.product-single__addtocart .btn-addtocart {
+  width: 100%;
+  border-radius: 0 !important;
+  background: var(--ss-ink) !important;
+  border: 1px solid var(--ss-ink) !important;
+  color: #fff !important;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.74rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.18em !important;
+  text-transform: uppercase;
+  padding: 1.05rem 1.5rem !important;
+  transition: background 0.4s var(--ss-ease-out), color 0.4s var(--ss-ease-out);
+}
+
+.product-single__addtocart .btn-addtocart:hover {
+  background: var(--ss-gold-dark) !important;
+  border-color: var(--ss-gold-dark) !important;
+  color: #fff !important;
+}
+
+/* ----------------------------------------------------------------------------
+   13 — HOME CATEGORY TILES: editorial asymmetric grid
+   Equal 5-up becomes a dominant hero tile + 2x2, flat edges, hairline gaps.
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 992px) {
+  .ss-category-strip {
+    padding: var(--ss-section) 0 !important;
+  }
+
+  .ss-category-strip__track {
+    grid-template-columns: 1.5fr 1fr 1fr !important;
+    grid-template-rows: 1fr 1fr !important;
+    gap: 8px !important;
+    height: clamp(560px, 54vw, 760px);
+  }
+
+  .ss-category-tile {
+    aspect-ratio: auto !important;
+    height: 100% !important;
+  }
+
+  /* First tile (Suits) dominates the left, full height */
+  .ss-category-tile:first-child {
+    grid-row: span 2 !important;
+  }
+}
+
+.ss-category-strip__heading {
+  font-size: 0.62rem !important;
+  letter-spacing: 0.34em !important;
+  margin-bottom: 2.5rem !important;
+}
+
+/* Flat editorial tiles — no radius, no border, calm hover */
+.ss-category-tile {
+  border-radius: 0 !important;
+  border: none !important;
+}
+
+.ss-category-tile:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+.ss-category-tile:hover .ss-category-tile__img {
+  transform: scale(1.05);
+  filter: saturate(0.95) brightness(0.74);
+}
+
+.ss-category-tile::after {
+  display: none !important;
+}
+
+.ss-category-tile__name {
+  font-family: var(--pf);
+  font-size: 1.05rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.04em !important;
+  text-transform: none !important;
+}
+
+/* ----------------------------------------------------------------------------
+   14 — HOMEPAGE SECTION RHYTHM (whitespace)
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 992px) {
+  .ss-home-page .ss-editorial-section {
+    padding-block: var(--ss-section-sm) !important;
+  }
+
+  .ss-home-page .ss-editorial-section .d-flex.align-items-center.justify-content-between {
+    margin-bottom: 3rem !important;
+  }
+}
+
+.ss-story-card {
+  border-radius: 2px !important;
+  box-shadow: none !important;
+}
+
+/* ----------------------------------------------------------------------------
+   15 — CONSISTENT PREMIUM BUTTON SYSTEM
+   Removes the global .btn sheen pseudo-animation; one flat, confident language.
+   -------------------------------------------------------------------------- */
+
+.page-wrapper .btn::before,
+.page-wrapper .btn::after {
+  display: none !important;
+  content: none !important;
+}
+
+.page-wrapper .btn {
+  border-radius: 0 !important;
+  font-family: var(--font-montserrat), sans-serif;
+  font-weight: 500 !important;
+  font-size: 0.74rem !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+  padding: 0.95rem 1.9rem !important;
+  transition: background 0.4s var(--ss-ease-out), color 0.4s var(--ss-ease-out),
+    border-color 0.4s var(--ss-ease-out) !important;
+}
+
+.page-wrapper .btn.btn-primary {
+  background: var(--ss-ink) !important;
+  border: 1px solid var(--ss-ink) !important;
+  color: #fff !important;
+}
+
+.page-wrapper .btn.btn-primary:hover {
+  background: var(--ss-gold-dark) !important;
+  border-color: var(--ss-gold-dark) !important;
+  color: #fff !important;
+}
+
+.page-wrapper .btn.btn-outline-dark {
+  background: transparent !important;
+  border: 1px solid var(--ss-ink) !important;
+  color: var(--ss-ink) !important;
+}
+
+.page-wrapper .btn.btn-outline-dark:hover {
+  background: var(--ss-ink) !important;
+  color: #fff !important;
+}
+
+.page-wrapper .btn.btn-light {
+  background: var(--ss-paper) !important;
+  border: 1px solid var(--ss-paper) !important;
+  color: var(--ss-ink) !important;
+}
+
+.page-wrapper .btn.btn-light:hover {
+  background: transparent !important;
+  border-color: var(--ss-paper) !important;
+  color: var(--ss-paper) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   17 — LUXURY LOADING: calm image fade-in (no spinners)
+   -------------------------------------------------------------------------- */
+
+@keyframes ssImgFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.ss-lux-grid .pc__img--primary,
+.ss-product-gallery__main-image {
+  animation: ssImgFade 0.7s var(--ss-ease-out) both;
+}
+
+/* ----------------------------------------------------------------------------
+   18 — FLATTEN RADII / SHADOWS across editorial surfaces
+   -------------------------------------------------------------------------- */
+
+.ss-home-page .rounded-4,
+.ss-home-page .rounded-3,
+.ss-commerce-page .rounded-4,
+.ss-commerce-page .rounded-3 {
+  border-radius: var(--ss-radius) !important;
+}
+
+.ss-editorial-banner,
+.ss-banner-panel {
+  border-radius: 0 !important;
+}
+
+/* ----------------------------------------------------------------------------
+   19 — HOMEPAGE FEATURED PRODUCT CARDS → editorial
+   Calm panel behind the garment, flat edges, quiet info, slow hover.
+   -------------------------------------------------------------------------- */
+
+.ss-home-page .ss-product-card .pc__img-wrapper {
+  background: var(--ss-paper-2);
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow: none !important;
+  overflow: hidden;
+}
+
+.ss-home-page .ss-product-card .pc__img {
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.9s var(--ss-ease-out) !important;
+}
+
+.ss-home-page .ss-product-card:hover .pc__img {
+  transform: scale(1.04);
+}
+
+.ss-home-page .ss-product-card .pc__info {
+  padding-top: var(--ss-space-sm);
+  text-align: left;
+}
+
+.ss-home-page .ss-product-card .pc__category {
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: var(--ss-tracking-eyebrow);
+  text-transform: uppercase;
+  color: var(--ss-ink-faint);
+  margin-bottom: 0.4rem;
+}
+
+.ss-home-page .ss-product-card .pc__title {
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.86rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.4;
+}
+
+.ss-home-page .ss-product-card .pc__title a {
+  color: var(--ss-ink);
+}
+
+.ss-home-page .ss-product-card .product-card__price {
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: var(--ss-ink);
+}
+
+/* ----------------------------------------------------------------------------
+   POLISH — size-guide trigger & quiet stock note
+   -------------------------------------------------------------------------- */
+
+.ss-size-guide-trigger {
+  background: transparent !important;
+  border: 1px solid var(--ss-hairline) !important;
+  border-radius: 0 !important;
+  color: var(--ss-ink) !important;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.68rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+  padding: 0.7rem 1.3rem !important;
+  transition: border-color 0.3s ease, color 0.3s ease;
+}
+
+.ss-size-guide-trigger:hover {
+  border-color: var(--ss-ink) !important;
+  color: var(--ss-ink) !important;
+}
+
+/* The "only N left" note → quiet meta, not a loud banner */
+.ss-lux-grid .ss-product-card__discount {
+  font-size: 0.56rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ss-ink-faint);
+}
+
+/* ----------------------------------------------------------------------------
+   FIX C — MOBILE FILTER DRAWER / SORT POPOVER
+   The toolbar's `backdrop-filter` created a containing block that trapped the
+   fixed-positioned drawer & popover inside the 35px toolbar. Removing it lets
+   them anchor to the viewport again (full-height sheet / bottom popover).
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 991.98px) {
+  .ss-shop-mobile-toolbar {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: var(--ss-paper) !important;
+    border-bottom: 1px solid var(--ss-hairline) !important;
+  }
+
+  /* Make the drawer feel like a proper premium bottom-anchored sheet */
+  .ss-shop-mobile-drawer {
+    background: var(--ss-paper) !important;
+    border-radius: 14px 14px 0 0 !important;
+  }
+
+  .ss-shop-mobile-popover {
+    background: var(--ss-paper) !important;
+    border-radius: 12px !important;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+   FIX B — WEB-SHOP CATEGORY NAV (top horizontal)
+   The white bordered/shadowed pills read as a dated template. Replace with a
+   clean Armani-style text-link bar with a hairline baseline + active underline.
+   -------------------------------------------------------------------------- */
+
+.ss-shop-hero__categories {
+  gap: 0 !important;
+  flex-wrap: wrap;
+  margin-top: 1.6rem !important;
+  padding: 0 !important;
+  border-bottom: 1px solid var(--ss-hairline);
+}
+
+.ss-shop-hero__category {
+  position: relative;
+  min-height: auto !important;
+  padding: 0.55rem 1.15rem !important;
+  border: none !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--ss-ink-faint) !important;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.74rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase;
+  transition: color 0.3s ease !important;
+}
+
+.ss-shop-hero__category:first-child {
+  padding-left: 0 !important;
+}
+
+.ss-shop-hero__category:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background: transparent !important;
+  color: var(--ss-ink) !important;
+}
+
+.ss-shop-hero__category.is-active {
+  background: transparent !important;
+  border: none !important;
+  color: var(--ss-ink) !important;
+}
+
+.ss-shop-hero__category.is-active::after {
+  content: "";
+  position: absolute;
+  left: 1.15rem;
+  right: 1.15rem;
+  bottom: -1px;
+  height: 2px;
+  background: var(--ss-ink);
+}
+
+.ss-shop-hero__category:first-child.is-active::after {
+  left: 0;
+}
+
+/* Mobile: let the nav scroll horizontally without wrapping */
+@media (max-width: 991.98px) {
+  .ss-shop-hero__categories {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .ss-shop-hero__categories::-webkit-scrollbar {
+    display: none;
+  }
+
+  .ss-shop-hero__category {
+    white-space: nowrap;
+    flex: 0 0 auto;
+  }
+}
+
+/* Category chips inside the mobile filter drawer → flat, borderless, gentle */
+.ss-shop-mobile-drawer__categories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem !important;
+}
+
+.ss-shop-mobile-drawer__categories .ss-shop-filter-chip {
+  background: var(--ss-paper-2) !important;
+  border: none !important;
+  border-radius: 4px !important;
+  box-shadow: none !important;
+  min-height: 40px !important;
+  padding: 0.5rem 0.95rem !important;
+  color: var(--ss-ink-soft) !important;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.78rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.04em !important;
+  transition: background 0.25s ease, color 0.25s ease !important;
+}
+
+.ss-shop-mobile-drawer__categories .ss-shop-filter-chip:hover {
+  transform: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  color: var(--ss-ink) !important;
+}
+
+.ss-shop-mobile-drawer__categories .ss-shop-filter-chip.is-active {
+  background: var(--ss-ink) !important;
+  color: #fff !important;
+  border: none !important;
+}
+
+/* Size chips (sidebar + drawer) → flat, gentle radius, no boxy 0-radius */
+.ss-shop-filter-form .ss-shop-filter-chip {
+  border-radius: 4px !important;
+  border: 1px solid var(--ss-hairline) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.ss-shop-filter-form .ss-shop-filter-chip.is-active {
+  background: var(--ss-ink) !important;
+  border-color: var(--ss-ink) !important;
+  color: #fff !important;
+}
+
+/* Mobile sort popover links → flat, gentle */
+.ss-shop-mobile-sort-link {
+  border-radius: 4px !important;
+  border: 1px solid var(--ss-hairline) !important;
+  background: transparent !important;
+  color: var(--ss-ink-soft) !important;
+  font-weight: 500 !important;
+}
+
+.ss-shop-mobile-sort-link.is-active {
+  border-color: var(--ss-ink) !important;
+  background: var(--ss-ink) !important;
+  color: #fff !important;
+}
+
+/* ----------------------------------------------------------------------------
+   D — FULL-SCREEN MOBILE MENU (premium)
+   Replaces the busy red/gold/blue glassmorphism with a calm deep-charcoal
+   takeover, large Playfair navigation, gold accents, hairline dividers.
+   -------------------------------------------------------------------------- */
+
+.ss-mobile-nav-backdrop {
+  background: rgba(8, 7, 5, 0.72) !important;
+  backdrop-filter: blur(6px) !important;
+}
+
+.ss-mobile-nav-panel {
+  background: #100d09 !important;
+  color: var(--ss-text-light, #f0ece4) !important;
+  box-shadow: none !important;
+}
+
+/* Kill the grid texture, colored glows and inner highlights */
+.ss-mobile-nav-panel::before,
+.ss-mobile-nav-panel::after,
+.ss-mobile-nav-panel__glow {
+  display: none !important;
+}
+
+.ss-mobile-nav-panel__inner {
+  padding: max(1.4rem, env(safe-area-inset-top)) 1.6rem
+    max(1.8rem, env(safe-area-inset-bottom)) 1.6rem !important;
+}
+
+/* Brand row — logo + close, generous space below */
+.ss-mobile-nav-brand {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2.5rem !important;
+}
+
+.ss-mobile-nav-close {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--ss-text-light, #f0ece4) !important;
+  width: 2.5rem;
+  height: 2.5rem;
+}
+
+/* Quick "search products" → refined hairline row, not a glass pill */
+.ss-mobile-nav-panel__quick {
+  grid-template-columns: 1fr !important;
+  margin-bottom: 1.75rem !important;
+}
+
+.ss-mobile-nav-quicklink {
+  background: transparent !important;
+  border: 1px solid rgba(240, 236, 228, 0.18) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: rgba(240, 236, 228, 0.82) !important;
+  min-height: 3.2rem !important;
+  padding-inline: 1.1rem !important;
+  font-family: var(--font-montserrat), sans-serif !important;
+  font-size: 0.72rem !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+}
+
+/* The navigation — large Playfair links, hairline separators, no glass cards */
+.ss-mobile-nav-list {
+  gap: 0 !important;
+  border-top: 1px solid rgba(240, 236, 228, 0.1);
+}
+
+.ss-mobile-nav-link,
+.ss-mobile-nav-link--toggle {
+  min-height: auto !important;
+  width: 100%;
+  padding: 1.1rem 0.1rem !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(240, 236, 228, 0.1) !important;
+  border-radius: 0 !important;
+  background: none !important;
+  box-shadow: none !important;
+  color: var(--ss-text-light, #f0ece4) !important;
+  font-family: var(--font-playfair-display), "Playfair Display", serif !important;
+  font-size: clamp(1.75rem, 7vw, 2.5rem) !important;
+  font-weight: 500 !important;
+  letter-spacing: -0.01em !important;
+  line-height: 1.1 !important;
+  justify-content: space-between !important;
+}
+
+.ss-mobile-nav-link.is-active,
+.ss-mobile-nav-link--toggle.is-active {
+  color: var(--ss-gold, #c9a96e) !important;
+  border-color: rgba(240, 236, 228, 0.1) !important;
+  background: none !important;
+  box-shadow: none !important;
+}
+
+.ss-mobile-nav-link svg,
+.ss-mobile-nav-link--toggle .ss-mobile-nav-link__chevron {
+  opacity: 0.45;
+  color: var(--ss-gold, #c9a96e);
+}
+
+/* Shop submenu — quiet uppercase labels under the big "Web Shop" link */
+.ss-mobile-nav-submenu {
+  padding: 0.4rem 0 0.9rem 0.1rem;
+}
+
+.ss-mobile-nav-submenu__link {
+  display: block;
+  padding: 0.5rem 0 !important;
+  font-family: var(--font-montserrat), sans-serif !important;
+  font-size: 0.8rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase;
+  color: rgba(240, 236, 228, 0.55) !important;
+  border: none !important;
+  background: none !important;
+}
+
+.ss-mobile-nav-submenu__link:active {
+  color: var(--ss-gold, #c9a96e) !important;
+}
+
+/* Footer — refined hairline buttons instead of filled pills */
+.ss-mobile-nav-footer {
+  margin-top: auto;
+  padding-top: 2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.7rem;
+  align-items: center;
+}
+
+.ss-mobile-nav-pill {
+  background: transparent !important;
+  border: 1px solid rgba(240, 236, 228, 0.2) !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  color: var(--ss-text-light, #f0ece4) !important;
+  font-family: var(--font-montserrat), sans-serif !important;
+  font-size: 0.7rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0.16em !important;
+  text-transform: uppercase;
+  padding: 0.85rem 1.3rem !important;
+  min-height: auto !important;
+}
+
+.ss-mobile-nav-pill:active {
+  background: rgba(240, 236, 228, 0.06) !important;
+}

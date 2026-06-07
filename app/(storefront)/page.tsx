@@ -888,7 +888,7 @@ export default async function HomePage({
                 y={26}
                 amount={0.15}
               >
-                <div className="position-relative overflow-hidden h-100 ss-story-card" style={{ minHeight: 420, borderRadius: 24 }}>
+                <div className="position-relative overflow-hidden h-100 ss-story-card" style={{ minHeight: 480, borderRadius: 2 }}>
                   <Image src={block.image || "/img/hero.jpg"} alt={tx(block.title)} fill sizes="(max-width: 991px) 100vw, 33vw" style={{ objectFit: "cover" }} />
                   <div
                     className="position-absolute top-0 start-0 w-100 h-100"

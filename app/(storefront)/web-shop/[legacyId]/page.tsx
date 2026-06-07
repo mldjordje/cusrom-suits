@@ -531,8 +531,8 @@ export default async function WebShopProductPage({
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-commerce-page ss-product-page">
         <Reveal as="section" className="product-single container">
-          <div className="row g-0 g-lg-4">
-            <div className="col-lg-7 col-xl-7">
+          <div className="row g-0 g-lg-5 ss-pdp-row">
+            <div className="col-lg-8 col-xl-8">
               <div className="product-single__media" data-media-type="scroll-snap">
                 <ProductImageGallery images={gallery} name={displayName} videoUrl={productVideoUrl} />
               </div>
@@ -549,7 +549,7 @@ export default async function WebShopProductPage({
               </div>
             </div>
 
-            <div className="col-lg-5 col-xl-5 ss-product-single-info">
+            <div className="col-lg-4 col-xl-4 ss-product-single-info">
               <div className="d-flex justify-content-between mb-4 pb-md-2">
                 <div className="breadcrumb mb-0 d-none d-md-block flex-grow-1">
                   <Link href={withLang("/")} className="menu-link menu-link_us-s text-uppercase fw-medium">

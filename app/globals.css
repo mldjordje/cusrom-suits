@@ -31,6 +31,51 @@
 
   --ss-border-light: rgba(255, 255, 255, 0.08);
   --ss-border-gold:  rgba(201, 169, 110, 0.32);
+
+  /* --- LUXURY SURFACES (light) --- */
+  --ss-paper:        #faf9f6;  /* page background — warm near-white */
+  --ss-paper-2:      #f4f2ed;  /* product image panel — garments float */
+  --ss-ink:          #12100c;  /* primary text — near-black */
+  --ss-ink-soft:     #3b362f;  /* secondary text — clearly readable */
+  --ss-ink-faint:    #6a6056;  /* eyebrows / meta — darker, still subdued */
+  --ss-hairline:     rgba(21, 18, 14, 0.14);  /* 1px separators */
+  --ss-hairline-2:   rgba(21, 18, 14, 0.08);
+
+  /* --- LUXURY SPACING SCALE (editorial rhythm) --- */
+  --ss-space-3xs: 0.25rem;
+  --ss-space-2xs: 0.5rem;
+  --ss-space-xs:  0.75rem;
+  --ss-space-sm:  1rem;
+  --ss-space-md:  1.5rem;
+  --ss-space-lg:  2.5rem;
+  --ss-space-xl:  4rem;
+  --ss-space-2xl: 6rem;
+  --ss-space-3xl: 8rem;
+  /* whitespace between major page sections */
+  --ss-section:    clamp(4.5rem, 8vw, 9rem);
+  --ss-section-sm: clamp(3rem, 5vw, 5.5rem);
+
+  /* --- LUXURY TYPE SCALE --- */
+  --ss-fs-display: clamp(2.5rem, 5vw, 4.75rem);
+  --ss-fs-h1:      clamp(2rem, 3.4vw, 3.1rem);
+  --ss-fs-h2:      clamp(1.6rem, 2.6vw, 2.4rem);
+  --ss-fs-h3:      clamp(1.2rem, 1.7vw, 1.55rem);
+  --ss-fs-lead:    clamp(1.02rem, 1.1vw, 1.18rem);
+  --ss-fs-body:    1rem;
+  --ss-fs-sm:      0.875rem;
+  --ss-fs-eyebrow: 0.7rem;
+
+  --ss-tracking-eyebrow: 0.26em;
+  --ss-tracking-wide:    0.12em;
+  --ss-tracking-tight:  -0.015em;
+  --ss-leading-tight:    1.08;
+  --ss-leading-snug:     1.3;
+  --ss-leading-body:     1.65;
+
+  /* --- RADII (flat, editorial) --- */
+  --ss-radius-xs: 2px;
+  --ss-radius:    4px;
+  --ss-radius-lg: 6px;
 }
 
 @theme inline {
@@ -50,8 +95,8 @@
 
 /* --- GLOBAL STILOVI --- */
 body {
-  background-color: #f7f7f7;
-  color: #111;
+  background-color: var(--ss-paper, #faf9f6);
+  color: var(--ss-ink, #15120e);
   font-family: var(--font-montserrat), "Montserrat", Arial, Helvetica, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;

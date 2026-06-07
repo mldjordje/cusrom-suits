@@ -6,6 +6,7 @@ import StorefrontRuntimeShell from "@/app/components/storefront/StorefrontRuntim
 import CookieConsent from "@/app/components/storefront/CookieConsent";
 import "./uomo.scss";
 import "./webshop-polish.scss";
+import "./premium.scss";
 
 export default function StorefrontLayout({ children }: { children: ReactNode }) {
   return (
