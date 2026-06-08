@@ -252,7 +252,7 @@ export default function AdminCategoriesPage() {
             <span>Raspodela: <strong>{autoAssignResult.assignmentsMade}</strong></span>
           </div>
           <p className="mt-2 text-xs text-violet-600">
-            Napomena: Kategorije sa imenima poput "Odela", "Sakoi", "Pantalone", "Kosulje", "Kaputi", "Jakne" se automatski prepoznaju.
+            Napomena: Kategorije sa imenima poput &quot;Odela&quot;, &quot;Sakoi&quot;, &quot;Pantalone&quot;, &quot;Kosulje&quot;, &quot;Kaputi&quot;, &quot;Jakne&quot; se automatski prepoznaju.
             Rasporeda ce biti vidljiva u web-shop filtrima nakon sto se osvezi kes kataloga.
           </p>
         </div>
