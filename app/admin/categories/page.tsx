@@ -118,11 +118,11 @@ export default function AdminCategoriesPage() {
   const loadCategoryProducts = async (categoryId: number) => {
     setLoadingProducts((prev) => new Set([...prev, categoryId]));
     try {
-      const res = await fetch(`/api/admin/webshop/products?categoryId=${categoryId}&pageSize=100&activeOnly=false&exportOnly=false`);
+      const res = await fetch(`/api/admin/webshop/products?categoryId=${categoryId}&pageSize=100`);
       const json = await res.json();
       setCategoryProducts((prev) => ({
         ...prev,
-        [categoryId]: (json.items || []) as ProductMini[],
+        [categoryId]: (json.data || []) as ProductMini[],
       }));
     } catch {
       // ignore
@@ -157,9 +157,9 @@ export default function AdminCategoriesPage() {
     }
     setSearchLoading((prev) => new Set([...prev, categoryId]));
     try {
-      const res = await fetch(`/api/admin/webshop/products?q=${encodeURIComponent(q)}&pageSize=20&activeOnly=false&exportOnly=false`);
+      const res = await fetch(`/api/admin/webshop/products?q=${encodeURIComponent(q)}&pageSize=20`);
       const json = await res.json();
-      setSearchResults((prev) => ({ ...prev, [categoryId]: (json.items || []) as ProductMini[] }));
+      setSearchResults((prev) => ({ ...prev, [categoryId]: (json.data || []) as ProductMini[] }));
     } catch {
       // ignore
     } finally {
