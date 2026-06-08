@@ -730,6 +730,7 @@ export default function AdminWebshopPage() {
   const [categoryEditorId, setCategoryEditorId] = useState<number | null>(null);
   const [categoryEditorSelectedIds, setCategoryEditorSelectedIds] = useState<Set<number>>(new Set());
   const [savingCategoryEditor, setSavingCategoryEditor] = useState(false);
+  const [categoryEditorError, setCategoryEditorError] = useState<string | null>(null);
 
   const [landingSettings, setLandingSettings] = useState<LandingSettings>(defaultLandingSettings);
   const [loadingLanding, setLoadingLanding] = useState(false);
@@ -1836,6 +1837,7 @@ export default function AdminWebshopPage() {
   const saveCategoryEditor = async () => {
     if (!categoryEditorId) return;
     setSavingCategoryEditor(true);
+    setCategoryEditorError(null);
     try {
       const res = await fetch("/api/admin/webshop/products/assign-categories", {
         method: "PATCH",
@@ -1845,10 +1847,13 @@ export default function AdminWebshopPage() {
       const json = await res.json();
       if (json?.success) {
         setCategoryEditorId(null);
-        await loadProducts(pagination.page);
+        setCategoryEditorError(null);
+        void loadProducts(pagination.page);
+      } else {
+        setCategoryEditorError(json?.message || "Cuvanje nije uspelo.");
       }
-    } catch {
-      // ignore
+    } catch (e: unknown) {
+      setCategoryEditorError((e instanceof Error ? e.message : null) || "Greska pri cuvanju.");
     } finally {
       setSavingCategoryEditor(false);
     }
@@ -3764,54 +3769,76 @@ export default function AdminWebshopPage() {
       ) : null}
 
       {categoryEditorId != null && currentCategoryEditorItem ? (
-        <div className="fixed inset-0 z-50 flex items-end bg-slate-900/45 lg:items-center" onClick={() => setCategoryEditorId(null)}>
-          <div className="w-full rounded-t-2xl bg-white p-4 shadow-2xl lg:mx-auto lg:max-w-md lg:rounded-2xl" onClick={(e) => e.stopPropagation()}>
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Kategorije proizvoda</p>
-            <h2 className="mt-1 text-base font-semibold text-slate-900 line-clamp-2">{currentCategoryEditorItem.name}</h2>
-            <p className="text-xs text-slate-500">#{currentCategoryEditorItem.legacyId} / {currentCategoryEditorItem.sku}</p>
+        <div className="fixed inset-0 z-50 flex items-end bg-slate-900/45 lg:items-center" onClick={() => { setCategoryEditorId(null); setCategoryEditorError(null); }}>
+          <div
+            className="flex w-full flex-col rounded-t-2xl bg-white shadow-2xl lg:mx-auto lg:max-w-md lg:rounded-2xl"
+            style={{ maxHeight: "85vh" }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Scrollable body */}
+            <div className="flex-1 overflow-y-auto p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Kategorije proizvoda</p>
+              <h2 className="mt-1 text-base font-semibold text-slate-900 line-clamp-2">{currentCategoryEditorItem.name}</h2>
+              <p className="text-xs text-slate-500">#{currentCategoryEditorItem.legacyId} / {currentCategoryEditorItem.sku}</p>
 
-            <div className="mt-4">
-              {categoryRegistry.length === 0 ? (
-                <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-                  Nema kreiranih kategorija. Dodaj kategorije u admin/categories.
-                </p>
-              ) : (
-                <div className="grid gap-2">
-                  {categoryRegistry.map((cat) => {
-                    const checked = categoryEditorSelectedIds.has(cat.id);
-                    return (
-                      <label key={cat.id} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${checked ? "border-violet-200 bg-violet-50" : "border-slate-200 hover:bg-slate-50"}`}>
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) => {
-                            setCategoryEditorSelectedIds((prev) => {
-                              const next = new Set(prev);
-                              if (e.target.checked) next.add(cat.id);
-                              else next.delete(cat.id);
-                              return next;
-                            });
-                          }}
-                          className="h-4 w-4 accent-violet-600"
-                        />
-                        <div>
-                          <p className="text-sm font-semibold text-slate-900">{cat.name}</p>
-                          {cat.path.length > 1 ? (
-                            <p className="text-xs text-slate-500">{cat.path.join(" / ")}</p>
-                          ) : null}
-                        </div>
-                      </label>
-                    );
-                  })}
-                </div>
-              )}
+              <div className="mt-4">
+                {categoryRegistry.length === 0 ? (
+                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                    Nema kreiranih kategorija. Dodaj kategorije u admin/categories.
+                  </p>
+                ) : (
+                  <div className="grid gap-2">
+                    {categoryRegistry.map((cat) => {
+                      const checked = categoryEditorSelectedIds.has(cat.id);
+                      return (
+                        <label key={cat.id} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${checked ? "border-violet-200 bg-violet-50" : "border-slate-200 hover:bg-slate-50"}`}>
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={(e) => {
+                              setCategoryEditorSelectedIds((prev) => {
+                                const next = new Set(prev);
+                                if (e.target.checked) next.add(cat.id);
+                                else next.delete(cat.id);
+                                return next;
+                              });
+                            }}
+                            className="h-4 w-4 accent-violet-600"
+                          />
+                          <div>
+                            <p className="text-sm font-semibold text-slate-900">{cat.name}</p>
+                            {cat.path.length > 1 ? (
+                              <p className="text-xs text-slate-500">{cat.path.join(" / ")}</p>
+                            ) : null}
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="mt-5 flex justify-end gap-2">
-              <button onClick={() => setCategoryEditorId(null)} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">Odustani</button>
-              <button onClick={() => void saveCategoryEditor()} disabled={savingCategoryEditor} className="rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-violet-700 disabled:opacity-50">
-                {savingCategoryEditor ? "Cuvanje..." : "Sacuvaj kategorije"}
-              </button>
+            {/* Sticky footer */}
+            <div className="border-t border-slate-100 bg-white p-4">
+              {categoryEditorError ? (
+                <p className="mb-3 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs text-rose-700">{categoryEditorError}</p>
+              ) : null}
+              <div className="flex justify-end gap-2">
+                <button
+                  onClick={() => { setCategoryEditorId(null); setCategoryEditorError(null); }}
+                  className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700"
+                >
+                  Odustani
+                </button>
+                <button
+                  onClick={() => void saveCategoryEditor()}
+                  disabled={savingCategoryEditor}
+                  className="rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-violet-700 disabled:opacity-50"
+                >
+                  {savingCategoryEditor ? "Cuvanje..." : "Sacuvaj kategorije"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
