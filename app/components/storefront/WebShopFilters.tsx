@@ -292,10 +292,41 @@ export default function WebShopFilters({
 
   const renderSizeField = () => {
     if (!availableSizes || availableSizes.length === 0) return null;
+    const selectedCount = selectedSizes.length;
     return (
-      <div className="ss-shop-form-block">
-        <span className="ss-shop-form-label">{isEn ? "Size" : "Velicina"}</span>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 4 }}>
+      <details className="ss-shop-form-block" open={selectedCount > 0} style={{ border: "none", padding: 0 }}>
+        <summary
+          style={{
+            listStyle: "none",
+            cursor: "pointer",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            userSelect: "none",
+          }}
+          className="ss-shop-form-label"
+        >
+          <span>{isEn ? "Size" : "Velicina"}</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            {selectedCount > 0 ? (
+              <span
+                style={{
+                  background: "#1f2937",
+                  color: "#fff",
+                  borderRadius: "999px",
+                  fontSize: 10,
+                  fontWeight: 700,
+                  padding: "1px 7px",
+                  lineHeight: "18px",
+                }}
+              >
+                {selectedCount}
+              </span>
+            ) : null}
+            <span style={{ fontSize: 10, color: "#9ca3af", fontWeight: 400 }}>▾</span>
+          </span>
+        </summary>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
           {selectedSizes.map((size) => (
             <input key={`hidden-${size}`} type="hidden" name="size" value={size.toUpperCase()} />
           ))}
@@ -314,7 +345,7 @@ export default function WebShopFilters({
             );
           })}
         </div>
-      </div>
+      </details>
     );
   };
 

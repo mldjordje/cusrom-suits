@@ -9,7 +9,8 @@ import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import Reveal from "@/app/components/motion/Reveal";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
-import { listCatalogProducts, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
+import { listCatalogProducts, normalizeCatalogCategoryGroupKey, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
+import { listCategoryRegistry } from "@/lib/catalog/categories";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
@@ -147,7 +148,7 @@ export default async function WebShopPage({
   const selectedSizes = Array.from(new Set(rawSizes.map((v) => v.toUpperCase().replace(/\s+/g, ""))));
 
   const brokenProductIds = await getBrokenProductIdSet();
-  const [result, landingSettings] = await Promise.all([
+  const [result, landingSettings, registryCategories] = await Promise.all([
     listCatalogProducts({
       page,
       pageSize: 24,
@@ -175,6 +176,7 @@ export default async function WebShopPage({
       sort: sort as "featured" | "name_asc" | "price_asc" | "price_desc" | "stock_desc" | "newest",
     }),
     getLandingSettings(),
+    listCategoryRegistry(),
   ]);
 
   const getCategoryLabel = (item: CatalogProductView) =>
@@ -193,6 +195,27 @@ export default async function WebShopPage({
 
   const items = sortItems(result.items, sort);
   const sortedCategoryGroups = sortCategoriesForShop(result.categoryGroups);
+
+  // Admin registry categories (visible) take priority over dynamic groups in nav.
+  // Each is mapped to a categoryGroup key using the same normalization as product matching,
+  // so filtering works without requiring products to be explicitly re-assigned.
+  const adminNavCategories = registryCategories
+    .filter((cat) => cat.isVisible)
+    .map((cat) => {
+      const key =
+        normalizeCatalogCategoryGroupKey(cat.name) ||
+        cat.path.map(normalizeCatalogCategoryGroupKey).find(Boolean) ||
+        "";
+      return { id: cat.id, key, name: cat.name };
+    })
+    .filter((cat) => cat.key.length > 0);
+
+  // Fall back to dynamic groups when no admin categories are configured
+  const featuredNavCategories =
+    adminNavCategories.length > 0
+      ? adminNavCategories
+      : sortedCategoryGroups.slice(0, 7).map((g: CatalogCategoryGroup) => ({ id: 0, key: g.key, name: g.name }));
+
   const topCategories = sortedCategoryGroups.slice(0, 7);
 
   const DEFAULT_SIZES = [
@@ -381,7 +404,7 @@ export default async function WebShopPage({
       href: makeHref({ categoryId: null, categoryGroup: null, onSale: 1, page: 1, q: null }),
       active: onSale && categoryId <= 0 && !categoryGroup,
     },
-    ...topCategories.slice(0, 5).map((category: CatalogCategoryGroup) => ({
+    ...featuredNavCategories.slice(0, 5).map((category) => ({
       label: localizeCategory(category.name),
       href: makeHref({ categoryGroup: category.key, categoryId: null, onSale: null, page: 1, q: null }),
       active: categoryGroup === category.key,
@@ -639,7 +662,7 @@ export default async function WebShopPage({
             onSale={onSale}
             sort={sort}
             categories={sortedCategoryGroups}
-            featuredCategories={topCategories.slice(0, 6)}
+            featuredCategories={featuredNavCategories.slice(0, 7)}
             activeFilterChips={activeFilterChips}
             showingCount={items.length}
             totalCount={result.total}

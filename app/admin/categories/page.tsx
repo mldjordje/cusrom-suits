@@ -32,6 +32,13 @@ const emptyDraft = {
   isVisible: true,
 };
 
+type AutoAssignResult = {
+  message: string;
+  productsUpdated: number;
+  assignmentsMade: number;
+  total: number;
+};
+
 export default function AdminCategoriesPage() {
   const [rows, setRows] = useState<CategoryRow[]>([]);
   const [drafts, setDrafts] = useState<DraftState>({});
@@ -39,6 +46,8 @@ export default function AdminCategoriesPage() {
   const [loading, setLoading] = useState(false);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
+  const [autoAssigning, setAutoAssigning] = useState(false);
+  const [autoAssignResult, setAutoAssignResult] = useState<AutoAssignResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState("");
@@ -69,8 +78,8 @@ export default function AdminCategoriesPage() {
           ]),
         ),
       );
-    } catch (e: any) {
-      setError(e?.message || "Ucitavanje kategorija nije uspelo.");
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : null) || "Ucitavanje kategorija nije uspelo.");
     } finally {
       setLoading(false);
     }
@@ -116,8 +125,8 @@ export default function AdminCategoriesPage() {
       setCreateForm(emptyCreateForm);
       setNotice("Kategorija je dodata.");
       await load();
-    } catch (e: any) {
-      setError(e?.message || "Kreiranje kategorije nije uspelo.");
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : null) || "Kreiranje kategorije nije uspelo.");
     } finally {
       setCreating(false);
     }
@@ -152,8 +161,8 @@ export default function AdminCategoriesPage() {
       }
       setNotice(`Sacuvana kategorija #${categoryId}.`);
       await load();
-    } catch (e: any) {
-      setError(e?.message || "Cuvanje kategorije nije uspelo.");
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : null) || "Cuvanje kategorije nije uspelo.");
     } finally {
       setSavingId(null);
     }
@@ -174,10 +183,36 @@ export default function AdminCategoriesPage() {
       }
       setNotice(`Obrisana kategorija #${categoryId}.`);
       await load();
-    } catch (e: any) {
-      setError(e?.message || "Brisanje kategorije nije uspelo.");
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : null) || "Brisanje kategorije nije uspelo.");
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const autoAssignProducts = async () => {
+    setAutoAssigning(true);
+    setAutoAssignResult(null);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/admin/webshop/categories/auto-assign", { method: "POST" });
+      const json = await res.json();
+      if (!json?.success) {
+        setError(json?.message || "Auto-raspodela nije uspela.");
+        return;
+      }
+      setAutoAssignResult({
+        message: json.message,
+        productsUpdated: json.productsUpdated || 0,
+        assignmentsMade: json.assignmentsMade || 0,
+        total: json.total || 0,
+      });
+      await load();
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : null) || "Auto-raspodela nije uspela.");
+    } finally {
+      setAutoAssigning(false);
     }
   };
 
@@ -190,13 +225,38 @@ export default function AdminCategoriesPage() {
             Poseban registry za kategorije iz starog admin toka, uz automatsko presnimavanje naziva i putanje na proizvode.
           </p>
         </div>
-        <button
-          onClick={load}
-          className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
-        >
-          Osvezi
-        </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={autoAssignProducts}
+            disabled={autoAssigning || rows.length === 0}
+            className="rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-violet-700 disabled:opacity-50"
+            title="Automatski rasporedi sve proizvode iz kataloga u odgovarajuce kategorije na osnovu naziva"
+          >
+            {autoAssigning ? "Rasporedjivanje..." : "Auto-rasporedi proizvode"}
+          </button>
+          <button
+            onClick={load}
+            className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
+          >
+            Osvezi
+          </button>
+        </div>
       </div>
+
+      {autoAssignResult ? (
+        <div className="rounded-2xl border border-violet-200 bg-violet-50 p-4">
+          <p className="text-sm font-semibold text-violet-800">{autoAssignResult.message}</p>
+          <div className="mt-2 flex flex-wrap gap-4 text-xs text-violet-700">
+            <span>Ukupno proizvoda: <strong>{autoAssignResult.total}</strong></span>
+            <span>Azurirano: <strong>{autoAssignResult.productsUpdated}</strong></span>
+            <span>Raspodela: <strong>{autoAssignResult.assignmentsMade}</strong></span>
+          </div>
+          <p className="mt-2 text-xs text-violet-600">
+            Napomena: Kategorije sa imenima poput "Odela", "Sakoi", "Pantalone", "Kosulje", "Kaputi", "Jakne" se automatski prepoznaju.
+            Rasporeda ce biti vidljiva u web-shop filtrima nakon sto se osvezi kes kataloga.
+          </p>
+        </div>
+      ) : null}
 
       <div className="grid gap-4 xl:grid-cols-[360px,minmax(0,1fr)]">
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -234,7 +294,7 @@ export default function AdminCategoriesPage() {
                 checked={createForm.isVisible}
                 onChange={(e) => setCreateForm((prev) => ({ ...prev, isVisible: e.target.checked }))}
               />
-              Vidljiva u admin izborima
+              Vidljiva u web-shop navigaciji
             </label>
             <button
               onClick={createCategory}
@@ -243,6 +303,16 @@ export default function AdminCategoriesPage() {
             >
               {creating ? "Kreiranje..." : "Dodaj kategoriju"}
             </button>
+          </div>
+
+          <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50 p-3">
+            <p className="text-xs font-semibold text-slate-600 mb-1">Prepoznata imena kategorija</p>
+            <p className="text-xs text-slate-500 leading-relaxed">
+              Odela, Sakoi, Pantalone, Kosulje, Kaputi, Jakne, Dzemperi, Obuca, Kaisevi, Kravate, Prsluci
+            </p>
+            <p className="mt-1 text-xs text-slate-400">
+              Kategorije sa ovim imenima se automatski mapiraju na proizvode i pojavljuju u web-shop navigaciji.
+            </p>
           </div>
         </div>
 
@@ -271,7 +341,12 @@ export default function AdminCategoriesPage() {
                       <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
                         #{row.id} | {row.source}
                       </p>
-                      <p className="mt-1 text-xs text-slate-500">Proizvoda u kategoriji: {row.usageCount}</p>
+                      <p className="mt-1 text-xs text-slate-500">
+                        Proizvoda u kategoriji: <strong>{row.usageCount}</strong>
+                        {row.usageCount === 0 ? (
+                          <span className="ml-2 text-amber-600">— pokrenite Auto-rasporedi</span>
+                        ) : null}
+                      </p>
                     </div>
                     <span
                       className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${
@@ -342,7 +417,7 @@ export default function AdminCategoriesPage() {
                           }))
                         }
                       />
-                      Vidljiva
+                      Vidljiva u web-shop navigaciji
                     </label>
 
                     <div className="flex flex-wrap gap-2">

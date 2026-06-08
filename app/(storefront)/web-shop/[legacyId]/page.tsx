@@ -25,6 +25,7 @@ import CompleteTheLook from "@/app/components/storefront/CompleteTheLook";
 import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
 import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
+import { BUNDLED_UNIFORM_IMAGES } from "@/lib/storefront/uniforms";
 import { resolveDisplayFinalPrice, resolveDisplayGrossPrice, calcDiscountPercent } from "@/lib/catalog/pricing";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getSiteContent } from "@/lib/storefront/siteContent";
@@ -390,7 +391,15 @@ export default async function WebShopProductPage({
 
     notFound();
   }
-  const gallery = productGallery.slice(0, 8);
+  let gallery = productGallery.slice(0, 8);
+  // For business uniform products, fill the gallery with all bundled uniform images
+  // so customers can see the full uniform collection on the detail page.
+  if (isBusinessUniformProduct(product) || isBusinessUniformProduct(displayProduct)) {
+    const uniformImagePaths = BUNDLED_UNIFORM_IMAGES.map((img) => img.image);
+    const gallerySet = new Set(gallery);
+    const extra = uniformImagePaths.filter((img) => !gallerySet.has(img));
+    gallery = [gallery[0], ...extra, ...gallery.slice(1)].filter(Boolean).slice(0, 8) as string[];
+  }
   const productVideoUrl = displayProduct.videoUrl || product.videoUrl || null;
   const sizeOptions = getProductSizeOptions(product, sizeVariants);
   const findRequestedSizeOption = () => {
