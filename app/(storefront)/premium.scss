@@ -457,13 +457,13 @@
 /* Taller, calmer masthead */
 @media (min-width: 992px) {
   #header .container {
-    padding-top: 0.85rem !important;
-    padding-bottom: 0.85rem !important;
+    padding-top: 0.55rem !important;
+    padding-bottom: 0.55rem !important;
   }
 
   #header .header-desk_type_1 .ss-site-logo {
-    width: clamp(178px, 13vw, 232px) !important;
-    max-height: 3.4rem !important;
+    width: clamp(164px, 12vw, 210px) !important;
+    max-height: 3rem !important;
   }
 
   /* Refined nav links — quieter weight, more air, optical tracking */
@@ -1277,4 +1277,90 @@ body.mobile-menu-opened {
 
 .ss-mobile-nav-pill:active {
   background: rgba(21, 18, 14, 0.06) !important;
+}
+
+/* ----------------------------------------------------------------------------
+   PDP — clean breadcrumb navigation (replaces prev/next clutter)
+   -------------------------------------------------------------------------- */
+
+.ss-pdp-breadnav {
+  display: flex;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--ss-hairline);
+}
+
+.ss-pdp-breadcrumb {
+  padding: 0;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 0;
+  min-width: 0;
+}
+
+.ss-pdp-breadcrumb__item {
+  display: flex;
+  align-items: center;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.ss-pdp-breadcrumb__item + .ss-pdp-breadcrumb__item::before {
+  content: "/";
+  padding-inline: 0.5rem;
+  color: var(--ss-ink-faint);
+  font-size: 0.62rem;
+  opacity: 0.45;
+  flex-shrink: 0;
+}
+
+.ss-pdp-breadcrumb__link {
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ss-ink-faint);
+  text-decoration: none;
+  transition: color 0.25s ease;
+  white-space: nowrap;
+}
+
+.ss-pdp-breadcrumb__link:hover {
+  color: var(--ss-ink);
+}
+
+.ss-pdp-breadcrumb__item--current .ss-pdp-breadcrumb__current {
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ss-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 12rem;
+  display: block;
+}
+
+.ss-pdp-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ss-ink-faint);
+  text-decoration: none;
+  transition: color 0.25s ease;
+  white-space: nowrap;
+}
+
+.ss-pdp-back:hover {
+  color: var(--ss-ink);
 }

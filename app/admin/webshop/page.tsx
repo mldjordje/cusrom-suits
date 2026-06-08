@@ -1846,9 +1846,25 @@ export default function AdminWebshopPage() {
       });
       const json = await res.json();
       if (json?.success) {
+        // Update local items state immediately — the catalog cache stays stale for
+        // up to 5 min so loadProducts() would just return old data.
+        const adminIds = new Set(categoryRegistry.map((c) => c.id));
+        const registryById = new Map(categoryRegistry.map((c) => [c.id, c]));
+        const savedLegacyId = categoryEditorId;
+        const savedSelectedIds = new Set(categoryEditorSelectedIds);
+        setItems((prev) =>
+          prev.map((item) => {
+            if (item.legacyId !== savedLegacyId) return item;
+            const legacyCats = item.categories.filter((c) => !adminIds.has(c.id));
+            const newAdminCats = Array.from(savedSelectedIds)
+              .map((id) => registryById.get(id))
+              .filter(Boolean)
+              .map((cat) => ({ id: cat!.id, name: cat!.name, path: cat!.path }));
+            return { ...item, categories: [...legacyCats, ...newAdminCats] };
+          }),
+        );
         setCategoryEditorId(null);
         setCategoryEditorError(null);
-        void loadProducts(pagination.page);
       } else {
         setCategoryEditorError(json?.message || "Cuvanje nije uspelo.");
       }

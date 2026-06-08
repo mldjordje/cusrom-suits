@@ -559,31 +559,28 @@ export default async function WebShopProductPage({
             </div>
 
             <div className="col-lg-4 col-xl-4 ss-product-single-info">
-              <div className="d-flex justify-content-between mb-4 pb-md-2">
-                <div className="breadcrumb mb-0 d-none d-md-block flex-grow-1">
-                  <Link href={withLang("/")} className="menu-link menu-link_us-s text-uppercase fw-medium">
-                    {isEn ? "Home" : "Pocetna"}
-                  </Link>
-                  <span className="breadcrumb-separator menu-link fw-medium ps-1 pe-1">/</span>
-                  <Link href={withLang("/web-shop")} className="menu-link menu-link_us-s text-uppercase fw-medium">
-                    Web shop
-                  </Link>
-                </div>
-
-                <div className="product-single__prev-next d-flex align-items-center justify-content-between justify-content-md-end flex-grow-1">
-                  <Link href={withLang("/web-shop")} className="text-uppercase fw-medium">
-                    <svg className="mb-1px" width="10" height="10" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
-                      <use href="#icon_prev_md" />
-                    </svg>
-                    <span className="menu-link menu-link_us-s">{isEn ? "Back to shop" : "Nazad na shop"}</span>
-                  </Link>
-                  <Link href={withLang("/kontakt")} className="text-uppercase fw-medium">
-                    <span className="menu-link menu-link_us-s">{isEn ? "Contact" : "Kontakt"}</span>
-                    <svg className="mb-1px" width="10" height="10" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg">
-                      <use href="#icon_next_md" />
-                    </svg>
-                  </Link>
-                </div>
+              <div className="ss-pdp-breadnav mb-3 mb-md-4">
+                <ol className="ss-pdp-breadcrumb list-unstyled d-none d-md-flex" aria-label={isEn ? "Breadcrumb" : "Putanja"}>
+                  <li className="ss-pdp-breadcrumb__item">
+                    <Link href={withLang("/")} className="ss-pdp-breadcrumb__link">
+                      {isEn ? "Home" : "Pocetna"}
+                    </Link>
+                  </li>
+                  <li className="ss-pdp-breadcrumb__item">
+                    <Link href={withLang("/web-shop")} className="ss-pdp-breadcrumb__link">
+                      Web Shop
+                    </Link>
+                  </li>
+                  <li className="ss-pdp-breadcrumb__item ss-pdp-breadcrumb__item--current" aria-current="page">
+                    <span className="ss-pdp-breadcrumb__current">{displayName}</span>
+                  </li>
+                </ol>
+                <Link href={withLang("/web-shop")} className="ss-pdp-back d-flex d-md-none">
+                  <svg width="14" height="14" viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <use href="#icon_prev_md" />
+                  </svg>
+                  <span>{isEn ? "Back to shop" : "Nazad na shop"}</span>
+                </Link>
               </div>
 
               <div className="ss-product-glass-card ss-product-hero-card">
