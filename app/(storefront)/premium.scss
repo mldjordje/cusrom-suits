@@ -262,8 +262,8 @@
   border: none !important;
   box-shadow: none !important;
   padding: 0 !important;
-  position: sticky;
-  top: 6.5rem;
+  position: relative !important;
+  top: auto !important;
 }
 
 .ss-shop-sidebar__header {
@@ -1363,4 +1363,93 @@ body.mobile-menu-opened {
 
 .ss-pdp-back:hover {
   color: var(--ss-ink);
+}
+
+/* ----------------------------------------------------------------------------
+   Shop sidebar: independent scroll + visual polish (desktop)
+   -------------------------------------------------------------------------- */
+
+@media (min-width: 992px) {
+  /* Sidebar sticks; its content scrolls independently when taller than viewport */
+  .ss-shop-sidebar {
+    max-height: calc(100svh - 7.5rem) !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: thin !important;
+    scrollbar-color: rgba(21, 18, 14, 0.1) transparent !important;
+    padding-bottom: 2rem !important;
+  }
+
+  .ss-shop-sidebar::-webkit-scrollbar {
+    width: 3px;
+  }
+
+  .ss-shop-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .ss-shop-sidebar::-webkit-scrollbar-thumb {
+    background: rgba(21, 18, 14, 0.14);
+    border-radius: 999px;
+  }
+}
+
+/* Left accent rail — single hairline marks the filter column */
+.ss-filter-panel.ss-shop-sidebar__panel,
+.ss-shop-sidebar__panel {
+  padding-left: 1.4rem !important;
+  position: relative !important;
+}
+
+.ss-filter-panel.ss-shop-sidebar__panel::before,
+.ss-shop-sidebar__panel::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 0.25rem !important;
+  bottom: 0.25rem !important;
+  width: 1px !important;
+  background: var(--ss-hairline) !important;
+}
+
+/* Section separators between form blocks */
+.ss-shop-filter-form .ss-shop-form-block + .ss-shop-form-block {
+  padding-top: 1.3rem !important;
+  border-top: 1px solid var(--ss-hairline) !important;
+  margin-bottom: 0 !important;
+}
+
+.ss-shop-filter-form details.ss-shop-form-block {
+  padding-top: 1.3rem !important;
+  border-top: 1px solid var(--ss-hairline) !important;
+}
+
+/* Active category chip: subtle gold dash prefix */
+.ss-shop-sidebar__categories .ss-shop-filter-chip {
+  position: relative !important;
+  transition: color 0.25s ease, padding-left 0.25s ease !important;
+}
+
+.ss-shop-sidebar__categories .ss-shop-filter-chip.is-active {
+  padding-left: 0.9rem !important;
+}
+
+.ss-shop-sidebar__categories .ss-shop-filter-chip.is-active::before {
+  content: "" !important;
+  position: absolute !important;
+  left: 0 !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  width: 0.5rem !important;
+  height: 1px !important;
+  background: var(--ss-gold-dark, #9a7230) !important;
+}
+
+/* Size chips: uniform width + centered */
+.ss-shop-filter-form .ss-shop-filter-chip {
+  min-width: 2.4rem !important;
+  padding-inline: 0.65rem !important;
+  justify-content: center !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.04em !important;
 }
