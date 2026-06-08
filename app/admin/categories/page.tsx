@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type CategoryRow = {
   id: number;
@@ -12,6 +12,14 @@ type CategoryRow = {
   isVisible: boolean;
   usageCount: number;
   source: string;
+};
+
+type ProductMini = {
+  legacyId: number;
+  sku: string;
+  name: string;
+  categories: Array<{ id: number; name: string; path: string[] }>;
+  coverImage?: string | null;
 };
 
 type DraftState = Record<number, { name: string; path: string; mainColor: string; description: string; isVisible: boolean }>;
@@ -51,6 +59,16 @@ export default function AdminCategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+
+  // Per-category product management
+  const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [categoryProducts, setCategoryProducts] = useState<Record<number, ProductMini[]>>({});
+  const [loadingProducts, setLoadingProducts] = useState<Set<number>>(new Set());
+  const [productSearch, setProductSearch] = useState<Record<number, string>>({});
+  const [searchResults, setSearchResults] = useState<Record<number, ProductMini[]>>({});
+  const [searchLoading, setSearchLoading] = useState<Set<number>>(new Set());
+  const [assigningProduct, setAssigningProduct] = useState<string | null>(null); // "legacyId-categoryId"
+  const searchTimers = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   const load = async () => {
     setLoading(true);
@@ -96,6 +114,106 @@ export default function AdminCategoriesPage() {
       [row.name, row.path.join(" / "), String(row.id)].join(" ").toLowerCase().includes(normalizedQuery),
     );
   }, [query, rows]);
+
+  const loadCategoryProducts = async (categoryId: number) => {
+    setLoadingProducts((prev) => new Set([...prev, categoryId]));
+    try {
+      const res = await fetch(`/api/admin/webshop/products?categoryId=${categoryId}&pageSize=100&activeOnly=false&exportOnly=false`);
+      const json = await res.json();
+      setCategoryProducts((prev) => ({
+        ...prev,
+        [categoryId]: (json.items || []) as ProductMini[],
+      }));
+    } catch {
+      // ignore
+    } finally {
+      setLoadingProducts((prev) => {
+        const next = new Set(prev);
+        next.delete(categoryId);
+        return next;
+      });
+    }
+  };
+
+  const toggleExpand = (categoryId: number) => {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(categoryId)) {
+        next.delete(categoryId);
+      } else {
+        next.add(categoryId);
+        if (!categoryProducts[categoryId]) {
+          void loadCategoryProducts(categoryId);
+        }
+      }
+      return next;
+    });
+  };
+
+  const searchProducts = async (categoryId: number, q: string) => {
+    if (!q.trim()) {
+      setSearchResults((prev) => ({ ...prev, [categoryId]: [] }));
+      return;
+    }
+    setSearchLoading((prev) => new Set([...prev, categoryId]));
+    try {
+      const res = await fetch(`/api/admin/webshop/products?q=${encodeURIComponent(q)}&pageSize=20&activeOnly=false&exportOnly=false`);
+      const json = await res.json();
+      setSearchResults((prev) => ({ ...prev, [categoryId]: (json.items || []) as ProductMini[] }));
+    } catch {
+      // ignore
+    } finally {
+      setSearchLoading((prev) => {
+        const next = new Set(prev);
+        next.delete(categoryId);
+        return next;
+      });
+    }
+  };
+
+  const handleSearchChange = (categoryId: number, value: string) => {
+    setProductSearch((prev) => ({ ...prev, [categoryId]: value }));
+    clearTimeout(searchTimers.current[categoryId]);
+    searchTimers.current[categoryId] = setTimeout(() => {
+      void searchProducts(categoryId, value);
+    }, 400);
+  };
+
+  const assignProductToCategory = async (product: ProductMini, categoryId: number, add: boolean) => {
+    const key = `${product.legacyId}-${categoryId}`;
+    setAssigningProduct(key);
+    try {
+      // Get current admin category IDs for this product, then add or remove the target
+      const allRows = rows;
+      const adminIds = new Set(allRows.map((r) => r.id));
+      const currentAdminCatIds = product.categories
+        .filter((c) => adminIds.has(c.id))
+        .map((c) => c.id);
+      const nextIds = add
+        ? Array.from(new Set([...currentAdminCatIds, categoryId]))
+        : currentAdminCatIds.filter((id) => id !== categoryId);
+
+      const res = await fetch("/api/admin/webshop/products/assign-categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ legacyId: product.legacyId, categoryIds: nextIds }),
+      });
+      const json = await res.json();
+      if (!json?.success) return;
+
+      // Refresh the category product list
+      await loadCategoryProducts(categoryId);
+      // Clear search so they see the updated state
+      setSearchResults((prev) => ({ ...prev, [categoryId]: [] }));
+      setProductSearch((prev) => ({ ...prev, [categoryId]: "" }));
+      // Refresh category counts
+      await load();
+    } catch {
+      // ignore
+    } finally {
+      setAssigningProduct(null);
+    }
+  };
 
   const createCategory = async () => {
     if (!createForm.name.trim()) {
@@ -208,6 +326,10 @@ export default function AdminCategoriesPage() {
         assignmentsMade: json.assignmentsMade || 0,
         total: json.total || 0,
       });
+      // Refresh all expanded category product lists
+      for (const catId of expandedIds) {
+        void loadCategoryProducts(catId);
+      }
       await load();
     } catch (e: unknown) {
       setError((e instanceof Error ? e.message : null) || "Auto-raspodela nije uspela.");
@@ -222,7 +344,7 @@ export default function AdminCategoriesPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Kategorije</h1>
           <p className="text-sm text-slate-600">
-            Poseban registry za kategorije iz starog admin toka, uz automatsko presnimavanje naziva i putanje na proizvode.
+            Upravljaj kategorijama i rasporedji proizvode iz web-shop kataloga.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -251,14 +373,11 @@ export default function AdminCategoriesPage() {
             <span>Azurirano: <strong>{autoAssignResult.productsUpdated}</strong></span>
             <span>Raspodela: <strong>{autoAssignResult.assignmentsMade}</strong></span>
           </div>
-          <p className="mt-2 text-xs text-violet-600">
-            Napomena: Kategorije sa imenima poput &quot;Odela&quot;, &quot;Sakoi&quot;, &quot;Pantalone&quot;, &quot;Kosulje&quot;, &quot;Kaputi&quot;, &quot;Jakne&quot; se automatski prepoznaju.
-            Rasporeda ce biti vidljiva u web-shop filtrima nakon sto se osvezi kes kataloga.
-          </p>
         </div>
       ) : null}
 
       <div className="grid gap-4 xl:grid-cols-[360px,minmax(0,1fr)]">
+        {/* Create form */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Nova kategorija</p>
           <div className="grid gap-3">
@@ -316,6 +435,7 @@ export default function AdminCategoriesPage() {
           </div>
         </div>
 
+        {/* Category list */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <input
@@ -334,109 +454,210 @@ export default function AdminCategoriesPage() {
           <div className="grid gap-3">
             {visibleRows.map((row) => {
               const draft = drafts[row.id];
+              const isExpanded = expandedIds.has(row.id);
+              const products = categoryProducts[row.id] || [];
+              const isLoadingProducts = loadingProducts.has(row.id);
+              const searchQ = productSearch[row.id] || "";
+              const results = searchResults[row.id] || [];
+              const isSearchLoading = searchLoading.has(row.id);
+
               return (
-                <article key={row.id} className="rounded-2xl border border-slate-200 p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
-                        #{row.id} | {row.source}
-                      </p>
-                      <p className="mt-1 text-xs text-slate-500">
-                        Proizvoda u kategoriji: <strong>{row.usageCount}</strong>
-                        {row.usageCount === 0 ? (
-                          <span className="ml-2 text-amber-600">— pokrenite Auto-rasporedi</span>
-                        ) : null}
-                      </p>
+                <article key={row.id} className="rounded-2xl border border-slate-200">
+                  {/* Category header */}
+                  <div className="p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                          #{row.id} | {row.source}
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Proizvoda: <strong>{row.usageCount}</strong>
+                          {row.usageCount === 0 ? (
+                            <span className="ml-2 text-amber-600">— pokrenite Auto-rasporedi</span>
+                          ) : null}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => toggleExpand(row.id)}
+                          className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+                            isExpanded
+                              ? "border-slate-300 bg-slate-100 text-slate-700"
+                              : "border-slate-200 text-slate-600 hover:bg-slate-50"
+                          }`}
+                        >
+                          {isExpanded ? "Sakrij proizvode" : "Prikazivanje proizvoda"}
+                        </button>
+                        <span
+                          className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${
+                            row.isVisible ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-500"
+                          }`}
+                        >
+                          {row.isVisible ? "Vidljiva" : "Sakrivena"}
+                        </span>
+                      </div>
                     </div>
-                    <span
-                      className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${
-                        row.isVisible ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-500"
-                      }`}
-                    >
-                      {row.isVisible ? "Vidljiva" : "Sakrivena"}
-                    </span>
-                  </div>
 
-                  <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1.1fr),minmax(0,1.1fr),100px]">
-                    <input
-                      value={draft?.name || ""}
-                      onChange={(e) =>
-                        setDrafts((prev) => ({
-                          ...prev,
-                          [row.id]: { ...(prev[row.id] || draft || emptyDraft), name: e.target.value },
-                        }))
-                      }
-                      placeholder="Naziv"
-                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                    />
-                    <input
-                      value={draft?.path || ""}
-                      onChange={(e) =>
-                        setDrafts((prev) => ({
-                          ...prev,
-                          [row.id]: { ...(prev[row.id] || draft || emptyDraft), path: e.target.value },
-                        }))
-                      }
-                      placeholder="Putanja"
-                      className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                    />
-                    <input
-                      type="color"
-                      value={draft?.mainColor || "#1f2937"}
-                      onChange={(e) =>
-                        setDrafts((prev) => ({
-                          ...prev,
-                          [row.id]: { ...(prev[row.id] || draft || emptyDraft), mainColor: e.target.value },
-                        }))
-                      }
-                      className="h-11 rounded-xl border border-slate-200 p-1"
-                    />
-                  </div>
-
-                  <textarea
-                    value={draft?.description || ""}
-                    onChange={(e) =>
-                      setDrafts((prev) => ({
-                        ...prev,
-                        [row.id]: { ...(prev[row.id] || draft || emptyDraft), description: e.target.value },
-                      }))
-                    }
-                    placeholder="Opis kategorije"
-                    className="mt-3 min-h-[92px] w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-                  />
-
-                  <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                    <label className="inline-flex items-center gap-2 text-sm">
+                    <div className="mt-3 grid gap-3 md:grid-cols-[minmax(0,1.1fr),minmax(0,1.1fr),100px]">
                       <input
-                        type="checkbox"
-                        checked={Boolean(draft?.isVisible)}
+                        value={draft?.name || ""}
                         onChange={(e) =>
                           setDrafts((prev) => ({
                             ...prev,
-                            [row.id]: { ...(prev[row.id] || draft || emptyDraft), isVisible: e.target.checked },
+                            [row.id]: { ...(prev[row.id] || draft || emptyDraft), name: e.target.value },
                           }))
                         }
+                        placeholder="Naziv"
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
                       />
-                      Vidljiva u web-shop navigaciji
-                    </label>
+                      <input
+                        value={draft?.path || ""}
+                        onChange={(e) =>
+                          setDrafts((prev) => ({
+                            ...prev,
+                            [row.id]: { ...(prev[row.id] || draft || emptyDraft), path: e.target.value },
+                          }))
+                        }
+                        placeholder="Putanja"
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      />
+                      <input
+                        type="color"
+                        value={draft?.mainColor || "#1f2937"}
+                        onChange={(e) =>
+                          setDrafts((prev) => ({
+                            ...prev,
+                            [row.id]: { ...(prev[row.id] || draft || emptyDraft), mainColor: e.target.value },
+                          }))
+                        }
+                        className="h-11 rounded-xl border border-slate-200 p-1"
+                      />
+                    </div>
 
-                    <div className="flex flex-wrap gap-2">
-                      <button
-                        onClick={() => saveCategory(row.id)}
-                        disabled={savingId === row.id}
-                        className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700"
-                      >
-                        {savingId === row.id ? "Cuvanje..." : "Sacuvaj"}
-                      </button>
-                      <button
-                        onClick={() => deleteCategory(row.id)}
-                        disabled={savingId === row.id || row.usageCount > 0}
-                        className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-rose-700 disabled:opacity-50"
-                      >
-                        Obrisi
-                      </button>
+                    <textarea
+                      value={draft?.description || ""}
+                      onChange={(e) =>
+                        setDrafts((prev) => ({
+                          ...prev,
+                          [row.id]: { ...(prev[row.id] || draft || emptyDraft), description: e.target.value },
+                        }))
+                      }
+                      placeholder="Opis kategorije"
+                      className="mt-3 min-h-[60px] w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    />
+
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                      <label className="inline-flex items-center gap-2 text-sm">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(draft?.isVisible)}
+                          onChange={(e) =>
+                            setDrafts((prev) => ({
+                              ...prev,
+                              [row.id]: { ...(prev[row.id] || draft || emptyDraft), isVisible: e.target.checked },
+                            }))
+                          }
+                        />
+                        Vidljiva u web-shop navigaciji
+                      </label>
+
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => saveCategory(row.id)}
+                          disabled={savingId === row.id}
+                          className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700"
+                        >
+                          {savingId === row.id ? "Cuvanje..." : "Sacuvaj"}
+                        </button>
+                        <button
+                          onClick={() => deleteCategory(row.id)}
+                          disabled={savingId === row.id || row.usageCount > 0}
+                          className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-rose-700 disabled:opacity-50"
+                        >
+                          Obrisi
+                        </button>
+                      </div>
                     </div>
                   </div>
+
+                  {/* Expanded product list */}
+                  {isExpanded ? (
+                    <div className="border-t border-slate-100 bg-slate-50/60 p-4">
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
+                        Proizvodi u kategoriji {row.name}
+                      </p>
+
+                      {isLoadingProducts ? (
+                        <p className="text-xs text-slate-400">Ucitavanje proizvoda...</p>
+                      ) : products.length === 0 ? (
+                        <p className="text-xs text-slate-400">Nema proizvoda. Koristite pretragu ispod da dodate.</p>
+                      ) : (
+                        <div className="mb-4 grid gap-2">
+                          {products.map((product) => (
+                            <div key={product.legacyId} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                              <div className="min-w-0">
+                                <p className="truncate text-xs font-semibold text-slate-900">{product.name}</p>
+                                <p className="text-[10px] text-slate-500">#{product.legacyId} / {product.sku}</p>
+                              </div>
+                              <button
+                                type="button"
+                                disabled={assigningProduct === `${product.legacyId}-${row.id}`}
+                                onClick={() => void assignProductToCategory(product, row.id, false)}
+                                className="shrink-0 rounded-full border border-rose-200 bg-rose-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-700 disabled:opacity-50"
+                              >
+                                Ukloni
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Search to add products */}
+                      <div className="mt-2">
+                        <p className="mb-2 text-xs font-semibold text-slate-600">Dodaj proizvod u kategoriju</p>
+                        <input
+                          value={searchQ}
+                          onChange={(e) => handleSearchChange(row.id, e.target.value)}
+                          placeholder="Pretrazi po nazivu, SKU ili ID..."
+                          className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                        />
+                        {isSearchLoading ? (
+                          <p className="mt-2 text-xs text-slate-400">Pretraga...</p>
+                        ) : results.length > 0 ? (
+                          <div className="mt-2 grid gap-1.5">
+                            {results.map((product) => {
+                              const alreadyIn = products.some((p) => p.legacyId === product.legacyId);
+                              return (
+                                <div key={product.legacyId} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-xs font-semibold text-slate-900">{product.name}</p>
+                                    <p className="text-[10px] text-slate-500">#{product.legacyId} / {product.sku}</p>
+                                  </div>
+                                  {alreadyIn ? (
+                                    <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
+                                      Vec u kategoriji
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      disabled={assigningProduct === `${product.legacyId}-${row.id}`}
+                                      onClick={() => void assignProductToCategory(product, row.id, true)}
+                                      className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700 disabled:opacity-50"
+                                    >
+                                      {assigningProduct === `${product.legacyId}-${row.id}` ? "Dodaje..." : "Dodaj"}
+                                    </button>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        ) : searchQ.trim() && !isSearchLoading ? (
+                          <p className="mt-2 text-xs text-slate-400">Nema rezultata za &quot;{searchQ}&quot;</p>
+                        ) : null}
+                      </div>
+                    </div>
+                  ) : null}
                 </article>
               );
             })}

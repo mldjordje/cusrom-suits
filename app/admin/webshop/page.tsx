@@ -727,6 +727,9 @@ export default function AdminWebshopPage() {
 
   const [editorId, setEditorId] = useState<number | null>(null);
   const [saleEditorId, setSaleEditorId] = useState<number | null>(null);
+  const [categoryEditorId, setCategoryEditorId] = useState<number | null>(null);
+  const [categoryEditorSelectedIds, setCategoryEditorSelectedIds] = useState<Set<number>>(new Set());
+  const [savingCategoryEditor, setSavingCategoryEditor] = useState(false);
 
   const [landingSettings, setLandingSettings] = useState<LandingSettings>(defaultLandingSettings);
   const [loadingLanding, setLoadingLanding] = useState(false);
@@ -1823,8 +1826,37 @@ export default function AdminWebshopPage() {
     }
   };
 
+  const openCategoryEditor = (item: CatalogProduct) => {
+    const adminIds = new Set(categoryRegistry.map((c) => c.id));
+    const currentIds = new Set(item.categories.filter((c) => adminIds.has(c.id)).map((c) => c.id));
+    setCategoryEditorSelectedIds(currentIds);
+    setCategoryEditorId(item.legacyId);
+  };
+
+  const saveCategoryEditor = async () => {
+    if (!categoryEditorId) return;
+    setSavingCategoryEditor(true);
+    try {
+      const res = await fetch("/api/admin/webshop/products/assign-categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ legacyId: categoryEditorId, categoryIds: Array.from(categoryEditorSelectedIds) }),
+      });
+      const json = await res.json();
+      if (json?.success) {
+        setCategoryEditorId(null);
+        await loadProducts(pagination.page);
+      }
+    } catch {
+      // ignore
+    } finally {
+      setSavingCategoryEditor(false);
+    }
+  };
+
   const currentEditorItem = items.find((item) => item.legacyId === editorId) || null;
   const currentSaleEditorItem = saleItems.find((item) => item.legacyId === saleEditorId) || null;
+  const currentCategoryEditorItem = items.find((item) => item.legacyId === categoryEditorId) || null;
 
   const renderProductCatalogCard = (item: CatalogProduct) => {
     const draft = drafts[item.legacyId];
@@ -1857,13 +1889,20 @@ export default function AdminWebshopPage() {
             </div>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           <button
             type="button"
             onClick={() => setEditorId(item.legacyId)}
             className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700"
           >
             Izmeni
+          </button>
+          <button
+            type="button"
+            onClick={() => openCategoryEditor(item)}
+            className="rounded-lg border border-violet-200 bg-violet-50 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-violet-700"
+          >
+            Kategorije
           </button>
           <label className="rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-700">
             <input
@@ -2535,7 +2574,7 @@ export default function AdminWebshopPage() {
                             <span className="mt-2 inline-flex rounded-lg border border-slate-200 px-2 py-1 text-[10px] text-slate-500">Rucni unos</span>
                           )}
                         </td>
-                        <td className="px-2 py-2"><div className="flex flex-col gap-1"><button onClick={() => saveProduct(item.legacyId)} disabled={savingId === item.legacyId || !draft} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">{savingId === item.legacyId ? "Cuvanje..." : "Sacuvaj"}</button><button onClick={() => setEditorId(item.legacyId)} className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">Otvori editor</button><Link href={`/web-shop/${item.legacyId}`} target="_blank" className="rounded border border-slate-200 px-2 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Pregled</Link></div></td>
+                        <td className="px-2 py-2"><div className="flex flex-col gap-1"><button onClick={() => saveProduct(item.legacyId)} disabled={savingId === item.legacyId || !draft} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">{savingId === item.legacyId ? "Cuvanje..." : "Sacuvaj"}</button><button onClick={() => setEditorId(item.legacyId)} className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">Otvori editor</button><button onClick={() => openCategoryEditor(item)} className="rounded border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-violet-700">Kategorije</button><Link href={`/web-shop/${item.legacyId}`} target="_blank" className="rounded border border-slate-200 px-2 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Pregled</Link></div></td>
                       </tr>
                     );
                   })}
@@ -3719,6 +3758,60 @@ export default function AdminWebshopPage() {
             <div className="mt-4 flex justify-end gap-2">
               <button onClick={() => setSaleEditorId(null)} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">Odustani</button>
               <button onClick={() => void saveProduct(currentSaleEditorItem.legacyId)} disabled={savingId === currentSaleEditorItem.legacyId} className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-emerald-700">{savingId === currentSaleEditorItem.legacyId ? "Cuvanje..." : "Sacuvaj"}</button>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {categoryEditorId != null && currentCategoryEditorItem ? (
+        <div className="fixed inset-0 z-50 flex items-end bg-slate-900/45 lg:items-center" onClick={() => setCategoryEditorId(null)}>
+          <div className="w-full rounded-t-2xl bg-white p-4 shadow-2xl lg:mx-auto lg:max-w-md lg:rounded-2xl" onClick={(e) => e.stopPropagation()}>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Kategorije proizvoda</p>
+            <h2 className="mt-1 text-base font-semibold text-slate-900 line-clamp-2">{currentCategoryEditorItem.name}</h2>
+            <p className="text-xs text-slate-500">#{currentCategoryEditorItem.legacyId} / {currentCategoryEditorItem.sku}</p>
+
+            <div className="mt-4">
+              {categoryRegistry.length === 0 ? (
+                <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  Nema kreiranih kategorija. Dodaj kategorije u admin/categories.
+                </p>
+              ) : (
+                <div className="grid gap-2">
+                  {categoryRegistry.map((cat) => {
+                    const checked = categoryEditorSelectedIds.has(cat.id);
+                    return (
+                      <label key={cat.id} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${checked ? "border-violet-200 bg-violet-50" : "border-slate-200 hover:bg-slate-50"}`}>
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) => {
+                            setCategoryEditorSelectedIds((prev) => {
+                              const next = new Set(prev);
+                              if (e.target.checked) next.add(cat.id);
+                              else next.delete(cat.id);
+                              return next;
+                            });
+                          }}
+                          className="h-4 w-4 accent-violet-600"
+                        />
+                        <div>
+                          <p className="text-sm font-semibold text-slate-900">{cat.name}</p>
+                          {cat.path.length > 1 ? (
+                            <p className="text-xs text-slate-500">{cat.path.join(" / ")}</p>
+                          ) : null}
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button onClick={() => setCategoryEditorId(null)} className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">Odustani</button>
+              <button onClick={() => void saveCategoryEditor()} disabled={savingCategoryEditor} className="rounded-full border border-violet-200 bg-violet-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-violet-700 disabled:opacity-50">
+                {savingCategoryEditor ? "Cuvanje..." : "Sacuvaj kategorije"}
+              </button>
             </div>
           </div>
         </div>
