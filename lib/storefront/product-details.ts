@@ -572,9 +572,14 @@ export const getProductDeclaration = (
   sizeOptions: ProductSizeOption[],
 ): ProductDetailField[] => {
   const name = getLocalizedCatalogProductName(product, lang);
+  const customDeclaration =
+    typeof product.rawPayload?.declaration === "string" &&
+    product.rawPayload.declaration.trim().length > 0
+      ? product.rawPayload.declaration.trim()
+      : null;
 
   if (lang === "en") {
-    return [
+    const fields: ProductDetailField[] = [
       { label: "Product", value: name },
       { label: "SKU", value: product.sku || "-" },
       { label: "Brand", value: product.brand || "Santos & Santorini" },
@@ -584,9 +589,11 @@ export const getProductDeclaration = (
         value: "Santos & Santorini, Obrenoviceva 9, Nis, Serbia",
       },
     ];
+    if (customDeclaration) fields.push({ label: "Note", value: customDeclaration });
+    return fields;
   }
 
-  return [
+  const fields: ProductDetailField[] = [
     { label: "Naziv proizvoda", value: name },
     { label: "SKU", value: product.sku || "-" },
     { label: "Brend", value: product.brand || "Santos & Santorini" },
@@ -596,113 +603,102 @@ export const getProductDeclaration = (
       value: "Santos & Santorini, Obrenoviceva 9, Nis, Srbija",
     },
   ];
+  if (customDeclaration) fields.push({ label: "Napomena", value: customDeclaration });
+  return fields;
+};
+
+const WASH_CARE_ICONS: ProductWashCareIcon[] = [
+  "gentleWash",
+  "dryCleaning",
+  "doNotBleach",
+  "lowIron",
+  "noTumbleDry",
+];
+
+const ALL_WASH_CARE_ITEMS_SR: Record<ProductWashCareIcon, ProductWashCareItem> = {
+  gentleWash: {
+    icon: "gentleWash",
+    title: "Pranje do 30C",
+    description: "Koristite nezan program pranja i blagi deterdzent.",
+  },
+  dryCleaning: {
+    icon: "dryCleaning",
+    title: "Hemijsko ciscenje",
+    description: "Za odela, sakoe i slicne krojene modele preporucuje se profesionalno ciscenje.",
+  },
+  doNotBleach: {
+    icon: "doNotBleach",
+    title: "Bez izbeljivaca",
+    description: "Izbeljivaci mogu ostetiti vlakna, boju i konstrukciju materijala.",
+  },
+  lowIron: {
+    icon: "lowIron",
+    title: "Peglanje na nizoj temperaturi",
+    description: "Peglajte pazljivo, najbolje preko tanke krpe ili sa nalicja.",
+  },
+  noTumbleDry: {
+    icon: "noTumbleDry",
+    title: "Bez susilice",
+    description: "Prirodno susenje cuva oblik i zavrsnu obradu proizvoda.",
+  },
+};
+
+const ALL_WASH_CARE_ITEMS_EN: Record<ProductWashCareIcon, ProductWashCareItem> = {
+  gentleWash: {
+    icon: "gentleWash",
+    title: "Gentle wash",
+    description: "Wash at up to 30C on a gentle program.",
+  },
+  dryCleaning: {
+    icon: "dryCleaning",
+    title: "Dry clean",
+    description: "Professional dry cleaning is recommended for tailored garments.",
+  },
+  doNotBleach: {
+    icon: "doNotBleach",
+    title: "Do not bleach",
+    description: "Bleach can damage fibers, color, and structure.",
+  },
+  lowIron: {
+    icon: "lowIron",
+    title: "Low iron",
+    description: "Iron at low temperature, ideally with a pressing cloth.",
+  },
+  noTumbleDry: {
+    icon: "noTumbleDry",
+    title: "No tumble dry",
+    description: "Let the garment air dry naturally on a hanger.",
+  },
 };
 
 export const getProductWashCare = (
   product: CatalogProductView,
   lang: StorefrontLanguage,
 ) => {
-  const tailored = isTailoredProduct(product);
+  const allItems = lang === "en" ? ALL_WASH_CARE_ITEMS_EN : ALL_WASH_CARE_ITEMS_SR;
+  const title =
+    lang === "en" ? "Wash care symbols and meanings" : "Wash care simboli i znacenje";
+  const note =
+    lang === "en"
+      ? "Always follow the original sewn-in care label if it differs from this guide."
+      : "Ako se originalna etiketa razlikuje od ovog vodica, pratite usivenu deklaraciju na proizvodu.";
 
-  if (lang === "en") {
-    return {
-      title: "Wash care symbols and meanings",
-      note: "Always follow the original sewn-in care label if it differs from this guide.",
-      items: tailored
-        ? [
-            {
-              icon: "dryCleaning" as const,
-              title: "Dry clean",
-              description: "Professional dry cleaning is recommended for tailored garments.",
-            },
-            {
-              icon: "doNotBleach" as const,
-              title: "Do not bleach",
-              description: "Bleach can damage fibers, color, and structure.",
-            },
-            {
-              icon: "lowIron" as const,
-              title: "Low iron",
-              description: "Iron at low temperature, ideally with a pressing cloth.",
-            },
-            {
-              icon: "noTumbleDry" as const,
-              title: "No tumble dry",
-              description: "Let the garment air dry naturally on a hanger.",
-            },
-          ]
-        : [
-            {
-              icon: "gentleWash" as const,
-              title: "Gentle wash",
-              description: "Wash at up to 30C on a gentle program.",
-            },
-            {
-              icon: "doNotBleach" as const,
-              title: "Do not bleach",
-              description: "Avoid bleach and aggressive whiteners.",
-            },
-            {
-              icon: "lowIron" as const,
-              title: "Low iron",
-              description: "Iron inside out at low temperature when needed.",
-            },
-            {
-              icon: "noTumbleDry" as const,
-              title: "No tumble dry",
-              description: "Air dry to preserve shape and finish.",
-            },
-          ],
-    };
+  const rawIcons = product.rawPayload?.washCareIcons;
+  const overrideIcons: ProductWashCareIcon[] | null =
+    Array.isArray(rawIcons) && rawIcons.length > 0
+      ? (rawIcons as string[]).filter((v): v is ProductWashCareIcon =>
+          WASH_CARE_ICONS.includes(v as ProductWashCareIcon),
+        )
+      : null;
+
+  if (overrideIcons && overrideIcons.length > 0) {
+    return { title, note, items: overrideIcons.map((icon) => allItems[icon]) };
   }
 
-  return {
-    title: "Wash care simboli i znacenje",
-    note: "Ako se originalna etiketa razlikuje od ovog vodica, pratite usivenu deklaraciju na proizvodu.",
-    items: tailored
-      ? [
-          {
-            icon: "dryCleaning" as const,
-            title: "Hemijsko ciscenje",
-            description: "Za odela, sakoe i slicne krojene modele preporucuje se profesionalno ciscenje.",
-          },
-          {
-            icon: "doNotBleach" as const,
-            title: "Bez izbeljivaca",
-            description: "Izbeljivaci mogu ostetiti vlakna, boju i konstrukciju materijala.",
-          },
-          {
-            icon: "lowIron" as const,
-            title: "Peglanje na nizoj temperaturi",
-            description: "Peglajte pazljivo, najbolje preko tanke krpe ili sa nalicja.",
-          },
-          {
-            icon: "noTumbleDry" as const,
-            title: "Bez masinskog susenja",
-            description: "Susite prirodno, na ofingeru ili ravnoj podlozi.",
-          },
-        ]
-      : [
-          {
-            icon: "gentleWash" as const,
-            title: "Pranje do 30C",
-            description: "Koristite nezan program pranja i blagi deterdzent.",
-          },
-          {
-            icon: "doNotBleach" as const,
-            title: "Bez izbeljivaca",
-            description: "Ne koristiti varikinu i jaka sredstva za beljenje.",
-          },
-          {
-            icon: "lowIron" as const,
-            title: "Peglanje na nizoj temperaturi",
-            description: "Po potrebi peglati sa nalicja kako bi se sacuvala struktura tkanine.",
-          },
-          {
-            icon: "noTumbleDry" as const,
-            title: "Bez susilice",
-            description: "Prirodno susenje cuva oblik i zavrsnu obradu proizvoda.",
-          },
-        ],
-  };
+  const tailored = isTailoredProduct(product);
+  const defaultIcons: ProductWashCareIcon[] = tailored
+    ? ["dryCleaning", "doNotBleach", "lowIron", "noTumbleDry"]
+    : ["gentleWash", "doNotBleach", "lowIron", "noTumbleDry"];
+
+  return { title, note, items: defaultIcons.map((icon) => allItems[icon]) };
 };

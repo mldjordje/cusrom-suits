@@ -12,7 +12,6 @@ import {
   applyPromotionRulesToProducts,
   listPromotionRules,
 } from "@/lib/catalog/promotions";
-import { hasUsableDisplayPrice } from "@/lib/catalog/pricing";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { revalidateTag, unstable_cache } from "next/cache";
 
@@ -1066,36 +1065,6 @@ const pickCollapsedRepresentative = (left: CatalogProductView, right: CatalogPro
   return right.legacyId > left.legacyId ? right : left;
 };
 
-const pickCollapsedPricingLeader = (left: CatalogProductView, right: CatalogProductView) => {
-  const leftUsable = hasUsableDisplayPrice(left);
-  const rightUsable = hasUsableDisplayPrice(right);
-
-  if (leftUsable !== rightUsable) {
-    return rightUsable ? right : left;
-  }
-
-  const leftDiscount = getCatalogDiscountPercent(left);
-  const rightDiscount = getCatalogDiscountPercent(right);
-
-  if (rightDiscount !== leftDiscount) {
-    return rightDiscount > leftDiscount ? right : left;
-  }
-
-  if (left.priceFinalGross !== right.priceFinalGross) {
-    return right.priceFinalGross > left.priceFinalGross ? right : left;
-  }
-
-  if (left.priceGross !== right.priceGross) {
-    return right.priceGross > left.priceGross ? right : left;
-  }
-
-  if (hasCatalogDiscount(left) !== hasCatalogDiscount(right)) {
-    return hasCatalogDiscount(right) ? right : left;
-  }
-
-  return pickCollapsedRepresentative(left, right);
-};
-
 const collapseCatalogProductsByKey = (
   items: CatalogProductView[],
   getKey: (item: CatalogProductView) => string,
@@ -1128,7 +1097,6 @@ const collapseCatalogProductsByKey = (
     // Compute representative first so its images are ordered first in the merged pool.
     // This ensures the listing card's first image always matches the detail page.
     const representative = pickCollapsedRepresentative(current, item);
-    const pricingLeader = pickCollapsedPricingLeader(current, item);
 
     const repImages = representative.legacyId === current.legacyId ? current.images : item.images;
     const otherImages = representative.legacyId === current.legacyId ? item.images : current.images;
@@ -1153,11 +1121,7 @@ const collapseCatalogProductsByKey = (
       ...((current.rawPayload?.collapsedVariantIds as number[] | undefined) || [current.legacyId]),
       ...((item.rawPayload?.collapsedVariantIds as number[] | undefined) || [item.legacyId]),
     ]);
-    const mergedDiscountPercent = Math.max(
-      getCatalogDiscountPercent(current),
-      getCatalogDiscountPercent(item),
-      getCatalogDiscountPercent(pricingLeader),
-    );
+    const mergedDiscountPercent = getCatalogDiscountPercent(representative);
     const mergedHasDirectMedia = current.hasDirectMedia || item.hasDirectMedia;
     const directMediaSource =
       hasCatalogProductDirectMedia(representative)
@@ -1173,7 +1137,6 @@ const collapseCatalogProductsByKey = (
       collapsedVariantIds: Array.from(collapsedVariantIds).sort((a, b) => a - b),
       collapsedVariantCount: collapsedVariantIds.size,
       collapsedRepresentativeLegacyId: representative.legacyId,
-      collapsedPricingSourceLegacyId: pricingLeader.legacyId,
     };
     if (directMediaSource) delete rawPayload.imageFallback;
 
@@ -1189,8 +1152,8 @@ const collapseCatalogProductsByKey = (
       specificationEn: representative.specificationEn || current.specificationEn || item.specificationEn,
       manufCode: representative.manufCode || current.manufCode || item.manufCode,
       brand: representative.brand || current.brand || item.brand,
-      priceGross: pricingLeader.priceGross,
-      priceFinalGross: pricingLeader.priceFinalGross,
+      priceGross: representative.priceGross,
+      priceFinalGross: representative.priceFinalGross,
       rebatePercent: mergedDiscountPercent,
       coverImage: representative.coverImage || current.coverImage || item.coverImage,
       videoUrl: representative.videoUrl || current.videoUrl || item.videoUrl,

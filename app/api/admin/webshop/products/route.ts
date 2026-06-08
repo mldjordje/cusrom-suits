@@ -37,6 +37,8 @@ type ProductUpdatePayload = {
   coverImage?: string | null;
   businessUniform?: boolean;
   priceOverride?: boolean;
+  declaration?: string | null;
+  washCareIcons?: string[] | null;
 };
 
 type ProductCreatePayload = {
@@ -289,7 +291,9 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
     patch.landingPriority !== undefined ||
     patch.videoUrl !== undefined ||
     patch.businessUniform !== undefined ||
-    patch.priceOverride !== undefined
+    patch.priceOverride !== undefined ||
+    patch.declaration !== undefined ||
+    patch.washCareIcons !== undefined
   ) {
     const { data: existing, error: rawError } = await supabase
       .from("catalog_products")
@@ -333,6 +337,12 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
           ...currentMedia,
           ...(patch.videoUrl !== undefined ? { videoUrl: patch.videoUrl } : {}),
         },
+        ...(patch.declaration !== undefined
+          ? { declaration: patch.declaration || null }
+          : {}),
+        ...(patch.washCareIcons !== undefined
+          ? { washCareIcons: Array.isArray(patch.washCareIcons) && patch.washCareIcons.length > 0 ? patch.washCareIcons : null }
+          : {}),
       },
       patch.businessUniform,
     );
