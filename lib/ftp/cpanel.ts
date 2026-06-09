@@ -1,4 +1,6 @@
 import * as ftp from "basic-ftp";
+import { writeFile, unlink } from "fs/promises";
+import os from "os";
 import path from "path";
 
 const FTP_HOST = process.env.FTP_HOST || "";
@@ -12,14 +14,16 @@ export function isFtpConfigured() {
   return Boolean(FTP_HOST && FTP_USER && FTP_PASS);
 }
 
+/** Uploads a buffer to cPanel via FTP. Returns the public /fajlovi/... path or throws on failure. */
 export async function uploadViaCpanel(
   fileBuffer: Buffer,
   remoteName: string,
   subDir: string,
-): Promise<string | null> {
-  if (!isFtpConfigured()) return null;
+): Promise<string> {
+  const tmpPath = path.join(os.tmpdir(), `ftp-${Date.now()}-${remoteName}`);
+  await writeFile(tmpPath, fileBuffer);
 
-  const client = new ftp.Client();
+  const client = new ftp.Client(30000);
   client.ftp.verbose = false;
 
   try {
@@ -33,16 +37,11 @@ export async function uploadViaCpanel(
 
     const remoteDir = `${FTP_REMOTE_BASE}/${subDir}`.replace(/\/+/g, "/");
     await client.ensureDir(remoteDir);
-
-    const { Readable } = await import("stream");
-    const stream = Readable.from(fileBuffer);
-    await client.uploadFrom(stream, `${remoteDir}/${remoteName}`);
+    await client.uploadFrom(tmpPath, `${remoteDir}/${remoteName}`);
 
     return `/fajlovi/site-assets/${subDir}/${remoteName}`;
-  } catch (err) {
-    console.error("[FTP] upload failed:", err);
-    return null;
   } finally {
     client.close();
+    unlink(tmpPath).catch(() => {});
   }
 }

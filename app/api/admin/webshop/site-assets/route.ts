@@ -127,20 +127,23 @@ export async function POST(req: NextRequest) {
     }
 
     if (useFtp) {
-      const url = await uploadViaCpanel(buffer, finalName, today);
-      if (!url) {
+      try {
+        const url = await uploadViaCpanel(buffer, finalName, today);
+        urls.push(url);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err);
+        console.error("[site-assets] FTP upload failed:", msg);
         return NextResponse.json(
-          { success: false, message: `"${file.name}" nije mogao da se sacuva na serveru.` },
+          { success: false, message: `FTP greška: ${msg}` },
           { status: 500 },
         );
       }
-      urls.push(url);
     } else {
       const storagePath = `${today}/${finalName}`;
       const uploaded = await uploadSiteAsset(storagePath, buffer, file.type || null);
       if (!uploaded) {
         return NextResponse.json(
-          { success: false, message: `"${file.name}" nije mogao da se sacuva na storage-u.` },
+          { success: false, message: `"${file.name}" nije mogao da se sacuva na storage-u. (Supabase fallback)` },
           { status: 500 },
         );
       }
