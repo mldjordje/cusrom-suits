@@ -53,6 +53,7 @@ const navSections: NavSection[] = [
     label: "Sadrzaj",
     items: [
       { href: "/admin/landing", label: "Pocetna i sekcije", icon: "LC" },
+      { href: "/admin/poslovne-uniforme", label: "Poslovne uniforme", icon: "UN" },
       { href: "/admin/site-content", label: "Site Content", icon: "SC" },
       { href: "/admin/blog-posts", label: "Blog", icon: "BL" },
     ],
