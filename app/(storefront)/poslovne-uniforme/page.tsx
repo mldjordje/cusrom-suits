@@ -10,6 +10,7 @@ import {
   buildUniformProducts,
   resolveUniformImages,
   resolveUniformVideos,
+  BUNDLED_UNIFORM_DOCUMENTS,
 } from "@/lib/storefront/uniforms";
 
 export const metadata = {
@@ -61,9 +62,21 @@ export default async function BusinessUniformsPage({
                 <a href="#uniforme-upit" className="btn btn-primary text-uppercase fw-medium">
                   {isEn ? "Send inquiry" : "Posalji upit"}
                 </a>
-                <Link href={withLang("/dokumenta")} className="btn btn-light text-uppercase fw-medium">
-                  {isEn ? "Documents" : "Dokumenta"}
-                </Link>
+                {BUNDLED_UNIFORM_DOCUMENTS.map((doc) => (
+                  <a
+                    key={doc.file}
+                    href={doc.file}
+                    download
+                    className="btn btn-light text-uppercase fw-medium d-inline-flex align-items-center gap-2"
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="7 10 12 15 17 10" />
+                      <line x1="12" y1="15" x2="12" y2="3" />
+                    </svg>
+                    {isEn ? doc.titleEn : doc.title}
+                  </a>
+                ))}
               </div>
             </Reveal>
           </div>

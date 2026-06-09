@@ -1,73 +1,135 @@
 import type { LandingSettings } from "@/lib/catalog/landingSettings";
 
-export type UniformImage = { title?: string; image: string; alt?: string };
+export type UniformImage = { title?: string; image: string; alt?: string; gallery?: string[] };
 export type UniformVideo = { title?: string; video: string; poster?: string; alt?: string };
 export type UniformDocument = { title: string; titleEn: string; file: string };
 
-// Bundled media from public/fajlovi/uniforme/. Used when admin settings are empty
-// (e.g. an empty production database), so the page is never blank.
+const u = (f: string) => `/fajlovi/uniforme/${f}`;
+
+// Bundled media from public/fajlovi/uniforme/. Used when admin settings are empty.
+// Each item's gallery[] = images specific to that outfit (from old-site PHP groupings).
 export const BUNDLED_UNIFORM_IMAGES: UniformImage[] = [
-  { title: "Hospitality kolekcija", image: "/fajlovi/uniforme/BRI04849.jpg", alt: "Santos poslovna uniforma za hospitality tim" },
-  { title: "Recepcija i menadzment", image: "/fajlovi/uniforme/BRI04875.jpg", alt: "Santos poslovna uniforma za recepciju" },
-  { title: "Zenska uniforma mantil", image: "/fajlovi/uniforme/BRI04899.jpg", alt: "Santos zenska poslovna uniforma mantil" },
-  { title: "Pantalone i jakna", image: "/fajlovi/uniforme/BRI04939.jpg", alt: "Santos poslovna uniforma pantalone i jakna" },
-  { title: "Timski setovi", image: "/fajlovi/uniforme/BRI04963.jpg", alt: "Santos poslovne uniforme za kompanijske timove" },
-  { title: "Uniforma za timove", image: "/fajlovi/uniforme/BRI04988.jpg", alt: "Santos komplet poslovne uniforme za timove" },
-  { title: "Muski komplet", image: "/fajlovi/uniforme/BRI04786.jpg", alt: "Santos muski poslovni komplet" },
-  { title: "Sako i suknja", image: "/fajlovi/uniforme/BRI04820.jpg", alt: "Santos poslovna uniforma sako i suknja" },
-  { title: "Kosulja i kravata", image: "/fajlovi/uniforme/BRI04807.jpg", alt: "Santos poslovna kosulja i kravata" },
-  { title: "Kolekcija haljina", image: "/fajlovi/uniforme/BRI04927.jpg", alt: "Santos poslovna uniforma kolekcija haljina" },
-  { title: "Zimska kolekcija", image: "/fajlovi/uniforme/BRI04762.jpg", alt: "Santos zimska poslovna uniforma" },
-  { title: "Plave uniforme", image: "/fajlovi/uniforme/BRI04980.jpg", alt: "Santos plave poslovne uniforme" },
+  {
+    title: "Hospitality kolekcija",
+    image: u("BRI04849.jpg"),
+    alt: "Santos poslovna uniforma za hospitality tim",
+    gallery: [u("BRI04849.jpg"), u("BRI04854.jpg"), u("BRI04852.jpg"), u("BRI04860.jpg")],
+  },
+  {
+    title: "Recepcija i menadzment",
+    image: u("BRI04875.jpg"),
+    alt: "Santos poslovna uniforma za recepciju i menadzment",
+    gallery: [u("BRI04875.jpg"), u("BRI04873.jpg"), u("BRI04877.jpg"), u("BRI04880.jpg")],
+  },
+  {
+    title: "Elegantna kolekcija",
+    image: u("BRI04929.jpg"),
+    alt: "Santos elegantna poslovna uniforma",
+    gallery: [u("BRI04929.jpg"), u("BRI04927.jpg"), u("BRI04931.jpg"), u("BRI04933.jpg")],
+  },
+  {
+    title: "Pantalone i jakna",
+    image: u("BRI04939.jpg"),
+    alt: "Santos poslovna uniforma pantalone i jakna",
+    gallery: [u("BRI04939.jpg"), u("BRI04997.jpg"), u("BRI04998.jpg"), u("BRI04933.jpg")],
+  },
+  {
+    title: "Timski setovi",
+    image: u("BRI04963.jpg"),
+    alt: "Santos poslovne uniforme za kompanijske timove",
+    gallery: [u("BRI04963.jpg"), u("BRI04971.jpg"), u("BRI04962.jpg"), u("BRI04966.jpg")],
+  },
+  {
+    title: "Uniforma za timove",
+    image: u("BRI04988.jpg"),
+    alt: "Santos komplet poslovne uniforme za timove",
+    gallery: [u("BRI04988.jpg"), u("BRI04987.jpg"), u("BRI04977.jpg"), u("BRI04980.jpg"), u("BRI04985.jpg")],
+  },
+  {
+    title: "Muski komplet",
+    image: u("BRI04787.jpg"),
+    alt: "Santos muski poslovni komplet",
+    gallery: [u("BRI04787.jpg"), u("BRI04793.jpg"), u("BRI04795.jpg"), u("BRI04785.jpg"), u("BRI04786.jpg")],
+  },
+  {
+    title: "Sako i suknja",
+    image: u("BRI04820.jpg"),
+    alt: "Santos poslovna uniforma sako i suknja",
+    gallery: [u("BRI04820.jpg"), u("BRI04823.jpg"), u("BRI04829.jpg"), u("BRI04832.jpg"), u("BRI04841.jpg")],
+  },
+  {
+    title: "Kosulja i kravata",
+    image: u("BRI04807.jpg"),
+    alt: "Santos poslovna kosulja i kravata",
+    gallery: [u("BRI04807.jpg"), u("BRI04802.jpg"), u("BRI04814.jpg"), u("BRI04812.jpg"), u("BRI04806.jpg")],
+  },
+  {
+    title: "Kolekcija haljina",
+    image: u("BRI05003.jpg"),
+    alt: "Santos poslovna uniforma kolekcija haljina",
+    gallery: [u("BRI05003.jpg"), u("BRI05005.jpg"), u("BRI05008.jpg"), u("BRI05007.jpg"), u("BRI05009.jpg")],
+  },
+  {
+    title: "Zimska kolekcija",
+    image: u("BRI04762.jpg"),
+    alt: "Santos zimska poslovna uniforma",
+    gallery: [u("BRI04762.jpg"), u("BRI04763.jpg"), u("BRI04764.jpg"), u("BRI04766.jpg"), u("BRI04775.jpg")],
+  },
+  {
+    title: "Plave uniforme",
+    image: u("BRI04907.jpg"),
+    alt: "Santos plave poslovne uniforme",
+    gallery: [u("BRI04907.jpg"), u("BRI04908.jpg"), u("BRI04952.jpg"), u("BRI04901.jpg"), u("BRI04903.jpg")],
+  },
 ];
 
 export const BUNDLED_UNIFORM_VIDEOS: UniformVideo[] = [
   {
     title: "Zenska uniforma mantil",
-    video: "/fajlovi/uniforme/Santos%20zenska%20uniforma%20mantil.mp4",
-    poster: "/fajlovi/uniforme/BRI04899.jpg",
+    video: u("Santos%20zenska%20uniforma%20mantil.mp4"),
+    poster: u("BRI04849.jpg"),
     alt: "Santos video prezentacija zenske poslovne uniforme",
   },
   {
     title: "Kosulja kratak rukav",
-    video: "/fajlovi/uniforme/Santos%20uniforma%20kosulja%20kratak%20rukav.mp4",
-    poster: "/fajlovi/uniforme/BRI04875.jpg",
+    video: u("Santos%20uniforma%20kosulja%20kratak%20rukav.mp4"),
+    poster: u("BRI04875.jpg"),
     alt: "Santos video prezentacija poslovne kosulje kratkog rukava",
   },
   {
     title: "Pantalone i jakna",
-    video: "/fajlovi/uniforme/Santos%20uniforma%20pantalone%20jakna.mp4",
-    poster: "/fajlovi/uniforme/BRI04939.jpg",
+    video: u("Santos%20uniforma%20pantalone%20jakna.mp4"),
+    poster: u("BRI04939.jpg"),
     alt: "Santos video prezentacija kompleta pantalone i jakna",
   },
   {
     title: "Muski mantil",
-    video: "/fajlovi/uniforme/Santos%20uniforma%20%20muski%20mantil.mp4",
-    poster: "/fajlovi/uniforme/BRI04786.jpg",
+    video: u("Santos%20uniforma%20%20muski%20mantil.mp4"),
+    poster: u("BRI04787.jpg"),
     alt: "Santos video prezentacija muskog mantila",
   },
   {
     title: "Uniforma mantil",
-    video: "/fajlovi/uniforme/Santos%20uniforma%20mantil.mp4",
-    poster: "/fajlovi/uniforme/BRI04988.jpg",
+    video: u("Santos%20uniforma%20mantil.mp4"),
+    poster: u("BRI04988.jpg"),
     alt: "Santos video prezentacija uniforme sa mantilom",
   },
   {
     title: "Sako, suknja i marama",
-    video: "/fajlovi/uniforme/Santos%20uniforma%20sako%20suknja%20marama.mp4",
-    poster: "/fajlovi/uniforme/BRI04820.jpg",
+    video: u("Santos%20uniforma%20sako%20suknja%20marama.mp4"),
+    poster: u("BRI04820.jpg"),
     alt: "Santos video prezentacija sako suknja marama",
   },
   {
     title: "Haljina",
-    video: "/fajlovi/uniforme/Santos%20uniforma%20haljina.mp4",
-    poster: "/fajlovi/uniforme/BRI04927.jpg",
+    video: u("Santos%20uniforma%20haljina.mp4"),
+    poster: u("BRI05003.jpg"),
     alt: "Santos video prezentacija poslovne haljine",
   },
   {
     title: "Crna muska kosulja",
-    video: "/fajlovi/uniforme/Santos%20uniforma%20crna%20muska%20kosulja%20crna.mp4",
-    poster: "/fajlovi/uniforme/BRI04807.jpg",
+    video: u("Santos%20uniforma%20crna%20muska%20kosulja%20crna.mp4"),
+    poster: u("BRI04807.jpg"),
     alt: "Santos video prezentacija crne muske poslovne kosulje",
   },
 ];
@@ -76,17 +138,17 @@ export const BUNDLED_UNIFORM_DOCUMENTS: UniformDocument[] = [
   {
     title: "Santos & Santorini prezentacija",
     titleEn: "Santos & Santorini presentation",
-    file: "/fajlovi/uniforme/Santos%26Santorini%20prezentacija1%20.pdf",
+    file: u("Santos%26Santorini%20prezentacija1%20.pdf"),
   },
   {
     title: "Katalog poslovnih uniformi (srp)",
     titleEn: "Business uniforms catalogue (srp)",
-    file: "/fajlovi/uniforme/Santos%26Santorini%20srp1.pdf",
+    file: u("Santos%26Santorini%20srp1.pdf"),
   },
   {
     title: "Prezentacija S&S",
     titleEn: "S&S presentation",
-    file: "/fajlovi/uniforme/prez%20S%26S.pdf",
+    file: u("prez%20S%26S.pdf"),
   },
 ];
 
@@ -124,12 +186,9 @@ export type UniformProduct = {
   title: string;
   description: string;
   cover: string;
-  /** This model's image first, then the rest of the collection. */
   gallery: string[];
 };
 
-/** Builds the uniform "products" with stable slugs and a multi-image gallery.
- *  `localize` localizes title/alt text (pass the page's tx helper). */
 export const buildUniformProducts = (
   images: UniformImage[],
   localize: (value: string, fallbackEn?: string) => string,
@@ -145,7 +204,12 @@ export const buildUniformProducts = (
       (isEn ? "Business uniform" : "Poslovna uniforma");
     const baseSlug = toUniformSlug(item.title || item.alt || `uniform-${index + 1}`) || `uniform-${index + 1}`;
     const cover = item.image;
-    const gallery = [cover, ...allImages.filter((image) => image !== cover)];
+
+    // Use per-product gallery if provided, otherwise fall back to all images (admin-configured items)
+    const gallery = item.gallery
+      ? [cover, ...item.gallery.filter((img) => img !== cover)]
+      : [cover, ...allImages.filter((img) => img !== cover)];
+
     return {
       slug: `${baseSlug}-${index + 1}`,
       title,

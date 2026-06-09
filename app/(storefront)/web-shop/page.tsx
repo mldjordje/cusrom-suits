@@ -237,6 +237,14 @@ export default async function WebShopPage({
     "54",
     "56",
     "58",
+    // Belt sizes (mOffice codes: 05=105cm, 10=110cm, 15=115cm, 20=120cm, 25=125cm, 30=130cm, 35=135cm)
+    "05",
+    "10",
+    "15",
+    "20",
+    "25",
+    "30",
+    "35",
   ];
   const sizeOccurrences = new Map<string, number>();
   for (const item of result.items) {

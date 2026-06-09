@@ -517,7 +517,7 @@ const CATEGORY_GROUP_PRIORITY: Record<string, number> = {
 };
 
 // Sub-keys that are rolled up under the "Aksesoari" parent group.
-export const ACCESSORY_SUB_KEYS = new Set(["kais", "kravata", "obuca", "novcanik", "card-holder", "torba"]);
+export const ACCESSORY_SUB_KEYS = new Set(["kais", "kravata", "novcanik", "card-holder", "torba"]);
 
 /**
  * Group keys a product belongs to. Derived from its categories AND from its name +

@@ -22,7 +22,7 @@ type HeaderNavItem = {
   label: string;
 };
 
-const SHOP_CATEGORIES_SESSION_KEY = "ss-shop-categories-v2";
+const SHOP_CATEGORIES_SESSION_KEY = "ss-shop-categories-v3";
 
 export default function StorefrontHeaderClient({
   lang = "sr",
@@ -280,7 +280,7 @@ export default function StorefrontHeaderClient({
                                   prefetch
                                   className="ss-shop-dd-cat"
                                 >
-                                  {category.name}
+                                  {localizeDynamicCategoryLabel(category.name, isEn ? "en" : "sr")}
                                 </Link>
                               ))}
                             </div>
