@@ -49,7 +49,15 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
   const cleanImages = useMemo(
     () =>
       Array.from(
-        new Set(images.map((img) => String(img || "").trim()).filter((img) => img.length > 0)),
+        new Set(
+          images
+            .map((img) => String(img || "").trim())
+            .filter((img) => {
+              if (!img.length) return false;
+              // Exclude video files — they can't render as <img>
+              return !/\.(mp4|webm|mov|avi|mpeg|mpg|m4v)(\?.*)?$/i.test(img);
+            }),
+        ),
       ),
     [images],
   );
@@ -91,7 +99,15 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
   const imageItems = activeGallery.filter((item) => item.kind === "image");
 
   useEffect(() => {
-    setActiveIndex((current) => Math.min(current, Math.max(activeGallery.length - 1, 0)));
+    setActiveIndex((current) => {
+      const clamped = Math.min(current, Math.max(activeGallery.length - 1, 0));
+      // Never auto-land on the video item — stay on the last image if images exist
+      if (activeGallery[clamped]?.kind === "video") {
+        const lastImageIdx = activeGallery.map((item, i) => item.kind === "image" ? i : -1).filter(i => i >= 0).pop();
+        if (lastImageIdx != null) return lastImageIdx;
+      }
+      return clamped;
+    });
   }, [activeGallery.length]);
 
   const openLightbox = useCallback((index: number) => {
@@ -172,6 +188,7 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
                 src={activeItem.src}
                 controls
                 playsInline
+                autoPlay={false}
                 preload="metadata"
                 className="ss-product-gallery__main-video"
                 poster={activeItem.thumbnail || undefined}
