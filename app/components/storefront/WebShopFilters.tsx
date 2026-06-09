@@ -263,7 +263,7 @@ export default function WebShopFilters({
           inputMode="numeric"
           min={priceFloorInput}
           max={priceCeilingInput}
-          step={500}
+          step={1}
           defaultValue={priceMin > 0 ? priceMin : ""}
           placeholder={priceFloorInput ? String(priceFloorInput) : isEn ? "From" : "Od"}
           className="form-control"
@@ -275,7 +275,7 @@ export default function WebShopFilters({
           inputMode="numeric"
           min={priceFloorInput}
           max={priceCeilingInput}
-          step={500}
+          step={1}
           defaultValue={priceMax > 0 ? priceMax : ""}
           placeholder={priceCeilingInput ? String(priceCeilingInput) : isEn ? "To" : "Do"}
           className="form-control"

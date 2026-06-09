@@ -57,7 +57,7 @@ function CustomSuitsComingSoon() {
 }
 
 export default function CustomSuitsPage() {
-  return <CustomSuitsConfigurator />;
+  return <CustomSuitsComingSoon />;
 }
 
 function CustomSuitsConfigurator() {

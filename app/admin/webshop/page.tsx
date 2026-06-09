@@ -764,6 +764,7 @@ export default function AdminWebshopPage() {
   const [uploadingBanner, setUploadingBanner] = useState<"left" | "right" | null>(null);
   const [uploadingAssetKind, setUploadingAssetKind] =
     useState<"shopHero" | "documents" | "uniforms" | "storyCard" | "productVideo" | null>(null);
+  const [uploadingEditorVideoId, setUploadingEditorVideoId] = useState<number | null>(null);
   const [landingProductQuery, setLandingProductQuery] = useState("");
   const [landingProductResults, setLandingProductResults] = useState<CatalogProduct[]>([]);
   const [landingProductsLoading, setLandingProductsLoading] = useState(false);
@@ -1472,7 +1473,7 @@ export default function AdminWebshopPage() {
 
   const uploadEditorVideo = async (legacyId: number, files: FileList | null) => {
     if (!files?.length) return;
-    setUploadingAssetKind("productVideo");
+    setUploadingEditorVideoId(legacyId);
     setError(null);
     setNotice(null);
     try {
@@ -1481,9 +1482,9 @@ export default function AdminWebshopPage() {
       updateDraft(legacyId, { videoUrl: url });
       setNotice(`Video za artikal #${legacyId} je uploadovan. Klikni Sacuvaj.`);
     } catch (e: any) {
-      setError(e?.message || "Upload product videa nije uspeo.");
+      setError(e?.message || "Upload video klipa nije uspeo. Proverite da li je fajl manji od 80MB.");
     } finally {
-      setUploadingAssetKind(null);
+      setUploadingEditorVideoId(null);
     }
   };
 
@@ -3806,17 +3807,18 @@ export default function AdminWebshopPage() {
             <div className="mt-4 rounded-2xl border border-slate-200 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Video proizvoda</p>
-                <label className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">
+                <label className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700" style={{ cursor: "pointer" }}>
                   <input
                     type="file"
-                    accept="video/mp4,video/webm,video/quicktime"
+                    accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/mpeg"
                     className="hidden"
+                    disabled={uploadingEditorVideoId === currentEditorItem.legacyId}
                     onChange={(e) => {
                       void uploadEditorVideo(currentEditorItem.legacyId, e.target.files);
                       e.currentTarget.value = "";
                     }}
                   />
-                  {uploadingAssetKind === "productVideo" ? "Uploading..." : "Upload video"}
+                  {uploadingEditorVideoId === currentEditorItem.legacyId ? "Uploading..." : "Upload video"}
                 </label>
               </div>
               {drafts[currentEditorItem.legacyId]?.videoUrl ? (

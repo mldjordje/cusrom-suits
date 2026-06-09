@@ -77,6 +77,7 @@ export type CatalogListResult = {
   totalPages: number;
   categories: CatalogCategory[];
   categoryGroups: CatalogCategoryGroup[];
+  priceRange: { min: number; max: number };
 };
 
 export type CatalogListInput = {
@@ -475,6 +476,7 @@ export const normalizeCatalogCategoryGroupKey = (value: string) => {
   if (/card holder/.test(normalized)) return "card-holder";
   if (/torb/.test(normalized)) return "torba";
   if (/prsluk|vest/.test(normalized)) return "prsluk";
+  if (/aksesoa|accessor/.test(normalized)) return "aksesoari";
   return "";
 };
 
@@ -486,6 +488,7 @@ const CATEGORY_GROUP_LABELS: Record<string, string> = {
   kaput: "Kaputi",
   jakna: "Jakne",
   dzemper: "Dzemperi",
+  aksesoari: "Aksesoari",
   obuca: "Obuca",
   kais: "Kaisevi",
   kravata: "Kravate",
@@ -503,14 +506,18 @@ const CATEGORY_GROUP_PRIORITY: Record<string, number> = {
   kaput: 5,
   jakna: 6,
   dzemper: 7,
-  obuca: 8,
-  kais: 9,
-  kravata: 10,
-  prsluk: 11,
-  novcanik: 12,
-  "card-holder": 13,
-  torba: 14,
+  aksesoari: 8,
+  obuca: 9,
+  kais: 10,
+  kravata: 11,
+  prsluk: 12,
+  novcanik: 13,
+  "card-holder": 14,
+  torba: 15,
 };
+
+// Sub-keys that are rolled up under the "Aksesoari" parent group.
+export const ACCESSORY_SUB_KEYS = new Set(["kais", "kravata", "obuca", "novcanik", "card-holder", "torba"]);
 
 /**
  * Group keys a product belongs to. Derived from its categories AND from its name +
@@ -533,7 +540,11 @@ const getCatalogProductGroupKeys = (item: CatalogProductView): Set<string> => {
 export const productMatchesCategoryGroup = (item: CatalogProductView, groupKey: string) => {
   const wanted = normalizeCatalogCategoryGroupKey(groupKey);
   if (!wanted) return false;
-  return getCatalogProductGroupKeys(item).has(wanted);
+  const keys = getCatalogProductGroupKeys(item);
+  if (wanted === "aksesoari") {
+    return keys.has("aksesoari") || [...keys].some((k) => ACCESSORY_SUB_KEYS.has(k));
+  }
+  return keys.has(wanted);
 };
 
 const applyFilters = (
@@ -651,6 +662,19 @@ const collectCategoryGroups = (items: CatalogProductView[]): CatalogCategoryGrou
       map.set(key, existing);
     }
   }
+
+  // Synthesize the "Aksesoari" parent group from all accessory sub-keys.
+  const accessoryGroup: CatalogCategoryGroup = { key: "aksesoari", name: "Aksesoari", ids: [], count: 0 };
+  for (const subKey of ACCESSORY_SUB_KEYS) {
+    const sub = map.get(subKey);
+    if (!sub) continue;
+    accessoryGroup.count += sub.count;
+    for (const id of sub.ids) {
+      if (!accessoryGroup.ids.includes(id)) accessoryGroup.ids.push(id);
+    }
+    map.delete(subKey);
+  }
+  if (accessoryGroup.count > 0) map.set("aksesoari", accessoryGroup);
 
   return Array.from(map.values()).sort((a, b) => {
     const priorityDiff =
@@ -1558,6 +1582,14 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const categoryGroups = collectCategoryGroups(filtered);
   const paginateMs = Date.now() - paginateStart;
 
+  const priceValues = filtered
+    .map((item) => Number(item.priceFinalGross || 0))
+    .filter((n) => Number.isFinite(n) && n > 0);
+  const priceRange = {
+    min: priceValues.length ? Math.floor(Math.min(...priceValues)) : 0,
+    max: priceValues.length ? Math.ceil(Math.max(...priceValues)) : 0,
+  };
+
   const result: CatalogListResult = {
     items: paged,
     total,
@@ -1566,6 +1598,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     totalPages,
     categories,
     categoryGroups,
+    priceRange,
   };
 
   listCache.set(cacheKey, {

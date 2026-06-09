@@ -1,8 +1,8 @@
 import { randomUUID } from "crypto";
-import fs from "fs/promises";
 import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
+import { uploadViaCpanel, isFtpConfigured } from "@/lib/ftp/cpanel";
 import { uploadSiteAsset } from "@/lib/storage/siteAssets";
 
 const MAX_FILES_PER_REQUEST = 12;
@@ -22,6 +22,8 @@ const ALLOWED_TYPES = new Set([
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-powerpoint",
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
 ]);
 const ALLOWED_EXTENSIONS = new Set([
   ".jpg",
@@ -41,7 +43,11 @@ const ALLOWED_EXTENSIONS = new Set([
   ".docx",
   ".xls",
   ".xlsx",
+  ".ppt",
+  ".pptx",
 ]);
+
+const IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 const sanitizeFileSegment = (value: string) =>
   String(value || "")
@@ -51,6 +57,18 @@ const sanitizeFileSegment = (value: string) =>
     .replace(/-+/g, "-")
     .replace(/^-|-$/g, "")
     .toLowerCase();
+
+async function compressImage(buffer: Buffer, mimeType: string): Promise<Buffer> {
+  try {
+    const sharp = (await import("sharp")).default;
+    if (mimeType === "image/png") {
+      return await sharp(buffer).png({ compressionLevel: 8 }).toBuffer();
+    }
+    return await sharp(buffer).jpeg({ quality: 82, mozjpeg: true }).toBuffer();
+  } catch {
+    return buffer;
+  }
+}
 
 export async function POST(req: NextRequest) {
   if (!hasAdminToken(req)) {
@@ -74,19 +92,12 @@ export async function POST(req: NextRequest) {
   }
 
   const today = new Date().toISOString().slice(0, 10);
-  const outputDir = path.join(process.cwd(), "public", "site-assets", today);
-  let localMirrorAvailable = true;
-  try {
-    await fs.mkdir(outputDir, { recursive: true });
-  } catch {
-    localMirrorAvailable = false;
-  }
-
   const urls: string[] = [];
+  const useFtp = isFtpConfigured();
 
   for (const file of files) {
     if (file.size > MAX_FILE_SIZE_BYTES) {
-        return NextResponse.json(
+      return NextResponse.json(
         { success: false, message: `"${file.name}" prelazi limit od 80MB.` },
         { status: 400 },
       );
@@ -100,31 +111,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const isImage = IMAGE_TYPES.has(file.type);
     const baseName = sanitizeFileSegment(path.basename(file.name || "fajl", ext)) || "fajl";
-    const cleanExt = ext ? `.${sanitizeFileSegment(ext.replace(/^\./, "")) || ext.replace(/^\./, "").toLowerCase()}` : "";
+    const cleanExt = ext
+      ? `.${sanitizeFileSegment(ext.replace(/^\./, "")) || ext.replace(/^\./, "").toLowerCase()}`
+      : "";
     const finalName = `${Date.now()}-${randomUUID()}-${baseName}${cleanExt}`;
-    const storagePath = `${today}/${finalName}`;
-    const outputPath = path.join(outputDir, finalName);
-    const buffer = Buffer.from(await file.arrayBuffer());
 
-    const uploaded = await uploadSiteAsset(storagePath, buffer, file.type || null);
-    if (!uploaded) {
-      if (!localMirrorAvailable) {
+    let buffer = Buffer.from(await file.arrayBuffer()) as Buffer;
+
+    if (isImage) {
+      buffer = await compressImage(buffer, file.type);
+    }
+
+    if (useFtp) {
+      const url = await uploadViaCpanel(buffer, finalName, today);
+      if (!url) {
+        return NextResponse.json(
+          { success: false, message: `"${file.name}" nije mogao da se sacuva na serveru.` },
+          { status: 500 },
+        );
+      }
+      urls.push(url);
+    } else {
+      const storagePath = `${today}/${finalName}`;
+      const uploaded = await uploadSiteAsset(storagePath, buffer, file.type || null);
+      if (!uploaded) {
         return NextResponse.json(
           { success: false, message: `"${file.name}" nije mogao da se sacuva na storage-u.` },
           { status: 500 },
         );
       }
-      await fs.writeFile(outputPath, buffer);
-    } else if (localMirrorAvailable) {
-      try {
-        await fs.writeFile(outputPath, buffer);
-      } catch {
-        // Local mirror is best-effort only on read-only deployments.
-      }
+      urls.push(`/site-assets/${storagePath}`);
     }
-
-    urls.push(`/site-assets/${storagePath}`);
   }
 
   return NextResponse.json({ success: true, urls });

@@ -135,6 +135,8 @@ const nextConfig: NextConfig = {
       { source: "/news/:path*", destination: "/blog", permanent: true },
       { source: "/blog/:id(\\d+)", destination: "/blog", permanent: true },
       { source: "/nacin-placanja", destination: "/nacinplacanja", permanent: true },
+      { source: "/custom-suits/measure", destination: "/custom-suits", permanent: false },
+      { source: "/custom-suits/measure/:path*", destination: "/custom-suits", permanent: false },
       { source: "/nacin_placanja", destination: "/nacinplacanja", permanent: true },
       { source: "/zamena-i-povrat", destination: "/reklamacije", permanent: true },
       { source: "/dostava", destination: "/isporuka", permanent: true },

@@ -254,11 +254,8 @@ export default async function WebShopPage({
   };
   const availableSizes = Array.from(sizeOccurrences.keys()).sort((a, b) => orderIndex(a) - orderIndex(b));
 
-  const priceValues = result.items
-    .map((item) => Number(item.priceFinalGross || 0))
-    .filter((n) => Number.isFinite(n) && n > 0);
-  const priceFloor = priceValues.length ? Math.floor(Math.min(...priceValues)) : 0;
-  const priceCeiling = priceValues.length ? Math.ceil(Math.max(...priceValues)) : 0;
+  const priceFloor = result.priceRange.min;
+  const priceCeiling = result.priceRange.max;
   const heroEyebrow = tx(landingSettings.shopHeroEyebrow?.trim() || "Santos & Santorini", "Santos & Santorini");
   const heroTitle =
     tx(landingSettings.shopHeroTitle?.trim() || (isEn ? "Menswear collection" : "Muska kolekcija"), "Menswear Collection");

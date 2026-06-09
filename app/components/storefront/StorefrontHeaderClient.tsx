@@ -10,6 +10,7 @@ import StorefrontLanguageSwitcher from "@/app/components/storefront/StorefrontLa
 import { useStorefrontAuth } from "@/app/components/storefront/StorefrontAuthProvider";
 import StorefrontCartLink from "@/app/components/storefront/cart/StorefrontCartLink";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
+import { localizeDynamicCategoryLabel } from "@/lib/storefront/dynamicCopy";
 
 type ShopCategory = {
   id: string;
@@ -208,7 +209,7 @@ export default function StorefrontHeaderClient({
     { href: "/web-shop?categoryId=sale", label: isEn ? "Sale" : "Akcija" },
     ...shopCategories.map((category) => ({
       href: `/web-shop?categoryGroup=${category.id}`,
-      label: category.name,
+      label: localizeDynamicCategoryLabel(category.name, isEn ? "en" : "sr"),
     })),
   ];
 

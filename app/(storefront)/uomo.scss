@@ -9119,10 +9119,8 @@ button.ss-mobile-nav-quicklink,
 }
 
 .ss-uniform-gallery__main img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: cover !important;
+  object-position: center top !important;
 }
 
 .ss-uniform-gallery__thumbs {
@@ -9146,10 +9144,8 @@ button.ss-mobile-nav-quicklink,
 }
 
 .ss-uniform-gallery__thumb img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: cover !important;
+  object-position: center top !important;
 }
 
 .ss-uniform-gallery__thumb:hover {

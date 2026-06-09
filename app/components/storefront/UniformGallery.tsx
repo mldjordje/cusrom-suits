@@ -19,15 +19,14 @@ export default function UniformGallery({ images, name }: UniformGalleryProps) {
 
   return (
     <div className="ss-uniform-gallery">
-      <div className="ss-uniform-gallery__main">
+      <div className="ss-uniform-gallery__main" style={{ position: "relative" }}>
         <StorefrontImage
           sources={[activeSrc]}
           fallbackSrc="/img/hero2.jpg"
           alt={name}
-          width={960}
-          height={1160}
+          fill
           priority
-          className="h-auto w-100"
+          style={{ objectFit: "cover", objectPosition: "center top" }}
           sizes="(max-width: 991px) 100vw, 58vw"
         />
       </div>
@@ -47,9 +46,8 @@ export default function UniformGallery({ images, name }: UniformGalleryProps) {
                 sources={[src]}
                 fallbackSrc="/img/hero2.jpg"
                 alt=""
-                width={160}
-                height={190}
-                className="h-100 w-100"
+                fill
+                style={{ objectFit: "cover", objectPosition: "center top" }}
                 sizes="96px"
               />
             </button>
