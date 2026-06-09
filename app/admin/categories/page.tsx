@@ -47,6 +47,152 @@ type AutoAssignResult = {
   total: number;
 };
 
+// ---------- Unassigned products panel ----------
+
+function UnassignedProductsPanel({
+  rows,
+  onAssigned,
+}: {
+  rows: CategoryRow[];
+  onAssigned: () => Promise<void>;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [products, setProducts] = useState<ProductMini[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [assigning, setAssigning] = useState<string | null>(null); // "legacyId-catId"
+  const [selectedCat, setSelectedCat] = useState<Record<number, number>>({}); // legacyId → categoryId
+
+  const fetchUnassigned = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(
+        "/api/admin/webshop/products?contentStatus=missing_category&activeOnly=1&exportOnly=1&pageSize=100&sort=newest",
+      );
+      const json = await res.json();
+      setProducts((json.data || []) as ProductMini[]);
+      setTotal(typeof json.pagination?.total === "number" ? json.pagination.total : (json.data || []).length);
+    } catch {
+      // ignore
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Always fetch count (collapsed view)
+    void fetchUnassigned();
+  }, []);
+
+  const handleAssign = async (product: ProductMini, categoryId: number) => {
+    const key = `${product.legacyId}-${categoryId}`;
+    setAssigning(key);
+    try {
+      const res = await fetch("/api/admin/webshop/products/assign-categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ legacyId: product.legacyId, categoryIds: [categoryId] }),
+      });
+      const json = await res.json();
+      if (!json?.success) return;
+      setProducts((prev) => prev.filter((p) => p.legacyId !== product.legacyId));
+      setTotal((prev) => (prev !== null ? prev - 1 : null));
+      await onAssigned();
+    } catch {
+      // ignore
+    } finally {
+      setAssigning(null);
+    }
+  };
+
+  const visibleCategories = rows.filter((r) => r.isVisible);
+
+  const count = total ?? products.length;
+
+  return (
+    <div className={`rounded-2xl border ${count > 0 ? "border-amber-200 bg-amber-50/60" : "border-slate-200 bg-white"} shadow-sm`}>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-semibold text-slate-800">Neraspoređeni artikli</span>
+          {count > 0 ? (
+            <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">{count}</span>
+          ) : (
+            <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">Sve ok</span>
+          )}
+          <span className="text-xs text-slate-500">— aktivni proizvodi bez dodeljene kategorije</span>
+        </div>
+        <span className="text-xs font-semibold text-slate-500">{expanded ? "▲ Sakrij" : "▼ Prikaži"}</span>
+      </button>
+
+      {expanded ? (
+        <div className="border-t border-amber-100 px-4 pb-4 pt-3">
+          {loading ? (
+            <p className="text-xs text-slate-400">Ucitavanje...</p>
+          ) : products.length === 0 ? (
+            <p className="text-xs text-slate-500">Nema neraspoređenih aktivnih proizvoda.</p>
+          ) : (
+            <>
+              <p className="mb-3 text-xs text-slate-500">
+                Prikazano <strong>{products.length}</strong>{total && total > products.length ? ` od ${total}` : ""} — izaberi kategoriju i klikni &ldquo;Dodaj&rdquo;.
+              </p>
+              <div className="grid gap-2">
+                {products.map((product) => {
+                  const catId = selectedCat[product.legacyId] ?? 0;
+                  const isWorking = assigning?.startsWith(`${product.legacyId}-`);
+                  return (
+                    <div
+                      key={product.legacyId}
+                      className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-100 bg-white px-3 py-2"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate text-xs font-semibold text-slate-900">{product.name}</p>
+                        <p className="text-[10px] text-slate-500">#{product.legacyId} / {product.sku}</p>
+                      </div>
+                      <select
+                        value={catId}
+                        onChange={(e) => setSelectedCat((prev) => ({ ...prev, [product.legacyId]: Number(e.target.value) }))}
+                        className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
+                        disabled={isWorking}
+                      >
+                        <option value={0}>— izaberi kategoriju —</option>
+                        {visibleCategories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.path.join(" / ") || cat.name}
+                          </option>
+                        ))}
+                      </select>
+                      <button
+                        type="button"
+                        disabled={!catId || isWorking}
+                        onClick={() => void handleAssign(product, catId)}
+                        className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700 disabled:opacity-40"
+                      >
+                        {isWorking ? "..." : "Dodaj"}
+                      </button>
+                      <a
+                        href={`/web-shop/${product.legacyId}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-[10px] text-slate-400 underline hover:text-slate-600"
+                      >
+                        Pogledaj
+                      </a>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function AdminCategoriesPage() {
   const [rows, setRows] = useState<CategoryRow[]>([]);
   const [drafts, setDrafts] = useState<DraftState>({});
@@ -376,6 +522,8 @@ export default function AdminCategoriesPage() {
         </div>
       ) : null}
 
+      <UnassignedProductsPanel rows={rows} onAssigned={load} />
+
       <div className="grid gap-4 xl:grid-cols-[360px,minmax(0,1fr)]">
         {/* Create form */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
@@ -487,7 +635,7 @@ export default function AdminCategoriesPage() {
                               : "border-slate-200 text-slate-600 hover:bg-slate-50"
                           }`}
                         >
-                          {isExpanded ? "Sakrij proizvode" : "Prikazivanje proizvoda"}
+                          {isExpanded ? "Sakrij proizvode" : "Prikaži proizvode"}
                         </button>
                         <span
                           className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${

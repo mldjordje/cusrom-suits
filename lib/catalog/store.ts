@@ -469,7 +469,7 @@ export const normalizeCatalogCategoryGroupKey = (value: string) => {
   if (/kaput/.test(normalized)) return "kaput";
   if (/jakn|jacket/.test(normalized)) return "jakna";
   if (/dzemper|džemper|knit|sweater/.test(normalized)) return "dzemper";
-  if (/kais|kaisevi|kai/.test(normalized)) return "kais";
+  if (/kais|kaisevi|automatik|beltran/.test(normalized)) return "kais";
   if (/kravat/.test(normalized)) return "kravata";
   if (/cipel|obuc|shoe/.test(normalized)) return "obuca";
   if (/novcan|wallet/.test(normalized)) return "novcanik";
