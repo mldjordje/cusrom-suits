@@ -192,7 +192,7 @@ function ModelImageCard({
             ))}
 
             {gallery.length === 0 && !item.image ? (
-              <p className="text-xs text-slate-400 py-2">Nema slika — dodaj ih klikom na "+ Dodaj slike".</p>
+              <p className="text-xs text-slate-400 py-2">Nema slika &mdash; dodaj ih klikom na &quot;+ Dodaj slike&quot;.</p>
             ) : null}
           </div>
         </div>
@@ -455,7 +455,7 @@ export default function AdminPoslovneUniformePage({
                   Modeli uniformi
                 </p>
                 <p className="mt-0.5 text-sm text-slate-600">
-                  Svaki model ima cover fotografiju i sopstvenu galeriju. Klikni "Galerija modela" da dodas/uklonis slike tog modela.
+                  Svaki model ima cover fotografiju i sopstvenu galeriju. Klikni &quot;Galerija modela&quot; da dodas/uklonis slike tog modela.
                 </p>
               </div>
               <div className="flex gap-2">
