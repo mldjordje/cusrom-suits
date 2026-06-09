@@ -31,7 +31,7 @@ export async function uploadViaCpanel(
       "X-Upload-Token": PHP_UPLOAD_TOKEN,
       "Content-Type": "application/octet-stream",
     },
-    body: fileBuffer,
+    body: new Uint8Array(fileBuffer),
   });
 
   const text = await res.text();
