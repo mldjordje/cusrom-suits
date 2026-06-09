@@ -2,6 +2,7 @@ import type { LandingSettings } from "@/lib/catalog/landingSettings";
 
 export type UniformImage = { title?: string; image: string; alt?: string };
 export type UniformVideo = { title?: string; video: string; poster?: string; alt?: string };
+export type UniformDocument = { title: string; titleEn: string; file: string };
 
 // Bundled media from public/fajlovi/uniforme/. Used when admin settings are empty
 // (e.g. an empty production database), so the page is never blank.
@@ -12,6 +13,12 @@ export const BUNDLED_UNIFORM_IMAGES: UniformImage[] = [
   { title: "Pantalone i jakna", image: "/fajlovi/uniforme/BRI04939.jpg", alt: "Santos poslovna uniforma pantalone i jakna" },
   { title: "Timski setovi", image: "/fajlovi/uniforme/BRI04963.jpg", alt: "Santos poslovne uniforme za kompanijske timove" },
   { title: "Uniforma za timove", image: "/fajlovi/uniforme/BRI04988.jpg", alt: "Santos komplet poslovne uniforme za timove" },
+  { title: "Muski komplet", image: "/fajlovi/uniforme/BRI04786.jpg", alt: "Santos muski poslovni komplet" },
+  { title: "Sako i suknja", image: "/fajlovi/uniforme/BRI04820.jpg", alt: "Santos poslovna uniforma sako i suknja" },
+  { title: "Kosulja i kravata", image: "/fajlovi/uniforme/BRI04807.jpg", alt: "Santos poslovna kosulja i kravata" },
+  { title: "Kolekcija haljina", image: "/fajlovi/uniforme/BRI04927.jpg", alt: "Santos poslovna uniforma kolekcija haljina" },
+  { title: "Zimska kolekcija", image: "/fajlovi/uniforme/BRI04762.jpg", alt: "Santos zimska poslovna uniforma" },
+  { title: "Plave uniforme", image: "/fajlovi/uniforme/BRI04980.jpg", alt: "Santos plave poslovne uniforme" },
 ];
 
 export const BUNDLED_UNIFORM_VIDEOS: UniformVideo[] = [
@@ -33,13 +40,61 @@ export const BUNDLED_UNIFORM_VIDEOS: UniformVideo[] = [
     poster: "/fajlovi/uniforme/BRI04939.jpg",
     alt: "Santos video prezentacija kompleta pantalone i jakna",
   },
+  {
+    title: "Muski mantil",
+    video: "/fajlovi/uniforme/Santos%20uniforma%20%20muski%20mantil.mp4",
+    poster: "/fajlovi/uniforme/BRI04786.jpg",
+    alt: "Santos video prezentacija muskog mantila",
+  },
+  {
+    title: "Uniforma mantil",
+    video: "/fajlovi/uniforme/Santos%20uniforma%20mantil.mp4",
+    poster: "/fajlovi/uniforme/BRI04988.jpg",
+    alt: "Santos video prezentacija uniforme sa mantilom",
+  },
+  {
+    title: "Sako, suknja i marama",
+    video: "/fajlovi/uniforme/Santos%20uniforma%20sako%20suknja%20marama.mp4",
+    poster: "/fajlovi/uniforme/BRI04820.jpg",
+    alt: "Santos video prezentacija sako suknja marama",
+  },
+  {
+    title: "Haljina",
+    video: "/fajlovi/uniforme/Santos%20uniforma%20haljina.mp4",
+    poster: "/fajlovi/uniforme/BRI04927.jpg",
+    alt: "Santos video prezentacija poslovne haljine",
+  },
+  {
+    title: "Crna muska kosulja",
+    video: "/fajlovi/uniforme/Santos%20uniforma%20crna%20muska%20kosulja%20crna.mp4",
+    poster: "/fajlovi/uniforme/BRI04807.jpg",
+    alt: "Santos video prezentacija crne muske poslovne kosulje",
+  },
+];
+
+export const BUNDLED_UNIFORM_DOCUMENTS: UniformDocument[] = [
+  {
+    title: "Santos & Santorini prezentacija",
+    titleEn: "Santos & Santorini presentation",
+    file: "/fajlovi/uniforme/Santos%26Santorini%20prezentacija1%20.pdf",
+  },
+  {
+    title: "Katalog poslovnih uniformi (srp)",
+    titleEn: "Business uniforms catalogue (srp)",
+    file: "/fajlovi/uniforme/Santos%26Santorini%20srp1.pdf",
+  },
+  {
+    title: "Prezentacija S&S",
+    titleEn: "S&S presentation",
+    file: "/fajlovi/uniforme/prez%20S%26S.pdf",
+  },
 ];
 
 export const toUniformSlug = (value: string) =>
   (value || "")
     .toLowerCase()
     .normalize("NFKD")
-    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[̀-ͯ]/g, "")
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 70);

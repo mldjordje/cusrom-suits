@@ -12,6 +12,7 @@ import {
   buildUniformProducts,
   resolveUniformImages,
   resolveUniformVideos,
+  BUNDLED_UNIFORM_DOCUMENTS,
 } from "@/lib/storefront/uniforms";
 
 export async function generateMetadata({
@@ -137,6 +138,28 @@ export default async function BusinessUniformDetailPage({
               </div>
             </Reveal>
           ) : null}
+
+          <Reveal as="section" className="pt-5" delay={0.06} amount={0.08} y={16}>
+            <p className="ss-uniform-eyebrow">{isEn ? "Downloads" : "Preuzimanje"}</p>
+            <h2 className="ss-uniform-section-title mb-4">{isEn ? "Presentations & catalogues" : "Prezentacije i katalozi"}</h2>
+            <div className="d-flex flex-wrap gap-3">
+              {BUNDLED_UNIFORM_DOCUMENTS.map((doc) => (
+                <a
+                  key={doc.file}
+                  href={doc.file}
+                  download
+                  className="btn btn-outline-dark d-inline-flex align-items-center gap-2"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                    <polyline points="7 10 12 15 17 10" />
+                    <line x1="12" y1="15" x2="12" y2="3" />
+                  </svg>
+                  {isEn ? doc.titleEn : doc.title}
+                </a>
+              ))}
+            </div>
+          </Reveal>
 
           <Reveal as="section" id="upit" className="ss-uniform-inquiry mt-5" delay={0.06} amount={0.12} y={16}>
             <p className="ss-uniform-eyebrow">{isEn ? "Inquiry" : "Upit"}</p>

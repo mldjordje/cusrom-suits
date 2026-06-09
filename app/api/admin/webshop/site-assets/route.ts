@@ -5,6 +5,8 @@ import { hasAdminToken } from "@/lib/auth/admin";
 import { uploadViaCpanel, isFtpConfigured } from "@/lib/ftp/cpanel";
 import { uploadSiteAsset } from "@/lib/storage/siteAssets";
 
+export const maxDuration = 60;
+
 const MAX_FILES_PER_REQUEST = 12;
 const MAX_FILE_SIZE_BYTES = 80 * 1024 * 1024;
 const ALLOWED_TYPES = new Set([
