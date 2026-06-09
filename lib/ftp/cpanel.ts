@@ -1,50 +1,54 @@
-import * as ftp from "basic-ftp";
-import { writeFile, unlink } from "fs/promises";
-import os from "os";
-import path from "path";
+/**
+ * Upload files to cPanel via the PHP upload endpoint at assets.santos.rs.
+ * Much more reliable than FTP from serverless — just plain HTTP POST.
+ *
+ * Required Vercel env vars:
+ *   PHP_UPLOAD_URL   — e.g. https://assets.santos.rs/site-upload.php
+ *   PHP_UPLOAD_TOKEN — secret token matching UPLOAD_SECRET on the cPanel server
+ */
 
-const FTP_HOST = process.env.FTP_HOST || "";
-const FTP_USER = process.env.FTP_USER || "";
-const FTP_PASS = process.env.FTP_PASS || "";
-const FTP_PORT = parseInt(process.env.FTP_PORT || "21", 10);
-const FTP_REMOTE_BASE =
-  process.env.FTP_REMOTE_BASE || "public_html/fajlovi/site-assets";
+const PHP_UPLOAD_URL   = process.env.PHP_UPLOAD_URL   || "";
+const PHP_UPLOAD_TOKEN = process.env.PHP_UPLOAD_TOKEN || "";
 
 export function isFtpConfigured() {
-  return Boolean(FTP_HOST && FTP_USER && FTP_PASS);
+  return Boolean(PHP_UPLOAD_URL && PHP_UPLOAD_TOKEN);
 }
 
-/** Uploads a buffer to cPanel via FTP. Returns the public /fajlovi/... path or throws on failure. */
 export async function uploadViaCpanel(
   fileBuffer: Buffer,
   remoteName: string,
   subDir: string,
 ): Promise<string> {
-  const tmpPath = path.join(os.tmpdir(), `ftp-${Date.now()}-${remoteName}`);
-  await writeFile(tmpPath, fileBuffer);
-
-  const client = new ftp.Client(30000);
-  client.ftp.verbose = false;
-
-  try {
-    await client.access({
-      host: FTP_HOST,
-      user: FTP_USER,
-      password: FTP_PASS,
-      port: FTP_PORT,
-      secure: false,
-    });
-
-    const remoteDir = `${FTP_REMOTE_BASE}/${subDir}`.replace(/\/+/g, "/");
-    await client.ensureDir(remoteDir);
-    const remoteFilePath = `${remoteDir}/${remoteName}`;
-    await client.uploadFrom(tmpPath, remoteFilePath);
-    // Ensure file is readable by the web server (cPanel may default to 600)
-    try { await client.send(`SITE CHMOD 644 ${remoteFilePath}`); } catch (_) {}
-
-    return `/fajlovi/site-assets/${subDir}/${remoteName}`;
-  } finally {
-    client.close();
-    unlink(tmpPath).catch(() => {});
+  if (!PHP_UPLOAD_URL || !PHP_UPLOAD_TOKEN) {
+    throw new Error("PHP_UPLOAD_URL / PHP_UPLOAD_TOKEN not configured");
   }
+
+  const url = `${PHP_UPLOAD_URL}?subdir=${encodeURIComponent(subDir)}&filename=${encodeURIComponent(remoteName)}`;
+
+  const res = await fetch(url, {
+    method: "POST",
+    headers: {
+      "X-Upload-Token": PHP_UPLOAD_TOKEN,
+      "Content-Type": "application/octet-stream",
+    },
+    body: fileBuffer,
+  });
+
+  const text = await res.text();
+
+  if (!res.ok) {
+    let detail = text;
+    try { detail = JSON.parse(text)?.error || text; } catch (_) {}
+    throw new Error(`PHP upload failed (${res.status}): ${detail}`);
+  }
+
+  let data: { url?: string; error?: string };
+  try { data = JSON.parse(text); } catch (_) {
+    throw new Error(`Invalid PHP response: ${text.slice(0, 200)}`);
+  }
+
+  if (data.error) throw new Error(data.error);
+  if (!data.url)  throw new Error("PHP response missing url field");
+
+  return data.url;
 }
