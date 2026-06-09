@@ -77,8 +77,9 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
 
   const gallery = useMemo<GalleryItem[]>(() => {
     const visibleImages = cleanImages.filter((src) => !failedImageSrcs.has(src));
-    const items: GalleryItem[] = visibleImages.map((src) => ({ kind: "image", src }));
     const cleanVideoUrl = String(videoUrl || "").trim();
+    const items: GalleryItem[] = [];
+    // Video goes FIRST so it autoplays as the hero on page load
     if (cleanVideoUrl) {
       items.push({
         kind: "video",
@@ -87,6 +88,7 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
         embedUrl: getYoutubeEmbedUrl(cleanVideoUrl),
       });
     }
+    visibleImages.forEach((src) => items.push({ kind: "image", src }));
     return items;
   }, [cleanImages, failedImageSrcs, videoUrl]);
 
@@ -99,15 +101,7 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
   const imageItems = activeGallery.filter((item) => item.kind === "image");
 
   useEffect(() => {
-    setActiveIndex((current) => {
-      const clamped = Math.min(current, Math.max(activeGallery.length - 1, 0));
-      // Never auto-land on the video item — stay on the last image if images exist
-      if (activeGallery[clamped]?.kind === "video") {
-        const lastImageIdx = activeGallery.map((item, i) => item.kind === "image" ? i : -1).filter(i => i >= 0).pop();
-        if (lastImageIdx != null) return lastImageIdx;
-      }
-      return clamped;
-    });
+    setActiveIndex((current) => Math.min(current, Math.max(activeGallery.length - 1, 0)));
   }, [activeGallery.length]);
 
   const openLightbox = useCallback((index: number) => {
@@ -187,9 +181,11 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
               <video
                 src={activeItem.src}
                 controls
+                autoPlay
+                muted
                 playsInline
-                autoPlay={false}
-                preload="metadata"
+                loop
+                preload="auto"
                 className="ss-product-gallery__main-video"
                 poster={activeItem.thumbnail || undefined}
               />
