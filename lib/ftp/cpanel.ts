@@ -8,7 +8,7 @@ const FTP_USER = process.env.FTP_USER || "";
 const FTP_PASS = process.env.FTP_PASS || "";
 const FTP_PORT = parseInt(process.env.FTP_PORT || "21", 10);
 const FTP_REMOTE_BASE =
-  process.env.FTP_REMOTE_BASE || "/home/agyc3416/public_html/fajlovi/site-assets";
+  process.env.FTP_REMOTE_BASE || "public_html/fajlovi/site-assets";
 
 export function isFtpConfigured() {
   return Boolean(FTP_HOST && FTP_USER && FTP_PASS);
@@ -37,7 +37,10 @@ export async function uploadViaCpanel(
 
     const remoteDir = `${FTP_REMOTE_BASE}/${subDir}`.replace(/\/+/g, "/");
     await client.ensureDir(remoteDir);
-    await client.uploadFrom(tmpPath, `${remoteDir}/${remoteName}`);
+    const remoteFilePath = `${remoteDir}/${remoteName}`;
+    await client.uploadFrom(tmpPath, remoteFilePath);
+    // Ensure file is readable by the web server (cPanel may default to 600)
+    try { await client.send(`SITE CHMOD 644 ${remoteFilePath}`); } catch (_) {}
 
     return `/fajlovi/site-assets/${subDir}/${remoteName}`;
   } finally {
