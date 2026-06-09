@@ -27,6 +27,8 @@ export type LandingUniformImage = {
   title: string;
   image: string;
   alt: string;
+  /** Additional images for the model's detail gallery (cover image is always first). */
+  gallery?: string[];
 };
 
 export type LandingUniformVideo = {
@@ -442,7 +444,12 @@ const normalizeLandingUniformImage = (value: unknown): LandingUniformImage | nul
   const image = repairUniformMediaUrl(String(row.image || "").trim());
   const alt = String(row.alt || "").trim();
   if (!title && !image && !alt) return null;
-  return { title, image, alt };
+  const gallery = Array.isArray(row.gallery)
+    ? (row.gallery as unknown[])
+        .map((g) => repairUniformMediaUrl(String(g || "").trim()))
+        .filter((g) => g.length > 0)
+    : undefined;
+  return { title, image, alt, ...(gallery && gallery.length ? { gallery } : {}) };
 };
 
 const normalizeLandingUniformImages = (value: unknown, max = 24) => {
