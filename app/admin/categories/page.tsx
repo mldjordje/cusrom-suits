@@ -310,6 +310,13 @@ export default function AdminCategoriesPage() {
   const [autoGroupLoading, setAutoGroupLoading] = useState<Set<string>>(new Set());
   const [autoGroupTotals, setAutoGroupTotals] = useState<Record<string, number>>({});
 
+  // SKU search for manual force-add to auto-kategorije
+  const [autoGroupSkuInput, setAutoGroupSkuInput] = useState<Record<string, string>>({});
+  const [autoGroupSkuResults, setAutoGroupSkuResults] = useState<Record<string, ProductMini[]>>({});
+  const [autoGroupSkuLoading, setAutoGroupSkuLoading] = useState<Set<string>>(new Set());
+  const [forcingProduct, setForcingProduct] = useState<string | null>(null); // "legacyId-groupKey"
+  const autoSkuTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
   // Per-category product management
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [categoryProducts, setCategoryProducts] = useState<Record<number, ProductMini[]>>({});
@@ -451,6 +458,55 @@ export default function AdminCategoriesPage() {
       }
       return next;
     });
+  };
+
+  const searchAutoGroupBySku = async (groupKey: string, sku: string) => {
+    if (!sku.trim()) {
+      setAutoGroupSkuResults((prev) => ({ ...prev, [groupKey]: [] }));
+      return;
+    }
+    setAutoGroupSkuLoading((prev) => new Set([...prev, groupKey]));
+    try {
+      const res = await fetch(`/api/admin/webshop/products?q=${encodeURIComponent(sku.trim())}&pageSize=10`);
+      const json = await res.json();
+      setAutoGroupSkuResults((prev) => ({ ...prev, [groupKey]: (json.data || []) as ProductMini[] }));
+    } catch {
+      // ignore
+    } finally {
+      setAutoGroupSkuLoading((prev) => { const n = new Set(prev); n.delete(groupKey); return n; });
+    }
+  };
+
+  const handleAutoSkuInput = (groupKey: string, value: string) => {
+    setAutoGroupSkuInput((prev) => ({ ...prev, [groupKey]: value }));
+    clearTimeout(autoSkuTimers.current[groupKey]);
+    autoSkuTimers.current[groupKey] = setTimeout(() => {
+      void searchAutoGroupBySku(groupKey, value);
+    }, 400);
+  };
+
+  const forceGroupAssign = async (product: ProductMini, groupKey: string, action: "add" | "remove") => {
+    const key = `${product.legacyId}-${groupKey}`;
+    setForcingProduct(key);
+    try {
+      const res = await fetch("/api/admin/webshop/categories/force-group", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ legacyId: product.legacyId, groupKey, action }),
+      });
+      const json = await res.json();
+      if (!json?.success) return;
+      // Reload the group products to reflect the change
+      await loadAutoGroupProducts(groupKey);
+      if (action === "add") {
+        setAutoGroupSkuInput((prev) => ({ ...prev, [groupKey]: "" }));
+        setAutoGroupSkuResults((prev) => ({ ...prev, [groupKey]: [] }));
+      }
+    } catch {
+      // ignore
+    } finally {
+      setForcingProduct(null);
+    }
   };
 
   const searchProducts = async (categoryId: number, q: string) => {
@@ -1047,7 +1103,8 @@ export default function AdminCategoriesPage() {
           <p className="text-sm font-semibold text-slate-800">Auto-kategorije — pregled proizvoda</p>
           <p className="text-xs text-slate-500 mt-0.5">
             Klikni na grupu da vidis koje artikle auto-kategorija prikazuje u web shopu. Proizvodi se
-            matchuju automatski po kljucnoj reci u nazivu — nema rucnog dodavanja.
+            matchuju automatski po ključnoj reči u nazivu ili mOffice kategoriji. Možeš i ručno dodati
+            artikal po SKU unutar svake grupe.
           </p>
         </div>
         <div className="divide-y divide-slate-100">
@@ -1096,7 +1153,7 @@ export default function AdminCategoriesPage() {
                     ) : !products || products.length === 0 ? (
                       <p className="text-xs text-slate-400">
                         Nema aktivnih proizvoda koji se matchuju za ovu grupu.
-                        Ako očekuješ proizvode ovde, proveri da li naziv sadrži odgovarajuću ključnu reč.
+                        Ako očekuješ proizvode ovde, proveri da li naziv sadrži odgovarajuću ključnu reč ili ga dodaj ručno ispod.
                       </p>
                     ) : (
                       <>
@@ -1142,6 +1199,54 @@ export default function AdminCategoriesPage() {
                         </div>
                       </>
                     )}
+
+                    {/* Dodaj po SKU */}
+                    <div className="mt-4 border-t border-slate-200 pt-3">
+                      <p className="mb-2 text-xs font-semibold text-slate-600">Dodaj proizvod ručno (po SKU)</p>
+                      <p className="mb-2 text-[11px] text-slate-400">
+                        Koristi ovo za artikle koji imaju sliku i lager, ali se ne pojavljuju automatski u ovoj grupi.
+                      </p>
+                      <input
+                        value={autoGroupSkuInput[group.key] ?? ""}
+                        onChange={(e) => handleAutoSkuInput(group.key, e.target.value)}
+                        placeholder="Unesi SKU ili naziv..."
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm"
+                      />
+                      {autoGroupSkuLoading.has(group.key) ? (
+                        <p className="mt-2 text-xs text-slate-400">Pretraga...</p>
+                      ) : (autoGroupSkuResults[group.key] ?? []).length > 0 ? (
+                        <div className="mt-2 grid gap-1.5">
+                          {(autoGroupSkuResults[group.key] ?? []).map((product) => {
+                            const alreadyIn = (products ?? []).some((p) => p.legacyId === product.legacyId);
+                            const forceKey = `${product.legacyId}-${group.key}`;
+                            return (
+                              <div key={product.legacyId} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
+                                <div className="min-w-0">
+                                  <p className="truncate text-xs font-semibold text-slate-900">{product.name}</p>
+                                  <p className="text-[10px] text-slate-500">#{product.legacyId} / {product.sku}</p>
+                                </div>
+                                {alreadyIn ? (
+                                  <span className="shrink-0 rounded-full border border-emerald-200 bg-emerald-50 px-2 py-1 text-[10px] font-semibold text-emerald-700">
+                                    Već u grupi
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    disabled={forcingProduct === forceKey}
+                                    onClick={() => void forceGroupAssign(product, group.key, "add")}
+                                    className="shrink-0 rounded-full border border-blue-200 bg-blue-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-700 disabled:opacity-50"
+                                  >
+                                    {forcingProduct === forceKey ? "Dodaje..." : "Dodaj"}
+                                  </button>
+                                )}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (autoGroupSkuInput[group.key] ?? "").trim() && !autoGroupSkuLoading.has(group.key) ? (
+                        <p className="mt-2 text-xs text-slate-400">Nema rezultata za &quot;{autoGroupSkuInput[group.key]}&quot;</p>
+                      ) : null}
+                    </div>
                   </div>
                 ) : null}
               </div>

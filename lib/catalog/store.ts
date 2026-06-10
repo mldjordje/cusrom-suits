@@ -520,11 +520,13 @@ const CATEGORY_GROUP_PRIORITY: Record<string, number> = {
 export const ACCESSORY_SUB_KEYS = new Set(["kais", "kravata", "novcanik", "card-holder", "torba"]);
 
 /**
- * Group keys a product belongs to. Derived from its categories AND from its name +
- * manufacturer code, because most mOffice-sourced rows carry the product type only in
- * the name ("M. Košulja C8/53", manufCode "BRANDO/74 M.Košulja") with an empty
- * categories[]. Without the name fallback, selecting a category group (e.g. Košulje)
- * matched only the handful of rows that happened to have a populated category.
+ * Group keys a product belongs to. Derived from (in order):
+ *  1. admin categories in categories[]
+ *  2. name + manufCode (catches rows like "BRANDO/74 M.Košulja")
+ *  3. raw_payload.moffice.category — covers legacy products whose name is a pure
+ *     numeric code ("36/195/17") with no Serbian type word, but whose mOffice record
+ *     explicitly carries the category ("M. Odelo", "M. Košulja", etc.)
+ *  4. raw_payload.forcedCategoryGroups — manual admin overrides per product
  */
 const getCatalogProductGroupKeys = (item: CatalogProductView): Set<string> => {
   const keys = new Set<string>();
@@ -534,6 +536,24 @@ const getCatalogProductGroupKeys = (item: CatalogProductView): Set<string> => {
   }
   const nameKey = normalizeCatalogCategoryGroupKey(`${item.name || ""} ${item.manufCode || ""}`);
   if (nameKey) keys.add(nameKey);
+
+  const moffice = item.rawPayload?.moffice;
+  if (moffice && typeof moffice === "object") {
+    const moffficeCat = String((moffice as Record<string, unknown>).category || "").trim();
+    if (moffficeCat) {
+      const mofficeKey = normalizeCatalogCategoryGroupKey(moffficeCat);
+      if (mofficeKey) keys.add(mofficeKey);
+    }
+  }
+
+  const forced = Array.isArray(item.rawPayload?.forcedCategoryGroups)
+    ? (item.rawPayload.forcedCategoryGroups as unknown[]).map(String).filter(Boolean)
+    : [];
+  for (const g of forced) {
+    const k = normalizeCatalogCategoryGroupKey(g);
+    if (k) keys.add(k);
+  }
+
   return keys;
 };
 

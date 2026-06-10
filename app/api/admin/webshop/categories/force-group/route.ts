@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
-import { listCategoryRegistry } from "@/lib/catalog/categories";
 import { getServiceSupabase } from "@/lib/supabase/server";
-import { invalidateCatalogCaches } from "@/lib/catalog/store";
+import { invalidateCatalogCaches, normalizeCatalogCategoryGroupKey } from "@/lib/catalog/store";
 
 export async function PATCH(req: NextRequest) {
   if (!hasAdminToken(req)) {
@@ -11,12 +10,17 @@ export async function PATCH(req: NextRequest) {
 
   const payload = await req.json().catch(() => null);
   const legacyId = Number(payload?.legacyId);
-  const categoryIds: number[] = Array.isArray(payload?.categoryIds)
-    ? (payload.categoryIds as unknown[]).map(Number).filter((n) => Number.isFinite(n) && n > 0)
-    : [];
+  const groupKey = normalizeCatalogCategoryGroupKey(String(payload?.groupKey || ""));
+  const action = String(payload?.action || "add");
 
   if (!legacyId || legacyId <= 0) {
     return NextResponse.json({ success: false, message: "legacyId je obavezan" }, { status: 400 });
+  }
+  if (!groupKey) {
+    return NextResponse.json({ success: false, message: "groupKey je obavezan" }, { status: 400 });
+  }
+  if (action !== "add" && action !== "remove") {
+    return NextResponse.json({ success: false, message: "action mora biti 'add' ili 'remove'" }, { status: 400 });
   }
 
   const supabase = getServiceSupabase();
@@ -35,33 +39,20 @@ export async function PATCH(req: NextRequest) {
   }
 
   const row = data as unknown as { raw_payload: Record<string, unknown> };
-  const registry = await listCategoryRegistry();
-  const registryById = new Map(registry.map((c) => [c.id, c]));
-  const adminCategoryIds = new Set(registry.map((c) => c.id));
-
   const rawPayload = { ...(row.raw_payload || {}) };
-  const existingCategories = Array.isArray(rawPayload.categories)
-    ? (rawPayload.categories as unknown[])
+
+  const existing: string[] = Array.isArray(rawPayload.forcedCategoryGroups)
+    ? (rawPayload.forcedCategoryGroups as unknown[]).map(String).filter(Boolean)
     : [];
 
-  // Keep legacy (non-admin) categories intact
-  const legacyCategories = existingCategories.filter((cat) => {
-    if (!cat || typeof cat !== "object") return true;
-    return !adminCategoryIds.has(Number((cat as Record<string, unknown>).id));
-  });
+  let updated: string[];
+  if (action === "add") {
+    updated = existing.includes(groupKey) ? existing : [...existing, groupKey];
+  } else {
+    updated = existing.filter((k) => k !== groupKey);
+  }
 
-  // Build the new admin category entries from the requested IDs
-  const newAdminCategories = categoryIds
-    .map((id) => registryById.get(id))
-    .filter(Boolean)
-    .map((cat) => ({
-      id: cat!.id,
-      name: cat!.name,
-      path: cat!.path,
-      parentId: cat!.parentId || 0,
-    }));
-
-  rawPayload.categories = [...legacyCategories, ...newAdminCategories];
+  rawPayload.forcedCategoryGroups = updated.length > 0 ? updated : undefined;
 
   const { error: updateError } = await supabase
     .from("catalog_products")
@@ -74,5 +65,5 @@ export async function PATCH(req: NextRequest) {
 
   invalidateCatalogCaches();
 
-  return NextResponse.json({ success: true });
+  return NextResponse.json({ success: true, groupKey, action, legacyId });
 }
