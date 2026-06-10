@@ -700,7 +700,7 @@ export default async function WebShopPage({
             inStock={inStock}
             onSale={onSale}
             sort={sort}
-            categories={sortedCategoryGroups}
+            categories={sidebarNavCategories}
             featuredCategories={sidebarNavCategories}
             activeFilterChips={activeFilterChips}
             showingCount={items.length}
