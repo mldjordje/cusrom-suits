@@ -115,8 +115,8 @@ export default async function PackingSlipPage({ params }: { params: Promise<{ id
             .packing-slip__actions a.ghost { background: transparent; color: #111827; border: 1px solid #cbd5e1; }
             .packing-slip__sheet { background: #fff; padding: 28px 32px; border-radius: 6px; box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08); }
             .packing-slip__head { display: flex; justify-content: space-between; align-items: flex-start; gap: 24px; border-bottom: 2px solid #111827; padding-bottom: 16px; margin-bottom: 20px; }
-            .packing-slip__brand { font-size: 20px; font-weight: 700; letter-spacing: 0.18em; text-transform: uppercase; }
-            .packing-slip__brand small { display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; color: #6b7280; margin-top: 4px; }
+            .packing-slip__brand img { display: block; height: 48px; width: auto; object-fit: contain; }
+            .packing-slip__brand small { display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.12em; color: #6b7280; margin-top: 6px; }
             .packing-slip__meta { text-align: right; font-size: 13px; line-height: 1.5; color: #374151; }
             .packing-slip__meta strong { display: block; font-size: 16px; color: #111827; margin-bottom: 2px; }
             .packing-slip__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 22px; }
@@ -155,7 +155,8 @@ export default async function PackingSlipPage({ params }: { params: Promise<{ id
       <div className="packing-slip__sheet">
         <header className="packing-slip__head">
           <div className="packing-slip__brand">
-            Santos &amp; Santorini
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/img/logo-header-dark.png" alt="Santos &amp; Santorini" />
             <small>Moda za gospodu &middot; Srbija</small>
           </div>
           <div className="packing-slip__meta">

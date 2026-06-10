@@ -49,6 +49,80 @@ type AutoAssignResult = {
 
 // ---------- Unassigned products panel ----------
 
+function UnassignedProductRow({
+  product,
+  visibleCategories,
+  assigning,
+  selectedCat,
+  onSelectCat,
+  onAssign,
+  dimmed,
+}: {
+  product: ProductMini;
+  visibleCategories: CategoryRow[];
+  assigning: string | null;
+  selectedCat: Record<number, number>;
+  onSelectCat: (legacyId: number, catId: number) => void;
+  onAssign: (product: ProductMini, catId: number) => void;
+  dimmed?: boolean;
+}) {
+  const catId = selectedCat[product.legacyId] ?? 0;
+  const isWorking = assigning?.startsWith(`${product.legacyId}-`);
+  const rawImg = String(product.coverImage || "").trim();
+  const img = rawImg.replace(/^https?:\/\/(www\.)?santos\.rs/, "").replace(/^https?:\/\/assets\.santos\.rs/, "");
+
+  return (
+    <div className={`flex flex-wrap items-center gap-2 rounded-xl border bg-white px-3 py-2 ${dimmed ? "border-slate-100 opacity-60" : "border-amber-100"}`}>
+      {img ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={img}
+          alt={product.name}
+          className="h-10 w-10 flex-shrink-0 rounded-md border border-slate-200 object-cover"
+          onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+        />
+      ) : (
+        <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-md border border-slate-200 bg-slate-100 text-[9px] font-semibold text-slate-400">
+          NO IMG
+        </div>
+      )}
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-xs font-semibold text-slate-900">{product.name}</p>
+        <p className="text-[10px] text-slate-500">#{product.legacyId} / {product.sku}</p>
+      </div>
+      <select
+        value={catId}
+        onChange={(e) => onSelectCat(product.legacyId, Number(e.target.value))}
+        className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
+        disabled={isWorking}
+      >
+        <option value={0}>— kategorija —</option>
+        {visibleCategories.map((cat) => (
+          <option key={cat.id} value={cat.id}>
+            {cat.path.join(" / ") || cat.name}
+          </option>
+        ))}
+      </select>
+      <button
+        type="button"
+        disabled={!catId || isWorking}
+        onClick={() => onAssign(product, catId)}
+        className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700 disabled:opacity-40"
+      >
+        {isWorking ? "..." : "Dodaj"}
+      </button>
+      <a
+        href={`/web-shop/${product.legacyId}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-[10px] text-slate-400 underline hover:text-slate-600"
+      >
+        Pogledaj
+      </a>
+    </div>
+  );
+}
+
 function UnassignedProductsPanel({
   rows,
   onAssigned,
@@ -57,21 +131,22 @@ function UnassignedProductsPanel({
   onAssigned: () => Promise<void>;
 }) {
   const [expanded, setExpanded] = useState(false);
+  const [showNoImage, setShowNoImage] = useState(false);
   const [products, setProducts] = useState<ProductMini[]>([]);
-  const [total, setTotal] = useState<number | null>(null);
+  const [totalFromApi, setTotalFromApi] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
-  const [assigning, setAssigning] = useState<string | null>(null); // "legacyId-catId"
-  const [selectedCat, setSelectedCat] = useState<Record<number, number>>({}); // legacyId → categoryId
+  const [assigning, setAssigning] = useState<string | null>(null);
+  const [selectedCat, setSelectedCat] = useState<Record<number, number>>({});
 
   const fetchUnassigned = async () => {
     setLoading(true);
     try {
       const res = await fetch(
-        "/api/admin/webshop/products?contentStatus=missing_category&activeOnly=1&exportOnly=1&pageSize=100&sort=newest",
+        "/api/admin/webshop/products?contentStatus=missing_category&activeOnly=1&exportOnly=1&pageSize=120&sort=newest",
       );
       const json = await res.json();
       setProducts((json.data || []) as ProductMini[]);
-      setTotal(typeof json.pagination?.total === "number" ? json.pagination.total : (json.data || []).length);
+      setTotalFromApi(typeof json.pagination?.total === "number" ? json.pagination.total : null);
     } catch {
       // ignore
     } finally {
@@ -80,7 +155,6 @@ function UnassignedProductsPanel({
   };
 
   useEffect(() => {
-    // Always fetch count (collapsed view)
     void fetchUnassigned();
   }, []);
 
@@ -96,7 +170,7 @@ function UnassignedProductsPanel({
       const json = await res.json();
       if (!json?.success) return;
       setProducts((prev) => prev.filter((p) => p.legacyId !== product.legacyId));
-      setTotal((prev) => (prev !== null ? prev - 1 : null));
+      setTotalFromApi((prev) => (prev !== null ? prev - 1 : null));
       await onAssigned();
     } catch {
       // ignore
@@ -107,25 +181,40 @@ function UnassignedProductsPanel({
 
   const visibleCategories = rows.filter((r) => r.isVisible);
 
-  const count = total ?? products.length;
+  // Split: with image = visible in web shop (priority), without image = less urgent
+  const withImage = products.filter((p) => p.coverImage && p.coverImage.trim().length > 0);
+  const noImage = products.filter((p) => !p.coverImage || p.coverImage.trim().length === 0);
+
+  const priorityCount = withImage.length;
+  const totalCount = totalFromApi ?? products.length;
+  // Badge shows only products currently visible in web shop (have image)
+  const badgeCount = priorityCount;
 
   return (
-    <div className={`rounded-2xl border ${count > 0 ? "border-amber-200 bg-amber-50/60" : "border-slate-200 bg-white"} shadow-sm`}>
+    <div className={`rounded-2xl border shadow-sm ${badgeCount > 0 ? "border-amber-200 bg-amber-50/40" : "border-slate-200 bg-white"}`}>
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
         className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
       >
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm font-semibold text-slate-800">Neraspoređeni artikli</span>
-          {count > 0 ? (
-            <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white">{count}</span>
-          ) : (
+          {badgeCount > 0 ? (
+            <span className="rounded-full bg-amber-500 px-2 py-0.5 text-xs font-bold text-white" title="Vidljivi u web shopu bez kategorije">
+              {badgeCount} u web shopu
+            </span>
+          ) : null}
+          {noImage.length > 0 ? (
+            <span className="rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-xs text-slate-500">
+              + {noImage.length} bez slike
+            </span>
+          ) : null}
+          {badgeCount === 0 && noImage.length === 0 && !loading ? (
             <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-semibold text-emerald-700">Sve ok</span>
-          )}
-          <span className="text-xs text-slate-500">— aktivni proizvodi bez dodeljene kategorije</span>
+          ) : null}
+          <span className="text-xs text-slate-400">— aktivni proizvodi bez dodeljene kategorije</span>
         </div>
-        <span className="text-xs font-semibold text-slate-500">{expanded ? "▲ Sakrij" : "▼ Prikaži"}</span>
+        <span className="shrink-0 text-xs font-semibold text-slate-500">{expanded ? "▲ Sakrij" : "▼ Prikaži"}</span>
       </button>
 
       {expanded ? (
@@ -135,57 +224,62 @@ function UnassignedProductsPanel({
           ) : products.length === 0 ? (
             <p className="text-xs text-slate-500">Nema neraspoređenih aktivnih proizvoda.</p>
           ) : (
-            <>
-              <p className="mb-3 text-xs text-slate-500">
-                Prikazano <strong>{products.length}</strong>{total && total > products.length ? ` od ${total}` : ""} — izaberi kategoriju i klikni &ldquo;Dodaj&rdquo;.
-              </p>
-              <div className="grid gap-2">
-                {products.map((product) => {
-                  const catId = selectedCat[product.legacyId] ?? 0;
-                  const isWorking = assigning?.startsWith(`${product.legacyId}-`);
-                  return (
-                    <div
-                      key={product.legacyId}
-                      className="flex flex-wrap items-center gap-2 rounded-xl border border-amber-100 bg-white px-3 py-2"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-xs font-semibold text-slate-900">{product.name}</p>
-                        <p className="text-[10px] text-slate-500">#{product.legacyId} / {product.sku}</p>
-                      </div>
-                      <select
-                        value={catId}
-                        onChange={(e) => setSelectedCat((prev) => ({ ...prev, [product.legacyId]: Number(e.target.value) }))}
-                        className="rounded-lg border border-slate-200 px-2 py-1 text-xs"
-                        disabled={isWorking}
-                      >
-                        <option value={0}>— izaberi kategoriju —</option>
-                        {visibleCategories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.path.join(" / ") || cat.name}
-                          </option>
-                        ))}
-                      </select>
-                      <button
-                        type="button"
-                        disabled={!catId || isWorking}
-                        onClick={() => void handleAssign(product, catId)}
-                        className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-emerald-700 disabled:opacity-40"
-                      >
-                        {isWorking ? "..." : "Dodaj"}
-                      </button>
-                      <a
-                        href={`/web-shop/${product.legacyId}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-[10px] text-slate-400 underline hover:text-slate-600"
-                      >
-                        Pogledaj
-                      </a>
+            <div className="grid gap-4">
+              {/* Priority: visible in web shop */}
+              {withImage.length > 0 ? (
+                <div>
+                  <p className="mb-2 text-xs font-semibold text-amber-700">
+                    ⚑ Vidljivi u web shopu ({withImage.length})
+                    {totalFromApi && totalFromApi > products.length ? (
+                      <span className="ml-1 font-normal text-slate-400">— prikazano {products.length} od {totalFromApi}</span>
+                    ) : null}
+                  </p>
+                  <div className="grid gap-2">
+                    {withImage.map((product) => (
+                      <UnassignedProductRow
+                        key={product.legacyId}
+                        product={product}
+                        visibleCategories={visibleCategories}
+                        assigning={assigning}
+                        selectedCat={selectedCat}
+                        onSelectCat={(id, catId) => setSelectedCat((prev) => ({ ...prev, [id]: catId }))}
+                        onAssign={(p, catId) => void handleAssign(p, catId)}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Secondary: no image (not visible in web shop) */}
+              {noImage.length > 0 ? (
+                <div>
+                  <button
+                    type="button"
+                    onClick={() => setShowNoImage((v) => !v)}
+                    className="mb-2 flex items-center gap-1 text-xs text-slate-400 hover:text-slate-600"
+                  >
+                    <span>{showNoImage ? "▼" : "▶"}</span>
+                    <span>Bez slike — nisu vidljivi u web shopu ({noImage.length})</span>
+                  </button>
+                  {showNoImage ? (
+                    <div className="grid gap-2">
+                      {noImage.map((product) => (
+                        <UnassignedProductRow
+                          key={product.legacyId}
+                          product={product}
+                          visibleCategories={visibleCategories}
+                          assigning={assigning}
+                          selectedCat={selectedCat}
+                          onSelectCat={(id, catId) => setSelectedCat((prev) => ({ ...prev, [id]: catId }))}
+                          onAssign={(p, catId) => void handleAssign(p, catId)}
+                          dimmed
+                        />
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
-            </>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
           )}
         </div>
       ) : null}

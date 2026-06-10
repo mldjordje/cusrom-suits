@@ -377,13 +377,40 @@ export default function OrdersAdminPage() {
                   <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-gray-500">
                     Artikli ({items.length})
                   </p>
-                  <div className="space-y-1 text-xs text-gray-600">
-                    {items.slice(0, 5).map((item: any) => (
-                      <p key={`${o.id}-${item?.legacyId || item?.sku}`}>
-                        {item?.quantity || 1}x {item?.name || "Proizvod"} {item?.sku ? `(${item.sku})` : ""}
-                      </p>
-                    ))}
-                    {items.length > 5 ? <p>+ jos {items.length - 5} artikala</p> : null}
+                  <div className="space-y-2">
+                    {items.slice(0, 5).map((item: any) => {
+                      const rawImg = String(item?.image || item?.coverImage || "").trim();
+                      const img = rawImg.startsWith("https://santos.rs") || rawImg.startsWith("https://www.santos.rs") || rawImg.startsWith("https://assets.santos.rs")
+                        ? rawImg.replace(/^https?:\/\/(www\.)?santos\.rs/, "").replace(/^https?:\/\/assets\.santos\.rs/, "")
+                        : rawImg;
+                      return (
+                        <div key={`${o.id}-${item?.legacyId || item?.sku}`} className="flex items-center gap-2">
+                          {img ? (
+                            // eslint-disable-next-line @next/next/no-img-element
+                            <img
+                              src={img}
+                              alt={item?.name || ""}
+                              className="h-10 w-10 flex-shrink-0 rounded-md border border-gray-200 object-cover"
+                              onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                            />
+                          ) : (
+                            <div className="h-10 w-10 flex-shrink-0 rounded-md border border-gray-200 bg-gray-100" />
+                          )}
+                          <div className="min-w-0">
+                            <p className="truncate text-xs font-medium text-gray-700">
+                              {item?.quantity || 1}× {item?.name || "Proizvod"}
+                            </p>
+                            <p className="text-[10px] text-gray-400">
+                              {item?.sku || ""}
+                              {item?.size ? ` · vel. ${item.size}` : ""}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {items.length > 5 ? (
+                      <p className="text-[10px] text-gray-400">+ još {items.length - 5} artikala</p>
+                    ) : null}
                   </div>
                 </div>
               ) : null}
