@@ -14,6 +14,8 @@ export type CatalogCategoryRecord = {
   description: string | null;
   mainColor: string | null;
   isVisible: boolean;
+  /** If true the category appears in the horizontal chip navigation bar above the product list. */
+  isFeatured: boolean;
   createdAt: string;
   updatedAt: string;
 };
@@ -50,6 +52,7 @@ const normalizeRegistryRecord = (
     description: row.description == null ? null : String(row.description),
     mainColor: row.mainColor == null ? null : String(row.mainColor),
     isVisible: row.isVisible !== false,
+    isFeatured: row.isFeatured === true,
     createdAt,
     updatedAt,
   };
@@ -107,6 +110,7 @@ async function loadCategoriesFromSupabase() {
           description: existing?.description || null,
           mainColor: existing?.mainColor || null,
           isVisible: existing?.isVisible ?? true,
+          isFeatured: existing?.isFeatured ?? false,
           createdAt: existing?.createdAt || new Date().toISOString(),
           updatedAt: existing?.updatedAt || new Date().toISOString(),
           usageCount: (existing?.usageCount || 0) + 1,
@@ -141,6 +145,7 @@ async function loadCategoriesFromFile() {
         description: existing?.description || null,
         mainColor: existing?.mainColor || null,
         isVisible: existing?.isVisible ?? true,
+        isFeatured: existing?.isFeatured ?? false,
         createdAt: existing?.createdAt || new Date().toISOString(),
         updatedAt: existing?.updatedAt || new Date().toISOString(),
         usageCount: (existing?.usageCount || 0) + 1,
@@ -274,6 +279,7 @@ export async function createCategoryRegistryEntry(input: {
   description?: string | null;
   mainColor?: string | null;
   isVisible?: boolean;
+  isFeatured?: boolean;
 }) {
   const name = String(input.name || "").trim();
   if (!name) {
@@ -292,6 +298,7 @@ export async function createCategoryRegistryEntry(input: {
     description: input.description == null ? null : String(input.description),
     mainColor: input.mainColor == null ? null : String(input.mainColor),
     isVisible: input.isVisible !== false,
+    isFeatured: input.isFeatured === true,
     createdAt: now,
     updatedAt: now,
   };
@@ -302,7 +309,7 @@ export async function createCategoryRegistryEntry(input: {
 
 export async function updateCategoryRegistryEntry(
   categoryId: number,
-  patch: Partial<Pick<CatalogCategoryRecord, "name" | "path" | "parentId" | "description" | "mainColor" | "isVisible">>,
+  patch: Partial<Pick<CatalogCategoryRecord, "name" | "path" | "parentId" | "description" | "mainColor" | "isVisible" | "isFeatured">>,
 ) {
   if (!Number.isFinite(categoryId) || categoryId <= 0) {
     throw new Error("ID kategorije nije validan.");
@@ -322,6 +329,7 @@ export async function updateCategoryRegistryEntry(
     description: patch.description === undefined ? existing?.description || null : patch.description,
     mainColor: patch.mainColor === undefined ? existing?.mainColor || null : patch.mainColor,
     isVisible: patch.isVisible === undefined ? existing?.isVisible ?? true : patch.isVisible,
+    isFeatured: patch.isFeatured === undefined ? existing?.isFeatured ?? false : patch.isFeatured,
     createdAt: existing?.createdAt || now,
     updatedAt: now,
   };

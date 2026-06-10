@@ -38,6 +38,7 @@ export async function POST(req: NextRequest) {
       description: payload?.description == null ? null : String(payload.description),
       mainColor: payload?.mainColor == null ? null : String(payload.mainColor),
       isVisible: payload?.isVisible !== false,
+      isFeatured: payload?.isFeatured === true,
     });
     return NextResponse.json({ success: true, data: category });
   } catch (error) {
@@ -61,6 +62,7 @@ export async function PATCH(req: NextRequest) {
       description: payload?.description == null ? undefined : String(payload.description),
       mainColor: payload?.mainColor == null ? undefined : String(payload.mainColor),
       isVisible: payload?.isVisible == null ? undefined : Boolean(payload.isVisible),
+      isFeatured: payload?.isFeatured == null ? undefined : Boolean(payload.isFeatured),
     });
     return NextResponse.json({ success: true, data: category });
   } catch (error) {

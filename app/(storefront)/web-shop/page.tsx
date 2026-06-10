@@ -210,6 +210,7 @@ export default async function WebShopPage({
         key: nameKey,
         name: cat.name,
         filterMode: (nameKey ? "group" : "id") as "group" | "id",
+        isFeatured: cat.isFeatured,
       };
     });
 
@@ -232,10 +233,19 @@ export default async function WebShopPage({
   // Fall back to hardcoded defaults when no admin categories are configured.
   // Filter to groups that actually exist in the current product set.
   const availableGroupKeys = new Set(result.categoryGroups.map((g: CatalogCategoryGroup) => g.key));
-  const featuredNavCategories =
-    adminNavCategories.length > 0
-      ? adminNavCategories
-      : DEFAULT_NAV_CATEGORIES.filter((c) => availableGroupKeys.has(c.key));
+  const defaultNavCategories = DEFAULT_NAV_CATEGORIES.filter((c) => availableGroupKeys.has(c.key));
+
+  // All visible admin categories for the sidebar quick-links. Falls back to hardcoded defaults.
+  const sidebarNavCategories =
+    adminNavCategories.length > 0 ? adminNavCategories : defaultNavCategories;
+
+  // Horizontal chip bar: prefer admin categories explicitly marked isFeatured.
+  // If none are featured, fall back to first 5 of sidebarNavCategories.
+  const featuredAdminCategories = adminNavCategories.filter((c) => c.isFeatured);
+  const chipNavCategories =
+    featuredAdminCategories.length > 0
+      ? featuredAdminCategories
+      : sidebarNavCategories.slice(0, 5);
 
   const topCategories = sortedCategoryGroups.slice(0, 10);
 
@@ -434,7 +444,7 @@ export default async function WebShopPage({
       href: makeHref({ categoryId: null, categoryGroup: null, onSale: 1, page: 1, q: null }),
       active: onSale && categoryId <= 0 && !categoryGroup,
     },
-    ...featuredNavCategories.slice(0, 5).map((category) => {
+    ...chipNavCategories.slice(0, 5).map((category) => {
       const useId = category.filterMode === "id" || (!category.key && Boolean(category.id));
       return {
         label: localizeCategory(category.name),
@@ -699,7 +709,7 @@ export default async function WebShopPage({
             onSale={onSale}
             sort={sort}
             categories={sortedCategoryGroups}
-            featuredCategories={featuredNavCategories.slice(0, 7)}
+            featuredCategories={sidebarNavCategories}
             activeFilterChips={activeFilterChips}
             showingCount={items.length}
             totalCount={result.total}

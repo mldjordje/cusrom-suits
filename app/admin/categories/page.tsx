@@ -10,6 +10,7 @@ type CategoryRow = {
   description: string | null;
   mainColor: string | null;
   isVisible: boolean;
+  isFeatured: boolean;
   usageCount: number;
   source: string;
 };
@@ -22,7 +23,7 @@ type ProductMini = {
   coverImage?: string | null;
 };
 
-type DraftState = Record<number, { name: string; path: string; mainColor: string; description: string; isVisible: boolean }>;
+type DraftState = Record<number, { name: string; path: string; mainColor: string; description: string; isVisible: boolean; isFeatured: boolean }>;
 
 const emptyCreateForm = {
   name: "",
@@ -30,6 +31,7 @@ const emptyCreateForm = {
   mainColor: "#1f2937",
   description: "",
   isVisible: true,
+  isFeatured: false,
 };
 
 const emptyDraft = {
@@ -38,6 +40,7 @@ const emptyDraft = {
   mainColor: "#1f2937",
   description: "",
   isVisible: true,
+  isFeatured: false,
 };
 
 type AutoAssignResult = {
@@ -301,6 +304,12 @@ export default function AdminCategoriesPage() {
   const [query, setQuery] = useState("");
   const [showLegacy, setShowLegacy] = useState(false);
 
+  // Auto-kategorije section state
+  const [autoExpandedKeys, setAutoExpandedKeys] = useState<Set<string>>(new Set());
+  const [autoGroupProducts, setAutoGroupProducts] = useState<Record<string, ProductMini[]>>({});
+  const [autoGroupLoading, setAutoGroupLoading] = useState<Set<string>>(new Set());
+  const [autoGroupTotals, setAutoGroupTotals] = useState<Record<string, number>>({});
+
   // Per-category product management
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
   const [categoryProducts, setCategoryProducts] = useState<Record<number, ProductMini[]>>({});
@@ -333,6 +342,7 @@ export default function AdminCategoriesPage() {
               mainColor: item.mainColor || "#1f2937",
               description: item.description || "",
               isVisible: item.isVisible,
+              isFeatured: item.isFeatured ?? false,
             },
           ]),
         ),
@@ -399,6 +409,44 @@ export default function AdminCategoriesPage() {
         next.add(categoryId);
         if (!categoryProducts[categoryId]) {
           void loadCategoryProducts(categoryId);
+        }
+      }
+      return next;
+    });
+  };
+
+  const loadAutoGroupProducts = async (groupKey: string) => {
+    setAutoGroupLoading((prev) => new Set([...prev, groupKey]));
+    try {
+      const res = await fetch(
+        `/api/admin/webshop/products?categoryGroup=${encodeURIComponent(groupKey)}&pageSize=60&activeOnly=1&exportOnly=1`,
+      );
+      const json = await res.json();
+      setAutoGroupProducts((prev) => ({ ...prev, [groupKey]: (json.data || []) as ProductMini[] }));
+      setAutoGroupTotals((prev) => ({
+        ...prev,
+        [groupKey]: typeof json.pagination?.total === "number" ? json.pagination.total : (json.data || []).length,
+      }));
+    } catch {
+      // ignore
+    } finally {
+      setAutoGroupLoading((prev) => {
+        const next = new Set(prev);
+        next.delete(groupKey);
+        return next;
+      });
+    }
+  };
+
+  const toggleAutoGroup = (groupKey: string) => {
+    setAutoExpandedKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(groupKey)) {
+        next.delete(groupKey);
+      } else {
+        next.add(groupKey);
+        if (!autoGroupProducts[groupKey]) {
+          void loadAutoGroupProducts(groupKey);
         }
       }
       return next;
@@ -488,6 +536,7 @@ export default function AdminCategoriesPage() {
           mainColor: createForm.mainColor || null,
           description: createForm.description || null,
           isVisible: createForm.isVisible,
+          isFeatured: createForm.isFeatured,
         }),
       });
       const json = await res.json();
@@ -525,6 +574,7 @@ export default function AdminCategoriesPage() {
           mainColor: draft.mainColor || null,
           description: draft.description || null,
           isVisible: draft.isVisible,
+          isFeatured: draft.isFeatured,
         }),
       });
       const json = await res.json();
@@ -693,9 +743,21 @@ export default function AdminCategoriesPage() {
               <input
                 type="checkbox"
                 checked={createForm.isVisible}
-                onChange={(e) => setCreateForm((prev) => ({ ...prev, isVisible: e.target.checked }))}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, isVisible: e.target.checked, isFeatured: e.target.checked ? prev.isFeatured : false }))}
               />
-              Vidljiva u web-shop filteru
+              Vidljiva u web-shop filteru (sidebar)
+            </label>
+            <label className={`inline-flex items-center gap-2 text-sm ${!createForm.isVisible ? "opacity-40" : ""}`}>
+              <input
+                type="checkbox"
+                checked={createForm.isFeatured}
+                disabled={!createForm.isVisible}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, isFeatured: e.target.checked }))}
+              />
+              <span>
+                Istakni u gornjoj navigaciji
+                <span className="ml-1 text-[11px] text-slate-400">(horizontalna traka iznad liste)</span>
+              </span>
             </label>
             <button
               onClick={createCategory}
@@ -781,6 +843,11 @@ export default function AdminCategoriesPage() {
                         >
                           {row.isVisible ? "Vidljiva" : "Sakrivena"}
                         </span>
+                        {row.isFeatured && row.isVisible ? (
+                          <span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-semibold text-violet-700">
+                            ★ Nav
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
@@ -833,19 +900,42 @@ export default function AdminCategoriesPage() {
                     />
 
                     <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                      <label className="inline-flex items-center gap-2 text-sm">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(draft?.isVisible)}
-                          onChange={(e) =>
-                            setDrafts((prev) => ({
-                              ...prev,
-                              [row.id]: { ...(prev[row.id] || draft || emptyDraft), isVisible: e.target.checked },
-                            }))
-                          }
-                        />
-                        Vidljiva u web-shop navigaciji
-                      </label>
+                      <div className="flex flex-col gap-1.5">
+                        <label className="inline-flex items-center gap-2 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={Boolean(draft?.isVisible)}
+                            onChange={(e) =>
+                              setDrafts((prev) => ({
+                                ...prev,
+                                [row.id]: {
+                                  ...(prev[row.id] || draft || emptyDraft),
+                                  isVisible: e.target.checked,
+                                  isFeatured: e.target.checked ? (prev[row.id]?.isFeatured ?? false) : false,
+                                },
+                              }))
+                            }
+                          />
+                          Vidljiva u web-shop filteru (sidebar)
+                        </label>
+                        <label className={`inline-flex items-center gap-2 text-sm ${!draft?.isVisible ? "opacity-40" : ""}`}>
+                          <input
+                            type="checkbox"
+                            checked={Boolean(draft?.isFeatured)}
+                            disabled={!draft?.isVisible}
+                            onChange={(e) =>
+                              setDrafts((prev) => ({
+                                ...prev,
+                                [row.id]: { ...(prev[row.id] || draft || emptyDraft), isFeatured: e.target.checked },
+                              }))
+                            }
+                          />
+                          <span>
+                            Istakni u gornjoj navigaciji
+                            <span className="ml-1 text-[11px] text-slate-400">(chip traka)</span>
+                          </span>
+                        </label>
+                      </div>
 
                       <div className="flex flex-wrap gap-2">
                         <button
@@ -948,6 +1038,115 @@ export default function AdminCategoriesPage() {
             })}
 
           </div>
+        </div>
+      </div>
+
+      {/* Auto-kategorije — expandable panels showing products per keyword group */}
+      <div className="rounded-2xl border border-blue-100 bg-white shadow-sm">
+        <div className="px-4 py-3 border-b border-blue-50">
+          <p className="text-sm font-semibold text-slate-800">Auto-kategorije — pregled proizvoda</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Klikni na grupu da vidis koje artikle auto-kategorija prikazuje u web shopu. Proizvodi se
+            matchuju automatski po kljucnoj reci u nazivu — nema rucnog dodavanja.
+          </p>
+        </div>
+        <div className="divide-y divide-slate-100">
+          {[
+            { key: "odelo",     name: "Odela",     hint: "naziv sadrži: odelo, odela" },
+            { key: "sako",      name: "Sakoi",     hint: "naziv sadrži: sako" },
+            { key: "pantalone", name: "Pantalone", hint: "naziv sadrži: pantalone" },
+            { key: "kosulja",   name: "Košulje",   hint: "naziv sadrži: košulja, kosulja" },
+            { key: "dzemper",   name: "Džemperi",  hint: "naziv sadrži: džemper, dzemper" },
+            { key: "prsluk",    name: "Prsluci",   hint: "naziv sadrži: prsluk" },
+            { key: "kaput",     name: "Kaputi",    hint: "naziv sadrži: kaput" },
+            { key: "jakna",     name: "Jakne",     hint: "naziv sadrži: jakna" },
+            { key: "obuca",     name: "Obuća",     hint: "naziv sadrži: cipele, obuca" },
+            { key: "aksesoari", name: "Aksesoari", hint: "kaiš, kravata, novčanik, torba, card-holder" },
+          ].map((group) => {
+            const isExpanded = autoExpandedKeys.has(group.key);
+            const isLoading = autoGroupLoading.has(group.key);
+            const products = autoGroupProducts[group.key];
+            const total = autoGroupTotals[group.key];
+
+            return (
+              <div key={group.key}>
+                <button
+                  type="button"
+                  onClick={() => toggleAutoGroup(group.key)}
+                  className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left hover:bg-slate-50/60 transition-colors"
+                >
+                  <div className="flex flex-wrap items-center gap-3">
+                    <span className="text-sm font-semibold text-slate-800">{group.name}</span>
+                    <span className="text-xs text-slate-400">{group.hint}</span>
+                    {total != null ? (
+                      <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[11px] font-semibold text-blue-700">
+                        {total} artik{total === 1 ? "al" : "ala"}
+                      </span>
+                    ) : null}
+                  </div>
+                  <span className="shrink-0 text-[11px] font-semibold text-slate-400">
+                    {isExpanded ? "▲ Sakrij" : "▼ Prikaži"}
+                  </span>
+                </button>
+
+                {isExpanded ? (
+                  <div className="border-t border-slate-100 bg-slate-50/50 px-4 pb-4 pt-3">
+                    {isLoading ? (
+                      <p className="text-xs text-slate-400">Učitavanje...</p>
+                    ) : !products || products.length === 0 ? (
+                      <p className="text-xs text-slate-400">
+                        Nema aktivnih proizvoda koji se matchuju za ovu grupu.
+                        Ako očekuješ proizvode ovde, proveri da li naziv sadrži odgovarajuću ključnu reč.
+                      </p>
+                    ) : (
+                      <>
+                        {total != null && total > products.length ? (
+                          <p className="mb-2 text-[11px] text-slate-400">
+                            Prikazano {products.length} od {total} proizvoda
+                          </p>
+                        ) : null}
+                        <div className="grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+                          {products.map((product) => {
+                            const rawImg = String(product.coverImage || "").trim();
+                            const img = rawImg.replace(/^https?:\/\/(www\.)?santos\.rs/, "").replace(/^https?:\/\/assets\.santos\.rs/, "");
+                            return (
+                              <div key={product.legacyId} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2">
+                                {img ? (
+                                  // eslint-disable-next-line @next/next/no-img-element
+                                  <img
+                                    src={img}
+                                    alt={product.name}
+                                    className="h-8 w-8 flex-shrink-0 rounded-md border border-slate-200 object-cover"
+                                    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+                                  />
+                                ) : (
+                                  <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-md border border-slate-100 bg-slate-100 text-[8px] font-bold text-slate-400">
+                                    ?
+                                  </div>
+                                )}
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-[11px] font-semibold text-slate-800">{product.name}</p>
+                                  <p className="text-[10px] text-slate-400">#{product.legacyId}</p>
+                                </div>
+                                <a
+                                  href={`/web-shop/${product.legacyId}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="shrink-0 text-[10px] text-slate-400 underline hover:text-slate-600"
+                                >
+                                  →
+                                </a>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
         </div>
       </div>
 
