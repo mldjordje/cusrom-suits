@@ -9,6 +9,8 @@ type ShopCategory = {
   id?: number;
   key?: string;
   name: string;
+  /** "group" = filter by categoryGroup keyword; "id" = filter by exact admin categoryId */
+  filterMode?: "group" | "id";
 };
 
 type ActiveFilterChip = {
@@ -154,17 +156,20 @@ export default function WebShopFilters({
         {isEn ? "Sale" : "Akcija"}
       </Link>
       {featuredCategories.map((category) => {
-        const key = category.key || String(category.id || "");
-        const isActive = categoryGroup === key;
+        // id-mode: no own group key — use exact categoryId for filtering
+        const useId = category.filterMode === "id" || (!category.key && Boolean(category.id));
+        const chipKey = useId ? `id-${category.id}` : (category.key || String(category.id || ""));
+        const isActive = useId
+          ? categoryId > 0 && categoryId === category.id
+          : Boolean(category.key) && categoryGroup === category.key;
         return (
           <Link
-            key={key}
-            href={makeHref({
-              categoryGroup: isActive ? null : key,
-              categoryId: null,
-              onSale: null,
-              q: null,
-            })}
+            key={chipKey}
+            href={makeHref(
+              useId
+                ? { categoryId: isActive ? null : (category.id ?? null), categoryGroup: null, onSale: null, q: null }
+                : { categoryGroup: isActive ? null : (category.key ?? null), categoryId: null, onSale: null, q: null },
+            )}
             className={`ss-shop-filter-chip ${isActive ? "is-active" : ""}`}
           >
             {localizeCategory(category.name)}

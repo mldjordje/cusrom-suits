@@ -197,24 +197,27 @@ export default async function WebShopPage({
   const sortedCategoryGroups = sortCategoriesForShop(result.categoryGroups);
 
   // Admin registry categories (visible) take priority over dynamic groups in nav.
-  // Each is mapped to a categoryGroup key using the same normalization as product matching,
-  // so filtering works without requiring products to be explicitly re-assigned.
+  // - Categories whose NAME produces a group key use categoryGroup filtering (keyword match,
+  //   catches all products of that type even without explicit assignment). E.g. "Kaisevi" → "kais".
+  // - Categories whose name has no own key (subcategories like "Elegantna", "Sportska") use
+  //   categoryId filtering — shows only products explicitly assigned to that admin category.
   const adminNavCategories = registryCategories
     .filter((cat) => cat.isVisible)
     .map((cat) => {
-      const key =
-        normalizeCatalogCategoryGroupKey(cat.name) ||
-        cat.path.map(normalizeCatalogCategoryGroupKey).find(Boolean) ||
-        "";
-      return { id: cat.id, key, name: cat.name };
-    })
-    .filter((cat) => cat.key.length > 0);
+      const nameKey = normalizeCatalogCategoryGroupKey(cat.name);
+      return {
+        id: cat.id,
+        key: nameKey,
+        name: cat.name,
+        filterMode: (nameKey ? "group" : "id") as "group" | "id",
+      };
+    });
 
   // Fall back to dynamic groups when no admin categories are configured
   const featuredNavCategories =
     adminNavCategories.length > 0
       ? adminNavCategories
-      : sortedCategoryGroups.slice(0, 7).map((g: CatalogCategoryGroup) => ({ id: 0, key: g.key, name: g.name }));
+      : sortedCategoryGroups.slice(0, 7).map((g: CatalogCategoryGroup) => ({ id: 0, key: g.key, name: g.name, filterMode: "group" as const }));
 
   const topCategories = sortedCategoryGroups.slice(0, 7);
 
@@ -325,7 +328,11 @@ export default async function WebShopPage({
 
   const categoryNameById = new Map(result.categories.map((category) => [category.id, category.name]));
   const categoryNameByGroup = new Map(result.categoryGroups.map((category) => [category.key, category.name]));
-  const selectedCategoryName = categoryId > 0 ? localizeCategory(categoryNameById.get(categoryId) || `Category ${categoryId}`) : "";
+  // Also check registry for names of admin categories filtered by categoryId
+  const registryNameById = new Map(registryCategories.map((cat) => [cat.id, cat.name]));
+  const selectedCategoryName = categoryId > 0
+    ? localizeCategory(categoryNameById.get(categoryId) || registryNameById.get(categoryId) || `Kategorija ${categoryId}`)
+    : "";
   const selectedCategoryGroupName = categoryGroup ? localizeCategory(categoryNameByGroup.get(categoryGroup) || categoryGroup) : "";
   const activeFilterChips: ActiveFilterChip[] = [];
 
@@ -409,11 +416,18 @@ export default async function WebShopPage({
       href: makeHref({ categoryId: null, categoryGroup: null, onSale: 1, page: 1, q: null }),
       active: onSale && categoryId <= 0 && !categoryGroup,
     },
-    ...featuredNavCategories.slice(0, 5).map((category) => ({
-      label: localizeCategory(category.name),
-      href: makeHref({ categoryGroup: category.key, categoryId: null, onSale: null, page: 1, q: null }),
-      active: categoryGroup === category.key,
-    })),
+    ...featuredNavCategories.slice(0, 5).map((category) => {
+      const useId = category.filterMode === "id" || (!category.key && Boolean(category.id));
+      return {
+        label: localizeCategory(category.name),
+        href: makeHref(
+          useId
+            ? { categoryId: category.id ?? null, categoryGroup: null, onSale: null, page: 1, q: null }
+            : { categoryGroup: category.key ?? null, categoryId: null, onSale: null, page: 1, q: null },
+        ),
+        active: useId ? categoryId === category.id : Boolean(category.key) && categoryGroup === category.key,
+      };
+    }),
   ];
 
   const renderOverlayCard = (
