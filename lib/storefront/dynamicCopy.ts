@@ -90,6 +90,8 @@ const TOKEN_EN_MAP = new Map<string, string>([
   ["majice", "t-shirts"],
   ["majica", "t-shirt"],
   ["aksesoari", "accessories"],
+  ["prsluci", "vests"],
+  ["prsluk", "vest"],
   ["elegantna", "formal"],
   ["elegantni", "formal"],
   ["muska", "menswear"],

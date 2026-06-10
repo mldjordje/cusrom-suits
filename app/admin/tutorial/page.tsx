@@ -24,7 +24,6 @@ const sections = [
       "`Prodajna cena` je cena koju kupac vidi na sajtu. `Regularna cena` je puna, precrtana cena.",
       "Ako je artikal iz mOffice-a, cena se normalno osvezava iz mOffice sync-a. Ako ukljucis `Pregazi mOffice cenu`, cena ostaje rucno uneta, a lager se i dalje osvezava.",
       "`Lager magacin 1` i `Ukupan lager` su kolicine. Ako je lager 0, proizvod moze ostati vidljiv ali bez trenutne dostupnosti.",
-      "Kategorije sluze za filtriranje, organizaciju i potencijalna promo pravila po grupama proizvoda.",
       "Svaki artikal sada moze da ima i video klip. Dodajes ga u editoru proizvoda kroz URL ili `Upload video`, a posle obavezno kliknes `Sacuvaj`.",
       "Pocetna strana se vise ne podesava iz editora proizvoda. Za to postoji posebna strana `Pocetna i sekcije`.",
     ],
@@ -53,19 +52,35 @@ const sections = [
     ],
   },
   {
-    title: "5. Porudzbine i checkout",
+    title: "5. Kategorije i web-shop filter",
+    body: [
+      "Web shop filter radi na dva nivoa: auto-kategorije i admin-kreirane kategorije.",
+      "AUTO-KATEGORIJE (uvek aktivne): Odela, Sakoi, Pantalone, Kosulje, Dzemperi, Prsluci, Kaputi, Jakne, Obuca, Aksesoari. Ovo su grupe koje sistem automatski prepoznaje na osnovu naziva proizvoda i mOffice kategorija. Ne treba da radis nista — cim postoji proizvod koji odgovara grupi, ona se pojavljuje kao filter cip.",
+      "Aksesoari filter automatski obuhvata: kaiseve, kravate, novcanike, torbe i slicne sitne aksesoari predmete.",
+      "ADMIN KATEGORIJE: Ako zelis poseban filter koji ne pokriva nijedno automatsko kljucno rec (npr. 'Nova kolekcija', 'Outlet', 'Elegantna cipela'), kreiras novu kategoriju u `/admin/categories`. Tu uneses naziv, dodas proizvode i ukljucis 'Vidljiva u web-shop filteru'. Filter ce se pojaviti na sajtu samo ako je kategorija vidljiva.",
+      "Ako admin kategorijai naziv odgovara nekoj auto-grupi (npr. 'Kosulje', 'Sakoi'), sistem ce koristiti keyword-filter i automatski obuhvata sve odgovarajuce proizvode. Ako naziv ne odgovara nijenom kljucnom recu (npr. 'Elegantna'), sistem ce filtrirati samo po rucno dodeljenim proizvodima.",
+      "LEGACY mOffice KATEGORIJE su prikazane u adminu u posebnom, kolapsovanom delu 'Legacy mOffice kategorije'. To su kategorije koje dolaze iz mOffice-a i sluze samo kao referenca. One se ne prikazuju direktno u web-shop filteru.",
+      "NERASPOREDENI ARTIKLI panel (vrh admin/categories stranice) pokazuje aktivne proizvode koji nemaju dodeljenu nijednu admin kategoriju. Zeleni marker 'u web shopu' znaci da su vidljivi kupcima i vredi ih sto pre rasporediti.",
+      "Ako su svi filtri na web shopu tacni ali neki artikal ne prodje kroz filter, proveri: da li je Aktivan + Export, da li ima sliku, i da li je naziv ili kategorija u mOffice-u dovoljno jasan za prepoznavanje kljucne reci.",
+    ],
+  },
+  {
+    title: "6. Porudzbine i checkout",
     body: [
       "Web shop korpa i checkout zavrsavaju u `Porudzbine`.",
-      "Tu se vidi izvor porudzbine, artikli, kontakt podaci, cena i status.",
+      "Svaki naruceni artikal sada ima malu thumbnail sliku pored naziva — brze vidis koji model je u pitanju bez otvaranja detalja.",
+      "Tu se vidi izvor porudzbine, artikli (sa slicama), kontakt podaci, cena i status.",
       "Trenutni checkout tok je bez online karticnog placanja. Kupac salje porudzbinu kao upit, a tim zatim potvrdjuje dostupnost i naredne korake.",
       "Preporuka je da status ide redom: `pending` -> `confirmed` -> `completed`, ili `cancelled` ako je potrebno.",
+      "Svaka porudzbina ima dugme `Otpremnica` koje otvara PDF za stampu. U gornjem levom uglu stoji Santos & Santorini logo, a u sadrzaju su svi artikli sa velicinoma i cenama.",
       "Ako kupac prijavi problem sa porudzbinom, prvo proveri da li su artikli bili aktivni i da li je lager bio smislen u trenutku kupovine.",
     ],
   },
   {
-    title: "6. Site Content, dokumenta i pravne stranice",
+    title: "7. Site Content, dokumenta i pravne stranice",
     body: [
       "Strana `Site Content` sluzi za navigaciju, footer, prodajna mesta, about i kontakt sadrzaj.",
+      "VAZNO: Sve izmene koje napravis u Site Content-u (npr. uklonis link iz navigacije) cuvaju se u Supabase Storage i OSTAJU posle svakog novog deploy-a. Nema vise situacije da se promene izgube.",
       "Kada uploadujes slike ili dokumenta kroz admin, novi fajlovi se sada cuvaju centralno tako da ostaju dostupni i na produkciji.",
       "Sekcija `Dokumenta` na javnom sajtu sada nije samo download lista, vec i ulazna tacka za pravne stranice.",
       "Pravne stranice koje moraju postojati i ostati azurne su: `Polisa privatnosti`, `Uslovi kupovine`, `Reklamacije`, `Isporuka`, `Uslovi koriscenja kolacica` i `Nacin placanja`.",
@@ -75,7 +90,7 @@ const sections = [
     ],
   },
   {
-    title: "7. Fulfillment, dostava i vauceri",
+    title: "8. Fulfillment, dostava i vauceri",
     body: [
       "Strana `Fulfillment` kontrolise pickup/delivery tok, dostupne kurirske sluzbe i vaucere.",
       "Ako kupac vidi pogresnu dostavu ili se ne pojavljuje odgovarajuca kurirska sluzba, prvo proveri `Fulfillment`, a ne landing ili proizvod.",
@@ -83,7 +98,7 @@ const sections = [
     ],
   },
   {
-    title: "8. Ananas i integracije",
+    title: "9. Ananas i integracije",
     body: [
       "Sve oko sinhronizacije i izvoza je u `Integracije`.",
       "Tu se prate runovi, retry logika i stanja za Ananas i lager tokove.",
@@ -92,7 +107,19 @@ const sections = [
     ],
   },
   {
-    title: "9. Preporuceni dnevni checklist za strica",
+    title: "10. Ceste greske i resenja",
+    body: [
+      "PROIZVOD NIJE VIDLJIV U WEB SHOPU: Proveri Aktivan + Export, proveri da li ima sliku (bez slike se ne prikazuje), proveri da li je cena > 0.",
+      "FILTER NE PRIKAZUJE ARTIKAL: Ako artikal treba da se pojavi u 'Aksesoari', proveri da li naziv ili mOffice kategorija sadrzi rec kao 'kais', 'kravata', 'novcanik', 'torba'. Ako ne, idi na admin/categories i rucno dodeli kategoriju.",
+      "ADMIN PROMENA SE IZGUBILA POSLE DEPLOYA: Ovo je popravljeno — izmene se sada cuvaju u Supabase Storage, ne u lokalnom fajlu. Ako se i dalje desava, proveri da li je save dugme uspesno pritisnuto (treba da se pojavi zelena potvrda).",
+      "KATEGORIJA POSTOJI U ADMINU ALI NE U WEB SHOPU: Proveri da li je checkboxom oznacena kao 'Vidljiva u web-shop filteru'. Ako jeste, proveri da li postoji makar jedan aktivan proizvod koji je dodeljen toj kategoriji.",
+      "AKCESOAR SE NE POJAVLJUJE U FILTERU: Naziv ili mOffice kategorija artikla mora da sadrzi prepoznatljivu rec (kais, kravata, novcanik, itd). Mozete i rucno da dodelite artikal admin kategoriji 'Aksesoari' ili slicnoj.",
+      "DUPLA KATEGORIJA U ADMINU (npr. 'Jakna' i 'Jakne'): Obe dolaze iz mOffice-a. Web shop ih automatski spaja u jednu grupu 'jakna'. Nema akcije sa tvoje strane potrebno.",
+      "OTPREMNICA NEMA LOGO: Otpremnica ucitava logo sa /img/logo-header-dark.png koji postoji u projektu. Ako se ne vidi, proveri stampac ili browser za print preview.",
+    ],
+  },
+  {
+    title: "11. Preporuceni dnevni checklist za strica",
     body: [
       "1. Otvori `Web Shop Hub -> Proizvodi i lager`.",
       "2. Klikni red rada `1. Dodaj slike`, zatim `Primeni filtere`. Otvori artikal, dodaj slike sa telefona, izaberi glavnu sliku i klikni `Sacuvaj`.",
@@ -101,7 +128,8 @@ const sections = [
       "5. Ako cena iz mOffice-a nije dobra, ukljuci `Pregazi mOffice cenu`, unesi cenu i sacuvaj. Ovo koristi samo kad stvarno treba.",
       "6. Proveri `Akcije i snizenja` samo za popuste. Ne koristi akcije za obicnu korekciju pogresne cene.",
       "7. Ako treba da bude na pocetnoj, idi na `Pocetna i sekcije` i dodaj proizvod u odgovarajucu sekciju.",
-      "8. Na kraju proveri javni proizvod preko dugmeta `Pregled` i proveri porudzbine.",
+      "8. Jednom nedeljno: idi na `Kategorije` i proveri `Nerasporedeni artikli` — rasporedi one koji imaju sliku i vidljivi su u web shopu.",
+      "9. Na kraju proveri javni proizvod preko dugmeta `Pregled` i proveri porudzbine.",
     ],
   },
 ];
@@ -112,10 +140,10 @@ const quickLinks = [
   { href: "/admin/webshop?tab=akcije", label: "Akcije i snizenja" },
   { href: "/admin/landing", label: "Pocetna i sekcije" },
   { href: "/admin/site-content", label: "Site Content" },
-  { href: "/admin/fulfillment", label: "Fulfillment" },
-  { href: "/admin/orders", label: "Porudzbine" },
-  { href: "/admin/integrations", label: "Integracije / Ananas" },
   { href: "/admin/categories", label: "Kategorije" },
+  { href: "/admin/orders", label: "Porudzbine" },
+  { href: "/admin/fulfillment", label: "Fulfillment" },
+  { href: "/admin/integrations", label: "Integracije / Ananas" },
 ];
 
 const launchChecklist = [
@@ -125,7 +153,9 @@ const launchChecklist = [
   "Prodji redirecte iz stare strukture sajta i pravne URL-ove.",
   "Proveri home, listing, product detail, checkout, kontakt i newsletter tok.",
   "Proveri landing sekcije, dokumenta, pravne stranice i prodajna mesta.",
-  "Proveri admin tok za porudzbine, kontakt poruke, site content i fulfillment.",
+  "Proveri admin tok za porudzbine (sa thumbnail slikama), kontakt poruke, site content i fulfillment.",
+  "Proveri otpremnicu za neku test porudzbinu — logo treba da se ucitava, svi artikli treba da budu vidljivi.",
+  "Proveri web-shop filter: svi auto-filteri (Odela, Sakoi, Pantalone, itd.) treba da se prikazuju.",
 ];
 
 export default function AdminTutorialPage() {
@@ -135,7 +165,7 @@ export default function AdminTutorialPage() {
         <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Tutorial</p>
         <h1 className="mt-1 text-3xl font-bold text-slate-900">Kako radi web shop admin</h1>
         <p className="mt-1 text-sm text-slate-600">
-          Jedno mesto za objasnjenje proizvoda, lagera, akcija, pocetne strane, javnog sadrzaja, porudzbina i integracija.
+          Jedno mesto za objasnjenje proizvoda, lagera, akcija, kategorija, pocetne strane, javnog sadrzaja, porudzbina i integracija.
         </p>
         <div className="mt-4 flex flex-wrap gap-2">
           {quickLinks.map((link) => (
@@ -163,7 +193,7 @@ export default function AdminTutorialPage() {
         ))}
 
         <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-xl font-semibold text-slate-900">10. Launch checklist za glavni domen</h2>
+          <h2 className="text-xl font-semibold text-slate-900">12. Launch checklist za glavni domen</h2>
           <div className="mt-3 space-y-2 text-sm text-slate-700">
             {launchChecklist.map((line) => (
               <p key={line}>{line}</p>
