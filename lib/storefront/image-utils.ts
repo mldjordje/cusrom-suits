@@ -58,6 +58,12 @@ export const sanitizeStorefrontImageSrc = (value: unknown): string => {
 
     return url.toString();
   } catch {
+    // URL parse failed — likely due to unencoded spaces in a legacy file path.
+    // Encode spaces and retry once so "foo bar.jpg" URLs still resolve correctly.
+    const withEncodedSpaces = raw.replace(/ /g, "%20");
+    if (withEncodedSpaces !== raw) {
+      return sanitizeStorefrontImageSrc(withEncodedSpaces);
+    }
     return raw;
   }
 };

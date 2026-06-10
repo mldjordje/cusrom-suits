@@ -56,12 +56,24 @@ const stripHtml = (value: string | null) =>
 
 const normalizeImageCandidate = (value: unknown) => sanitizeStorefrontImageSrc(value);
 
-const extractSizes = (product: CatalogProductView) =>
-  Array.isArray(product.attributes?.size)
-    ? product.attributes.size
-        .map((value) => String(value || "").trim())
-        .filter((value) => value.length > 0)
-    : [];
+const BELT_NAME_SIZE_RE = /^0+(\d+)\s+/;
+
+const extractSizes = (product: CatalogProductView) => {
+  if (Array.isArray(product.attributes?.size)) {
+    const explicit = (product.attributes.size as unknown[])
+      .map((value) => String(value || "").trim())
+      .filter((value) => value.length > 0);
+    if (explicit.length > 0) return explicit;
+  }
+  // Legacy belt products (e.g. "010 Beltrano") have the size encoded as a
+  // zero-padded numeric prefix in the name; mOffice sends empty ARTIKAL_VELICINA.
+  const nameMatch = product.name.match(BELT_NAME_SIZE_RE);
+  if (nameMatch) {
+    const code = String(parseInt(nameMatch[1], 10));
+    if (code !== "0") return [code];
+  }
+  return [];
+};
 
 const sizeAliases: Record<string, string> = {
   "1XL": "XL",
