@@ -34,7 +34,7 @@ export default async function AboutPage({
             priority
           />
           <div className="position-absolute top-50 start-50 translate-middle text-center text-white px-3">
-            <h1 className="text-uppercase mb-2">{isEn ? aboutPage.heroTitleEn : aboutPage.heroTitle}</h1>
+            <h1 className="text-uppercase mb-2 text-white">{isEn ? aboutPage.heroTitleEn : aboutPage.heroTitle}</h1>
             <p className="mb-0">{isEn ? aboutPage.heroSubtitleEn : aboutPage.heroSubtitle}</p>
           </div>
         </Reveal>
