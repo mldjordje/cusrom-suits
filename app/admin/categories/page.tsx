@@ -310,6 +310,12 @@ export default function AdminCategoriesPage() {
   const [autoGroupLoading, setAutoGroupLoading] = useState<Set<string>>(new Set());
   const [autoGroupTotals, setAutoGroupTotals] = useState<Record<string, number>>({});
 
+  // Active auto groups (enabled/disabled toggles)
+  const [enabledAutoGroups, setEnabledAutoGroups] = useState<Set<string>>(
+    new Set(["odelo","sako","pantalone","kosulja","dzemper","prsluk","kaput","jakna","obuca","aksesoari"])
+  );
+  const [savingAutoGroups, setSavingAutoGroups] = useState(false);
+
   // SKU search for manual force-add to auto-kategorije
   const [autoGroupSkuInput, setAutoGroupSkuInput] = useState<Record<string, string>>({});
   const [autoGroupSkuResults, setAutoGroupSkuResults] = useState<Record<string, ProductMini[]>>({});
@@ -331,8 +337,11 @@ export default function AdminCategoriesPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/webshop/categories");
-      const json = await res.json();
+      const [catRes, autoRes] = await Promise.all([
+        fetch("/api/admin/webshop/categories"),
+        fetch("/api/admin/webshop/categories/auto-groups"),
+      ]);
+      const json = await catRes.json();
       if (!json?.success) {
         setError(json?.message || "Ucitavanje kategorija nije uspelo.");
         return;
@@ -354,11 +363,37 @@ export default function AdminCategoriesPage() {
           ]),
         ),
       );
+      const autoJson = await autoRes.json();
+      if (autoJson?.success && Array.isArray(autoJson.enabledGroups)) {
+        setEnabledAutoGroups(new Set(autoJson.enabledGroups as string[]));
+      }
     } catch (e: unknown) {
       setError((e instanceof Error ? e.message : null) || "Ucitavanje kategorija nije uspelo.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const saveAutoGroups = async (next: Set<string>) => {
+    setSavingAutoGroups(true);
+    try {
+      await fetch("/api/admin/webshop/categories/auto-groups", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabledGroups: Array.from(next) }),
+      });
+    } finally {
+      setSavingAutoGroups(false);
+    }
+  };
+
+  const toggleAutoGroupEnabled = (key: string) => {
+    setEnabledAutoGroups((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      void saveAutoGroups(next);
+      return next;
+    });
   };
 
   useEffect(() => {
@@ -737,26 +772,75 @@ export default function AdminCategoriesPage() {
         </div>
       ) : null}
 
-      {/* Auto-category info box */}
-      <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
-        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700 mb-1">Auto-kategorije (uvek aktivne)</p>
-        <p className="text-xs text-blue-700 mb-2">
-          Sledece kategorije se automatski prikazuju u web-shop filteru — ne trebaju nikakva podešavanja.
-          Svaki proizvod ciji naziv ili mOffice kategorija sadrzi ova kljucna rec automatski pripada grupi:
-        </p>
-        <div className="flex flex-wrap gap-1.5">
-          {[
-            "Odela", "Sakoi", "Pantalone", "Kosulje", "Dzemperi",
-            "Prsluci", "Kaputi", "Jakne", "Obuca", "Aksesoari",
-          ].map((name) => (
-            <span key={name} className="rounded-full border border-blue-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-blue-800">
-              {name}
-            </span>
-          ))}
+      {/* Aktivne kategorije u sajtu */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
+          <p className="text-sm font-semibold text-slate-800">Aktivne kategorije u sajtu</p>
+          <p className="text-xs text-slate-500 mt-0.5">
+            Ove kategorije se prikazuju u web-shop filteru (tabovi iznad proizvoda, sidebar i dropdown).
+            Ukljucuje i auto-kategorije i rucno kreirane admin kategorije.
+          </p>
         </div>
-        <p className="mt-2 text-[11px] text-blue-600">
-          Aksesoari obuhvata: kaiševe, kravate, novčanike, torbe. Da bi se pokazao filter za neku grupu, mora da postoji makar jedan vidljivi proizvod u toj grupi.
-        </p>
+
+        {/* Auto-kategorije toggles */}
+        <div className="px-4 py-3 border-b border-slate-100">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 mb-2">
+            Auto-kategorije {savingAutoGroups ? <span className="text-blue-400 normal-case font-normal tracking-normal">— cuvanje...</span> : null}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {[
+              { key: "odelo",     name: "Odela" },
+              { key: "sako",      name: "Sakoi" },
+              { key: "pantalone", name: "Pantalone" },
+              { key: "kosulja",   name: "Kosulje" },
+              { key: "dzemper",   name: "Dzemperi" },
+              { key: "prsluk",    name: "Prsluci" },
+              { key: "kaput",     name: "Kaputi" },
+              { key: "jakna",     name: "Jakne" },
+              { key: "obuca",     name: "Obuca" },
+              { key: "aksesoari", name: "Aksesoari" },
+            ].map((group) => {
+              const active = enabledAutoGroups.has(group.key);
+              return (
+                <button
+                  key={group.key}
+                  type="button"
+                  disabled={savingAutoGroups}
+                  onClick={() => toggleAutoGroupEnabled(group.key)}
+                  className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors disabled:opacity-50 ${
+                    active
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+                      : "border-slate-200 bg-slate-50 text-slate-400 hover:bg-slate-100"
+                  }`}
+                >
+                  <span className={`h-2 w-2 rounded-full ${active ? "bg-emerald-500" : "bg-slate-300"}`} />
+                  {group.name}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Admin kategorije */}
+        <div className="px-4 py-3">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 mb-2">Admin kategorije (rucno kreirane)</p>
+          {registryRows.filter((r) => r.isVisible).length === 0 ? (
+            <p className="text-xs text-slate-400">Nema rucno kreiranih vidljivih kategorija. Dodaj ih ispod.</p>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {registryRows.filter((r) => r.isVisible).map((row) => (
+                <span
+                  key={row.id}
+                  className="flex items-center gap-1.5 rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-800"
+                >
+                  <span className="h-2 w-2 rounded-full bg-blue-400" />
+                  {row.path.join(" / ") || row.name}
+                  {row.isFeatured ? <span className="text-[10px] text-blue-500">*</span> : null}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <UnassignedProductsPanel rows={rows} onAssigned={load} />

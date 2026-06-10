@@ -5,6 +5,33 @@ import type { LegacyCatalogProduct } from "@/lib/legacy/types";
 
 const CATEGORY_REGISTRY_PATH = "data/webshop-categories.json";
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
+const AUTO_GROUP_SETTINGS_PATH = "data/auto-group-settings.json";
+
+export const ALL_AUTO_GROUPS: Array<{ key: string; name: string }> = [
+  { key: "odelo",     name: "Odela" },
+  { key: "sako",      name: "Sakoi" },
+  { key: "pantalone", name: "Pantalone" },
+  { key: "kosulja",   name: "Košulje" },
+  { key: "dzemper",   name: "Džemperi" },
+  { key: "prsluk",    name: "Prsluci" },
+  { key: "kaput",     name: "Kaputi" },
+  { key: "jakna",     name: "Jakne" },
+  { key: "obuca",     name: "Obuća" },
+  { key: "aksesoari", name: "Aksesoari" },
+];
+
+export async function getAutoGroupSettings(): Promise<{ enabledGroups: string[] }> {
+  const data = await readPersistentJsonFile<{ enabledGroups?: unknown }>(AUTO_GROUP_SETTINGS_PATH, {});
+  const stored = Array.isArray(data.enabledGroups)
+    ? (data.enabledGroups as unknown[]).map(String).filter(Boolean)
+    : null;
+  // Default: all groups enabled
+  return { enabledGroups: stored ?? ALL_AUTO_GROUPS.map((g) => g.key) };
+}
+
+export async function setAutoGroupSettings(enabledGroups: string[]): Promise<void> {
+  await writePersistentJsonFile(AUTO_GROUP_SETTINGS_PATH, { enabledGroups });
+}
 
 export type CatalogCategoryRecord = {
   id: number;

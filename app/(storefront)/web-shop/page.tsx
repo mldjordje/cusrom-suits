@@ -10,7 +10,7 @@ import Reveal from "@/app/components/motion/Reveal";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { listCatalogProducts, normalizeCatalogCategoryGroupKey, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
-import { listCategoryRegistry } from "@/lib/catalog/categories";
+import { listCategoryRegistry, getAutoGroupSettings } from "@/lib/catalog/categories";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
@@ -148,7 +148,7 @@ export default async function WebShopPage({
   const selectedSizes = Array.from(new Set(rawSizes.map((v) => v.toUpperCase().replace(/\s+/g, ""))));
 
   const brokenProductIds = await getBrokenProductIdSet();
-  const [result, landingSettings, registryCategories] = await Promise.all([
+  const [result, landingSettings, registryCategories, autoGroupSettings] = await Promise.all([
     listCatalogProducts({
       page,
       pageSize: 24,
@@ -177,6 +177,7 @@ export default async function WebShopPage({
     }),
     getLandingSettings(),
     listCategoryRegistry(),
+    getAutoGroupSettings(),
   ]);
 
   const getCategoryLabel = (item: CatalogProductView) =>
@@ -196,11 +197,22 @@ export default async function WebShopPage({
   const items = sortItems(result.items, sort);
   const sortedCategoryGroups = sortCategoriesForShop(result.categoryGroups);
 
-  // Admin registry categories (visible) take priority over dynamic groups in nav.
-  // - Categories whose NAME produces a group key use categoryGroup filtering (keyword match,
-  //   catches all products of that type even without explicit assignment). E.g. "Kaisevi" → "kais".
-  // - Categories whose name has no own key (subcategories like "Elegantna", "Sportska") use
-  //   categoryId filtering — shows only products explicitly assigned to that admin category.
+  // Build the combined category nav from both enabled auto-groups and admin categories.
+  // They always coexist — admin categories never replace auto-groups.
+  const availableGroupKeys = new Set(result.categoryGroups.map((g: CatalogCategoryGroup) => g.key));
+  const enabledAutoGroupKeys = new Set(autoGroupSettings.enabledGroups);
+
+  // Enabled auto-groups that have actual products in the current catalog
+  const autoNavCategories: Array<{ id: number; key: string; name: string; filterMode: "group" | "id"; isFeatured: boolean }> =
+    autoGroupSettings.enabledGroups
+      .filter((key) => availableGroupKeys.has(key))
+      .map((key) => {
+        const label = { odelo: "Odela", sako: "Sakoi", pantalone: "Pantalone", kosulja: "Kosulje", dzemper: "Džemperi", prsluk: "Prsluci", kaput: "Kaputi", jakna: "Jakne", obuca: "Obuća", aksesoari: "Aksesoari" }[key] ?? key;
+        return { id: 0, key, name: label, filterMode: "group" as const, isFeatured: false };
+      });
+
+  // Visible admin categories — deduplicate by group key so an admin "Odela" category doesn't
+  // add a second "Odela" entry when the auto-group is also enabled.
   const adminNavCategories = registryCategories
     .filter((cat) => cat.isVisible)
     .map((cat) => {
@@ -212,35 +224,15 @@ export default async function WebShopPage({
         filterMode: (nameKey ? "group" : "id") as "group" | "id",
         isFeatured: cat.isFeatured,
       };
-    });
+    })
+    // Skip admin categories whose group key is already covered by an enabled auto-group
+    .filter((cat) => !cat.key || !enabledAutoGroupKeys.has(cat.key));
 
-  // Canonical default category list — shown when no admin registry categories are configured.
-  // These map 1:1 to keyword groups in normalizeCatalogCategoryGroupKey and are filtered
-  // to only include groups that actually have products in the current catalog.
-  const DEFAULT_NAV_CATEGORIES: Array<{ id: number; key: string; name: string; filterMode: "group" | "id" }> = [
-    { id: 0, key: "odelo",     name: "Odela",     filterMode: "group" },
-    { id: 0, key: "sako",      name: "Sakoi",      filterMode: "group" },
-    { id: 0, key: "pantalone", name: "Pantalone",  filterMode: "group" },
-    { id: 0, key: "kosulja",   name: "Kosulje",    filterMode: "group" },
-    { id: 0, key: "dzemper",   name: "Dzemperi",   filterMode: "group" },
-    { id: 0, key: "prsluk",    name: "Prsluci",    filterMode: "group" },
-    { id: 0, key: "kaput",     name: "Kaputi",     filterMode: "group" },
-    { id: 0, key: "jakna",     name: "Jakne",      filterMode: "group" },
-    { id: 0, key: "obuca",     name: "Obuca",      filterMode: "group" },
-    { id: 0, key: "aksesoari", name: "Aksesoari",  filterMode: "group" },
-  ];
-
-  // Fall back to hardcoded defaults when no admin categories are configured.
-  // Filter to groups that actually exist in the current product set.
-  const availableGroupKeys = new Set(result.categoryGroups.map((g: CatalogCategoryGroup) => g.key));
-  const defaultNavCategories = DEFAULT_NAV_CATEGORIES.filter((c) => availableGroupKeys.has(c.key));
-
-  // All visible admin categories for the sidebar quick-links. Falls back to hardcoded defaults.
-  const sidebarNavCategories =
-    adminNavCategories.length > 0 ? adminNavCategories : defaultNavCategories;
+  // Combined list: auto-groups first, then any admin categories not overlapping with them
+  const sidebarNavCategories = [...autoNavCategories, ...adminNavCategories];
 
   // Horizontal chip bar: prefer admin categories explicitly marked isFeatured.
-  // If none are featured, fall back to first 5 of sidebarNavCategories.
+  // If none, fall back to first 5 of combined list.
   const featuredAdminCategories = adminNavCategories.filter((c) => c.isFeatured);
   const chipNavCategories =
     featuredAdminCategories.length > 0
