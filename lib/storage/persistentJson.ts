@@ -95,9 +95,11 @@ export async function readPersistentJsonFile<T>(
   const stored = await readFromSupabase<T>(bucket, storagePath);
   if (stored != null) return stored;
 
-  const local = await readJsonFile<T>(relativePath, fallback);
-  await writeToSupabase(bucket, storagePath, local).catch(() => false);
-  return local;
+  // Supabase unavailable or file not found — read from local file only.
+  // Do NOT write back to Supabase here: a transient read failure or a
+  // fresh deploy with empty local files would otherwise overwrite any
+  // data the admin previously saved. Writes happen only via writePersistentJsonFile.
+  return readJsonFile<T>(relativePath, fallback);
 }
 
 export async function writePersistentJsonFile(

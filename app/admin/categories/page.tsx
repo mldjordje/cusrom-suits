@@ -299,6 +299,7 @@ export default function AdminCategoriesPage() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [query, setQuery] = useState("");
+  const [showLegacy, setShowLegacy] = useState(false);
 
   // Per-category product management
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
@@ -347,13 +348,27 @@ export default function AdminCategoriesPage() {
     void load();
   }, []);
 
+  // Registry/merged = admin-created categories that appear in web-shop filter.
+  // Catalog-only = legacy mOffice categories from raw product data (informational only).
+  const registryRows = useMemo(() => rows.filter((r) => r.source === "registry" || r.source === "merged"), [rows]);
+  const catalogOnlyRows = useMemo(() => rows.filter((r) => r.source === "catalog"), [rows]);
+
   const visibleRows = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return rows;
-    return rows.filter((row) =>
+    const base = registryRows;
+    if (!normalizedQuery) return base;
+    return base.filter((row) =>
       [row.name, row.path.join(" / "), String(row.id)].join(" ").toLowerCase().includes(normalizedQuery),
     );
-  }, [query, rows]);
+  }, [query, registryRows]);
+
+  const visibleLegacyRows = useMemo(() => {
+    const normalizedQuery = query.trim().toLowerCase();
+    if (!normalizedQuery) return catalogOnlyRows;
+    return catalogOnlyRows.filter((row) =>
+      [row.name, row.path.join(" / "), String(row.id)].join(" ").toLowerCase().includes(normalizedQuery),
+    );
+  }, [query, catalogOnlyRows]);
 
   const loadCategoryProducts = async (categoryId: number) => {
     setLoadingProducts((prev) => new Set([...prev, categoryId]));
@@ -584,7 +599,7 @@ export default function AdminCategoriesPage() {
         <div>
           <h1 className="text-2xl font-bold text-slate-900">Kategorije</h1>
           <p className="text-sm text-slate-600">
-            Upravljaj kategorijama i rasporedji proizvode iz web-shop kataloga.
+            Upravljaj web-shop kategorijama. Auto-kategorije rade odmah bez podešavanja.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -616,12 +631,37 @@ export default function AdminCategoriesPage() {
         </div>
       ) : null}
 
+      {/* Auto-category info box */}
+      <div className="rounded-2xl border border-blue-100 bg-blue-50/60 p-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-700 mb-1">Auto-kategorije (uvek aktivne)</p>
+        <p className="text-xs text-blue-700 mb-2">
+          Sledece kategorije se automatski prikazuju u web-shop filteru — ne trebaju nikakva podešavanja.
+          Svaki proizvod ciji naziv ili mOffice kategorija sadrzi ova kljucna rec automatski pripada grupi:
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {[
+            "Odela", "Sakoi", "Pantalone", "Kosulje", "Dzemperi",
+            "Prsluci", "Kaputi", "Jakne", "Obuca", "Aksesoari",
+          ].map((name) => (
+            <span key={name} className="rounded-full border border-blue-200 bg-white px-2.5 py-0.5 text-xs font-semibold text-blue-800">
+              {name}
+            </span>
+          ))}
+        </div>
+        <p className="mt-2 text-[11px] text-blue-600">
+          Aksesoari obuhvata: kaiševe, kravate, novčanike, torbe. Da bi se pokazao filter za neku grupu, mora da postoji makar jedan vidljivi proizvod u toj grupi.
+        </p>
+      </div>
+
       <UnassignedProductsPanel rows={rows} onAssigned={load} />
 
       <div className="grid gap-4 xl:grid-cols-[360px,minmax(0,1fr)]">
         {/* Create form */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Nova kategorija</p>
+          <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Nova admin kategorija</p>
+          <p className="mb-3 text-xs text-slate-400">
+            Koristite za posebne kolekcije, podtipove ili sezonske filere koji se ne pokrivaju auto-kategorijama.
+          </p>
           <div className="grid gap-3">
             <input
               value={createForm.name}
@@ -632,7 +672,7 @@ export default function AdminCategoriesPage() {
             <input
               value={createForm.path}
               onChange={(e) => setCreateForm((prev) => ({ ...prev, path: e.target.value }))}
-              placeholder="Putanja, npr. Musko / Odela"
+              placeholder="Putanja, npr. Obuca / Elegantna"
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
             />
             <div className="grid grid-cols-[1fr,84px] gap-3">
@@ -655,7 +695,7 @@ export default function AdminCategoriesPage() {
                 checked={createForm.isVisible}
                 onChange={(e) => setCreateForm((prev) => ({ ...prev, isVisible: e.target.checked }))}
               />
-              Vidljiva u web-shop navigaciji
+              Vidljiva u web-shop filteru
             </label>
             <button
               onClick={createCategory}
@@ -665,33 +705,36 @@ export default function AdminCategoriesPage() {
               {creating ? "Kreiranje..." : "Dodaj kategoriju"}
             </button>
           </div>
-
-          <div className="mt-5 rounded-xl border border-slate-100 bg-slate-50 p-3">
-            <p className="text-xs font-semibold text-slate-600 mb-1">Prepoznata imena kategorija</p>
-            <p className="text-xs text-slate-500 leading-relaxed">
-              Odela, Sakoi, Pantalone, Kosulje, Kaputi, Jakne, Dzemperi, Obuca, Kaisevi, Kravate, Prsluci
-            </p>
-            <p className="mt-1 text-xs text-slate-400">
-              Kategorije sa ovim imenima se automatski mapiraju na proizvode i pojavljuju u web-shop navigaciji.
-            </p>
-          </div>
         </div>
 
-        {/* Category list */}
+        {/* Registry category list */}
         <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-slate-800">Admin kategorije</p>
+              <p className="text-xs text-slate-500">Kategorije koje si rucno kreirao — pojavljuju se u web-shop filteru.</p>
+            </div>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Pretraga po nazivu, putanji ili ID"
-              className="w-full max-w-sm rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              placeholder="Pretraga..."
+              className="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-sm"
             />
-            <p className="text-xs text-slate-500">Prikazano {visibleRows.length} od {rows.length}</p>
           </div>
 
           {loading ? <p className="text-sm text-slate-500">Ucitavanje...</p> : null}
           {error ? <p className="text-sm text-rose-600">{error}</p> : null}
           {notice ? <p className="text-sm text-emerald-700">{notice}</p> : null}
+
+          {!loading && registryRows.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-slate-200 p-6 text-center">
+              <p className="text-sm font-semibold text-slate-600">Nema admin kategorija</p>
+              <p className="mt-1 text-xs text-slate-400">
+                Web shop filter vec prikazuje auto-kategorije gore. Kreiranje admin kategorija potrebno je samo
+                za posebne filere (npr. &quot;Nova kolekcija&quot;, &quot;Outlet&quot;, podtipovi obuće i sl.).
+              </p>
+            </div>
+          ) : null}
 
           <div className="grid gap-3">
             {visibleRows.map((row) => {
@@ -904,11 +947,60 @@ export default function AdminCategoriesPage() {
               );
             })}
 
-            {!loading && visibleRows.length === 0 ? (
-              <p className="text-sm text-slate-500">Nema kategorija za prikaz.</p>
-            ) : null}
           </div>
         </div>
+      </div>
+
+      {/* Legacy mOffice categories — collapsed by default */}
+      <div className="rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <button
+          type="button"
+          onClick={() => setShowLegacy((v) => !v)}
+          className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        >
+          <div>
+            <span className="text-sm font-semibold text-slate-700">Legacy mOffice kategorije</span>
+            <span className="ml-2 rounded-full bg-slate-100 px-2 py-0.5 text-xs font-semibold text-slate-500">
+              {catalogOnlyRows.length}
+            </span>
+            <p className="mt-0.5 text-xs text-slate-400">
+              Kategorije iz mOffice sistema — nisu direktno vezane za web-shop filter. Samo informativno.
+            </p>
+          </div>
+          <span className="shrink-0 text-xs font-semibold text-slate-500">
+            {showLegacy ? "▲ Sakrij" : "▼ Prikaži"}
+          </span>
+        </button>
+
+        {showLegacy ? (
+          <div className="border-t border-slate-100 px-4 pb-4 pt-3">
+            <p className="mb-3 text-xs text-slate-500">
+              Ove kategorije dolaze iz mOffice-a i prikazuju se u adminu radi pregleda — ali se ne prikazuju u web-shop filteru.
+              Ako zelis da neka od njih postane web-shop filter, napred kreiraj novu <em>admin kategoriju</em> sa tim imenom.
+            </p>
+            <div className="grid gap-2">
+              {visibleLegacyRows.map((row) => (
+                <div key={row.id} className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-slate-100 bg-slate-50 px-3 py-2">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-700">
+                      {row.path.join(" / ") || row.name}
+                      {row.path.join(" / ") !== row.name && row.path.length > 0 ? (
+                        <span className="ml-1 font-normal text-slate-400">({row.name})</span>
+                      ) : null}
+                    </p>
+                    <p className="text-[10px] text-slate-400">#{row.id} · {row.usageCount} {row.usageCount === 1 ? "proizvod" : "proizvoda"}</p>
+                  </div>
+                  <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                    mOffice
+                  </span>
+                </div>
+              ))}
+              {visibleLegacyRows.length === 0 ? (
+                <p className="text-xs text-slate-400">Nema legacy kategorija.</p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

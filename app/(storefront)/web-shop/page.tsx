@@ -213,13 +213,31 @@ export default async function WebShopPage({
       };
     });
 
-  // Fall back to dynamic groups when no admin categories are configured
+  // Canonical default category list — shown when no admin registry categories are configured.
+  // These map 1:1 to keyword groups in normalizeCatalogCategoryGroupKey and are filtered
+  // to only include groups that actually have products in the current catalog.
+  const DEFAULT_NAV_CATEGORIES: Array<{ id: number; key: string; name: string; filterMode: "group" | "id" }> = [
+    { id: 0, key: "odelo",     name: "Odela",     filterMode: "group" },
+    { id: 0, key: "sako",      name: "Sakoi",      filterMode: "group" },
+    { id: 0, key: "pantalone", name: "Pantalone",  filterMode: "group" },
+    { id: 0, key: "kosulja",   name: "Kosulje",    filterMode: "group" },
+    { id: 0, key: "dzemper",   name: "Dzemperi",   filterMode: "group" },
+    { id: 0, key: "prsluk",    name: "Prsluci",    filterMode: "group" },
+    { id: 0, key: "kaput",     name: "Kaputi",     filterMode: "group" },
+    { id: 0, key: "jakna",     name: "Jakne",      filterMode: "group" },
+    { id: 0, key: "obuca",     name: "Obuca",      filterMode: "group" },
+    { id: 0, key: "aksesoari", name: "Aksesoari",  filterMode: "group" },
+  ];
+
+  // Fall back to hardcoded defaults when no admin categories are configured.
+  // Filter to groups that actually exist in the current product set.
+  const availableGroupKeys = new Set(result.categoryGroups.map((g: CatalogCategoryGroup) => g.key));
   const featuredNavCategories =
     adminNavCategories.length > 0
       ? adminNavCategories
-      : sortedCategoryGroups.slice(0, 7).map((g: CatalogCategoryGroup) => ({ id: 0, key: g.key, name: g.name, filterMode: "group" as const }));
+      : DEFAULT_NAV_CATEGORIES.filter((c) => availableGroupKeys.has(c.key));
 
-  const topCategories = sortedCategoryGroups.slice(0, 7);
+  const topCategories = sortedCategoryGroups.slice(0, 10);
 
   const DEFAULT_SIZES = [
     "XS",
