@@ -3689,7 +3689,6 @@
   }
 }
 
-html.mobile-menu-opened,
 body.mobile-menu-opened {
   overflow: hidden;
   overscroll-behavior: none;
@@ -3806,8 +3805,6 @@ body.mobile-menu-opened {
   backdrop-filter: blur(18px);
 }
 
-.ss-mobile-slot::before,
-.mobile-nav-activator::before,
 .page-wrapper .btn::before,
 .page-wrapper .pc__atc::before,
 .ss-mobile-nav-quicklink::before,
@@ -3826,8 +3823,6 @@ body.mobile-menu-opened {
   mix-blend-mode: screen;
 }
 
-.ss-mobile-slot::after,
-.mobile-nav-activator::after,
 .page-wrapper .btn::after,
 .page-wrapper .pc__atc::after,
 .ss-mobile-nav-quicklink::after,

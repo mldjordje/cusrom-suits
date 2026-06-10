@@ -68,9 +68,6 @@ export default function StorefrontHeaderClient({
 
     const unlockScroll = () => {
       body.classList.remove("mobile-menu-opened");
-      documentElement.classList.remove("mobile-menu-opened");
-      documentElement.style.overflow = "";
-      documentElement.style.height = "";
       body.style.overflow = "";
       body.style.height = "";
       window.scrollTo(0, lockedScrollY.current);
@@ -79,12 +76,8 @@ export default function StorefrontHeaderClient({
     if (mobileOpen) {
       lockedScrollY.current = window.scrollY;
       body.classList.add("mobile-menu-opened");
-      documentElement.classList.add("mobile-menu-opened");
-      // Use overflow:hidden on html+body instead of position:fixed.
-      // position:fixed on body breaks overflow-y:auto scroll inside
+      // Lock only body, not html — html:overflow:hidden blocks scroll inside
       // fixed overlays on iOS Safari.
-      documentElement.style.overflow = "hidden";
-      documentElement.style.height = "100%";
       body.style.overflow = "hidden";
       body.style.height = "100%";
     } else {
