@@ -11,13 +11,8 @@
 
 header('Content-Type: application/json');
 
-// Read secret from server env or hard-coded fallback (replace before deploying)
-$secret = getenv('UPLOAD_SECRET') ?: '';
-if (!$secret) {
-    http_response_code(500);
-    echo json_encode(['error' => 'Server not configured (missing UPLOAD_SECRET)']);
-    exit;
-}
+// *** Set this to any strong random string. Use the same value for PHP_UPLOAD_TOKEN on Vercel. ***
+$secret = 'REPLACE_THIS_WITH_YOUR_SECRET_TOKEN';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);

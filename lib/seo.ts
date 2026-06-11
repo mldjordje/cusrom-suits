@@ -31,9 +31,12 @@ export const COMPANY_INFO = {
   phone: "+381694455106",
   phoneDisplay: "+381 69 445 5106",
   streetAddress: "Obrenoviceva 9",
-  addressLocality: "Nis",
+  addressLocality: "Niš",
   postalCode: "18000",
   addressCountry: "RS",
+  latitude: 43.3209,
+  longitude: 21.8954,
+  priceRange: "€€",
 };
 
 const DEFAULT_KEYWORDS = [
@@ -45,6 +48,10 @@ const DEFAULT_KEYWORDS = [
   "ready to wear",
   "custom suits",
   "poslovne uniforme",
+  "muska odeca nis",
+  "odela nis",
+  "muska elegancija srbija",
+  "santos santorini nis",
 ];
 
 export const absoluteUrl = (path = "/") => {
@@ -191,6 +198,9 @@ export const buildLocalBusinessJsonLd = () => ({
   image: absoluteUrl(DEFAULT_OG_IMAGE),
   telephone: COMPANY_INFO.phoneDisplay,
   email: COMPANY_INFO.email,
+  priceRange: COMPANY_INFO.priceRange,
+  currenciesAccepted: "RSD",
+  paymentAccepted: "Cash, Credit Card",
   sameAs: COMPANY_SAME_AS,
   address: {
     "@type": "PostalAddress",
@@ -199,6 +209,26 @@ export const buildLocalBusinessJsonLd = () => ({
     postalCode: COMPANY_INFO.postalCode,
     addressCountry: COMPANY_INFO.addressCountry,
   },
+  geo: {
+    "@type": "GeoCoordinates",
+    latitude: COMPANY_INFO.latitude,
+    longitude: COMPANY_INFO.longitude,
+  },
+  openingHoursSpecification: [
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"],
+      opens: "09:00",
+      closes: "19:00",
+    },
+    {
+      "@type": "OpeningHoursSpecification",
+      dayOfWeek: ["Saturday"],
+      opens: "09:00",
+      closes: "15:00",
+    },
+  ],
+  hasMap: `https://maps.google.com/?q=${COMPANY_INFO.latitude},${COMPANY_INFO.longitude}`,
 });
 
 export const buildWebSiteJsonLd = () => ({

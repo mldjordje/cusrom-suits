@@ -1309,7 +1309,7 @@ const sortCatalogProducts = (
       const aHas = hasCatalogProductDirectMedia(a) ? 1 : 0;
       const bHas = hasCatalogProductDirectMedia(b) ? 1 : 0;
       if (aHas !== bHas) return aHas - bHas;
-      return b.legacyId - a.legacyId;
+      return getAvailableStockValue(b) - getAvailableStockValue(a);
     });
   }
   return list.sort((a, b) => {

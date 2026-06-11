@@ -57,7 +57,7 @@ async function loadAllCatalogProductPaths() {
 
   return [firstPage, ...rest]
     .flatMap((result) => result.items)
-    .map((item) => `/web-shop/${item.legacyId}`);
+    .map((item) => ({ path: `/web-shop/${item.legacyId}` }));
 }
 
 async function loadAllBlogPaths() {
@@ -83,11 +83,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = STATIC_ROUTES.map((path) => ({
     url: absoluteUrl(path),
     alternates: hreflangAlternates(path),
-    changeFrequency: path === "/" ? "weekly" : "monthly",
-    priority: path === "/" ? 1 : path === "/web-shop" || path === "/custom-suits" ? 0.9 : 0.7,
+    changeFrequency: path === "/" ? "weekly" : path === "/akcije" ? "daily" : "monthly",
+    priority: path === "/" ? 1 : path === "/web-shop" || path === "/custom-suits" ? 0.9 : path === "/akcije" ? 0.85 : 0.7,
   }));
 
-  const productEntries: MetadataRoute.Sitemap = productPaths.map((path) => ({
+  const productEntries: MetadataRoute.Sitemap = productPaths.map(({ path }) => ({
     url: absoluteUrl(path),
     alternates: hreflangAlternates(path),
     changeFrequency: "weekly",

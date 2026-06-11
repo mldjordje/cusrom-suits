@@ -723,8 +723,12 @@ export default function AdminWebshopPage() {
 
   const [q, setQ] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [inStock, setInStock] = useState(false);
-  const [activeOnly, setActiveOnly] = useState(true);
+  const [inStock, setInStock] = useState(() =>
+    typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("inStock") === "1" : false
+  );
+  const [activeOnly, setActiveOnly] = useState(() =>
+    typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("activeOnly") !== "0" : true
+  );
   const [exportOnly, setExportOnly] = useState(true);
   const [onSaleOnly, setOnSaleOnly] = useState(false);
   const [mediaStatus, setMediaStatus] = useState(() =>
@@ -736,6 +740,15 @@ export default function AdminWebshopPage() {
   const [sort, setSort] = useState(() =>
     typeof window !== "undefined" ? (new URLSearchParams(window.location.search).get("sort") || "featured") : "featured"
   );
+
+  const setMediaStatusWithAutoSort = (value: string) => {
+    setMediaStatus(value);
+    if (value === "missing") {
+      setSort("stock_desc");
+      setInStock(true);
+      setActiveOnly(true);
+    }
+  };
   const [createPanelOpen, setCreatePanelOpen] = useState(false);
   const [saleQ, setSaleQ] = useState("");
   const [saleOnSaleOnly, setSaleOnSaleOnly] = useState(true);
@@ -1910,10 +1923,18 @@ export default function AdminWebshopPage() {
 
   const renderProductCatalogCard = (item: CatalogProduct) => {
     const draft = drafts[item.legacyId];
+    const hasNoImage = !item.images?.length || Boolean(item.rawPayload?.imageFallback);
     return (
-      <article key={item.legacyId} className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+      <article key={item.legacyId} className={`rounded-2xl border bg-white p-3 shadow-sm ${hasNoImage ? "border-rose-200" : "border-slate-200"}`}>
         <div className="flex gap-3">
-          <Image src={cardImage(item)} alt={item.name} width={96} height={96} className="h-24 w-24 shrink-0 rounded-lg object-cover" />
+          <div className="relative shrink-0">
+            <Image src={cardImage(item)} alt={item.name} width={96} height={96} className="h-24 w-24 rounded-lg object-cover" />
+            {hasNoImage && (
+              <span className="absolute -right-1 -top-1 rounded-full bg-rose-500 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-white shadow">
+                BEZ SLIKE
+              </span>
+            )}
+          </div>
           <div className="min-w-0 flex-1">
             <p className="truncate text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">
               #{item.legacyId} / {item.sku}
@@ -1922,7 +1943,9 @@ export default function AdminWebshopPage() {
             <p className="mt-1 text-xs text-slate-600">{item.categories[0]?.path.join(" / ") || "Bez kategorije"}</p>
             <div className="mt-2 flex flex-wrap gap-2 text-[11px]">
               <span className="rounded-full border border-slate-200 px-2 py-1">{formatRsd(item.priceFinalGross)}</span>
-              <span className="rounded-full border border-slate-200 px-2 py-1">Lager {item.stockWarehouse1}</span>
+              <span className={`rounded-full border px-2 py-1 font-semibold ${item.stockTotal > 10 ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-slate-200 text-slate-600"}`}>
+                Lager {item.stockTotal ?? item.stockWarehouse1}
+              </span>
               <span className={`rounded-full border px-2 py-1 ${isMofficeProduct(item) ? "border-blue-200 bg-blue-50 text-blue-800" : "border-slate-200 text-slate-600"}`}>
                 {isMofficeProduct(item) ? "mOffice sync" : "Rucni unos"}
               </span>
@@ -1939,6 +1962,21 @@ export default function AdminWebshopPage() {
             </div>
           </div>
         </div>
+        {hasNoImage && (
+          <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-rose-300 bg-rose-50 px-3 py-3 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100">
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => {
+                void uploadEditorImages(item.legacyId, e.target.files);
+                e.currentTarget.value = "";
+              }}
+            />
+            {uploadingEditorImages === item.legacyId ? "⏳ Uploading..." : "📷 Dodaj slike — prevuci ili klikni"}
+          </label>
+        )}
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
           <button
             type="button"
@@ -1954,7 +1992,7 @@ export default function AdminWebshopPage() {
           >
             Kategorije
           </button>
-          <label className="rounded-lg border border-indigo-200 bg-indigo-50 px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-700">
+          <label className={`rounded-lg border px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] ${hasNoImage ? "border-rose-200 bg-rose-50 text-rose-700" : "border-indigo-200 bg-indigo-50 text-indigo-700"}`}>
             <input
               type="file"
               accept="image/*"
@@ -2455,7 +2493,7 @@ export default function AdminWebshopPage() {
                   <option key={c.id} value={c.id}>{c.path.join(" / ")}</option>
                 ))}
               </select>
-              <select value={mediaStatus} onChange={(e) => setMediaStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+              <select value={mediaStatus} onChange={(e) => setMediaStatusWithAutoSort(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
                 <option value="all">Sve slike</option>
                 <option value="missing">Bez direktne slike</option>
                 <option value="direct">Ima direktnu sliku</option>
@@ -2560,6 +2598,20 @@ export default function AdminWebshopPage() {
           </div>
 
           {loading ? <p className="text-sm text-slate-500">Ucitavanje...</p> : null}
+
+          {mediaStatus === "missing" && !loading && items.length > 0 && (
+            <div className="rounded-2xl border border-rose-300 bg-rose-50 p-4">
+              <p className="text-sm font-bold text-rose-900">
+                📷 {items.length} artikala bez slike — sortirani po lageru (najvažniji prvi)
+              </p>
+              <p className="mt-1 text-xs text-rose-700">
+                Za svaki artikal klikni <strong>„Dodaj slike"</strong> (crveno dugme), izaberi fajlove, pa <strong>„Sacuvaj"</strong>. Posle toga artikal se pojavljuje na web shopu.
+              </p>
+              <p className="mt-1 text-xs text-rose-600">
+                Možeš uploadovati više slika odjednom (do 12). Prva slika postaje cover.
+              </p>
+            </div>
+          )}
 
           <div className="grid gap-3 lg:hidden">{items.map(renderProductCatalogCard)}</div>
 

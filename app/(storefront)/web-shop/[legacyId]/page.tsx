@@ -504,7 +504,7 @@ export default async function WebShopProductPage({
           url: absoluteUrl(canonicalPath),
           availability: "https://schema.org/PreOrder",
           priceCurrency: "RSD",
-          seller: { "@id": ORGANIZATION_JSONLD_ID },
+          seller: { "@type": "Organization", "@id": ORGANIZATION_JSONLD_ID, name: "Santos & Santorini" },
         }
       : {
           "@type": "Offer",
@@ -514,9 +514,12 @@ export default async function WebShopProductPage({
           availability:
             stockValue > 0
               ? "https://schema.org/InStock"
-              : "https://schema.org/PreOrder",
+              : "https://schema.org/OutOfStock",
           itemCondition: "https://schema.org/NewCondition",
-          seller: { "@id": ORGANIZATION_JSONLD_ID },
+          ...(selectedProduct.rebatePercent && Number(selectedProduct.rebatePercent) > 0
+            ? { priceValidUntil: new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10) }
+            : {}),
+          seller: { "@type": "Organization", "@id": ORGANIZATION_JSONLD_ID, name: "Santos & Santorini" },
         },
   };
 

@@ -82,7 +82,7 @@ export default function MediaHealthPanel() {
 
       <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4">
         <Link
-          href="/admin/webshop?mediaStatus=missing&sort=no_image_first"
+          href="/admin/webshop?mediaStatus=missing&sort=stock_desc&activeOnly=1&inStock=1"
           className="rounded-xl border border-rose-300 bg-white px-3 py-2 block hover:bg-rose-50 transition-colors"
           title="Klikni da vidiš artikle bez sopstvene slike"
         >
