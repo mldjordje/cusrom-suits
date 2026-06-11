@@ -2605,7 +2605,7 @@ export default function AdminWebshopPage() {
                 📷 {items.length} artikala bez slike — sortirani po lageru (najvažniji prvi)
               </p>
               <p className="mt-1 text-xs text-rose-700">
-                Za svaki artikal klikni <strong>„Dodaj slike"</strong> (crveno dugme), izaberi fajlove, pa <strong>„Sacuvaj"</strong>. Posle toga artikal se pojavljuje na web shopu.
+                Za svaki artikal klikni <strong>&bdquo;Dodaj slike&ldquo;</strong> (crveno dugme), izaberi fajlove, pa <strong>&bdquo;Sacuvaj&ldquo;</strong>. Posle toga artikal se pojavljuje na web shopu.
               </p>
               <p className="mt-1 text-xs text-rose-600">
                 Možeš uploadovati više slika odjednom (do 12). Prva slika postaje cover.
