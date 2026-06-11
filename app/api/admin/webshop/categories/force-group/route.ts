@@ -41,18 +41,25 @@ export async function PATCH(req: NextRequest) {
   const row = data as unknown as { raw_payload: Record<string, unknown> };
   const rawPayload = { ...(row.raw_payload || {}) };
 
-  const existing: string[] = Array.isArray(rawPayload.forcedCategoryGroups)
+  const existingForced: string[] = Array.isArray(rawPayload.forcedCategoryGroups)
     ? (rawPayload.forcedCategoryGroups as unknown[]).map(String).filter(Boolean)
     : [];
+  const existingExcluded: string[] = Array.isArray(rawPayload.excludedCategoryGroups)
+    ? (rawPayload.excludedCategoryGroups as unknown[]).map(String).filter(Boolean)
+    : [];
 
-  let updated: string[];
+  let updatedForced: string[];
+  let updatedExcluded: string[];
   if (action === "add") {
-    updated = existing.includes(groupKey) ? existing : [...existing, groupKey];
+    updatedForced = existingForced.includes(groupKey) ? existingForced : [...existingForced, groupKey];
+    updatedExcluded = existingExcluded.filter((k) => k !== groupKey);
   } else {
-    updated = existing.filter((k) => k !== groupKey);
+    updatedForced = existingForced.filter((k) => k !== groupKey);
+    updatedExcluded = existingExcluded.includes(groupKey) ? existingExcluded : [...existingExcluded, groupKey];
   }
 
-  rawPayload.forcedCategoryGroups = updated.length > 0 ? updated : undefined;
+  rawPayload.forcedCategoryGroups = updatedForced.length > 0 ? updatedForced : undefined;
+  rawPayload.excludedCategoryGroups = updatedExcluded.length > 0 ? updatedExcluded : undefined;
 
   const { error: updateError } = await supabase
     .from("catalog_products")

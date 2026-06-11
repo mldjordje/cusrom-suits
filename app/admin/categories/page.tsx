@@ -21,7 +21,20 @@ type ProductMini = {
   name: string;
   categories: Array<{ id: number; name: string; path: string[] }>;
   coverImage?: string | null;
+  stockTotal?: number;
+  isActive?: boolean;
+  isExported?: boolean;
 };
+
+const isProductVisibleOnSite = (p: ProductMini) =>
+  Boolean(p.isActive !== false && p.isExported !== false && (p.stockTotal ?? 0) > 0 && p.coverImage);
+
+const sortByVisibility = (products: ProductMini[]): ProductMini[] =>
+  [...products].sort((a, b) => {
+    const av = isProductVisibleOnSite(a);
+    const bv = isProductVisibleOnSite(b);
+    return av === bv ? 0 : av ? -1 : 1;
+  });
 
 type DraftState = Record<number, { name: string; path: string; mainColor: string; description: string; isVisible: boolean; isFeatured: boolean }>;
 
@@ -429,7 +442,7 @@ export default function AdminCategoriesPage() {
       const json = await res.json();
       setCategoryProducts((prev) => ({
         ...prev,
-        [categoryId]: (json.data || []) as ProductMini[],
+        [categoryId]: sortByVisibility((json.data || []) as ProductMini[]),
       }));
     } catch {
       // ignore
@@ -464,7 +477,7 @@ export default function AdminCategoriesPage() {
         `/api/admin/webshop/products?categoryGroup=${encodeURIComponent(groupKey)}&pageSize=60&activeOnly=1&exportOnly=1`,
       );
       const json = await res.json();
-      setAutoGroupProducts((prev) => ({ ...prev, [groupKey]: (json.data || []) as ProductMini[] }));
+      setAutoGroupProducts((prev) => ({ ...prev, [groupKey]: sortByVisibility((json.data || []) as ProductMini[]) }));
       setAutoGroupTotals((prev) => ({
         ...prev,
         [groupKey]: typeof json.pagination?.total === "number" ? json.pagination.total : (json.data || []).length,
@@ -1109,11 +1122,18 @@ export default function AdminCategoriesPage() {
                         <p className="text-xs text-slate-400">Nema proizvoda. Koristite pretragu ispod da dodate.</p>
                       ) : (
                         <div className="mb-4 grid gap-2">
-                          {products.map((product) => (
-                            <div key={product.legacyId} className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-3 py-2">
-                              <div className="min-w-0">
+                          {products.map((product) => {
+                            const visible = isProductVisibleOnSite(product);
+                            return (
+                            <div key={product.legacyId} className={`flex items-center justify-between gap-3 rounded-xl border bg-white px-3 py-2 ${visible ? "border-slate-200" : "border-amber-100"}`}>
+                              <div className="min-w-0 flex-1">
                                 <p className="truncate text-xs font-semibold text-slate-900">{product.name}</p>
-                                <p className="text-[10px] text-slate-500">#{product.legacyId} / {product.sku}</p>
+                                <p className="text-[10px] text-slate-500">
+                                  #{product.legacyId} / {product.sku}
+                                  {!visible && (
+                                    <span className="ml-1.5 text-amber-600">· nije vidljiv na sajtu</span>
+                                  )}
+                                </p>
                               </div>
                               <button
                                 type="button"
@@ -1124,7 +1144,8 @@ export default function AdminCategoriesPage() {
                                 Ukloni
                               </button>
                             </div>
-                          ))}
+                            );
+                          })}
                         </div>
                       )}
 
@@ -1250,8 +1271,10 @@ export default function AdminCategoriesPage() {
                           {products.map((product) => {
                             const rawImg = String(product.coverImage || "").trim();
                             const img = rawImg.replace(/^https?:\/\/(www\.)?santos\.rs/, "").replace(/^https?:\/\/assets\.santos\.rs/, "");
+                            const visible = isProductVisibleOnSite(product);
+                            const forceKey = `${product.legacyId}-${group.key}`;
                             return (
-                              <div key={product.legacyId} className="flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-2.5 py-2">
+                              <div key={product.legacyId} className={`flex items-center gap-2 rounded-xl border px-2.5 py-2 ${visible ? "border-slate-200 bg-white" : "border-amber-100 bg-amber-50/40"}`}>
                                 {img ? (
                                   // eslint-disable-next-line @next/next/no-img-element
                                   <img
@@ -1267,8 +1290,19 @@ export default function AdminCategoriesPage() {
                                 )}
                                 <div className="min-w-0 flex-1">
                                   <p className="truncate text-[11px] font-semibold text-slate-800">{product.name}</p>
-                                  <p className="text-[10px] text-slate-400">#{product.legacyId}</p>
+                                  <p className="text-[10px] text-slate-400">
+                                    #{product.legacyId}
+                                    {!visible && <span className="ml-1 text-amber-500">· nije vidljiv</span>}
+                                  </p>
                                 </div>
+                                <button
+                                  type="button"
+                                  disabled={forcingProduct === forceKey}
+                                  onClick={() => void forceGroupAssign(product, group.key, "remove")}
+                                  className="shrink-0 rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.1em] text-rose-600 disabled:opacity-50"
+                                >
+                                  {forcingProduct === forceKey ? "..." : "Ukloni"}
+                                </button>
                                 <a
                                   href={`/web-shop/${product.legacyId}`}
                                   target="_blank"

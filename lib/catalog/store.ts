@@ -560,6 +560,11 @@ const getCatalogProductGroupKeys = (item: CatalogProductView): Set<string> => {
 export const productMatchesCategoryGroup = (item: CatalogProductView, groupKey: string) => {
   const wanted = normalizeCatalogCategoryGroupKey(groupKey);
   if (!wanted) return false;
+  // Admin-forced exclusions override everything else
+  const excluded: string[] = Array.isArray(item.rawPayload?.excludedCategoryGroups)
+    ? (item.rawPayload.excludedCategoryGroups as unknown[]).map(String).filter(Boolean)
+    : [];
+  if (excluded.map(normalizeCatalogCategoryGroupKey).includes(wanted)) return false;
   const keys = getCatalogProductGroupKeys(item);
   if (wanted === "aksesoari") {
     return keys.has("aksesoari") || [...keys].some((k) => ACCESSORY_SUB_KEYS.has(k));
