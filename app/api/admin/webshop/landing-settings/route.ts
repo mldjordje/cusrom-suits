@@ -60,7 +60,10 @@ const parseUniformImages = (value: unknown): LandingUniformImage[] => {
       const image = String(entry.image || "").trim();
       const alt = String(entry.alt || "").trim();
       if (!title && !image && !alt) return null;
-      return { title, image, alt };
+      const gallery = Array.isArray(entry.gallery)
+        ? (entry.gallery as unknown[]).map((g) => String(g || "").trim()).filter((g) => g.length > 0)
+        : undefined;
+      return { title, image, alt, ...(gallery && gallery.length ? { gallery } : {}) };
     })
     .filter((item): item is LandingUniformImage => Boolean(item))
     .slice(0, 24);

@@ -36,11 +36,6 @@ const normalizeImage = async (file: File) => {
     withoutEnlargement: true,
   });
 
-  if (file.type === "image/png") {
-    const buffer = await pipeline.png({ compressionLevel: 9 }).toBuffer();
-    return { buffer, ext: "png", contentType: "image/png" };
-  }
-
   if (file.type === "image/webp") {
     const buffer = await pipeline.webp({ quality: 84 }).toBuffer();
     return { buffer, ext: "webp", contentType: "image/webp" };

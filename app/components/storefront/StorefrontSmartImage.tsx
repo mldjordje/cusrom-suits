@@ -38,10 +38,14 @@ export default function StorefrontSmartImage({
   }, [candidates]);
 
   const activeSrc = candidates[Math.min(activeIndex, Math.max(candidates.length - 1, 0))] || fallbackSrc;
+  // Bypass Vercel's /_next/image optimizer for Supabase Storage URLs — they are
+  // already public and directly accessible, and going through the optimizer burns
+  // the monthly source-image quota (resulting in 402 errors for new uploads).
   const shouldBypassOptimization =
     props.unoptimized == null &&
     (activeSrc.startsWith("data:image/") ||
-      activeSrc.toLowerCase().includes(".svg"));
+      activeSrc.toLowerCase().includes(".svg") ||
+      activeSrc.includes("/storage/v1/object/public/"));
 
   return (
     <Image
