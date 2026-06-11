@@ -48,11 +48,10 @@ const nextConfig: NextConfig = {
     },
   },
   images: {
-    formats: ["image/webp"],
-    minimumCacheTTL: 604800, // 7 dana — produktne slike se retko menjaju
-    deviceSizes: [640, 750, 828, 1080, 1200, 1600, 1920],
-    imageSizes: [48, 64, 96, 120, 180, 330, 420, 690, 900],
-    qualities: [60, 75],
+    // Vercel free tier has a 5K/month transformation quota — disable the optimizer
+    // entirely so all images are served directly from source (Supabase, cPanel).
+    // Images are already resized/compressed by Sharp on upload, so no quality loss.
+    unoptimized: true,
     remotePatterns,
   },
   async rewrites() {
