@@ -88,3 +88,23 @@ export async function downloadSiteAsset(storagePath: string, bucket = SITE_ASSET
     return null;
   }
 }
+
+export async function getSignedSiteAssetUrl(
+  storagePath: string,
+  expiresInSeconds = 3600,
+  bucket = SITE_ASSET_BUCKET,
+) {
+  const normalizedPath = normalizeSiteAssetPath(storagePath);
+  const supabase = getServiceSupabase();
+  if (!supabase) return null;
+
+  try {
+    const { data, error } = await supabase.storage
+      .from(bucket)
+      .createSignedUrl(normalizedPath, expiresInSeconds);
+    if (error || !data?.signedUrl) return null;
+    return data.signedUrl;
+  } catch {
+    return null;
+  }
+}
