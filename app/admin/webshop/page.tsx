@@ -3815,8 +3815,7 @@ export default function AdminWebshopPage() {
                 <label className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-700">
                   <input
                     type="file"
-                    accept="image/*"
-                    capture="environment"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
                     multiple
                     className="hidden"
                     onChange={(e) => {
