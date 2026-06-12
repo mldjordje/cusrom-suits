@@ -815,10 +815,33 @@ async function executeMofficeSync(input: {
       });
     }
 
+    // Re-read current categories from DB just before upserting to prevent
+    // a race condition where an admin saves categories while the sync is
+    // running — the plan was built from a snapshot taken at sync start.
+    const upsertLegacyIds = plan.rows.map((row) => Number(row.legacy_id)).filter((id) => Number.isFinite(id) && id > 0);
+    const currentCategoriesById = new Map<number, unknown[]>();
+    for (const idChunk of chunkArray(upsertLegacyIds, 500)) {
+      const { data: catRows } = await supabase
+        .from("catalog_products")
+        .select("legacy_id,raw_payload")
+        .in("legacy_id", idChunk);
+      for (const row of catRows || []) {
+        const id = Number((row as Record<string, unknown>).legacy_id);
+        const payload = getRawPayload((row as Record<string, unknown>).raw_payload);
+        const cats = Array.isArray(payload.categories) ? payload.categories : [];
+        if (cats.length > 0) currentCategoriesById.set(id, cats);
+      }
+    }
+    const rowsToUpsert = plan.rows.map((row) => {
+      const cats = currentCategoriesById.get(Number(row.legacy_id));
+      if (!cats) return row;
+      return { ...row, raw_payload: { ...getRawPayload(row.raw_payload), categories: cats } };
+    });
+
     let upserted = 0;
     const chunkSize = 100;
-    for (let i = 0; i < plan.rows.length; i += chunkSize) {
-      const batch = plan.rows.slice(i, i + chunkSize);
+    for (let i = 0; i < rowsToUpsert.length; i += chunkSize) {
+      const batch = rowsToUpsert.slice(i, i + chunkSize);
       const table = supabase.from("catalog_products");
       const { error } = await (table.upsert as Function)(batch, {
         onConflict: "legacy_id",
