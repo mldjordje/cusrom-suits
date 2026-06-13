@@ -129,6 +129,8 @@ export default async function ContactPage({
                     />
                   </div>
                   <input type="hidden" name="source" value={productParam ? "product-inquiry" : "kontakt-page"} />
+                  {/* Honeypot — hidden from humans, bots fill it */}
+                  <input name="website" type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", opacity: 0 }} />
                   <div className="col-12">
                     <button type="submit" className="btn btn-primary text-uppercase fw-medium">
                       {isEn ? pageCopy.submitLabelEn : pageCopy.submitLabel}
