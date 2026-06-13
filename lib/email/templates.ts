@@ -428,6 +428,38 @@ export type ContactEmailContext = {
   adminUrl: string;
 };
 
+export const buildCustomerContactConfirmationEmail = (ctx: Pick<ContactEmailContext, "name" | "email" | "subject" | "message">) => {
+  const body = `
+    <p style="margin:0 0 12px;">Poštovani/a ${escape(ctx.name)},</p>
+    <p style="margin:0 0 16px;">
+      Primili smo Vašu poruku i naš tim će Vam se javiti u najkraćem mogućem roku.
+    </p>
+    <div style="background:${BRAND_CREAM};border-radius:12px;padding:16px 18px;margin:16px 0;">
+      ${ctx.subject ? `<div style="font-size:12px;color:#666;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:6px;">Tema: ${escape(ctx.subject)}</div>` : ""}
+      <div style="font-size:14px;color:#444;white-space:pre-line;">${escape(ctx.message)}</div>
+    </div>
+    <p style="margin:24px 0 0;color:#555;font-size:13px;line-height:1.5;">
+      Ako imate dodatnih pitanja, slobodno nas kontaktirajte na
+      <a href="mailto:info@santos.rs" style="color:${BRAND_BLACK};">info@santos.rs</a>.
+    </p>
+  `;
+
+  return {
+    subject: "Primili smo Vašu poruku - Santos & Santorini",
+    html: shell({
+      title: "Hvala na poruci",
+      preheader: "Vaša poruka je primljena. Javićemo Vam se uskoro.",
+      body,
+    }),
+    text:
+      `Poštovani/a ${ctx.name},\n\n` +
+      `Primili smo Vašu poruku i javićemo Vam se u najkraćem roku.\n` +
+      (ctx.subject ? `\nTema: ${ctx.subject}\n` : "") +
+      `\nVaša poruka:\n${ctx.message}\n` +
+      `\nPitanja: info@santos.rs`,
+  };
+};
+
 export const buildAdminContactEmail = (ctx: ContactEmailContext) => {
   const body = `
     <p style="margin:0 0 16px;">Nova poruka sa kontakt forme.</p>

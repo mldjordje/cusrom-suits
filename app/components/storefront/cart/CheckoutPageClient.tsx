@@ -76,6 +76,9 @@ export default function CheckoutPageClient({
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
   const [submittedTotal, setSubmittedTotal] = useState<number | null>(null);
   const [appliedVoucherCode, setAppliedVoucherCode] = useState<string | null>(null);
+  const [voucherDiscount, setVoucherDiscount] = useState(0);
+  const [voucherApplying, setVoucherApplying] = useState(false);
+  const [voucherError, setVoucherError] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const isEn = lang === "en";
 
@@ -97,7 +100,7 @@ export default function CheckoutPageClient({
     [deliveryServices, form.deliveryServiceId],
   );
   const deliveryCost = form.deliveryMethod === "delivery" ? Number(selectedDeliveryService?.price || 0) : 0;
-  const checkoutTotal = subtotal + deliveryCost;
+  const checkoutTotal = Math.max(0, subtotal + deliveryCost - voucherDiscount);
 
   useEffect(() => {
     if (!authUser) return;
@@ -113,6 +116,32 @@ export default function CheckoutPageClient({
 
   const markTouched = (field: string) =>
     setTouched((prev) => ({ ...prev, [field]: true }));
+
+  const applyVoucher = async () => {
+    const code = form.voucherCode.trim().toUpperCase();
+    if (!code) return;
+    setVoucherApplying(true);
+    setVoucherError(null);
+    try {
+      const res = await fetch("/api/storefront/voucher", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, email: form.email, subtotal, deliveryCost }),
+      });
+      const json = await res.json();
+      if (!json?.success) {
+        setVoucherError(json?.message || (isEn ? "Invalid voucher." : "Neispravan vaucer."));
+        setVoucherDiscount(0);
+        return;
+      }
+      setVoucherDiscount(Number(json.discountAmount || 0));
+      setAppliedVoucherCode(code);
+    } catch {
+      setVoucherError(isEn ? "Could not validate voucher." : "Greska pri proveri vaucera.");
+    } finally {
+      setVoucherApplying(false);
+    }
+  };
 
   const fieldError = (field: keyof typeof form, required = true): boolean => {
     if (!touched[field]) return false;
@@ -573,23 +602,60 @@ export default function CheckoutPageClient({
               ))}
             </div>
 
-            <div className="ss-order-summary__total">
-              <span>{isEn ? "Current total" : "Trenutni ukupno"}</span>
-              <strong>{formatRsd(checkoutTotal)}</strong>
-            </div>
-
             <div className="ss-order-summary__voucher">
               <label htmlFor="checkout-voucher" className="form-label">
-                {isEn ? "Voucher code" : "Vaucer kod"}{" "}
+                {isEn ? "Voucher code" : "Vaučer kod"}{" "}
                 <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({isEn ? "optional" : "opciono"})</span>
               </label>
-              <input
-                id="checkout-voucher"
-                value={form.voucherCode}
-                onChange={(e) => setForm((prev) => ({ ...prev, voucherCode: e.target.value.toUpperCase() }))}
-                className="form-control form-control-sm"
-                placeholder={isEn ? "Enter voucher code" : "Unesi vaucer kod"}
-              />
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <input
+                  id="checkout-voucher"
+                  value={form.voucherCode}
+                  onChange={(e) => {
+                    setForm((prev) => ({ ...prev, voucherCode: e.target.value.toUpperCase() }));
+                    setVoucherDiscount(0);
+                    setVoucherError(null);
+                    setAppliedVoucherCode(null);
+                  }}
+                  className="form-control form-control-sm"
+                  placeholder={isEn ? "Enter voucher code" : "Unesi vaučer kod"}
+                  style={{ flex: 1 }}
+                />
+                <button
+                  type="button"
+                  onClick={() => void applyVoucher()}
+                  disabled={!form.voucherCode.trim() || voucherApplying}
+                  className="btn btn-outline-secondary btn-sm"
+                  style={{ whiteSpace: "nowrap" }}
+                >
+                  {voucherApplying ? "..." : isEn ? "Apply" : "Primeni"}
+                </button>
+              </div>
+              {voucherError ? (
+                <p style={{ marginTop: "4px", fontSize: "0.82em", color: "#c0392b" }}>{voucherError}</p>
+              ) : null}
+              {voucherDiscount > 0 && appliedVoucherCode ? (
+                <p style={{ marginTop: "4px", fontSize: "0.82em", color: "#27ae60" }}>
+                  {isEn ? "Discount applied" : "Popust primenjen"}: &minus;{formatRsd(voucherDiscount)}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="ss-order-summary__total">
+              {voucherDiscount > 0 ? (
+                <>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9em", color: "#555", marginBottom: "4px" }}>
+                    <span>{isEn ? "Subtotal" : "Međuzbir"}</span>
+                    <span>{formatRsd(subtotal + deliveryCost)}</span>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9em", color: "#27ae60", marginBottom: "4px" }}>
+                    <span>{isEn ? "Voucher discount" : "Popust (vaučer)"}</span>
+                    <span>&minus;{formatRsd(voucherDiscount)}</span>
+                  </div>
+                </>
+              ) : null}
+              <span>{isEn ? "Total" : "Ukupno"}</span>
+              <strong>{formatRsd(checkoutTotal)}</strong>
             </div>
 
             <div className="ss-order-summary__note">

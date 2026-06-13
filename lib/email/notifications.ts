@@ -3,6 +3,7 @@ import { isEmailEnabled, sendEmail } from "@/lib/email/client";
 import {
   buildAdminContactEmail,
   buildAdminOrderEmail,
+  buildCustomerContactConfirmationEmail,
   buildCustomerOrderEmail,
   buildCustomerStatusUpdateEmail,
   buildNewsletterWelcomeEmail,
@@ -112,20 +113,43 @@ export async function sendNewsletterWelcome(ctx: NewsletterWelcomeContext): Prom
 
 export async function sendContactNotifications(ctx: Omit<ContactEmailContext, "adminUrl">): Promise<void> {
   if (!isEmailEnabled()) return;
+  const tasks: Promise<unknown>[] = [];
+
   const recipients = getContactRecipients();
-  if (!recipients.length) return;
+  if (recipients.length) {
+    const { subject, html, text } = buildAdminContactEmail({
+      ...ctx,
+      adminUrl: adminContactLink(),
+    });
+    tasks.push(
+      sendEmail({
+        to: recipients,
+        subject,
+        html,
+        text,
+        replyTo: ctx.email || undefined,
+        tags: [{ name: "type", value: "contact_admin" }],
+      }),
+    );
+  }
 
-  const { subject, html, text } = buildAdminContactEmail({
-    ...ctx,
-    adminUrl: adminContactLink(),
-  });
+  if (ctx.email) {
+    const { subject, html, text } = buildCustomerContactConfirmationEmail({
+      name: ctx.name,
+      email: ctx.email,
+      subject: ctx.subject,
+      message: ctx.message,
+    });
+    tasks.push(
+      sendEmail({
+        to: ctx.email,
+        subject,
+        html,
+        text,
+        tags: [{ name: "type", value: "contact_customer" }],
+      }),
+    );
+  }
 
-  await sendEmail({
-    to: recipients,
-    subject,
-    html,
-    text,
-    replyTo: ctx.email || undefined,
-    tags: [{ name: "type", value: "contact_admin" }],
-  });
+  if (tasks.length) await Promise.allSettled(tasks);
 }

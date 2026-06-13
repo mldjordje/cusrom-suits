@@ -3,6 +3,7 @@ import { extractModelCode } from "@/lib/integrations/moffice/modelCode";
 import { startSyncRun, completeSyncRun, addSyncRunItem } from "@/lib/integrations/core/store";
 import type { SyncCounters, SyncEnvironment, SyncMode, SyncTrigger } from "@/lib/integrations/core/types";
 import { getServiceSupabase } from "@/lib/supabase/server";
+import { getFulfillmentSettings, updateFulfillmentSettings, type Voucher } from "@/lib/storefront/fulfillment";
 
 const MOFFICE_API_URL = "https://api.moffice.co.rs/api/LagerTekstil";
 const DEBUG_SKUS = new Set(["129513", "130406", "133051"]);
@@ -177,6 +178,57 @@ const chunkArray = <T,>(items: T[], size: number) => {
   for (let i = 0; i < items.length; i += size) chunks.push(items.slice(i, i + size));
   return chunks;
 };
+
+const isVoucherItem = (item: MofficeItem): boolean => {
+  const naziv = normalizeKey(item.ARTIKAL_NAZIV).toLowerCase();
+  const grupa = normalizeKey(item.ARTIKAL_GRUPA).toLowerCase();
+  return naziv.includes("vaučer") || naziv.includes("vaucer") || naziv.includes("voucher") ||
+    grupa.includes("vaučer") || grupa.includes("vaucer") || grupa.includes("voucher");
+};
+
+const mapMofficeVoucher = (item: MofficeItem): Voucher | null => {
+  const code = normalizeKey(item.ARTIKAL_BARKOD || item.ARTIKAL_SIFRA).toUpperCase();
+  if (!code) return null;
+
+  // Discount amount from MP price; size field can also carry denomination
+  const amountFromPrice = Math.max(0, Number(item.ARTIKAL_MP_CENA ?? 0));
+  const amountFromSize = Math.max(0, Number(item.ARTIKAL_VELICINA ?? 0));
+  const amount = amountFromPrice > 0 ? amountFromPrice : amountFromSize;
+  if (amount <= 0) return null;
+
+  // Treat as percent if ≤ 100 and the name or group hints at percent, else fixed RSD
+  const naziv = normalizeKey(item.ARTIKAL_NAZIV).toLowerCase();
+  const isPercent = (naziv.includes("%") || naziv.includes("procenat")) && amount <= 100;
+  const type: Voucher["type"] = isPercent ? "percent" : "fixed";
+
+  const isActive = Math.max(0, Math.floor(Number(item.ARTIKAL_ZALIHE ?? 0))) > 0;
+
+  return {
+    id: `moffice_${normalizeKey(item.ARTIKAL_ID ?? item.ARTIKAL_BARKOD ?? code)}`,
+    code,
+    email: "",
+    amount,
+    type,
+    isActive,
+    createdAt: new Date().toISOString(),
+    usedAt: isActive ? null : new Date().toISOString(),
+    usedOrderId: null,
+  };
+};
+
+async function syncVouchersFromItems(items: MofficeItem[]): Promise<number> {
+  const voucherItems = items.filter(isVoucherItem);
+  if (!voucherItems.length) return 0;
+
+  const imported = voucherItems.map(mapMofficeVoucher).filter((v): v is Voucher => v !== null);
+  if (!imported.length) return 0;
+
+  const settings = await getFulfillmentSettings();
+  const mofficeIds = new Set(imported.map((v) => v.id));
+  const kept = settings.vouchers.filter((v) => !v.id.startsWith("moffice_") || !mofficeIds.has(v.id));
+  await updateFulfillmentSettings({ vouchers: [...kept, ...imported] });
+  return imported.length;
+}
 
 export const buildMofficePulledRows = (items: MofficeItem[]): MofficePulledRow[] =>
   items.map((item) => ({
@@ -786,8 +838,15 @@ async function executeMofficeSync(input: {
   });
 
   try {
-    const items = await input.loadItems();
-    if (!Array.isArray(items)) throw new Error("mOffice payload must be an array.");
+    const allItems = await input.loadItems();
+    if (!Array.isArray(allItems)) throw new Error("mOffice payload must be an array.");
+
+    // Separate voucher articles from regular catalog products
+    const items = allItems.filter((item) => !isVoucherItem(item));
+    const syncedVouchers = await syncVouchersFromItems(allItems).catch((err) =>
+      console.error("[moffice] voucher sync failed:", err) ?? 0,
+    );
+
     const debugItems = buildDebugItems(items);
     const pulledRows = buildMofficePulledRows(items);
 
@@ -970,7 +1029,7 @@ async function executeMofficeSync(input: {
       skipped: 0,
     };
     const status = counters.failed > 0 ? "partial_success" : "success";
-    const summary = `mOffice synced ${upserted} rows, deactivated ${deactivated} stale rows (${plan.counters.matched} matched, ${plan.counters.created} new).`;
+    const summary = `mOffice synced ${upserted} rows, deactivated ${deactivated} stale rows (${plan.counters.matched} matched, ${plan.counters.created} new).${syncedVouchers ? ` Vouchers: ${syncedVouchers}.` : ""}`;
     await completeSyncRun(run.id, {
       status,
       counters,
@@ -991,6 +1050,7 @@ async function executeMofficeSync(input: {
         duplicates: plan.counters.duplicates,
         postSyncStale: postSyncStaleIds.length,
         deactivated,
+        syncedVouchers,
         debugItems,
       },
     });
@@ -1011,6 +1071,7 @@ async function executeMofficeSync(input: {
       copiedMediaRows,
       copiedModelMediaRows,
       deactivated,
+      syncedVouchers,
       debugItems,
     };
   } catch (error) {
