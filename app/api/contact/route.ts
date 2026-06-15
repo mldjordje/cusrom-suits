@@ -9,7 +9,7 @@ const sanitize = (value: FormDataEntryValue | null) =>
 
 const RATE_LIMIT = { limit: 5, windowMs: 60_000, scope: "contact" } as const;
 
-const URL_PATTERN = /https?:\/\/\S+|www\.\S+\.\S+/i;
+const URL_PATTERN = /https?:\/\/\S+|www\.\S+\.\S+|\b[a-z0-9][a-z0-9-]*\.[a-z]{2,}\/\S+/i;
 const SPAM_KEYWORDS = [
   "casino", "slot", "poker", "betting", "gambling", "crypto", "bitcoin",
   "earn money", "make money", "click here", "free money", "win cash",
