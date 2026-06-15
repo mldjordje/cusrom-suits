@@ -1,12 +1,17 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import Reveal from "@/app/components/motion/Reveal";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Loyalty program | Santos & Santorini",
   description: "Prijava za Santos & Santorini loyalty program.",
+  robots: {
+    index: false,
+    follow: true,
+  },
 };
 
 export default async function LoyaltyProgramPage({

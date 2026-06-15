@@ -1,11 +1,16 @@
+import type { Metadata } from "next";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import CartPageClient from "@/app/components/storefront/cart/CartPageClient";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 
-export const metadata = {
+export const metadata: Metadata = {
   title: "Korpa",
   description: "Pregled odabranih proizvoda i nastavak slanja porudzbine.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default async function CartPage({

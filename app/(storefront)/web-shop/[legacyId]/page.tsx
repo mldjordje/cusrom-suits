@@ -36,6 +36,7 @@ import {
   getLocalizedCatalogDescription,
   getLocalizedCatalogProductName,
   getLocalizedCatalogSpecification,
+  getProductSeoFields,
   getProductDeclaration,
   getProductMaterial,
   getProductSizeGuide,
@@ -237,19 +238,31 @@ export async function generateMetadata({
     });
   }
   const displayName = getLocalizedCatalogProductName(product, lang);
+  const productSeo = getProductSeoFields(product);
   const description =
+    productSeo.metaDescription ||
+    productSeo.aiSummary ||
     stripHtml(getLocalizedCatalogDescription(product, lang)) ||
     (lang === "en"
       ? `Product details, material information and available sizes for ${displayName}.`
       : `Detalji proizvoda, sastav i dostupne velicine za model ${displayName}.`);
 
   return buildSeoMetadata({
-    title: displayName,
+    title: productSeo.seoTitle || displayName,
     description,
     path: `/web-shop/${product.legacyId}`,
     lang,
     image: product.coverImage || product.images[0] || "/img/odela.jpg",
-    keywords: [product.sku, displayName, product.categories[0]?.name || "web shop proizvod"],
+    keywords: [
+      product.sku,
+      displayName,
+      product.categories[0]?.name || "web shop proizvod",
+      ...productSeo.occasionTags,
+      ...productSeo.styleTags,
+      productSeo.fit,
+      productSeo.color,
+      productSeo.targetUse,
+    ].filter(Boolean),
   });
 }
 
@@ -348,9 +361,12 @@ export default async function WebShopProductPage({
   }
 
   const displayName = getLocalizedCatalogProductName(displayProduct, lang);
+  const displaySeo = getProductSeoFields(displayProduct);
+  const fallbackSeo = displayProduct.legacyId === product.legacyId ? displaySeo : getProductSeoFields(product);
+  const productSeo = displaySeo.aiSummary || displaySeo.seoTitle || displaySeo.metaDescription ? displaySeo : fallbackSeo;
   const displayDescription = getLocalizedCatalogDescription(displayProduct, lang);
   const displaySpecification = getLocalizedCatalogSpecification(displayProduct, lang);
-  const material = getProductMaterial(displayProduct, lang);
+  const material = productSeo.material || getProductMaterial(displayProduct, lang);
   // Use the requested product's own images so the listing thumbnail matches what's
   // shown on the detail page. displayProduct may be a different size variant.
   const productGalleryCandidates = getCatalogProductImageSources(product, [], []).slice(0, 8);
@@ -444,7 +460,7 @@ export default async function WebShopProductPage({
   const categoryLabel =
     product.categories[0]?.path.join(" / ") ||
     (isEn ? "Santos selection" : "Santos izbor");
-  const shortDescription = stripHtml(displayDescription).slice(0, 280);
+  const shortDescription = (productSeo.aiSummary || stripHtml(displayDescription)).slice(0, 320);
   const attributeItems = Object.entries(product.attributes || {})
     .filter(([key]) => key !== "size")
     .slice(0, 6);
@@ -496,8 +512,15 @@ export default async function WebShopProductPage({
     },
     category: categoryLabel,
     material,
+    color: productSeo.color || undefined,
     size: selectedSize || undefined,
     itemCondition: "https://schema.org/NewCondition",
+    additionalProperty: [
+      productSeo.fit ? { "@type": "PropertyValue", name: "Kroj", value: productSeo.fit } : null,
+      productSeo.targetUse ? { "@type": "PropertyValue", name: "Namena", value: productSeo.targetUse } : null,
+      productSeo.occasionTags.length ? { "@type": "PropertyValue", name: "Prilike", value: productSeo.occasionTags.join(", ") } : null,
+      productSeo.styleTags.length ? { "@type": "PropertyValue", name: "Stil", value: productSeo.styleTags.join(", ") } : null,
+    ].filter(Boolean),
     offers: businessUniform
       ? {
           "@type": "Offer",
@@ -533,6 +556,20 @@ export default async function WebShopProductPage({
           thumbnailUrl: gallery[0] || null,
         })
       : null;
+  const faqJsonLd = productSeo.faq.length
+    ? {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        mainEntity: productSeo.faq.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: item.answer,
+          },
+        })),
+      }
+    : null;
 
   return (
     <>
@@ -540,6 +577,7 @@ export default async function WebShopProductPage({
       <JsonLd data={breadcrumbJsonLd} />
       <JsonLd data={productJsonLd} />
       {videoJsonLd ? <JsonLd data={videoJsonLd} /> : null}
+      {faqJsonLd ? <JsonLd data={faqJsonLd} /> : null}
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-commerce-page ss-product-page">
         <Reveal as="section" className="product-single container">
@@ -661,6 +699,22 @@ export default async function WebShopProductPage({
                         : "Detalji proizvoda, sastav i dostupne velicine iz Santos & Santorini kolekcije.")}
                   </p>
                 </div>
+
+                {(productSeo.aiSummary || productSeo.targetUse || productSeo.occasionTags.length || productSeo.styleTags.length || productSeo.fit || productSeo.color) ? (
+                  <div className="ss-product-seo-summary">
+                    {productSeo.aiSummary ? (
+                      <p className="ss-product-seo-summary__copy">{productSeo.aiSummary}</p>
+                    ) : null}
+                    <div className="ss-product-seo-summary__chips">
+                      {[productSeo.targetUse, productSeo.fit, productSeo.color, ...productSeo.occasionTags, ...productSeo.styleTags]
+                        .filter(Boolean)
+                        .slice(0, 8)
+                        .map((item) => (
+                          <span key={item}>{item}</span>
+                        ))}
+                    </div>
+                  </div>
+                ) : null}
 
                 <div className="product-single__swatches">
                   <div className="product-swatch text-swatches">
@@ -823,6 +877,22 @@ export default async function WebShopProductPage({
                       </li>
                     ))}
                   </ul>
+                </div>
+              ) : null}
+
+              {productSeo.faq.length ? (
+                <div className="rounded-4 border p-3 mt-3 bg-white ss-product-glass-card">
+                  <p className="text-uppercase fw-medium text-secondary mb-2">
+                    {isEn ? "Product questions" : "Pitanja o proizvodu"}
+                  </p>
+                  <div className="d-grid gap-2">
+                    {productSeo.faq.map((item) => (
+                      <details key={item.question} className="ss-product-faq-item">
+                        <summary>{item.question}</summary>
+                        <p>{item.answer}</p>
+                      </details>
+                    ))}
+                  </div>
                 </div>
               ) : null}
             </div>

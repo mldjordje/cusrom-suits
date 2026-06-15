@@ -99,7 +99,7 @@ export type CatalogListInput = {
   requireDirectImages?: boolean;
   requireReachableImages?: boolean;
   mediaStatus?: "all" | "missing" | "direct" | "fallback" | "broken" | "video";
-  contentStatus?: "all" | "missing_description" | "missing_price" | "missing_category";
+  contentStatus?: "all" | "missing_description" | "missing_price" | "missing_category" | "missing_seo";
   visibilityStatus?: "all" | "visible" | "hidden";
   sourceStatus?: "all" | "moffice" | "manual";
   /** Collapsed-representative legacyIds to drop from the result (e.g. products with
@@ -322,6 +322,7 @@ const compactRawPayload = (
   if (source.landing && typeof source.landing === "object") compact.landing = source.landing;
   if (source.attributes && typeof source.attributes === "object") compact.attributes = source.attributes;
   if (source.media && typeof source.media === "object") compact.media = source.media;
+  if (source.seo && typeof source.seo === "object") compact.seo = source.seo;
   if (source.productType) compact.productType = source.productType;
   if (source.source) compact.source = source.source;
   if (source.moffice && typeof source.moffice === "object") compact.moffice = source.moffice;
@@ -1266,6 +1267,15 @@ const applyAdminQualityFilters = (
     filtered = filtered.filter((item) => Number(item.priceFinalGross || 0) <= 0);
   } else if (contentStatus === "missing_category") {
     filtered = filtered.filter((item) => item.categories.length === 0);
+  } else if (contentStatus === "missing_seo") {
+    filtered = filtered.filter((item) => {
+      const seo = item.rawPayload?.seo && typeof item.rawPayload.seo === "object"
+        ? (item.rawPayload.seo as Record<string, unknown>)
+        : {};
+      return !String(seo.seoTitle || "").trim() ||
+        !String(seo.metaDescription || "").trim() ||
+        !String(seo.aiSummary || "").trim();
+    });
   }
 
   if (visibilityStatus === "visible") {

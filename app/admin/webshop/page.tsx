@@ -58,6 +58,16 @@ type ProductDraft = {
   specification: string;
   declaration: string;
   washCareIcons: WashCareIcon[];
+  seoTitle: string;
+  metaDescription: string;
+  aiSummary: string;
+  occasionTags: string;
+  styleTags: string;
+  fit: string;
+  material: string;
+  color: string;
+  targetUse: string;
+  faqText: string;
   priceGross: string;
   priceFinalGross: string;
   rebatePercent: string;
@@ -626,6 +636,23 @@ const toDraft = (item: CatalogProduct): ProductDraft => {
           VALID_WASH_CARE_ICONS.includes(v as WashCareIcon),
         )
       : [];
+  const seo =
+    item.rawPayload?.seo && typeof item.rawPayload.seo === "object"
+      ? (item.rawPayload.seo as Record<string, unknown>)
+      : {};
+  const seoList = (value: unknown) => Array.isArray(value) ? value.map(String).join(", ") : String(value || "");
+  const faqText = Array.isArray(seo.faq)
+    ? seo.faq
+        .map((entry) => {
+          if (!entry || typeof entry !== "object") return "";
+          const row = entry as Record<string, unknown>;
+          const question = String(row.question || "").trim();
+          const answer = String(row.answer || "").trim();
+          return question && answer ? `${question} | ${answer}` : "";
+        })
+        .filter(Boolean)
+        .join("\n")
+    : "";
   return {
     name: item.name,
     brand: item.brand || "",
@@ -636,6 +663,16 @@ const toDraft = (item: CatalogProduct): ProductDraft => {
         ? item.rawPayload.declaration
         : "",
     washCareIcons,
+    seoTitle: String(seo.seoTitle || ""),
+    metaDescription: String(seo.metaDescription || ""),
+    aiSummary: String(seo.aiSummary || ""),
+    occasionTags: seoList(seo.occasionTags),
+    styleTags: seoList(seo.styleTags),
+    fit: String(seo.fit || ""),
+    material: String(seo.material || ""),
+    color: String(seo.color || ""),
+    targetUse: String(seo.targetUse || ""),
+    faqText,
     priceGross: String(item.priceGross),
     priceFinalGross: String(item.priceFinalGross),
     rebatePercent: String(item.rebatePercent || 0),
@@ -675,6 +712,26 @@ const isMofficeProduct = (item: CatalogProduct) =>
 const hasManualPriceOverride = (item: CatalogProduct) =>
   Boolean((item.rawPayload?.commerceOverrides as Record<string, unknown> | undefined)?.price);
 
+const parseCsvDraftList = (value: string) =>
+  Array.from(new Set(
+    String(value || "")
+      .split(",")
+      .map((token) => token.trim())
+      .filter(Boolean),
+  ));
+
+const parseFaqDraftText = (value: string) =>
+  String(value || "")
+    .split(/\r?\n/)
+    .map((line) => {
+      const [questionRaw, ...answerParts] = line.split("|");
+      const question = String(questionRaw || "").trim();
+      const answer = answerParts.join("|").trim();
+      if (!question || !answer) return null;
+      return { question, answer };
+    })
+    .filter((item): item is { question: string; answer: string } => Boolean(item));
+
 const productQualityFlags = (item: CatalogProduct) => {
   const flags: Array<{ label: string; tone: "rose" | "amber" | "emerald" | "slate" }> = [];
   const hasOnlyFallbackImage = Boolean(item.rawPayload?.imageFallback);
@@ -683,6 +740,12 @@ const productQualityFlags = (item: CatalogProduct) => {
   if (hasOnlyFallbackImage) flags.push({ label: "Pozajmljena slika", tone: "amber" });
   else if (!item.coverImage) flags.push({ label: "Nema cover", tone: "amber" });
   if (!item.description?.trim()) flags.push({ label: "Nema opis", tone: "amber" });
+  const seo = item.rawPayload?.seo && typeof item.rawPayload.seo === "object"
+    ? (item.rawPayload.seo as Record<string, unknown>)
+    : {};
+  if (!String(seo.seoTitle || "").trim() || !String(seo.metaDescription || "").trim() || !String(seo.aiSummary || "").trim()) {
+    flags.push({ label: "SEO nedostaje", tone: "amber" });
+  }
   if (!item.priceFinalGross && !isBusinessUniformProduct(item)) flags.push({ label: "Nema cenu", tone: "rose" });
   if (!item.categories?.length) flags.push({ label: "Bez kategorije", tone: "amber" });
   if (item.videoUrl) flags.push({ label: "Ima video", tone: "emerald" });
@@ -1580,6 +1643,18 @@ export default function AdminWebshopPage() {
           coverImage: draft.coverImage || draft.images[0] || null,
           businessUniform: draft.businessUniform,
           priceOverride: draft.priceOverride,
+          seo: {
+            seoTitle: draft.seoTitle.trim(),
+            metaDescription: draft.metaDescription.trim(),
+            aiSummary: draft.aiSummary.trim(),
+            occasionTags: parseCsvDraftList(draft.occasionTags),
+            styleTags: parseCsvDraftList(draft.styleTags),
+            fit: draft.fit.trim(),
+            material: draft.material.trim(),
+            color: draft.color.trim(),
+            targetUse: draft.targetUse.trim(),
+            faq: parseFaqDraftText(draft.faqText),
+          },
         }),
       });
       const json = await res.json();
@@ -2506,6 +2581,7 @@ export default function AdminWebshopPage() {
                 <option value="missing_description">Nema opis</option>
                 <option value="missing_price">Nema cenu</option>
                 <option value="missing_category">Bez kategorije</option>
+                <option value="missing_seo">SEO nedostaje</option>
               </select>
               <select value={visibilityStatus} onChange={(e) => setVisibilityStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
                 <option value="all">Sva vidljivost</option>
@@ -3692,6 +3768,56 @@ export default function AdminWebshopPage() {
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Specifikacija / materijal</span>
                 <textarea value={drafts[currentEditorItem.legacyId]?.specification || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { specification: e.target.value })} rows={3} placeholder="Materijal, kroj, dimenzije, napomene iz radnje..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               </label>
+              <div className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50/60 p-3">
+                <div className="mb-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-800">SEO / AI preporuke</p>
+                  <p className="mt-1 text-xs text-amber-900/80">
+                    Ova polja hrane title/meta, Product schema i AI-friendly opis. Za FAQ koristi format: Pitanje | Odgovor, svako pitanje u novom redu.
+                  </p>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <label className="flex flex-col gap-1 md:col-span-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">SEO title</span>
+                    <input value={drafts[currentEditorItem.legacyId]?.seoTitle || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { seoTitle: e.target.value })} placeholder="npr. Musko odelo Allesio - Santos & Santorini" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  </label>
+                  <label className="flex flex-col gap-1 md:col-span-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Meta description</span>
+                    <textarea value={drafts[currentEditorItem.legacyId]?.metaDescription || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { metaDescription: e.target.value })} rows={2} placeholder="120-160 karaktera: sta je proizvod, za koga je i kako se porucuje." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  </label>
+                  <label className="flex flex-col gap-1 md:col-span-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">AI sazetak / preporuka</span>
+                    <textarea value={drafts[currentEditorItem.legacyId]?.aiSummary || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { aiSummary: e.target.value })} rows={3} placeholder="Jedna jasna recenica zasto bi AI preporucio ovaj model i za koju priliku." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Prilike (CSV)</span>
+                    <input value={drafts[currentEditorItem.legacyId]?.occasionTags || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { occasionTags: e.target.value })} placeholder="svadba, posao, matura" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Stil tagovi (CSV)</span>
+                    <input value={drafts[currentEditorItem.legacyId]?.styleTags || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { styleTags: e.target.value })} placeholder="elegantno, slim fit, formalno" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Kroj</span>
+                    <input value={drafts[currentEditorItem.legacyId]?.fit || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { fit: e.target.value })} placeholder="Slim fit / Regular fit" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Materijal za SEO</span>
+                    <input value={drafts[currentEditorItem.legacyId]?.material || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { material: e.target.value })} placeholder="vuna, pamuk, poliester..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Boja</span>
+                    <input value={drafts[currentEditorItem.legacyId]?.color || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { color: e.target.value })} placeholder="teget, crna, siva..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Ciljna upotreba</span>
+                    <input value={drafts[currentEditorItem.legacyId]?.targetUse || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { targetUse: e.target.value })} placeholder="poslovno odelo, odelo za svadbu..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  </label>
+                  <label className="flex flex-col gap-1 md:col-span-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">FAQ</span>
+                    <textarea value={drafts[currentEditorItem.legacyId]?.faqText || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { faqText: e.target.value })} rows={4} placeholder={"Da li je dostupno online? | Dostupnost se potvrdjuje posle upita.\nZa koju priliku je model? | Pogodan je za posao i formalne dogadjaje."} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                  </label>
+                </div>
+              </div>
               <label className="flex flex-col gap-1 md:col-span-2">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Deklaracija — napomena (opciono)</span>
                 <textarea value={drafts[currentEditorItem.legacyId]?.declaration || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { declaration: e.target.value })} rows={2} placeholder="Dodatna napomena koja se prikazuje u tabeli deklaracije na sajtu..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />

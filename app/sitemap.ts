@@ -15,8 +15,6 @@ const STATIC_ROUTES = [
   "/web-shop",
   "/akcije",
   "/blog",
-  "/cart",
-  "/checkout",
   "/kontakt",
   "/o-nama",
   "/dokumenta",
@@ -29,6 +27,9 @@ const STATIC_ROUTES = [
   "/poslovne-uniforme",
   "/prodajna-mesta",
   "/custom-suits",
+  "/muska-odela",
+  "/odela-nis",
+  "/odela-srbija",
 ];
 
 async function loadAllCatalogProductPaths() {

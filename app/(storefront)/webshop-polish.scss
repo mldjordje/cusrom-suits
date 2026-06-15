@@ -552,3 +552,57 @@
     margin-top: 10px !important;
   }
 }
+/* Product SEO / AI summary */
+.ss-product-seo-summary {
+  margin: 1rem 0 0;
+  border: 1px solid rgba(17, 24, 39, 0.08);
+  border-radius: 14px;
+  background: rgba(248, 250, 252, 0.82);
+  padding: 0.85rem 0.95rem;
+}
+
+.ss-product-seo-summary__copy {
+  margin: 0;
+  color: #334155;
+  font-size: 0.88rem;
+  line-height: 1.55;
+}
+
+.ss-product-seo-summary__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin-top: 0.7rem;
+}
+
+.ss-product-seo-summary__chips span {
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  border-radius: 999px;
+  background: #fff;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  padding: 0.35rem 0.6rem;
+  text-transform: uppercase;
+}
+
+.ss-product-faq-item {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+}
+
+.ss-product-faq-item summary {
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.ss-product-faq-item p {
+  margin: 0.55rem 0 0;
+  color: #475569;
+  font-size: 0.86rem;
+  line-height: 1.55;
+}

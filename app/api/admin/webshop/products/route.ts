@@ -39,6 +39,18 @@ type ProductUpdatePayload = {
   priceOverride?: boolean;
   declaration?: string | null;
   washCareIcons?: string[] | null;
+  seo?: {
+    seoTitle?: string;
+    metaDescription?: string;
+    aiSummary?: string;
+    occasionTags?: string[];
+    styleTags?: string[];
+    fit?: string;
+    material?: string;
+    color?: string;
+    targetUse?: string;
+    faq?: Array<{ question: string; answer: string }>;
+  } | null;
 };
 
 type ProductCreatePayload = {
@@ -87,6 +99,38 @@ const parseStringList = (value: unknown) =>
         .filter((item) => item.length > 0)
     : [];
 
+const parseSeoPayload = (value: unknown): ProductUpdatePayload["seo"] => {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const normalize = (input: unknown) => String(input || "").replace(/\s+/g, " ").trim();
+  const faq = Array.isArray(row.faq)
+    ? row.faq
+        .map((item) => {
+          if (!item || typeof item !== "object") return null;
+          const faqRow = item as Record<string, unknown>;
+          const question = normalize(faqRow.question);
+          const answer = normalize(faqRow.answer);
+          if (!question || !answer) return null;
+          return { question, answer };
+        })
+        .filter((item): item is { question: string; answer: string } => Boolean(item))
+        .slice(0, 6)
+    : [];
+
+  return {
+    seoTitle: normalize(row.seoTitle),
+    metaDescription: normalize(row.metaDescription),
+    aiSummary: normalize(row.aiSummary),
+    occasionTags: parseStringList(row.occasionTags).slice(0, 12),
+    styleTags: parseStringList(row.styleTags).slice(0, 12),
+    fit: normalize(row.fit),
+    material: normalize(row.material),
+    color: normalize(row.color),
+    targetUse: normalize(row.targetUse),
+    faq,
+  };
+};
+
 const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
   if (!raw || typeof raw !== "object") return null;
   const row = raw as Record<string, unknown>;
@@ -121,6 +165,9 @@ const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
   }
   if (hasOwn(row, "businessUniform")) out.businessUniform = Boolean(row.businessUniform);
   if (hasOwn(row, "priceOverride")) out.priceOverride = Boolean(row.priceOverride);
+  if (hasOwn(row, "declaration")) out.declaration = row.declaration == null ? null : String(row.declaration);
+  if (hasOwn(row, "washCareIcons")) out.washCareIcons = parseStringList(row.washCareIcons);
+  if (hasOwn(row, "seo")) out.seo = parseSeoPayload(row.seo);
   return out;
 };
 
@@ -216,6 +263,11 @@ const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
             },
           }
         : {}),
+      ...(patch.declaration !== undefined ? { declaration: patch.declaration || null } : {}),
+      ...(patch.washCareIcons !== undefined
+        ? { washCareIcons: Array.isArray(patch.washCareIcons) && patch.washCareIcons.length > 0 ? patch.washCareIcons : null }
+        : {}),
+      ...(patch.seo !== undefined ? { seo: patch.seo } : {}),
     },
     patch.businessUniform,
   );
@@ -293,7 +345,8 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
     patch.businessUniform !== undefined ||
     patch.priceOverride !== undefined ||
     patch.declaration !== undefined ||
-    patch.washCareIcons !== undefined
+    patch.washCareIcons !== undefined ||
+    patch.seo !== undefined
   ) {
     const { data: existing, error: rawError } = await supabase
       .from("catalog_products")
@@ -343,6 +396,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
         ...(patch.washCareIcons !== undefined
           ? { washCareIcons: Array.isArray(patch.washCareIcons) && patch.washCareIcons.length > 0 ? patch.washCareIcons : null }
           : {}),
+        ...(patch.seo !== undefined ? { seo: patch.seo || null } : {}),
       },
       patch.businessUniform,
     );
@@ -614,7 +668,7 @@ export async function GET(req: NextRequest) {
   );
   const contentStatus = parseCatalogFilter<CatalogListInput["contentStatus"] & string>(
     params.get("contentStatus"),
-    ["all", "missing_description", "missing_price", "missing_category"],
+    ["all", "missing_description", "missing_price", "missing_category", "missing_seo"],
     "all",
   );
   const visibilityStatus = parseCatalogFilter<CatalogListInput["visibilityStatus"] & string>(

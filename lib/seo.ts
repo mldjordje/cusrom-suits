@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 export const SITE_NAME = "Santos & Santorini";
-export const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://santos.rs").replace(/\/+$/, "");
+export const SITE_URL = String(process.env.NEXT_PUBLIC_SITE_URL || "https://www.santos.rs").replace(/\/+$/, "");
 export const DEFAULT_OG_IMAGE = "/img/og-default.jpg";
 
 /** Stable @id for JSON-LD graph linking (Product offers, FAQ, etc.) */

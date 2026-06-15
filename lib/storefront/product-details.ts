@@ -51,8 +51,74 @@ export type ProductWashCareItem = {
   description: string;
 };
 
+export type ProductSeoFaq = {
+  question: string;
+  answer: string;
+};
+
+export type ProductSeoFields = {
+  seoTitle: string;
+  metaDescription: string;
+  aiSummary: string;
+  occasionTags: string[];
+  styleTags: string[];
+  fit: string;
+  material: string;
+  color: string;
+  targetUse: string;
+  faq: ProductSeoFaq[];
+};
+
 const stripHtml = (value: string | null) =>
   decodeHtmlEntities((value || "").replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim());
+
+const normalizeString = (value: unknown) => String(value || "").replace(/\s+/g, " ").trim();
+
+const normalizeStringList = (value: unknown, max = 12) => {
+  const raw = Array.isArray(value) ? value : String(value || "").split(",");
+  return Array.from(
+    new Set(
+      raw
+        .map((item) => normalizeString(item))
+        .filter(Boolean),
+    ),
+  ).slice(0, max);
+};
+
+const normalizeSeoFaq = (value: unknown, max = 6): ProductSeoFaq[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((item) => {
+      if (!item || typeof item !== "object") return null;
+      const row = item as Record<string, unknown>;
+      const question = normalizeString(row.question);
+      const answer = normalizeString(row.answer);
+      if (!question || !answer) return null;
+      return { question, answer };
+    })
+    .filter((item): item is ProductSeoFaq => Boolean(item))
+    .slice(0, max);
+};
+
+export const getProductSeoFields = (product: CatalogProductView): ProductSeoFields => {
+  const seo =
+    product.rawPayload?.seo && typeof product.rawPayload.seo === "object"
+      ? (product.rawPayload.seo as Record<string, unknown>)
+      : {};
+
+  return {
+    seoTitle: normalizeString(seo.seoTitle),
+    metaDescription: normalizeString(seo.metaDescription),
+    aiSummary: normalizeString(seo.aiSummary),
+    occasionTags: normalizeStringList(seo.occasionTags, 12),
+    styleTags: normalizeStringList(seo.styleTags, 12),
+    fit: normalizeString(seo.fit),
+    material: normalizeString(seo.material),
+    color: normalizeString(seo.color),
+    targetUse: normalizeString(seo.targetUse),
+    faq: normalizeSeoFaq(seo.faq, 6),
+  };
+};
 
 const normalizeImageCandidate = (value: unknown) => sanitizeStorefrontImageSrc(value);
 
