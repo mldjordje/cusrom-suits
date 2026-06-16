@@ -125,8 +125,8 @@ type ImageReachabilityCacheEntry = {
 };
 
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
-const CATALOG_SNAPSHOT_TTL_MS = 300_000;
-const CATALOG_LIST_TTL_MS = 300_000;
+const CATALOG_SNAPSHOT_TTL_MS = 1_800_000; // 30 min — reduces cold-start Supabase hits on Vercel
+const CATALOG_LIST_TTL_MS = 1_800_000;
 const CATALOG_LIST_CACHE_MAX_ENTRIES = 220;
 const CATALOG_LIST_CACHE_VERSION = "v6";
 const IMAGE_REACHABILITY_TTL_MS = 3_600_000;
@@ -268,8 +268,8 @@ const maybeLogCatalogPerformance = (payload: {
 
 const listPromotionRulesCached = unstable_cache(
   async () => listPromotionRules(),
-  ["catalog-promotion-rules-v1"],
-  { revalidate: 60, tags: [PROMOTION_RULES_CACHE_TAG] },
+  ["catalog-promotion-rules-v2"],
+  { revalidate: 3600, tags: [PROMOTION_RULES_CACHE_TAG] },
 );
 
 const getAvailableStockValue = (item: Pick<CatalogProductView, "stockWarehouse1" | "stockTotal">) => {

@@ -110,6 +110,12 @@ const FAST_PREVIEW = true;
 // Hard guard: pants must use only real fabric texture, never synthetic drawn stripes.
 const ENABLE_PANTS_SYNTHETIC_STRIPES = false;
 const PARITY_DEBUG_OVERLAY = process.env.NEXT_PUBLIC_PARITY_DEBUG === "1";
+// Fabric Union V2: render the woven texture with an `overlay` blend instead of the
+// faint `soft-light` pass. Overlay darkens the weave inside folds and lifts it on
+// highlights (both driven by the shaded grayscale base photo), so the cloth reads
+// as sitting in the garment's drape — closer to the Hockerty reference. Flag-gated
+// for A/B comparison; enable with NEXT_PUBLIC_FABRIC_UNION_V2=1.
+const FABRIC_UNION_V2 = process.env.NEXT_PUBLIC_FABRIC_UNION_V2 === "1";
 const VEST_FEATURE_ENABLED = process.env.NEXT_PUBLIC_VEST_FEATURE !== "0";
 const PANTS_MASK_VERSION = "v26";
 const ZERO_OFFSET = { x: 0, y: 0 } as const;
@@ -1784,7 +1790,11 @@ const SuitPreview = ({
   }, [fabricMetrics.lightness, fabricMetrics.saturation, usePhotoBase]);
   const photoFilter = useMemo(() => {
     if (usePhotoBase) {
-      return `grayscale(1) brightness(${(photoExposure * PREVIEW_EXPOSURE).toFixed(2)}) contrast(0.98) saturate(1.05)`;
+      // V2 overlay weave darkens the mid-tones; lift base exposure + ease contrast
+      // so the recolored fabric keeps its true value and folds don't crush.
+      const v2Lift = FABRIC_UNION_V2 ? 1.07 : 1;
+      const v2Contrast = FABRIC_UNION_V2 ? 0.94 : 0.98;
+      return `grayscale(1) brightness(${(photoExposure * PREVIEW_EXPOSURE * v2Lift).toFixed(2)}) contrast(${v2Contrast}) saturate(1.05)`;
     }
     const brightness = clamp((1 + autoTuning.photo.brightness) * PREVIEW_EXPOSURE, 0.8, 1.6).toFixed(2);
     const contrast = autoTuning.photo.contrast.toFixed(2);
@@ -2037,11 +2047,13 @@ const SuitPreview = ({
             setFabricTileTexture(null);
           }
 
-          const shouldFetchStripeTile =
-            (isStripeFabric || patternStripe || pantsStripeZoneEligible) &&
-            /^https?:\/\//i.test(fabricTexture);
-          if (shouldFetchStripeTile) {
-            const profile = "stripe";
+          // Route every remote fabric through the tile endpoint so the swatch lighting
+          // is flattened server-side (even tiling + accurate colour) for ALL fabrics,
+          // not only stripes. Stripe-eligible fabrics use the crisper stripe profile.
+          const isStripeTile = isStripeFabric || patternStripe || pantsStripeZoneEligible;
+          const shouldFetchTile = /^https?:\/\//i.test(fabricTexture);
+          if (shouldFetchTile) {
+            const profile = isStripeTile ? "stripe" : "default";
             const quality = lowPowerMode ? "medium" : "high";
             const tileSize = clamp(Math.round(tilePx * 1.2), 72, 192);
             const endpoint = `/api/fabric-tile?url=${encodeURIComponent(
@@ -2787,11 +2799,16 @@ const SuitPreview = ({
   const jacketTextureStyleReal = useMemo<React.CSSProperties>(() => {
     const baseOpacity = Number(fabricTextureStyle.opacity ?? tunedTextureOpacity);
     if (usePhotoBase) {
-      // Use soft-light for all stripe fabrics — overlay creates an overly harsh
-      // "stamped on" look vs the natural texture in the reference.
-      const blend: React.CSSProperties["mixBlendMode"] = "soft-light";
-      const preserveMul = isStripeFabric ? (fabricTone === "dark" ? 0.82 : 0.74) : 0.72;
-      const opacity = clamp(baseOpacity * preserveMul, 0.10, isStripeFabric ? 0.28 : 0.3);
+      // V2: `overlay` makes the weave follow the shaded base — darker in folds,
+      // brighter on highlights — for real cloth depth. V1 keeps the soft `soft-light`
+      // pass (overlay alone created a "stamped on" look on stripes).
+      const blend: React.CSSProperties["mixBlendMode"] = FABRIC_UNION_V2 ? "overlay" : "soft-light";
+      const preserveMul = FABRIC_UNION_V2
+        ? (isStripeFabric ? (fabricTone === "dark" ? 0.7 : 0.62) : 0.66)
+        : (isStripeFabric ? (fabricTone === "dark" ? 0.82 : 0.74) : 0.72);
+      const opacity = FABRIC_UNION_V2
+        ? clamp(baseOpacity * preserveMul, 0.14, isStripeFabric ? 0.34 : 0.4)
+        : clamp(baseOpacity * preserveMul, 0.10, isStripeFabric ? 0.28 : 0.3);
       return {
         ...fabricTextureStyle,
         mixBlendMode: blend,
@@ -2820,10 +2837,15 @@ const SuitPreview = ({
     // Mirror jacket texture rendering so pants and jacket look consistent.
     const baseOpacity = Number(pantsZoneTextureStyle.opacity ?? tunedTextureOpacity);
     if (usePhotoBase) {
-      const blend: React.CSSProperties["mixBlendMode"] = "soft-light";
+      // V2 mirrors jacket: `overlay` weave that follows the shaded base for depth.
+      const blend: React.CSSProperties["mixBlendMode"] = FABRIC_UNION_V2 ? "overlay" : "soft-light";
       // Raise opacity floor for stripe fabrics so woven lines read clearly on pants.
-      const preserveMul = isStripeFabric ? (fabricTone === "dark" ? 0.96 : 0.90) : 0.72;
-      const opacity = clamp(baseOpacity * preserveMul, isStripeFabric ? 0.22 : 0.16, isStripeFabric ? 0.52 : 0.3);
+      const preserveMul = FABRIC_UNION_V2
+        ? (isStripeFabric ? (fabricTone === "dark" ? 0.82 : 0.76) : 0.66)
+        : (isStripeFabric ? (fabricTone === "dark" ? 0.96 : 0.90) : 0.72);
+      const opacity = FABRIC_UNION_V2
+        ? clamp(baseOpacity * preserveMul, isStripeFabric ? 0.24 : 0.18, isStripeFabric ? 0.5 : 0.4)
+        : clamp(baseOpacity * preserveMul, isStripeFabric ? 0.22 : 0.16, isStripeFabric ? 0.52 : 0.3);
       return {
         ...pantsZoneTextureStyle,
         mixBlendMode: blend,

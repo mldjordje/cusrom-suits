@@ -193,9 +193,8 @@ const readRules = async () => {
     await readJsonFile<unknown[]>(PROMOTION_RULES_PATH, []),
   );
 
-  if (fileRules.length > 0) {
-    await writeRulesToSupabaseStorage(fileRules);
-  }
+  // Always write back so the file exists in storage and future reads don't 400.
+  await writeRulesToSupabaseStorage(fileRules);
 
   return fileRules;
 };
