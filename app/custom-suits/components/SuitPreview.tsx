@@ -28,6 +28,7 @@ import { useLinings } from "../hooks/useLinings";
 import { ButtonLayout, ButtonPosition, getFallbackPositions } from "../data/buttonPositions";
 import { BaseLayer } from "./layers/BaseLayer";
 import { FabricUnion } from "./layers/FabricUnion";
+import { FabricWarpLayer, type FabricWarpStatus } from "./layers/FabricWarpLayer";
 import { GlobalOverlay } from "./layers/GlobalOverlay";
 import { LightingPasses } from "./layers/LightingPasses";
 import { spriteBackground } from "./layers/types";
@@ -116,6 +117,13 @@ const PARITY_DEBUG_OVERLAY = process.env.NEXT_PUBLIC_PARITY_DEBUG === "1";
 // as sitting in the garment's drape — closer to the Hockerty reference. Flag-gated
 // for A/B comparison; enable with NEXT_PUBLIC_FABRIC_UNION_V2=1.
 const FABRIC_UNION_V2 = process.env.NEXT_PUBLIC_FABRIC_UNION_V2 === "1";
+// WebGL fabric warp (Path A): samples the fabric tile through a displacement field
+// derived from the garment base photo so stripes/patterns drape around the body and
+// lapel instead of tiling flat. Replaces the rigid per-zone stripe rotation for the
+// jacket body when on. Default-ON (only the gated /custom-suits/debug route exposes
+// it); kill switch with NEXT_PUBLIC_FABRIC_WARP_V1=0. Falls back to CSS tiling if WebGL
+// is unavailable or a texture fails to load.
+const FABRIC_WARP_V1 = process.env.NEXT_PUBLIC_FABRIC_WARP_V1 !== "0";
 const VEST_FEATURE_ENABLED = process.env.NEXT_PUBLIC_VEST_FEATURE !== "0";
 const PANTS_MASK_VERSION = "v26";
 const ZERO_OFFSET = { x: 0, y: 0 } as const;
@@ -2055,7 +2063,9 @@ const SuitPreview = ({
           if (shouldFetchTile) {
             const profile = isStripeTile ? "stripe" : "default";
             const quality = lowPowerMode ? "medium" : "high";
-            const tileSize = clamp(Math.round(tilePx * 1.2), 72, 192);
+            // Stripe tiles get a larger cap — at 192px max, the sharpened pinstripe
+            // upscales/aliases into static when the CSS layer tiles it across the torso.
+            const tileSize = clamp(Math.round(tilePx * 1.2), 72, isStripeTile ? 256 : 192);
             const endpoint = `/api/fabric-tile?url=${encodeURIComponent(
               fabricTexture
             )}&size=${tileSize}&profile=${profile}&quality=${quality}`;
@@ -2507,6 +2517,43 @@ const SuitPreview = ({
   );
   const jacketMask = jacketUnionMask;
   const pantsMask = pantsUnionMask;
+  // Displacement/shading source for the WebGL warp: the torso base photo (grayscale).
+  // Its luminance gradient drives the stripe drape; its luminance drives shading.
+  const jacketDisplacementUrl = useMemo(() => {
+    if (!FABRIC_WARP_V1 || !usePhotoBase) return null;
+    const torso = structuralJacketLayers.find((l) => l.id === "torso") ?? structuralJacketLayers[0];
+    if (!torso) return null;
+    const pair = resolveJacketPhoto(torso);
+    return pair?.png || pair?.webp || null;
+  }, [resolveJacketPhoto, structuralJacketLayers, usePhotoBase]);
+  const [jacketWarpStatus, setJacketWarpStatus] = useState<FabricWarpStatus>("idle");
+  const jacketWarpActive = Boolean(
+    FABRIC_WARP_V1 &&
+      usePhotoBase &&
+      useTexture &&
+      fabricTextureSource &&
+      jacketDisplacementUrl &&
+      jacketMask &&
+      jacketWarpStatus !== "failed",
+  );
+  // Pants warp mirrors the jacket: displacement/shading from the main pants base photo.
+  const pantsDisplacementUrl = useMemo(() => {
+    if (!FABRIC_WARP_V1 || !usePhotoBase) return null;
+    const main = pantsBaseLayers[0];
+    if (!main) return null;
+    const pair = resolvePantsPhoto(main);
+    return pair?.png || pair?.webp || null;
+  }, [pantsBaseLayers, resolvePantsPhoto, usePhotoBase]);
+  const [pantsWarpStatus, setPantsWarpStatus] = useState<FabricWarpStatus>("idle");
+  const pantsWarpActive = Boolean(
+    FABRIC_WARP_V1 &&
+      usePhotoBase &&
+      useTexture &&
+      fabricTextureSourcePants &&
+      pantsDisplacementUrl &&
+      pantsMask &&
+      pantsWarpStatus !== "failed",
+  );
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
   const pantsSplitTextureRotation = useMemo(() => {
@@ -2839,20 +2886,22 @@ const SuitPreview = ({
     if (usePhotoBase) {
       // V2 mirrors jacket: `overlay` weave that follows the shaded base for depth.
       const blend: React.CSSProperties["mixBlendMode"] = FABRIC_UNION_V2 ? "overlay" : "soft-light";
-      // Raise opacity floor for stripe fabrics so woven lines read clearly on pants.
+      // Mirror jacket's exact multipliers/caps — pants previously ran hotter than the
+      // jacket (preserveMul up to 0.96 vs jacket's 0.82), which read as a visible
+      // brightness mismatch between the two pieces on the same fabric.
       const preserveMul = FABRIC_UNION_V2
-        ? (isStripeFabric ? (fabricTone === "dark" ? 0.82 : 0.76) : 0.66)
-        : (isStripeFabric ? (fabricTone === "dark" ? 0.96 : 0.90) : 0.72);
+        ? (isStripeFabric ? (fabricTone === "dark" ? 0.7 : 0.62) : 0.66)
+        : (isStripeFabric ? (fabricTone === "dark" ? 0.82 : 0.74) : 0.72);
       const opacity = FABRIC_UNION_V2
-        ? clamp(baseOpacity * preserveMul, isStripeFabric ? 0.24 : 0.18, isStripeFabric ? 0.5 : 0.4)
-        : clamp(baseOpacity * preserveMul, isStripeFabric ? 0.22 : 0.16, isStripeFabric ? 0.52 : 0.3);
+        ? clamp(baseOpacity * preserveMul, 0.14, isStripeFabric ? 0.34 : 0.4)
+        : clamp(baseOpacity * preserveMul, 0.10, isStripeFabric ? 0.28 : 0.3);
       return {
         ...pantsZoneTextureStyle,
         mixBlendMode: blend,
         opacity,
       };
     }
-    const opacity = clamp(baseOpacity * 0.92, 0.06, 0.58);
+    const opacity = clamp(baseOpacity * 0.82, 0.06, 0.52);
     const blend: React.CSSProperties["mixBlendMode"] =
       fabricTone === "dark" ? "soft-light" : pantsZoneTextureStyle.mixBlendMode;
     return {
@@ -3617,6 +3666,7 @@ const SuitPreview = ({
                     baseColor={tunedFabricFill || toneBaseColor}
                     fabricAvgColor={tunedFabricFill}
                     baseBlendMode="color"
+                    fabricTone={fabricTone}
                     baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                     panZoom={panZoom}
                     canvas={JACKET_CANVAS}
@@ -3703,6 +3753,7 @@ const SuitPreview = ({
                   baseColor={tunedFabricFill || toneBaseColor}
                   fabricAvgColor={tunedFabricFill}
                   baseBlendMode="color"
+                    fabricTone={fabricTone}
                   baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                   panZoom={panZoom}
                   canvas={JACKET_CANVAS}
@@ -3725,6 +3776,7 @@ const SuitPreview = ({
                 textureStyle={jacketPatternOverlayStyle}
                 baseColor={tunedFabricFill || toneBaseColor}
                 baseBlendMode="color"
+                    fabricTone={fabricTone}
                 baseOpacity={0}
                 panZoom={panZoom}
                 canvas={JACKET_CANVAS}
@@ -3772,7 +3824,19 @@ const SuitPreview = ({
                 mask={jacketMask}
               />
             )}
-            {showLayer("fabric") &&
+            {showLayer("fabric") && jacketWarpActive && (
+              <FabricWarpLayer
+                fabricTextureUrl={fabricTextureSource}
+                displacementUrl={jacketDisplacementUrl}
+                maskUrl={jacketMask}
+                tileSizePx={stripeTileSizePx}
+                scale={panZoom.scale * jacketTextureScale}
+                offset={panZoom.offset}
+                canvas={JACKET_CANVAS}
+                onStatus={setJacketWarpStatus}
+              />
+            )}
+            {showLayer("fabric") && !jacketWarpActive &&
               (jacketStripeZoneActive && jacketStripeZones ? (
                 <>
                   <FabricUnion
@@ -3783,6 +3847,7 @@ const SuitPreview = ({
                     baseColor={tunedFabricFill || toneBaseColor}
                     fabricAvgColor={tunedFabricFill}
                     baseBlendMode="color"
+                    fabricTone={fabricTone}
                     baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                     panZoom={panZoom}
                     canvas={JACKET_CANVAS}
@@ -3803,6 +3868,7 @@ const SuitPreview = ({
                     baseColor={tunedFabricFill || toneBaseColor}
                     fabricAvgColor={tunedFabricFill}
                     baseBlendMode="color"
+                    fabricTone={fabricTone}
                     baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                     panZoom={panZoom}
                     canvas={JACKET_CANVAS}
@@ -3823,6 +3889,7 @@ const SuitPreview = ({
                     baseColor={tunedFabricFill || toneBaseColor}
                     fabricAvgColor={tunedFabricFill}
                     baseBlendMode="color"
+                    fabricTone={fabricTone}
                     baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                     panZoom={panZoom}
                     canvas={JACKET_CANVAS}
@@ -3845,6 +3912,7 @@ const SuitPreview = ({
                   baseColor={tunedFabricFill || toneBaseColor}
                   fabricAvgColor={tunedFabricFill}
                   baseBlendMode="color"
+                    fabricTone={fabricTone}
                   baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                   panZoom={panZoom}
                   canvas={JACKET_CANVAS}
@@ -4083,6 +4151,7 @@ const SuitPreview = ({
             baseColor={tunedFabricFill || toneBaseColor}
             fabricAvgColor={tunedFabricFill}
             baseBlendMode="color"
+                    fabricTone={fabricTone}
             baseOpacity={pantsBaseFillOpacity}
             panZoom={panZoom}
             canvas={PANTS_CANVAS}
@@ -4091,7 +4160,19 @@ const SuitPreview = ({
             textureTileSizePx={pantsTileSizePx}
           />
         )}
-        {showLayer("fabric") && usePantsTexture && (
+        {showLayer("fabric") && pantsWarpActive && (
+          <FabricWarpLayer
+            fabricTextureUrl={fabricTextureSourcePants}
+            displacementUrl={pantsDisplacementUrl}
+            maskUrl={pantsMask}
+            tileSizePx={pantsTileSizePx}
+            scale={panZoom.scale * pantsTextureScale}
+            offset={panZoom.offset}
+            canvas={PANTS_CANVAS}
+            onStatus={setPantsWarpStatus}
+          />
+        )}
+        {showLayer("fabric") && usePantsTexture && !pantsWarpActive && (
           pantsZoneTextureActive ? (
             <>
               {pantsStripeZoneConfig.mode === "primary" ? (
@@ -4104,6 +4185,7 @@ const SuitPreview = ({
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4125,6 +4207,7 @@ const SuitPreview = ({
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4146,6 +4229,7 @@ const SuitPreview = ({
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4167,6 +4251,7 @@ const SuitPreview = ({
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4188,6 +4273,7 @@ const SuitPreview = ({
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4212,6 +4298,7 @@ const SuitPreview = ({
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4233,6 +4320,7 @@ const SuitPreview = ({
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4254,6 +4342,7 @@ const SuitPreview = ({
                       textureStyle={pantsDetailProtectTextureStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4301,6 +4390,7 @@ const SuitPreview = ({
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4322,6 +4412,7 @@ const SuitPreview = ({
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4343,6 +4434,7 @@ const SuitPreview = ({
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4364,6 +4456,7 @@ const SuitPreview = ({
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4385,6 +4478,7 @@ const SuitPreview = ({
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4409,6 +4503,7 @@ const SuitPreview = ({
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4430,6 +4525,7 @@ const SuitPreview = ({
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}
@@ -4451,6 +4547,7 @@ const SuitPreview = ({
                       textureStyle={pantsStripeHighlightStyle}
                       baseColor={tunedFabricFill || toneBaseColor}
                       baseBlendMode="color"
+                    fabricTone={fabricTone}
                       baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
                       panZoom={panZoom}
                       canvas={PANTS_CANVAS}

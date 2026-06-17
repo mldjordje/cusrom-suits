@@ -132,10 +132,13 @@ export async function GET(req: Request) {
   let pipeline = await flattenIllumination(cropped, tileSize, profile === "stripe" ? 0.7 : 0.82);
 
   if (profile === "stripe") {
-    // Stripe profile keeps woven lines crisp for preview, especially on phone uploads.
-    const sharpenSigma = quality === "high" ? 1.45 : quality === "low" ? 0.95 : 1.2;
-    const sharpenM1 = quality === "high" ? 1.9 : 1.5;
-    const sharpenM2 = quality === "high" ? 2.5 : 2.2;
+    // Stripe profile keeps woven lines readable for preview, especially on phone
+    // uploads. Sharpen amounts kept mild — at the small tile sizes used here, strong
+    // unsharp-mask rings/aliases when the CSS layer tiles+upscales it, reading as
+    // static/noise instead of a clean pinstripe.
+    const sharpenSigma = quality === "high" ? 1.0 : quality === "low" ? 0.7 : 0.85;
+    const sharpenM1 = quality === "high" ? 1.1 : 0.9;
+    const sharpenM2 = quality === "high" ? 1.4 : 1.2;
     pipeline = pipeline
       .removeAlpha()
       .normalize({ lower: 1, upper: 99 })
