@@ -29,6 +29,7 @@ import { ButtonLayout, ButtonPosition, getFallbackPositions } from "../data/butt
 import { BaseLayer } from "./layers/BaseLayer";
 import { FabricUnion } from "./layers/FabricUnion";
 import { FabricWarpLayer, type FabricWarpStatus } from "./layers/FabricWarpLayer";
+import { FabricGeometryLayer, type FabricGeometryStatus } from "./layers/FabricGeometryLayer";
 import { GlobalOverlay } from "./layers/GlobalOverlay";
 import { LightingPasses } from "./layers/LightingPasses";
 import { spriteBackground } from "./layers/types";
@@ -123,7 +124,14 @@ const FABRIC_UNION_V2 = process.env.NEXT_PUBLIC_FABRIC_UNION_V2 === "1";
 // jacket body when on. Default-ON (only the gated /custom-suits/debug route exposes
 // it); kill switch with NEXT_PUBLIC_FABRIC_WARP_V1=0. Falls back to CSS tiling if WebGL
 // is unavailable or a texture fails to load.
-const FABRIC_WARP_V1 = process.env.NEXT_PUBLIC_FABRIC_WARP_V1 !== "0";
+const FABRIC_WARP_V1 = process.env.NEXT_PUBLIC_FABRIC_WARP_V1 === "1";
+// Geometry-aware cloth engine: samples the fabric through pre-baked per-style UV/normal/AO
+// maps so the pattern wraps the body/lapel/legs like a real garment. Maps live in
+// public/assets/suits/geometry/<styleId>/. Flag-gated; falls back to CSS tiling if a
+// style has no maps or WebGL fails.
+const FABRIC_GEOMETRY_V1 = process.env.NEXT_PUBLIC_FABRIC_GEOMETRY_V1 === "1";
+// Styles that currently have baked geometry maps on disk.
+const GEOMETRY_STYLES = new Set<string>(["single_1btn", "single_2btn", "double_4btn", "double_6btn"]);
 const VEST_FEATURE_ENABLED = process.env.NEXT_PUBLIC_VEST_FEATURE !== "0";
 const PANTS_MASK_VERSION = "v26";
 const ZERO_OFFSET = { x: 0, y: 0 } as const;
@@ -883,11 +891,6 @@ const SuitPreview = ({
               id: "pants-front-pocket",
               name: "Front Pocket",
               src: "/assets/suits/transparent/front_pocket+diagonal.png",
-            },
-            {
-              id: "pants-back-pocket",
-              name: "Back Pocket",
-              src: "/assets/suits/transparent/back_pocket+with_button.png",
             },
           ]
         : [],
@@ -1793,9 +1796,10 @@ const SuitPreview = ({
     if (!usePhotoBase) return 1;
     const lum = fabricMetrics.lightness;
     const sat = fabricMetrics.saturation;
-    const exposure = 1.04 + (lum - 0.45) * 0.18 + (sat > 0.14 ? 0.015 : 0);
-    return clamp(exposure, 1.0, 1.12);
-  }, [fabricMetrics.lightness, fabricMetrics.saturation, usePhotoBase]);
+    const darkSolidLift = !isStripeFabric && !hasCheckPattern && lum < 0.22 ? 0.12 : 0;
+    const exposure = 1.04 + (lum - 0.45) * 0.18 + (sat > 0.14 ? 0.015 : 0) + darkSolidLift;
+    return clamp(exposure, 1.0, darkSolidLift ? 1.18 : 1.12);
+  }, [fabricMetrics.lightness, fabricMetrics.saturation, hasCheckPattern, isStripeFabric, usePhotoBase]);
   const photoFilter = useMemo(() => {
     if (usePhotoBase) {
       // V2 overlay weave darkens the mid-tones; lift base exposure + ease contrast
@@ -2009,22 +2013,27 @@ const SuitPreview = ({
           const ctx = c.getContext("2d");
           if (!ctx) return;
           const size = lowPowerMode ? 48 : STRIPE_ANALYSIS_SIZE;
-          c.width = size;
-          c.height = size;
-          ctx.drawImage(img, 0, 0, size, size);
-          const d = ctx.getImageData(0, 0, size, size).data;
-          const avg = computeRobustAverageColor(d);
-          if (avg) {
-            setFabricAvgColor(avg);
-            FABRIC_AVG_CACHE.set(fabricTexture, avg);
-          } else {
-            setFabricAvgColor(null);
-            FABRIC_AVG_CACHE.set(fabricTexture, null);
-          }
+          const analyzeTile = (source: CanvasImageSource) => {
+            c.width = size;
+            c.height = size;
+            ctx.clearRect(0, 0, size, size);
+            ctx.drawImage(source, 0, 0, size, size);
+            const d = ctx.getImageData(0, 0, size, size).data;
+            const avg = computeRobustAverageColor(d);
+            if (avg) {
+              setFabricAvgColor(avg);
+              FABRIC_AVG_CACHE.set(fabricTexture, avg);
+            } else {
+              setFabricAvgColor(null);
+              FABRIC_AVG_CACHE.set(fabricTexture, null);
+            }
+            const stripeHint = computeStripeHint(d, size, size);
+            setFabricStripe(stripeHint);
+            FABRIC_STRIPE_CACHE.set(fabricTexture, stripeHint);
+            return stripeHint;
+          };
 
-          const stripeHint = computeStripeHint(d, size, size);
-          setFabricStripe(stripeHint);
-          FABRIC_STRIPE_CACHE.set(fabricTexture, stripeHint);
+          const stripeHint = analyzeTile(img);
           const stripeTileStrength = patternStripe ? Math.max(stripeHint.strength, 0.35) : stripeHint.strength;
 
           const tile = document.createElement("canvas");
@@ -2061,7 +2070,7 @@ const SuitPreview = ({
           const isStripeTile = isStripeFabric || patternStripe || pantsStripeZoneEligible;
           const shouldFetchTile = /^https?:\/\//i.test(fabricTexture);
           if (shouldFetchTile) {
-            const profile = isStripeTile ? "stripe" : "default";
+            const profile = isStripeTile && fabricTone === "dark" ? "tailored-stripe" : isStripeTile ? "stripe" : "default";
             const quality = lowPowerMode ? "medium" : "high";
             // Stripe tiles get a larger cap — at 192px max, the sharpened pinstripe
             // upscales/aliases into static when the CSS layer tiles it across the torso.
@@ -2085,6 +2094,11 @@ const SuitPreview = ({
                   if (!dataUrl || cancelled) return;
                   setFabricTileTexture(dataUrl);
                   FABRIC_TILE_CACHE.set(fabricTexture, dataUrl);
+                  const tileImg = new Image();
+                  tileImg.onload = () => {
+                    if (!cancelled) analyzeTile(tileImg);
+                  };
+                  tileImg.src = dataUrl;
                 };
                 reader.readAsDataURL(blob);
               })
@@ -2465,8 +2479,8 @@ const SuitPreview = ({
     [structuralJacketLayers, usePhotoBase]
   );
   const pantsPhotoLayers = useMemo(
-    () => (usePhotoBase ? [...pantsBaseLayers, ...pantsPhotoDetailLayers] : []),
-    [pantsBaseLayers, pantsPhotoDetailLayers, usePhotoBase]
+    () => (usePhotoBase ? pantsBaseLayers : []),
+    [pantsBaseLayers, usePhotoBase]
   );
   const pantsZoneTuningSignature = JSON.stringify({
     diagAbsDeg: PANTS_STRIPE_TUNING.diagAbsDeg,
@@ -2526,6 +2540,25 @@ const SuitPreview = ({
     const pair = resolveJacketPhoto(torso);
     return pair?.png || pair?.webp || null;
   }, [resolveJacketPhoto, structuralJacketLayers, usePhotoBase]);
+  const jacketPhotoShadeUrl = useMemo(() => {
+    if (!usePhotoBase) return null;
+    const torso = structuralJacketLayers.find((l) => l.id === "torso") ?? structuralJacketLayers[0];
+    if (!torso) return null;
+    const pair = resolveJacketPhoto(torso);
+    return pair?.png || pair?.webp || null;
+  }, [resolveJacketPhoto, structuralJacketLayers, usePhotoBase]);
+  const jacketPhotoShadeUrls = useMemo(
+    () =>
+      usePhotoBase
+        ? jacketPhotoLayers
+            .map((layer) => {
+              const pair = resolveJacketPhoto(layer);
+              return pair?.png || pair?.webp || null;
+            })
+            .filter((url): url is string => Boolean(url))
+        : [],
+    [jacketPhotoLayers, resolveJacketPhoto, usePhotoBase]
+  );
   const [jacketWarpStatus, setJacketWarpStatus] = useState<FabricWarpStatus>("idle");
   const jacketWarpActive = Boolean(
     FABRIC_WARP_V1 &&
@@ -2544,6 +2577,25 @@ const SuitPreview = ({
     const pair = resolvePantsPhoto(main);
     return pair?.png || pair?.webp || null;
   }, [pantsBaseLayers, resolvePantsPhoto, usePhotoBase]);
+  const pantsPhotoShadeUrl = useMemo(() => {
+    if (!usePhotoBase) return null;
+    const main = pantsBaseLayers[0];
+    if (!main) return null;
+    const pair = resolvePantsPhoto(main);
+    return pair?.png || pair?.webp || null;
+  }, [pantsBaseLayers, resolvePantsPhoto, usePhotoBase]);
+  const pantsPhotoShadeUrls = useMemo(
+    () =>
+      usePhotoBase
+        ? pantsPhotoLayers
+            .map((layer) => {
+              const pair = resolvePantsPhoto(layer);
+              return pair?.png || pair?.webp || null;
+            })
+            .filter((url): url is string => Boolean(url))
+        : [],
+    [pantsPhotoLayers, resolvePantsPhoto, usePhotoBase]
+  );
   const [pantsWarpStatus, setPantsWarpStatus] = useState<FabricWarpStatus>("idle");
   const pantsWarpActive = Boolean(
     FABRIC_WARP_V1 &&
@@ -2554,6 +2606,76 @@ const SuitPreview = ({
       pantsMask &&
       pantsWarpStatus !== "failed",
   );
+  // Geometry-aware cloth engine — per-style baked maps under /assets/suits/geometry/<styleId>/.
+  const geometryStyleId = currentSuit?.id ?? "";
+  const geometryAvailable = FABRIC_GEOMETRY_V1 && GEOMETRY_STYLES.has(geometryStyleId);
+  const geometryPatternActive = Boolean(
+    !isExplicitSolid &&
+      !hasCheckPattern &&
+      (patternStripe || stripeScopePants || stripeNameHint || stripeSpacingHint || isPantsCmsStripe)
+  );
+  const geometryBase = `/assets/suits/geometry/${geometryStyleId}`;
+  const [jacketGeomStatus, setJacketGeomStatus] = useState<FabricGeometryStatus>("idle");
+  const [pantsGeomStatus, setPantsGeomStatus] = useState<FabricGeometryStatus>("idle");
+  const jacketGeometryActive = Boolean(
+    geometryAvailable &&
+      geometryPatternActive &&
+      usePhotoBase &&
+      useTexture &&
+      fabricTextureSource &&
+      jacketGeomStatus !== "failed",
+  );
+  const pantsGeometryActive = Boolean(
+    geometryAvailable &&
+      geometryPatternActive &&
+      usePhotoBase &&
+      useTexture &&
+      fabricTextureSourcePants &&
+      pantsGeomStatus !== "failed",
+  );
+  const geometryFabricTuning = useMemo(() => {
+    const token = `${selectedFabric?.name ?? ""} ${selectedFabric?.pattern ?? ""} ${selectedFabric?.texture ?? ""}`.toLowerCase();
+    const seersuckerLike =
+      token.includes("seersucker") ||
+      token.includes("recycled") ||
+      token.includes("fiber") ||
+      token.includes("fibre");
+    const chalkStripeLike =
+      token.includes("chalk") ||
+      token.includes("pinstripe") ||
+      token.includes("stripe") ||
+      token.includes("prug") ||
+      patternStripe ||
+      isStripeFabric;
+    if (seersuckerLike) {
+      return {
+        jacketRepeat: 19,
+        pantsRepeat: 15,
+        clothContrast: 1.08,
+        weaveStrength: 0.7,
+        sheen: 0.025,
+        fabricBrightness: 1.04,
+      };
+    }
+    if (chalkStripeLike) {
+      return {
+        jacketRepeat: 10,
+        pantsRepeat: 8,
+        clothContrast: fabricTone === "dark" ? 1.08 : 1.04,
+        weaveStrength: 0.32,
+        sheen: fabricTone === "dark" ? 0.055 : 0.035,
+        fabricBrightness: fabricTone === "dark" ? 1.24 : 1.06,
+      };
+    }
+    return {
+      jacketRepeat: 18,
+      pantsRepeat: 12,
+      clothContrast: 0.92,
+      weaveStrength: 0.22,
+      sheen: 0.075,
+      fabricBrightness: 1.02,
+    };
+  }, [fabricTone, isStripeFabric, patternStripe, selectedFabric]);
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
   const pantsSplitTextureRotation = useMemo(() => {
@@ -3824,7 +3946,28 @@ const SuitPreview = ({
                 mask={jacketMask}
               />
             )}
-            {showLayer("fabric") && jacketWarpActive && (
+            {showLayer("fabric") && jacketGeometryActive && (
+              <FabricGeometryLayer
+                fabricTextureUrl={fabricTileTexture ?? fabricTextureSource}
+                uvUrl={`${geometryBase}/jacket_body.uv.png`}
+                normalUrl={`${geometryBase}/jacket_body.normal.png`}
+                aoUrl={`${geometryBase}/jacket_body.ao.png`}
+                maskUrl={`${geometryBase}/jacket_body.mask.png`}
+                shadeUrl={jacketPhotoShadeUrl}
+                shadeUrls={jacketPhotoShadeUrls}
+                canvas={JACKET_CANVAS}
+                repeat={geometryFabricTuning.jacketRepeat}
+                clothContrast={geometryFabricTuning.clothContrast}
+                weaveStrength={geometryFabricTuning.weaveStrength}
+                sheen={geometryFabricTuning.sheen}
+                fabricBrightness={geometryFabricTuning.fabricBrightness}
+                photoShading={0.68}
+                ambient={0.5}
+                diffuse={0.68}
+                onStatus={setJacketGeomStatus}
+              />
+            )}
+            {showLayer("fabric") && !jacketGeometryActive && jacketWarpActive && (
               <FabricWarpLayer
                 fabricTextureUrl={fabricTextureSource}
                 displacementUrl={jacketDisplacementUrl}
@@ -3836,7 +3979,7 @@ const SuitPreview = ({
                 onStatus={setJacketWarpStatus}
               />
             )}
-            {showLayer("fabric") && !jacketWarpActive &&
+            {showLayer("fabric") && !jacketGeometryActive && !jacketWarpActive &&
               (jacketStripeZoneActive && jacketStripeZones ? (
                 <>
                   <FabricUnion
@@ -4160,7 +4303,28 @@ const SuitPreview = ({
             textureTileSizePx={pantsTileSizePx}
           />
         )}
-        {showLayer("fabric") && pantsWarpActive && (
+        {showLayer("fabric") && pantsGeometryActive && (
+          <FabricGeometryLayer
+            fabricTextureUrl={fabricTileTexture ?? fabricTextureSourcePants}
+            uvUrl={`${geometryBase}/pants.uv.png`}
+            normalUrl={`${geometryBase}/pants.normal.png`}
+            aoUrl={`${geometryBase}/pants.ao.png`}
+            maskUrl={`${geometryBase}/pants.mask.png`}
+            shadeUrl={pantsPhotoShadeUrl}
+            shadeUrls={pantsPhotoShadeUrls}
+            canvas={PANTS_CANVAS}
+            repeat={geometryFabricTuning.pantsRepeat}
+            clothContrast={geometryFabricTuning.clothContrast}
+            weaveStrength={geometryFabricTuning.weaveStrength}
+            sheen={geometryFabricTuning.sheen * 0.72}
+            fabricBrightness={geometryFabricTuning.fabricBrightness}
+            photoShading={0.62}
+            ambient={0.52}
+            diffuse={0.62}
+            onStatus={setPantsGeomStatus}
+          />
+        )}
+        {showLayer("fabric") && !pantsGeometryActive && pantsWarpActive && (
           <FabricWarpLayer
             fabricTextureUrl={fabricTextureSourcePants}
             displacementUrl={pantsDisplacementUrl}
@@ -4172,7 +4336,7 @@ const SuitPreview = ({
             onStatus={setPantsWarpStatus}
           />
         )}
-        {showLayer("fabric") && usePantsTexture && !pantsWarpActive && (
+        {showLayer("fabric") && usePantsTexture && !pantsGeometryActive && !pantsWarpActive && (
           pantsZoneTextureActive ? (
             <>
               {pantsStripeZoneConfig.mode === "primary" ? (

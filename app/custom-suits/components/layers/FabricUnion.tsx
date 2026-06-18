@@ -176,7 +176,7 @@ const FabricUnionComponent: React.FC<Props> = ({
   // under-triggers on stripe fabrics (white yarn lightens the averaged fill colour).
   // fabricTone is the authoritative signal from the configurator, so it always wins.
   const toneClampOpacity =
-    baseBlendMode === "color" ? (fabricTone === "dark" ? 0.85 : fabricTone === "medium" ? 0.2 : 0) : 0;
+    baseBlendMode === "color" ? (fabricTone === "dark" ? 0.34 : fabricTone === "medium" ? 0.16 : 0) : 0;
   const highlightClampOpacity = Math.max(hexClampOpacity, toneClampOpacity);
 
   const renderBaseFill = () => {

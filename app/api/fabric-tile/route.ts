@@ -3,7 +3,7 @@ import sharp from "sharp";
 
 const ALLOWED_HOST_SUFFIXES = [".supabase.co"];
 
-type TileProfile = "default" | "stripe";
+type TileProfile = "default" | "stripe" | "tailored-stripe";
 type TileQuality = "low" | "medium" | "high";
 
 const isAllowedUrl = (value: string) => {
@@ -18,6 +18,7 @@ const isAllowedUrl = (value: string) => {
 
 const normalizeProfile = (value: string | null): TileProfile => {
   const raw = (value ?? "").trim().toLowerCase();
+  if (raw === "tailored-stripe") return "tailored-stripe";
   if (raw === "stripe") return "stripe";
   return "default";
 };
@@ -29,7 +30,7 @@ const normalizeQuality = (value: string | null): TileQuality => {
 };
 
 const defaultSizeForProfile = (profile: TileProfile, quality: TileQuality) => {
-  if (profile === "stripe") {
+  if (profile === "stripe" || profile === "tailored-stripe") {
     if (quality === "high") return 112;
     if (quality === "low") return 80;
     return 96;
@@ -40,7 +41,7 @@ const defaultSizeForProfile = (profile: TileProfile, quality: TileQuality) => {
 };
 
 const clampSize = (value: number, profile: TileProfile) => {
-  const max = profile === "stripe" ? 256 : 192;
+  const max = profile === "stripe" || profile === "tailored-stripe" ? 256 : 192;
   return Math.min(max, Math.max(32, value));
 };
 
@@ -91,6 +92,61 @@ const flattenIllumination = async (
   return sharp(out, { raw: { width: info.width, height: info.height, channels: ch } });
 };
 
+const cleanTailoredStripe = async (img: sharp.Sharp, size: number): Promise<sharp.Sharp> => {
+  const { data, info } = await img.clone().removeAlpha().toColourspace("srgb").raw().toBuffer({ resolveWithObject: true });
+  const ch = info.channels;
+  if (ch < 3) return img.removeAlpha();
+  const width = info.width;
+  const height = info.height;
+  const columns = Array.from({ length: width }, () => [0, 0, 0]);
+  const global = [0, 0, 0];
+
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const o = (y * width + x) * ch;
+      for (let c = 0; c < 3; c++) {
+        columns[x][c] += data[o + c];
+        global[c] += data[o + c];
+      }
+    }
+  }
+
+  const px = width * height;
+  for (let c = 0; c < 3; c++) global[c] /= px;
+  for (let x = 0; x < width; x++) {
+    for (let c = 0; c < 3; c++) columns[x][c] /= height;
+  }
+
+  const smoothColumns = columns.map((_, x) => {
+    const acc = [0, 0, 0];
+    let weightSum = 0;
+    for (let dx = -2; dx <= 2; dx++) {
+      const xx = (x + dx + width) % width;
+      const w = dx === 0 ? 3 : Math.abs(dx) === 1 ? 2 : 1;
+      for (let c = 0; c < 3; c++) acc[c] += columns[xx][c] * w;
+      weightSum += w;
+    }
+    return acc.map((v) => v / weightSum);
+  });
+
+  const out = Buffer.alloc(width * height * 3);
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const source = (y * width + x) * ch;
+      const target = (y * width + x) * 3;
+      for (let c = 0; c < 3; c++) {
+        const columnSignal = global[c] + (smoothColumns[x][c] - global[c]) * 1.28;
+        const micro = data[source + c] - columns[x][c];
+        out[target + c] = Math.max(0, Math.min(255, Math.round(columnSignal + micro * 0.04)));
+      }
+    }
+  }
+
+  return sharp(out, { raw: { width, height, channels: 3 } })
+    .blur(Math.max(0.3, size / 900))
+    .modulate({ saturation: 1.02, brightness: 1.12 });
+};
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const raw = searchParams.get("url")?.trim() ?? "";
@@ -129,9 +185,15 @@ export async function GET(req: Request) {
 
   // Flatten the swatch lighting for every profile so any phone upload tiles evenly
   // and yields an accurate average colour, not just stripe fabrics.
-  let pipeline = await flattenIllumination(cropped, tileSize, profile === "stripe" ? 0.7 : 0.82);
+  let pipeline = await flattenIllumination(
+    cropped,
+    tileSize,
+    profile === "stripe" || profile === "tailored-stripe" ? 0.7 : 0.82
+  );
 
-  if (profile === "stripe") {
+  if (profile === "tailored-stripe") {
+    pipeline = await cleanTailoredStripe(pipeline, tileSize);
+  } else if (profile === "stripe") {
     // Stripe profile keeps woven lines readable for preview, especially on phone
     // uploads. Sharpen amounts kept mild — at the small tile sizes used here, strong
     // unsharp-mask rings/aliases when the CSS layer tiles+upscales it, reading as
