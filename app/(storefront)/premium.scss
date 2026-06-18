@@ -554,8 +554,8 @@
 }
 
 .ss-product-gallery__main-image {
-  object-fit: cover !important;
-  object-position: center top !important;
+  object-fit: contain !important;
+  object-position: center center !important;
 }
 
 /* Flatten the buy-panel box — name/price/CTA sit directly on the page */

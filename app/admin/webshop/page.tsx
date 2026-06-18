@@ -20,6 +20,9 @@ import {
   type LandingGridOrderRef,
 } from "@/lib/catalog/landingSectionOrder";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
+import { PRODUCT_IMAGE_ACCEPT, PRODUCT_VIDEO_ACCEPT } from "@/lib/catalog/productMediaUpload";
+import { optimizeProductVideo } from "@/lib/catalog/optimizeProductVideo";
+import { supabaseClient } from "@/lib/supabase/client";
 import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 import AdminLandingProductPickGrid from "@/app/admin/components/AdminLandingProductPickGrid";
 import MediaHealthPanel from "@/app/admin/webshop/MediaHealthPanel";
@@ -763,6 +766,33 @@ const flagClass = (tone: "rose" | "amber" | "emerald" | "slate") => {
   return "border-slate-200 bg-slate-50 text-slate-600";
 };
 
+const uploadProductVideo = async (file: File, onProgress: (progress: number) => void) => {
+  if (!supabaseClient) throw new Error("Supabase upload nije konfigurisan.");
+
+  const optimized = await optimizeProductVideo(file, (progress) => onProgress(progress * 0.75));
+  onProgress(0.78);
+
+  const ticketRes = await fetch("/api/admin/webshop/video-upload-ticket", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ name: optimized.name, type: optimized.type, size: optimized.size }),
+  });
+  const ticket = await ticketRes.json();
+  if (!ticketRes.ok || !ticket?.success) {
+    throw new Error(ticket?.message || "Nije moguće pripremiti video upload.");
+  }
+
+  onProgress(0.82);
+  const { error } = await supabaseClient.storage
+    .from(String(ticket.bucket))
+    .uploadToSignedUrl(String(ticket.path), String(ticket.token), optimized, {
+      contentType: "video/mp4",
+    });
+  if (error) throw new Error(error.message);
+  onProgress(1);
+  return String(ticket.publicUrl || "");
+};
+
 export default function AdminWebshopPage() {
   const pathname = usePathname();
   const router = useRouter();
@@ -841,6 +871,7 @@ export default function AdminWebshopPage() {
   const [uploadingAssetKind, setUploadingAssetKind] =
     useState<"shopHero" | "documents" | "uniforms" | "storyCard" | "productVideo" | null>(null);
   const [uploadingEditorVideoId, setUploadingEditorVideoId] = useState<number | null>(null);
+  const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [landingProductQuery, setLandingProductQuery] = useState("");
   const [landingProductResults, setLandingProductResults] = useState<CatalogProduct[]>([]);
   const [landingProductsLoading, setLandingProductsLoading] = useState(false);
@@ -1535,15 +1566,17 @@ export default function AdminWebshopPage() {
     setUploadingAssetKind("productVideo");
     setError(null);
     setNotice(null);
+    setVideoUploadProgress(0);
     try {
-      const [url] = await uploadSiteAssets(files);
+      const url = await uploadProductVideo(files[0], setVideoUploadProgress);
       if (!url) throw new Error("Upload nije vratio URL.");
       setCreateDraft((prev) => ({ ...prev, videoUrl: url }));
-      setNotice("Video za proizvod je uploadovan.");
+      setNotice("Video je optimizovan u MP4 i uploadovan.");
     } catch (e: any) {
       setError(e?.message || "Upload product videa nije uspeo.");
     } finally {
       setUploadingAssetKind(null);
+      setVideoUploadProgress(0);
     }
   };
 
@@ -1552,15 +1585,17 @@ export default function AdminWebshopPage() {
     setUploadingEditorVideoId(legacyId);
     setError(null);
     setNotice(null);
+    setVideoUploadProgress(0);
     try {
-      const [url] = await uploadSiteAssets(files);
+      const url = await uploadProductVideo(files[0], setVideoUploadProgress);
       if (!url) throw new Error("Upload nije vratio URL.");
       updateDraft(legacyId, { videoUrl: url });
-      setNotice(`Video za artikal #${legacyId} je uploadovan. Klikni Sacuvaj.`);
+      setNotice(`Video za artikal #${legacyId} je optimizovan i uploadovan. Klikni Sacuvaj.`);
     } catch (e: any) {
-      setError(e?.message || "Upload video klipa nije uspeo. Proverite da li je fajl manji od 80MB.");
+      setError(e?.message || "Upload video klipa nije uspeo. Proverite format i internet vezu.");
     } finally {
       setUploadingEditorVideoId(null);
+      setVideoUploadProgress(0);
     }
   };
 
@@ -2041,7 +2076,7 @@ export default function AdminWebshopPage() {
           <label className="mt-3 flex cursor-pointer items-center justify-center gap-2 rounded-xl border-2 border-dashed border-rose-300 bg-rose-50 px-3 py-3 text-sm font-semibold text-rose-700 transition-colors hover:bg-rose-100">
             <input
               type="file"
-              accept="image/*"
+              accept={PRODUCT_IMAGE_ACCEPT}
               multiple
               className="hidden"
               onChange={(e) => {
@@ -2070,7 +2105,7 @@ export default function AdminWebshopPage() {
           <label className={`rounded-lg border px-2 py-1.5 text-center text-[11px] font-semibold uppercase tracking-[0.12em] ${hasNoImage ? "border-rose-200 bg-rose-50 text-rose-700" : "border-indigo-200 bg-indigo-50 text-indigo-700"}`}>
             <input
               type="file"
-              accept="image/*"
+              accept={PRODUCT_IMAGE_ACCEPT}
               multiple
               className="hidden"
               onChange={(e) => {
@@ -2411,7 +2446,7 @@ export default function AdminWebshopPage() {
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Slike proizvoda</p>
                 <input
                   type="file"
-                  accept="image/*"
+                  accept={PRODUCT_IMAGE_ACCEPT}
                   multiple
                   onChange={(e) => {
                     void uploadCreateImages(e.target.files);
@@ -2470,14 +2505,16 @@ export default function AdminWebshopPage() {
                   <label className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
                     <input
                       type="file"
-                      accept="video/mp4,video/webm,video/quicktime"
+                      accept={PRODUCT_VIDEO_ACCEPT}
                       className="hidden"
                       onChange={(e) => {
                         void uploadCreateVideo(e.target.files);
                         e.currentTarget.value = "";
                       }}
                     />
-                    {uploadingAssetKind === "productVideo" ? "Uploading..." : "Upload video"}
+                    {uploadingAssetKind === "productVideo"
+                      ? `Optimizacija ${Math.round(videoUploadProgress * 100)}%`
+                      : "Izaberi video iz galerije"}
                   </label>
                 </div>
                 {createDraft.videoUrl ? (
@@ -3938,18 +3975,23 @@ export default function AdminWebshopPage() {
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Slike proizvoda</p>
                   <p className="mt-1 text-xs text-slate-500">Dodaj slike sa telefona, izaberi glavnu sliku i sacuvaj proizvod.</p>
                 </div>
-                <label className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-700">
+                <label
+                  htmlFor={`product-${currentEditorItem.legacyId}-images`}
+                  className="cursor-pointer rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-indigo-700"
+                >
                   <input
+                    id={`product-${currentEditorItem.legacyId}-images`}
                     type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    accept={PRODUCT_IMAGE_ACCEPT}
                     multiple
-                    className="hidden"
+                    className="sr-only"
+                    disabled={uploadingEditorImages === currentEditorItem.legacyId}
                     onChange={(e) => {
                       void uploadEditorImages(currentEditorItem.legacyId, e.target.files);
                       e.currentTarget.value = "";
                     }}
                   />
-                  {uploadingEditorImages === currentEditorItem.legacyId ? "Upload..." : "Dodaj slike"}
+                  {uploadingEditorImages === currentEditorItem.legacyId ? "Upload..." : "Izaberi slike iz galerije"}
                 </label>
               </div>
               {drafts[currentEditorItem.legacyId]?.images?.length ? (
@@ -3984,18 +4026,24 @@ export default function AdminWebshopPage() {
             <div className="mt-4 rounded-2xl border border-slate-200 p-3">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Video proizvoda</p>
-                <label className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700" style={{ cursor: "pointer" }}>
+                <label
+                  htmlFor={`product-${currentEditorItem.legacyId}-video`}
+                  className="cursor-pointer rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700"
+                >
                   <input
+                    id={`product-${currentEditorItem.legacyId}-video`}
                     type="file"
-                    accept="video/mp4,video/webm,video/quicktime,video/x-msvideo,video/mpeg"
-                    className="hidden"
+                    accept={PRODUCT_VIDEO_ACCEPT}
+                    className="sr-only"
                     disabled={uploadingEditorVideoId === currentEditorItem.legacyId}
                     onChange={(e) => {
                       void uploadEditorVideo(currentEditorItem.legacyId, e.target.files);
                       e.currentTarget.value = "";
                     }}
                   />
-                  {uploadingEditorVideoId === currentEditorItem.legacyId ? "Uploading..." : "Upload video"}
+                  {uploadingEditorVideoId === currentEditorItem.legacyId
+                    ? `Optimizacija ${Math.round(videoUploadProgress * 100)}%`
+                    : "Izaberi video iz galerije"}
                 </label>
               </div>
               {drafts[currentEditorItem.legacyId]?.videoUrl ? (
