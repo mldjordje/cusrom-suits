@@ -19,18 +19,30 @@ export async function POST(req: NextRequest) {
   const contentType = req.headers.get("content-type") || "";
   let email = "";
   let source = "";
+  let firstName = "";
+  let lastName = "";
+  let birthDate = "";
+  let gender = "";
 
   if (contentType.includes("application/json")) {
     const body = await req.json().catch(() => ({}));
     email = sanitize(body?.email ?? "");
     source = sanitize(body?.source ?? "");
+    firstName = sanitize(body?.firstName ?? "");
+    lastName = sanitize(body?.lastName ?? "");
+    birthDate = sanitize(body?.birthDate ?? "");
+    gender = sanitize(body?.gender ?? "");
   } else {
     const form = await req.formData();
     email = sanitize(form.get("email"));
     source = sanitize(form.get("source"));
+    firstName = sanitize(form.get("firstName"));
+    lastName = sanitize(form.get("lastName"));
+    birthDate = sanitize(form.get("birthDate"));
+    gender = sanitize(form.get("gender"));
   }
 
-  const result = await subscribeToNewsletter({ email, source });
+  const result = await subscribeToNewsletter({ email, source, firstName, lastName, birthDate, gender });
   const status = result.success ? 200 : 400;
   const isFreshSignup = result.success && !("duplicate" in result && result.duplicate);
   if (isFreshSignup) {
