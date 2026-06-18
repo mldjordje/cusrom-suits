@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
 import { parseSyncEnvironment, requireProductionConfirm } from "@/lib/integrations/core/config";
+import { buildMofficeProxyHeaders } from "@/lib/integrations/moffice/proxy";
 import { runMofficeSync, runMofficeSyncWithItems, type MofficeItem } from "@/lib/integrations/moffice/sync";
 
 export async function POST(req: NextRequest) {
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
     let items: MofficeItem[];
     try {
       const proxyRes = await fetch(proxyUrl, {
-        headers: { Authorization: `Bearer ${proxySecret}` },
+        headers: buildMofficeProxyHeaders(proxySecret),
         cache: "no-store",
         signal: AbortSignal.timeout(60_000),
       });

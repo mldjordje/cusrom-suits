@@ -76,3 +76,5 @@ transparent-upload/
 # local dev logs + agent config
 next-*.log
 .mcp.json
+
+.vercel
