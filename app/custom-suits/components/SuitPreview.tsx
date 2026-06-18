@@ -2070,14 +2070,21 @@ const SuitPreview = ({
           const isStripeTile = isStripeFabric || patternStripe || pantsStripeZoneEligible;
           const shouldFetchTile = /^https?:\/\//i.test(fabricTexture);
           if (shouldFetchTile) {
-            const profile = isStripeTile && fabricTone === "dark" ? "tailored-stripe" : isStripeTile ? "stripe" : "default";
+            // Rectify (tailored-stripe) whenever the swatch has a clean detectable stripe
+            // axis — collapses phone-photo noise along the stripe so the geometry engine
+            // gets razor-clean lines. Gated on orientation, not tone (the old dark-only
+            // gate left light/medium stripes noisy). Unknown axis -> sharpen-only stripe.
+            const cleanStripeAxis =
+              stripeHint.orientation === "vertical" || stripeHint.orientation === "horizontal";
+            const profile = isStripeTile ? (cleanStripeAxis ? "tailored-stripe" : "stripe") : "default";
+            const orientationParam = stripeHint.orientation === "horizontal" ? "horizontal" : "vertical";
             const quality = lowPowerMode ? "medium" : "high";
             // Stripe tiles get a larger cap — at 192px max, the sharpened pinstripe
             // upscales/aliases into static when the CSS layer tiles it across the torso.
             const tileSize = clamp(Math.round(tilePx * 1.2), 72, isStripeTile ? 256 : 192);
             const endpoint = `/api/fabric-tile?url=${encodeURIComponent(
               fabricTexture
-            )}&size=${tileSize}&profile=${profile}&quality=${quality}`;
+            )}&size=${tileSize}&profile=${profile}&quality=${quality}&orientation=${orientationParam}`;
             fetch(endpoint, { cache: "force-cache" })
               .then(async (res) => {
                 if (!res.ok) return null;
@@ -2609,10 +2616,17 @@ const SuitPreview = ({
   // Geometry-aware cloth engine — per-style baked maps under /assets/suits/geometry/<styleId>/.
   const geometryStyleId = currentSuit?.id ?? "";
   const geometryAvailable = FABRIC_GEOMETRY_V1 && GEOMETRY_STYLES.has(geometryStyleId);
+  // Checks route through the same geometry engine as stripes — the UV unwrap is
+  // pattern-agnostic, so a check swatch wraps the body/lapel exactly like a pinstripe.
+  // (Previously excluded → checks fell back to flat CSS tiling = no body wrap.)
   const geometryPatternActive = Boolean(
     !isExplicitSolid &&
-      !hasCheckPattern &&
-      (patternStripe || stripeScopePants || stripeNameHint || stripeSpacingHint || isPantsCmsStripe)
+      (hasCheckPattern ||
+        patternStripe ||
+        stripeScopePants ||
+        stripeNameHint ||
+        stripeSpacingHint ||
+        isPantsCmsStripe)
   );
   const geometryBase = `/assets/suits/geometry/${geometryStyleId}`;
   const [jacketGeomStatus, setJacketGeomStatus] = useState<FabricGeometryStatus>("idle");
@@ -2640,6 +2654,15 @@ const SuitPreview = ({
       token.includes("recycled") ||
       token.includes("fiber") ||
       token.includes("fibre");
+    const checkLike =
+      hasCheckPattern ||
+      token.includes("karo") ||
+      token.includes("check") ||
+      token.includes("glen") ||
+      token.includes("windowpane") ||
+      token.includes("gingham") ||
+      token.includes("houndstooth") ||
+      token.includes("pepito");
     const chalkStripeLike =
       token.includes("chalk") ||
       token.includes("pinstripe") ||
@@ -2647,8 +2670,20 @@ const SuitPreview = ({
       token.includes("prug") ||
       patternStripe ||
       isStripeFabric;
+    // `usesSpacing` = pattern whose repeat should track the fabric's real stripe spacing
+    // metadata (stripes + checks). Seersucker/solid weave repeat is texture-scale, not a
+    // declared pitch, so it's left on the name-guessed constant.
+    let base: {
+      jacketRepeat: number;
+      pantsRepeat: number;
+      clothContrast: number;
+      weaveStrength: number;
+      sheen: number;
+      fabricBrightness: number;
+    };
+    let usesSpacing = false;
     if (seersuckerLike) {
-      return {
+      base = {
         jacketRepeat: 19,
         pantsRepeat: 15,
         clothContrast: 1.08,
@@ -2656,9 +2691,21 @@ const SuitPreview = ({
         sheen: 0.025,
         fabricBrightness: 1.04,
       };
-    }
-    if (chalkStripeLike) {
-      return {
+    } else if (checkLike) {
+      // Checks are a 2-axis pattern: slightly lower repeat than a pinstripe (a grid reads
+      // busier than vertical lines) and modest weave/sheen so the squares stay crisp.
+      usesSpacing = true;
+      base = {
+        jacketRepeat: 9,
+        pantsRepeat: 7,
+        clothContrast: fabricTone === "dark" ? 1.06 : 1.03,
+        weaveStrength: 0.34,
+        sheen: fabricTone === "dark" ? 0.05 : 0.035,
+        fabricBrightness: fabricTone === "dark" ? 1.2 : 1.05,
+      };
+    } else if (chalkStripeLike) {
+      usesSpacing = true;
+      base = {
         jacketRepeat: 10,
         pantsRepeat: 8,
         clothContrast: fabricTone === "dark" ? 1.08 : 1.04,
@@ -2666,16 +2713,39 @@ const SuitPreview = ({
         sheen: fabricTone === "dark" ? 0.055 : 0.035,
         fabricBrightness: fabricTone === "dark" ? 1.24 : 1.06,
       };
+    } else {
+      base = {
+        jacketRepeat: 18,
+        pantsRepeat: 12,
+        clothContrast: 0.92,
+        weaveStrength: 0.22,
+        sheen: 0.075,
+        fabricBrightness: 1.02,
+      };
     }
-    return {
-      jacketRepeat: 18,
-      pantsRepeat: 12,
-      clothContrast: 0.92,
-      weaveStrength: 0.22,
-      sheen: 0.075,
-      fabricBrightness: 1.02,
-    };
-  }, [fabricTone, isStripeFabric, patternStripe, selectedFabric]);
+    // Drive the geometry repeat from the fabric's real stripe-spacing metadata when set
+    // (overrides the name-guess). Bigger declared spacing => wider stripes => fewer
+    // repeats across the unwrapped garment, so divide by the spacing scale.
+    if (usesSpacing) {
+      if (hasStripeSpacingJacketOverride) {
+        base.jacketRepeat = clamp(base.jacketRepeat / stripeSpacingScaleJacket, 4, 30);
+      }
+      if (hasStripeSpacingPantsOverride) {
+        base.pantsRepeat = clamp(base.pantsRepeat / stripeSpacingScalePants, 3, 26);
+      }
+    }
+    return base;
+  }, [
+    fabricTone,
+    hasCheckPattern,
+    hasStripeSpacingJacketOverride,
+    hasStripeSpacingPantsOverride,
+    isStripeFabric,
+    patternStripe,
+    selectedFabric,
+    stripeSpacingScaleJacket,
+    stripeSpacingScalePants,
+  ]);
   const jacketShadowClass = "drop-shadow-[0_24px_40px_rgba(15,23,42,0.16)]";
   const pantsShadowClass = "drop-shadow-[0_14px_24px_rgba(15,23,42,0.14)]";
   const pantsSplitTextureRotation = useMemo(() => {

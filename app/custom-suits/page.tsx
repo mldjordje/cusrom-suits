@@ -10,6 +10,7 @@ import Sidebar from "./components/Sidebar";
 import MobileControls, { Panel as MobilePanel } from "./components/MobileControls";
 import { computePrice } from "./utils/price";
 import { buildBackendUrl } from "./utils/backend";
+import { filterSolidFabrics } from "./utils/fabricFilter";
 import StickyMiniNav from "../components/landing/StickyMiniNav";
 import Image from "next/image";
 import Link from "next/link";
@@ -56,8 +57,12 @@ function CustomSuitsComingSoon() {
   );
 }
 
+// Live since 2026-06-18: solids-only launch (stripes/checks still render flat vs Hockerty,
+// gated out via filterSolidFabrics). Flip to false to restore the coming-soon placeholder.
+const CUSTOM_SUITS_LIVE = true;
+
 export default function CustomSuitsPage() {
-  return <CustomSuitsComingSoon />;
+  return CUSTOM_SUITS_LIVE ? <CustomSuitsConfigurator /> : <CustomSuitsComingSoon />;
 }
 
 function CustomSuitsConfigurator() {
@@ -72,18 +77,26 @@ function CustomSuitsConfigurator() {
   const [activeMobilePanel, setActiveMobilePanel] = React.useState<MobilePanel | null>(null);
 
 
-  // Preselect first available fabric so preview is ready without a manual choice
-  const firstFabricId = initialFabrics?.[0]?.id ? String(initialFabrics[0].id) : null;
+  const solidFabrics = React.useMemo(() => {
+    const cmsSolids = filterSolidFabrics(initialFabrics ?? []);
+    return cmsSolids.length ? cmsSolids : filterSolidFabrics(fallbackFabrics);
+  }, [initialFabrics]);
+
+  // Preselect a public, solid fabric and replace any stale patterned selection.
+  const firstFabricId = solidFabrics[0]?.id ? String(solidFabrics[0].id) : null;
   React.useEffect(() => {
     if (!firstFabricId) return;
-    if (defaultColorSet.current) return;
-    if (config.colorId) {
+    const selectedIsPublic = solidFabrics.some(
+      (fabric: any) => String(fabric.id) === String(config.colorId)
+    );
+    if (selectedIsPublic) {
       defaultColorSet.current = true;
       return;
     }
+    if (defaultColorSet.current && config.colorId === firstFabricId) return;
     dispatch({ type: "SET_COLOR", payload: firstFabricId });
     defaultColorSet.current = true;
-  }, [config.colorId, dispatch, firstFabricId]);
+  }, [config.colorId, dispatch, firstFabricId, solidFabrics]);
 
   const configuratorVariants: Variants = {
     hidden: { opacity: 0, y: 16 },
@@ -112,10 +125,7 @@ function CustomSuitsConfigurator() {
     },
   };
   const price = React.useMemo(() => computePrice(config, suits), [config]);
-  const fabricsFallback = React.useMemo(
-    () => (initialFabrics?.length ? initialFabrics : fallbackFabrics),
-    [initialFabrics]
-  );
+  const fabricsFallback = solidFabrics;
   const selectedFabric = React.useMemo(
     () => fabricsFallback.find((fabric: any) => String(fabric.id) === String(config.colorId)) ?? fabricsFallback[0] ?? null,
     [config.colorId, fabricsFallback]

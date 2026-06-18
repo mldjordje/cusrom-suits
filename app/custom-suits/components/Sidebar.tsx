@@ -11,6 +11,7 @@ import { buildBackendUrl } from "../utils/backend";
 import { useFabrics } from "../hooks/useFabrics";
 import { useButtons } from "../hooks/useButtons";
 import { useLinings } from "../hooks/useLinings";
+import { filterSolidFabrics } from "../utils/fabricFilter";
 import FabricDetailModal, { FabricDetail } from "./FabricDetailModal";
 
 type Props = {
@@ -77,18 +78,16 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
   });
 
   const price = computePrice(config, suits);
-  const fabricsNormalized = useMemo(
-    () =>
-      fabrics.length
-        ? fabrics.map((x: any) => ({ ...x, id: String(x.id) }))
-        : fallbackFabrics.map((fabric) => ({
-            ...fabric,
-            id: String(fabric.id),
-            price: (fabric as any).price ?? 0,
-            tone: (fabric as any).tone ?? "medium",
-          })),
-    [fabrics]
-  );
+  const fabricsNormalized = useMemo(() => {
+    const cmsSolids = filterSolidFabrics(fabrics);
+    const publicFabrics = cmsSolids.length ? cmsSolids : filterSolidFabrics(fallbackFabrics);
+    return publicFabrics.map((fabric: any) => ({
+      ...fabric,
+      id: String(fabric.id),
+      price: (fabric as any).price ?? 0,
+      tone: (fabric as any).tone ?? "medium",
+    }));
+  }, [fabrics]);
   const resolveFabricDetail = useCallback((fabric: any): FabricDetail | null => {
     const detailImage =
       fabric?.detailImage ??
@@ -723,8 +722,6 @@ const Sidebar: React.FC<Props> = ({ config, dispatch, showSummary = true, showFo
 };
 
 export default Sidebar;
-
-
 
 
 

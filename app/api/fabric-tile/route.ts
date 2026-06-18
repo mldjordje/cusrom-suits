@@ -5,6 +5,7 @@ const ALLOWED_HOST_SUFFIXES = [".supabase.co"];
 
 type TileProfile = "default" | "stripe" | "tailored-stripe";
 type TileQuality = "low" | "medium" | "high";
+type StripeOrientation = "vertical" | "horizontal";
 
 const isAllowedUrl = (value: string) => {
   try {
@@ -27,6 +28,11 @@ const normalizeQuality = (value: string | null): TileQuality => {
   const raw = (value ?? "").trim().toLowerCase();
   if (raw === "low" || raw === "high") return raw;
   return "medium";
+};
+
+const normalizeOrientation = (value: string | null): StripeOrientation => {
+  const raw = (value ?? "").trim().toLowerCase();
+  return raw === "horizontal" ? "horizontal" : "vertical";
 };
 
 const defaultSizeForProfile = (profile: TileProfile, quality: TileQuality) => {
@@ -92,38 +98,64 @@ const flattenIllumination = async (
   return sharp(out, { raw: { width: info.width, height: info.height, channels: ch } });
 };
 
-const cleanTailoredStripe = async (img: sharp.Sharp, size: number): Promise<sharp.Sharp> => {
+/**
+ * Rectify a real stripe swatch into a clean, even pinstripe tile for the geometry engine.
+ *
+ * A phone photo of a stripe carries sensor noise, JPEG blocking and a lighting gradient
+ * that the geometry engine then magnifies (it samples the tile at sub-pixel through UV).
+ * We collapse the swatch along the stripe's CONSTANT axis — for a vertical stripe the
+ * colour is (ideally) constant down each column, so we average every column into a 1-D
+ * profile, smooth it, and re-broadcast it across the tile. Noise that doesn't follow the
+ * stripe direction averages out; the stripe lines stay razor-sharp.
+ *
+ * `orientation === "horizontal"` transposes the logic (collapse rows -> per-row profile).
+ * Brightness lift is tone-adaptive: dark fabrics get a small pop, light fabrics are left
+ * near-identity so they don't wash out (the old hard 1.12 lift blew out light stripes —
+ * the reason rectify was previously gated to dark tone only).
+ */
+const rectifyStripe = async (
+  img: sharp.Sharp,
+  size: number,
+  orientation: StripeOrientation = "vertical"
+): Promise<sharp.Sharp> => {
   const { data, info } = await img.clone().removeAlpha().toColourspace("srgb").raw().toBuffer({ resolveWithObject: true });
   const ch = info.channels;
   if (ch < 3) return img.removeAlpha();
   const width = info.width;
   const height = info.height;
-  const columns = Array.from({ length: width }, () => [0, 0, 0]);
+  // Vertical stripe => the stripe profile runs across X (one bin per column), averaged
+  // down Y. Horizontal stripe => one bin per row, averaged across X.
+  const vertical = orientation !== "horizontal";
+  const binCount = vertical ? width : height;
+  const binOf = (x: number, y: number) => (vertical ? x : y);
+  const lines = Array.from({ length: binCount }, () => [0, 0, 0]);
   const global = [0, 0, 0];
 
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const o = (y * width + x) * ch;
+      const b = binOf(x, y);
       for (let c = 0; c < 3; c++) {
-        columns[x][c] += data[o + c];
+        lines[b][c] += data[o + c];
         global[c] += data[o + c];
       }
     }
   }
 
   const px = width * height;
+  const span = vertical ? height : width;
   for (let c = 0; c < 3; c++) global[c] /= px;
-  for (let x = 0; x < width; x++) {
-    for (let c = 0; c < 3; c++) columns[x][c] /= height;
+  for (let b = 0; b < binCount; b++) {
+    for (let c = 0; c < 3; c++) lines[b][c] /= span;
   }
 
-  const smoothColumns = columns.map((_, x) => {
+  const smoothLines = lines.map((_, b) => {
     const acc = [0, 0, 0];
     let weightSum = 0;
-    for (let dx = -2; dx <= 2; dx++) {
-      const xx = (x + dx + width) % width;
-      const w = dx === 0 ? 3 : Math.abs(dx) === 1 ? 2 : 1;
-      for (let c = 0; c < 3; c++) acc[c] += columns[xx][c] * w;
+    for (let db = -2; db <= 2; db++) {
+      const bb = (b + db + binCount) % binCount;
+      const w = db === 0 ? 3 : Math.abs(db) === 1 ? 2 : 1;
+      for (let c = 0; c < 3; c++) acc[c] += lines[bb][c] * w;
       weightSum += w;
     }
     return acc.map((v) => v / weightSum);
@@ -134,17 +166,22 @@ const cleanTailoredStripe = async (img: sharp.Sharp, size: number): Promise<shar
     for (let x = 0; x < width; x++) {
       const source = (y * width + x) * ch;
       const target = (y * width + x) * 3;
+      const b = binOf(x, y);
       for (let c = 0; c < 3; c++) {
-        const columnSignal = global[c] + (smoothColumns[x][c] - global[c]) * 1.28;
-        const micro = data[source + c] - columns[x][c];
-        out[target + c] = Math.max(0, Math.min(255, Math.round(columnSignal + micro * 0.04)));
+        const lineSignal = global[c] + (smoothLines[b][c] - global[c]) * 1.28;
+        const micro = data[source + c] - lines[b][c];
+        out[target + c] = Math.max(0, Math.min(255, Math.round(lineSignal + micro * 0.04)));
       }
     }
   }
 
+  // Tone-adaptive lift: dark (~50 luma) -> ~1.13, mid -> ~1.05, light (~200) -> ~0.99.
+  const globalLum = 0.2126 * global[0] + 0.7152 * global[1] + 0.0722 * global[2];
+  const lift = Math.max(0.98, Math.min(1.15, 1.0 + (150 - globalLum) / 750));
+
   return sharp(out, { raw: { width, height, channels: 3 } })
     .blur(Math.max(0.3, size / 900))
-    .modulate({ saturation: 1.02, brightness: 1.12 });
+    .modulate({ saturation: 1.02, brightness: lift });
 };
 
 export async function GET(req: Request) {
@@ -152,6 +189,7 @@ export async function GET(req: Request) {
   const raw = searchParams.get("url")?.trim() ?? "";
   const profile = normalizeProfile(searchParams.get("profile"));
   const quality = normalizeQuality(searchParams.get("quality"));
+  const orientation = normalizeOrientation(searchParams.get("orientation"));
   const requestedSize = Number.parseInt(searchParams.get("size") ?? "", 10);
   const tileSize = clampSize(
     Number.isFinite(requestedSize) ? requestedSize : defaultSizeForProfile(profile, quality),
@@ -191,21 +229,20 @@ export async function GET(req: Request) {
     profile === "stripe" || profile === "tailored-stripe" ? 0.7 : 0.82
   );
 
-  if (profile === "tailored-stripe") {
-    pipeline = await cleanTailoredStripe(pipeline, tileSize);
-  } else if (profile === "stripe") {
-    // Stripe profile keeps woven lines readable for preview, especially on phone
-    // uploads. Sharpen amounts kept mild — at the small tile sizes used here, strong
-    // unsharp-mask rings/aliases when the CSS layer tiles+upscales it, reading as
-    // static/noise instead of a clean pinstripe.
-    const sharpenSigma = quality === "high" ? 1.0 : quality === "low" ? 0.7 : 0.85;
-    const sharpenM1 = quality === "high" ? 1.1 : 0.9;
-    const sharpenM2 = quality === "high" ? 1.4 : 1.2;
-    pipeline = pipeline
-      .removeAlpha()
-      .normalize({ lower: 1, upper: 99 })
-      .modulate({ brightness: 1.01, saturation: 1 })
-      .sharpen(sharpenSigma, sharpenM1, sharpenM2);
+  if (profile === "tailored-stripe" || profile === "stripe") {
+    // Both stripe profiles now rectify: collapse the swatch along the stripe's constant
+    // axis so phone-photo noise/blocking averages out and the lines stay razor-clean for
+    // the geometry engine (which magnifies any residual grain when it samples through UV).
+    // `tailored-stripe` is the clean result as-is; `stripe` adds a mild unsharp pass to
+    // keep lighter-tone weave crisp. Sharpen kept gentle — at these tile sizes a strong
+    // unsharp-mask rings/aliases when the engine minifies the tile.
+    pipeline = await rectifyStripe(pipeline, tileSize, orientation);
+    if (profile === "stripe") {
+      const sharpenSigma = quality === "high" ? 0.9 : quality === "low" ? 0.65 : 0.8;
+      const sharpenM1 = quality === "high" ? 1.0 : 0.85;
+      const sharpenM2 = quality === "high" ? 1.3 : 1.1;
+      pipeline = pipeline.sharpen(sharpenSigma, sharpenM1, sharpenM2);
+    }
   } else {
     // Default profile: flatten only. No percentile `normalize` — on an already-even
     // swatch a contrast stretch amplifies residual low-frequency differences and skews
