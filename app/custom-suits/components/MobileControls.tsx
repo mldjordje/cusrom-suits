@@ -11,6 +11,12 @@ import { useLinings } from "../hooks/useLinings";
 import { computePrice } from "../utils/price";
 import { buildBackendUrl } from "../utils/backend";
 import FabricDetailModal, { FabricDetail } from "./FabricDetailModal";
+import {
+  MOBILE_GLASS_ACTIVE_CONTROL_CLASS,
+  MOBILE_GLASS_PANEL_CLASS,
+  MOBILE_GLASS_PRIMARY_ACTION_CLASS,
+  MOBILE_GLASS_SECONDARY_ACTION_CLASS,
+} from "@/lib/custom-suits/mobileGlass";
 
 export type Panel = "FABRIC" | "STYLE" | "ACCENTS";
 
@@ -786,9 +792,17 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
   return (
     <>
       <div className="lg:hidden">
-        <div className="fixed bottom-0 left-0 right-0 z-30">
-          <div className="mx-auto w-full max-w-md border-t border-white/10 bg-[#10141a]/95 px-3 pb-3 pt-2 text-white shadow-[0_-18px_42px_rgba(8,11,16,0.26)] backdrop-blur-md">
-            <div className="flex items-center justify-between gap-2">
+        <div className="fixed bottom-0 left-0 right-0 z-30 px-3 pb-[max(12px,env(safe-area-inset-bottom))]">
+          <div className={MOBILE_GLASS_PANEL_CLASS}>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(circle_at_18%_-12%,rgba(255,255,255,0.2),transparent_34%),radial-gradient(circle_at_86%_118%,rgba(123,158,190,0.18),transparent_42%),linear-gradient(145deg,rgba(255,255,255,0.1),rgba(255,255,255,0.015)_42%,rgba(5,10,18,0.16))]"
+            />
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-x-5 top-0 h-px bg-gradient-to-r from-transparent via-white/65 to-transparent"
+            />
+            <div className="relative z-10 flex items-center justify-between gap-2">
               {NAV.map((item) => {
                 const active = currentPanel === item.id;
                 return (
@@ -796,28 +810,28 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
                     key={item.id}
                     onClick={() => setPanel(item.id)}
                     className={`flex flex-1 flex-col items-center gap-1 py-1 transition ${
-                      active ? "text-white" : "text-white/44 hover:text-white/70"
+                      active ? "text-white" : "text-white/48 hover:text-white/76"
                     }`}
                   >
-                    <span className={`flex h-8 w-8 items-center justify-center rounded-full ${active ? "bg-white/10" : "bg-transparent"}`}>
-                      <img src={item.icon} alt={item.label} className="h-5 w-5 object-contain opacity-80" />
+                    <span className={`flex h-9 w-9 items-center justify-center rounded-full border transition ${active ? MOBILE_GLASS_ACTIVE_CONTROL_CLASS : "border-white/[0.06] bg-white/[0.045]"}`}>
+                      <img src={item.icon} alt={item.label} className="h-5 w-5 object-contain opacity-80 brightness-125" />
                     </span>
                     <span className="text-[9px] font-semibold tracking-[0.2em] uppercase">{item.label}</span>
                   </button>
                 );
               })}
             </div>
-            <div className="mt-2 grid grid-cols-[minmax(0,1fr)_minmax(138px,42%)] items-end gap-3">
+            <div className="relative z-10 mt-2 grid grid-cols-[minmax(0,1fr)_minmax(142px,44%)] items-center gap-3 border-t border-white/10 pt-2.5">
               <div className="min-w-0">
-                <p className="text-[10px] font-semibold text-white/62">Vase odelo</p>
-                <p className="text-xl font-semibold text-white">{price.total} EUR</p>
-                <p className="text-[10px] text-white/48">Tkanina {fabricPrice} EUR</p>
+                <p className="text-[10px] font-semibold text-white/58">Vase odelo</p>
+                <p className="text-xl font-semibold text-white drop-shadow-[0_1px_8px_rgba(255,255,255,0.12)]">{price.total} EUR</p>
+                <p className="text-[10px] text-white/42">Tkanina {fabricPrice} EUR</p>
               </div>
               <div className="grid gap-1.5">
                 <button
                   onClick={handleAddToCart}
                   disabled={savingCart}
-                  className="rounded-full bg-white px-3 py-2 text-sm font-semibold text-[#11161d] shadow-[0_12px_28px_rgba(0,0,0,0.22)] transition hover:bg-[#e9dcc8] disabled:cursor-not-allowed disabled:opacity-70"
+                  className={MOBILE_GLASS_PRIMARY_ACTION_CLASS}
                 >
                   Sacuvaj dizajn
                 </button>
@@ -826,7 +840,7 @@ function MobileControls({ config, dispatch, activePanel, onPanelChange }: Props)
                   onClick={() => {
                     window.location.href = measurementUrl;
                   }}
-                  className="rounded-full border border-white/20 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white/72 transition hover:border-white/40 hover:text-white"
+                  className={MOBILE_GLASS_SECONDARY_ACTION_CLASS}
                 >
                   Merenje
                 </button>
