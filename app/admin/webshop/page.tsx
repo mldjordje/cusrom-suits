@@ -20,7 +20,12 @@ import {
   type LandingGridOrderRef,
 } from "@/lib/catalog/landingSectionOrder";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
-import { PRODUCT_IMAGE_ACCEPT, PRODUCT_VIDEO_ACCEPT } from "@/lib/catalog/productMediaUpload";
+import {
+  PRODUCT_IMAGE_ACCEPT,
+  PRODUCT_VIDEO_ACCEPT,
+  buildAdminCommercePatch,
+  persistUploadedProductVideo,
+} from "@/lib/catalog/productMediaUpload";
 import { optimizeProductVideo } from "@/lib/catalog/optimizeProductVideo";
 import { supabaseClient } from "@/lib/supabase/client";
 import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
@@ -1589,8 +1594,9 @@ export default function AdminWebshopPage() {
     try {
       const url = await uploadProductVideo(files[0], setVideoUploadProgress);
       if (!url) throw new Error("Upload nije vratio URL.");
+      await persistUploadedProductVideo(legacyId, url);
       updateDraft(legacyId, { videoUrl: url });
-      setNotice(`Video za artikal #${legacyId} je optimizovan i uploadovan. Klikni Sacuvaj.`);
+      setNotice(`Video za artikal #${legacyId} je optimizovan, uploadovan i sacuvan.`);
     } catch (e: any) {
       setError(e?.message || "Upload video klipa nije uspeo. Proverite format i internet vezu.");
     } finally {
@@ -1648,6 +1654,16 @@ export default function AdminWebshopPage() {
   const saveProduct = async (legacyId: number) => {
     const draft = drafts[legacyId];
     if (!draft) return;
+    const currentItem = items.find((item) => item.legacyId === legacyId) || saleItems.find((item) => item.legacyId === legacyId);
+    const commercePatch = buildAdminCommercePatch({
+      isMoffice: currentItem ? isMofficeProduct(currentItem) : false,
+      priceOverride: draft.priceOverride,
+      priceGross: toNumberOrNull(draft.priceGross),
+      priceFinalGross: toNumberOrNull(draft.priceFinalGross),
+      rebatePercent: toNumberOrNull(draft.rebatePercent),
+      stockWarehouse1: toNumberOrNull(draft.stockWarehouse1),
+      stockTotal: toNumberOrNull(draft.stockTotal),
+    });
 
     setSavingId(legacyId);
     setError(null);
@@ -1664,11 +1680,7 @@ export default function AdminWebshopPage() {
           specification: draft.specification.trim() || null,
           declaration: draft.declaration.trim() || null,
           washCareIcons: draft.washCareIcons.length > 0 ? draft.washCareIcons : null,
-          priceGross: toNumberOrNull(draft.priceGross),
-          priceFinalGross: toNumberOrNull(draft.priceFinalGross),
-          rebatePercent: toNumberOrNull(draft.rebatePercent),
-          stockWarehouse1: toNumberOrNull(draft.stockWarehouse1),
-          stockTotal: toNumberOrNull(draft.stockTotal),
+          ...commercePatch,
           isActive: draft.isActive,
           isExported: draft.isExported,
           landingFeatured: draft.landingFeatured,
@@ -1677,7 +1689,6 @@ export default function AdminWebshopPage() {
           images: draft.images,
           coverImage: draft.coverImage || draft.images[0] || null,
           businessUniform: draft.businessUniform,
-          priceOverride: draft.priceOverride,
           seo: {
             seoTitle: draft.seoTitle.trim(),
             metaDescription: draft.metaDescription.trim(),

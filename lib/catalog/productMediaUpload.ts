@@ -10,6 +10,18 @@ type UploadFileMetadata = {
   size: number;
 };
 
+type AdminCommerceDraft = {
+  isMoffice: boolean;
+  priceOverride: boolean;
+  priceGross: number | null;
+  priceFinalGross: number | null;
+  rebatePercent: number | null;
+  stockWarehouse1: number | null;
+  stockTotal: number | null;
+};
+
+type FetchProductUpdate = (url: string, init?: RequestInit) => Promise<Response>;
+
 const sanitizeFileName = (value: string) =>
   String(value || "video")
     .normalize("NFD")
@@ -33,4 +45,44 @@ export function validateProductVideoUpload(file: UploadFileMetadata): string | n
 export function buildProductVideoStoragePath(name: string, id: string, now = new Date()) {
   const date = now.toISOString().slice(0, 10);
   return `webshop/videos/${date}/${sanitizeFileName(id)}-${sanitizeFileName(name)}.mp4`;
+}
+
+export function buildAdminCommercePatch(draft: AdminCommerceDraft) {
+  if (draft.isMoffice) {
+    return {
+      priceOverride: draft.priceOverride,
+      ...(draft.priceOverride
+        ? {
+            priceGross: draft.priceGross,
+            priceFinalGross: draft.priceFinalGross,
+            rebatePercent: draft.rebatePercent,
+          }
+        : {}),
+    };
+  }
+
+  return {
+    priceGross: draft.priceGross,
+    priceFinalGross: draft.priceFinalGross,
+    rebatePercent: draft.rebatePercent,
+    stockWarehouse1: draft.stockWarehouse1,
+    stockTotal: draft.stockTotal,
+    priceOverride: draft.priceOverride,
+  };
+}
+
+export async function persistUploadedProductVideo(
+  legacyId: number,
+  videoUrl: string,
+  fetcher: FetchProductUpdate = fetch,
+) {
+  const response = await fetcher("/api/admin/webshop/products", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ legacyId, videoUrl }),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok || !payload?.success) {
+    throw new Error(payload?.message || "Video je uploadovan, ali nije vezan za artikal.");
+  }
 }
