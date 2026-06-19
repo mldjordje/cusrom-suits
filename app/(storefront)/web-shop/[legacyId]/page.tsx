@@ -27,6 +27,7 @@ import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { BUNDLED_UNIFORM_IMAGES } from "@/lib/storefront/uniforms";
 import { resolveDisplayFinalPrice, resolveDisplayGrossPrice, calcDiscountPercent } from "@/lib/catalog/pricing";
+import { resolveProductMediaOrder } from "@/lib/catalog/productMediaOrder";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getSiteContent } from "@/lib/storefront/siteContent";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
@@ -417,6 +418,7 @@ export default async function WebShopProductPage({
     gallery = [gallery[0], ...extra, ...gallery.slice(1)].filter(Boolean).slice(0, 8) as string[];
   }
   const productVideoUrl = displayProduct.videoUrl || product.videoUrl || null;
+  const orderedMedia = resolveProductMediaOrder(gallery, productVideoUrl, product.mediaOrder);
   const sizeOptions = getProductSizeOptions(product, sizeVariants);
   const findRequestedSizeOption = () => {
     if (!requestedSize) return null;
@@ -584,7 +586,7 @@ export default async function WebShopProductPage({
           <div className="row g-0 g-lg-5 ss-pdp-row">
             <div className="col-lg-8 col-xl-8">
               <div className="product-single__media" data-media-type="scroll-snap">
-                <ProductImageGallery images={gallery} name={displayName} videoUrl={productVideoUrl} />
+                <ProductImageGallery images={gallery} name={displayName} videoUrl={productVideoUrl} media={orderedMedia} />
               </div>
               <div className="ss-product-tabs-under-media d-none d-lg-block">
                 <ProductDetailTabs

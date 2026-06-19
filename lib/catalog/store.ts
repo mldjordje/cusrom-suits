@@ -14,6 +14,7 @@ import {
 } from "@/lib/catalog/promotions";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { revalidateTag, unstable_cache } from "next/cache";
+import { parseProductMediaOrder, type ProductMediaItem } from "@/lib/catalog/productMediaOrder";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
 
@@ -65,6 +66,7 @@ export type CatalogProductView = {
   images: string[];
   hasDirectMedia: boolean;
   videoUrl: string | null;
+  mediaOrder?: ProductMediaItem[];
   attributes: Record<string, unknown>;
   rawPayload: Record<string, unknown>;
 };
@@ -348,6 +350,14 @@ const extractProductVideoUrl = (rawPayload: Record<string, unknown> | null | und
   return directVideoUrl || null;
 };
 
+const extractProductMediaOrder = (rawPayload: Record<string, unknown> | null | undefined) => {
+  if (!rawPayload || typeof rawPayload !== "object") return [];
+  const media = rawPayload.media && typeof rawPayload.media === "object"
+    ? (rawPayload.media as Record<string, unknown>)
+    : null;
+  return parseProductMediaOrder(media?.mediaOrder);
+};
+
 const normalizeCatalogRow = (
   row: Record<string, unknown>,
   imagesByProductId: Map<number, string[]>,
@@ -395,6 +405,7 @@ const normalizeCatalogRow = (
     images,
     hasDirectMedia: images.length > 0,
     videoUrl: extractProductVideoUrl(rawPayload),
+    mediaOrder: extractProductMediaOrder(rawPayload),
     attributes:
       rawPayload && typeof rawPayload.attributes === "object"
         ? (rawPayload.attributes as Record<string, unknown>)
@@ -436,6 +447,7 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
   images: Array.isArray(item.images) ? item.images : [],
   hasDirectMedia: Array.isArray(item.images) && item.images.some((img) => String(img || "").trim().length > 0),
   videoUrl: extractProductVideoUrl(item.raw as Record<string, unknown>),
+  mediaOrder: extractProductMediaOrder(item.raw as Record<string, unknown>),
   attributes: item.attributes as unknown as Record<string, unknown>,
   rawPayload: compactRawPayload({
     categories: item.categories,

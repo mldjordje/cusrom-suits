@@ -5,6 +5,7 @@ import { getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 import { BUSINESS_UNIFORM_PRODUCT_TYPE } from "@/lib/catalog/productTypes";
 import type { LegacyCatalogProduct, LegacyCategory } from "@/lib/legacy/types";
+import { parseProductMediaOrder, type ProductMediaItem } from "@/lib/catalog/productMediaOrder";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
 
@@ -33,6 +34,7 @@ type ProductUpdatePayload = {
   landingFeatured?: boolean;
   landingPriority?: number | null;
   videoUrl?: string | null;
+  mediaOrder?: ProductMediaItem[];
   images?: string[];
   coverImage?: string | null;
   businessUniform?: boolean;
@@ -159,6 +161,7 @@ const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
   if (hasOwn(row, "videoUrl")) {
     out.videoUrl = row.videoUrl == null ? null : String(row.videoUrl || "").trim() || null;
   }
+  if (hasOwn(row, "mediaOrder")) out.mediaOrder = parseProductMediaOrder(row.mediaOrder);
   if (hasOwn(row, "images")) out.images = parseStringList(row.images);
   if (hasOwn(row, "coverImage")) {
     out.coverImage = row.coverImage == null ? null : String(row.coverImage || "").trim() || null;
@@ -255,11 +258,12 @@ const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
             },
           }
         : {}),
-      ...(patch.videoUrl !== undefined
+      ...(patch.videoUrl !== undefined || patch.mediaOrder !== undefined
         ? {
             media: {
               ...((current.raw && typeof current.raw.media === "object" ? current.raw.media : {}) || {}),
-              videoUrl: patch.videoUrl,
+              ...(patch.videoUrl !== undefined ? { videoUrl: patch.videoUrl } : {}),
+              ...(patch.mediaOrder !== undefined ? { mediaOrder: patch.mediaOrder } : {}),
             },
           }
         : {}),
@@ -342,6 +346,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
     patch.landingFeatured !== undefined ||
     patch.landingPriority !== undefined ||
     patch.videoUrl !== undefined ||
+    patch.mediaOrder !== undefined ||
     patch.businessUniform !== undefined ||
     patch.priceOverride !== undefined ||
     patch.declaration !== undefined ||
@@ -389,6 +394,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
         media: {
           ...currentMedia,
           ...(patch.videoUrl !== undefined ? { videoUrl: patch.videoUrl } : {}),
+          ...(patch.mediaOrder !== undefined ? { mediaOrder: patch.mediaOrder } : {}),
         },
         ...(patch.declaration !== undefined
           ? { declaration: patch.declaration || null }

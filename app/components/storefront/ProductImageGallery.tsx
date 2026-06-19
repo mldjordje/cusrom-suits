@@ -4,11 +4,13 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
+import type { ProductMediaItem } from "@/lib/catalog/productMediaOrder";
 
 type ProductImageGalleryProps = {
   images: string[];
   name: string;
   videoUrl?: string | null;
+  media?: ProductMediaItem[];
 };
 
 type GalleryItem =
@@ -44,7 +46,7 @@ const getYoutubeEmbedUrl = (value: string) => {
   return null;
 };
 
-export default function ProductImageGallery({ images, name, videoUrl }: ProductImageGalleryProps) {
+export default function ProductImageGallery({ images, name, videoUrl, media }: ProductImageGalleryProps) {
   const [failedImageSrcs, setFailedImageSrcs] = useState<Set<string>>(() => new Set());
   const cleanImages = useMemo(
     () =>
@@ -78,19 +80,30 @@ export default function ProductImageGallery({ images, name, videoUrl }: ProductI
   const gallery = useMemo<GalleryItem[]>(() => {
     const visibleImages = cleanImages.filter((src) => !failedImageSrcs.has(src));
     const cleanVideoUrl = String(videoUrl || "").trim();
+    const visibleImageSet = new Set(visibleImages);
+    const orderedMedia = media?.length
+      ? media
+      : [
+          ...(cleanVideoUrl ? [{ kind: "video" as const, src: cleanVideoUrl }] : []),
+          ...visibleImages.map((src) => ({ kind: "image" as const, src })),
+        ];
     const items: GalleryItem[] = [];
-    // Video goes FIRST so it autoplays as the hero on page load
-    if (cleanVideoUrl) {
-      items.push({
-        kind: "video",
-        src: cleanVideoUrl,
-        thumbnail: visibleImages[0] || null,
-        embedUrl: getYoutubeEmbedUrl(cleanVideoUrl),
-      });
+    for (const item of orderedMedia) {
+      if (item.kind === "image") {
+        if (visibleImageSet.has(item.src)) items.push({ kind: "image", src: item.src });
+        continue;
+      }
+      if (cleanVideoUrl && item.src === cleanVideoUrl) {
+        items.push({
+          kind: "video",
+          src: cleanVideoUrl,
+          thumbnail: visibleImages[0] || null,
+          embedUrl: getYoutubeEmbedUrl(cleanVideoUrl),
+        });
+      }
     }
-    visibleImages.forEach((src) => items.push({ kind: "image", src }));
     return items;
-  }, [cleanImages, failedImageSrcs, videoUrl]);
+  }, [cleanImages, failedImageSrcs, media, videoUrl]);
 
   const [activeIndex, setActiveIndex] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);

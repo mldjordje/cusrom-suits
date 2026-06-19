@@ -27,6 +27,7 @@ import {
   persistUploadedProductVideo,
 } from "@/lib/catalog/productMediaUpload";
 import { optimizeProductVideo } from "@/lib/catalog/optimizeProductVideo";
+import { resolveProductMediaOrder, type ProductMediaItem } from "@/lib/catalog/productMediaOrder";
 import { supabaseClient } from "@/lib/supabase/client";
 import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 import AdminLandingProductPickGrid from "@/app/admin/components/AdminLandingProductPickGrid";
@@ -55,6 +56,7 @@ type CatalogProduct = {
   images?: string[];
   hasDirectMedia?: boolean;
   videoUrl?: string | null;
+  mediaOrder?: ProductMediaItem[];
   rawPayload?: Record<string, unknown> | null;
 };
 type WashCareIcon = "gentleWash" | "dryCleaning" | "doNotBleach" | "lowIron" | "noTumbleDry";
@@ -86,6 +88,7 @@ type ProductDraft = {
   landingFeatured: boolean;
   landingPriority: string;
   videoUrl: string;
+  mediaOrder: ProductMediaItem[];
   images: string[];
   coverImage: string;
   businessUniform: boolean;
@@ -661,6 +664,8 @@ const toDraft = (item: CatalogProduct): ProductDraft => {
         .filter(Boolean)
         .join("\n")
     : "";
+  const images = item.rawPayload?.imageFallback ? [] : Array.isArray(item.images) ? item.images.filter(Boolean) : [];
+  const videoUrl = item.videoUrl || "";
   return {
     name: item.name,
     brand: item.brand || "",
@@ -690,8 +695,9 @@ const toDraft = (item: CatalogProduct): ProductDraft => {
     isExported: item.isExported,
     landingFeatured: Boolean(item.landingFeatured),
     landingPriority: item.landingPriority == null ? "" : String(item.landingPriority),
-    videoUrl: item.videoUrl || "",
-    images: item.rawPayload?.imageFallback ? [] : Array.isArray(item.images) ? item.images.filter(Boolean) : [],
+    videoUrl,
+    mediaOrder: resolveProductMediaOrder(images, videoUrl, item.mediaOrder),
+    images,
     coverImage: item.rawPayload?.imageFallback ? "" : item.coverImage || item.images?.[0] || "",
     businessUniform: isBusinessUniformProduct(item),
     priceOverride: Boolean((item.rawPayload?.commerceOverrides as Record<string, unknown> | undefined)?.price),
@@ -1595,7 +1601,18 @@ export default function AdminWebshopPage() {
       const url = await uploadProductVideo(files[0], setVideoUploadProgress);
       if (!url) throw new Error("Upload nije vratio URL.");
       await persistUploadedProductVideo(legacyId, url);
-      updateDraft(legacyId, { videoUrl: url });
+      setDrafts((prev) => {
+        const current = prev[legacyId];
+        if (!current) return prev;
+        return {
+          ...prev,
+          [legacyId]: {
+            ...current,
+            videoUrl: url,
+            mediaOrder: resolveProductMediaOrder(current.images, url, current.mediaOrder),
+          },
+        };
+      });
       setNotice(`Video za artikal #${legacyId} je optimizovan, uploadovan i sacuvan.`);
     } catch (e: any) {
       setError(e?.message || "Upload video klipa nije uspeo. Proverite format i internet vezu.");
@@ -1686,6 +1703,7 @@ export default function AdminWebshopPage() {
           landingFeatured: draft.landingFeatured,
           landingPriority: draft.landingPriority.trim() ? toNumberOrNull(draft.landingPriority) : null,
           videoUrl: draft.videoUrl.trim() || null,
+          mediaOrder: resolveProductMediaOrder(draft.images, draft.videoUrl, draft.mediaOrder),
           images: draft.images,
           coverImage: draft.coverImage || draft.images[0] || null,
           businessUniform: draft.businessUniform,
@@ -1835,6 +1853,7 @@ export default function AdminWebshopPage() {
             ...current,
             images,
             coverImage: current.coverImage || images[0] || "",
+            mediaOrder: resolveProductMediaOrder(images, current.videoUrl, current.mediaOrder),
           },
         };
       });
@@ -1856,7 +1875,28 @@ export default function AdminWebshopPage() {
       if (!current) return prev;
       const images = current.images.filter((imageUrl) => imageUrl !== url);
       const coverImage = current.coverImage === url ? images[0] || "" : current.coverImage;
-      return { ...prev, [legacyId]: { ...current, images, coverImage } };
+      return {
+        ...prev,
+        [legacyId]: {
+          ...current,
+          images,
+          coverImage,
+          mediaOrder: resolveProductMediaOrder(images, current.videoUrl, current.mediaOrder),
+        },
+      };
+    });
+  };
+
+  const moveDraftMedia = (legacyId: number, fromIndex: number, toIndex: number) => {
+    setDrafts((prev) => {
+      const current = prev[legacyId];
+      if (!current) return prev;
+      const mediaOrder = resolveProductMediaOrder(current.images, current.videoUrl, current.mediaOrder);
+      if (fromIndex < 0 || fromIndex >= mediaOrder.length || toIndex < 0 || toIndex >= mediaOrder.length) return prev;
+      const nextOrder = [...mediaOrder];
+      const [moved] = nextOrder.splice(fromIndex, 1);
+      nextOrder.splice(toIndex, 0, moved);
+      return { ...prev, [legacyId]: { ...current, mediaOrder: nextOrder } };
     });
   };
 
@@ -3978,6 +4018,63 @@ export default function AdminWebshopPage() {
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Video URL — YouTube link ili upload ispod</span>
                 <input value={drafts[currentEditorItem.legacyId]?.videoUrl || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { videoUrl: e.target.value })} placeholder="https://youtube.com/... ili /site-assets/..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               </label>
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-indigo-200 bg-indigo-50/40 p-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-indigo-700">Redosled na detail stranici</p>
+                <p className="mt-1 text-xs text-slate-600">Prevuci stavke ili koristi strelice. Prva stavka ce se prva prikazati kupcu.</p>
+              </div>
+              {(() => {
+                const draft = drafts[currentEditorItem.legacyId];
+                const mediaOrder = draft
+                  ? resolveProductMediaOrder(draft.images, draft.videoUrl, draft.mediaOrder)
+                  : [];
+                return mediaOrder.length ? (
+                  <div className="mt-3 flex flex-col gap-2">
+                    {mediaOrder.map((media, index) => (
+                      <div
+                        key={`${media.kind}-${media.src}`}
+                        draggable
+                        onDragStart={(event) => {
+                          event.dataTransfer.effectAllowed = "move";
+                          event.dataTransfer.setData("text/plain", String(index));
+                        }}
+                        onDragOver={(event) => {
+                          event.preventDefault();
+                          event.dataTransfer.dropEffect = "move";
+                        }}
+                        onDrop={(event) => {
+                          event.preventDefault();
+                          const fromIndex = Number(event.dataTransfer.getData("text/plain"));
+                          if (Number.isInteger(fromIndex)) moveDraftMedia(currentEditorItem.legacyId, fromIndex, index);
+                        }}
+                        className="flex items-center gap-3 rounded-xl border border-slate-200 bg-white p-2 shadow-sm"
+                      >
+                        <span className="cursor-grab select-none text-lg text-slate-400" aria-hidden>⋮⋮</span>
+                        <span className="w-6 text-center text-xs font-bold text-slate-500">{index + 1}</span>
+                        {media.kind === "image" ? (
+                          <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-slate-100">
+                            <Image src={sanitizeStorefrontImageSrc(media.src) || media.src} alt={`Medij ${index + 1}`} fill sizes="56px" className="object-cover" unoptimized />
+                          </div>
+                        ) : (
+                          <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-slate-900 text-[10px] font-bold text-white">VIDEO</div>
+                        )}
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-semibold text-slate-800">{media.kind === "image" ? "Slika" : "Video"}</p>
+                          <p className="truncate text-[10px] text-slate-500">{media.src}</p>
+                        </div>
+                        <div className="flex shrink-0 gap-1">
+                          <button type="button" disabled={index === 0} onClick={() => moveDraftMedia(currentEditorItem.legacyId, index, index - 1)} aria-label="Pomeri gore" className="rounded-lg border border-slate-200 px-2 py-1 text-sm disabled:opacity-30">↑</button>
+                          <button type="button" disabled={index === mediaOrder.length - 1} onClick={() => moveDraftMedia(currentEditorItem.legacyId, index, index + 1)} aria-label="Pomeri dole" className="rounded-lg border border-slate-200 px-2 py-1 text-sm disabled:opacity-30">↓</button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-xs text-slate-500">Dodaj slike ili video da bi podesio redosled.</p>
+                );
+              })()}
             </div>
 
             <div className="mt-4 rounded-2xl border border-slate-200 p-3">
