@@ -24,21 +24,14 @@ let sessionKeyPromise: Promise<CryptoKey> | null = null;
 const normalize = (value: string) => value.trim();
 
 const getAdminCredentials = () => ({
-  username: normalize(process.env.ADMIN_USERNAME || "santos").toLowerCase(),
-  password: normalize(process.env.ADMIN_PASSWORD || "santorini"),
+  username: normalize(process.env.ADMIN_USERNAME || "").toLowerCase(),
+  password: normalize(process.env.ADMIN_PASSWORD || ""),
 });
-
-const DEFAULT_SESSION_SECRET = "santos-admin-session-dev-only-change-me";
 
 const getSessionSecret = () => {
   const envSecret = normalize(process.env.ADMIN_SESSION_SECRET || "");
   if (envSecret) return envSecret;
-  if (process.env.NODE_ENV === "production") {
-    console.warn(
-      "[adminAuth] ADMIN_SESSION_SECRET is not set. Using unsafe default. Set it in production env!",
-    );
-  }
-  return DEFAULT_SESSION_SECRET;
+  throw new Error("ADMIN_SESSION_SECRET is not configured");
 };
 
 const bytesToBinary = (bytes: Uint8Array) => {

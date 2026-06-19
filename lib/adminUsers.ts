@@ -31,8 +31,6 @@ type AdminUsersFile = {
 const ADMIN_USERS_PATH = "data/admin-users.json";
 const ADMIN_USERS_FILE_VERSION = 1;
 const PASSWORD_HASH_PREFIX = "scrypt";
-const DEFAULT_ADMIN_USERNAME = "santos";
-const DEFAULT_ADMIN_PASSWORD = "santorini";
 
 const normalize = (value: string) => value.trim();
 const nowIso = () => new Date().toISOString();
@@ -94,10 +92,14 @@ const normalizeStoredUser = (user: AdminUserRecord): AdminUserRecord => ({
   lastLoginAt: user.lastLoginAt ?? null,
 });
 
-const getBootstrapCredentials = () => ({
-  username: normalize(process.env.ADMIN_USERNAME || DEFAULT_ADMIN_USERNAME).toLowerCase(),
-  password: normalize(process.env.ADMIN_PASSWORD || DEFAULT_ADMIN_PASSWORD),
-});
+const getBootstrapCredentials = () => {
+  const username = normalize(process.env.ADMIN_USERNAME || "").toLowerCase();
+  const password = normalize(process.env.ADMIN_PASSWORD || "");
+  if (!username || !password) {
+    throw new Error("ADMIN_USERNAME and ADMIN_PASSWORD must be configured");
+  }
+  return { username, password };
+};
 
 const createBootstrapOwner = (): AdminUserRecord => {
   const { username, password } = getBootstrapCredentials();

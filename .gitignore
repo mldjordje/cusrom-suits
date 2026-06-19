@@ -25,17 +25,22 @@ data/admin-users.json
 _SuitPreview.diff
 Sajt kupljen novi template zip.zip
 
-# local env files
-.env
-.env.local
-.env.production
-.env.development
+# Local environment files and secrets. Keep only redacted templates.
+.env*
+!.env.example
+!**/.env.example
 
 # OS junk
 .DS_Store
 Thumbs.db
 
 # backend (jer je već na cPanelu)
+
+# cPanel-only PHP/backend runtime
+*.php
+/cpanel-cron/
+/cpanel-upload/
+**/error_log
 
 # backend assets (local only)
 custom-suits-backend/

@@ -1,5 +1,0 @@
-SetEnvIf Authorization "(.+)" HTTP_AUTHORIZATION=$1
-
-<FilesMatch "^(?!moffice-proxy\.php$).+">
-  Require all denied
-</FilesMatch>
