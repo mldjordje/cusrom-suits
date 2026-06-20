@@ -6,21 +6,37 @@ import StorefrontRuntimeShell from "@/app/components/storefront/StorefrontRuntim
 import CookieConsent from "@/app/components/storefront/CookieConsent";
 import PromoPopups from "@/app/components/storefront/PromoPopups";
 import { getPopupSettings } from "@/lib/marketing/popupSettings";
+import { getFontLibrary } from "@/lib/storefront/fontLibrary";
+import { getFontSettings } from "@/lib/storefront/fontSettings";
+import { buildGoogleFontUrls, buildStorefrontFontCss, resolveFontSettings } from "@/lib/storefront/fontSettingsDefaults";
 import "./uomo.scss";
 import "./webshop-polish.scss";
 import "./premium.scss";
 
 export default async function StorefrontLayout({ children }: { children: ReactNode }) {
-  const popupSettings = await getPopupSettings();
+  const [popupSettings, fontSettings, fontLibrary] = await Promise.all([
+    getPopupSettings(),
+    getFontSettings(),
+    getFontLibrary(),
+  ]);
+  const resolvedFonts = resolveFontSettings(fontSettings, fontLibrary);
+  const fontCss = buildStorefrontFontCss(resolvedFonts);
+  const googleFontUrls = buildGoogleFontUrls(resolvedFonts);
   return (
-    <StorefrontAuthProvider>
-      <StorefrontCartProvider>
-        <StorefrontRuntimeShell />
-        {children}
-        <CookieConsent />
-        <PromoPopups settings={popupSettings} />
-        <Analytics />
-      </StorefrontCartProvider>
-    </StorefrontAuthProvider>
+    <>
+      {googleFontUrls.map((href) => <link key={href} rel="stylesheet" href={href} />)}
+      <style dangerouslySetInnerHTML={{ __html: fontCss }} />
+      <div className="ss-storefront-font-scope">
+        <StorefrontAuthProvider>
+          <StorefrontCartProvider>
+            <StorefrontRuntimeShell />
+            {children}
+            <CookieConsent />
+            <PromoPopups settings={popupSettings} />
+            <Analytics />
+          </StorefrontCartProvider>
+        </StorefrontAuthProvider>
+      </div>
+    </>
   );
 }

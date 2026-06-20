@@ -1,347 +1,145 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-// Import from the client-safe defaults file — fontSettings.ts has server-only (fs) imports
-import type { FontSettingsShape as FontSettings } from "@/lib/storefront/fontSettingsDefaults";
-import { DEFAULT_FONT_SETTINGS } from "@/lib/storefront/fontSettingsDefaults";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ALLOWED_FONT_WEIGHTS,
+  type FontFallback,
+  type FontFamilyRecord,
+  type FontWeight,
+} from "@/lib/storefront/fontLibraryDefaults";
+import {
+  DEFAULT_FONT_SETTINGS,
+  buildGoogleFontUrls,
+  buildStorefrontFontCss,
+  resolveFontSettings,
+  type FontSettingsShape,
+} from "@/lib/storefront/fontSettingsDefaults";
 
-const POPULAR_BODY_FONTS = [
-  "Montserrat",
-  "Inter",
-  "Lato",
-  "Open Sans",
-  "Raleway",
-  "Poppins",
-  "Nunito",
-  "Source Sans 3",
-  "DM Sans",
-  "Roboto",
-];
-
-const POPULAR_DISPLAY_FONTS = [
-  "Playfair Display",
-  "Cormorant Garamond",
-  "Libre Baskerville",
-  "Lora",
-  "Merriweather",
-  "EB Garamond",
-  "Crimson Text",
-  "Abril Fatface",
-  "Josefin Sans",
-  "Oswald",
-];
-
-const emptySettings: FontSettings = { ...DEFAULT_FONT_SETTINGS };
+type UploadRow = { weight: FontWeight; file: File | null };
+const buttonClass = "rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] disabled:opacity-50";
 
 export default function AdminFontsPage() {
-  const [settings, setSettings] = useState<FontSettings>(emptySettings);
-  const [loading, setLoading] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [settings, setSettings] = useState<FontSettingsShape>({ ...DEFAULT_FONT_SETTINGS });
+  const [fonts, setFonts] = useState<FontFamilyRecord[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [notice, setNotice] = useState<string | null>(null);
-  const previewRef = useRef<HTMLDivElement>(null);
+  const [googleName, setGoogleName] = useState("");
+  const [googleFallback, setGoogleFallback] = useState<FontFallback>("sans-serif");
+  const [uploadName, setUploadName] = useState("");
+  const [uploadFallback, setUploadFallback] = useState<FontFallback>("sans-serif");
+  const [uploadRows, setUploadRows] = useState<UploadRow[]>([{ weight: "400", file: null }]);
 
   const load = async () => {
-    setLoading(true);
-    setError(null);
+    setBusy(true); setError(null);
     try {
-      const res = await fetch("/api/admin/font-settings");
-      const json = await res.json();
-      if (!json?.success) throw new Error(json?.message || "Ucitavanje nije uspelo.");
-      setSettings(json.settings || emptySettings);
-    } catch (e: any) {
-      setError(e?.message || "Ucitavanje nije uspelo.");
-    } finally {
-      setLoading(false);
-    }
+      const [settingsRes, fontsRes] = await Promise.all([fetch("/api/admin/font-settings"), fetch("/api/admin/fonts")]);
+      const [settingsJson, fontsJson] = await Promise.all([settingsRes.json(), fontsRes.json()]);
+      if (!settingsJson?.success) throw new Error(settingsJson?.message || "Podešavanja nisu učitana.");
+      if (!fontsJson?.success) throw new Error(fontsJson?.message || "Biblioteka fontova nije učitana.");
+      setSettings({ ...DEFAULT_FONT_SETTINGS, ...settingsJson.settings });
+      setFonts(fontsJson.fonts || []);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Učitavanje nije uspelo."); }
+    finally { setBusy(false); }
   };
 
-  useEffect(() => {
-    void load();
-  }, []);
+  useEffect(() => { void load(); }, []);
 
-  /** Inject Google Font preview link into document head */
-  useEffect(() => {
-    const families = [settings.bodyFont, settings.displayFont]
-      .filter(Boolean)
-      .map((f) => `${encodeURIComponent(f).replace(/%20/g, "+")}:wght@400;600;700`)
-      .join("&family=");
+  const resolved = useMemo(() => resolveFontSettings(settings, fonts.length ? fonts : undefined), [settings, fonts]);
+  const previewCss = useMemo(() => buildStorefrontFontCss(resolved), [resolved]);
+  const previewUrls = useMemo(() => buildGoogleFontUrls(resolved), [resolved]);
 
-    const href = `https://fonts.googleapis.com/css2?family=${families}&display=swap`;
-    const existing = document.getElementById("ss-admin-font-preview-link") as HTMLLinkElement | null;
-    if (existing) {
-      existing.href = href;
-    } else {
-      const link = document.createElement("link");
-      link.id = "ss-admin-font-preview-link";
-      link.rel = "stylesheet";
-      link.href = href;
-      document.head.appendChild(link);
-    }
-  }, [settings.bodyFont, settings.displayFont]);
+  useEffect(() => {
+    document.querySelectorAll("[data-admin-font-preview]").forEach((node) => node.remove());
+    previewUrls.forEach((href) => {
+      const link = document.createElement("link"); link.rel = "stylesheet"; link.href = href; link.dataset.adminFontPreview = "true"; document.head.appendChild(link);
+    });
+    return () => document.querySelectorAll("[data-admin-font-preview]").forEach((node) => node.remove());
+  }, [previewUrls]);
+
+  const selectedFont = (role: "body" | "heading") => fonts.find((font) => font.id === (role === "body" ? settings.bodyFontId : settings.displayFontId));
+  const selectRole = (role: "body" | "heading", id: string) => {
+    const font = fonts.find((item) => item.id === id); if (!font) return;
+    const weightKey = role === "body" ? "bodyFontWeight" : "displayFontWeight";
+    const currentWeight = settings[weightKey];
+    setSettings((current) => ({ ...current, ...(role === "body" ? { bodyFontId: id, bodyFont: font.name } : { displayFontId: id, displayFont: font.name }), [weightKey]: font.weights.includes(currentWeight as FontWeight) ? currentWeight : font.weights[0] }));
+  };
 
   const save = async () => {
-    setSaving(true);
-    setError(null);
-    setNotice(null);
+    setBusy(true); setError(null); setMessage(null);
     try {
-      const res = await fetch("/api/admin/font-settings", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(settings),
-      });
-      const json = await res.json();
-      if (!json?.success) throw new Error(json?.message || "Cuvanje nije uspelo.");
-      setSettings(json.settings || settings);
-      setNotice("Podešavanja fontova su sačuvana. Promena je aktivna na storefrontu.");
-    } catch (e: any) {
-      setError(e?.message || "Cuvanje nije uspelo.");
-    } finally {
-      setSaving(false);
-    }
+      const response = await fetch("/api/admin/font-settings", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(settings) });
+      const json = await response.json(); if (!json?.success) throw new Error(json?.message || "Čuvanje nije uspelo.");
+      setSettings(json.settings); setMessage("Globalni fontovi su sačuvani i aktivni na storefrontu.");
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Čuvanje nije uspelo."); }
+    finally { setBusy(false); }
   };
 
-  const set = (key: keyof FontSettings, value: string) =>
-    setSettings((prev) => ({ ...prev, [key]: value }));
+  const addGoogle = async () => {
+    setBusy(true); setError(null); setMessage(null);
+    try {
+      const response = await fetch("/api/admin/fonts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ source: "google", name: googleName, fallback: googleFallback, weights: [...ALLOWED_FONT_WEIGHTS] }) });
+      const json = await response.json(); if (!json?.success) throw new Error(json?.message || "Google font nije dodat.");
+      setFonts(json.fonts); setGoogleName(""); setMessage("Google font je dodat u biblioteku.");
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Google font nije dodat."); }
+    finally { setBusy(false); }
+  };
 
-  const reset = () => setSettings({ ...DEFAULT_FONT_SETTINGS });
+  const upload = async () => {
+    const completeRows = uploadRows.filter((row): row is UploadRow & { file: File } => Boolean(row.file));
+    if (!uploadName.trim() || completeRows.length !== uploadRows.length) { setError("Unesite naziv i izaberite WOFF2 fajl za svaku težinu."); return; }
+    setBusy(true); setError(null); setMessage(null);
+    try {
+      const form = new FormData(); form.append("familyName", uploadName); form.append("fallback", uploadFallback);
+      completeRows.forEach((row) => { form.append("files", row.file); form.append("weights", row.weight); });
+      const response = await fetch("/api/admin/fonts", { method: "POST", body: form });
+      const json = await response.json(); if (!json?.success) throw new Error(json?.message || "Upload nije uspeo.");
+      setFonts(json.fonts); setUploadName(""); setUploadRows([{ weight: "400", file: null }]); setMessage("WOFF2 font je dodat u biblioteku.");
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Upload nije uspeo."); }
+    finally { setBusy(false); }
+  };
 
-  return (
-    <div className="flex flex-col gap-6">
-      {/* Header */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Storefront appearance</p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">Upravljanje fontovima</h1>
-            <p className="mt-1 text-sm text-slate-600">
-              Ovde možeš promeniti fontove koji se koriste na storefrontu. Fontovi se učitavaju sa Google Fonts.
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={load}
-              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
-            >
-              Osvezi
-            </button>
-            <button
-              onClick={reset}
-              className="rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-amber-700"
-            >
-              Reset na default
-            </button>
-            <button
-              onClick={save}
-              disabled={saving || loading}
-              className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700 disabled:opacity-60"
-            >
-              {saving ? "Cuvanje..." : "Sacuvaj"}
-            </button>
-          </div>
-        </div>
-        {settings.updatedAt ? (
-          <p className="mt-3 text-xs text-slate-500">
-            Poslednje cuvanje: {new Date(settings.updatedAt).toLocaleString("sr-RS")}
-          </p>
-        ) : null}
-        {loading ? <p className="mt-3 text-sm text-slate-500">Ucitavanje...</p> : null}
-        {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}
-        {notice ? <p className="mt-3 text-sm text-emerald-700">{notice}</p> : null}
-      </div>
+  const RoleCard = ({ role, title }: { role: "body" | "heading"; title: string }) => {
+    const font = selectedFont(role);
+    const weightKey = role === "body" ? "bodyFontWeight" : "displayFontWeight";
+    return <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">{title}</p>
+      <label className="mt-4 block text-xs font-semibold text-slate-600">Porodica fonta</label>
+      <select value={role === "body" ? settings.bodyFontId : settings.displayFontId} onChange={(event) => selectRole(role, event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+        {fonts.map((item) => <option key={item.id} value={item.id}>{item.name} · {item.source === "google" ? "Google" : "Upload"}</option>)}
+      </select>
+      <label className="mt-4 block text-xs font-semibold text-slate-600">Podrazumevana težina</label>
+      <select value={settings[weightKey]} onChange={(event) => setSettings((current) => ({ ...current, [weightKey]: event.target.value }))} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm">
+        {(font?.weights || []).map((weight) => <option key={weight} value={weight}>{weight}</option>)}
+      </select>
+      {font ? <p className="mt-3 text-xs text-slate-500">Izvor: {font.source} · Dostupno: {font.weights.join(", ")}</p> : null}
+    </section>;
+  };
 
-      <div className="grid gap-6 xl:grid-cols-2">
-        {/* Body font */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Osnovni font</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-900">Body font</h2>
-          <p className="mt-1 text-sm text-slate-600">Koristi se za sav tekst na stranici (opisi, dugmad, navigacija).</p>
+  return <div className="flex flex-col gap-6">
+    <header className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+      <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-xs font-bold uppercase tracking-[0.16em] text-slate-500">Storefront</p><h1 className="text-2xl font-bold text-slate-900">Globalni fontovi</h1><p className="mt-1 text-sm text-slate-600">Dva fonta kontrolišu sav tekst i naslove na javnom sajtu.</p></div>
+      <div className="flex gap-2"><button type="button" onClick={() => setSettings({ ...DEFAULT_FONT_SETTINGS })} className={`${buttonClass} border-amber-200 bg-amber-50 text-amber-700`}>Reset</button><button type="button" onClick={() => void save()} disabled={busy || !fonts.length} className={`${buttonClass} border-emerald-200 bg-emerald-50 text-emerald-700`}>{busy ? "Radim..." : "Sačuvaj"}</button></div></div>
+      {error ? <p className="mt-3 text-sm text-rose-600">{error}</p> : null}{message ? <p className="mt-3 text-sm text-emerald-700">{message}</p> : null}
+    </header>
 
-          <div className="mt-4 grid gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.1em] text-slate-700">
-                Google Fonts naziv
-              </label>
-              <input
-                value={settings.bodyFont}
-                onChange={(e) => set("bodyFont", e.target.value)}
-                placeholder="npr. Montserrat"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-slate-700">
-                Brzi izbor
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {POPULAR_BODY_FONTS.map((font) => (
-                  <button
-                    key={font}
-                    type="button"
-                    onClick={() => set("bodyFont", font)}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                      settings.bodyFont === font
-                        ? "border-slate-800 bg-slate-900 text-white"
-                        : "border-slate-200 text-slate-700 hover:border-slate-400"
-                    }`}
-                    style={{ fontFamily: `"${font}", sans-serif` }}
-                  >
-                    {font}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.1em] text-slate-700">
-                Težina (font weight)
-              </label>
-              <select
-                value={settings.bodyFontWeight}
-                onChange={(e) => set("bodyFontWeight", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              >
-                {["300", "400", "500", "600"].map((w) => (
-                  <option key={w} value={w}>{w}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
+    <div className="grid gap-6 xl:grid-cols-2"><RoleCard role="body" title="Osnovni font" /><RoleCard role="heading" title="Font za naslove" /></div>
 
-        {/* Display font */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Display font</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-900">Heading / display font</h2>
-          <p className="mt-1 text-sm text-slate-600">Koristi se za naslove i prominentne tekstove (logo, section titles).</p>
+    <div className="grid gap-6 xl:grid-cols-2">
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Dodaj Google font</h2><p className="mt-1 text-sm text-slate-500">Unesite tačan naziv porodice sa Google Fonts.</p>
+        <input value={googleName} onChange={(event) => setGoogleName(event.target.value)} placeholder="npr. Cormorant Garamond" className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+        <select value={googleFallback} onChange={(event) => setGoogleFallback(event.target.value as FontFallback)} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="sans-serif">Sans-serif</option><option value="serif">Serif</option></select>
+        <button type="button" onClick={() => void addGoogle()} disabled={busy || !googleName.trim()} className={`${buttonClass} mt-4 border-indigo-200 bg-indigo-50 text-indigo-700`}>Dodaj Google font</button>
+      </section>
 
-          <div className="mt-4 grid gap-3">
-            <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.1em] text-slate-700">
-                Google Fonts naziv
-              </label>
-              <input
-                value={settings.displayFont}
-                onChange={(e) => set("displayFont", e.target.value)}
-                placeholder="npr. Playfair Display"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              />
-            </div>
-            <div>
-              <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.1em] text-slate-700">
-                Brzi izbor
-              </label>
-              <div className="flex flex-wrap gap-1.5">
-                {POPULAR_DISPLAY_FONTS.map((font) => (
-                  <button
-                    key={font}
-                    type="button"
-                    onClick={() => set("displayFont", font)}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-                      settings.displayFont === font
-                        ? "border-slate-800 bg-slate-900 text-white"
-                        : "border-slate-200 text-slate-700 hover:border-slate-400"
-                    }`}
-                    style={{ fontFamily: `"${font}", serif` }}
-                  >
-                    {font}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.1em] text-slate-700">
-                Težina (font weight)
-              </label>
-              <select
-                value={settings.displayFontWeight}
-                onChange={(e) => set("displayFontWeight", e.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              >
-                {["400", "600", "700", "800"].map((w) => (
-                  <option key={w} value={w}>{w}</option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Letter spacing */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Razmak slova</p>
-        <h2 className="mt-1 text-lg font-semibold text-slate-900">Letter spacing (base)</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          Osnovna vrednost razmaka slova za body tekst u em jedinicama. <code className="rounded bg-slate-100 px-1 text-xs">0</code> = bez izmena,{" "}
-          <code className="rounded bg-slate-100 px-1 text-xs">0.02</code> = malo rašireno.
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          <input
-            value={settings.letterSpacingBase}
-            onChange={(e) => set("letterSpacingBase", e.target.value)}
-            placeholder="0"
-            className="w-40 rounded-xl border border-slate-200 px-3 py-2 text-sm"
-          />
-          {["0", "0.01", "0.02", "0.04", "0.06"].map((v) => (
-            <button
-              key={v}
-              type="button"
-              onClick={() => set("letterSpacingBase", v)}
-              className={`rounded-full border px-3 py-1.5 text-xs font-semibold ${
-                settings.letterSpacingBase === v
-                  ? "border-slate-800 bg-slate-900 text-white"
-                  : "border-slate-200 text-slate-700"
-              }`}
-            >
-              {v}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Live preview */}
-      <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Pregled</p>
-        <h2 className="mt-1 text-lg font-semibold text-slate-900">Live preview</h2>
-        <p className="mt-1 mb-4 text-sm text-slate-600">Promena je vidljiva odmah — fontovi se učitavaju sa Google Fonts.</p>
-
-        <div
-          ref={previewRef}
-          className="rounded-2xl border border-slate-100 bg-slate-50 p-6"
-          style={{ letterSpacing: settings.letterSpacingBase !== "0" ? `${settings.letterSpacingBase}em` : undefined }}
-        >
-          <p
-            className="mb-1 text-xs uppercase text-slate-500"
-            style={{ fontFamily: `"${settings.bodyFont}", sans-serif` }}
-          >
-            Display font — {settings.displayFont}
-          </p>
-          <h3
-            className="mb-4 text-3xl"
-            style={{
-              fontFamily: `"${settings.displayFont}", serif`,
-              fontWeight: settings.displayFontWeight,
-            }}
-          >
-            Santos &amp; Santorini — Muška moda
-          </h3>
-          <p
-            className="mb-3 text-base leading-relaxed text-slate-700"
-            style={{
-              fontFamily: `"${settings.bodyFont}", sans-serif`,
-              fontWeight: settings.bodyFontWeight,
-            }}
-          >
-            Elegantna odela, košulje i obuća za modernog muškarca. Kolekcija obuhvata slim i regular fit modele
-            prilagođene svim prilikama — od poslovnih do svečanih.
-          </p>
-          <p
-            className="text-xs uppercase tracking-[0.14em] text-slate-500"
-            style={{ fontFamily: `"${settings.bodyFont}", sans-serif` }}
-          >
-            Body font — {settings.bodyFont} / weight {settings.bodyFontWeight}
-          </p>
-        </div>
-      </div>
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Upload WOFF2 fonta</h2><p className="mt-1 text-sm text-slate-500">Dodajte poseban fajl za svaku dostupnu težinu, maksimalno 5 MB.</p>
+        <input value={uploadName} onChange={(event) => setUploadName(event.target.value)} placeholder="Naziv porodice" className="mt-4 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+        <select value={uploadFallback} onChange={(event) => setUploadFallback(event.target.value as FontFallback)} className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="sans-serif">Sans-serif</option><option value="serif">Serif</option></select>
+        <div className="mt-3 space-y-2">{uploadRows.map((row, index) => <div key={index} className="grid grid-cols-[100px_1fr_auto] gap-2"><select value={row.weight} onChange={(event) => setUploadRows((rows) => rows.map((item, i) => i === index ? { ...item, weight: event.target.value as FontWeight } : item))} className="rounded-xl border border-slate-200 px-2 text-sm">{ALLOWED_FONT_WEIGHTS.map((weight) => <option key={weight}>{weight}</option>)}</select><input type="file" accept=".woff2,font/woff2" onChange={(event) => setUploadRows((rows) => rows.map((item, i) => i === index ? { ...item, file: event.target.files?.[0] || null } : item))} className="min-w-0 rounded-xl border border-slate-200 px-2 py-2 text-xs" /><button type="button" disabled={uploadRows.length === 1} onClick={() => setUploadRows((rows) => rows.filter((_, i) => i !== index))} className="px-2 text-rose-500">×</button></div>)}</div>
+        <div className="mt-3 flex gap-2"><button type="button" onClick={() => setUploadRows((rows) => [...rows, { weight: "700", file: null }])} className={`${buttonClass} border-slate-200 text-slate-700`}>+ Težina</button><button type="button" onClick={() => void upload()} disabled={busy} className={`${buttonClass} border-indigo-200 bg-indigo-50 text-indigo-700`}>Upload</button></div>
+      </section>
     </div>
-  );
+
+    <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"><h2 className="text-lg font-bold">Live preview</h2><style>{previewCss}</style><div className="ss-storefront-font-scope mt-4 rounded-xl bg-slate-50 p-6"><h2 className="text-3xl">Santos &amp; Santorini</h2><p className="mt-3">Elegantna odela, košulje i obuća za modernog muškarca. Proverite izgled osnovnog teksta, dugmadi i naslova pre čuvanja.</p><button type="button" className="mt-4 rounded-full bg-slate-900 px-5 py-2 text-sm text-white">Pogledaj kolekciju</button></div></section>
+  </div>;
 }

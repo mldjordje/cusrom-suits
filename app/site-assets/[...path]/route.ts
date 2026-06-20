@@ -18,6 +18,7 @@ const MIME_BY_EXT: Record<string, string> = {
   ".webp": "image/webp",
   ".gif": "image/gif",
   ".pdf": "application/pdf",
+  ".woff2": "font/woff2",
 };
 
 const VIDEO_EXTS = new Set([".mp4", ".webm", ".mov", ".avi", ".m4v", ".mpeg", ".mpg"]);

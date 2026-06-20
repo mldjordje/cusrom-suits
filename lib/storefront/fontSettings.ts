@@ -6,6 +6,8 @@
 import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
 import { DEFAULT_FONT_SETTINGS } from "@/lib/storefront/fontSettingsDefaults";
 import type { FontSettingsShape as FontSettings } from "@/lib/storefront/fontSettingsDefaults";
+import { getFontLibrary } from "@/lib/storefront/fontLibrary";
+import { resolveFontSettings } from "@/lib/storefront/fontSettingsDefaults";
 
 export type { FontSettingsShape as FontSettings } from "@/lib/storefront/fontSettingsDefaults";
 
@@ -20,6 +22,8 @@ export async function getFontSettings(): Promise<FontSettings> {
   );
   return {
     updatedAt: str(saved.updatedAt) || null,
+    bodyFontId: str(saved.bodyFontId) || str(saved.bodyFont).toLowerCase().replace(/\s+/g, "-") || DEFAULT_FONT_SETTINGS.bodyFontId,
+    displayFontId: str(saved.displayFontId) || str(saved.displayFont).toLowerCase().replace(/\s+/g, "-") || DEFAULT_FONT_SETTINGS.displayFontId,
     bodyFont: str(saved.bodyFont) || DEFAULT_FONT_SETTINGS.bodyFont,
     displayFont: str(saved.displayFont) || DEFAULT_FONT_SETTINGS.displayFont,
     bodyFontWeight: str(saved.bodyFontWeight) || DEFAULT_FONT_SETTINGS.bodyFontWeight,
@@ -30,12 +34,16 @@ export async function getFontSettings(): Promise<FontSettings> {
 
 export async function updateFontSettings(patch: Partial<FontSettings>): Promise<FontSettings> {
   const current = await getFontSettings();
+  const library = await getFontLibrary();
+  const resolved = resolveFontSettings({ ...current, ...patch }, library);
   const next: FontSettings = {
     updatedAt: new Date().toISOString(),
-    bodyFont: str(patch.bodyFont) || current.bodyFont,
-    displayFont: str(patch.displayFont) || current.displayFont,
-    bodyFontWeight: str(patch.bodyFontWeight) || current.bodyFontWeight,
-    displayFontWeight: str(patch.displayFontWeight) || current.displayFontWeight,
+    bodyFontId: resolved.body.id,
+    displayFontId: resolved.heading.id,
+    bodyFont: resolved.body.name,
+    displayFont: resolved.heading.name,
+    bodyFontWeight: resolved.bodyWeight,
+    displayFontWeight: resolved.headingWeight,
     letterSpacingBase: str(patch.letterSpacingBase, "0") !== "" ? str(patch.letterSpacingBase, "0") : current.letterSpacingBase,
   };
   await writePersistentJsonFile(FONT_SETTINGS_PATH, next);
