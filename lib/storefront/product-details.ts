@@ -11,6 +11,11 @@ import {
   type SizeGuideTable,
 } from "@/lib/catalog/sizeGuides";
 import type { CatalogProductView } from "@/lib/catalog/store";
+import {
+  getLocalizedWashCareItems,
+  type LocalizedWashCareItem,
+  type WashCareSymbolKey,
+} from "@/lib/catalog/washCare";
 import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
@@ -38,18 +43,8 @@ export type ProductSizeGuide = {
   fallbackNote: string | null;
 };
 
-export type ProductWashCareIcon =
-  | "gentleWash"
-  | "dryCleaning"
-  | "doNotBleach"
-  | "lowIron"
-  | "noTumbleDry";
-
-export type ProductWashCareItem = {
-  icon: ProductWashCareIcon;
-  title: string;
-  description: string;
-};
+export type ProductWashCareIcon = WashCareSymbolKey;
+export type ProductWashCareItem = LocalizedWashCareItem;
 
 export type ProductSeoFaq = {
   question: string;
@@ -685,75 +680,10 @@ export const getProductDeclaration = (
   return fields;
 };
 
-const WASH_CARE_ICONS: ProductWashCareIcon[] = [
-  "gentleWash",
-  "dryCleaning",
-  "doNotBleach",
-  "lowIron",
-  "noTumbleDry",
-];
-
-const ALL_WASH_CARE_ITEMS_SR: Record<ProductWashCareIcon, ProductWashCareItem> = {
-  gentleWash: {
-    icon: "gentleWash",
-    title: "Pranje do 30C",
-    description: "Koristite nezan program pranja i blagi deterdzent.",
-  },
-  dryCleaning: {
-    icon: "dryCleaning",
-    title: "Hemijsko ciscenje",
-    description: "Za odela, sakoe i slicne krojene modele preporucuje se profesionalno ciscenje.",
-  },
-  doNotBleach: {
-    icon: "doNotBleach",
-    title: "Bez izbeljivaca",
-    description: "Izbeljivaci mogu ostetiti vlakna, boju i konstrukciju materijala.",
-  },
-  lowIron: {
-    icon: "lowIron",
-    title: "Peglanje na nizoj temperaturi",
-    description: "Peglajte pazljivo, najbolje preko tanke krpe ili sa nalicja.",
-  },
-  noTumbleDry: {
-    icon: "noTumbleDry",
-    title: "Bez susilice",
-    description: "Prirodno susenje cuva oblik i zavrsnu obradu proizvoda.",
-  },
-};
-
-const ALL_WASH_CARE_ITEMS_EN: Record<ProductWashCareIcon, ProductWashCareItem> = {
-  gentleWash: {
-    icon: "gentleWash",
-    title: "Gentle wash",
-    description: "Wash at up to 30C on a gentle program.",
-  },
-  dryCleaning: {
-    icon: "dryCleaning",
-    title: "Dry clean",
-    description: "Professional dry cleaning is recommended for tailored garments.",
-  },
-  doNotBleach: {
-    icon: "doNotBleach",
-    title: "Do not bleach",
-    description: "Bleach can damage fibers, color, and structure.",
-  },
-  lowIron: {
-    icon: "lowIron",
-    title: "Low iron",
-    description: "Iron at low temperature, ideally with a pressing cloth.",
-  },
-  noTumbleDry: {
-    icon: "noTumbleDry",
-    title: "No tumble dry",
-    description: "Let the garment air dry naturally on a hanger.",
-  },
-};
-
 export const getProductWashCare = (
   product: CatalogProductView,
   lang: StorefrontLanguage,
 ) => {
-  const allItems = lang === "en" ? ALL_WASH_CARE_ITEMS_EN : ALL_WASH_CARE_ITEMS_SR;
   const title =
     lang === "en" ? "Wash care symbols and meanings" : "Wash care simboli i znacenje";
   const note =
@@ -761,22 +691,9 @@ export const getProductWashCare = (
       ? "Always follow the original sewn-in care label if it differs from this guide."
       : "Ako se originalna etiketa razlikuje od ovog vodica, pratite usivenu deklaraciju na proizvodu.";
 
-  const rawIcons = product.rawPayload?.washCareIcons;
-  const overrideIcons: ProductWashCareIcon[] | null =
-    Array.isArray(rawIcons) && rawIcons.length > 0
-      ? (rawIcons as string[]).filter((v): v is ProductWashCareIcon =>
-          WASH_CARE_ICONS.includes(v as ProductWashCareIcon),
-        )
-      : null;
-
-  if (overrideIcons && overrideIcons.length > 0) {
-    return { title, note, items: overrideIcons.map((icon) => allItems[icon]) };
-  }
-
-  const tailored = isTailoredProduct(product);
-  const defaultIcons: ProductWashCareIcon[] = tailored
-    ? ["dryCleaning", "doNotBleach", "lowIron", "noTumbleDry"]
-    : ["gentleWash", "doNotBleach", "lowIron", "noTumbleDry"];
-
-  return { title, note, items: defaultIcons.map((icon) => allItems[icon]) };
+  return {
+    title,
+    note,
+    items: getLocalizedWashCareItems(product.rawPayload?.washCareIcons, lang),
+  };
 };

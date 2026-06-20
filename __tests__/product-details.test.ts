@@ -14,6 +14,7 @@ import { describe, it, expect } from "vitest";
 import {
   getCatalogProductImageSources,
   getLocalizedCatalogProductName,
+  getProductWashCare,
   getProductSizeOptions,
 } from "@/lib/storefront/product-details";
 import type { CatalogProductView } from "@/lib/catalog/store";
@@ -280,3 +281,25 @@ function normalizedKey(value: string): string {
   const up = value.trim().toUpperCase().replace(/\s+/g, "");
   return aliases[up] ?? up;
 }
+
+describe("getProductWashCare", () => {
+  it("returns only explicitly selected valid symbols in catalogue order", () => {
+    const product = makeProduct({
+      rawPayload: { washCareIcons: ["doNotIron", "unknown", "wash30"] },
+    });
+
+    expect(getProductWashCare(product, "sr").items.map((item) => item.icon)).toEqual([
+      "wash30",
+      "doNotIron",
+    ]);
+  });
+
+  it("returns no symbols for an explicit empty selection", () => {
+    const product = makeProduct({ rawPayload: { washCareIcons: [] } });
+    expect(getProductWashCare(product, "sr").items).toEqual([]);
+  });
+
+  it("does not infer defaults for an unconfigured product", () => {
+    expect(getProductWashCare(makeProduct({ rawPayload: {} }), "en").items).toEqual([]);
+  });
+});

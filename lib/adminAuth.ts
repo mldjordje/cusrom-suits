@@ -28,8 +28,14 @@ const getAdminCredentials = () => ({
   password: normalize(process.env.ADMIN_PASSWORD || ""),
 });
 
-const getSessionSecret = () => {
+const getSessionSecretOrNull = () => {
   const envSecret = normalize(process.env.ADMIN_SESSION_SECRET || "");
+  if (envSecret) return envSecret;
+  return null;
+};
+
+const getSessionSecret = () => {
+  const envSecret = getSessionSecretOrNull();
   if (envSecret) return envSecret;
   throw new Error("ADMIN_SESSION_SECRET is not configured");
 };
@@ -83,6 +89,7 @@ const getLegacyBootstrapViewer = (): AdminViewer => {
 
 const parseSignedSession = async (value?: string | null): Promise<AdminViewer | null> => {
   if (!value || !value.includes(".")) return null;
+  if (!getSessionSecretOrNull()) return null;
   const [encodedPayload, signature] = value.split(".");
   if (!encodedPayload || !signature) return null;
 

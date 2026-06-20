@@ -32,6 +32,8 @@ import { supabaseClient } from "@/lib/supabase/client";
 import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 import AdminLandingProductPickGrid from "@/app/admin/components/AdminLandingProductPickGrid";
 import MediaHealthPanel from "@/app/admin/webshop/MediaHealthPanel";
+import WashCareSelector from "@/app/admin/webshop/WashCareSelector";
+import { parseWashCareSymbolKeys, type WashCareSymbolKey } from "@/lib/catalog/washCare";
 
 type TabKey = "products" | "landing" | "akcije";
 type CatalogCategory = { id: number; name: string; path: string[] };
@@ -59,15 +61,13 @@ type CatalogProduct = {
   mediaOrder?: ProductMediaItem[];
   rawPayload?: Record<string, unknown> | null;
 };
-type WashCareIcon = "gentleWash" | "dryCleaning" | "doNotBleach" | "lowIron" | "noTumbleDry";
-
 type ProductDraft = {
   name: string;
   brand: string;
   description: string;
   specification: string;
   declaration: string;
-  washCareIcons: WashCareIcon[];
+  washCareIcons: WashCareSymbolKey[];
   seoTitle: string;
   metaDescription: string;
   aiSummary: string;
@@ -631,22 +631,9 @@ const scopeValuesLabel = (rule: PromotionRule) => {
   return rule.scopeValues.join(", ");
 };
 
-const VALID_WASH_CARE_ICONS: WashCareIcon[] = [
-  "gentleWash",
-  "dryCleaning",
-  "doNotBleach",
-  "lowIron",
-  "noTumbleDry",
-];
-
 const toDraft = (item: CatalogProduct): ProductDraft => {
   const rawWashCare = item.rawPayload?.washCareIcons;
-  const washCareIcons: WashCareIcon[] =
-    Array.isArray(rawWashCare)
-      ? (rawWashCare as string[]).filter((v): v is WashCareIcon =>
-          VALID_WASH_CARE_ICONS.includes(v as WashCareIcon),
-        )
-      : [];
+  const washCareIcons = parseWashCareSymbolKeys(rawWashCare);
   const seo =
     item.rawPayload?.seo && typeof item.rawPayload.seo === "object"
       ? (item.rawPayload.seo as Record<string, unknown>)
@@ -1696,7 +1683,7 @@ export default function AdminWebshopPage() {
           description: draft.description.trim() || null,
           specification: draft.specification.trim() || null,
           declaration: draft.declaration.trim() || null,
-          washCareIcons: draft.washCareIcons.length > 0 ? draft.washCareIcons : null,
+          washCareIcons: draft.washCareIcons,
           ...commercePatch,
           isActive: draft.isActive,
           isExported: draft.isExported,
@@ -3910,90 +3897,10 @@ export default function AdminWebshopPage() {
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Deklaracija — napomena (opciono)</span>
                 <textarea value={drafts[currentEditorItem.legacyId]?.declaration || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { declaration: e.target.value })} rows={2} placeholder="Dodatna napomena koja se prikazuje u tabeli deklaracije na sajtu..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               </label>
-              <div className="flex flex-col gap-2 md:col-span-2">
-                <div className="flex items-center justify-between gap-2">
-                  <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Odrzavanje — simboli</span>
-                  {(drafts[currentEditorItem.legacyId]?.washCareIcons?.length ?? 0) > 0 && (
-                    <button
-                      type="button"
-                      onClick={() => updateDraft(currentEditorItem.legacyId, { washCareIcons: [] })}
-                      className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-400 hover:text-slate-600"
-                    >
-                      Resetuj na auto
-                    </button>
-                  )}
-                </div>
-                <p className="text-[11px] text-slate-400">
-                  {(drafts[currentEditorItem.legacyId]?.washCareIcons?.length ?? 0) === 0
-                    ? "Auto — simboli se biraju po tipu proizvoda. Cekiraj da pregurazis."
-                    : `Rucno: ${drafts[currentEditorItem.legacyId].washCareIcons.length} simbol${drafts[currentEditorItem.legacyId].washCareIcons.length === 1 ? "" : "a"} odabrano`}
-                </p>
-                <div className="grid grid-cols-5 gap-2">
-                  {(
-                    [
-                      { key: "gentleWash" as WashCareIcon, label: "Pranje 30°C", svg: (
-                        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
-                          <path d="M6 16 Q6 10 12 10 H36 Q42 10 42 16 L38 36 H10 Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-                          <text x="24" y="28" textAnchor="middle" fontSize="11" fontFamily="inherit" fill="currentColor" fontWeight="600">30°</text>
-                          <line x1="6" y1="40" x2="42" y2="40" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                          <line x1="6" y1="44" x2="42" y2="44" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                        </svg>
-                      )},
-                      { key: "dryCleaning" as WashCareIcon, label: "Hemijsko", svg: (
-                        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
-                          <circle cx="24" cy="24" r="18" stroke="currentColor" strokeWidth="1.6" />
-                          <text x="24" y="30" textAnchor="middle" fontSize="18" fontFamily="inherit" fill="currentColor" fontWeight="700">P</text>
-                        </svg>
-                      )},
-                      { key: "doNotBleach" as WashCareIcon, label: "Bez beljenja", svg: (
-                        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
-                          <path d="M24 6 L42 42 H6 Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-                          <line x1="12" y1="14" x2="36" y2="38" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                          <line x1="36" y1="14" x2="12" y2="38" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                        </svg>
-                      )},
-                      { key: "lowIron" as WashCareIcon, label: "Nizak. temp", svg: (
-                        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
-                          <path d="M6 30 L6 22 Q6 16 16 16 L38 16 Q44 16 44 22 L44 30 Q44 34 40 34 L10 34 Q6 34 6 30 Z" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" />
-                          <line x1="6" y1="34" x2="6" y2="40" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                          <circle cx="27" cy="25" r="2.2" fill="currentColor" />
-                        </svg>
-                      )},
-                      { key: "noTumbleDry" as WashCareIcon, label: "Bez susilice", svg: (
-                        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg" className="h-8 w-8">
-                          <rect x="6" y="6" width="36" height="36" rx="3" stroke="currentColor" strokeWidth="1.6" />
-                          <circle cx="24" cy="24" r="13" stroke="currentColor" strokeWidth="1.6" />
-                          <line x1="14" y1="14" x2="34" y2="34" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                          <line x1="34" y1="14" x2="14" y2="34" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                        </svg>
-                      )},
-                    ] as const
-                  ).map(({ key, label, svg }) => {
-                    const active = (drafts[currentEditorItem.legacyId]?.washCareIcons ?? []).includes(key);
-                    return (
-                      <button
-                        key={key}
-                        type="button"
-                        onClick={() => {
-                          const current = drafts[currentEditorItem.legacyId]?.washCareIcons ?? [];
-                          const next = active
-                            ? current.filter((k) => k !== key)
-                            : [...current, key];
-                          updateDraft(currentEditorItem.legacyId, { washCareIcons: next });
-                        }}
-                        className={`flex flex-col items-center gap-1 rounded-xl border px-2 py-2 text-center transition-colors ${
-                          active
-                            ? "border-indigo-300 bg-indigo-50 text-indigo-700"
-                            : "border-slate-200 bg-white text-slate-400 hover:border-slate-300 hover:text-slate-600"
-                        }`}
-                      >
-                        {svg}
-                        <span className="text-[9px] font-semibold uppercase leading-tight tracking-[0.08em]">{label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <WashCareSelector
+                value={drafts[currentEditorItem.legacyId]?.washCareIcons ?? []}
+                onChange={(washCareIcons) => updateDraft(currentEditorItem.legacyId, { washCareIcons })}
+              />
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Regularna cena (RSD) — puna bez popusta</span>
                 <input value={drafts[currentEditorItem.legacyId]?.priceGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceGross: e.target.value })} placeholder="npr. 15000" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />

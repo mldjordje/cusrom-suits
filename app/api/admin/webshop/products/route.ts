@@ -6,6 +6,7 @@ import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 import { BUSINESS_UNIFORM_PRODUCT_TYPE } from "@/lib/catalog/productTypes";
 import type { LegacyCatalogProduct, LegacyCategory } from "@/lib/legacy/types";
 import { parseProductMediaOrder, type ProductMediaItem } from "@/lib/catalog/productMediaOrder";
+import { validateWashCareSymbolKeys, type WashCareSymbolKey } from "@/lib/catalog/washCare";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
 
@@ -40,7 +41,7 @@ type ProductUpdatePayload = {
   businessUniform?: boolean;
   priceOverride?: boolean;
   declaration?: string | null;
-  washCareIcons?: string[] | null;
+  washCareIcons?: WashCareSymbolKey[] | null;
   seo?: {
     seoTitle?: string;
     metaDescription?: string;
@@ -169,7 +170,11 @@ const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
   if (hasOwn(row, "businessUniform")) out.businessUniform = Boolean(row.businessUniform);
   if (hasOwn(row, "priceOverride")) out.priceOverride = Boolean(row.priceOverride);
   if (hasOwn(row, "declaration")) out.declaration = row.declaration == null ? null : String(row.declaration);
-  if (hasOwn(row, "washCareIcons")) out.washCareIcons = parseStringList(row.washCareIcons);
+  if (hasOwn(row, "washCareIcons")) {
+    const washCareIcons = validateWashCareSymbolKeys(row.washCareIcons);
+    if (!washCareIcons) return null;
+    out.washCareIcons = washCareIcons;
+  }
   if (hasOwn(row, "seo")) out.seo = parseSeoPayload(row.seo);
   return out;
 };
@@ -268,9 +273,7 @@ const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
           }
         : {}),
       ...(patch.declaration !== undefined ? { declaration: patch.declaration || null } : {}),
-      ...(patch.washCareIcons !== undefined
-        ? { washCareIcons: Array.isArray(patch.washCareIcons) && patch.washCareIcons.length > 0 ? patch.washCareIcons : null }
-        : {}),
+      ...(patch.washCareIcons !== undefined ? { washCareIcons: patch.washCareIcons } : {}),
       ...(patch.seo !== undefined ? { seo: patch.seo } : {}),
     },
     patch.businessUniform,
@@ -399,9 +402,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
         ...(patch.declaration !== undefined
           ? { declaration: patch.declaration || null }
           : {}),
-        ...(patch.washCareIcons !== undefined
-          ? { washCareIcons: Array.isArray(patch.washCareIcons) && patch.washCareIcons.length > 0 ? patch.washCareIcons : null }
-          : {}),
+        ...(patch.washCareIcons !== undefined ? { washCareIcons: patch.washCareIcons } : {}),
         ...(patch.seo !== undefined ? { seo: patch.seo || null } : {}),
       },
       patch.businessUniform,
