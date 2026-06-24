@@ -5606,9 +5606,11 @@ body.mobile-menu-opened {
 
 .product-single__swatches .swatch,
 .ss-product-size-picker .swatch {
+  flex: 0 0 auto;
   min-width: 2.85rem;
-  white-space: normal;
-  word-break: break-word;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
 }
 
 .ss-product-size-picker .swatch.is-pending {
@@ -5633,7 +5635,9 @@ body.mobile-menu-opened {
   color: rgba(17, 24, 39, 0.9);
   line-height: 1.05;
   text-align: center;
-  overflow-wrap: anywhere;
+  white-space: nowrap;
+  word-break: normal;
+  overflow-wrap: normal;
   font-weight: 700;
   letter-spacing: 0.12em;
   transition:
@@ -7251,7 +7255,7 @@ button.ss-mobile-nav-quicklink,
   }
 
   .ss-product-size-picker .swatch {
-    flex: 1 1 calc(33.333% - 0.5rem);
+    flex: 0 0 auto;
     justify-content: center;
     text-align: center;
     padding-left: 0.6rem;
