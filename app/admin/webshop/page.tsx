@@ -33,6 +33,7 @@ import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 import AdminLandingProductPickGrid from "@/app/admin/components/AdminLandingProductPickGrid";
 import MediaHealthPanel from "@/app/admin/webshop/MediaHealthPanel";
 import WashCareSelector from "@/app/admin/webshop/WashCareSelector";
+import WashCareSymbol from "@/app/components/wash-care/WashCareSymbol";
 import { parseWashCareSymbolKeys, type WashCareSymbolKey } from "@/lib/catalog/washCare";
 
 type TabKey = "products" | "landing" | "akcije";
@@ -689,6 +690,23 @@ const toDraft = (item: CatalogProduct): ProductDraft => {
     businessUniform: isBusinessUniformProduct(item),
     priceOverride: Boolean((item.rawPayload?.commerceOverrides as Record<string, unknown> | undefined)?.price),
   };
+};
+
+const WashCareAdminPreview = ({ icons }: { icons: WashCareSymbolKey[] }) => {
+  if (!icons.length) {
+    return <span className="text-[10px] font-medium text-slate-400">Wash care nije setovan</span>;
+  }
+
+  return (
+    <div className="flex flex-wrap items-center gap-1.5" title={`${icons.length} wash-care simbola`}>
+      {icons.slice(0, 5).map((icon) => (
+        <span key={icon} className="inline-flex h-7 w-7 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700">
+          <WashCareSymbol icon={icon} className="h-5 w-5" />
+        </span>
+      ))}
+      {icons.length > 5 ? <span className="text-[10px] font-semibold text-slate-500">+{icons.length - 5}</span> : null}
+    </div>
+  );
 };
 
 const normalizeTab = (value: string | null | undefined): TabKey => {
@@ -2072,6 +2090,7 @@ export default function AdminWebshopPage() {
   const renderProductCatalogCard = (item: CatalogProduct) => {
     const draft = drafts[item.legacyId];
     const hasNoImage = !item.images?.length || Boolean(item.rawPayload?.imageFallback);
+    const washCareIcons = draft?.washCareIcons ?? parseWashCareSymbolKeys(item.rawPayload?.washCareIcons);
     return (
       <article key={item.legacyId} className={`rounded-2xl border bg-white p-3 shadow-sm ${hasNoImage ? "border-rose-200" : "border-slate-200"}`}>
         <div className="flex gap-3">
@@ -2107,6 +2126,9 @@ export default function AdminWebshopPage() {
                   {flag.label}
                 </span>
               ))}
+            </div>
+            <div className="mt-2">
+              <WashCareAdminPreview icons={washCareIcons} />
             </div>
           </div>
         </div>
@@ -2789,6 +2811,7 @@ export default function AdminWebshopPage() {
                     <th className="px-2 py-2">Kategorija</th>
                     <th className="px-2 py-2">Prodajna / Regularna</th>
                     <th className="px-2 py-2">Lager</th>
+                    <th className="px-2 py-2">Wash care</th>
                     <th className="px-2 py-2">Status</th>
                     <th className="px-2 py-2">Akcije</th>
                   </tr>
@@ -2796,6 +2819,7 @@ export default function AdminWebshopPage() {
                 <tbody>
                   {items.map((item) => {
                     const draft = drafts[item.legacyId];
+                    const washCareIcons = draft?.washCareIcons ?? parseWashCareSymbolKeys(item.rawPayload?.washCareIcons);
                     return (
                       <tr key={item.legacyId} className="border-b border-slate-100 align-top">
                         <td className="px-2 py-2"><input type="checkbox" checked={Boolean(selected[item.legacyId])} onChange={(e) => setSelected((prev) => ({ ...prev, [item.legacyId]: e.target.checked }))} /></td>
@@ -2814,6 +2838,7 @@ export default function AdminWebshopPage() {
                         <td className="px-2 py-2 text-xs">{item.categories[0]?.path.join(" / ") || "-"}</td>
                         <td className="px-2 py-2"><input value={draft?.priceFinalGross || ""} onChange={(e) => updateDraft(item.legacyId, { priceFinalGross: e.target.value })} className="mb-1 w-28 rounded border border-slate-200 px-2 py-1 text-xs" /><input value={draft?.priceGross || ""} onChange={(e) => updateDraft(item.legacyId, { priceGross: e.target.value })} className="w-28 rounded border border-slate-200 px-2 py-1 text-xs" /></td>
                         <td className="px-2 py-2"><input value={draft?.stockWarehouse1 || ""} onChange={(e) => updateDraft(item.legacyId, { stockWarehouse1: e.target.value })} className="mb-1 w-24 rounded border border-slate-200 px-2 py-1 text-xs" /><input value={draft?.stockTotal || ""} onChange={(e) => updateDraft(item.legacyId, { stockTotal: e.target.value })} className="w-24 rounded border border-slate-200 px-2 py-1 text-xs" /></td>
+                        <td className="px-2 py-2"><WashCareAdminPreview icons={washCareIcons} /></td>
                         <td className="px-2 py-2 text-xs">
                           <label className="mb-1 flex items-center gap-2"><input type="checkbox" checked={Boolean(draft?.isActive)} onChange={(e) => updateDraft(item.legacyId, { isActive: e.target.checked })} />Aktivan</label>
                           <label className="mb-1 flex items-center gap-2"><input type="checkbox" checked={Boolean(draft?.isExported)} onChange={(e) => updateDraft(item.legacyId, { isExported: e.target.checked })} />Export</label>
@@ -2952,7 +2977,8 @@ export default function AdminWebshopPage() {
               <input value={landingSettings.heroSecondaryCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, heroSecondaryCtaHref: e.target.value }))} placeholder="Secondary CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
             </div>
             <div className="mt-4 border-t border-slate-100 pt-4">
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Hero video pozadina (upload)</p>
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Hero pozadina i video</p>
+              <p className="mb-3 text-xs text-slate-500">Hero background image koristi polje Poster slika. Ako video nije dodat, ova slika je glavna pozadina hero sekcije.</p>
               <div className="grid gap-2 md:grid-cols-2">
                 <div className="flex gap-2">
                   <input
@@ -2985,7 +3011,7 @@ export default function AdminWebshopPage() {
                   <input
                     value={landingSettings.heroVideoPosterUrl || ""}
                     onChange={(e) => setLandingSettings((p) => ({ ...p, heroVideoPosterUrl: e.target.value }))}
-                    placeholder="Poster slika (thumbnail) - opciono"
+                    placeholder="Hero background image / poster URL"
                     className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm"
                   />
                   <label className="cursor-pointer rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-slate-600 whitespace-nowrap">
@@ -3005,10 +3031,16 @@ export default function AdminWebshopPage() {
                         }
                       }}
                     />
-                    Upload poster
+                    {uploadingAssetKind === "shopHero" ? "Uploading..." : "Upload sliku"}
                   </label>
                 </div>
               </div>
+              {landingSettings.heroVideoPosterUrl ? (
+                <div className="mt-3 flex flex-wrap items-center gap-3">
+                  <Image src={landingSettings.heroVideoPosterUrl} alt="" width={160} height={96} className="h-24 w-40 rounded-xl object-cover" unoptimized />
+                  <button type="button" onClick={() => setLandingSettings((p) => ({ ...p, heroVideoPosterUrl: "" }))} className="rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700">Ukloni sliku</button>
+                </div>
+              ) : null}
               {landingSettings.heroVideoUrl ? (
                 <div className="mt-3 flex items-center gap-3">
                   <video src={landingSettings.heroVideoUrl} controls preload="metadata" className="max-h-36 rounded-xl bg-slate-950" />

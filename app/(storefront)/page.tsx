@@ -666,6 +666,9 @@ export default async function HomePage({
                         alt={getProductDisplayName(item, contentLang)}
                         className="pc__img"
                       />
+                      <span className="ss-product-card__quick-link">
+                        {contentLang === "en" ? "View product" : "Pogledaj proizvod"}
+                      </span>
                     </Link>
                   </div>
                   <div className="pc__info position-relative">
@@ -722,6 +725,9 @@ export default async function HomePage({
                         alt={getProductDisplayName(item, contentLang)}
                         className="pc__img"
                       />
+                      <span className="ss-product-card__quick-link">
+                        {contentLang === "en" ? "View product" : "Pogledaj proizvod"}
+                      </span>
                     </Link>
                   </div>
                   <div className="pc__info position-relative">
@@ -784,6 +790,9 @@ export default async function HomePage({
                     alt={getProductDisplayName(item, contentLang)}
                     className="pc__img"
                   />
+                  <span className="ss-product-card__quick-link">
+                    {contentLang === "en" ? "View product" : "Pogledaj proizvod"}
+                  </span>
                 </Link>
               </div>
               <div className="pc__info position-relative">
@@ -1131,7 +1140,7 @@ export default async function HomePage({
                     {tx(landingSettings.documentsTitle, "Documents")}
                   </p>
                   <p className="text-secondary mb-3">{tx(landingSettings.documentsSubtitle)}</p>
-                  <div className="d-grid gap-2">
+                  <div className="ss-document-download-list">
                     {landingDocuments.length > 0 ? (
                       landingDocuments.slice(0, 3).map((item) => (
                         <a
@@ -1139,11 +1148,13 @@ export default async function HomePage({
                           href={item.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="border px-3 py-2 text-decoration-none text-dark"
-                          style={{ borderRadius: 14 }}
+                          className="ss-document-download-card"
                         >
-                          <div className="fw-medium">{tx(item.title)}</div>
-                          {item.description ? <div className="text-secondary small">{tx(item.description)}</div> : null}
+                          <span>
+                            <span className="ss-document-download-card__title">{tx(item.title)}</span>
+                            {item.description ? <span className="ss-document-download-card__description d-block">{tx(item.description)}</span> : null}
+                          </span>
+                          <span className="ss-document-download-card__action">{isEn ? "Download" : "Preuzmi"}</span>
                         </a>
                       ))
                     ) : (
@@ -1158,7 +1169,7 @@ export default async function HomePage({
           </div>
         </Reveal>
 
-        <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
+        <div className="mb-3 mb-xl-4 pt-xl-1 pb-3" />
 
         <Reveal as="section" className="container pb-5 ss-editorial-section" delay={0.175}>
           <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">

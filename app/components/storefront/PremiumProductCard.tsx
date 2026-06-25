@@ -63,7 +63,7 @@ export default function PremiumProductCard({
 
         {/* Quick view overlay — pojavljuje se na hover */}
         <div className="ss-premium-card__overlay" aria-hidden="true">
-          <span className="ss-premium-card__overlay-label">Pogledaj</span>
+          <span className="ss-premium-card__overlay-label">Pogledaj proizvod</span>
         </div>
       </div>
 

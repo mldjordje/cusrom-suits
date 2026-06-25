@@ -1,4 +1,6 @@
 import { getAnonSupabase, getServiceSupabase } from "@/lib/supabase/server";
+import fs from "fs/promises";
+import path from "path";
 
 export const SITE_ASSET_BUCKET = process.env.SUPABASE_SITE_ASSET_BUCKET || "site-assets";
 
@@ -58,20 +60,35 @@ export async function uploadSiteAsset(
   contentType?: string | null,
   bucket = SITE_ASSET_BUCKET,
 ) {
+  const normalizedPath = normalizeSiteAssetPath(storagePath);
   const supabase = getServiceSupabase();
-  if (!supabase) return false;
+  const writeLocalFallback = async () => {
+    try {
+      const baseDir = path.join(process.cwd(), "public", "site-assets");
+      const fullPath = path.join(baseDir, normalizedPath);
+      const relative = path.relative(baseDir, fullPath);
+      if (relative.startsWith("..") || path.isAbsolute(relative)) return false;
+      await fs.mkdir(path.dirname(fullPath), { recursive: true });
+      await fs.writeFile(fullPath, Buffer.isBuffer(payload) ? payload : Buffer.from(payload));
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  if (!supabase) return writeLocalFallback();
 
   const ready = await ensureSiteAssetBucket(bucket);
-  if (!ready) return false;
+  if (!ready) return writeLocalFallback();
 
   try {
-    const { error } = await supabase.storage.from(bucket).upload(normalizeSiteAssetPath(storagePath), payload, {
+    const { error } = await supabase.storage.from(bucket).upload(normalizedPath, payload, {
       upsert: true,
       contentType: contentType || undefined,
     });
-    return !error;
+    return !error || writeLocalFallback();
   } catch {
-    return false;
+    return writeLocalFallback();
   }
 }
 

@@ -292,6 +292,9 @@ const getFabricPatternRaw = (fabric: unknown) => {
   }
   return "";
 };
+
+const isSuitFabricInteriorLayer = (layer: SuitLayer) =>
+  layer.id === "interior_base" || /(?:^|\/)interior1\.(?:png|webp)(?:\?|$)/i.test(layer.src);
 const shouldUsePantsPatternOverlay = (fabric: unknown) => {
   const raw = normalizePattern(getFabricPatternRaw(fabric));
   return raw.includes("pruge") || raw.includes("pinstripe") || raw.includes("stripe") || raw === "karo";
@@ -2430,6 +2433,14 @@ const SuitPreview = ({
     Array.isArray(activeInterior?.layers) && activeInterior.layers.length
       ? activeInterior.layers
       : currentSuit?.interiors?.[0]?.layers;
+  const suitFabricInteriorLayer = useMemo(
+    () => currentSuit?.interiors?.flatMap((interior) => interior.layers).find(isSuitFabricInteriorLayer) ?? null,
+    [currentSuit]
+  );
+  const liningInteriorLayers = useMemo(
+    () => (interiorLayers ?? []).filter((layer) => !isSuitFabricInteriorLayer(layer)),
+    [interiorLayers]
+  );
   const activeInteriorTexture = (activeInterior as any)?.texture as string | undefined;
   /* -----------------------------------------------------------------------------
      Pan/zoom handlers
@@ -3814,60 +3825,57 @@ const SuitPreview = ({
             <div className="h-10 w-10 animate-spin rounded-full border-2 border-gray-300 border-t-gray-900" />
           </div>
         )}
-        {showJacketLayers && activeInteriorTexture && interiorLayers?.length
-          ? interiorLayers.map((l) => {
-            const pair = cdnPair(l.src);
-            const maskUrl = pair?.png || l.src;
-            return (
-              <div
-                key={`int-${l.id}`}
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                    backgroundImage: `url(${activeInteriorTexture})`,
-                    backgroundSize: "100% auto",
-                    backgroundRepeat: "repeat",
-                    mixBlendMode: "normal",
-                    opacity: 1,
-                    filter: "saturate(1.2) contrast(1.18) brightness(1.06)",
-                    WebkitMaskImage: `url(${maskUrl})`,
-                    WebkitMaskRepeat: "no-repeat",
-                    WebkitMaskSize: "contain",
-                    WebkitMaskPosition: "center",
-                    maskImage: `url(${maskUrl})`,
-                    maskRepeat: "no-repeat",
-                    maskSize: "contain",
-                    maskPosition: "center",
-                  }}
-                />
-              );
-            })
-          : showJacketLayers
-            ? interiorLayers?.map((l) => {
-              // Only the base interior shape (interior1.png) receives the suit fabric.
-              // The secondary shadow layers (interior2, interior3) stay as plain sprites.
-              if (l.id === "interior_base") {
+        {showJacketLayers && suitFabricInteriorLayer && (() => {
+          const pair = cdnPair(suitFabricInteriorLayer.src);
+          const maskUrl = pair?.png || suitFabricInteriorLayer.src;
+          return (
+            <FabricUnion
+              key={`int-suit-fabric-${suitFabricInteriorLayer.id}`}
+              layers={fabricMaskLayers}
+              resolve={resolveCdn}
+              fabricTexture={useTexture ? fabricTextureSource : undefined}
+              textureStyle={jacketTextureStyleReal}
+              baseColor={tunedFabricFill || toneBaseColor}
+              fabricAvgColor={tunedFabricFill}
+              baseBlendMode="color"
+              fabricTone={fabricTone}
+              baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
+              panZoom={panZoom}
+              canvas={JACKET_CANVAS}
+              mask={maskUrl}
+              textureScale={jacketTextureScale}
+              textureTileSizePx={stripeTileSizePx}
+              maskSize="contain"
+              maskPosition="center"
+              maskRepeat="no-repeat"
+            />
+          );
+        })()}
+        {showJacketLayers
+          ? liningInteriorLayers.map((l) => {
+              if (activeInteriorTexture) {
                 const pair = cdnPair(l.src);
                 const maskUrl = pair?.png || l.src;
                 return (
-                  <FabricUnion
+                  <div
                     key={`int-${l.id}`}
-                    layers={fabricMaskLayers}
-                    resolve={resolveCdn}
-                    fabricTexture={useTexture ? fabricTextureSource : undefined}
-                    textureStyle={jacketTextureStyleReal}
-                    baseColor={tunedFabricFill || toneBaseColor}
-                    fabricAvgColor={tunedFabricFill}
-                    baseBlendMode="color"
-                    fabricTone={fabricTone}
-                    baseOpacity={usePhotoBase ? photoBaseOpacity : 0.95}
-                    panZoom={panZoom}
-                    canvas={JACKET_CANVAS}
-                    mask={maskUrl}
-                    textureScale={jacketTextureScale}
-                    textureTileSizePx={stripeTileSizePx}
-                    maskSize="contain"
-                    maskPosition="center"
-                    maskRepeat="no-repeat"
+                    className="absolute inset-0 pointer-events-none"
+                    style={{
+                      backgroundImage: `url(${activeInteriorTexture})`,
+                      backgroundSize: "100% auto",
+                      backgroundRepeat: "repeat",
+                      mixBlendMode: "normal",
+                      opacity: 1,
+                      filter: "saturate(1.2) contrast(1.18) brightness(1.06)",
+                      WebkitMaskImage: `url(${maskUrl})`,
+                      WebkitMaskRepeat: "no-repeat",
+                      WebkitMaskSize: "contain",
+                      WebkitMaskPosition: "center",
+                      maskImage: `url(${maskUrl})`,
+                      maskRepeat: "no-repeat",
+                      maskSize: "contain",
+                      maskPosition: "center",
+                    }}
                   />
                 );
               }
@@ -3882,7 +3890,7 @@ const SuitPreview = ({
                 />
               );
             })
-            : null}
+          : null}
         {config.showShirt && (
           <img
             src={SHIRT_PAIR.webp}

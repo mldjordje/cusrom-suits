@@ -325,6 +325,8 @@ const compactRawPayload = (
   if (source.attributes && typeof source.attributes === "object") compact.attributes = source.attributes;
   if (source.media && typeof source.media === "object") compact.media = source.media;
   if (source.seo && typeof source.seo === "object") compact.seo = source.seo;
+  if (Array.isArray(source.washCareIcons)) compact.washCareIcons = source.washCareIcons;
+  if (Object.prototype.hasOwnProperty.call(source, "declaration")) compact.declaration = source.declaration;
   if (source.productType) compact.productType = source.productType;
   if (source.source) compact.source = source.source;
   if (source.moffice && typeof source.moffice === "object") compact.moffice = source.moffice;
@@ -460,6 +462,8 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
           ? { videoUrl: extractProductVideoUrl(item.raw as Record<string, unknown>) }
           : undefined,
     productType: item.raw?.productType,
+    washCareIcons: item.raw?.washCareIcons,
+    declaration: item.raw?.declaration,
   }),
 });
 

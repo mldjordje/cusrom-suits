@@ -17,6 +17,12 @@ import { revalidateTag, unstable_cache } from "next/cache";
 const LANDING_SETTINGS_PATH = "data/landing-settings.json";
 const LANDING_SETTINGS_CACHE_TAG = "landing-settings";
 
+const PURCHASE_WITHDRAWAL_DOCUMENT: LandingDocument = {
+  title: "Obrazac o odustajanju od kupovine",
+  description: "Formular za raskid ugovora / odustanak od kupovine na daljinu.",
+  url: "/fajlovi/uputstvo/formular_za_raskid_ugovora.pdf",
+};
+
 export type LandingDocument = {
   title: string;
   description: string;
@@ -205,7 +211,7 @@ const DEFAULT_SETTINGS: LandingSettings = {
     "Izaberite proizvod i velicinu, dodajte artikal u korpu, zatim na checkout strani unesite kontakt podatke i posaljite porudzbinu kao upit. Nas tim potom potvrdjuje dostupnost, rok i sve detalje isporuke.",
   documentsTitle: "Dokumenta za preuzimanje",
   documentsSubtitle: "Ovde mozete dodati obrasce i dokumenta koja kupci mogu odmah da preuzmu.",
-  documents: [],
+  documents: [PURCHASE_WITHDRAWAL_DOCUMENT],
   uniformsEyebrow: "Poslovne uniforme",
   uniformsTitle: "Uniforme za timove, hotele, restorane i klinike",
   uniformsText:
@@ -403,6 +409,13 @@ const normalizeLandingDocument = (value: unknown): LandingDocument | null => {
 const normalizeLandingDocuments = (value: unknown, max = 24) => {
   if (!Array.isArray(value)) return [] as LandingDocument[];
   return value.map(normalizeLandingDocument).filter((item): item is LandingDocument => Boolean(item)).slice(0, max);
+};
+
+const ensureRequiredLandingDocuments = (documents: LandingDocument[]) => {
+  const hasWithdrawalForm = documents.some((item) =>
+    String(item.url || "").includes("formular_za_raskid_ugovora.pdf"),
+  );
+  return hasWithdrawalForm ? documents : [PURCHASE_WITHDRAWAL_DOCUMENT, ...documents].slice(0, 24);
 };
 
 const UNIFORM_MEDIA_REPAIRS: Record<string, string> = {
@@ -607,7 +620,7 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
     purchaseGuideText: decodeLandingText(settings.purchaseGuideText, DEFAULT_SETTINGS.purchaseGuideText),
     documentsTitle: decodeLandingText(settings.documentsTitle, DEFAULT_SETTINGS.documentsTitle),
     documentsSubtitle: decodeLandingText(settings.documentsSubtitle, DEFAULT_SETTINGS.documentsSubtitle),
-    documents: normalizeLandingDocuments(settings.documents ?? DEFAULT_SETTINGS.documents),
+    documents: ensureRequiredLandingDocuments(normalizeLandingDocuments(settings.documents ?? DEFAULT_SETTINGS.documents)),
     uniformsEyebrow: decodeLandingText(settings.uniformsEyebrow, DEFAULT_SETTINGS.uniformsEyebrow),
     uniformsTitle: decodeLandingText(settings.uniformsTitle, DEFAULT_SETTINGS.uniformsTitle),
     uniformsText: decodeLandingText(settings.uniformsText, DEFAULT_SETTINGS.uniformsText),
@@ -835,7 +848,7 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
         ? current.documentsSubtitle
         : String(patch.documentsSubtitle).trim() || DEFAULT_SETTINGS.documentsSubtitle,
     documents:
-      patch.documents == null ? current.documents : normalizeLandingDocuments(patch.documents, 24),
+      patch.documents == null ? current.documents : ensureRequiredLandingDocuments(normalizeLandingDocuments(patch.documents, 24)),
     uniformsEyebrow:
       patch.uniformsEyebrow == null
         ? current.uniformsEyebrow

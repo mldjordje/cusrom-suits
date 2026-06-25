@@ -151,7 +151,7 @@ export default async function LegalPageView({
                   >
                     {isEn ? "Downloads" : "Preuzimanja"}
                   </p>
-                  <div className="d-grid gap-2">
+                  <div className="ss-document-download-list">
                     {downloadableDocuments.length > 0 ? (
                       downloadableDocuments.map((item) => (
                         <a
@@ -159,11 +159,13 @@ export default async function LegalPageView({
                           href={item.url}
                           target="_blank"
                           rel="noreferrer"
-                          className="border text-decoration-none text-dark px-3 py-3"
-                          style={{ borderRadius: 14 }}
+                          className="ss-document-download-card"
                         >
-                          <div className="fw-medium">{item.title}</div>
-                          {item.description ? <div className="small text-secondary mt-1">{item.description}</div> : null}
+                          <span>
+                            <span className="ss-document-download-card__title">{item.title}</span>
+                            {item.description ? <span className="ss-document-download-card__description d-block">{item.description}</span> : null}
+                          </span>
+                          <span className="ss-document-download-card__action">{isEn ? "Download" : "Preuzmi"}</span>
                         </a>
                       ))
                     ) : (

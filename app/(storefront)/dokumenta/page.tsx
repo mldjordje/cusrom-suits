@@ -46,7 +46,7 @@ export default async function DocumentsPage({
                   <strong>{isEn ? "documents" : "preuzimanje"}</strong>
                 </h1>
                 <p className="text-secondary mb-4">{tx(landingSettings.documentsSubtitle)}</p>
-                <div className="d-grid gap-3">
+                <div className="ss-document-download-list">
                   {documents.length > 0 ? (
                     documents.map((item) => (
                       <a
@@ -54,11 +54,13 @@ export default async function DocumentsPage({
                         href={item.url}
                         target="_blank"
                         rel="noreferrer"
-                        className="border text-decoration-none text-dark px-4 py-3"
-                        style={{ borderRadius: 18 }}
+                        className="ss-document-download-card"
                       >
-                        <div className="fw-medium">{tx(item.title)}</div>
-                        {item.description ? <div className="text-secondary small mt-1">{tx(item.description)}</div> : null}
+                        <span>
+                          <span className="ss-document-download-card__title">{tx(item.title)}</span>
+                          {item.description ? <span className="ss-document-download-card__description d-block">{tx(item.description)}</span> : null}
+                        </span>
+                        <span className="ss-document-download-card__action">{isEn ? "Download" : "Preuzmi"}</span>
                       </a>
                     ))
                   ) : (

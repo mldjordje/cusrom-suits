@@ -94,7 +94,20 @@ export default function AdminFontsPage() {
       completeRows.forEach((row) => { form.append("files", row.file); form.append("weights", row.weight); });
       const response = await fetch("/api/admin/fonts", { method: "POST", body: form });
       const json = await response.json(); if (!json?.success) throw new Error(json?.message || "Upload nije uspeo.");
-      setFonts(json.fonts); setUploadName(""); setUploadRows([{ weight: "400", file: null }]); setMessage("WOFF2 font je dodat u biblioteku.");
+      const nextFonts = json.fonts || [];
+      const uploadedFont = nextFonts.find((font: FontFamilyRecord) => font.source === "uploaded" && font.name === uploadName.trim());
+      setFonts(nextFonts);
+      if (uploadedFont) {
+        setSettings((current) => ({
+          ...current,
+          displayFontId: uploadedFont.id,
+          displayFont: uploadedFont.name,
+          displayFontWeight: uploadedFont.weights.includes(current.displayFontWeight as FontWeight)
+            ? current.displayFontWeight
+            : uploadedFont.weights[0],
+        }));
+      }
+      setUploadName(""); setUploadRows([{ weight: "400", file: null }]); setMessage("WOFF2 font je dodat i izabran za naslove. Kliknite Sačuvaj da bude aktivan na sajtu.");
     } catch (cause) { setError(cause instanceof Error ? cause.message : "Upload nije uspeo."); }
     finally { setBusy(false); }
   };
