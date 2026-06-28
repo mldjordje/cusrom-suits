@@ -30,6 +30,7 @@ export default function HomeHeroMedia({
   const [isDesktop, setIsDesktop] = useState(true);
   const [shouldLoadVideo, setShouldLoadVideo] = useState(false);
   const [showVideo, setShowVideo] = useState(false);
+  const hasAnyHeroVideo = Boolean(heroVideoUrl || heroVideoMobileUrl);
 
   useEffect(() => {
     const mq = window.matchMedia(DESKTOP_MQ);
@@ -42,7 +43,7 @@ export default function HomeHeroMedia({
   }, []);
 
   useEffect(() => {
-    if (!viewportReady || lowPower || !heroVideoUrl) {
+    if (!viewportReady || lowPower || !hasAnyHeroVideo) {
       setShouldLoadVideo(false);
       setShowVideo(false);
       return;
@@ -70,7 +71,7 @@ export default function HomeHeroMedia({
       if (loadTimeoutId !== null) window.clearTimeout(loadTimeoutId);
       if (showTimeoutId !== null) window.clearTimeout(showTimeoutId);
     };
-  }, [heroVideoUrl, lowPower, viewportReady]);
+  }, [hasAnyHeroVideo, lowPower, viewportReady]);
 
   const posterSrc = !viewportReady || isDesktop ? desktopPosterSrc : mobilePosterSrc;
   const activeVideoUrl = !viewportReady || isDesktop
@@ -97,11 +98,11 @@ export default function HomeHeroMedia({
           muted
           loop
           playsInline
-          poster={desktopPosterSrc}
-          className="ss-home18-hero__iframe ss-home18-hero__video-frame"
+          poster={posterSrc}
+          preload="metadata"
+          className="ss-home18-hero__video-frame"
           aria-hidden="true"
           tabIndex={-1}
-          style={{ objectFit: "cover", width: "100%", height: "100%" }}
         />
       ) : null}
     </div>
