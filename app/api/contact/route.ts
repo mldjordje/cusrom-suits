@@ -16,8 +16,8 @@ const SPAM_KEYWORDS = [
   "spin", "jackpot", "reel", "psee.io", "bit.ly", "tinyurl",
 ];
 
-function isSpam(subject: string, message: string): boolean {
-  const combined = `${subject} ${message}`.toLowerCase();
+function isSpam(...fields: string[]): boolean {
+  const combined = fields.join(" ").toLowerCase();
   if (URL_PATTERN.test(combined)) return true;
   if (SPAM_KEYWORDS.some((kw) => combined.includes(kw))) return true;
   return false;
@@ -76,7 +76,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Basic spam detection
-  if (isSpam(subject, message)) {
+  if (isSpam(name, email, phone, company, subject, message, preferredStore)) {
     return NextResponse.json({ success: true, data: null });
   }
 
