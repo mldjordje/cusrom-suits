@@ -298,8 +298,8 @@ export default function CheckoutPageClient({
         </div>
         <p className="ss-commerce-intro__copy">
           {isEn
-            ? "The customer only fills in contact details and an optional address or note. There is no online payment barrier in this flow."
-            : "Kupac unosi samo kontakt podatke i po zelji adresu ili napomenu. U ovom toku nema barijere online placanja."}
+            ? "Enter your contact details and, if you like, a delivery address or note. No online payment is required upfront."
+            : "Unesi kontakt podatke i po zelji adresu ili napomenu. Placanje unapred nije potrebno."}
         </p>
       </div>
 
@@ -561,8 +561,8 @@ export default function CheckoutPageClient({
             <div className="ss-order-panel__footer">
               <p className="ss-order-panel__hint">
                 {isEn
-                  ? "Submitting creates an order inquiry in admin. The team confirms availability and next steps afterward."
-                  : "Slanjem kreiras upit za porudzbinu u adminu. Tim potom potvrdjuje dostupnost i sledece korake."}
+                  ? "After you send the order, our team calls you to confirm availability, delivery and payment."
+                  : "Nakon slanja porudzbine nas tim te poziva da potvrdi dostupnost, dostavu i placanje."}
               </p>
               <p className="ss-order-panel__hint mt-1">
                 {isEn
@@ -661,8 +661,8 @@ export default function CheckoutPageClient({
             <div className="ss-order-summary__note">
               <p>
                 {isEn
-                  ? "There is no online payment in this flow. The form stays simple and focused on sending the request fast."
-                  : "U ovom toku nema online placanja. Forma ostaje jednostavna i fokusirana na brzo slanje zahteva."}
+                  ? "Payment on delivery, by card or bank transfer — you choose when our team calls to confirm the order."
+                  : "Placanje pouzecem, karticom ili uplatnicom — biras kada te nas tim pozove radi potvrde porudzbine."}
               </p>
             </div>
           </div>

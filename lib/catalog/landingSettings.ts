@@ -59,6 +59,14 @@ export type LandingContactPoint = {
   value: string;
 };
 
+export type LandingCategoryTile = {
+  id: string;
+  label: string;
+  labelEn: string;
+  href: string;
+  image: string;
+};
+
 /** Jedan vizuelni hero blok na /web-shop (do 2 komada, jedan ispod drugog). */
 export type LandingShopHeroSection = {
   id: string;
@@ -136,6 +144,7 @@ export type LandingSettings = {
   shopHeroPromoLabel: string;
   shopHeroPromoHref: string;
   shopHeroSections: LandingShopHeroSection[];
+  categoryTiles: LandingCategoryTile[];
   storySectionTitle: string;
   storySectionCtaLabel: string;
   storySectionCtaHref: string;
@@ -286,6 +295,13 @@ const DEFAULT_SETTINGS: LandingSettings = {
       promoLabel: "",
       promoHref: "/akcije",
     },
+  ],
+  categoryTiles: [
+    { id: "category-1", label: "Odela", labelEn: "Suits", href: "/web-shop?categoryGroup=odelo", image: "/img/odela.jpg" },
+    { id: "category-2", label: "Sakoi", labelEn: "Blazers", href: "/web-shop?categoryGroup=sako", image: "/img/hero2.jpg" },
+    { id: "category-3", label: "Pantalone", labelEn: "Trousers", href: "/web-shop?categoryGroup=pantalone", image: "/img/odela2.jpg" },
+    { id: "category-4", label: "Kosulje", labelEn: "Shirts", href: "/web-shop?categoryGroup=kosulja", image: "/img/hero.jpg" },
+    { id: "category-5", label: "Custom Suits", labelEn: "Custom Suits", href: "/custom-suits", image: "/img/odela.jpg" },
   ],
   storySectionTitle: "Brend Prica",
   storySectionCtaLabel: "Pogledaj kolekciju",
@@ -524,6 +540,27 @@ const normalizeLandingStoryCards = (value: unknown, max = 6) => {
     .slice(0, max);
 };
 
+const normalizeLandingCategoryTile = (value: unknown, index: number): LandingCategoryTile | null => {
+  if (!value || typeof value !== "object") return null;
+  const row = value as Record<string, unknown>;
+  const fallback = DEFAULT_SETTINGS.categoryTiles[index];
+  const id = String(row.id || fallback?.id || `category-${index + 1}`).trim() || `category-${index + 1}`;
+  const label = String(row.label ?? fallback?.label ?? "").trim();
+  const labelEn = String(row.labelEn ?? fallback?.labelEn ?? "").trim();
+  const href = String(row.href ?? fallback?.href ?? "").trim() || fallback?.href || "/web-shop";
+  const image = String(row.image ?? fallback?.image ?? "").trim() || fallback?.image || "";
+  if (!label && !image) return null;
+  return { id, label, labelEn, href, image };
+};
+
+const normalizeLandingCategoryTiles = (value: unknown, max = 8) => {
+  if (!Array.isArray(value)) return DEFAULT_SETTINGS.categoryTiles.slice(0, max);
+  return value
+    .map((item, index) => normalizeLandingCategoryTile(item, index))
+    .filter((item): item is LandingCategoryTile => Boolean(item))
+    .slice(0, max);
+};
+
 const normalizeLandingContactPoint = (value: unknown, index: number): LandingContactPoint | null => {
   if (!value || typeof value !== "object") return null;
   const row = value as Record<string, unknown>;
@@ -636,6 +673,7 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
     shopHeroShowPromo: shopHeroFirst.showPromo,
     shopHeroPromoLabel: shopHeroFirst.promoLabel,
     shopHeroPromoHref: shopHeroFirst.promoHref,
+    categoryTiles: normalizeLandingCategoryTiles(settings.categoryTiles),
     storySectionTitle: decodeLandingText(settings.storySectionTitle, DEFAULT_SETTINGS.storySectionTitle),
     storySectionCtaLabel: decodeLandingText(settings.storySectionCtaLabel, DEFAULT_SETTINGS.storySectionCtaLabel),
     storySectionCtaHref: String(settings.storySectionCtaHref || DEFAULT_SETTINGS.storySectionCtaHref),
@@ -902,6 +940,8 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
       patch.storySectionCtaHref == null
         ? current.storySectionCtaHref
         : String(patch.storySectionCtaHref).trim() || DEFAULT_SETTINGS.storySectionCtaHref,
+    categoryTiles:
+      patch.categoryTiles == null ? current.categoryTiles : normalizeLandingCategoryTiles(patch.categoryTiles, 8),
     storyCards:
       patch.storyCards == null ? current.storyCards : normalizeLandingStoryCards(patch.storyCards, 6),
     aboutEyebrow:

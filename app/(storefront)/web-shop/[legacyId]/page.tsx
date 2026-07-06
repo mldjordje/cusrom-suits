@@ -627,17 +627,10 @@ export default async function WebShopProductPage({
               </div>
 
               <div className="ss-product-glass-card ss-product-hero-card">
+                <p className="ss-pdp-ref mb-2">
+                  {product.categories[0]?.name || "Santos & Santorini"} · {product.sku}
+                </p>
                 <h1 className="product-single__name">{displayName}</h1>
-                <div className="product-single__rating">
-                  <div className="reviews-group d-flex text-warning" aria-hidden="true">
-                    <span>*****</span>
-                  </div>
-                  <span className="reviews-note text-lowercase text-secondary ms-1">
-                    {businessUniform
-                      ? (isEn ? "team inquiry" : "upit za timske porudzbine")
-                      : `${stockValue} ${isEn ? "in stock" : "na stanju"}`}
-                  </span>
-                </div>
                 <div className="product-single__price">
                   {businessUniform ? (
                     <span className="current-price">{isEn ? "Inquiry only" : "Na upit"}</span>
@@ -673,8 +666,16 @@ export default async function WebShopProductPage({
                     </svg>
                     {isEn ? "In stock" : "Na stanju"}
                   </p>
+                ) : !businessUniform && stockValue <= 0 ? (
+                  <p className="ss-stock-badge ss-stock-badge--low mt-2">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                      <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+                      <path d="M12 8v4m0 4h.01" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+                    </svg>
+                    {isEn ? "Sold out online — contact us to check store availability" : "Rasprodato online — kontaktiraj nas za dostupnost u radnji"}
+                  </p>
                 ) : null}
-                {!businessUniform && displayPriceFinalGross < 15000 ? (
+                {!businessUniform && stockValue > 0 && displayPriceFinalGross < 15000 ? (
                   <p className="ss-shipping-nudge">
                     <svg className="ss-shipping-nudge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
@@ -685,7 +686,7 @@ export default async function WebShopProductPage({
                       ? `Add ${formatRsd(15000 - displayPriceFinalGross)} more for free delivery`
                       : `Dodaj jos ${formatRsd(15000 - displayPriceFinalGross)} za besplatnu dostavu`}
                   </p>
-                ) : !businessUniform && displayPriceFinalGross >= 15000 ? (
+                ) : !businessUniform && stockValue > 0 && displayPriceFinalGross >= 15000 ? (
                   <p className="ss-shipping-nudge">
                     <svg className="ss-shipping-nudge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -700,43 +701,6 @@ export default async function WebShopProductPage({
                         ? "Product details, material information, and available sizes from the Santos & Santorini collection."
                         : "Detalji proizvoda, sastav i dostupne velicine iz Santos & Santorini kolekcije.")}
                   </p>
-                </div>
-
-                {(productSeo.aiSummary || productSeo.targetUse || productSeo.occasionTags.length || productSeo.styleTags.length || productSeo.fit || productSeo.color) ? (
-                  <div className="ss-product-seo-summary">
-                    {productSeo.aiSummary ? (
-                      <p className="ss-product-seo-summary__copy">{productSeo.aiSummary}</p>
-                    ) : null}
-                    <div className="ss-product-seo-summary__chips">
-                      {[productSeo.targetUse, productSeo.fit, productSeo.color, ...productSeo.occasionTags, ...productSeo.styleTags]
-                        .filter(Boolean)
-                        .slice(0, 8)
-                        .map((item) => (
-                          <span key={item}>{item}</span>
-                        ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="product-single__swatches">
-                  <div className="product-swatch text-swatches">
-                    <label>{isEn ? "Material" : "Materijal"}</label>
-                    <div className="swatch-list">
-                      <span className="swatch">{material}</span>
-                    </div>
-                  </div>
-                  <div className="product-swatch color-swatches">
-                    <label>Status</label>
-                    <div className="swatch-list">
-                      <span className={`swatch ${stockValue > 0 && !businessUniform ? "bg-success" : "bg-secondary"} text-white`}>
-                        {businessUniform
-                          ? (isEn ? "Inquiry only" : "Na upit")
-                          : stockValue > 0
-                            ? (isEn ? "In stock" : "Na stanju")
-                            : (isEn ? "On request" : "Na upit")}
-                      </span>
-                    </div>
-                  </div>
                 </div>
 
                 {sizeOptions.length > 0 ? (
@@ -779,6 +743,13 @@ export default async function WebShopProductPage({
                         className="btn btn-primary btn-addtocart ss-cta-btn"
                       >
                         {isEn ? "Send inquiry" : "Posalji upit"}
+                      </Link>
+                    ) : stockValue <= 0 ? (
+                      <Link
+                        href={withLang(`/kontakt?product=${product.legacyId}`)}
+                        className="btn btn-primary btn-addtocart ss-cta-btn"
+                      >
+                        {isEn ? "Ask about availability" : "Proveri dostupnost"}
                       </Link>
                     ) : (
                       <AddToCartButton
@@ -947,6 +918,10 @@ export default async function WebShopProductPage({
               {businessUniform ? (
                 <Link href={withLang(`/kontakt?product=${product.legacyId}`)} className="btn btn-primary ss-mobile-product-bar__btn">
                   {isEn ? "Inquiry" : "Upit"}
+                </Link>
+              ) : stockValue <= 0 ? (
+                <Link href={withLang(`/kontakt?product=${product.legacyId}`)} className="btn btn-primary ss-mobile-product-bar__btn">
+                  {isEn ? "Availability" : "Dostupnost"}
                 </Link>
               ) : (
                 <AddToCartButton

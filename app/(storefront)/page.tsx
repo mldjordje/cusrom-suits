@@ -862,6 +862,7 @@ export default async function HomePage({
 
         <HomeCategoryTiles
           categories={catalog.categories}
+          tiles={landingSettings.categoryTiles}
           categoryGroupImages={(() => {
             const groups = ["odelo", "sako", "pantalone", "kosulja"];
             const result: Record<string, string> = {};
@@ -991,7 +992,7 @@ export default async function HomePage({
           backgroundImage={landingSettings.heroVideoPosterUrl || undefined}
         />
 
-        {bottomGridSections.length > 0 ? <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" /> : null}
+        {bottomGridSections.length > 0 ? <div className="mb-2 pb-3" /> : null}
 
         {bottomGridSections.length > 0
           ? bottomGridSections.map((entry, index) => (
@@ -1008,7 +1009,7 @@ export default async function HomePage({
             ))
           : null}
 
-        {bottomGridSections.length > 0 ? <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" /> : null}
+        {bottomGridSections.length > 0 ? <div className="mb-2 pb-3" /> : null}
 
         <Reveal as="section" id="o-nama" className="container pb-5 ss-editorial-section ss-atelier-section" delay={0.16}>
           <div className="row g-4 align-items-stretch">
@@ -1072,7 +1073,7 @@ export default async function HomePage({
           </div>
         </Reveal>
 
-        <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
+        <div className="mb-2 pb-3" />
 
         <Reveal as="section" className="container pb-5 ss-editorial-section" delay={0.17}>
           <div className="row g-4">
@@ -1213,7 +1214,7 @@ export default async function HomePage({
           </div>
         </Reveal>
 
-        <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" />
+        <div className="mb-2 pb-3" />
 
         <Reveal as="section" className="blog-grid container ss-editorial-section ss-editorial-section--blog" delay={0.18}>
           <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">

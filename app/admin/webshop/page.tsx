@@ -145,6 +145,13 @@ type LandingContactPoint = {
   label: string;
   value: string;
 };
+type LandingCategoryTile = {
+  id: string;
+  label: string;
+  labelEn: string;
+  href: string;
+  image: string;
+};
 type LandingSettings = {
   showSaleSection: boolean;
   productSections: LandingProductSectionState[];
@@ -187,6 +194,7 @@ type LandingSettings = {
   shopHeroTitle: string;
   shopHeroLead: string;
   shopHeroImage: string;
+  categoryTiles: LandingCategoryTile[];
   storySectionTitle: string;
   storySectionCtaLabel: string;
   storySectionCtaHref: string;
@@ -370,6 +378,13 @@ const defaultLandingSettings: LandingSettings = {
   shopHeroLead:
     "Pregledaj kolekciju uz citljiviju navigaciju, pretragu po proizvodu i filtere koji sada rade pregledno i na desktopu i na telefonu.",
   shopHeroImage: "/img/hero2.jpg",
+  categoryTiles: [
+    { id: "category-1", label: "Odela", labelEn: "Suits", href: "/web-shop?categoryGroup=odelo", image: "/img/odela.jpg" },
+    { id: "category-2", label: "Sakoi", labelEn: "Blazers", href: "/web-shop?categoryGroup=sako", image: "/img/hero2.jpg" },
+    { id: "category-3", label: "Pantalone", labelEn: "Trousers", href: "/web-shop?categoryGroup=pantalone", image: "/img/odela2.jpg" },
+    { id: "category-4", label: "Kosulje", labelEn: "Shirts", href: "/web-shop?categoryGroup=kosulja", image: "/img/hero.jpg" },
+    { id: "category-5", label: "Custom Suits", labelEn: "Custom Suits", href: "/custom-suits", image: "/img/odela.jpg" },
+  ],
   storySectionTitle: "Brend Prica",
   storySectionCtaLabel: "Pogledaj kolekciju",
   storySectionCtaHref: "/web-shop",
@@ -559,6 +574,28 @@ const normalizeLandingStoryCards = (value: unknown, max = 6): LandingStoryCard[]
       };
     })
     .filter((item): item is LandingStoryCard => Boolean(item))
+    .slice(0, max);
+};
+
+const normalizeLandingCategoryTiles = (value: unknown, max = 8): LandingCategoryTile[] => {
+  if (!Array.isArray(value)) return defaultLandingSettings.categoryTiles.slice(0, max);
+  return value
+    .map((item, index) => {
+      if (!item || typeof item !== "object") return null;
+      const row = item as Record<string, unknown>;
+      const fallback = defaultLandingSettings.categoryTiles[index];
+      const label = String(row.label ?? fallback?.label ?? "").trim();
+      const image = String(row.image ?? fallback?.image ?? "").trim() || fallback?.image || "";
+      if (!label && !image) return null;
+      return {
+        id: String(row.id || fallback?.id || `category-${index + 1}`).trim() || `category-${index + 1}`,
+        label,
+        labelEn: String(row.labelEn ?? fallback?.labelEn ?? "").trim(),
+        href: String(row.href ?? fallback?.href ?? "").trim() || fallback?.href || "/web-shop",
+        image,
+      };
+    })
+    .filter((item): item is LandingCategoryTile => Boolean(item))
     .slice(0, max);
 };
 
@@ -885,7 +922,7 @@ export default function AdminWebshopPage() {
   const [savingLanding, setSavingLanding] = useState(false);
   const [uploadingBanner, setUploadingBanner] = useState<"left" | "right" | null>(null);
   const [uploadingAssetKind, setUploadingAssetKind] =
-    useState<"shopHero" | "documents" | "uniforms" | "storyCard" | "productVideo" | null>(null);
+    useState<"shopHero" | "documents" | "uniforms" | "storyCard" | "categoryTile" | "productVideo" | null>(null);
   const [uploadingEditorVideoId, setUploadingEditorVideoId] = useState<number | null>(null);
   const [videoUploadProgress, setVideoUploadProgress] = useState(0);
   const [landingProductQuery, setLandingProductQuery] = useState("");
@@ -1275,6 +1312,7 @@ export default function AdminWebshopPage() {
         uniformsImages: normalizeLandingUniformImages(loaded.uniformsImages),
         uniformsVideos: normalizeLandingUniformVideos(loaded.uniformsVideos),
         storyCards: normalizeLandingStoryCards(loaded.storyCards),
+        categoryTiles: normalizeLandingCategoryTiles(loaded.categoryTiles),
         aboutParagraphs: normalizeStringList(loaded.aboutParagraphs, defaultLandingSettings.aboutParagraphs, 6),
         contactPoints: normalizeLandingContactPoints(loaded.contactPoints, 8),
         heroStripProductIds: normalizeLegacyIdList(loaded.heroStripProductIds, limitForLandingSection("heroStripProductIds")),
@@ -1467,6 +1505,36 @@ export default function AdminWebshopPage() {
     }));
   };
 
+  const updateCategoryTile = (index: number, patch: Partial<LandingCategoryTile>) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      categoryTiles: prev.categoryTiles.map((item, itemIndex) => (itemIndex === index ? { ...item, ...patch } : item)),
+    }));
+  };
+
+  const addCategoryTile = () => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      categoryTiles: [
+        ...prev.categoryTiles,
+        {
+          id: `category-${Date.now()}`,
+          label: "",
+          labelEn: "",
+          href: "/web-shop",
+          image: "/img/hero.jpg",
+        },
+      ],
+    }));
+  };
+
+  const removeCategoryTile = (index: number) => {
+    setLandingSettings((prev) => ({
+      ...prev,
+      categoryTiles: prev.categoryTiles.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  };
+
   const updateProductSectionContent = (key: LandingProductSectionKey, patch: Partial<LandingProductSectionContent>) => {
     setLandingSettings((prev) => ({
       ...prev,
@@ -1642,6 +1710,26 @@ export default function AdminWebshopPage() {
       setNotice("Story slika uploadovana. Sacuvaj landing da ostane na sajtu.");
     } catch (e: any) {
       setError(e?.message || "Upload story slike nije uspeo.");
+    } finally {
+      setUploadingAssetKind(null);
+    }
+  };
+
+  const uploadCategoryTileImage = async (index: number, files: FileList | null) => {
+    if (!files?.length) return;
+    setUploadingAssetKind("categoryTile");
+    setError(null);
+    setNotice(null);
+    try {
+      const [url] = await uploadSiteAssets(files);
+      if (!url) throw new Error("Upload nije vratio URL.");
+      setLandingSettings((prev) => ({
+        ...prev,
+        categoryTiles: prev.categoryTiles.map((item, itemIndex) => (itemIndex === index ? { ...item, image: url } : item)),
+      }));
+      setNotice("Slika kategorije uploadovana. Sacuvaj landing da ostane na sajtu.");
+    } catch (e: any) {
+      setError(e?.message || "Upload slike kategorije nije uspeo.");
     } finally {
       setUploadingAssetKind(null);
     }
@@ -1987,6 +2075,7 @@ export default function AdminWebshopPage() {
         uniformsImages: normalizeLandingUniformImages(nextSettings.uniformsImages ?? prev.uniformsImages),
         uniformsVideos: normalizeLandingUniformVideos(nextSettings.uniformsVideos ?? prev.uniformsVideos),
         storyCards: normalizeLandingStoryCards(nextSettings.storyCards ?? prev.storyCards),
+        categoryTiles: normalizeLandingCategoryTiles(nextSettings.categoryTiles ?? prev.categoryTiles),
         aboutParagraphs: normalizeStringList(nextSettings.aboutParagraphs ?? prev.aboutParagraphs, prev.aboutParagraphs, 6),
         contactPoints: normalizeLandingContactPoints(nextSettings.contactPoints ?? prev.contactPoints, 8),
       }));
@@ -3109,6 +3198,44 @@ export default function AdminWebshopPage() {
                       <input value={card.ctaLabel} onChange={(e) => updateStoryCard(index, { ctaLabel: e.target.value })} placeholder="CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
                       <input value={card.ctaHref} onChange={(e) => updateStoryCard(index, { ctaHref: e.target.value })} placeholder="CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
                       <button onClick={() => removeStoryCard(index)} className="justify-self-start rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700">Ukloni</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Kategorije (tile-ovi na pocetnoj)</p>
+              <button onClick={addCategoryTile} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">Dodaj kategoriju</button>
+            </div>
+            <p className="mt-2 text-xs text-slate-500">Slike, naslovi i linkovi za kartice ispod hero sekcije (Odela, Sakoi, Pantalone, Kosulje, Custom Suits).</p>
+            <div className="mt-4 grid gap-4">
+              {landingSettings.categoryTiles.map((tile, index) => (
+                <div key={tile.id} className="rounded-xl border border-slate-200 p-3">
+                  <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
+                    <div>
+                      <Image src={tile.image || "/img/hero.jpg"} alt={tile.label || `Kategorija ${index + 1}`} width={280} height={390} className="h-40 w-full rounded-lg object-cover" />
+                      <label className="mt-3 inline-flex rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            void uploadCategoryTileImage(index, e.target.files);
+                            e.currentTarget.value = "";
+                          }}
+                        />
+                        {uploadingAssetKind === "categoryTile" ? "Uploading..." : "Upload slike"}
+                      </label>
+                    </div>
+                    <div className="grid gap-2">
+                      <input value={tile.label} onChange={(e) => updateCategoryTile(index, { label: e.target.value })} placeholder="Naziv (sr)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                      <input value={tile.labelEn} onChange={(e) => updateCategoryTile(index, { labelEn: e.target.value })} placeholder="Naziv (en)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                      <input value={tile.href} onChange={(e) => updateCategoryTile(index, { href: e.target.value })} placeholder="Link (npr. /web-shop?categoryGroup=odelo)" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                      <input value={tile.image} onChange={(e) => updateCategoryTile(index, { image: e.target.value })} placeholder="URL slike" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                      <button onClick={() => removeCategoryTile(index)} className="justify-self-start rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700">Ukloni</button>
                     </div>
                   </div>
                 </div>

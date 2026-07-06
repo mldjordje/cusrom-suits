@@ -41,8 +41,8 @@ export default function CartPageClient({
           <h1>{isEn ? "Start with the products you want to order." : "Kreni od proizvoda koje zelis da porucis."}</h1>
           <p>
             {isEn
-              ? "Once you add items from the web shop, this page becomes your clean review step before sending the order."
-              : "Kada dodas artikle iz web shop-a, ovde dobijas pregledan korak pre slanja porudzbine."}
+              ? "Add items from the web shop and review them here before placing the order."
+              : "Dodaj artikle iz web shop-a i pregledaj ih ovde pre slanja porudzbine."}
           </p>
           <Link href={withLang("/web-shop")} className="btn btn-primary text-uppercase fw-medium">
             {isEn ? "Back to shop" : "Nazad na shop"}
@@ -65,8 +65,8 @@ export default function CartPageClient({
         </div>
         <p className="ss-commerce-intro__copy">
           {isEn
-            ? "Check sizes, quantity and product mix here. Then send the order as a direct inquiry."
-            : "Ovde proveri velicine, kolicinu i izbor modela. Zatim posalji porudzbinu kao direktan upit."}
+            ? "Check sizes and quantities, then continue to checkout — no upfront online payment required."
+            : "Proveri velicine i kolicine, zatim nastavi na porudzbinu — bez obaveznog placanja unapred."}
         </p>
       </div>
 
@@ -184,7 +184,7 @@ export default function CartPageClient({
 
             <div className="ss-order-summary__actions">
               <Link href={withLang("/checkout")} className="btn btn-primary w-100 text-uppercase fw-medium">
-                {isEn ? "Send order" : "Nastavi porudzbinu"}
+                {isEn ? "Continue to checkout" : "Nastavi na porudzbinu"}
               </Link>
               <Link href={withLang("/web-shop")} className="btn btn-outline-dark w-100 text-uppercase fw-medium">
                 {isEn ? "Add more products" : "Dodaj jos proizvoda"}

@@ -142,8 +142,11 @@
   transform: scale(1.04);
 }
 
-/* Kill the desktop hover overlay (category/title/price/button on top of image) */
-.ss-lux-grid .pc__info.hover__content {
+/* Kill the desktop hover overlay (category/title/price/button on top of image).
+   uomo.scss re-shows it at md+ with `.ss-product-card .pc__info.hover__content.d-md-flex`
+   (specificity 0,4,0) so the kill selector must outrank that. */
+.ss-lux-grid .pc__info.hover__content,
+.ss-lux-grid .ss-product-card .pc__info.hover__content.d-md-flex {
   display: none !important;
 }
 
@@ -1512,4 +1515,48 @@ body.mobile-menu-opened {
   justify-content: center !important;
   font-size: 0.68rem !important;
   letter-spacing: 0.04em !important;
+}
+
+/* ----------------------------------------------------------------------------
+   PDP reference line — replaces the fake star rating. Quiet category + SKU,
+   the way Zara/Boss anchor a product without inventing social proof.
+   -------------------------------------------------------------------------- */
+
+.ss-pdp-ref {
+  font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ss-ink-faint);
+}
+
+/* ----------------------------------------------------------------------------
+   LANDING EDITORIAL CARDS — flatten the rounded-24 "app widget" look into
+   hairline editorial panels (consistent with the flat product grid/tiles).
+   Beats the inline border-radius styles via !important.
+   -------------------------------------------------------------------------- */
+
+.page-wrapper .ss-editorial-card {
+  border-radius: 0 !important;
+  border-color: var(--ss-hairline) !important;
+}
+
+.page-wrapper .ss-editorial-card .border {
+  border-radius: 0 !important;
+  border-color: var(--ss-hairline) !important;
+}
+
+.page-wrapper .ss-story-card {
+  border-radius: 0 !important;
+}
+
+.page-wrapper .ss-document-download-card {
+  border-radius: 0;
+}
+
+.page-wrapper .ss-document-download-card:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(24, 20, 20, 0.4);
 }

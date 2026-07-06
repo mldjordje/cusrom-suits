@@ -2073,6 +2073,9 @@
 
 .ss-shop-gallery {
   display: grid;
+  /* minmax(0, 1fr) keeps the product grid from forcing the auto track wider
+     than the container — without it half the grid renders offscreen on mobile */
+  grid-template-columns: minmax(0, 1fr);
   gap: 1rem;
 }
 

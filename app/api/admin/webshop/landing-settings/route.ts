@@ -7,6 +7,7 @@ import {
 } from "@/lib/catalog/landingSections";
 import {
   getLandingSettings,
+  type LandingCategoryTile,
   type LandingContactPoint,
   updateLandingSettings,
   type LandingDocument,
@@ -92,6 +93,27 @@ const parseStringList = (value: unknown, max = 12): string[] => {
     .map((item) => String(item || "").trim())
     .filter(Boolean)
     .slice(0, max);
+};
+
+const parseCategoryTiles = (value: unknown): LandingCategoryTile[] => {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map((row, index) => {
+      if (!row || typeof row !== "object") return null;
+      const entry = row as Record<string, unknown>;
+      const label = String(entry.label || "").trim();
+      const image = String(entry.image || "").trim();
+      if (!label && !image) return null;
+      return {
+        id: String(entry.id || `category-${index + 1}`).trim() || `category-${index + 1}`,
+        label,
+        labelEn: String(entry.labelEn || "").trim(),
+        href: String(entry.href || "").trim() || "/web-shop",
+        image,
+      };
+    })
+    .filter((item): item is LandingCategoryTile => Boolean(item))
+    .slice(0, 8);
 };
 
 const parseStoryCards = (value: unknown): LandingStoryCard[] => {
@@ -200,6 +222,7 @@ export async function PATCH(req: NextRequest) {
   if ("storySectionCtaLabel" in row) patch.storySectionCtaLabel = String(row.storySectionCtaLabel || "");
   if ("storySectionCtaHref" in row) patch.storySectionCtaHref = String(row.storySectionCtaHref || "");
   if ("storyCards" in row) patch.storyCards = parseStoryCards(row.storyCards);
+  if ("categoryTiles" in row) patch.categoryTiles = parseCategoryTiles(row.categoryTiles);
   if ("aboutEyebrow" in row) patch.aboutEyebrow = String(row.aboutEyebrow || "");
   if ("aboutTitle" in row) patch.aboutTitle = String(row.aboutTitle || "");
   if ("aboutParagraphs" in row) patch.aboutParagraphs = parseStringList(row.aboutParagraphs, 6);
