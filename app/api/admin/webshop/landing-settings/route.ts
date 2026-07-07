@@ -5,6 +5,7 @@ import {
   normalizeLandingProductSectionContent,
   normalizeLandingProductSections,
 } from "@/lib/catalog/landingSections";
+import { normalizeLandingFixedSections } from "@/lib/catalog/landingPageSections";
 import {
   getLandingSettings,
   type LandingCategoryTile,
@@ -113,7 +114,7 @@ const parseCategoryTiles = (value: unknown): LandingCategoryTile[] => {
       };
     })
     .filter((item): item is LandingCategoryTile => Boolean(item))
-    .slice(0, 8);
+    .slice(0, 12);
 };
 
 const parseStoryCards = (value: unknown): LandingStoryCard[] => {
@@ -172,6 +173,7 @@ export async function PATCH(req: NextRequest) {
   const row = payload as Record<string, unknown>;
   const patch: PatchPayload = {};
   if ("showSaleSection" in row) patch.showSaleSection = Boolean(row.showSaleSection);
+  if ("fixedSections" in row) patch.fixedSections = normalizeLandingFixedSections(row.fixedSections);
   if ("productSections" in row) patch.productSections = normalizeLandingProductSections(row.productSections);
   if ("productSectionContent" in row) patch.productSectionContent = normalizeLandingProductSectionContent(row.productSectionContent);
   if ("customSections" in row) patch.customSections = normalizeLandingCustomSections(row.customSections);

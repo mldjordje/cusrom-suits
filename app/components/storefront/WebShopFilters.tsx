@@ -244,8 +244,8 @@ export default function WebShopFilters({
     </label>
   );
 
-  const priceFloorInput = priceFloor > 0 ? priceFloor : undefined;
-  const priceCeilingInput = priceCeiling > 0 ? priceCeiling : undefined;
+  const priceFloorInput = 1;
+  const priceCeilingInput = undefined;
 
   const selectedSizesSet = new Set(selectedSizes.map((v) => v.toUpperCase()));
 
@@ -270,7 +270,7 @@ export default function WebShopFilters({
           max={priceCeilingInput}
           step={1}
           defaultValue={priceMin > 0 ? priceMin : ""}
-          placeholder={priceFloorInput ? String(priceFloorInput) : isEn ? "From" : "Od"}
+          placeholder={isEn ? "From" : "Od"}
           className="form-control"
         />
         <input
@@ -286,10 +286,10 @@ export default function WebShopFilters({
           className="form-control"
         />
       </div>
-      {priceFloorInput && priceCeilingInput ? (
+      {priceFloor > 0 && priceCeiling > 0 ? (
         <p className="ss-shop-form-note" style={{ marginTop: 6 }}>
-          {isEn ? "Range from catalog" : "Opseg iz kataloga"}: {priceFloorInput.toLocaleString("sr-RS")} -{" "}
-          {priceCeilingInput.toLocaleString("sr-RS")} RSD
+          {isEn ? "Catalog range" : "Opseg iz kataloga"}: {priceFloor.toLocaleString("sr-RS")} -{" "}
+          {priceCeiling.toLocaleString("sr-RS")} RSD. {isEn ? "Minimum filter starts from 1 RSD." : "Filter moze da krene od 1 RSD."}
         </p>
       ) : null}
     </div>

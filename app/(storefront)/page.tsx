@@ -42,6 +42,11 @@ import {
   type LandingCustomSection,
   type LandingProductSectionKey,
 } from "@/lib/catalog/landingSections";
+import {
+  getOrderedLandingPageEntries,
+  normalizeLandingFixedSections,
+  type LandingFixedSectionKey,
+} from "@/lib/catalog/landingPageSections";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getCatalogProductImageSources } from "@/lib/storefront/product-details";
 import {
@@ -374,8 +379,8 @@ export default async function HomePage({
   const heroStripProducts = pickProductsForSectionManaged(
     landingPoolUnique,
     landingSettings.heroStripProductIds,
-    4,
-    landingPoolUnique.slice(0, 12),
+    8,
+    landingPoolUnique.slice(0, 24),
     usedSkuKeys,
   );
   const heroProducts = pickProductsForSectionManaged(
@@ -432,13 +437,14 @@ export default async function HomePage({
     | { kind: "custom"; section: LandingCustomSection; items: CatalogProductView[]; order: number }
   > = [
     ...normalizeLandingProductSections(landingSettings.productSections)
-      .filter((section) => section.key !== "heroStripProductIds" && section.enabled)
+      .filter((section) => section.enabled)
       .map((section) => ({
         kind: "builtin" as const,
         key: section.key,
         order: section.order,
       }))
       .filter((entry) => {
+        if (entry.key === "heroStripProductIds") return heroStripProducts.length > 0;
         if (entry.key === "highlightedProductIds") return heroProducts.length > 0;
         if (entry.key === "popularProductIds") return featured.length > 0;
         if (entry.key === "arrivalsProductIds") return arrivals.length > 0;
@@ -458,8 +464,25 @@ export default async function HomePage({
     if (left.kind === "custom" && right.kind === "custom") return left.section.title.localeCompare(right.section.title);
     return left.kind === "builtin" ? -1 : 1;
   });
-  const topGridSections = orderedGridSections.slice(0, 2);
-  const bottomGridSections = orderedGridSections.slice(2);
+  const fixedSectionStateMap = new Map(normalizeLandingFixedSections(landingSettings.fixedSections).map((section) => [section.key, section]));
+  const customGridSectionById = new Map(customGridSections.map((entry) => [entry.section.id, entry]));
+  const orderedLandingPageEntries = getOrderedLandingPageEntries(
+    landingSettings.fixedSections,
+    landingSettings.productSections,
+    landingSettings.customSections,
+  ).filter((entry) => {
+    if (entry.kind === "fixed") return fixedSectionStateMap.get(entry.key)?.enabled !== false;
+    if (entry.kind === "custom") return customGridSectionById.has(entry.id);
+    if (entry.key === "heroStripProductIds") return heroStripEnabled && heroStripProducts.length > 0;
+    if (entry.key === "highlightedProductIds") return heroProducts.length > 0;
+    if (entry.key === "popularProductIds") return featured.length > 0;
+    if (entry.key === "arrivalsProductIds") return arrivals.length > 0;
+    if (entry.key === "saleProductIds") return saleItems.length > 0;
+    if (entry.key === "trendingProductIds") return trending.length > 0;
+    return false;
+  });
+  const topGridSections: typeof orderedGridSections = [];
+  const bottomGridSections: typeof orderedGridSections = [];
   const getSectionContent = (key: LandingProductSectionKey) => productSectionContentMap.get(key);
 
   const renderGridSection = (key: LandingProductSectionKey) => {
@@ -470,6 +493,37 @@ export default async function HomePage({
     const gridFeatured = carousel
       ? "ss-landing-product-row ss-landing-product-row--carousel"
       : "row row-cols-2 row-cols-md-4 g-2 g-md-3 ss-feature-strip";
+
+    if (key === "heroStripProductIds") {
+      return (
+        <section key={key} className="products-grid container pb-5 ss-editorial-section ss-editorial-section--hero-strip">
+          <div className="row row-cols-2 row-cols-md-4 g-2 g-md-3 ss-feature-strip">
+            {heroStripProducts.map((item, index) => (
+              <ProductItemMotion key={item.legacyId} className="col" index={index}>
+                <PremiumProductCard
+                  href={withLang(`/web-shop/${item.legacyId}`)}
+                  primarySrc={getCatalogProductImageSources(item, [], ["/img/odela.jpg"])[0] || "/img/odela.jpg"}
+                  hoverSrc={getCatalogProductImageSources(item, [], ["/img/odela.jpg"])[1]}
+                  categoryLabel={getProductCategoryLabel(item, contentLang)}
+                  title={getProductDisplayName(item, contentLang)}
+                  price={
+                    item.priceGross > item.priceFinalGross ? (
+                      <>
+                        <span className="price-old">{formatRsd(item.priceGross)}</span>
+                        <span className="price-sale">{formatRsd(item.priceFinalGross)}</span>
+                      </>
+                    ) : (
+                      formatRsd(item.priceFinalGross)
+                    )
+                  }
+                  isSale={item.priceGross > item.priceFinalGross}
+                />
+              </ProductItemMotion>
+            ))}
+          </div>
+        </section>
+      );
+    }
 
     if (key === "highlightedProductIds") {
       const sectionContent = getSectionContent(key);
@@ -830,6 +884,148 @@ export default async function HomePage({
     return renderCustomGridSection(entry.section, entry.items);
   };
 
+  const renderFixedSection = (key: LandingFixedSectionKey) => {
+    if (key === "categoryTiles") {
+      return (
+        <HomeCategoryTiles
+          categories={catalog.categories}
+          tiles={landingSettings.categoryTiles}
+          categoryGroupImages={(() => {
+            const groups = ["odelo", "sako", "pantalone", "kosulja", "jakna", "obuca", "kaput"];
+            const result: Record<string, string> = {};
+            for (const group of groups) {
+              const match = catalog.items.find((item) => item.coverImage && productMatchesCategoryGroup(item, group));
+              if (match?.coverImage) result[group] = String(match?.coverImage);
+            }
+            return result;
+          })()}
+          lang={lang}
+        />
+      );
+    }
+
+    if (key === "story") {
+      return (
+        <Reveal as="section" className="container pb-5 ss-editorial-section ss-editorial-section--story" delay={0.02}>
+          <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
+            <SectionHeadingReveal className="section-title text-uppercase">{tx(landingSettings.storySectionTitle, "Brand Story")}</SectionHeadingReveal>
+            {landingSettings.storySectionCtaLabel ? (
+              <Link href={withOptionalLang(landingSettings.storySectionCtaHref)} className="btn-link default-underline text-uppercase fw-medium">{tx(landingSettings.storySectionCtaLabel, "View Collection")}</Link>
+            ) : null}
+          </div>
+          <div className="row g-4">
+            {storyCards.map((block, storyIndex) => (
+              <Reveal key={block.id} as="article" className="col-12 col-md-6 col-lg-4" delay={0.06 * storyIndex} y={26} amount={0.15}>
+                <div className="position-relative overflow-hidden h-100 ss-story-card" style={{ minHeight: 480, borderRadius: 2 }}>
+                  <Image src={block.image || "/img/hero.jpg"} alt={tx(block.title)} fill sizes="(max-width: 991px) 100vw, 33vw" style={{ objectFit: "cover" }} />
+                  <div className="position-absolute top-0 start-0 w-100 h-100" style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.78) 100%)" }} />
+                  <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-between p-4 text-white ss-story-card__body">
+                    <span className="text-uppercase fw-medium" style={{ letterSpacing: "0.14em", fontSize: "0.68rem" }}>{tx(block.badge)}</span>
+                    <div>
+                      <h3 className="h4 text-white text-uppercase mb-2">{tx(block.title)}</h3>
+                      <p className="mb-3">{block.copy}</p>
+                      {block.ctaLabel ? <Link href={withOptionalLang(block.ctaHref)} className="btn btn-light btn-sm text-uppercase fw-medium">{tx(block.ctaLabel, "View More")}</Link> : null}
+                    </div>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
+          </div>
+        </Reveal>
+      );
+    }
+
+    if (key === "banners") {
+      return (
+        <Reveal as="section" className="banner-grid container ss-editorial-banners" delay={0.08}>
+          <div className="row g-4">
+            {[
+              [landingSettings.bannerLeftTitle, landingSettings.bannerLeftButtonLabel, landingSettings.bannerLeftHref, landingSettings.bannerLeftImage, "/img/hero2.jpg", "Ready to Wear", "Shop Now"],
+              [landingSettings.bannerRightTitle, landingSettings.bannerRightButtonLabel, landingSettings.bannerRightHref, landingSettings.bannerRightImage, "/img/hero.jpg", "Current Sale", "View Sale"],
+            ].map(([title, button, href, image, fallback, fallbackTitle, fallbackButton]) => (
+              <div key={String(fallbackTitle)} className="col-md-6">
+                <div className="position-relative overflow-hidden ss-banner-panel">
+                  <StorefrontImage sources={[String(image)]} fallbackSrc={String(fallback)} width={690} height={330} alt={tx(String(title), String(fallbackTitle))} className="w-100 h-auto" sizes="(max-width: 767px) 100vw, 50vw" />
+                  <div className="position-absolute top-50 start-50 translate-middle text-center">
+                    <h4 className="text-uppercase text-white">{tx(String(title), String(fallbackTitle))}</h4>
+                    <Link href={withLang(String(href))} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">{tx(String(button), String(fallbackButton))}</Link>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Reveal>
+      );
+    }
+
+    if (key === "customSuits") return <CustomSuitsEditorialBanner lang={lang} backgroundImage={landingSettings.heroVideoPosterUrl || undefined} />;
+
+    if (key === "aboutContact") {
+      return (
+        <Reveal as="section" id="o-nama" className="container pb-5 ss-editorial-section ss-atelier-section" delay={0.16}>
+          <div className="row g-4 align-items-stretch">
+            <div className="col-12 col-lg-7"><div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
+              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(landingSettings.aboutEyebrow, "About")}</p>
+              <div className="row g-3">{aboutParagraphs.map((paragraph) => <div key={paragraph} className="col-12 col-md-6"><p className="text-secondary mb-0">{paragraph}</p></div>)}</div>
+            </div></div>
+            <div className="col-12 col-lg-5"><div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
+              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(landingSettings.contactEyebrow, "Contact")}</p>
+              <h3 className="h4 text-uppercase mb-3">{tx(landingSettings.contactTitle, "Support and personal recommendations")}</h3>
+              <p className="text-secondary mb-4">{tx(landingSettings.contactText)}</p>
+              <div className="d-grid gap-2">{contactPoints.map((point) => <div key={point.label} className="border px-3 py-2" style={{ borderRadius: 14 }}><div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(point.label)}</div><div>{point.value}</div></div>)}</div>
+            </div></div>
+          </div>
+        </Reveal>
+      );
+    }
+
+    if (key === "customerInfo") {
+      return (
+        <Reveal as="section" className="container pb-5 ss-editorial-section" delay={0.17}>
+          <div className="row g-4">
+            <div className="col-12 col-lg-7"><div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
+              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(landingSettings.customerInfoEyebrow, "Customer Information")}</p>
+              <SectionHeadingReveal className="section-title text-uppercase mb-4">{tx(landingSettings.customerInfoTitle, "Customer rights and purchase guide")}</SectionHeadingReveal>
+              <div className="row g-3">{[[landingSettings.customerRightsTitle, "Customer Rights", landingSettings.customerRightsText], [landingSettings.purchaseGuideTitle, "Purchase Guide", landingSettings.purchaseGuideText]].map(([title, fallback, text]) => <div key={fallback} className="col-12 col-md-6"><div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}><p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(title, fallback)}</p><p className="text-secondary mb-0">{tx(text)}</p></div></div>)}</div>
+            </div></div>
+            <div className="col-12 col-lg-5"><div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
+              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(landingSettings.companyDetailsEyebrow, "Company Details")}</p>
+              <div className="d-grid gap-2"><div className="border px-3 py-2" style={{ borderRadius: 14 }}><div className="text-uppercase fw-medium mb-1">{tx(landingSettings.companyPibLabel, "Tax ID")}</div><div>{landingSettings.companyPib}</div></div><div className="border px-3 py-2" style={{ borderRadius: 14 }}><div className="text-uppercase fw-medium mb-1">{tx(landingSettings.companyMbLabel, "Registration No.")}</div><div>{landingSettings.companyMb}</div></div></div>
+            </div></div>
+          </div>
+        </Reveal>
+      );
+    }
+
+    if (key === "uniforms") {
+      return (
+        <Reveal as="section" className="container pb-5 ss-editorial-section" delay={0.175}>
+          <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4"><div><p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(landingSettings.uniformsEyebrow, "Business Uniforms")}</p><SectionHeadingReveal className="section-title text-uppercase mb-0">{tx(landingSettings.uniformsTitle, "Business Uniforms")}</SectionHeadingReveal></div><Link href={withOptionalLang(landingSettings.uniformsCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">{tx(landingSettings.uniformsCtaLabel, "View Uniforms")}</Link></div>
+          <div className="row g-4 align-items-stretch"><div className="col-12 col-lg-5"><div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}><p className="text-secondary mb-0">{tx(landingSettings.uniformsText)}</p></div></div><div className="col-12 col-lg-7"><div className="row g-3">{landingUniformImages.slice(0, 3).map((item) => <div key={`${item.image}-${item.title}`} className="col-12 col-md-4"><div className="border bg-white h-100 p-2 ss-editorial-card" style={{ borderRadius: 20 }}><Image src={item.image} alt={item.alt || tx(item.title || landingSettings.uniformsTitle, "Business Uniforms")} width={420} height={520} className="w-100 h-auto" style={{ borderRadius: 16, objectFit: "cover" }} />{item.title ? <p className="mt-3 mb-1 fw-medium text-uppercase small">{tx(item.title)}</p> : null}</div></div>)}</div></div></div>
+        </Reveal>
+      );
+    }
+
+    if (key === "blog") {
+      return (
+        <Reveal as="section" className="blog-grid container ss-editorial-section ss-editorial-section--blog" delay={0.18}>
+          <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2"><SectionHeadingReveal className="section-title">{tx(landingSettings.blogSectionTitle, "Latest Blog")}</SectionHeadingReveal>{landingSettings.blogSectionCtaLabel ? <Link href={withOptionalLang(landingSettings.blogSectionCtaHref)} className="btn-link default-underline text-uppercase fw-medium">{tx(landingSettings.blogSectionCtaLabel, "View All")}</Link> : null}</div>
+          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4">{posts.items.map((post) => <article key={post.id} className="mb-4"><div className="blog-grid__item ss-blog-card"><div className="blog-grid__item-image-wrap"><Link href={withLang(`/blog/${post.slug}`)} prefetch={false}><StorefrontImage sources={[post.coverImage || "/img/hero.jpg"]} width={330} height={230} alt={post.title} className="w-100 h-auto" /></Link></div><div className="blog-grid__item-detail"><h6 className="blog-grid__item-title"><Link href={withLang(`/blog/${post.slug}`)} prefetch={false}>{post.title}</Link></h6><p className="text-secondary">{(post.excerpt || "").slice(0, 85) || (isEn ? "Continue reading." : "Nastavite sa citanjem.")}</p></div></div></article>)}</div>
+        </Reveal>
+      );
+    }
+
+    return null;
+  };
+
+  const renderLandingPageEntry = (entry: (typeof orderedLandingPageEntries)[number], index: number) => {
+    const key = entry.kind === "fixed" ? `fixed-${entry.key}` : entry.kind === "custom" ? `custom-${entry.id}` : `builtin-${entry.key}`;
+    const custom = entry.kind === "custom" ? customGridSectionById.get(entry.id) : null;
+    const content = entry.kind === "fixed" ? renderFixedSection(entry.key) : entry.kind === "custom" && custom ? renderCustomGridSection(custom.section, custom.items) : entry.kind === "builtin" ? renderGridSection(entry.key) : null;
+    if (!content) return null;
+    return <Reveal key={key} as="div" delay={Math.min(0.04 * index, 0.24)} y={18} amount={0.08}>{content}{index < orderedLandingPageEntries.length - 1 ? <div className="mb-3 mb-xl-4 pt-xl-1 pb-3" /> : null}</Reveal>;
+  };
+
   const websiteJsonLd = buildWebSiteJsonLd();
   const organizationJsonLd = buildOrganizationJsonLd();
   const localBusinessJsonLd = buildLocalBusinessJsonLd();
@@ -844,7 +1040,7 @@ export default async function HomePage({
         <HomeHeroVideo
           lang={lang}
           categories={catalog.categories}
-          showProductCards={heroStripEnabled}
+          showProductCards={false}
           featuredProducts={heroStripProducts}
           heroVideoUrl={landingSettings.heroVideoUrl || undefined}
           heroVideoMobileUrl={landingSettings.heroVideoMobileUrl || undefined}
@@ -860,17 +1056,21 @@ export default async function HomePage({
           }}
         />
 
+        {orderedLandingPageEntries.map(renderLandingPageEntry)}
+
+        {false ? (
+          <>
         <HomeCategoryTiles
           categories={catalog.categories}
           tiles={landingSettings.categoryTiles}
           categoryGroupImages={(() => {
-            const groups = ["odelo", "sako", "pantalone", "kosulja"];
+            const groups = ["odelo", "sako", "pantalone", "kosulja", "jakna", "obuca", "kaput"];
             const result: Record<string, string> = {};
             for (const group of groups) {
               const match = catalog.items.find(
                 (item) => item.coverImage && productMatchesCategoryGroup(item, group),
               );
-              if (match?.coverImage) result[group] = match.coverImage;
+              if (match?.coverImage) result[group] = String(match?.coverImage);
             }
             return result;
           })()}
@@ -1257,6 +1457,8 @@ export default async function HomePage({
         </Reveal>
 
         <div className="mb-4 mb-xl-5 pt-xl-1 pb-4" />
+          </>
+        ) : null}
 
       </main>
       <StorefrontFooter lang={lang} />

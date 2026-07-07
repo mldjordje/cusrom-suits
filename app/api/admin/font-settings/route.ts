@@ -1,12 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminViewerFromRequest, hasAdminPermission } from "@/lib/adminAuth";
+import { hasAdminToken } from "@/lib/auth/admin";
 import { getFontSettings, updateFontSettings } from "@/lib/storefront/fontSettings";
 import { getFontLibrary } from "@/lib/storefront/fontLibrary";
 
 const requireAdmin = async (req: NextRequest) => {
-  const viewer = await getAdminViewerFromRequest(req);
-  if (hasAdminPermission(viewer, "content.manage")) return null;
-  return NextResponse.json({ success: false, message: "Nemate dozvolu za upravljanje fontovima." }, { status: viewer ? 403 : 401 });
+  if (hasAdminToken(req)) return null;
+  return NextResponse.json({ success: false, message: "Nemate dozvolu za upravljanje fontovima." }, { status: 401 });
 };
 
 export async function GET(req: NextRequest) {

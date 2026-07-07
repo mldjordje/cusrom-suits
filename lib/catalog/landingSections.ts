@@ -2,8 +2,8 @@ export const LANDING_PRODUCT_SECTION_CONFIG = [
   {
     key: "heroStripProductIds",
     label: "Hero traka",
-    description: "Proizvodi ispod hero videa.",
-    limit: 4,
+    description: "Proizvodi u hero/landing traci.",
+    limit: 8,
     placement: "hero",
     defaultOrder: 0,
     defaultTitle: "",

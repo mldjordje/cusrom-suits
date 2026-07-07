@@ -294,7 +294,7 @@ const landingSectionConfig: Array<{
   description: string;
   limit: number;
 }> = [
-  { key: "heroStripProductIds", label: "Hero traka", description: "Proizvodi ispod hero videa.", limit: 4 },
+  { key: "heroStripProductIds", label: "Hero traka", description: "Proizvodi u hero/landing traci.", limit: 8 },
   { key: "highlightedProductIds", label: "Izdvojeni modeli", description: "Prva velika produkt sekcija.", limit: 8 },
   { key: "popularProductIds", label: "Popularni proizvodi", description: "Sekcija popularnih proizvoda.", limit: 4 },
   { key: "arrivalsProductIds", label: "Nova kolekcija", description: "Sekcija novih modela.", limit: 4 },
@@ -384,6 +384,9 @@ const defaultLandingSettings: LandingSettings = {
     { id: "category-3", label: "Pantalone", labelEn: "Trousers", href: "/web-shop?categoryGroup=pantalone", image: "/img/odela2.jpg" },
     { id: "category-4", label: "Kosulje", labelEn: "Shirts", href: "/web-shop?categoryGroup=kosulja", image: "/img/hero.jpg" },
     { id: "category-5", label: "Custom Suits", labelEn: "Custom Suits", href: "/custom-suits", image: "/img/odela.jpg" },
+    { id: "category-6", label: "Jakne", labelEn: "Jackets", href: "/web-shop?categoryGroup=jakna", image: "/img/hero2.jpg" },
+    { id: "category-7", label: "Cipele", labelEn: "Shoes", href: "/web-shop?categoryGroup=obuca", image: "/img/obuca.jpg" },
+    { id: "category-8", label: "Kaputi", labelEn: "Coats", href: "/web-shop?categoryGroup=kaput", image: "/img/hero.jpg" },
   ],
   storySectionTitle: "Brend Prica",
   storySectionCtaLabel: "Pogledaj kolekciju",
@@ -577,9 +580,9 @@ const normalizeLandingStoryCards = (value: unknown, max = 6): LandingStoryCard[]
     .slice(0, max);
 };
 
-const normalizeLandingCategoryTiles = (value: unknown, max = 8): LandingCategoryTile[] => {
+const normalizeLandingCategoryTiles = (value: unknown, max = 12): LandingCategoryTile[] => {
   if (!Array.isArray(value)) return defaultLandingSettings.categoryTiles.slice(0, max);
-  return value
+  const normalized = value
     .map((item, index) => {
       if (!item || typeof item !== "object") return null;
       const row = item as Record<string, unknown>;
@@ -597,6 +600,14 @@ const normalizeLandingCategoryTiles = (value: unknown, max = 8): LandingCategory
     })
     .filter((item): item is LandingCategoryTile => Boolean(item))
     .slice(0, max);
+  const seen = new Set(normalized.map((item) => item.id));
+  for (const fallback of defaultLandingSettings.categoryTiles) {
+    if (normalized.length >= max) break;
+    if (seen.has(fallback.id)) continue;
+    normalized.push(fallback);
+    seen.add(fallback.id);
+  }
+  return normalized;
 };
 
 const normalizeLandingContactPoints = (value: unknown, max = 12): LandingContactPoint[] => {
@@ -1050,6 +1061,7 @@ export default function AdminWebshopPage() {
       }
       const nextFinal = computeSalePriceFromRebate(item.priceGross, rebate);
       updateDraft(item.legacyId, {
+        priceOverride: true,
         rebatePercent: toInputNumber(clampPercent(rebate)),
         priceFinalGross: toInputNumber(nextFinal),
       });
@@ -1064,6 +1076,7 @@ export default function AdminWebshopPage() {
     const safeFinal = Math.max(0, finalPrice);
     const nextRebate = computeRebateFromSalePrice(item.priceGross, safeFinal);
     updateDraft(item.legacyId, {
+      priceOverride: true,
       priceFinalGross: toInputNumber(safeFinal),
       rebatePercent: toInputNumber(nextRebate),
     });

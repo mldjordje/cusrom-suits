@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminViewerFromRequest, hasAdminPermission } from "@/lib/adminAuth";
+import { hasAdminToken } from "@/lib/auth/admin";
 import { uploadSiteAsset } from "@/lib/storage/siteAssets";
 import {
   addGoogleFontFamily,
@@ -18,10 +18,9 @@ import { buildUploadedFontStoragePath, validateWoff2Upload } from "@/lib/storefr
 export const maxDuration = 60;
 
 const authorize = async (req: NextRequest) => {
-  const viewer = await getAdminViewerFromRequest(req);
-  return hasAdminPermission(viewer, "content.manage")
+  return hasAdminToken(req)
     ? null
-    : NextResponse.json({ success: false, message: "Nemate dozvolu za upravljanje fontovima." }, { status: viewer ? 403 : 401 });
+    : NextResponse.json({ success: false, message: "Nemate dozvolu za upravljanje fontovima." }, { status: 401 });
 };
 
 const parseFallback = (value: unknown): FontFallback | null =>

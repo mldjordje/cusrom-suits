@@ -22,16 +22,24 @@ type HeaderNavItem = {
   label: string;
 };
 
+type HeaderSocialLinks = {
+  instagramUrl?: string;
+  facebookUrl?: string;
+  tiktokUrl?: string;
+};
+
 const SHOP_CATEGORIES_SESSION_KEY = "ss-shop-categories-v3";
 
 export default function StorefrontHeaderClient({
   lang = "sr",
   variant = "default",
   navItems,
+  socialLinks,
 }: {
   lang?: StorefrontLanguage;
   variant?: "default" | "contrast";
   navItems: HeaderNavItem[];
+  socialLinks?: HeaderSocialLinks;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -205,6 +213,11 @@ export default function StorefrontHeaderClient({
       label: localizeDynamicCategoryLabel(category.name, isEn ? "en" : "sr"),
     })),
   ];
+  const headerSocialItems = [
+    { key: "instagram", label: "Instagram", shortLabel: "IG", href: socialLinks?.instagramUrl },
+    { key: "facebook", label: "Facebook", shortLabel: "FB", href: socialLinks?.facebookUrl },
+    { key: "tiktok", label: "TikTok", shortLabel: "TT", href: socialLinks?.tiktokUrl },
+  ].filter((item) => item.href && item.href.trim().length > 0);
 
   return (
     <>
@@ -287,6 +300,22 @@ export default function StorefrontHeaderClient({
             </nav>
 
             <div className="header-tools d-flex align-items-center gap-2">
+              {headerSocialItems.length ? (
+                <div className="ss-header-socials d-none d-xl-inline-flex" aria-label={isEn ? "Social links" : "Drustvene mreze"}>
+                  {headerSocialItems.map((item) => (
+                    <a
+                      key={item.key}
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ss-header-social-link"
+                      aria-label={item.label}
+                    >
+                      {item.shortLabel}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
               <StorefrontLanguageSwitcher lang={lang} className="d-none d-md-inline-flex me-1" />
               <button
                 type="button"
@@ -535,6 +564,22 @@ export default function StorefrontHeaderClient({
                   </ul>
 
                   <div className="ss-mobile-nav-footer">
+                    {headerSocialItems.length ? (
+                      <div className="ss-mobile-nav-socials" aria-label={isEn ? "Social links" : "Drustvene mreze"}>
+                        {headerSocialItems.map((item) => (
+                          <a
+                            key={`mobile-social-${item.key}`}
+                            href={item.href}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="ss-mobile-nav-pill"
+                            onClick={closeMobileMenu}
+                          >
+                            {item.shortLabel}
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
                     <Link
                       href={withLang(authUser ? "/nalog/porudzbine" : "/nalog/prijava")}
                       className="ss-mobile-nav-account ss-mobile-nav-pill"

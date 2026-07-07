@@ -29,6 +29,7 @@ type SiteContent = {
     brandCopyEn: string;
     instagramUrl: string;
     facebookUrl: string;
+    tiktokUrl: string;
     bottomTagline: string;
     bottomTaglineEn: string;
     groups: SiteFooterGroup[];
@@ -146,6 +147,7 @@ const defaultContent: SiteContent = {
     brandCopyEn: "",
     instagramUrl: "",
     facebookUrl: "",
+    tiktokUrl: "",
     bottomTagline: "",
     bottomTaglineEn: "",
     groups: [],
@@ -495,6 +497,7 @@ export default function AdminSiteContentPage() {
           <textarea value={content.footer.brandCopyEn} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, brandCopyEn: e.target.value } }))} placeholder="Footer copy EN" className={`${fieldClass} min-h-[90px]`} />
           <input value={content.footer.instagramUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, instagramUrl: e.target.value } }))} placeholder="Instagram URL" className={fieldClass} />
           <input value={content.footer.facebookUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, facebookUrl: e.target.value } }))} placeholder="Facebook URL" className={fieldClass} />
+          <input value={content.footer.tiktokUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, tiktokUrl: e.target.value } }))} placeholder="TikTok URL" className={fieldClass} />
           <input value={content.footer.bottomTagline} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, bottomTagline: e.target.value } }))} placeholder="Bottom tagline SR" className={fieldClass} />
           <input value={content.footer.bottomTaglineEn} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, bottomTaglineEn: e.target.value } }))} placeholder="Bottom tagline EN" className={fieldClass} />
         </div>

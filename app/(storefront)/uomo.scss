@@ -9227,3 +9227,35 @@ button.ss-mobile-nav-quicklink,
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
+
+.ss-header-socials {
+  align-items: center;
+  gap: 0.35rem;
+  padding-right: 0.25rem;
+}
+
+.ss-header-social-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: inherit;
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  text-decoration: none;
+}
+
+.ss-header-social-link:hover {
+  color: var(--ss-gold-dark, #a07d45);
+}
+
+.ss-mobile-nav-socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  width: 100%;
+}

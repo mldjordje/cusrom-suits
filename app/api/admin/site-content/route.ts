@@ -56,6 +56,7 @@ const parseFooter = (value: unknown): SiteFooterContent | undefined => {
     brandCopyEn: String(row.brandCopyEn || "").trim(),
     instagramUrl: String(row.instagramUrl || "").trim(),
     facebookUrl: String(row.facebookUrl || "").trim(),
+    tiktokUrl: String(row.tiktokUrl || "").trim(),
     bottomTagline: String(row.bottomTagline || "").trim(),
     bottomTaglineEn: String(row.bottomTaglineEn || "").trim(),
     groups: Array.isArray(row.groups)

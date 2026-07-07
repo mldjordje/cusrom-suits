@@ -30,6 +30,7 @@ export type SiteFooterContent = {
   brandCopyEn: string;
   instagramUrl: string;
   facebookUrl: string;
+  tiktokUrl: string;
   bottomTagline: string;
   bottomTaglineEn: string;
   groups: SiteFooterGroup[];
@@ -135,6 +136,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
     brandCopyEn: "Modern tailoring, ready-to-wear pieces and a cleaner mobile shopping experience.",
     instagramUrl: "https://www.instagram.com/santos.santorini/",
     facebookUrl: "https://www.facebook.com/share/1GqmAg7ENk/?mibextid=wwXIfr",
+    tiktokUrl: "",
     bottomTagline: "Krojenje, aksesoari i editorial shopping.",
     bottomTaglineEn: "Tailoring, accessories and editorial shopping.",
     groups: [
@@ -458,6 +460,7 @@ async function readSiteContentUncached(): Promise<SiteContent> {
       brandCopyEn: decodeText(raw.footer?.brandCopyEn, DEFAULT_SITE_CONTENT.footer.brandCopyEn),
       instagramUrl: String(raw.footer?.instagramUrl || DEFAULT_SITE_CONTENT.footer.instagramUrl).trim(),
       facebookUrl: String((raw.footer as Partial<SiteFooterContent> | undefined)?.facebookUrl || DEFAULT_SITE_CONTENT.footer.facebookUrl).trim(),
+      tiktokUrl: String((raw.footer as Partial<SiteFooterContent> | undefined)?.tiktokUrl || DEFAULT_SITE_CONTENT.footer.tiktokUrl).trim(),
       bottomTagline: decodeText(raw.footer?.bottomTagline, DEFAULT_SITE_CONTENT.footer.bottomTagline),
       bottomTaglineEn: decodeText(raw.footer?.bottomTaglineEn, DEFAULT_SITE_CONTENT.footer.bottomTaglineEn),
       groups: normalizeFooterGroups(raw.footer?.groups, DEFAULT_SITE_CONTENT.footer.groups),
@@ -540,6 +543,7 @@ export async function updateSiteContent(patch: Partial<SiteContent>): Promise<Si
       brandCopyEn: patch.footer?.brandCopyEn == null ? current.footer.brandCopyEn : decodeText(patch.footer.brandCopyEn, current.footer.brandCopyEn),
       instagramUrl: patch.footer?.instagramUrl == null ? current.footer.instagramUrl : String(patch.footer.instagramUrl).trim() || current.footer.instagramUrl,
       facebookUrl: patch.footer?.facebookUrl == null ? current.footer.facebookUrl : String(patch.footer.facebookUrl).trim() || current.footer.facebookUrl,
+      tiktokUrl: patch.footer?.tiktokUrl == null ? current.footer.tiktokUrl : String(patch.footer.tiktokUrl).trim(),
       bottomTagline: patch.footer?.bottomTagline == null ? current.footer.bottomTagline : decodeText(patch.footer.bottomTagline, current.footer.bottomTagline),
       bottomTaglineEn: patch.footer?.bottomTaglineEn == null ? current.footer.bottomTaglineEn : decodeText(patch.footer.bottomTaglineEn, current.footer.bottomTaglineEn),
       groups: patch.footer?.groups == null ? current.footer.groups : normalizeFooterGroups(patch.footer.groups, current.footer.groups),

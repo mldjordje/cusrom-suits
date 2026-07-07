@@ -80,6 +80,18 @@ export default async function StorefrontFooter({
                     <span>Facebook</span>
                   </a>
                   ) : null}
+                  {footer.tiktokUrl ? (
+                  <a
+                    href={footer.tiktokUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="ss-footer__social-link"
+                    aria-label="TikTok"
+                  >
+                    <span aria-hidden="true" className="fw-semibold">TT</span>
+                    <span>TikTok</span>
+                  </a>
+                  ) : null}
                 </div>
               </div>
             </div>

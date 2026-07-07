@@ -15,15 +15,21 @@ import {
   type LandingProductSectionState,
 } from "@/lib/catalog/landingSections";
 import {
-  applyGridOrderToSections,
-  getOrderedGridEntries,
-  type LandingGridOrderEntry,
-  type LandingGridOrderRef,
-} from "@/lib/catalog/landingSectionOrder";
+  LANDING_FIXED_SECTION_CONFIG,
+  applyLandingPageOrder,
+  getLandingFixedSectionConfig,
+  getOrderedLandingPageEntries,
+  normalizeLandingFixedSections,
+  type LandingFixedSectionKey,
+  type LandingFixedSectionState,
+  type LandingPageOrderEntry,
+  type LandingPageOrderRef,
+} from "@/lib/catalog/landingPageSections";
 import AdminLandingProductPickGrid from "@/app/admin/components/AdminLandingProductPickGrid";
 
 type LandingSectionsState = {
   showSaleSection: boolean;
+  fixedSections: LandingFixedSectionState[];
   productSections: LandingProductSectionState[];
   customSections: LandingCustomSection[];
   saleSectionTitle: string;
@@ -61,6 +67,7 @@ const defaultPickerValue: Record<LandingProductSectionKey, string> = {
 
 const defaultState: LandingSectionsState = {
   showSaleSection: true,
+  fixedSections: normalizeLandingFixedSections([]),
   productSections: normalizeLandingProductSections([]),
   customSections: [],
   saleSectionTitle: "Aktuelne Akcije",
@@ -94,13 +101,6 @@ const normalizeLegacyIdList = (value: unknown, max = 24): number[] => {
 const limitForLandingSection = (key: LandingProductSectionKey) =>
   getLandingProductSectionConfig(key)?.limit ?? 24;
 
-const sortSectionsForDisplay = (sections: LandingProductSectionState[]) => {
-  const normalized = normalizeLandingProductSections(sections);
-  const heroSections = normalized.filter((section) => getLandingProductSectionConfig(section.key)?.placement === "hero");
-  const gridSections = normalized.filter((section) => getLandingProductSectionConfig(section.key)?.placement === "grid");
-  return [...heroSections, ...gridSections];
-};
-
 const normalizeLandingState = (value: unknown): LandingSectionsState => {
   const row = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
   let productSections = normalizeLandingProductSections(row.productSections);
@@ -115,6 +115,7 @@ const normalizeLandingState = (value: unknown): LandingSectionsState => {
 
   return {
     showSaleSection: saleEnabled,
+    fixedSections: normalizeLandingFixedSections(row.fixedSections),
     productSections,
     customSections: normalizeLandingCustomSections(row.customSections),
     saleSectionTitle: String(row.saleSectionTitle || defaultState.saleSectionTitle).trim() || defaultState.saleSectionTitle,
@@ -147,40 +148,50 @@ export default function AdminLandingSectionsPage() {
     [productResults],
   );
 
-  const orderedGridEntries = useMemo(
-    () => getOrderedGridEntries(state.productSections, state.customSections),
-    [state.customSections, state.productSections],
+  const orderedPageEntries = useMemo(
+    () => getOrderedLandingPageEntries(state.fixedSections, state.productSections, state.customSections),
+    [state.customSections, state.fixedSections, state.productSections],
   );
 
-  const gridPositionByBuiltInKey = useMemo(
+  const pagePositionByFixedKey = useMemo(
     () =>
       new Map(
-        orderedGridEntries
-          .filter((entry): entry is Extract<LandingGridOrderEntry, { kind: "builtin" }> => entry.kind === "builtin")
+        orderedPageEntries
+          .filter((entry): entry is Extract<LandingPageOrderEntry, { kind: "fixed" }> => entry.kind === "fixed")
           .map((entry, index) => [entry.key, index + 1] as const),
       ),
-    [orderedGridEntries],
+    [orderedPageEntries],
   );
 
-  const gridPositionByCustomId = useMemo(
+  const pagePositionByBuiltInKey = useMemo(
     () =>
       new Map(
-        orderedGridEntries
-          .filter((entry): entry is Extract<LandingGridOrderEntry, { kind: "custom" }> => entry.kind === "custom")
+        orderedPageEntries
+          .filter((entry): entry is Extract<LandingPageOrderEntry, { kind: "builtin" }> => entry.kind === "builtin")
+          .map((entry, index) => [entry.key, index + 1] as const),
+      ),
+    [orderedPageEntries],
+  );
+
+  const pagePositionByCustomId = useMemo(
+    () =>
+      new Map(
+        orderedPageEntries
+          .filter((entry): entry is Extract<LandingPageOrderEntry, { kind: "custom" }> => entry.kind === "custom")
           .map((entry, index) => [entry.id, index + 1] as const),
       ),
-    [orderedGridEntries],
+    [orderedPageEntries],
   );
 
   const displaySections = useMemo<LandingDisplaySection[]>(() => {
-    const orderedControls = sortSectionsForDisplay(state.productSections);
+    const orderedControls = normalizeLandingProductSections(state.productSections);
     return orderedControls.map((control) => {
       const config = getLandingProductSectionConfig(control.key);
       if (!config) {
         throw new Error(`Missing landing section config for ${control.key}`);
       }
       const ids = state[control.key];
-      const displayPosition = config?.placement === "grid" ? gridPositionByBuiltInKey.get(control.key) ?? null : null;
+      const displayPosition = pagePositionByBuiltInKey.get(control.key) ?? null;
 
       return {
         ...config,
@@ -190,7 +201,21 @@ export default function AdminLandingSectionsPage() {
         names: ids.map((id) => landingProductMap.get(id)?.name || `#${id}`).slice(0, 3),
       };
     });
-  }, [gridPositionByBuiltInKey, landingProductMap, state]);
+  }, [landingProductMap, pagePositionByBuiltInKey, state]);
+
+  const fixedDisplaySections = useMemo(
+    () =>
+      normalizeLandingFixedSections(state.fixedSections).map((control) => {
+        const config = getLandingFixedSectionConfig(control.key);
+        if (!config) throw new Error(`Missing landing fixed section config for ${control.key}`);
+        return {
+          ...config,
+          control,
+          displayPosition: pagePositionByFixedKey.get(control.key) ?? null,
+        };
+      }),
+    [pagePositionByFixedKey, state.fixedSections],
+  );
 
   const loadSections = async () => {
     setLoading(true);
@@ -291,7 +316,7 @@ export default function AdminLandingSectionsPage() {
           title: "",
           subtitle: "",
           enabled: true,
-          order: getOrderedGridEntries(prev.productSections, prev.customSections).length + 1,
+          order: getOrderedLandingPageEntries(prev.fixedSections, prev.productSections, prev.customSections).length + 1,
           layout: "grid",
           productIds: [],
         },
@@ -380,15 +405,17 @@ export default function AdminLandingSectionsPage() {
     });
   };
 
-  const moveGridSection = (entry: LandingGridOrderRef, direction: -1 | 1) => {
+  const movePageSection = (entry: LandingPageOrderRef, direction: -1 | 1) => {
     setState((prev) => {
-      const orderedEntries = getOrderedGridEntries(prev.productSections, prev.customSections);
+      const orderedEntries = getOrderedLandingPageEntries(prev.fixedSections, prev.productSections, prev.customSections);
       const currentIndex = orderedEntries.findIndex((candidate) =>
-        candidate.kind === "builtin" && entry.kind === "builtin"
+        candidate.kind === "fixed" && entry.kind === "fixed"
           ? candidate.key === entry.key
-          : candidate.kind === "custom" && entry.kind === "custom"
-            ? candidate.id === entry.id
-            : false,
+          : candidate.kind === "builtin" && entry.kind === "builtin"
+            ? candidate.key === entry.key
+            : candidate.kind === "custom" && entry.kind === "custom"
+              ? candidate.id === entry.id
+              : false,
       );
       const targetIndex = currentIndex + direction;
       if (currentIndex < 0 || targetIndex < 0 || targetIndex >= orderedEntries.length) return prev;
@@ -398,9 +425,18 @@ export default function AdminLandingSectionsPage() {
       reordered.splice(targetIndex, 0, picked);
       return {
         ...prev,
-        ...applyGridOrderToSections(prev.productSections, prev.customSections, reordered),
+        ...applyLandingPageOrder(prev.fixedSections, prev.productSections, prev.customSections, reordered),
       };
     });
+  };
+
+  const setFixedSectionEnabled = (key: LandingFixedSectionKey, enabled: boolean) => {
+    setState((prev) => ({
+      ...prev,
+      fixedSections: normalizeLandingFixedSections(
+        prev.fixedSections.map((section) => (section.key === key ? { ...section, enabled } : section)),
+      ),
+    }));
   };
 
   const setBuiltinLayout = (key: LandingProductSectionKey, layout: LandingProductLayout) => {
@@ -448,8 +484,8 @@ export default function AdminLandingSectionsPage() {
           <div>
             <h1 className="text-3xl font-bold text-slate-900">Pocetna i sekcije</h1>
             <p className="mt-1 max-w-3xl text-sm text-slate-600">
-              Ovaj ekran sada upravlja koje landing sekcije su ukljucene i kojim redosledom se prikazuju. Hero traka ostaje
-              u hero bloku, dok ostale produkt sekcije menjaju redosled na storefront-u.
+              Ovaj ekran upravlja koje landing sekcije su ukljucene i kojim redosledom se prikazuju na pocetnoj strani.
+              Kolekcije, hero traka, produkt sekcije, baneri, uniforme i blog mogu da se pomeraju gore/dole.
             </p>
           </div>
           <Link
@@ -473,6 +509,28 @@ export default function AdminLandingSectionsPage() {
       </div>
 
       <div id="landing-summary" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 scroll-mt-24">
+        {fixedDisplaySections.map((section) => (
+          <div key={section.key} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">{section.label}</p>
+                <p className="mt-1 text-xs text-slate-500">{section.description}</p>
+              </div>
+              <span
+                className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
+                  section.control.enabled
+                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                    : "border border-slate-200 bg-slate-50 text-slate-500"
+                }`}
+              >
+                {section.control.enabled ? "ON" : "OFF"}
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
+              <span className="rounded-full bg-slate-100 px-2 py-1">Pozicija {section.displayPosition || "-"}</span>
+            </div>
+          </div>
+        ))}
         {displaySections.map((section) => (
           <div key={section.key} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex items-start justify-between gap-3">
@@ -492,7 +550,7 @@ export default function AdminLandingSectionsPage() {
             </div>
             <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
               <span className="rounded-full bg-slate-100 px-2 py-1">
-                {section.placement === "hero" ? "Fiksno u hero bloku" : `Pozicija ${section.displayPosition || "-"}`}
+                Pozicija {section.displayPosition || "-"}
               </span>
               <span className="rounded-full bg-slate-100 px-2 py-1">
                 {section.ids.length}/{section.limit} proizvoda
@@ -521,8 +579,8 @@ export default function AdminLandingSectionsPage() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Raspored i sadrzaj sekcija</p>
             <p className="mt-1 text-sm text-slate-600">
-              Ako sekcija ostane prazna, storefront i dalje koristi postojeci fallback za proizvode. Redosled vazi za
-              grid sekcije na home stranici, dok hero traka ostaje vezana za hero.
+              Ako produkt sekcija ostane prazna, storefront i dalje koristi postojeci fallback za proizvode. Redosled vazi
+              za sve glavne landing blokove na home stranici.
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -543,12 +601,54 @@ export default function AdminLandingSectionsPage() {
         </div>
 
         <div className="mt-5 grid gap-4">
+          {fixedDisplaySections.map((section) => {
+            const pagePosition = pagePositionByFixedKey.get(section.key) ?? null;
+
+            return (
+              <section key={section.key} className="rounded-xl border border-slate-200 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">{section.label}</p>
+                    <p className="text-xs text-slate-500">
+                      Pozicija na home-u: {pagePosition || "-"} / {section.description}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                      <input
+                        type="checkbox"
+                        checked={section.control.enabled}
+                        onChange={(e) => setFixedSectionEnabled(section.key, e.target.checked)}
+                      />
+                      {section.control.enabled ? "Ukljucena" : "Iskljucena"}
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => movePageSection({ kind: "fixed", key: section.key }, -1)}
+                      disabled={pagePosition == null || pagePosition <= 1}
+                      className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
+                    >
+                      Gore
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => movePageSection({ kind: "fixed", key: section.key }, 1)}
+                      disabled={pagePosition == null || pagePosition >= orderedPageEntries.length}
+                      className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
+                    >
+                      Dole
+                    </button>
+                  </div>
+                </div>
+              </section>
+            );
+          })}
+
           {displaySections.map((section) => {
             const sectionIds = state[section.key];
             const csvValue = sectionIds.join(",");
             const candidates = productResults.filter((item) => !sectionIds.includes(item.legacyId));
-            const moveDisabled = section.placement === "hero";
-            const gridPosition = section.placement === "grid" ? gridPositionByBuiltInKey.get(section.key) ?? null : null;
+            const pagePosition = pagePositionByBuiltInKey.get(section.key) ?? null;
 
             return (
               <section key={section.key} className="rounded-xl border border-slate-200 p-4">
@@ -566,18 +666,18 @@ export default function AdminLandingSectionsPage() {
                       />
                       {section.control.enabled ? "Ukljucena" : "Iskljucena"}
                     </label>
-                    <button
+                      <button
                       type="button"
-                      onClick={() => moveGridSection({ kind: "builtin", key: section.key }, -1)}
-                      disabled={moveDisabled || gridPosition == null || gridPosition <= 1}
+                      onClick={() => movePageSection({ kind: "builtin", key: section.key }, -1)}
+                      disabled={pagePosition == null || pagePosition <= 1}
                       className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
                     >
                       Gore
                     </button>
                     <button
                       type="button"
-                      onClick={() => moveGridSection({ kind: "builtin", key: section.key }, 1)}
-                      disabled={moveDisabled || gridPosition == null || gridPosition >= orderedGridEntries.length}
+                      onClick={() => movePageSection({ kind: "builtin", key: section.key }, 1)}
+                      disabled={pagePosition == null || pagePosition >= orderedPageEntries.length}
                       className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
                     >
                       Dole
@@ -587,7 +687,6 @@ export default function AdminLandingSectionsPage() {
                       <select
                         value={section.control.layout}
                         onChange={(e) => setBuiltinLayout(section.key, e.target.value as LandingProductLayout)}
-                        disabled={section.placement !== "grid"}
                         className="rounded-lg border border-slate-200 px-2 py-1 text-[11px] font-semibold text-slate-800 disabled:opacity-40"
                       >
                         <option value="grid">Mreza</option>
@@ -718,8 +817,8 @@ export default function AdminLandingSectionsPage() {
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Custom sekcije</p>
             <p className="mt-1 max-w-3xl text-sm text-slate-600">
-              Ovde dodajes nove produkt sekcije sa svojim naslovom i proizvodima. Ulaze u isti raspored kao standardne
-              grid sekcije, pa mogu da idu iznad ili ispod bannera u zavisnosti od pozicije.
+              Ovde dodajes nove produkt sekcije sa svojim naslovom i proizvodima. Ulaze u isti raspored kao standardni
+              landing blokovi, pa mogu da idu iznad ili ispod bilo koje sekcije.
             </p>
           </div>
           <button
@@ -740,7 +839,7 @@ export default function AdminLandingSectionsPage() {
             {state.customSections.map((section, sectionIndex) => {
               const csvValue = section.productIds.join(",");
               const candidates = productResults.filter((item) => !section.productIds.includes(item.legacyId));
-              const gridPosition = gridPositionByCustomId.get(section.id) ?? null;
+              const pagePosition = pagePositionByCustomId.get(section.id) ?? null;
 
               return (
                 <section key={section.id} className="rounded-xl border border-slate-200 p-4">
@@ -750,7 +849,7 @@ export default function AdminLandingSectionsPage() {
                         {section.title || `Nova sekcija ${sectionIndex + 1}`}
                       </p>
                       <p className="text-xs text-slate-500">
-                        Pozicija na home-u: {gridPosition || "-"} / 12 proizvoda max
+                        Pozicija na home-u: {pagePosition || "-"} / 12 proizvoda max
                       </p>
                     </div>
                     <div className="flex flex-wrap items-center gap-2">
@@ -764,16 +863,16 @@ export default function AdminLandingSectionsPage() {
                       </label>
                       <button
                         type="button"
-                        onClick={() => moveGridSection({ kind: "custom", id: section.id }, -1)}
-                        disabled={gridPosition == null || gridPosition <= 1}
+                        onClick={() => movePageSection({ kind: "custom", id: section.id }, -1)}
+                        disabled={pagePosition == null || pagePosition <= 1}
                         className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
                       >
                         Gore
                       </button>
                       <button
                         type="button"
-                        onClick={() => moveGridSection({ kind: "custom", id: section.id }, 1)}
-                        disabled={gridPosition == null || gridPosition >= orderedGridEntries.length}
+                        onClick={() => movePageSection({ kind: "custom", id: section.id }, 1)}
+                        disabled={pagePosition == null || pagePosition >= orderedPageEntries.length}
                         className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
                       >
                         Dole

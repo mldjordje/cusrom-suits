@@ -8,6 +8,7 @@ type Post = {
   title: string;
   excerpt: string | null;
   bodyHtml: string | null;
+  coverImage: string | null;
   postType: "blog" | "news";
   isPublished: boolean;
   publishedAt: string | null;
@@ -18,6 +19,7 @@ const defaultDraft = {
   title: "",
   excerpt: "",
   bodyHtml: "",
+  coverImage: "",
   postType: "blog" as "blog" | "news",
   isPublished: true,
 };
@@ -66,6 +68,7 @@ export default function AdminBlogPostsPage() {
       title: post.title,
       excerpt: post.excerpt || "",
       bodyHtml: post.bodyHtml || "",
+      coverImage: post.coverImage || "",
       postType: post.postType,
       isPublished: post.isPublished,
     });
@@ -90,6 +93,7 @@ export default function AdminBlogPostsPage() {
           title: draft.title,
           excerpt: draft.excerpt || null,
           bodyHtml: draft.bodyHtml || null,
+          coverImage: draft.coverImage || null,
           postType: draft.postType,
           isPublished: draft.isPublished,
         }),
@@ -150,6 +154,12 @@ export default function AdminBlogPostsPage() {
             onChange={(e) => setDraft((prev) => ({ ...prev, excerpt: e.target.value }))}
             placeholder="Excerpt"
             className="min-h-[80px] rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
+          />
+          <input
+            value={draft.coverImage}
+            onChange={(e) => setDraft((prev) => ({ ...prev, coverImage: e.target.value }))}
+            placeholder="Naslovna slika URL, npr. /uploads/blog/slika.jpg"
+            className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
           />
           <textarea
             value={draft.bodyHtml}
@@ -225,4 +235,3 @@ export default function AdminBlogPostsPage() {
     </div>
   );
 }
-

@@ -12,6 +12,11 @@ import {
   type LandingProductSectionKey,
   type LandingProductSectionState,
 } from "@/lib/catalog/landingSections";
+import {
+  DEFAULT_LANDING_FIXED_SECTIONS,
+  normalizeLandingFixedSections,
+  type LandingFixedSectionState,
+} from "@/lib/catalog/landingPageSections";
 import { revalidateTag, unstable_cache } from "next/cache";
 
 const LANDING_SETTINGS_PATH = "data/landing-settings.json";
@@ -100,6 +105,7 @@ function normalizeShopHeroSectionsInput(value: unknown): LandingShopHeroSection[
 
 export type LandingSettings = {
   showSaleSection: boolean;
+  fixedSections: LandingFixedSectionState[];
   productSections: LandingProductSectionState[];
   productSectionContent: LandingProductSectionContent[];
   customSections: LandingCustomSection[];
@@ -190,6 +196,7 @@ export type LandingSettings = {
 
 const DEFAULT_SETTINGS: LandingSettings = {
   showSaleSection: true,
+  fixedSections: DEFAULT_LANDING_FIXED_SECTIONS,
   productSections: DEFAULT_LANDING_PRODUCT_SECTIONS,
   productSectionContent: DEFAULT_LANDING_PRODUCT_SECTION_CONTENT,
   customSections: [],
@@ -302,6 +309,9 @@ const DEFAULT_SETTINGS: LandingSettings = {
     { id: "category-3", label: "Pantalone", labelEn: "Trousers", href: "/web-shop?categoryGroup=pantalone", image: "/img/odela2.jpg" },
     { id: "category-4", label: "Kosulje", labelEn: "Shirts", href: "/web-shop?categoryGroup=kosulja", image: "/img/hero.jpg" },
     { id: "category-5", label: "Custom Suits", labelEn: "Custom Suits", href: "/custom-suits", image: "/img/odela.jpg" },
+    { id: "category-6", label: "Jakne", labelEn: "Jackets", href: "/web-shop?categoryGroup=jakna", image: "/img/hero2.jpg" },
+    { id: "category-7", label: "Cipele", labelEn: "Shoes", href: "/web-shop?categoryGroup=obuca", image: "/img/obuca.jpg" },
+    { id: "category-8", label: "Kaputi", labelEn: "Coats", href: "/web-shop?categoryGroup=kaput", image: "/img/hero.jpg" },
   ],
   storySectionTitle: "Brend Prica",
   storySectionCtaLabel: "Pogledaj kolekciju",
@@ -553,12 +563,20 @@ const normalizeLandingCategoryTile = (value: unknown, index: number): LandingCat
   return { id, label, labelEn, href, image };
 };
 
-const normalizeLandingCategoryTiles = (value: unknown, max = 8) => {
+const normalizeLandingCategoryTiles = (value: unknown, max = 12) => {
   if (!Array.isArray(value)) return DEFAULT_SETTINGS.categoryTiles.slice(0, max);
-  return value
+  const normalized = value
     .map((item, index) => normalizeLandingCategoryTile(item, index))
     .filter((item): item is LandingCategoryTile => Boolean(item))
     .slice(0, max);
+  const seen = new Set(normalized.map((item) => item.id));
+  for (const fallback of DEFAULT_SETTINGS.categoryTiles) {
+    if (normalized.length >= max) break;
+    if (seen.has(fallback.id)) continue;
+    normalized.push(fallback);
+    seen.add(fallback.id);
+  }
+  return normalized;
 };
 
 const normalizeLandingContactPoint = (value: unknown, index: number): LandingContactPoint | null => {
@@ -629,6 +647,7 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
 
   return {
     showSaleSection: saleSectionEnabled,
+    fixedSections: normalizeLandingFixedSections(settings.fixedSections),
     productSections: syncedProductSections,
     productSectionContent,
     customSections: normalizeLandingCustomSections(settings.customSections),
@@ -802,6 +821,8 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
 
   const next: LandingSettings = {
     showSaleSection: saleSectionEnabled,
+    fixedSections:
+      patch.fixedSections == null ? current.fixedSections : normalizeLandingFixedSections(patch.fixedSections),
     productSections: nextProductSections,
     productSectionContent: nextProductSectionContent,
     customSections:
@@ -941,7 +962,7 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
         ? current.storySectionCtaHref
         : String(patch.storySectionCtaHref).trim() || DEFAULT_SETTINGS.storySectionCtaHref,
     categoryTiles:
-      patch.categoryTiles == null ? current.categoryTiles : normalizeLandingCategoryTiles(patch.categoryTiles, 8),
+      patch.categoryTiles == null ? current.categoryTiles : normalizeLandingCategoryTiles(patch.categoryTiles, 12),
     storyCards:
       patch.storyCards == null ? current.storyCards : normalizeLandingStoryCards(patch.storyCards, 6),
     aboutEyebrow:

@@ -73,7 +73,7 @@ export default function ProductDetailTabs({
             className={`nav-link nav-link_underscore ${tab === "declaration" ? "active" : ""}`}
             onClick={() => setTab("declaration")}
           >
-            {isEn ? "Declaration" : "Deklaracija"}
+            {isEn ? "Country of origin" : "Zemlja porekla"}
           </button>
         </li>
         <li className="nav-item" role="presentation">
@@ -117,7 +117,7 @@ export default function ProductDetailTabs({
               transition={{ duration: reduceMotion ? 0 : 0.24, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="product-single__description">
-                <h3 className="block-title mb-3">{isEn ? "Declaration" : "Deklaracija"}</h3>
+                <h3 className="block-title mb-3">{isEn ? "Country of origin" : "Zemlja porekla"}</h3>
                 <ul className="list text-list mb-0">
                   {declaration.map((item) => (
                     <li key={item.label}>

@@ -650,6 +650,16 @@ export const getProductDeclaration = (
     product.rawPayload.declaration.trim().length > 0
       ? product.rawPayload.declaration.trim()
       : null;
+  const countryOfOrigin =
+    [
+      product.rawPayload?.countryOfOrigin,
+      product.rawPayload?.origin,
+      product.rawPayload?.country_origin,
+      product.rawPayload?.zemljaPorekla,
+      product.rawPayload?.zemlja_porekla,
+    ]
+      .map((value) => (typeof value === "string" ? value.trim() : ""))
+      .find(Boolean) || null;
 
   if (lang === "en") {
     const fields: ProductDetailField[] = [
@@ -658,8 +668,8 @@ export const getProductDeclaration = (
       { label: "Brand", value: product.brand || "Santos & Santorini" },
       { label: "Material", value: material },
       {
-        label: "Declaration",
-        value: "Santos & Santorini, Obrenoviceva 9, Nis, Serbia",
+        label: "Country of origin",
+        value: countryOfOrigin || "Serbia",
       },
     ];
     if (customDeclaration) fields.push({ label: "Note", value: customDeclaration });
@@ -672,8 +682,8 @@ export const getProductDeclaration = (
     { label: "Brend", value: product.brand || "Santos & Santorini" },
     { label: "Materijal", value: material },
     {
-      label: "Deklaracija",
-      value: "Santos & Santorini, Obrenoviceva 9, Nis, Srbija",
+      label: "Zemlja porekla",
+      value: countryOfOrigin || "Srbija",
     },
   ];
   if (customDeclaration) fields.push({ label: "Napomena", value: customDeclaration });
