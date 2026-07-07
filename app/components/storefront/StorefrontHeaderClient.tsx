@@ -213,11 +213,28 @@ export default function StorefrontHeaderClient({
       label: localizeDynamicCategoryLabel(category.name, isEn ? "en" : "sr"),
     })),
   ];
-  const headerSocialItems = [
-    { key: "instagram", label: "Instagram", shortLabel: "IG", href: socialLinks?.instagramUrl },
-    { key: "facebook", label: "Facebook", shortLabel: "FB", href: socialLinks?.facebookUrl },
-    { key: "tiktok", label: "TikTok", shortLabel: "TT", href: socialLinks?.tiktokUrl },
-  ].filter((item) => item.href && item.href.trim().length > 0);
+  type HeaderSocialItem = { key: "instagram" | "facebook"; label: string; href?: string };
+  const headerSocialItems = ([
+    { key: "instagram", label: "Instagram", href: socialLinks?.instagramUrl },
+    { key: "facebook", label: "Facebook", href: socialLinks?.facebookUrl },
+  ] satisfies HeaderSocialItem[]).filter((item) => item.href && item.href.trim().length > 0);
+  const renderHeaderSocialIcon = (key: "instagram" | "facebook") => {
+    if (key === "instagram") {
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <rect x="5" y="5" width="14" height="14" rx="4" stroke="currentColor" strokeWidth="1.7" />
+          <circle cx="12" cy="12" r="3.1" stroke="currentColor" strokeWidth="1.7" />
+          <circle cx="16.35" cy="7.65" r="1" fill="currentColor" />
+        </svg>
+      );
+    }
+
+    return (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <path d="M14 8.25h2.15V5.1A13.4 13.4 0 0 0 13 4.85c-3.12 0-5.1 1.83-5.1 5.18v2.72H4.5v3.52h3.4v7.48h4.1v-7.48h3.35l.53-3.52H12v-2.38c0-1.02.28-2.12 2-2.12Z" fill="currentColor" />
+      </svg>
+    );
+  };
 
   return (
     <>
@@ -225,6 +242,22 @@ export default function StorefrontHeaderClient({
         <div className="container">
           <div className="header-desk header-desk_type_1">
             <div className="logo">
+              {headerSocialItems.length ? (
+                <div className="ss-header-socials d-none d-xl-inline-flex" aria-label={isEn ? "Social links" : "Drustvene mreze"}>
+                  {headerSocialItems.map((item) => (
+                    <a
+                      key={item.key}
+                      href={item.href}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="ss-header-social-link"
+                      aria-label={item.label}
+                    >
+                      {renderHeaderSocialIcon(item.key)}
+                    </a>
+                  ))}
+                </div>
+              ) : null}
               <Link href={withLang("/")}>
                 <Image
                   src={desktopLogoSrc}
@@ -300,22 +333,6 @@ export default function StorefrontHeaderClient({
             </nav>
 
             <div className="header-tools d-flex align-items-center gap-2">
-              {headerSocialItems.length ? (
-                <div className="ss-header-socials d-none d-xl-inline-flex" aria-label={isEn ? "Social links" : "Drustvene mreze"}>
-                  {headerSocialItems.map((item) => (
-                    <a
-                      key={item.key}
-                      href={item.href}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="ss-header-social-link"
-                      aria-label={item.label}
-                    >
-                      {item.shortLabel}
-                    </a>
-                  ))}
-                </div>
-              ) : null}
               <StorefrontLanguageSwitcher lang={lang} className="d-none d-md-inline-flex me-1" />
               <button
                 type="button"
@@ -573,9 +590,10 @@ export default function StorefrontHeaderClient({
                             target="_blank"
                             rel="noreferrer"
                             className="ss-mobile-nav-pill"
+                            aria-label={item.label}
                             onClick={closeMobileMenu}
                           >
-                            {item.shortLabel}
+                            {renderHeaderSocialIcon(item.key)}
                           </a>
                         ))}
                       </div>
