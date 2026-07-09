@@ -1023,7 +1023,7 @@ export default async function HomePage({
     const custom = entry.kind === "custom" ? customGridSectionById.get(entry.id) : null;
     const content = entry.kind === "fixed" ? renderFixedSection(entry.key) : entry.kind === "custom" && custom ? renderCustomGridSection(custom.section, custom.items) : entry.kind === "builtin" ? renderGridSection(entry.key) : null;
     if (!content) return null;
-    return <Reveal key={key} as="div" delay={Math.min(0.04 * index, 0.24)} y={18} amount={0.08}>{content}{index < orderedLandingPageEntries.length - 1 ? <div className="mb-3 mb-xl-4 pt-xl-1 pb-3" /> : null}</Reveal>;
+    return <Reveal key={key} as="div" delay={Math.min(0.04 * index, 0.24)} y={18} amount={0.08}>{content}{index < orderedLandingPageEntries.length - 1 ? <div className="ss-home-section-gap" /> : null}</Reveal>;
   };
 
   const websiteJsonLd = buildWebSiteJsonLd();

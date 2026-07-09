@@ -14,8 +14,8 @@
    uppercase/bold treatments are softened into refined letter-spacing.
    -------------------------------------------------------------------------- */
 
-/* Token overrides — uomo.scss redefines a :root palette that loads after
-   globals.css and lightens secondary text. premium.scss loads last, so these
+/* Token overrides — storefront-base.scss redefines a :root palette that loads after
+   globals.css and lightens secondary text. santos-theme.scss loads last, so these
    win and restore readable contrast. */
 :root {
   --ss-ink: #14110c;
@@ -143,7 +143,7 @@
 }
 
 /* Kill the desktop hover overlay (category/title/price/button on top of image).
-   uomo.scss re-shows it at md+ with `.ss-product-card .pc__info.hover__content.d-md-flex`
+   storefront-base.scss re-shows it at md+ with `.ss-product-card .pc__info.hover__content.d-md-flex`
    (specificity 0,4,0) so the kill selector must outrank that. */
 .ss-lux-grid .pc__info.hover__content,
 .ss-lux-grid .ss-product-card .pc__info.hover__content.d-md-flex {
@@ -739,22 +739,26 @@
 
 @media (min-width: 992px) {
   .ss-home-page .ss-editorial-section {
-    padding-block: clamp(2rem, 4vw, 4.25rem) !important;
+    padding-block: clamp(1.25rem, 2.6vw, 3rem) !important;
   }
 
   .ss-home-page .ss-editorial-section .d-flex.align-items-center.justify-content-between {
-    margin-bottom: clamp(1.35rem, 2vw, 2rem) !important;
+    margin-bottom: clamp(1rem, 1.5vw, 1.5rem) !important;
   }
 }
 
 @media (max-width: 991.98px) {
   .ss-home-page .ss-editorial-section {
-    padding-block: 2.25rem !important;
+    padding-block: 1.5rem !important;
   }
 
   .ss-home-page .ss-editorial-section .d-flex.align-items-center.justify-content-between {
-    margin-bottom: 1.25rem !important;
+    margin-bottom: 1rem !important;
   }
+}
+
+.ss-home-section-gap {
+  height: clamp(0.75rem, 1.8vw, 1.5rem);
 }
 
 .ss-home-page .products-grid.container {
@@ -1016,7 +1020,7 @@
 
 /* ----------------------------------------------------------------------------
    FIX B — WEB-SHOP CATEGORY NAV (top horizontal)
-   The white bordered/shadowed pills read as a dated template. Replace with a
+   The white bordered/shadowed pills read as an older visual system. Replace with a
    clean Armani-style text-link bar with a hairline baseline + active underline.
    -------------------------------------------------------------------------- */
 
@@ -1166,7 +1170,7 @@
    Dark scrim behind the panel dims the page. Panel slides in from left.
    -------------------------------------------------------------------------- */
 
-/* SCROLL FIX — body.mobile-menu-opened in uomo.scss sets touch-action:manipulation
+/* SCROLL FIX — body.mobile-menu-opened in storefront-base.scss sets touch-action:manipulation
    which blocks pan-y on all children. Override to pan-y so the inner panel scrolls. */
 body.mobile-menu-opened {
   touch-action: pan-y !important;
@@ -1197,7 +1201,7 @@ body.mobile-menu-opened {
   max-height: 100svh !important;
 }
 
-/* Kill all uomo decorations */
+/* Remove inherited decorative layers */
 .ss-mobile-nav-panel::before,
 .ss-mobile-nav-panel::after,
 .ss-mobile-nav-panel__glow {

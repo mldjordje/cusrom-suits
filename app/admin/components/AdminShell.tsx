@@ -38,19 +38,19 @@ export default function AdminShell({ generatedAt, viewerName, viewerRoles, sideb
   }, [drawerOpen]);
 
   return (
-    <div className={drawerOpen ? "admin-template-root admin-template-root--drawer-open" : "admin-template-root"}>
-      <div className="admin-template-shell">
+    <div className={drawerOpen ? "admin-shell-root admin-shell-root--drawer-open" : "admin-shell-root"}>
+      <div className="admin-shell-shell">
         {drawerOpen ? (
           <button
             type="button"
-            className="admin-template-backdrop"
+            className="admin-shell-backdrop"
             aria-label="Zatvori navigaciju"
             onClick={closeDrawer}
           />
         ) : null}
 
         <aside
-          className="admin-template-sidebar"
+          className="admin-shell-sidebar"
           id="admin-sidebar-nav"
           aria-label="Admin meni"
           onClick={closeDrawer}
@@ -58,25 +58,25 @@ export default function AdminShell({ generatedAt, viewerName, viewerRoles, sideb
           {sidebar}
         </aside>
 
-        <div className="admin-template-main">
-          <header className="admin-template-topbar">
-            <div className="admin-template-topbar-row">
+        <div className="admin-shell-main">
+          <header className="admin-shell-topbar">
+            <div className="admin-shell-topbar-row">
               <button
                 type="button"
-                className="admin-template-menu-toggle"
+                className="admin-shell-menu-toggle"
                 aria-expanded={drawerOpen}
                 aria-controls="admin-sidebar-nav"
                 onClick={() => (drawerOpen ? closeDrawer() : openDrawer())}
               >
-                <span className="admin-template-menu-toggle-bars" aria-hidden="true" />
-                <span className="admin-template-menu-toggle-label">Meni</span>
+                <span className="admin-shell-menu-toggle-bars" aria-hidden="true" />
+                <span className="admin-shell-menu-toggle-label">Meni</span>
               </button>
-              <div className="admin-template-topbar-title">
+              <div className="admin-shell-topbar-title">
                 <p>Admin panel</p>
                 <h1>Santos operacije</h1>
               </div>
             </div>
-            <div className="admin-template-topbar-meta">
+            <div className="admin-shell-topbar-meta">
               <span className="admin-topbar-hide-mobile">Status: Online</span>
               <span className="admin-topbar-hide-mobile">{viewerName}</span>
               <span className="admin-topbar-hide-mobile">{viewerRoles.join(", ") || "admin"}</span>
@@ -86,13 +86,13 @@ export default function AdminShell({ generatedAt, viewerName, viewerRoles, sideb
               <span className="admin-topbar-hide-mobile"><AdminPwaInstallButton /></span>
               <span className="admin-topbar-hide-mobile">{generatedAt}</span>
               <form action="/api/admin/logout" method="post">
-                <button type="submit" className="admin-template-logout">
+                <button type="submit" className="admin-shell-logout">
                   Logout
                 </button>
               </form>
             </div>
           </header>
-          <section className="admin-template-content">{children}</section>
+          <section className="admin-shell-content">{children}</section>
         </div>
       </div>
     </div>

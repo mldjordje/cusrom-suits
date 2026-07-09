@@ -9,9 +9,9 @@ import { getPopupSettings } from "@/lib/marketing/popupSettings";
 import { getFontLibrary } from "@/lib/storefront/fontLibrary";
 import { getFontSettings } from "@/lib/storefront/fontSettings";
 import { buildGoogleFontUrls, buildStorefrontFontCss, resolveFontSettings } from "@/lib/storefront/fontSettingsDefaults";
-import "./uomo.scss";
-import "./webshop-polish.scss";
-import "./premium.scss";
+import "./storefront-base.scss";
+import "./storefront-webshop.scss";
+import "./santos-theme.scss";
 
 export default async function StorefrontLayout({ children }: { children: ReactNode }) {
   const [popupSettings, fontSettings, fontLibrary] = await Promise.all([

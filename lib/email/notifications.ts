@@ -35,6 +35,7 @@ const getContactRecipients = () => {
 
 const adminOrderLink = (orderId: string) => `${SITE_URL}/admin/orders?highlight=${encodeURIComponent(orderId)}`;
 const adminContactLink = () => `${SITE_URL}/admin/contact-messages`;
+const getSupportReplyTo = () => normalize(process.env.MAIL_REPLY_TO) || "info@santos.rs";
 
 export async function sendOrderNotifications(ctx: OrderEmailContext): Promise<void> {
   if (!isEmailEnabled()) return;
@@ -48,6 +49,7 @@ export async function sendOrderNotifications(ctx: OrderEmailContext): Promise<vo
         subject,
         html,
         text,
+        replyTo: getSupportReplyTo(),
         tags: [
           { name: "type", value: "order_customer" },
           { name: "order_id", value: ctx.internalOrderId || ctx.orderId },
@@ -89,6 +91,7 @@ export async function sendOrderStatusUpdate(ctx: OrderStatusUpdateContext): Prom
     subject,
     html,
     text,
+    replyTo: getSupportReplyTo(),
     tags: [
       { name: "type", value: "order_status" },
       { name: "order_id", value: ctx.internalOrderId || ctx.orderId },
@@ -107,6 +110,10 @@ export async function sendNewsletterWelcome(ctx: NewsletterWelcomeContext): Prom
     subject,
     html,
     text,
+    replyTo: getSupportReplyTo(),
+    headers: {
+      "List-Unsubscribe": `<mailto:${getSupportReplyTo()}?subject=Odjava>`,
+    },
     tags: [{ name: "type", value: "newsletter_welcome" }],
   });
 }
@@ -146,6 +153,7 @@ export async function sendContactNotifications(ctx: Omit<ContactEmailContext, "a
         subject,
         html,
         text,
+        replyTo: getSupportReplyTo(),
         tags: [{ name: "type", value: "contact_customer" }],
       }),
     );

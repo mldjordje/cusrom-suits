@@ -6,7 +6,7 @@ import AdminNav from "./components/AdminNav";
 import AdminShell from "./components/AdminShell";
 import { buildSeoMetadata } from "@/lib/seo";
 import { getAdminViewerFromCookieStore } from "@/lib/adminAuth";
-import "./admin-template.css";
+import "./admin-shell.css";
 
 export const metadata: Metadata = {
   ...buildSeoMetadata({
@@ -31,15 +31,15 @@ export default async function AdminLayout({ children }: { children: ReactNode })
       viewerRoles={viewer?.roleIds || []}
       sidebar={(
         <>
-          <Link href="/admin" className="admin-template-brand">
-            <span className="admin-template-brand-dot" aria-hidden="true" />
-            <span className="admin-template-brand-text">
+          <Link href="/admin" className="admin-shell-brand">
+            <span className="admin-shell-brand-dot" aria-hidden="true" />
+            <span className="admin-shell-brand-text">
               <strong>Santos Admin</strong>
               <small>web shop operations</small>
             </span>
           </Link>
           <AdminNav permissions={viewer?.permissions || []} />
-          <p className="admin-template-sidebar-foot">Web shop, sadrzaj i operacije</p>
+          <p className="admin-shell-sidebar-foot">Web shop, sadrzaj i operacije</p>
         </>
       )}
     >

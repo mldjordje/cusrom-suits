@@ -35,8 +35,8 @@
   &:focus {
     z-index: 3;
     outline: 0;
-    // border-color: $accordion-button-focus-border-color;  // Not used in Uomo design
-    // box-shadow: $accordion-button-focus-box-shadow;      // Not used in Uomo design
+    // border-color: $accordion-button-focus-border-color;  // Not used in storefront design
+    // box-shadow: $accordion-button-focus-box-shadow;      // Not used in storefront design
   }
 }
 
@@ -45,7 +45,7 @@
 }
 
 .accordion-item {
-  // &:first-of-type {    // Uomo accordions don't have border-radius
+  // &:first-of-type {    // Storefront accordions don't have border-radius
   //   .accordion-button {
   //     @include border-top-radius($accordion-border-radius);
   //   }
@@ -56,13 +56,13 @@
       // Only set a border-radius on the last item if the accordion is collapsed
       &.collapsed {
         border-bottom-width: $accordion-border-width;
-        // @include border-bottom-radius($accordion-border-radius); // Uomo accordions don't have border-radius
+        // @include border-bottom-radius($accordion-border-radius); // Storefront accordions don't have border-radius
       }
     }
 
     .accordion-collapse {
       border-bottom-width: $accordion-border-width;
-      // @include border-bottom-radius($accordion-border-radius); // Uomo accordions don't have border-radius
+      // @include border-bottom-radius($accordion-border-radius); // Storefront accordions don't have border-radius
     }
   }
 }

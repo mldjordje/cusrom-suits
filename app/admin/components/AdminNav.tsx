@@ -124,20 +124,20 @@ export default function AdminNav({ onNavigate, permissions = ["*"] }: AdminNavPr
 
     if (item.children?.length) {
       return (
-        <li key={item.href} className={`admin-template-nav-group ${active ? "is-open" : ""}`}>
+        <li key={item.href} className={`admin-shell-nav-group ${active ? "is-open" : ""}`}>
           <Link
             href={item.href}
             onClick={onNavigate}
             aria-current={active ? "page" : undefined}
-            className={`admin-template-nav-link ${active ? "is-active" : ""}`}
+            className={`admin-shell-nav-link ${active ? "is-active" : ""}`}
           >
-            <span className="admin-template-nav-icon" aria-hidden="true">{item.icon}</span>
-            <span className="admin-template-nav-link__copy">
+            <span className="admin-shell-nav-icon" aria-hidden="true">{item.icon}</span>
+            <span className="admin-shell-nav-link__copy">
               <span>{item.label}</span>
             </span>
-            <span className="admin-template-nav-caret" aria-hidden="true">▾</span>
+            <span className="admin-shell-nav-caret" aria-hidden="true">▾</span>
           </Link>
-          <ul className="admin-template-subnav-list">
+          <ul className="admin-shell-subnav-list">
             {item.children.map((child) => {
               const childActive = childMatchesCurrentLocation(child.href);
               return (
@@ -146,7 +146,7 @@ export default function AdminNav({ onNavigate, permissions = ["*"] }: AdminNavPr
                     href={child.href}
                     onClick={onNavigate}
                     aria-current={childActive ? "page" : undefined}
-                    className={`admin-template-subnav-link ${childActive ? "is-active" : ""}`}
+                    className={`admin-shell-subnav-link ${childActive ? "is-active" : ""}`}
                   >
                     {child.label}
                   </Link>
@@ -164,9 +164,9 @@ export default function AdminNav({ onNavigate, permissions = ["*"] }: AdminNavPr
           href={item.href}
           onClick={onNavigate}
           aria-current={active ? "page" : undefined}
-          className={`admin-template-nav-link ${active ? "is-active" : ""}`}
+          className={`admin-shell-nav-link ${active ? "is-active" : ""}`}
         >
-          <span className="admin-template-nav-icon" aria-hidden="true">{item.icon}</span>
+          <span className="admin-shell-nav-icon" aria-hidden="true">{item.icon}</span>
           <span>{item.label}</span>
         </Link>
       </li>
@@ -174,19 +174,19 @@ export default function AdminNav({ onNavigate, permissions = ["*"] }: AdminNavPr
   };
 
   return (
-    <nav className="admin-template-nav" aria-label="Admin navigation">
+    <nav className="admin-shell-nav" aria-label="Admin navigation">
       {navSections.map((section, sectionIdx) => {
         const visibleItems = section.items.filter((item) => canAccess(item.permission));
         if (!visibleItems.length) return null;
         return (
           <div
             key={section.label ?? `section-${sectionIdx}`}
-            className="admin-template-nav-section"
+            className="admin-shell-nav-section"
           >
             {section.label ? (
-              <span className="admin-template-nav-section-label">{section.label}</span>
+              <span className="admin-shell-nav-section-label">{section.label}</span>
             ) : null}
-            <ul className="admin-template-nav-list">
+            <ul className="admin-shell-nav-list">
               {visibleItems.map(renderItem)}
             </ul>
           </div>

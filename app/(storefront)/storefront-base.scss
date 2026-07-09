@@ -7831,6 +7831,10 @@ button.ss-mobile-nav-quicklink,
   position: absolute;
   inset: 0;
   z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0.75rem;
   background: rgba(10, 9, 8, 0);
   transition: background 0.5s ease;
   pointer-events: none;

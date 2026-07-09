@@ -7,6 +7,7 @@ export type SendEmailInput = {
   text?: string;
   replyTo?: string;
   from?: string;
+  headers?: Record<string, string>;
   tags?: Array<{ name: string; value: string }>;
 };
 
@@ -19,7 +20,12 @@ const normalize = (value: string | undefined | null) => String(value || "").trim
 
 const getFromAddress = (override?: string) => {
   const fromEnv = normalize(process.env.MAIL_FROM);
-  return override || fromEnv || "Santos & Santorini <info@santos.rs>";
+  return override || fromEnv || "Santos & Santorini <no-reply@santos.rs>";
+};
+
+const getReplyToAddress = (override?: string) => {
+  const replyToEnv = normalize(process.env.MAIL_REPLY_TO);
+  return override || replyToEnv || "info@santos.rs";
 };
 
 let cached: Resend | null | undefined;
@@ -73,7 +79,12 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       subject: input.subject,
       html: input.html,
       text: input.text,
-      replyTo: input.replyTo,
+      replyTo: getReplyToAddress(input.replyTo),
+      headers: {
+        "Auto-Submitted": "auto-generated",
+        "X-Santos-Mailer": "storefront",
+        ...(input.headers || {}),
+      },
       tags: input.tags,
     });
 
