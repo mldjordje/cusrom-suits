@@ -473,7 +473,9 @@ export default async function HomePage({
   ).filter((entry) => {
     if (entry.kind === "fixed") return fixedSectionStateMap.get(entry.key)?.enabled !== false;
     if (entry.kind === "custom") return customGridSectionById.has(entry.id);
-    if (entry.key === "heroStripProductIds") return heroStripEnabled && heroStripProducts.length > 0;
+    // Hero strip products now render INSIDE the hero section (HomeHeroVideo
+    // showProductCards), so never emit them as a standalone section below it.
+    if (entry.key === "heroStripProductIds") return false;
     if (entry.key === "highlightedProductIds") return heroProducts.length > 0;
     if (entry.key === "popularProductIds") return featured.length > 0;
     if (entry.key === "arrivalsProductIds") return arrivals.length > 0;
@@ -1040,7 +1042,7 @@ export default async function HomePage({
         <HomeHeroVideo
           lang={lang}
           categories={catalog.categories}
-          showProductCards={false}
+          showProductCards={heroStripEnabled && heroStripProducts.length > 0}
           featuredProducts={heroStripProducts}
           heroVideoUrl={landingSettings.heroVideoUrl || undefined}
           heroVideoMobileUrl={landingSettings.heroVideoMobileUrl || undefined}
