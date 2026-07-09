@@ -34,6 +34,13 @@ type LandingSectionsState = {
   customSections: LandingCustomSection[];
   saleSectionTitle: string;
   saleSectionSubtitle: string;
+  heroEyebrow: string;
+  heroTitleLine1: string;
+  heroTitleLine2: string;
+  heroPrimaryCtaLabel: string;
+  heroPrimaryCtaHref: string;
+  heroSecondaryCtaLabel: string;
+  heroSecondaryCtaHref: string;
   heroStripProductIds: number[];
   highlightedProductIds: number[];
   popularProductIds: number[];
@@ -72,6 +79,13 @@ const defaultState: LandingSectionsState = {
   customSections: [],
   saleSectionTitle: "Aktuelne Akcije",
   saleSectionSubtitle: "",
+  heroEyebrow: "Santos & Santorini",
+  heroTitleLine1: "Nova kolekcija",
+  heroTitleLine2: "2026",
+  heroPrimaryCtaLabel: "Web shop",
+  heroPrimaryCtaHref: "/web-shop",
+  heroSecondaryCtaLabel: "Kontakt",
+  heroSecondaryCtaHref: "/kontakt",
   heroStripProductIds: [],
   highlightedProductIds: [],
   popularProductIds: [],
@@ -120,6 +134,13 @@ const normalizeLandingState = (value: unknown): LandingSectionsState => {
     customSections: normalizeLandingCustomSections(row.customSections),
     saleSectionTitle: String(row.saleSectionTitle || defaultState.saleSectionTitle).trim() || defaultState.saleSectionTitle,
     saleSectionSubtitle: String(row.saleSectionSubtitle || "").trim(),
+    heroEyebrow: String(row.heroEyebrow || defaultState.heroEyebrow).trim() || defaultState.heroEyebrow,
+    heroTitleLine1: String(row.heroTitleLine1 || defaultState.heroTitleLine1).trim() || defaultState.heroTitleLine1,
+    heroTitleLine2: String(row.heroTitleLine2 || "").trim(),
+    heroPrimaryCtaLabel: String(row.heroPrimaryCtaLabel || defaultState.heroPrimaryCtaLabel).trim() || defaultState.heroPrimaryCtaLabel,
+    heroPrimaryCtaHref: String(row.heroPrimaryCtaHref || defaultState.heroPrimaryCtaHref).trim() || defaultState.heroPrimaryCtaHref,
+    heroSecondaryCtaLabel: String(row.heroSecondaryCtaLabel || defaultState.heroSecondaryCtaLabel).trim() || defaultState.heroSecondaryCtaLabel,
+    heroSecondaryCtaHref: String(row.heroSecondaryCtaHref || defaultState.heroSecondaryCtaHref).trim() || defaultState.heroSecondaryCtaHref,
     heroStripProductIds: normalizeLegacyIdList(row.heroStripProductIds, limitForLandingSection("heroStripProductIds")),
     highlightedProductIds: normalizeLegacyIdList(row.highlightedProductIds, limitForLandingSection("highlightedProductIds")),
     popularProductIds: normalizeLegacyIdList(row.popularProductIds, limitForLandingSection("popularProductIds")),
@@ -216,6 +237,47 @@ export default function AdminLandingSectionsPage() {
       }),
     [pagePositionByFixedKey, state.fixedSections],
   );
+
+  const landingPageRows = useMemo(() => {
+    return orderedPageEntries.map((entry, index) => {
+      if (entry.kind === "fixed") {
+        const section = fixedDisplaySections.find((item) => item.key === entry.key);
+        return {
+          id: `fixed-${entry.key}`,
+          position: index + 1,
+          kindLabel: "Blok",
+          title: section?.label || entry.key,
+          description: section?.description || "",
+          enabled: section?.control.enabled !== false,
+          detail: "Bez proizvoda",
+        };
+      }
+
+      if (entry.kind === "custom") {
+        const section = state.customSections.find((item) => item.id === entry.id);
+        return {
+          id: `custom-${entry.id}`,
+          position: index + 1,
+          kindLabel: "Custom",
+          title: section?.title?.trim() || "Custom sekcija",
+          description: section?.subtitle?.trim() || "Rucno dodata produkt sekcija.",
+          enabled: section?.enabled !== false,
+          detail: `${section?.productIds.length || 0}/12 proizvoda`,
+        };
+      }
+
+      const section = displaySections.find((item) => item.key === entry.key);
+      return {
+        id: `builtin-${entry.key}`,
+        position: index + 1,
+        kindLabel: "Proizvodi",
+        title: section?.label || entry.key,
+        description: section?.description || "",
+        enabled: section?.control.enabled !== false,
+        detail: `${section?.ids.length || 0}/${section?.limit || 0} proizvoda`,
+      };
+    });
+  }, [displaySections, fixedDisplaySections, orderedPageEntries, state.customSections]);
 
   const loadSections = async () => {
     setLoading(true);
@@ -501,6 +563,7 @@ export default function AdminLandingSectionsPage() {
 
       <div className="sticky top-3 z-10 rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-sm backdrop-blur">
         <div className="flex flex-wrap gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+          <a href="#landing-hero-copy" className="rounded-full border border-slate-200 px-3 py-1.5">Hero</a>
           <a href="#landing-summary" className="rounded-full border border-slate-200 px-3 py-1.5">Pregled</a>
           <a href="#landing-sections-editor" className="rounded-full border border-slate-200 px-3 py-1.5">Standardne sekcije</a>
           <a href="#landing-custom-sections" className="rounded-full border border-slate-200 px-3 py-1.5">Custom sekcije</a>
@@ -508,74 +571,177 @@ export default function AdminLandingSectionsPage() {
         </div>
       </div>
 
-      <div id="landing-summary" className="grid gap-4 md:grid-cols-2 xl:grid-cols-3 scroll-mt-24">
-        {fixedDisplaySections.map((section) => (
-          <div key={section.key} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">{section.label}</p>
-                <p className="mt-1 text-xs text-slate-500">{section.description}</p>
-              </div>
-              <span
-                className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
-                  section.control.enabled
-                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border border-slate-200 bg-slate-50 text-slate-500"
-                }`}
-              >
-                {section.control.enabled ? "ON" : "OFF"}
-              </span>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
-              <span className="rounded-full bg-slate-100 px-2 py-1">Pozicija {section.displayPosition || "-"}</span>
-            </div>
+      <section id="landing-hero-copy" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm scroll-mt-24 sm:p-5">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Hero sekcija</p>
+            <h2 className="mt-1 text-lg font-bold text-slate-900">Tekst i dugmad na pocetnoj</h2>
           </div>
-        ))}
-        {displaySections.map((section) => (
-          <div key={section.key} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">{section.label}</p>
-                <p className="mt-1 text-xs text-slate-500">{section.description}</p>
-              </div>
-              <span
-                className={`rounded-full px-2 py-1 text-[11px] font-semibold ${
-                  section.control.enabled
-                    ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border border-slate-200 bg-slate-50 text-slate-500"
-                }`}
+          <p className="text-xs text-slate-500">Ovo menja glavni naslov i CTA dugmad iznad sekcija.</p>
+        </div>
+
+        <div className="mt-4 grid gap-3 lg:grid-cols-2">
+          <label className="grid gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Eyebrow</span>
+            <input
+              value={state.heroEyebrow}
+              onChange={(e) => setState((prev) => ({ ...prev, heroEyebrow: e.target.value }))}
+              placeholder="Santos & Santorini"
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="grid gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Naslov - prvi red</span>
+            <input
+              value={state.heroTitleLine1}
+              onChange={(e) => setState((prev) => ({ ...prev, heroTitleLine1: e.target.value }))}
+              placeholder="Nova kolekcija"
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="grid gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Naslov - drugi red</span>
+            <input
+              value={state.heroTitleLine2}
+              onChange={(e) => setState((prev) => ({ ...prev, heroTitleLine2: e.target.value }))}
+              placeholder="2026"
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Primarno dugme</span>
+              <input
+                value={state.heroPrimaryCtaLabel}
+                onChange={(e) => setState((prev) => ({ ...prev, heroPrimaryCtaLabel: e.target.value }))}
+                placeholder="Web shop"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Primarni link</span>
+              <input
+                value={state.heroPrimaryCtaHref}
+                onChange={(e) => setState((prev) => ({ ...prev, heroPrimaryCtaHref: e.target.value }))}
+                placeholder="/web-shop"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:col-span-2">
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Sekundarno dugme</span>
+              <input
+                value={state.heroSecondaryCtaLabel}
+                onChange={(e) => setState((prev) => ({ ...prev, heroSecondaryCtaLabel: e.target.value }))}
+                placeholder="Kontakt"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Sekundarni link</span>
+              <input
+                value={state.heroSecondaryCtaHref}
+                onChange={(e) => setState((prev) => ({ ...prev, heroSecondaryCtaHref: e.target.value }))}
+                placeholder="/kontakt"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <div id="landing-summary" className="grid gap-4 scroll-mt-24 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Redosled na home-u</p>
+              <h2 className="mt-1 text-lg font-bold text-slate-900">Pozicije sekcija</h2>
+            </div>
+            <p className="text-xs text-slate-500">{landingPageRows.length} blokova u rasporedu</p>
+          </div>
+          <div className="mt-4 grid gap-2">
+            {landingPageRows.map((row) => (
+              <div
+                key={row.id}
+                className="grid grid-cols-[44px_1fr] gap-3 rounded-xl border border-slate-200 bg-slate-50/70 p-3 sm:grid-cols-[52px_1fr_auto] sm:items-center"
               >
-                {section.control.enabled ? "ON" : "OFF"}
-              </span>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2 text-xs text-slate-600">
-              <span className="rounded-full bg-slate-100 px-2 py-1">
-                Pozicija {section.displayPosition || "-"}
-              </span>
-              <span className="rounded-full bg-slate-100 px-2 py-1">
-                {section.ids.length}/{section.limit} proizvoda
-              </span>
-            </div>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {section.names.length ? (
-                section.names.map((name, index) => (
+                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white sm:h-12 sm:w-12">
+                  {row.position}
+                </div>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-sm font-semibold text-slate-900">{row.title}</p>
+                    <span className="rounded-full bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">
+                      {row.kindLabel}
+                    </span>
+                  </div>
+                  <p className="mt-1 line-clamp-2 text-xs text-slate-500">{row.description}</p>
+                </div>
+                <div className="col-span-2 flex flex-wrap gap-2 sm:col-span-1 sm:justify-end">
                   <span
-                    key={`${section.key}-${section.ids[index] || index}`}
-                    className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600"
+                    className={`rounded-full px-2.5 py-1 text-[11px] font-semibold ${
+                      row.enabled
+                        ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border border-slate-200 bg-white text-slate-500"
+                    }`}
                   >
-                    {name}
+                    {row.enabled ? "Ukljuceno" : "Iskljuceno"}
                   </span>
-                ))
-              ) : (
-                <span className="text-xs text-slate-500">Nema rucno dodatih proizvoda.</span>
-              )}
-            </div>
+                  <span className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] font-semibold text-slate-600">
+                    {row.detail}
+                  </span>
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+        </section>
+
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Produkt sekcije</p>
+          <h2 className="mt-1 text-lg font-bold text-slate-900">Brzi pregled proizvoda</h2>
+          <div className="mt-4 grid gap-3">
+            {displaySections.map((section) => (
+              <div key={section.key} className="rounded-xl border border-slate-200 p-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-slate-900">{section.label}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      Pozicija {section.displayPosition || "-"} / {section.ids.length}/{section.limit} proizvoda
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold ${
+                      section.control.enabled
+                        ? "border border-emerald-200 bg-emerald-50 text-emerald-700"
+                        : "border border-slate-200 bg-slate-50 text-slate-500"
+                    }`}
+                  >
+                    {section.control.enabled ? "ON" : "OFF"}
+                  </span>
+                </div>
+                <div className="mt-3 flex flex-wrap gap-2">
+                  {section.names.length ? (
+                    section.names.map((name, index) => (
+                      <span
+                        key={`${section.key}-${section.ids[index] || index}`}
+                        className="max-w-full truncate rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-600"
+                      >
+                        {name}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-xs text-slate-500">Nema rucno dodatih proizvoda.</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
 
-      <div id="landing-sections-editor" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm scroll-mt-24">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+      <div id="landing-sections-editor" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm scroll-mt-24 sm:p-5">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Raspored i sadrzaj sekcija</p>
             <p className="mt-1 text-sm text-slate-600">
@@ -583,17 +749,17 @@ export default function AdminLandingSectionsPage() {
               za sve glavne landing blokove na home stranici.
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid w-full gap-2 sm:grid-cols-[minmax(0,1fr)_auto] lg:w-auto">
             <input
               value={productQuery}
               onChange={(e) => setProductQuery(e.target.value)}
               placeholder="Pretraga po ID, SKU ili nazivu"
-              className="min-w-[240px] rounded-full border border-slate-200 px-4 py-2 text-sm"
+              className="w-full min-w-0 rounded-full border border-slate-200 px-4 py-2 text-sm sm:min-w-[280px]"
             />
             <button
               onClick={() => loadProducts()}
               disabled={productsLoading}
-              className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
+              className="w-full rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 sm:w-auto"
             >
               {productsLoading ? "Pretraga..." : "Pretrazi proizvode"}
             </button>
@@ -605,16 +771,16 @@ export default function AdminLandingSectionsPage() {
             const pagePosition = pagePositionByFixedKey.get(section.key) ?? null;
 
             return (
-              <section key={section.key} className="rounded-xl border border-slate-200 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
+              <section key={section.key} className="rounded-xl border border-slate-200 p-3 sm:p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-slate-900">{section.label}</p>
                     <p className="text-xs text-slate-500">
                       Pozicija na home-u: {pagePosition || "-"} / {section.description}
                     </p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  <div className="grid w-full grid-cols-3 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center">
+                    <label className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700 sm:py-1.5">
                       <input
                         type="checkbox"
                         checked={section.control.enabled}
@@ -626,7 +792,7 @@ export default function AdminLandingSectionsPage() {
                       type="button"
                       onClick={() => movePageSection({ kind: "fixed", key: section.key }, -1)}
                       disabled={pagePosition == null || pagePosition <= 1}
-                      className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
+                      className="rounded-full border border-slate-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40 sm:py-1.5"
                     >
                       Gore
                     </button>
@@ -634,7 +800,7 @@ export default function AdminLandingSectionsPage() {
                       type="button"
                       onClick={() => movePageSection({ kind: "fixed", key: section.key }, 1)}
                       disabled={pagePosition == null || pagePosition >= orderedPageEntries.length}
-                      className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
+                      className="rounded-full border border-slate-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40 sm:py-1.5"
                     >
                       Dole
                     </button>
@@ -651,14 +817,16 @@ export default function AdminLandingSectionsPage() {
             const pagePosition = pagePositionByBuiltInKey.get(section.key) ?? null;
 
             return (
-              <section key={section.key} className="rounded-xl border border-slate-200 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
+              <section key={section.key} className="rounded-xl border border-slate-200 p-3 sm:p-4">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-slate-900">{section.label}</p>
-                    <p className="text-xs text-slate-500">{section.description}</p>
+                    <p className="text-xs text-slate-500">
+                      Pozicija na home-u: {pagePosition || "-"} / {section.description}
+                    </p>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    <label className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                  <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
+                    <label className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700 sm:py-1.5">
                       <input
                         type="checkbox"
                         checked={section.control.enabled}
@@ -666,11 +834,11 @@ export default function AdminLandingSectionsPage() {
                       />
                       {section.control.enabled ? "Ukljucena" : "Iskljucena"}
                     </label>
-                      <button
+                    <button
                       type="button"
                       onClick={() => movePageSection({ kind: "builtin", key: section.key }, -1)}
                       disabled={pagePosition == null || pagePosition <= 1}
-                      className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
+                      className="rounded-full border border-slate-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40 sm:py-1.5"
                     >
                       Gore
                     </button>
@@ -678,11 +846,11 @@ export default function AdminLandingSectionsPage() {
                       type="button"
                       onClick={() => movePageSection({ kind: "builtin", key: section.key }, 1)}
                       disabled={pagePosition == null || pagePosition >= orderedPageEntries.length}
-                      className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
+                      className="rounded-full border border-slate-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40 sm:py-1.5"
                     >
                       Dole
                     </button>
-                    <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+                    <label className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-slate-200 px-3 py-2 text-[11px] font-semibold text-slate-600 sm:col-span-1 sm:border-0 sm:px-0 sm:py-0">
                       <span className="uppercase tracking-[0.08em]">Prikaz</span>
                       <select
                         value={section.control.layout}
@@ -745,19 +913,19 @@ export default function AdminLandingSectionsPage() {
                     productsLoading
                       ? undefined
                       : productResults.length === 0
-                        ? "Kucaj pojam iznad — rezultati se ucitavaju automatski."
+                        ? "Kucaj pojam iznad - rezultati se ucitavaju automatski."
                         : undefined
                   }
                 />
 
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                   {sectionIds.length === 0 ? <p className="text-xs text-slate-500">Nema manuelno odabranih proizvoda.</p> : null}
                   {sectionIds.map((id, index) => {
                     const product = landingProductMap.get(id);
                     return (
                       <div
                         key={`${section.key}-${id}`}
-                        className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs"
+                        className="grid grid-cols-[36px_1fr] gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs"
                       >
                         {product?.coverImage ? (
                           <Image
@@ -765,43 +933,47 @@ export default function AdminLandingSectionsPage() {
                             alt={product.name}
                             width={28}
                             height={28}
-                            className="h-7 w-7 rounded-full object-cover"
+                            className="h-9 w-9 rounded-lg object-cover"
                             unoptimized
                           />
                         ) : (
                           <div
-                            className="h-7 w-7 rounded-full border border-slate-200 bg-white"
+                            className="h-9 w-9 rounded-lg border border-slate-200 bg-white"
                             aria-hidden="true"
                           />
                         )}
-                        <span className="font-semibold text-slate-700">
-                          #{id}
-                          {product ? ` / ${product.sku}` : ""}
-                        </span>
-                        <span className="max-w-[220px] truncate text-slate-500">{product?.name || "Nepoznat proizvod"}</span>
-                        <button
-                          type="button"
-                          onClick={() => moveLandingSectionId(section.key, index, index - 1)}
-                          disabled={index === 0}
-                          className="rounded border border-slate-200 px-1 text-[10px] text-slate-700 disabled:opacity-40"
-                        >
-                          UP
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => moveLandingSectionId(section.key, index, index + 1)}
-                          disabled={index === sectionIds.length - 1}
-                          className="rounded border border-slate-200 px-1 text-[10px] text-slate-700 disabled:opacity-40"
-                        >
-                          DOWN
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => removeLandingSectionId(section.key, id)}
-                          className="rounded border border-rose-200 px-1 text-[10px] text-rose-700"
-                        >
-                          x
-                        </button>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-slate-700">
+                            #{id}
+                            {product ? ` / ${product.sku}` : ""}
+                          </p>
+                          <p className="truncate text-slate-500">{product?.name || "Nepoznat proizvod"}</p>
+                          <div className="mt-2 grid grid-cols-3 gap-1">
+                            <button
+                              type="button"
+                              onClick={() => moveLandingSectionId(section.key, index, index - 1)}
+                              disabled={index === 0}
+                              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 disabled:opacity-40"
+                            >
+                              Gore
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => moveLandingSectionId(section.key, index, index + 1)}
+                              disabled={index === sectionIds.length - 1}
+                              className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 disabled:opacity-40"
+                            >
+                              Dole
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeLandingSectionId(section.key, id)}
+                              className="rounded-lg border border-rose-200 bg-white px-2 py-1 text-[10px] font-semibold text-rose-700"
+                            >
+                              Ukloni
+                            </button>
+                          </div>
+                        </div>
                       </div>
                     );
                   })}
@@ -812,8 +984,8 @@ export default function AdminLandingSectionsPage() {
         </div>
       </div>
 
-      <div id="landing-custom-sections" className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm scroll-mt-24">
-        <div className="flex flex-wrap items-start justify-between gap-3">
+      <div id="landing-custom-sections" className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm scroll-mt-24 sm:p-5">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Custom sekcije</p>
             <p className="mt-1 max-w-3xl text-sm text-slate-600">
@@ -824,7 +996,7 @@ export default function AdminLandingSectionsPage() {
           <button
             type="button"
             onClick={addCustomSection}
-            className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
+            className="w-full rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 sm:w-auto"
           >
             Dodaj sekciju
           </button>
@@ -842,9 +1014,9 @@ export default function AdminLandingSectionsPage() {
               const pagePosition = pagePositionByCustomId.get(section.id) ?? null;
 
               return (
-                <section key={section.id} className="rounded-xl border border-slate-200 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
+                <section key={section.id} className="rounded-xl border border-slate-200 p-3 sm:p-4">
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
                       <p className="text-sm font-semibold text-slate-900">
                         {section.title || `Nova sekcija ${sectionIndex + 1}`}
                       </p>
@@ -852,8 +1024,8 @@ export default function AdminLandingSectionsPage() {
                         Pozicija na home-u: {pagePosition || "-"} / 12 proizvoda max
                       </p>
                     </div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <label className="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">
+                    <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:items-center sm:justify-end">
+                      <label className="inline-flex items-center justify-center gap-2 rounded-full border border-slate-200 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700 sm:py-1.5">
                         <input
                           type="checkbox"
                           checked={section.enabled}
@@ -865,7 +1037,7 @@ export default function AdminLandingSectionsPage() {
                         type="button"
                         onClick={() => movePageSection({ kind: "custom", id: section.id }, -1)}
                         disabled={pagePosition == null || pagePosition <= 1}
-                        className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
+                        className="rounded-full border border-slate-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40 sm:py-1.5"
                       >
                         Gore
                       </button>
@@ -873,11 +1045,11 @@ export default function AdminLandingSectionsPage() {
                         type="button"
                         onClick={() => movePageSection({ kind: "custom", id: section.id }, 1)}
                         disabled={pagePosition == null || pagePosition >= orderedPageEntries.length}
-                        className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40"
+                        className="rounded-full border border-slate-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700 disabled:opacity-40 sm:py-1.5"
                       >
                         Dole
                       </button>
-                      <label className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600">
+                      <label className="col-span-2 inline-flex items-center justify-center gap-1.5 rounded-full border border-slate-200 px-3 py-2 text-[11px] font-semibold text-slate-600 sm:col-span-1 sm:border-0 sm:px-0 sm:py-0">
                         <span className="uppercase tracking-[0.08em]">Prikaz</span>
                         <select
                           value={section.layout}
@@ -891,7 +1063,7 @@ export default function AdminLandingSectionsPage() {
                       <button
                         type="button"
                         onClick={() => removeCustomSection(section.id)}
-                        className="rounded-full border border-rose-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700"
+                        className="col-span-2 rounded-full border border-rose-200 px-3 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] text-rose-700 sm:col-span-1 sm:py-1.5"
                       >
                         Obrisi
                       </button>
@@ -957,12 +1129,12 @@ export default function AdminLandingSectionsPage() {
                       productsLoading
                         ? undefined
                         : productResults.length === 0
-                          ? "Kucaj pojam iznad — rezultati se ucitavaju automatski."
+                          ? "Kucaj pojam iznad - rezultati se ucitavaju automatski."
                           : undefined
                     }
                   />
 
-                  <div className="mt-3 flex flex-wrap gap-2">
+                  <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
                     {section.productIds.length === 0 ? (
                       <p className="text-xs text-slate-500">Sekcija je prazna dok ne dodas proizvode.</p>
                     ) : null}
@@ -971,7 +1143,7 @@ export default function AdminLandingSectionsPage() {
                       return (
                         <div
                           key={`${section.id}-${id}`}
-                          className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-2 py-1 text-xs"
+                          className="grid grid-cols-[36px_1fr] gap-2 rounded-xl border border-slate-200 bg-slate-50 p-2 text-xs"
                         >
                           {product?.coverImage ? (
                             <Image
@@ -979,43 +1151,47 @@ export default function AdminLandingSectionsPage() {
                               alt={product.name}
                               width={28}
                               height={28}
-                              className="h-7 w-7 rounded-full object-cover"
+                              className="h-9 w-9 rounded-lg object-cover"
                               unoptimized
                             />
                           ) : (
                             <div
-                              className="h-7 w-7 rounded-full border border-slate-200 bg-white"
+                              className="h-9 w-9 rounded-lg border border-slate-200 bg-white"
                               aria-hidden="true"
                             />
                           )}
-                          <span className="font-semibold text-slate-700">
-                            #{id}
-                            {product ? ` / ${product.sku}` : ""}
-                          </span>
-                          <span className="max-w-[220px] truncate text-slate-500">{product?.name || "Nepoznat proizvod"}</span>
-                          <button
-                            type="button"
-                            onClick={() => moveCustomSectionId(section.id, index, index - 1)}
-                            disabled={index === 0}
-                            className="rounded border border-slate-200 px-1 text-[10px] text-slate-700 disabled:opacity-40"
-                          >
-                            UP
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => moveCustomSectionId(section.id, index, index + 1)}
-                            disabled={index === section.productIds.length - 1}
-                            className="rounded border border-slate-200 px-1 text-[10px] text-slate-700 disabled:opacity-40"
-                          >
-                            DOWN
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => removeCustomSectionId(section.id, id)}
-                            className="rounded border border-rose-200 px-1 text-[10px] text-rose-700"
-                          >
-                            x
-                          </button>
+                          <div className="min-w-0">
+                            <p className="truncate font-semibold text-slate-700">
+                              #{id}
+                              {product ? ` / ${product.sku}` : ""}
+                            </p>
+                            <p className="truncate text-slate-500">{product?.name || "Nepoznat proizvod"}</p>
+                            <div className="mt-2 grid grid-cols-3 gap-1">
+                              <button
+                                type="button"
+                                onClick={() => moveCustomSectionId(section.id, index, index - 1)}
+                                disabled={index === 0}
+                                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 disabled:opacity-40"
+                              >
+                                Gore
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => moveCustomSectionId(section.id, index, index + 1)}
+                                disabled={index === section.productIds.length - 1}
+                                className="rounded-lg border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold text-slate-700 disabled:opacity-40"
+                              >
+                                Dole
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => removeCustomSectionId(section.id, id)}
+                                className="rounded-lg border border-rose-200 bg-white px-2 py-1 text-[10px] font-semibold text-rose-700"
+                              >
+                                Ukloni
+                              </button>
+                            </div>
+                          </div>
                         </div>
                       );
                     })}
