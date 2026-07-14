@@ -35,11 +35,13 @@ export default function StorefrontHeaderClient({
   variant = "default",
   navItems,
   socialLinks,
+  navLinkColor,
 }: {
   lang?: StorefrontLanguage;
   variant?: "default" | "contrast";
   navItems: HeaderNavItem[];
   socialLinks?: HeaderSocialLinks;
+  navLinkColor?: string;
 }) {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -266,6 +268,9 @@ export default function StorefrontHeaderClient({
 
   return (
     <>
+      {navLinkColor ? (
+        <style>{`#header#header .navigation__link, #header#header .navigation__item.is-active .navigation__link, #header#header .navigation__link.is-active { color: ${navLinkColor} !important; }`}</style>
+      ) : null}
       <header id="header" className={headerClass}>
         <div className="container">
           <div className="header-desk header-desk_type_1">

@@ -1070,6 +1070,7 @@ export default async function HomePage({
           heroVideoUrl={landingSettings.heroVideoUrl || undefined}
           heroVideoMobileUrl={landingSettings.heroVideoMobileUrl || undefined}
           heroVideoPosterUrl={landingSettings.heroVideoPosterUrl || undefined}
+          heroTextColor={landingSettings.heroTextColor || undefined}
           content={{
             heroEyebrow: tx(landingSettings.heroEyebrow, "Santos & Santorini"),
             heroTitleLine1: tx(landingSettings.heroTitleLine1, "New Collection"),

@@ -1,6 +1,7 @@
 import StorefrontAnnouncementBar from "@/app/components/storefront/StorefrontAnnouncementBar";
 import StorefrontHeaderClient from "@/app/components/storefront/StorefrontHeaderClient";
 import { getSiteContent, type SiteNavItem } from "@/lib/storefront/siteContent";
+import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 const BUSINESS_UNIFORMS_NAV_ITEM: SiteNavItem = {
@@ -19,7 +20,7 @@ export default async function StorefrontHeader({
   variant?: "default" | "contrast";
 }) {
   const isEn = lang === "en";
-  const siteContent = await getSiteContent();
+  const [siteContent, landingSettings] = await Promise.all([getSiteContent(), getLandingSettings()]);
   const navigationItems = REQUIRED_NAV_ITEMS.reduce((items, requiredItem) => {
     if (items.some((item) => item.href === requiredItem.href)) return items;
     const anchorIndex = items.findIndex((item) => item.href === "/blog" || item.href === "/kontakt");
@@ -38,11 +39,17 @@ export default async function StorefrontHeader({
   return (
     <div className="ss-top-bar-wrapper">
       <StorefrontAnnouncementBar lang={lang} content={siteContent.announcements} />
-      <StorefrontHeaderClient lang={lang} variant={variant} navItems={navItems} socialLinks={{
-        instagramUrl: siteContent.footer.instagramUrl,
-        facebookUrl: siteContent.footer.facebookUrl,
-        tiktokUrl: siteContent.footer.tiktokUrl,
-      }} />
+      <StorefrontHeaderClient
+        lang={lang}
+        variant={variant}
+        navItems={navItems}
+        navLinkColor={landingSettings.navLinkColor || undefined}
+        socialLinks={{
+          instagramUrl: siteContent.footer.instagramUrl,
+          facebookUrl: siteContent.footer.facebookUrl,
+          tiktokUrl: siteContent.footer.tiktokUrl,
+        }}
+      />
     </div>
   );
 }

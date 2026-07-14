@@ -22,6 +22,12 @@ import { revalidateTag, unstable_cache } from "next/cache";
 const LANDING_SETTINGS_PATH = "data/landing-settings.json";
 const LANDING_SETTINGS_CACHE_TAG = "landing-settings";
 
+const CSS_COLOR_PATTERN = /^#[0-9a-fA-F]{3,8}$|^rgba?\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*(,\s*[\d.]+\s*)?\)$/;
+export const sanitizeCssColor = (value: unknown, fallback = ""): string => {
+  const trimmed = String(value || "").trim();
+  return CSS_COLOR_PATTERN.test(trimmed) ? trimmed : fallback;
+};
+
 const PURCHASE_WITHDRAWAL_DOCUMENT: LandingDocument = {
   title: "Obrazac o odustajanju od kupovine",
   description: "Formular za raskid ugovora / odustanak od kupovine na daljinu.",
@@ -118,6 +124,8 @@ export type LandingSettings = {
   heroPrimaryCtaHref: string;
   heroSecondaryCtaLabel: string;
   heroSecondaryCtaHref: string;
+  heroTextColor: string;
+  navLinkColor: string;
   bannerLeftTitle: string;
   bannerLeftButtonLabel: string;
   bannerLeftHref: string;
@@ -209,6 +217,8 @@ const DEFAULT_SETTINGS: LandingSettings = {
   heroPrimaryCtaHref: "/web-shop",
   heroSecondaryCtaLabel: "Kontakt",
   heroSecondaryCtaHref: "/kontakt",
+  heroTextColor: "",
+  navLinkColor: "",
   bannerLeftTitle: "Ready to Wear",
   bannerLeftButtonLabel: "Kupi odmah",
   bannerLeftHref: "/web-shop",
@@ -660,6 +670,8 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
     heroPrimaryCtaHref: String(settings.heroPrimaryCtaHref || DEFAULT_SETTINGS.heroPrimaryCtaHref),
     heroSecondaryCtaLabel: decodeLandingText(settings.heroSecondaryCtaLabel, DEFAULT_SETTINGS.heroSecondaryCtaLabel),
     heroSecondaryCtaHref: String(settings.heroSecondaryCtaHref || DEFAULT_SETTINGS.heroSecondaryCtaHref),
+    heroTextColor: sanitizeCssColor(settings.heroTextColor, DEFAULT_SETTINGS.heroTextColor),
+    navLinkColor: sanitizeCssColor(settings.navLinkColor, DEFAULT_SETTINGS.navLinkColor),
     bannerLeftTitle: decodeLandingText(settings.bannerLeftTitle, DEFAULT_SETTINGS.bannerLeftTitle),
     bannerLeftButtonLabel: decodeLandingText(settings.bannerLeftButtonLabel, DEFAULT_SETTINGS.bannerLeftButtonLabel),
     bannerLeftHref: String(settings.bannerLeftHref || DEFAULT_SETTINGS.bannerLeftHref),
@@ -848,6 +860,8 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
       patch.heroSecondaryCtaHref == null
         ? current.heroSecondaryCtaHref
         : String(patch.heroSecondaryCtaHref).trim() || DEFAULT_SETTINGS.heroSecondaryCtaHref,
+    heroTextColor: patch.heroTextColor == null ? current.heroTextColor : sanitizeCssColor(patch.heroTextColor),
+    navLinkColor: patch.navLinkColor == null ? current.navLinkColor : sanitizeCssColor(patch.navLinkColor),
     bannerLeftTitle:
       patch.bannerLeftTitle == null
         ? current.bannerLeftTitle

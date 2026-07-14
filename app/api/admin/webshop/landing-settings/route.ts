@@ -186,6 +186,8 @@ export async function PATCH(req: NextRequest) {
   if ("heroPrimaryCtaHref" in row) patch.heroPrimaryCtaHref = String(row.heroPrimaryCtaHref || "");
   if ("heroSecondaryCtaLabel" in row) patch.heroSecondaryCtaLabel = String(row.heroSecondaryCtaLabel || "");
   if ("heroSecondaryCtaHref" in row) patch.heroSecondaryCtaHref = String(row.heroSecondaryCtaHref || "");
+  if ("heroTextColor" in row) patch.heroTextColor = String(row.heroTextColor || "");
+  if ("navLinkColor" in row) patch.navLinkColor = String(row.navLinkColor || "");
   if ("bannerLeftTitle" in row) patch.bannerLeftTitle = String(row.bannerLeftTitle || "");
   if ("bannerLeftButtonLabel" in row) patch.bannerLeftButtonLabel = String(row.bannerLeftButtonLabel || "");
   if ("bannerLeftHref" in row) patch.bannerLeftHref = String(row.bannerLeftHref || "");

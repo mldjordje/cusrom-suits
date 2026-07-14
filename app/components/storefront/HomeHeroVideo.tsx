@@ -38,11 +38,12 @@ type Props = {
   heroVideoUrl?: string;
   heroVideoMobileUrl?: string;
   heroVideoPosterUrl?: string;
+  heroTextColor?: string;
 };
 
 const hrefForCategoryGroup = (categoryGroup: string) => `/web-shop?categoryGroup=${categoryGroup}`;
 
-export default function HomeHeroVideo({ categories: _categories, showProductCards = true, cards: cardsInput, content, lang = "sr", heroVideoUrl, heroVideoMobileUrl, heroVideoPosterUrl }: Props) {
+export default function HomeHeroVideo({ categories: _categories, showProductCards = true, cards: cardsInput, content, lang = "sr", heroVideoUrl, heroVideoMobileUrl, heroVideoPosterUrl, heroTextColor }: Props) {
   const isEn = lang === "en";
   const tx = (value: string, fallbackEn?: string) => localizeDynamicStorefrontText(value, lang, fallbackEn);
   const withLang = (href: string) => {
@@ -82,6 +83,9 @@ export default function HomeHeroVideo({ categories: _categories, showProductCard
 
   return (
     <section id="ss-home-hero" className="ss-home18-hero position-relative overflow-hidden">
+      {heroTextColor ? (
+        <style>{`#ss-home-hero#ss-home-hero .ss-home18-hero__eyebrow, #ss-home-hero#ss-home-hero .hero-display { color: ${heroTextColor} !important; }`}</style>
+      ) : null}
       <div className="ss-home18-hero__ambient ss-home18-hero__ambient--one" data-hero-glow />
       <div className="ss-home18-hero__ambient ss-home18-hero__ambient--two" data-hero-glow />
       <div className="ss-home18-hero__grid" aria-hidden="true" />

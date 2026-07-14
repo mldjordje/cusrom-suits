@@ -166,6 +166,8 @@ type LandingSettings = {
   heroPrimaryCtaHref: string;
   heroSecondaryCtaLabel: string;
   heroSecondaryCtaHref: string;
+  heroTextColor: string;
+  navLinkColor: string;
   bannerLeftTitle: string;
   bannerLeftButtonLabel: string;
   bannerLeftHref: string;
@@ -346,6 +348,8 @@ const defaultLandingSettings: LandingSettings = {
   heroPrimaryCtaHref: "/web-shop",
   heroSecondaryCtaLabel: "Kontakt",
   heroSecondaryCtaHref: "/kontakt",
+  heroTextColor: "",
+  navLinkColor: "",
   bannerLeftTitle: "Ready to Wear",
   bannerLeftButtonLabel: "Kupi odmah",
   bannerLeftHref: "/web-shop",
@@ -3078,6 +3082,54 @@ export default function AdminWebshopPage() {
               <input value={landingSettings.heroSecondaryCtaLabel} onChange={(e) => setLandingSettings((p) => ({ ...p, heroSecondaryCtaLabel: e.target.value }))} placeholder="Secondary CTA label" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={landingSettings.heroSecondaryCtaHref} onChange={(e) => setLandingSettings((p) => ({ ...p, heroSecondaryCtaHref: e.target.value }))} placeholder="Secondary CTA href" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
             </div>
+
+            <div className="mt-4 border-t border-slate-100 pt-4">
+              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Boja teksta</p>
+              <p className="mb-3 text-xs text-slate-500">Ostavi prazno za podrazumevanu boju (belo u hero-u, automatska u meniju).</p>
+              <div className="grid gap-3 md:grid-cols-2">
+                <label className="grid gap-1 text-xs font-medium text-slate-500">
+                  Boja hero naslova/teksta
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={landingSettings.heroTextColor || "#ffffff"}
+                      onChange={(e) => setLandingSettings((p) => ({ ...p, heroTextColor: e.target.value }))}
+                      className="h-9 w-12 rounded-lg border border-slate-200"
+                    />
+                    <input
+                      value={landingSettings.heroTextColor}
+                      onChange={(e) => setLandingSettings((p) => ({ ...p, heroTextColor: e.target.value }))}
+                      placeholder="npr. #ffffff (prazno = podrazumevano)"
+                      className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    />
+                    {landingSettings.heroTextColor ? (
+                      <button type="button" onClick={() => setLandingSettings((p) => ({ ...p, heroTextColor: "" }))} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600">Reset</button>
+                    ) : null}
+                  </div>
+                </label>
+                <label className="grid gap-1 text-xs font-medium text-slate-500">
+                  Boja linkova u header meniju
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="color"
+                      value={landingSettings.navLinkColor || "#181414"}
+                      onChange={(e) => setLandingSettings((p) => ({ ...p, navLinkColor: e.target.value }))}
+                      className="h-9 w-12 rounded-lg border border-slate-200"
+                    />
+                    <input
+                      value={landingSettings.navLinkColor}
+                      onChange={(e) => setLandingSettings((p) => ({ ...p, navLinkColor: e.target.value }))}
+                      placeholder="npr. #181414 (prazno = podrazumevano)"
+                      className="flex-1 rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                    />
+                    {landingSettings.navLinkColor ? (
+                      <button type="button" onClick={() => setLandingSettings((p) => ({ ...p, navLinkColor: "" }))} className="rounded-lg border border-slate-200 px-2 py-1.5 text-xs text-slate-600">Reset</button>
+                    ) : null}
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <div className="mt-4 border-t border-slate-100 pt-4">
               <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Hero pozadina i video</p>
               <p className="mb-3 text-xs text-slate-500">Hero background image koristi polje Poster slika. Ako video nije dodat, ova slika je glavna pozadina hero sekcije.</p>
