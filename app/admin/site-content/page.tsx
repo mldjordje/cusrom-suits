@@ -487,17 +487,34 @@ export default function AdminSiteContentPage() {
       <SectionCard
         id="footer"
         title="Footer"
-        description="Brend tekst, drustvene mreze i footer navigacija."
+        description="Brend tekst, drustvene mreze (Instagram/Facebook/TikTok) i footer navigacija."
         badge={content.footer.groups.length > 0 ? `${content.footer.groups.length} grupe` : null}
+        defaultOpen
       >
         <div className="grid gap-3 md:grid-cols-2">
           <input value={content.footer.eyebrow} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, eyebrow: e.target.value } }))} placeholder="Eyebrow SR" className={fieldClass} />
           <input value={content.footer.eyebrowEn} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, eyebrowEn: e.target.value } }))} placeholder="Eyebrow EN" className={fieldClass} />
           <textarea value={content.footer.brandCopy} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, brandCopy: e.target.value } }))} placeholder="Footer copy SR" className={`${fieldClass} min-h-[90px]`} />
           <textarea value={content.footer.brandCopyEn} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, brandCopyEn: e.target.value } }))} placeholder="Footer copy EN" className={`${fieldClass} min-h-[90px]`} />
-          <input value={content.footer.instagramUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, instagramUrl: e.target.value } }))} placeholder="Instagram URL" className={fieldClass} />
-          <input value={content.footer.facebookUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, facebookUrl: e.target.value } }))} placeholder="Facebook URL" className={fieldClass} />
-          <input value={content.footer.tiktokUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, tiktokUrl: e.target.value } }))} placeholder="TikTok URL" className={fieldClass} />
+        </div>
+
+        <h3 className="mt-5 text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">Drustvene mreze (header + footer)</h3>
+        <div className="mt-2 grid gap-3 md:grid-cols-2">
+          <label className="grid gap-1 text-xs font-medium text-slate-500">
+            Instagram URL
+            <input value={content.footer.instagramUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, instagramUrl: e.target.value } }))} placeholder="https://instagram.com/..." className={fieldClass} />
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-slate-500">
+            Facebook URL
+            <input value={content.footer.facebookUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, facebookUrl: e.target.value } }))} placeholder="https://facebook.com/..." className={fieldClass} />
+          </label>
+          <label className="grid gap-1 text-xs font-medium text-slate-500">
+            TikTok URL
+            <input value={content.footer.tiktokUrl} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, tiktokUrl: e.target.value } }))} placeholder="https://www.tiktok.com/@..." className={fieldClass} />
+          </label>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-2">
           <input value={content.footer.bottomTagline} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, bottomTagline: e.target.value } }))} placeholder="Bottom tagline SR" className={fieldClass} />
           <input value={content.footer.bottomTaglineEn} onChange={(e) => setContent((prev) => ({ ...prev, footer: { ...prev.footer, bottomTaglineEn: e.target.value } }))} placeholder="Bottom tagline EN" className={fieldClass} />
         </div>

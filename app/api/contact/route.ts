@@ -14,6 +14,11 @@ const SPAM_KEYWORDS = [
   "casino", "slot", "poker", "betting", "gambling", "crypto", "bitcoin",
   "earn money", "make money", "click here", "free money", "win cash",
   "spin", "jackpot", "reel", "psee.io", "bit.ly", "tinyurl",
+  // crypto/phishing "transfer" scams (graph.org and similar redirect chains)
+  "transfer to you", "sign in >>>", "sign in <<<", "graph.org", "balance-",
+  // backlink / SEO outreach spam
+  "backlink", "guest post", "link exchange", "domain rating", "dr30",
+  "seo boost", "5 quality local business", "5 local business websites",
 ];
 
 function isSpam(...fields: string[]): boolean {

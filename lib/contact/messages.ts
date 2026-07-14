@@ -50,6 +50,15 @@ export async function appendContactMessage(entry: ContactMessage) {
   return normalized;
 }
 
+export async function deleteContactMessages(ids: string[]): Promise<number> {
+  const idSet = new Set(ids);
+  const list = await listContactMessages();
+  const next = list.filter((entry) => !idSet.has(entry.id));
+  const removed = list.length - next.length;
+  if (removed > 0) await writePersistentJsonFile(CONTACT_MESSAGES_PATH, next);
+  return removed;
+}
+
 export async function updateContactMessageStatus(
   id: string,
   status: ContactMessageStatus,

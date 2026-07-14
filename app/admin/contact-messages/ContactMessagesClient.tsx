@@ -27,6 +27,8 @@ export default function ContactMessagesClient({ initialMessages }: Props) {
   const [query, setQuery] = useState("");
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleting, setDeleting] = useState(false);
 
   const counts = useMemo(
     () => ({
@@ -72,6 +74,42 @@ export default function ContactMessagesClient({ initialMessages }: Props) {
     }
   };
 
+  const toggleSelected = (id: string) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const deleteMessages = async (ids: string[]) => {
+    if (!ids.length) return;
+    if (!window.confirm(`Obrisati ${ids.length} poruk${ids.length === 1 ? "u" : "e"} trajno?`)) return;
+    setDeleting(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/contact-messages", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const json = await res.json();
+      if (!json?.success) throw new Error(json?.message || "Brisanje nije uspelo.");
+      const idSet = new Set(ids);
+      setMessages((prev) => prev.filter((m) => !idSet.has(m.id)));
+      setSelected((prev) => {
+        const next = new Set(prev);
+        ids.forEach((id) => next.delete(id));
+        return next;
+      });
+    } catch (err) {
+      setError((err as Error)?.message || "Greska pri brisanju.");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-5">
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -104,7 +142,18 @@ export default function ContactMessagesClient({ initialMessages }: Props) {
         </div>
 
         {error ? <p className="mb-3 text-sm text-rose-600">{error}</p> : null}
-        <p className="mb-3 text-sm text-slate-600">Prikazano: {visible.length}</p>
+        <div className="mb-3 flex flex-wrap items-center gap-3">
+          <p className="text-sm text-slate-600">Prikazano: {visible.length}</p>
+          {selected.size > 0 ? (
+            <button
+              onClick={() => void deleteMessages(Array.from(selected))}
+              disabled={deleting}
+              className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700 transition hover:border-rose-400 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Obrisi selektovane ({selected.size})
+            </button>
+          ) : null}
+        </div>
 
         <div className="space-y-3">
           {visible.map((message) => {
@@ -114,6 +163,12 @@ export default function ContactMessagesClient({ initialMessages }: Props) {
               <article key={message.id} className="rounded-xl border border-slate-200 p-4">
                 <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                   <div className="flex flex-wrap items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={selected.has(message.id)}
+                      onChange={() => toggleSelected(message.id)}
+                      className="h-4 w-4"
+                    />
                     <p className="font-semibold text-slate-900">{message.name}</p>
                     <span
                       className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] ${badgeStyles[status]}`}
@@ -188,6 +243,13 @@ export default function ContactMessagesClient({ initialMessages }: Props) {
                   >
                     Odgovori mailom
                   </a>
+                  <button
+                    onClick={() => void deleteMessages([message.id])}
+                    disabled={deleting}
+                    className="ml-auto rounded-full border border-rose-200 px-3 py-1 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700 transition hover:border-rose-400 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Obrisi
+                  </button>
                 </div>
               </article>
             );

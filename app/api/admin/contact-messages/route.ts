@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
 import {
+  deleteContactMessages,
   listContactMessages,
   updateContactMessageStatus,
   type ContactMessageStatus,
@@ -43,4 +44,19 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ success: false, message: "Message not found." }, { status: 404 });
   }
   return NextResponse.json({ success: true, message: updated });
+}
+
+export async function DELETE(req: NextRequest) {
+  if (!hasAdminToken(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
+  const payload = await req.json().catch(() => null);
+  const ids = Array.isArray((payload as Record<string, unknown> | null)?.ids)
+    ? ((payload as Record<string, unknown>).ids as unknown[]).map((id) => String(id || "").trim()).filter(Boolean)
+    : [];
+  if (!ids.length) {
+    return NextResponse.json({ success: false, message: "Missing ids." }, { status: 400 });
+  }
+  const removed = await deleteContactMessages(ids);
+  return NextResponse.json({ success: true, removed });
 }
