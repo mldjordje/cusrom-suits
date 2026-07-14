@@ -491,6 +491,14 @@
   #header .container {
     padding-top: 0.55rem !important;
     padding-bottom: 0.55rem !important;
+    /* Bootstrap's centered .container leaves a huge auto-margin on wide
+       screens, stranding the logo ~150px from the edge. Un-center it so the
+       header content hugs the viewport edges instead. */
+    max-width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    padding-left: clamp(1.25rem, 2.5vw, 2.5rem) !important;
+    padding-right: clamp(1.25rem, 2.5vw, 2.5rem) !important;
   }
 
   #header .header-desk_type_1 .ss-site-logo {

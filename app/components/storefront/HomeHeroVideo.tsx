@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { decodeHtmlEntities, getCatalogProductDisplayName } from "@/lib/catalog/presentation";
+import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import HomeHeroMedia from "@/app/components/storefront/HomeHeroMedia";
@@ -14,17 +14,17 @@ type HomeCategory = {
   path: string[];
 };
 
+type HeroCard = {
+  id: string;
+  title: string;
+  image: string;
+  href: string;
+};
+
 type Props = {
   categories: HomeCategory[];
   showProductCards?: boolean;
-  featuredProducts: {
-    legacyId: number;
-    sku: string;
-    name: string;
-    manufCode?: string | null;
-    coverImage: string | null;
-    categories: HomeCategory[];
-  }[];
+  cards: HeroCard[];
   content: {
     heroEyebrow: string;
     heroTitleLine1: string;
@@ -42,7 +42,7 @@ type Props = {
 
 const hrefForCategoryGroup = (categoryGroup: string) => `/web-shop?categoryGroup=${categoryGroup}`;
 
-export default function HomeHeroVideo({ categories: _categories, showProductCards = true, featuredProducts, content, lang = "sr", heroVideoUrl, heroVideoMobileUrl, heroVideoPosterUrl }: Props) {
+export default function HomeHeroVideo({ categories: _categories, showProductCards = true, cards: cardsInput, content, lang = "sr", heroVideoUrl, heroVideoMobileUrl, heroVideoPosterUrl }: Props) {
   const isEn = lang === "en";
   const tx = (value: string, fallbackEn?: string) => localizeDynamicStorefrontText(value, lang, fallbackEn);
   const withLang = (href: string) => {
@@ -51,21 +51,8 @@ export default function HomeHeroVideo({ categories: _categories, showProductCard
     return `${href}?lang=en`;
   };
   const cards =
-    featuredProducts.length > 0
-      ? featuredProducts.slice(0, 4).map((product) => ({
-          id: String(product.legacyId),
-          title: getCatalogProductDisplayName(
-            {
-              name: product.name,
-              sku: product.sku,
-              manufCode: product.manufCode,
-              categories: product.categories,
-            },
-            lang,
-          ),
-          image: product.coverImage || "/img/hero.jpg",
-          href: withLang(`/web-shop/${product.legacyId}`),
-        }))
+    cardsInput.length > 0
+      ? cardsInput.slice(0, 4)
       : [
           {
             id: "fallback-1",

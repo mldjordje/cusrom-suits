@@ -294,7 +294,7 @@ const landingSectionConfig: Array<{
   description: string;
   limit: number;
 }> = [
-  { key: "heroStripProductIds", label: "Hero traka", description: "Proizvodi u hero/landing traci.", limit: 8 },
+  { key: "heroStripProductIds", label: "Istrazi kolekciju (traka ispod hero-a)", description: "Proizvodi u traci 'Istrazi kolekciju', ispod hero sekcije.", limit: 8 },
   { key: "highlightedProductIds", label: "Izdvojeni modeli", description: "Prva velika produkt sekcija.", limit: 8 },
   { key: "popularProductIds", label: "Popularni proizvodi", description: "Sekcija popularnih proizvoda.", limit: 4 },
   { key: "arrivalsProductIds", label: "Nova kolekcija", description: "Sekcija novih modela.", limit: 4 },
@@ -3220,10 +3220,10 @@ export default function AdminWebshopPage() {
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Kategorije (tile-ovi na pocetnoj)</p>
+              <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Kategorije (kartice u hero sekciji)</p>
               <button onClick={addCategoryTile} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">Dodaj kategoriju</button>
             </div>
-            <p className="mt-2 text-xs text-slate-500">Slike, naslovi i linkovi za kartice ispod hero sekcije (Odela, Sakoi, Pantalone, Kosulje, Custom Suits).</p>
+            <p className="mt-2 text-xs text-slate-500">Slike, naslovi i linkovi za kategorije u &ldquo;Izdvojeno&rdquo; traci unutar hero sekcije (prve 4 kartice se prikazuju).</p>
             <div className="mt-4 grid gap-4">
               {landingSettings.categoryTiles.map((tile, index) => (
                 <div key={tile.id} className="rounded-xl border border-slate-200 p-3">

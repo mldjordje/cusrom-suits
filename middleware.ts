@@ -7,7 +7,18 @@ import {
 } from "@/lib/adminAuth";
 import { updateStorefrontSupabaseSession } from "@/lib/supabase/update-storefront-session";
 
+// Bots/scrapers frequently crawl the raw *.vercel.app alias directly (it's
+// what shows up in Vercel's own dashboards/DNS scans), not through the real
+// domain a customer would type. Block it at the edge so that traffic never
+// reaches the app or gets counted as real visitors.
+const BLOCKED_HOST_SUFFIX = ".vercel.app";
+
 export async function middleware(req: NextRequest) {
+  const host = req.headers.get("host") || "";
+  if (host.toLowerCase().endsWith(BLOCKED_HOST_SUFFIX)) {
+    return new NextResponse("Not Found", { status: 404 });
+  }
+
   const pathname = req.nextUrl.pathname;
   const isAdminArea = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");
   const isAdminApi = pathname.startsWith("/api/admin/");
@@ -66,12 +77,7 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: [
-    "/admin/:path*",
-    "/api/admin/:path*",
-    "/nalog/:path*",
-    "/checkout",
-    "/api/storefront/orders",
-    "/api/orders",
-  ],
+  // Broad matcher so the vercel.app host block applies everywhere, not just
+  // the admin/auth routes the rest of this middleware cares about.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };

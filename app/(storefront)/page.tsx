@@ -888,19 +888,20 @@ export default async function HomePage({
 
   const renderFixedSection = (key: LandingFixedSectionKey) => {
     if (key === "categoryTiles") {
+      // Featured articles render here (swapped with the hero rail, which now
+      // shows the category tiles) so visitors can jump straight into a
+      // category from the hero, while this strip below showcases products.
+      const productTiles = heroStripProducts.slice(0, 8).map((item) => ({
+        id: String(item.legacyId),
+        label: getProductDisplayName(item, "sr"),
+        labelEn: getProductDisplayName(item, "en"),
+        href: `/web-shop/${item.legacyId}`,
+        image: item.coverImage || "/img/hero.jpg",
+      }));
       return (
         <HomeCategoryTiles
           categories={catalog.categories}
-          tiles={landingSettings.categoryTiles}
-          categoryGroupImages={(() => {
-            const groups = ["odelo", "sako", "pantalone", "kosulja", "jakna", "obuca", "kaput"];
-            const result: Record<string, string> = {};
-            for (const group of groups) {
-              const match = catalog.items.find((item) => item.coverImage && productMatchesCategoryGroup(item, group));
-              if (match?.coverImage) result[group] = String(match?.coverImage);
-            }
-            return result;
-          })()}
+          tiles={productTiles}
           lang={lang}
         />
       );
@@ -1032,6 +1033,28 @@ export default async function HomePage({
   const organizationJsonLd = buildOrganizationJsonLd();
   const localBusinessJsonLd = buildLocalBusinessJsonLd();
 
+  // Hero rail now shows category tiles (swapped with the product strip below)
+  // so visitors can jump straight into a category from the hero.
+  const heroCategoryGroupImages = (() => {
+    const groups = ["odelo", "sako", "pantalone", "kosulja", "jakna", "obuca", "kaput"];
+    const result: Record<string, string> = {};
+    for (const group of groups) {
+      const match = catalog.items.find((item) => item.coverImage && productMatchesCategoryGroup(item, group));
+      if (match?.coverImage) result[group] = String(match?.coverImage);
+    }
+    return result;
+  })();
+  const heroCategoryCards = landingSettings.categoryTiles.slice(0, 4).map((tile) => {
+    const groupKey = new URLSearchParams(tile.href.split("?")[1] || "").get("categoryGroup") || "";
+    const liveImage = groupKey && heroCategoryGroupImages[groupKey];
+    return {
+      id: tile.id || tile.href,
+      title: tx(tile.label, tile.labelEn),
+      image: tile.image || liveImage || "/img/hero.jpg",
+      href: withLang(tile.href),
+    };
+  });
+
   return (
     <>
       <JsonLd data={websiteJsonLd} />
@@ -1042,8 +1065,8 @@ export default async function HomePage({
         <HomeHeroVideo
           lang={lang}
           categories={catalog.categories}
-          showProductCards={heroStripEnabled && heroStripProducts.length > 0}
-          featuredProducts={heroStripProducts}
+          showProductCards={heroStripEnabled && heroCategoryCards.length > 0}
+          cards={heroCategoryCards}
           heroVideoUrl={landingSettings.heroVideoUrl || undefined}
           heroVideoMobileUrl={landingSettings.heroVideoMobileUrl || undefined}
           heroVideoPosterUrl={landingSettings.heroVideoPosterUrl || undefined}

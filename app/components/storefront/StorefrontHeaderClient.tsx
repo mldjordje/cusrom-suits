@@ -213,18 +213,43 @@ export default function StorefrontHeaderClient({
       label: localizeDynamicCategoryLabel(category.name, isEn ? "en" : "sr"),
     })),
   ];
-  type HeaderSocialItem = { key: "instagram" | "facebook"; label: string; href?: string };
+  type HeaderSocialItem = { key: "instagram" | "facebook" | "tiktok"; label: string; href?: string };
   const headerSocialItems = ([
     { key: "instagram", label: "Instagram", href: socialLinks?.instagramUrl },
     { key: "facebook", label: "Facebook", href: socialLinks?.facebookUrl },
+    { key: "tiktok", label: "TikTok", href: socialLinks?.tiktokUrl },
   ] satisfies HeaderSocialItem[]).filter((item) => item.href && item.href.trim().length > 0);
-  const renderHeaderSocialIcon = (key: "instagram" | "facebook") => {
+  const renderHeaderSocialIcon = (key: "instagram" | "facebook" | "tiktok", idSuffix: string) => {
     if (key === "instagram") {
+      const gradientId = `ss-ig-gradient-${idSuffix}`;
       return (
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <rect x="4.75" y="4.75" width="14.5" height="14.5" rx="4.5" stroke="currentColor" strokeWidth="1.6" />
-          <circle cx="12" cy="12" r="3.35" stroke="currentColor" strokeWidth="1.6" />
-          <circle cx="16.5" cy="7.5" r="1.05" fill="currentColor" />
+          <defs>
+            <linearGradient id={gradientId} x1="1.5" y1="22.5" x2="22.5" y2="1.5" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#FEE411" />
+              <stop offset="0.15" stopColor="#FEDA77" />
+              <stop offset="0.35" stopColor="#F58529" />
+              <stop offset="0.55" stopColor="#DD2A7B" />
+              <stop offset="0.75" stopColor="#8134AF" />
+              <stop offset="1" stopColor="#515BD4" />
+            </linearGradient>
+          </defs>
+          <rect x="1.75" y="1.75" width="20.5" height="20.5" rx="6" fill={`url(#${gradientId})`} />
+          <rect x="6.25" y="6.25" width="11.5" height="11.5" rx="4" stroke="#fff" strokeWidth="1.7" />
+          <circle cx="12" cy="12" r="3.35" stroke="#fff" strokeWidth="1.7" />
+          <circle cx="17" cy="7" r="1.15" fill="#fff" />
+        </svg>
+      );
+    }
+
+    if (key === "facebook") {
+      return (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <circle cx="12" cy="12" r="10.25" fill="#1877F2" />
+          <path
+            d="M13.6 21.75v-7.7h2.58l.39-3H13.6V9.05c0-.87.24-1.46 1.49-1.46h1.59V4.9c-.27-.04-1.22-.12-2.31-.12-2.29 0-3.86 1.4-3.86 3.96v2.21H8v3h2.51v7.7Z"
+            fill="#fff"
+          />
         </svg>
       );
     }
@@ -232,11 +257,8 @@ export default function StorefrontHeaderClient({
     return (
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
         <path
-          d="M13.5 20.5v-7.4h2.4l.42-3H13.5V8.2c0-.86.26-1.45 1.5-1.45h1.5V4.1c-.73-.08-1.47-.13-2.2-.14-2.24 0-3.78 1.37-3.78 3.88v2.16H8v3h2.52v7.5h3Z"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-          fill="none"
+          d="M16.6 5.82c-.68-.73-1.06-1.68-1.06-2.66h-3.03v13.3a2.9 2.9 0 1 1-2.05-2.77v-3.1a5.94 5.94 0 0 0-.86-.06 5.94 5.94 0 1 0 5.94 5.94V9.4a7.85 7.85 0 0 0 4.59 1.47V7.85a4.85 4.85 0 0 1-3.53-2.03Z"
+          fill="currentColor"
         />
       </svg>
     );
@@ -334,7 +356,7 @@ export default function StorefrontHeaderClient({
                       className="ss-header-social-link"
                       aria-label={item.label}
                     >
-                      {renderHeaderSocialIcon(item.key)}
+                      {renderHeaderSocialIcon(item.key, "desktop")}
                     </a>
                   ))}
                 </div>
@@ -607,7 +629,7 @@ export default function StorefrontHeaderClient({
                             aria-label={item.label}
                             onClick={closeMobileMenu}
                           >
-                            {renderHeaderSocialIcon(item.key)}
+                            {renderHeaderSocialIcon(item.key, "mobile")}
                           </a>
                         ))}
                       </div>
