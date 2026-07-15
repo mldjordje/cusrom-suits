@@ -118,11 +118,16 @@ export type LandingSettings = {
   saleSectionTitle: string;
   saleSectionSubtitle: string;
   heroEyebrow: string;
+  heroEyebrowEn: string;
   heroTitleLine1: string;
+  heroTitleLine1En: string;
   heroTitleLine2: string;
+  heroTitleLine2En: string;
   heroPrimaryCtaLabel: string;
+  heroPrimaryCtaLabelEn: string;
   heroPrimaryCtaHref: string;
   heroSecondaryCtaLabel: string;
+  heroSecondaryCtaLabelEn: string;
   heroSecondaryCtaHref: string;
   heroTextColor: string;
   navLinkColor: string;
@@ -211,11 +216,16 @@ const DEFAULT_SETTINGS: LandingSettings = {
   saleSectionTitle: "Aktuelne Akcije",
   saleSectionSubtitle: "Sekcija i proizvodi se kontrolisu kroz admin.",
   heroEyebrow: "Santos & Santorini",
+  heroEyebrowEn: "",
   heroTitleLine1: "Nova kolekcija",
+  heroTitleLine1En: "",
   heroTitleLine2: "2026",
+  heroTitleLine2En: "",
   heroPrimaryCtaLabel: "Web shop",
+  heroPrimaryCtaLabelEn: "",
   heroPrimaryCtaHref: "/web-shop",
   heroSecondaryCtaLabel: "Kontakt",
+  heroSecondaryCtaLabelEn: "",
   heroSecondaryCtaHref: "/kontakt",
   heroTextColor: "",
   navLinkColor: "",
@@ -664,11 +674,16 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
     saleSectionTitle: decodeLandingText(settings.saleSectionTitle, DEFAULT_SETTINGS.saleSectionTitle),
     saleSectionSubtitle: decodeLandingText(settings.saleSectionSubtitle, DEFAULT_SETTINGS.saleSectionSubtitle),
     heroEyebrow: decodeLandingText(settings.heroEyebrow, DEFAULT_SETTINGS.heroEyebrow),
+    heroEyebrowEn: decodeLandingText(settings.heroEyebrowEn, ""),
     heroTitleLine1: decodeLandingText(settings.heroTitleLine1, DEFAULT_SETTINGS.heroTitleLine1),
+    heroTitleLine1En: decodeLandingText(settings.heroTitleLine1En, ""),
     heroTitleLine2: decodeLandingText(settings.heroTitleLine2, DEFAULT_SETTINGS.heroTitleLine2),
+    heroTitleLine2En: decodeLandingText(settings.heroTitleLine2En, ""),
     heroPrimaryCtaLabel: decodeLandingText(settings.heroPrimaryCtaLabel, DEFAULT_SETTINGS.heroPrimaryCtaLabel),
+    heroPrimaryCtaLabelEn: decodeLandingText(settings.heroPrimaryCtaLabelEn, ""),
     heroPrimaryCtaHref: String(settings.heroPrimaryCtaHref || DEFAULT_SETTINGS.heroPrimaryCtaHref),
     heroSecondaryCtaLabel: decodeLandingText(settings.heroSecondaryCtaLabel, DEFAULT_SETTINGS.heroSecondaryCtaLabel),
+    heroSecondaryCtaLabelEn: decodeLandingText(settings.heroSecondaryCtaLabelEn, ""),
     heroSecondaryCtaHref: String(settings.heroSecondaryCtaHref || DEFAULT_SETTINGS.heroSecondaryCtaHref),
     heroTextColor: sanitizeCssColor(settings.heroTextColor, DEFAULT_SETTINGS.heroTextColor),
     navLinkColor: sanitizeCssColor(settings.navLinkColor, DEFAULT_SETTINGS.navLinkColor),
@@ -842,12 +857,17 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
     saleSectionTitle: (patch.saleSectionTitle || current.saleSectionTitle).trim() || DEFAULT_SETTINGS.saleSectionTitle,
     saleSectionSubtitle: patch.saleSectionSubtitle == null ? current.saleSectionSubtitle : String(patch.saleSectionSubtitle).trim(),
     heroEyebrow: patch.heroEyebrow == null ? current.heroEyebrow : String(patch.heroEyebrow).trim() || DEFAULT_SETTINGS.heroEyebrow,
+    heroEyebrowEn: patch.heroEyebrowEn == null ? current.heroEyebrowEn : String(patch.heroEyebrowEn).trim(),
     heroTitleLine1: patch.heroTitleLine1 == null ? current.heroTitleLine1 : String(patch.heroTitleLine1).trim() || DEFAULT_SETTINGS.heroTitleLine1,
+    heroTitleLine1En: patch.heroTitleLine1En == null ? current.heroTitleLine1En : String(patch.heroTitleLine1En).trim(),
     heroTitleLine2: patch.heroTitleLine2 == null ? current.heroTitleLine2 : String(patch.heroTitleLine2).trim() || DEFAULT_SETTINGS.heroTitleLine2,
+    heroTitleLine2En: patch.heroTitleLine2En == null ? current.heroTitleLine2En : String(patch.heroTitleLine2En).trim(),
     heroPrimaryCtaLabel:
       patch.heroPrimaryCtaLabel == null
         ? current.heroPrimaryCtaLabel
         : String(patch.heroPrimaryCtaLabel).trim() || DEFAULT_SETTINGS.heroPrimaryCtaLabel,
+    heroPrimaryCtaLabelEn:
+      patch.heroPrimaryCtaLabelEn == null ? current.heroPrimaryCtaLabelEn : String(patch.heroPrimaryCtaLabelEn).trim(),
     heroPrimaryCtaHref:
       patch.heroPrimaryCtaHref == null
         ? current.heroPrimaryCtaHref
@@ -856,6 +876,8 @@ export async function updateLandingSettings(patch: Partial<LandingSettings>): Pr
       patch.heroSecondaryCtaLabel == null
         ? current.heroSecondaryCtaLabel
         : String(patch.heroSecondaryCtaLabel).trim() || DEFAULT_SETTINGS.heroSecondaryCtaLabel,
+    heroSecondaryCtaLabelEn:
+      patch.heroSecondaryCtaLabelEn == null ? current.heroSecondaryCtaLabelEn : String(patch.heroSecondaryCtaLabelEn).trim(),
     heroSecondaryCtaHref:
       patch.heroSecondaryCtaHref == null
         ? current.heroSecondaryCtaHref

@@ -180,11 +180,16 @@ export async function PATCH(req: NextRequest) {
   if ("saleSectionTitle" in row) patch.saleSectionTitle = String(row.saleSectionTitle || "");
   if ("saleSectionSubtitle" in row) patch.saleSectionSubtitle = String(row.saleSectionSubtitle || "");
   if ("heroEyebrow" in row) patch.heroEyebrow = String(row.heroEyebrow || "");
+  if ("heroEyebrowEn" in row) patch.heroEyebrowEn = String(row.heroEyebrowEn || "");
   if ("heroTitleLine1" in row) patch.heroTitleLine1 = String(row.heroTitleLine1 || "");
+  if ("heroTitleLine1En" in row) patch.heroTitleLine1En = String(row.heroTitleLine1En || "");
   if ("heroTitleLine2" in row) patch.heroTitleLine2 = String(row.heroTitleLine2 || "");
+  if ("heroTitleLine2En" in row) patch.heroTitleLine2En = String(row.heroTitleLine2En || "");
   if ("heroPrimaryCtaLabel" in row) patch.heroPrimaryCtaLabel = String(row.heroPrimaryCtaLabel || "");
+  if ("heroPrimaryCtaLabelEn" in row) patch.heroPrimaryCtaLabelEn = String(row.heroPrimaryCtaLabelEn || "");
   if ("heroPrimaryCtaHref" in row) patch.heroPrimaryCtaHref = String(row.heroPrimaryCtaHref || "");
   if ("heroSecondaryCtaLabel" in row) patch.heroSecondaryCtaLabel = String(row.heroSecondaryCtaLabel || "");
+  if ("heroSecondaryCtaLabelEn" in row) patch.heroSecondaryCtaLabelEn = String(row.heroSecondaryCtaLabelEn || "");
   if ("heroSecondaryCtaHref" in row) patch.heroSecondaryCtaHref = String(row.heroSecondaryCtaHref || "");
   if ("heroTextColor" in row) patch.heroTextColor = String(row.heroTextColor || "");
   if ("navLinkColor" in row) patch.navLinkColor = String(row.navLinkColor || "");

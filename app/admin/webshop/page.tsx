@@ -2942,7 +2942,7 @@ export default function AdminWebshopPage() {
                         <td className="px-2 py-2 text-xs font-mono">#{item.legacyId}<br />{item.sku}</td>
                         <td className="px-2 py-2"><input value={draft?.name || ""} onChange={(e) => updateDraft(item.legacyId, { name: e.target.value })} className="w-64 rounded border border-slate-200 px-2 py-1 text-xs" /></td>
                         <td className="px-2 py-2 text-xs">{item.categories[0]?.path.join(" / ") || "-"}</td>
-                        <td className="px-2 py-2"><input value={draft?.priceFinalGross || ""} onChange={(e) => updateDraft(item.legacyId, { priceFinalGross: e.target.value })} className="mb-1 w-28 rounded border border-slate-200 px-2 py-1 text-xs" /><input value={draft?.priceGross || ""} onChange={(e) => updateDraft(item.legacyId, { priceGross: e.target.value })} className="w-28 rounded border border-slate-200 px-2 py-1 text-xs" /></td>
+                        <td className="px-2 py-2"><input value={draft?.priceFinalGross || ""} onChange={(e) => updateDraft(item.legacyId, { priceFinalGross: e.target.value, priceOverride: true })} className="mb-1 w-28 rounded border border-slate-200 px-2 py-1 text-xs" /><input value={draft?.priceGross || ""} onChange={(e) => updateDraft(item.legacyId, { priceGross: e.target.value, priceOverride: true })} className="w-28 rounded border border-slate-200 px-2 py-1 text-xs" /></td>
                         <td className="px-2 py-2"><input value={draft?.stockWarehouse1 || ""} onChange={(e) => updateDraft(item.legacyId, { stockWarehouse1: e.target.value })} className="mb-1 w-24 rounded border border-slate-200 px-2 py-1 text-xs" /><input value={draft?.stockTotal || ""} onChange={(e) => updateDraft(item.legacyId, { stockTotal: e.target.value })} className="w-24 rounded border border-slate-200 px-2 py-1 text-xs" /></td>
                         <td className="px-2 py-2"><WashCareAdminPreview icons={washCareIcons} /></td>
                         <td className="px-2 py-2 text-xs">
@@ -4127,15 +4127,15 @@ export default function AdminWebshopPage() {
               />
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Regularna cena (RSD) — puna bez popusta</span>
-                <input value={drafts[currentEditorItem.legacyId]?.priceGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceGross: e.target.value })} placeholder="npr. 15000" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+                <input value={drafts[currentEditorItem.legacyId]?.priceGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceGross: e.target.value, priceOverride: true })} placeholder="npr. 15000" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Prodajna cena (RSD) — cena na sajtu</span>
-                <input value={drafts[currentEditorItem.legacyId]?.priceFinalGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceFinalGross: e.target.value })} placeholder="npr. 12000" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+                <input value={drafts[currentEditorItem.legacyId]?.priceFinalGross || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { priceFinalGross: e.target.value, priceOverride: true })} placeholder="npr. 12000" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Popust % (0–100) — alternativa za akcijsku cenu</span>
-                <input value={drafts[currentEditorItem.legacyId]?.rebatePercent || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { rebatePercent: e.target.value })} placeholder="npr. 20" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
+                <input value={drafts[currentEditorItem.legacyId]?.rebatePercent || ""} disabled={drafts[currentEditorItem.legacyId]?.businessUniform} onChange={(e) => updateDraft(currentEditorItem.legacyId, { rebatePercent: e.target.value, priceOverride: true })} placeholder="npr. 20" className="rounded-xl border border-slate-200 px-3 py-2 text-sm disabled:bg-slate-50 disabled:text-slate-400" />
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Stanje magacin 1 (kom)</span>

@@ -1072,12 +1072,12 @@ export default async function HomePage({
           heroVideoPosterUrl={landingSettings.heroVideoPosterUrl || undefined}
           heroTextColor={landingSettings.heroTextColor || undefined}
           content={{
-            heroEyebrow: tx(landingSettings.heroEyebrow, "Santos & Santorini"),
-            heroTitleLine1: tx(landingSettings.heroTitleLine1, "New Collection"),
-            heroTitleLine2: tx(landingSettings.heroTitleLine2),
-            heroPrimaryCtaLabel: tx(landingSettings.heroPrimaryCtaLabel, "Web Shop"),
+            heroEyebrow: (isEn && landingSettings.heroEyebrowEn.trim()) || tx(landingSettings.heroEyebrow, "Santos & Santorini"),
+            heroTitleLine1: (isEn && landingSettings.heroTitleLine1En.trim()) || tx(landingSettings.heroTitleLine1, "New Collection"),
+            heroTitleLine2: (isEn && landingSettings.heroTitleLine2En.trim()) || tx(landingSettings.heroTitleLine2),
+            heroPrimaryCtaLabel: (isEn && landingSettings.heroPrimaryCtaLabelEn.trim()) || tx(landingSettings.heroPrimaryCtaLabel, "Web Shop"),
             heroPrimaryCtaHref: landingSettings.heroPrimaryCtaHref,
-            heroSecondaryCtaLabel: tx(landingSettings.heroSecondaryCtaLabel, "Contact"),
+            heroSecondaryCtaLabel: (isEn && landingSettings.heroSecondaryCtaLabelEn.trim()) || tx(landingSettings.heroSecondaryCtaLabel, "Contact"),
             heroSecondaryCtaHref: landingSettings.heroSecondaryCtaHref,
           }}
         />

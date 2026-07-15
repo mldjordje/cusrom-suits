@@ -35,11 +35,16 @@ type LandingSectionsState = {
   saleSectionTitle: string;
   saleSectionSubtitle: string;
   heroEyebrow: string;
+  heroEyebrowEn: string;
   heroTitleLine1: string;
+  heroTitleLine1En: string;
   heroTitleLine2: string;
+  heroTitleLine2En: string;
   heroPrimaryCtaLabel: string;
+  heroPrimaryCtaLabelEn: string;
   heroPrimaryCtaHref: string;
   heroSecondaryCtaLabel: string;
+  heroSecondaryCtaLabelEn: string;
   heroSecondaryCtaHref: string;
   heroStripProductIds: number[];
   highlightedProductIds: number[];
@@ -80,11 +85,16 @@ const defaultState: LandingSectionsState = {
   saleSectionTitle: "Aktuelne Akcije",
   saleSectionSubtitle: "",
   heroEyebrow: "Santos & Santorini",
+  heroEyebrowEn: "",
   heroTitleLine1: "Nova kolekcija",
+  heroTitleLine1En: "",
   heroTitleLine2: "2026",
+  heroTitleLine2En: "",
   heroPrimaryCtaLabel: "Web shop",
+  heroPrimaryCtaLabelEn: "",
   heroPrimaryCtaHref: "/web-shop",
   heroSecondaryCtaLabel: "Kontakt",
+  heroSecondaryCtaLabelEn: "",
   heroSecondaryCtaHref: "/kontakt",
   heroStripProductIds: [],
   highlightedProductIds: [],
@@ -135,11 +145,16 @@ const normalizeLandingState = (value: unknown): LandingSectionsState => {
     saleSectionTitle: String(row.saleSectionTitle || defaultState.saleSectionTitle).trim() || defaultState.saleSectionTitle,
     saleSectionSubtitle: String(row.saleSectionSubtitle || "").trim(),
     heroEyebrow: String(row.heroEyebrow || defaultState.heroEyebrow).trim() || defaultState.heroEyebrow,
+    heroEyebrowEn: String(row.heroEyebrowEn || "").trim(),
     heroTitleLine1: String(row.heroTitleLine1 || defaultState.heroTitleLine1).trim() || defaultState.heroTitleLine1,
+    heroTitleLine1En: String(row.heroTitleLine1En || "").trim(),
     heroTitleLine2: String(row.heroTitleLine2 || "").trim(),
+    heroTitleLine2En: String(row.heroTitleLine2En || "").trim(),
     heroPrimaryCtaLabel: String(row.heroPrimaryCtaLabel || defaultState.heroPrimaryCtaLabel).trim() || defaultState.heroPrimaryCtaLabel,
+    heroPrimaryCtaLabelEn: String(row.heroPrimaryCtaLabelEn || "").trim(),
     heroPrimaryCtaHref: String(row.heroPrimaryCtaHref || defaultState.heroPrimaryCtaHref).trim() || defaultState.heroPrimaryCtaHref,
     heroSecondaryCtaLabel: String(row.heroSecondaryCtaLabel || defaultState.heroSecondaryCtaLabel).trim() || defaultState.heroSecondaryCtaLabel,
+    heroSecondaryCtaLabelEn: String(row.heroSecondaryCtaLabelEn || "").trim(),
     heroSecondaryCtaHref: String(row.heroSecondaryCtaHref || defaultState.heroSecondaryCtaHref).trim() || defaultState.heroSecondaryCtaHref,
     heroStripProductIds: normalizeLegacyIdList(row.heroStripProductIds, limitForLandingSection("heroStripProductIds")),
     highlightedProductIds: normalizeLegacyIdList(row.highlightedProductIds, limitForLandingSection("highlightedProductIds")),
@@ -580,37 +595,74 @@ export default function AdminLandingSectionsPage() {
           <p className="text-xs text-slate-500">Ovo menja glavni naslov i CTA dugmad iznad sekcija.</p>
         </div>
 
+        <p className="mt-2 text-xs text-slate-500">
+          EN polja su opciona. Ako ostanu prazna, sajt na engleskoj verziji sam pokusava da prevede SR tekst (recnik reci) — za tacan prevod popuni EN polje.
+        </p>
+
         <div className="mt-4 grid gap-3 lg:grid-cols-2">
-          <label className="grid gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Eyebrow</span>
-            <input
-              value={state.heroEyebrow}
-              onChange={(e) => setState((prev) => ({ ...prev, heroEyebrow: e.target.value }))}
-              placeholder="Santos & Santorini"
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="grid gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Naslov - prvi red</span>
-            <input
-              value={state.heroTitleLine1}
-              onChange={(e) => setState((prev) => ({ ...prev, heroTitleLine1: e.target.value }))}
-              placeholder="Nova kolekcija"
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            />
-          </label>
-          <label className="grid gap-1">
-            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Naslov - drugi red</span>
-            <input
-              value={state.heroTitleLine2}
-              onChange={(e) => setState((prev) => ({ ...prev, heroTitleLine2: e.target.value }))}
-              placeholder="2026"
-              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
-            />
-          </label>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Primarno dugme</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Eyebrow (SR)</span>
+              <input
+                value={state.heroEyebrow}
+                onChange={(e) => setState((prev) => ({ ...prev, heroEyebrow: e.target.value }))}
+                placeholder="Santos & Santorini"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Eyebrow (EN)</span>
+              <input
+                value={state.heroEyebrowEn}
+                onChange={(e) => setState((prev) => ({ ...prev, heroEyebrowEn: e.target.value }))}
+                placeholder="Santos & Santorini"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Naslov - prvi red (SR)</span>
+              <input
+                value={state.heroTitleLine1}
+                onChange={(e) => setState((prev) => ({ ...prev, heroTitleLine1: e.target.value }))}
+                placeholder="Nova kolekcija"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Naslov - prvi red (EN)</span>
+              <input
+                value={state.heroTitleLine1En}
+                onChange={(e) => setState((prev) => ({ ...prev, heroTitleLine1En: e.target.value }))}
+                placeholder="New Collection"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Naslov - drugi red (SR)</span>
+              <input
+                value={state.heroTitleLine2}
+                onChange={(e) => setState((prev) => ({ ...prev, heroTitleLine2: e.target.value }))}
+                placeholder="2026"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Naslov - drugi red (EN)</span>
+              <input
+                value={state.heroTitleLine2En}
+                onChange={(e) => setState((prev) => ({ ...prev, heroTitleLine2En: e.target.value }))}
+                placeholder="2026"
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              />
+            </label>
+          </div>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="grid gap-1">
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Primarno dugme (SR)</span>
               <input
                 value={state.heroPrimaryCtaLabel}
                 onChange={(e) => setState((prev) => ({ ...prev, heroPrimaryCtaLabel: e.target.value }))}
@@ -619,18 +671,27 @@ export default function AdminLandingSectionsPage() {
               />
             </label>
             <label className="grid gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Primarni link</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Primarno dugme (EN)</span>
               <input
-                value={state.heroPrimaryCtaHref}
-                onChange={(e) => setState((prev) => ({ ...prev, heroPrimaryCtaHref: e.target.value }))}
-                placeholder="/web-shop"
+                value={state.heroPrimaryCtaLabelEn}
+                onChange={(e) => setState((prev) => ({ ...prev, heroPrimaryCtaLabelEn: e.target.value }))}
+                placeholder="Web Shop"
                 className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
               />
             </label>
           </div>
-          <div className="grid gap-3 sm:grid-cols-2 lg:col-span-2">
+          <label className="grid gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Primarni link</span>
+            <input
+              value={state.heroPrimaryCtaHref}
+              onChange={(e) => setState((prev) => ({ ...prev, heroPrimaryCtaHref: e.target.value }))}
+              placeholder="/web-shop"
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            />
+          </label>
+          <div className="grid gap-3 sm:grid-cols-2">
             <label className="grid gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Sekundarno dugme</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Sekundarno dugme (SR)</span>
               <input
                 value={state.heroSecondaryCtaLabel}
                 onChange={(e) => setState((prev) => ({ ...prev, heroSecondaryCtaLabel: e.target.value }))}
@@ -639,15 +700,24 @@ export default function AdminLandingSectionsPage() {
               />
             </label>
             <label className="grid gap-1">
-              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Sekundarni link</span>
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Sekundarno dugme (EN)</span>
               <input
-                value={state.heroSecondaryCtaHref}
-                onChange={(e) => setState((prev) => ({ ...prev, heroSecondaryCtaHref: e.target.value }))}
-                placeholder="/kontakt"
+                value={state.heroSecondaryCtaLabelEn}
+                onChange={(e) => setState((prev) => ({ ...prev, heroSecondaryCtaLabelEn: e.target.value }))}
+                placeholder="Contact"
                 className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
               />
             </label>
           </div>
+          <label className="grid gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.1em] text-slate-500">Sekundarni link</span>
+            <input
+              value={state.heroSecondaryCtaHref}
+              onChange={(e) => setState((prev) => ({ ...prev, heroSecondaryCtaHref: e.target.value }))}
+              placeholder="/kontakt"
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            />
+          </label>
         </div>
       </section>
 
