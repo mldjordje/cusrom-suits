@@ -33,12 +33,35 @@ const fallbackHtml = {
   en: "<p>Detailed description is currently unavailable.</p>",
 };
 
-const safeHtml = (value: string | null, lang: StorefrontLanguage) => ({
-  __html:
-    value && value.trim().length > 0
-      ? decodeHtmlEntities(value)
-      : fallbackHtml[lang],
-});
+const escapeHtml = (value: string) =>
+  value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+
+// Admin descriptions are usually plain text where line breaks carry the
+// intended structure. If the stored value has no block-level HTML we escape it
+// and rebuild paragraphs (blank line -> new paragraph, single line -> <br>) so
+// the whole text renders cleanly instead of collapsing into one run-on blob.
+const formatRichText = (raw: string) => {
+  const value = raw.trim();
+  if (/<(p|br|ul|ol|li|div|h[1-6]|table|section)\b/i.test(value)) {
+    return value;
+  }
+  return value
+    .split(/\n{2,}/)
+    .map((block) => block.trim())
+    .filter(Boolean)
+    .map((block) => `<p>${escapeHtml(block).replace(/\n/g, "<br />")}</p>`)
+    .join("");
+};
+
+const safeHtml = (value: string | null, lang: StorefrontLanguage) => {
+  const decoded = value ? decodeHtmlEntities(value) : "";
+  return {
+    __html: decoded.trim().length > 0 ? formatRichText(decoded) : fallbackHtml[lang],
+  };
+};
 
 export default function ProductDetailTabs({
   lang = "sr",

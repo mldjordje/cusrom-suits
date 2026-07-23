@@ -5787,6 +5787,34 @@ body.mobile-menu-opened {
   margin-top: 1.25rem;
 }
 
+/* Admin-entered product copy: keep the full text readable and let long words
+   wrap so nothing overflows the glass card. */
+.product-single__description .content {
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--ss-ink-soft, #4a4a4a);
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.product-single__description .content p {
+  margin: 0 0 0.85rem;
+}
+
+.product-single__description .content p:last-child {
+  margin-bottom: 0;
+}
+
+.product-single__description .content ul,
+.product-single__description .content ol {
+  margin: 0 0 0.85rem;
+  padding-left: 1.25rem;
+}
+
+.product-single__description .content li {
+  margin-bottom: 0.35rem;
+}
+
 .ss-size-guide-modal {
   position: relative;
   z-index: 2100;
@@ -9246,8 +9274,6 @@ button.ss-mobile-nav-quicklink,
   justify-content: center;
   width: 28px;
   height: 28px;
-  border: 1px solid currentColor;
-  border-radius: 999px;
   color: inherit;
   line-height: 1;
   text-decoration: none;
@@ -9256,8 +9282,8 @@ button.ss-mobile-nav-quicklink,
 }
 
 .ss-header-social-link svg {
-  width: 15px;
-  height: 15px;
+  width: 20px;
+  height: 20px;
 }
 
 .ss-header-social-link:hover {

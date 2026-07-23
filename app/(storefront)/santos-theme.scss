@@ -1836,26 +1836,22 @@ body.mobile-menu-opened {
   justify-content: center;
   width: 30px;
   height: 30px;
-  border: 1px solid currentColor;
-  border-radius: 9px;
   color: inherit;
   line-height: 1;
   text-decoration: none;
   opacity: 0.6;
-  transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
+  transition: color 0.2s ease, opacity 0.2s ease, transform 0.2s ease;
 }
 
 .ss-header-social-link svg {
-  width: 15px;
-  height: 15px;
+  width: 20px;
+  height: 20px;
 }
 
 .ss-header-social-link:hover {
   opacity: 1;
   transform: translateY(-1px);
-  color: #fff;
-  background: var(--ss-gold-dark, #a07d45);
-  border-color: var(--ss-gold-dark, #a07d45);
+  color: var(--ss-gold-dark, #a07d45);
 }
 
 /* On light (scrolled / contrast) headers the hover chip fill stays gold but

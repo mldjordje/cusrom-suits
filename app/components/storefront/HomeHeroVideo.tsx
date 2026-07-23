@@ -114,18 +114,14 @@ export default function HomeHeroVideo({ categories: _categories, showProductCard
           <div className="ss-hero-rail" data-hero-rail>
             <div className="ss-hero-rail__head">
               <span className="ss-hero-rail__label">{isEn ? "Featured" : "Izdvojeno"}</span>
-              <span className="ss-hero-rail__line" aria-hidden="true" />
               <Link href={withLang("/web-shop")} prefetch={false} className="ss-hero-rail__all">
                 {isEn ? "View all" : "Pogledaj sve"}
               </Link>
             </div>
             <div className="ss-home18-hero__cards">
-              {cards.map((card, index) => (
+              {cards.map((card) => (
                 <article key={card.id} className="ss-home18-hero__card-item ss-hero-card" data-hero-card>
                   <Link href={card.href} prefetch={false} className="ss-home18-hero__card-link ss-hero-card__link">
-                    <span className="ss-hero-card__index" aria-hidden="true">
-                      {String(index + 1).padStart(2, "0")}
-                    </span>
                     <span className="ss-hero-card__frame">
                       <StorefrontImage
                         sources={[card.image]}
