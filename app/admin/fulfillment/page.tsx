@@ -40,6 +40,7 @@ type FulfillmentSettings = {
   deliveryNote: string;
   deliveryNoteEn: string;
   deliveryServices: DeliveryService[];
+  freeDeliveryThreshold: number;
   vouchers: Voucher[];
 };
 
@@ -94,6 +95,7 @@ const defaultSettings: FulfillmentSettings = {
   deliveryNote: "",
   deliveryNoteEn: "",
   deliveryServices: [],
+  freeDeliveryThreshold: 0,
   vouchers: [],
 };
 
@@ -203,6 +205,18 @@ export default function AdminFulfillmentPage() {
           <textarea value={settings.pickupNoteEn} onChange={(e) => setSettings((prev) => ({ ...prev, pickupNoteEn: e.target.value }))} placeholder="Pickup note EN" className={`${fieldClass} min-h-[90px]`} />
           <textarea value={settings.deliveryNote} onChange={(e) => setSettings((prev) => ({ ...prev, deliveryNote: e.target.value }))} placeholder="Delivery note SR" className={`${fieldClass} min-h-[90px]`} />
           <textarea value={settings.deliveryNoteEn} onChange={(e) => setSettings((prev) => ({ ...prev, deliveryNoteEn: e.target.value }))} placeholder="Delivery note EN" className={`${fieldClass} min-h-[90px]`} />
+          <label className="flex flex-col gap-1 text-xs text-slate-600">
+            Prag za besplatnu dostavu (RSD) — 0 iskljucuje ponudu
+            <input
+              type="number"
+              min={0}
+              step={100}
+              value={settings.freeDeliveryThreshold}
+              onChange={(e) => setSettings((prev) => ({ ...prev, freeDeliveryThreshold: Math.max(0, Number(e.target.value || 0)) }))}
+              placeholder="15000"
+              className={fieldClass}
+            />
+          </label>
         </div>
       </div>
 

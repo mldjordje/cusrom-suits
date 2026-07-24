@@ -48,7 +48,9 @@ const DEFAULT_SETTINGS: PopupSettings = {
   toast: {
     enabled: false,
     text: "Popusti koje ste čekali su tu! Muška i ženska kolekcija proleće/leto '26 sada su snižene do čak 30%.",
-    linkLabel: "link",
+    // Was the literal placeholder "link", which shipped to production and
+    // rendered as "…snižene do čak 30%. link" on every page.
+    linkLabel: "Pogledaj akcije",
     linkHref: "/akcije",
   },
 };
@@ -56,6 +58,16 @@ const DEFAULT_SETTINGS: PopupSettings = {
 const str = (v: unknown, fallback = "") => {
   const s = String(v ?? "").trim();
   return s.length ? s : fallback;
+};
+
+/** Placeholder labels that leaked into stored settings and rendered verbatim to
+ *  customers. Treated as "not set" so the real default takes over without
+ *  anyone having to edit the saved JSON. */
+const PLACEHOLDER_LINK_LABELS = new Set(["link", "label", "text", "lorem", "todo"]);
+
+const linkLabel = (value: unknown, fallback = "") => {
+  const text = str(value);
+  return text && !PLACEHOLDER_LINK_LABELS.has(text.toLowerCase()) ? text : fallback;
 };
 
 export function normalizePopupSettings(value: Partial<PopupSettings> | null | undefined): PopupSettings {
@@ -67,7 +79,7 @@ export function normalizePopupSettings(value: Partial<PopupSettings> | null | un
       image: str(modal.image),
       heading: str(modal.heading, DEFAULT_SETTINGS.modal.heading),
       description: str(modal.description, DEFAULT_SETTINGS.modal.description),
-      linkLabel: str(modal.linkLabel),
+      linkLabel: linkLabel(modal.linkLabel),
       linkHref: str(modal.linkHref),
       collectForm: modal.collectForm == null ? true : Boolean(modal.collectForm),
       submitLabel: str(modal.submitLabel, DEFAULT_SETTINGS.modal.submitLabel),
@@ -76,7 +88,7 @@ export function normalizePopupSettings(value: Partial<PopupSettings> | null | un
     toast: {
       enabled: Boolean(toast.enabled),
       text: str(toast.text, DEFAULT_SETTINGS.toast.text),
-      linkLabel: str(toast.linkLabel, DEFAULT_SETTINGS.toast.linkLabel),
+      linkLabel: linkLabel(toast.linkLabel, DEFAULT_SETTINGS.toast.linkLabel),
       linkHref: str(toast.linkHref, DEFAULT_SETTINGS.toast.linkHref),
     },
   };

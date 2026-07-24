@@ -46,6 +46,7 @@ export default async function CheckoutPage({
             lang={lang}
             pickupStores={pickupStores}
             deliveryServices={deliveryServices}
+            freeDeliveryThreshold={fulfillment.freeDeliveryThreshold}
             fulfillmentCopy={{
               pickupEnabled: fulfillment.pickupEnabled,
               deliveryEnabled: fulfillment.deliveryEnabled,

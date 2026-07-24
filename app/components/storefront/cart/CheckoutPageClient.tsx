@@ -1,11 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSteps";
 import { useStorefrontAuth } from "@/app/components/storefront/StorefrontAuthProvider";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
+import { trackBeginCheckout, trackPurchase, type AnalyticsProduct } from "@/lib/analytics/ecommerce";
+import { applyFreeDeliveryThreshold, getRemainingForFreeDelivery } from "@/lib/storefront/deliveryPricing";
+import type { StorefrontCartItem } from "@/lib/cart/types";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 type PickupStoreOption = {
@@ -37,6 +40,16 @@ const formatRsd = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
+const toAnalyticsProduct = (item: StorefrontCartItem): AnalyticsProduct => ({
+  legacyId: item.legacyId,
+  sku: item.sku,
+  name: item.name,
+  price: item.price,
+  quantity: item.quantity,
+  category: item.categoryLabel,
+  size: item.size,
+});
+
 const initialForm = {
   fullName: "",
   email: "",
@@ -56,11 +69,13 @@ export default function CheckoutPageClient({
   pickupStores,
   deliveryServices,
   fulfillmentCopy,
+  freeDeliveryThreshold = 0,
 }: {
   lang?: StorefrontLanguage;
   pickupStores: PickupStoreOption[];
   deliveryServices: DeliveryServiceOption[];
   fulfillmentCopy: FulfillmentCopy;
+  freeDeliveryThreshold?: number;
 }) {
   const { items, subtotal, clearCart, isReady } = useCart();
   const { user: authUser, loading: authLoading } = useStorefrontAuth();
@@ -99,8 +114,26 @@ export default function CheckoutPageClient({
     () => deliveryServices.find((service) => service.id === form.deliveryServiceId) || deliveryServices[0] || null,
     [deliveryServices, form.deliveryServiceId],
   );
-  const deliveryCost = form.deliveryMethod === "delivery" ? Number(selectedDeliveryService?.price || 0) : 0;
+  const baseDeliveryCost =
+    form.deliveryMethod === "delivery" ? Number(selectedDeliveryService?.price || 0) : 0;
+  // Mirrors the server calculation in /api/orders so the summary matches the
+  // total the customer is actually charged.
+  const deliveryCost = applyFreeDeliveryThreshold(subtotal, baseDeliveryCost, freeDeliveryThreshold);
+  const freeDeliveryApplied =
+    form.deliveryMethod === "delivery" && baseDeliveryCost > 0 && deliveryCost === 0;
+  const missingForFreeDelivery =
+    form.deliveryMethod === "delivery" && baseDeliveryCost > 0
+      ? getRemainingForFreeDelivery(subtotal, freeDeliveryThreshold)
+      : 0;
   const checkoutTotal = Math.max(0, subtotal + deliveryCost - voucherDiscount);
+
+  // begin_checkout fires once, after the cart has hydrated from localStorage.
+  const beginCheckoutSent = useRef(false);
+  useEffect(() => {
+    if (!isReady || beginCheckoutSent.current || !items.length) return;
+    beginCheckoutSent.current = true;
+    trackBeginCheckout(items.map(toAnalyticsProduct));
+  }, [isReady, items]);
 
   useEffect(() => {
     if (!authUser) return;
@@ -196,10 +229,21 @@ export default function CheckoutPageClient({
         setError(json?.message || (isEn ? "Order submission failed." : "Slanje porudzbine nije uspelo."));
         return;
       }
+      const confirmedTotal = Number(json.finalTotal || checkoutTotal);
       setOrderId(String(json.orderId || ""));
       setOrderNumber(String(json.orderNumber || json.orderId || ""));
-      setSubmittedTotal(Number(json.finalTotal || checkoutTotal));
+      setSubmittedTotal(confirmedTotal);
       setAppliedVoucherCode(json.voucherCode ? String(json.voucherCode) : null);
+      // Report the server's total, not the client's — the server re-prices every
+      // line, so these can legitimately differ.
+      trackPurchase({
+        orderId: String(json.orderNumber || json.orderId || ""),
+        products: items.map(toAnalyticsProduct),
+        value: confirmedTotal,
+        shipping: deliveryCost,
+        discount: voucherDiscount,
+        coupon: json.voucherCode ? String(json.voucherCode) : null,
+      });
       clearCart();
       setForm({
         ...initialForm,
@@ -314,12 +358,23 @@ export default function CheckoutPageClient({
         </div>
         <div className="ss-checkout-mini-summary__item">
           <span>{isEn ? "Delivery" : "Dostava"}</span>
-          <strong>{formatRsd(deliveryCost)}</strong>
+          <strong>
+            {freeDeliveryApplied ? (isEn ? "Free" : "Besplatno") : formatRsd(deliveryCost)}
+          </strong>
         </div>
         <div className="ss-checkout-mini-summary__item ss-checkout-mini-summary__item--wide">
           <span>{isEn ? "Current total" : "Trenutni ukupno"}</span>
           <strong>{formatRsd(checkoutTotal)}</strong>
         </div>
+        {missingForFreeDelivery > 0 ? (
+          <div className="ss-checkout-mini-summary__item ss-checkout-mini-summary__item--wide">
+            <span>
+              {isEn
+                ? `Add ${formatRsd(missingForFreeDelivery)} more for free delivery`
+                : `Dodaj jos ${formatRsd(missingForFreeDelivery)} za besplatnu dostavu`}
+            </span>
+          </div>
+        ) : null}
       </div>
 
       <div className="row g-4 align-items-start">

@@ -1,6 +1,7 @@
 import type { MetadataRoute } from "next";
 import { listPosts } from "@/lib/blog/store";
 import { listCatalogProducts } from "@/lib/catalog/store";
+import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { absoluteUrl, withStorefrontLanguage } from "@/lib/seo";
 
 const hreflangAlternates = (path: string): MetadataRoute.Sitemap[number]["alternates"] => ({
@@ -33,27 +34,25 @@ const STATIC_ROUTES = [
 ];
 
 async function loadAllCatalogProductPaths() {
-  const firstPage = await listCatalogProducts({
-    page: 1,
+  // Must match the filters /web-shop uses. The sitemap previously asked only for
+  // `requireImages`, so it advertised products the shop itself hides behind
+  // `requireDirectImages` + the media-health exclusion list — Google crawled
+  // URLs that redirect or render as dead ends.
+  const brokenProductIds = await getBrokenProductIdSet();
+  const sharedFilters = {
     pageSize: 120,
     activeOnly: true,
     exportOnly: true,
     collapseBySku: true,
-    requireImages: true,
-  });
+    requireDirectImages: true,
+    excludeLegacyIds: brokenProductIds.size ? Array.from(brokenProductIds) : undefined,
+  } as const;
+
+  const firstPage = await listCatalogProducts({ page: 1, ...sharedFilters });
 
   const pages = Array.from({ length: Math.max(0, firstPage.totalPages - 1) }, (_, index) => index + 2);
   const rest = await Promise.all(
-    pages.map((page) =>
-      listCatalogProducts({
-        page,
-        pageSize: 120,
-        activeOnly: true,
-        exportOnly: true,
-        collapseBySku: true,
-        requireImages: true,
-      }),
-    ),
+    pages.map((page) => listCatalogProducts({ page, ...sharedFilters })),
   );
 
   return [firstPage, ...rest]

@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import JsonLd from "@/app/components/seo/JsonLd";
+import { TrackProductListView } from "@/app/components/analytics/TrackProductView";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import StorefrontTrustStrip from "@/app/components/storefront/StorefrontTrustStrip";
@@ -8,6 +9,7 @@ import WebShopFilters from "@/app/components/storefront/WebShopFilters";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import Reveal from "@/app/components/motion/Reveal";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
+import ProductCardPrice, { hasCardPriceRange } from "@/app/components/storefront/ProductCardPrice";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { listCatalogProducts, normalizeCatalogCategoryGroupKey, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
 import { listCategoryRegistry, getAutoGroupSettings } from "@/lib/catalog/categories";
@@ -484,6 +486,14 @@ export default async function WebShopPage({
       : 0;
     const isLowStock = stockValue > 0 && stockValue <= 5;
 
+    // A card stands for a whole collapsed model, whose sizes can be priced
+    // differently. Rendering goes through the shared component so the landing
+    // page and the grid can never quote the same article differently.
+    const hasPriceRange = hasCardPriceRange(item, businessUniform);
+    const renderPrice = (className: string) => (
+      <ProductCardPrice item={item} isEn={isEn} businessUniform={businessUniform} className={className} />
+    );
+
     return (
       <ProductItemMotion key={key} className={wrapperClassName} index={motionIndex}>
         <div className={cardClassName}>
@@ -527,23 +537,8 @@ export default async function WebShopPage({
                     {displayName}
                   </Link>
                 </h6>
-              {businessUniform || !item.priceFinalGross ? (
-                <div className="product-card__price d-flex justify-content-center">
-                  <span className="money price">{isEn ? "Inquiry only" : "Na upit"}</span>
-                </div>
-              ) : (
-                <div className="product-card__price d-flex justify-content-center">
-                  {item.priceGross > item.priceFinalGross ? (
-                    <>
-                      <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                      <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
-                    </>
-                  ) : (
-                    <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-                  )}
-                </div>
-              )}
-              {discountPercent > 0 && !businessUniform ? (
+              {renderPrice("product-card__price d-flex justify-content-center")}
+              {discountPercent > 0 && !businessUniform && !hasPriceRange ? (
                 <p className="ss-product-card__discount mb-0">
                   {isEn ? "Save" : "Ušteda"} {discountPercent}%
                 </p>
@@ -560,23 +555,8 @@ export default async function WebShopPage({
                 {displayName}
               </Link>
             </h6>
-            {businessUniform || !item.priceFinalGross ? (
-              <div className="product-card__price d-flex">
-                <span className="money price">{isEn ? "Inquiry only" : "Na upit"}</span>
-              </div>
-            ) : (
-              <div className="product-card__price d-flex">
-                {item.priceGross > item.priceFinalGross ? (
-                  <>
-                    <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                    <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
-                  </>
-                ) : (
-                  <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-                )}
-              </div>
-            )}
-            {discountPercent > 0 && !businessUniform ? (
+            {renderPrice("product-card__price d-flex")}
+            {discountPercent > 0 && !businessUniform && !hasPriceRange ? (
               <p className="ss-product-card__discount mb-0">
                 {isEn ? "Save" : "Ušteda"} {discountPercent}%
               </p>
@@ -631,6 +611,16 @@ export default async function WebShopPage({
     <>
       <JsonLd data={breadcrumbJsonLd} />
       <JsonLd data={collectionJsonLd} />
+      <TrackProductListView
+        listName={q ? `search:${q}` : categoryGroup || selectedCategoryValue || "web-shop"}
+        products={items.map((item) => ({
+          legacyId: item.legacyId,
+          sku: item.sku,
+          name: getLocalizedCatalogProductName(item, lang),
+          price: item.priceFinalGross,
+          category: getCategoryLabel(item),
+        }))}
+      />
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-shop-page">
         <Reveal as="section" className="ss-shop-hero-section" delay={0} amount={0.05} y={12}>
@@ -717,7 +707,9 @@ export default async function WebShopPage({
               <div className="ss-shop-gallery__header">
                 <div>
                   <p className="ss-shop-gallery__eyebrow">{isEn ? "Collection" : "Kolekcija"}</p>
-                  <h2 className="ss-shop-gallery__title">
+                  {/* The page's main heading. It was an h2 and the shop had no
+                      h1 at all, so search engines had no primary topic signal. */}
+                  <h1 className="ss-shop-gallery__title">
                     {items.length === 0
                       ? isEn ? "No products found" : "Nema pronadjenih proizvoda"
                       : q.trim()
@@ -727,7 +719,7 @@ export default async function WebShopPage({
                           : selectedCategoryGroupName || selectedCategoryName
                             ? selectedCategoryGroupName || selectedCategoryName
                             : isEn ? "All products" : "Svi proizvodi"}
-                  </h2>
+                  </h1>
                 </div>
                 <p className="ss-shop-gallery__meta">
                   {items.length} / {result.total} {isEn ? "products" : "proizvoda"}

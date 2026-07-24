@@ -20,13 +20,15 @@ import {
 } from "@/lib/catalog/store";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import {
-  applyMaxPriceFromMap,
-  buildMaxPriceBySkuMap,
+  applyVariantPriceIndex,
+  buildVariantPriceIndexBySku,
   calcDiscountPercent,
   hasUsableDisplayPrice,
+  resolveCardPrice,
   resolveDisplayFinalPrice,
   resolveDisplayGrossPrice,
 } from "@/lib/catalog/pricing";
+import ProductCardPrice from "@/app/components/storefront/ProductCardPrice";
 import {
   getCatalogProductCategoryLabel,
   getCatalogProductDisplayName,
@@ -346,14 +348,16 @@ export default async function HomePage({
     ),
   );
 
-  // Pinned products are fetched by a single legacyId (one size variant) so their price
-  // may be lower than the highest variant. Use shared pricing utilities to override.
-  const maxPriceBySku = buildMaxPriceBySkuMap(catalog.items);
+  // Pinned products are fetched by a single legacyId (one size variant), so their
+  // price may be lower than the model's. The index carries the variant spread as
+  // well, which is what lets these cards render "od X" exactly like the shop grid
+  // instead of quoting one size's price for the whole article.
+  const variantPriceIndex = buildVariantPriceIndexBySku(catalog.items);
   const pinnedProducts = await Promise.all(
-    pinnedProductsRaw.map((item) => resolveAnomalousProductPrice(applyMaxPriceFromMap(item, maxPriceBySku))),
+    pinnedProductsRaw.map((item) => resolveAnomalousProductPrice(applyVariantPriceIndex(item, variantPriceIndex))),
   );
   const saleCatalogItems = await Promise.all(
-    saleCatalog.items.map((item) => resolveAnomalousProductPrice(applyMaxPriceFromMap(item, maxPriceBySku))),
+    saleCatalog.items.map((item) => resolveAnomalousProductPrice(applyVariantPriceIndex(item, variantPriceIndex))),
   );
 
   const pinnedProductsById = new Map(pinnedProducts.map((item) => [item.legacyId, item]));
@@ -508,17 +512,22 @@ export default async function HomePage({
                   hoverSrc={getCatalogProductImageSources(item, [], ["/img/odela.jpg"])[1]}
                   categoryLabel={getProductCategoryLabel(item, contentLang)}
                   title={getProductDisplayName(item, contentLang)}
-                  price={
-                    item.priceGross > item.priceFinalGross ? (
-                      <>
-                        <span className="price-old">{formatRsd(item.priceGross)}</span>
-                        <span className="price-sale">{formatRsd(item.priceFinalGross)}</span>
-                      </>
-                    ) : (
-                      formatRsd(item.priceFinalGross)
-                    )
-                  }
-                  isSale={item.priceGross > item.priceFinalGross}
+                  // Keeps this card's own price classes (no "money price" here)
+                  // while picking up the shared range/sale decision.
+                  price={(() => {
+                    const price = resolveCardPrice(item);
+                    if (price.kind === "range") return `od ${formatRsd(price.from)}`;
+                    if (price.kind === "sale") {
+                      return (
+                        <>
+                          <span className="price-old">{formatRsd(price.gross)}</span>
+                          <span className="price-sale">{formatRsd(price.final)}</span>
+                        </>
+                      );
+                    }
+                    return formatRsd(price.kind === "single" ? price.final : item.priceFinalGross);
+                  })()}
+                  isSale={resolveCardPrice(item).kind === "sale"}
                 />
               </ProductItemMotion>
             ))}
@@ -557,14 +566,7 @@ export default async function HomePage({
                     {getProductDisplayName(item, contentLang)}
                   </span>
                   <span className="ss-featured-tile__meta" aria-hidden="true">
-                    {item.priceGross > item.priceFinalGross ? (
-                      <>
-                        <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                        <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
-                      </>
-                    ) : (
-                      <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-                    )}
+                    <ProductCardPrice item={item} isEn={isEn} as="none" />
                   </span>
                   <span className="ss-featured-tile__overlay" aria-hidden="true">
                     <span className="ss-featured-tile__overlay-inner">
@@ -575,14 +577,7 @@ export default async function HomePage({
                         {getProductDisplayName(item, contentLang)}
                       </span>
                       <span className="ss-featured-tile__overlay-price">
-                        {item.priceGross > item.priceFinalGross ? (
-                          <>
-                            <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                            <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
-                          </>
-                        ) : (
-                          <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-                        )}
+                        <ProductCardPrice item={item} isEn={isEn} as="none" />
                       </span>
                       <span className="ss-featured-tile__overlay-cta">
                         {contentLang === "en" ? "View product" : "Pogledaj proizvod"}
@@ -734,16 +729,7 @@ export default async function HomePage({
                         {getProductDisplayName(item, contentLang)}
                       </Link>
                     </h6>
-                    <div className="product-card__price d-flex">
-                      {item.priceGross > item.priceFinalGross ? (
-                        <>
-                          <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                          <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
-                        </>
-                      ) : (
-                        <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-                      )}
-                    </div>
+                    <ProductCardPrice item={item} isEn={isEn} />
                   </div>
                 </div>
               </ProductItemMotion>
@@ -793,16 +779,7 @@ export default async function HomePage({
                         {getProductDisplayName(item, contentLang)}
                       </Link>
                     </h6>
-                    <div className="product-card__price d-flex">
-                      {item.priceGross > item.priceFinalGross ? (
-                        <>
-                          <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                          <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
-                        </>
-                      ) : (
-                        <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-                      )}
-                    </div>
+                    <ProductCardPrice item={item} isEn={isEn} />
                   </div>
                 </div>
               </ProductItemMotion>
@@ -858,16 +835,7 @@ export default async function HomePage({
                     {getProductDisplayName(item, contentLang)}
                   </Link>
                 </h6>
-                <div className="product-card__price d-flex">
-                  {item.priceGross > item.priceFinalGross ? (
-                    <>
-                      <span className="money price price-old">{formatRsd(item.priceGross)}</span>
-                      <span className="money price price-sale">{formatRsd(item.priceFinalGross)}</span>
-                    </>
-                  ) : (
-                    <span className="money price">{formatRsd(item.priceFinalGross)}</span>
-                  )}
-                </div>
+                <ProductCardPrice item={item} isEn={isEn} />
               </div>
             </div>
           </ProductItemMotion>

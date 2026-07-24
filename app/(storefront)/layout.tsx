@@ -1,5 +1,6 @@
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/next";
+import AnalyticsScripts from "@/app/components/analytics/AnalyticsScripts";
 import StorefrontAuthProvider from "@/app/components/storefront/StorefrontAuthProvider";
 import StorefrontCartProvider from "@/app/components/storefront/cart/StorefrontCartProvider";
 import StorefrontRuntimeShell from "@/app/components/storefront/StorefrontRuntimeShell";
@@ -33,6 +34,11 @@ export default async function StorefrontLayout({ children }: { children: ReactNo
             {children}
             <CookieConsent />
             <PromoPopups settings={popupSettings} />
+            {/* useSearchParams inside AnalyticsScripts needs a Suspense boundary
+                so it doesn't opt every storefront route out of static rendering. */}
+            <Suspense fallback={null}>
+              <AnalyticsScripts />
+            </Suspense>
             <Analytics />
           </StorefrontCartProvider>
         </StorefrontAuthProvider>

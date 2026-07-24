@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { trackVercelServerEvent } from "@/lib/analytics/vercel";
+import { isMetaCapiConfigured, sendMetaCapiPurchase } from "@/lib/analytics/metaCapi";
 import { isAdminRequestAuthenticated } from "@/lib/adminAuth";
-import { evaluateVoucher, getFulfillmentSettings, redeemVoucher } from "@/lib/storefront/fulfillment";
+import {
+  applyFreeDeliveryThreshold,
+  evaluateVoucher,
+  getFulfillmentSettings,
+  redeemVoucher,
+} from "@/lib/storefront/fulfillment";
 import { getSiteContent } from "@/lib/storefront/siteContent";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { getStorefrontUserFromCookies } from "@/lib/supabase/storefront-server";
@@ -10,6 +16,8 @@ import { buildRateLimitHeaders, checkRateLimit } from "@/lib/security/rateLimit"
 import { sendOrderNotifications, sendOrderStatusUpdate } from "@/lib/email/notifications";
 import type { OrderEmailContext } from "@/lib/email/templates";
 import { formatPublicOrderNumber, getNextPublicOrderNumber } from "@/lib/orders/publicOrderNumber";
+import { describeRejections, resolveOrderItems } from "@/lib/orders/resolveOrderItems";
+import { getCatalogProductByLegacyId } from "@/lib/catalog/store";
 import type { StorefrontCartItem } from "@/lib/cart/types";
 
 const ORDERS_RATE_LIMIT = { limit: 6, windowMs: 60_000, scope: "orders" } as const;
@@ -28,6 +36,43 @@ const warnSupabaseMissing = (context: string) => {
   }
 };
 
+/**
+ * Mirrors the browser Purchase pixel from the server so ad-blocked and ITP
+ * sessions still report. `event_id` is the public order number on both sides,
+ * which is what Meta deduplicates on.
+ */
+const reportPurchaseToMeta = async (
+  req: NextRequest,
+  input: {
+    publicOrderNumber: number;
+    items: Array<{ sku: string; legacyId: number; quantity: number }>;
+    finalTotal: number;
+    quantity: number;
+    fullName: string;
+    email: string;
+    phone: string;
+    city: string;
+    postalCode: string;
+  },
+) => {
+  if (!isMetaCapiConfigured()) return;
+  await sendMetaCapiPurchase({
+    eventId: String(input.publicOrderNumber),
+    value: input.finalTotal,
+    currency: process.env.NEXT_PUBLIC_ANALYTICS_CURRENCY?.trim() || "RSD",
+    contentIds: input.items.map((item) => String(item.sku || item.legacyId)),
+    numItems: input.quantity,
+    email: input.email,
+    phone: input.phone,
+    firstName: input.fullName.split(/\s+/)[0] || null,
+    city: input.city,
+    postalCode: input.postalCode,
+    clientIpAddress: req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || null,
+    clientUserAgent: req.headers.get("user-agent"),
+    eventSourceUrl: req.headers.get("referer"),
+  });
+};
+
 const requireAdmin = async (req: NextRequest) => {
   if (await isAdminRequestAuthenticated(req)) return null;
   return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
@@ -39,7 +84,29 @@ const writeOrdersFile = async (orders: any[]) => {
   await writePersistentJsonFile(ORDERS_PATH, orders);
 };
 
+let orderNumberRpcMissingWarned = false;
+
+/**
+ * Public order numbers come from a Postgres sequence (see
+ * supabase/sql/public_order_number_sequence.sql) so concurrent checkouts can't
+ * collide. Until that migration is applied we fall back to the old max+1 scan,
+ * which is racy and caps out at 1000 rows — the warning says so out loud.
+ */
 const getNextSupabasePublicOrderNumber = async (supabase: NonNullable<ReturnType<typeof getServiceSupabase>>) => {
+  const { data: sequenceValue, error: rpcError } = await supabase.rpc("next_public_order_number");
+  if (!rpcError && sequenceValue != null) {
+    const parsed = Number(sequenceValue);
+    if (Number.isInteger(parsed) && parsed > 0) return parsed;
+  }
+
+  if (!orderNumberRpcMissingWarned) {
+    orderNumberRpcMissingWarned = true;
+    console.error(
+      "[orders] next_public_order_number() RPC unavailable — falling back to the racy max+1 scan. Apply supabase/sql/public_order_number_sequence.sql.",
+      rpcError?.message || "",
+    );
+  }
+
   const { data, error } = await supabase.from("orders").select("config").limit(1000);
   if (error) throw error;
   return getNextPublicOrderNumber((data ?? []) as Array<{ config?: Record<string, unknown> | null }>);
@@ -69,22 +136,39 @@ export async function POST(req: NextRequest) {
   }
 
   if (isStorefrontPayload(payload)) {
-    const items = payload.items
-      .map((item) => ({
-        legacyId: Number(item.legacyId),
-        sku: String(item.sku || ""),
-        name: String(item.name || ""),
-        size: item.size ? String(item.size) : null,
-        material: item.material ? String(item.material) : null,
-        price: Number(item.price || 0),
-        quantity: Math.max(1, Number(item.quantity || 1)),
-        image: item.image ? String(item.image) : null,
-        categoryLabel: item.categoryLabel ? String(item.categoryLabel) : null,
-      }))
-      .filter((item) => Number.isFinite(item.legacyId) && item.legacyId > 0 && item.name.length > 0);
+    // Never price an order from the payload: the cart lives in localStorage, so
+    // `price` and `totals.subtotal` are attacker-controlled. Re-resolve every
+    // line against the catalog and re-price it from the database.
+    const resolved = await resolveOrderItems(payload.items, (legacyId) =>
+      getCatalogProductByLegacyId(legacyId),
+    );
+    const items = resolved.items;
+
+    if (resolved.mismatches.length) {
+      console.warn(
+        "[orders] client/server price mismatch:",
+        resolved.mismatches
+          .map((entry) => `${entry.legacyId}: client=${entry.clientPrice} server=${entry.serverPrice}`)
+          .join(", "),
+      );
+    }
 
     if (!items.length) {
-      return NextResponse.json({ success: false, message: "Korpa je prazna." }, { status: 400 });
+      return NextResponse.json(
+        { success: false, message: describeRejections(resolved.rejected) || "Korpa je prazna." },
+        { status: 400 },
+      );
+    }
+
+    if (resolved.rejected.length) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: describeRejections(resolved.rejected),
+          unavailableLegacyIds: resolved.rejected.map((entry) => entry.legacyId),
+        },
+        { status: 409 },
+      );
     }
 
     const customer = payload.customer && typeof payload.customer === "object"
@@ -100,8 +184,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const subtotal = Number(payload?.totals?.subtotal || items.reduce((sum, item) => sum + item.price * item.quantity, 0));
-    const quantity = Number(payload?.totals?.quantity || items.reduce((sum, item) => sum + item.quantity, 0));
+    const subtotal = resolved.subtotal;
+    const quantity = resolved.quantity;
     const fulfillmentPayload =
       payload.fulfillment && typeof payload.fulfillment === "object"
         ? (payload.fulfillment as Record<string, unknown>)
@@ -127,7 +211,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: false, message: "Izaberi kurirsku sluzbu." }, { status: 400 });
     }
 
-    const deliveryCost = deliveryMethod === "delivery" ? Number(selectedDeliveryService?.price || 0) : 0;
+    const baseDeliveryCost = deliveryMethod === "delivery" ? Number(selectedDeliveryService?.price || 0) : 0;
+    // Honour the free-delivery threshold the storefront advertises.
+    const deliveryCost = applyFreeDeliveryThreshold(
+      subtotal,
+      baseDeliveryCost,
+      fulfillmentSettings.freeDeliveryThreshold,
+    );
     let voucherDiscount = 0;
     if (voucherCode) {
       const voucherResult = await evaluateVoucher({
@@ -301,6 +391,17 @@ export async function POST(req: NextRequest) {
     if (voucherCode && orderId) {
       await redeemVoucher(voucherCode, orderId);
     }
+    void reportPurchaseToMeta(req, {
+      publicOrderNumber,
+      items,
+      finalTotal,
+      quantity,
+      fullName,
+      email,
+      phone,
+      city: contact.grad,
+      postalCode: contact.postanski_broj,
+    });
     void trackVercelServerEvent("order_submitted", {
       source: "storefront",
       fulfillmentMethod: deliveryMethod,
@@ -396,13 +497,15 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  // Admin-only. There used to be an `isPublicUpdate` escape hatch for
+  // `{status: "pending", contact}` payloads, which let an unauthenticated caller
+  // rewrite price/config/contact on any order id. Nothing in the storefront used
+  // it — only app/admin/orders/page.tsx calls PATCH.
+  const authError = await requireAdmin(req);
+  if (authError) return authError;
+
   const supabase = getServiceSupabase();
   const payload = await req.json().catch(() => null);
-  const isPublicUpdate = payload?.status === "pending" && payload?.contact;
-  if (!isPublicUpdate) {
-    const authError = await requireAdmin(req);
-    if (authError) return authError;
-  }
   const id = payload?.id;
   if (!id) {
     return NextResponse.json({ success: false, message: "Missing id" }, { status: 400 });
@@ -421,7 +524,6 @@ export async function PATCH(req: NextRequest) {
   }
 
   const shouldNotifyCustomer =
-    !isPublicUpdate &&
     typeof payload?.status === "string" &&
     payload.notifyCustomer !== false &&
     ["confirmed", "completed", "cancelled"].includes(payload.status);

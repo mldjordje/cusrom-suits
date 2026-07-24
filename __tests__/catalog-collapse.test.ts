@@ -216,3 +216,49 @@ describe("catalog model collapse", () => {
     expect(collapsed[0].rawPayload.collapsedVariantIds).toEqual([12913552, 12913556]);
   });
 });
+
+/**
+ * Listing cards represent a whole collapsed model. When its sizes are priced
+ * differently, quoting the representative's price alone made the card disagree
+ * with the product page, so collapse records the spread.
+ */
+describe("collapsed price range", () => {
+  it("records the min and max across collapsed variants", () => {
+    const collapsed = collapseCatalogProductsByModel([
+      makeProduct({ legacyId: 1, name: "M. Kosulja C8/51", priceFinalGross: 3_950 }),
+      makeProduct({ legacyId: 2, name: "M. Kosulja C8/53", priceFinalGross: 4_950 }),
+    ]);
+
+    expect(collapsed).toHaveLength(1);
+    expect(collapsed[0].rawPayload.collapsedPriceMin).toBe(3_950);
+    expect(collapsed[0].rawPayload.collapsedPriceMax).toBe(4_950);
+  });
+
+  it("reports an equal min and max when every variant costs the same", () => {
+    const collapsed = collapseCatalogProductsByModel([
+      makeProduct({ legacyId: 1, name: "M. Kosulja C8/51", priceFinalGross: 3_950 }),
+      makeProduct({ legacyId: 2, name: "M. Kosulja C8/53", priceFinalGross: 3_950 }),
+    ]);
+
+    expect(collapsed[0].rawPayload.collapsedPriceMin).toBe(3_950);
+    expect(collapsed[0].rawPayload.collapsedPriceMax).toBe(3_950);
+  });
+
+  it("ignores junk placeholder prices when computing the floor", () => {
+    const collapsed = collapseCatalogProductsByModel([
+      makeProduct({ legacyId: 1, name: "M. Kosulja C8/51", priceFinalGross: 1 }),
+      makeProduct({ legacyId: 2, name: "M. Kosulja C8/53", priceFinalGross: 4_950 }),
+    ]);
+
+    expect(collapsed[0].rawPayload.collapsedPriceMin).toBe(4_950);
+  });
+
+  it("sets a range for a single uncollapsed product", () => {
+    const collapsed = collapseCatalogProductsByModel([
+      makeProduct({ legacyId: 1, priceFinalGross: 3_950 }),
+    ]);
+
+    expect(collapsed[0].rawPayload.collapsedPriceMin).toBe(3_950);
+    expect(collapsed[0].rawPayload.collapsedPriceMax).toBe(3_950);
+  });
+});

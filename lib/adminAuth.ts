@@ -21,6 +21,17 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 let sessionKeyPromise: Promise<CryptoKey> | null = null;
 
+const DEFAULT_SESSION_MAX_AGE_DAYS = 30;
+
+/** Absolute lifetime of a signed admin session, checked against `issuedAt`.
+ *  The cookie's own maxAge is only a client-side hint — a copied cookie value
+ *  stays valid until the payload itself expires. */
+export const getAdminSessionMaxAgeMs = () => {
+  const raw = Number(process.env.ADMIN_SESSION_MAX_AGE_DAYS);
+  const days = Number.isFinite(raw) && raw > 0 ? raw : DEFAULT_SESSION_MAX_AGE_DAYS;
+  return days * 24 * 60 * 60 * 1000;
+};
+
 const normalize = (value: string) => value.trim();
 
 const getAdminCredentials = () => ({
@@ -94,10 +105,15 @@ const parseSignedSession = async (value?: string | null): Promise<AdminViewer | 
   if (!encodedPayload || !signature) return null;
 
   const expected = await signSessionPayload(encodedPayload);
-  if (expected !== signature) return null;
+  if (!timingSafeEqual(expected, signature)) return null;
 
   try {
     const payload = JSON.parse(decoder.decode(decodeBase64Url(encodedPayload))) as AdminSessionPayload;
+    const issuedAt = Number(payload?.issuedAt);
+    // Reject sessions with no issue time at all — those predate expiry support
+    // and would otherwise be valid forever.
+    if (!Number.isFinite(issuedAt) || issuedAt <= 0) return null;
+    if (Date.now() - issuedAt > getAdminSessionMaxAgeMs()) return null;
     const roleIds = Array.isArray(payload?.roleIds) ? payload.roleIds : [];
     const permissions =
       Array.isArray(payload?.permissions) && payload.permissions.length
@@ -116,10 +132,14 @@ const parseSignedSession = async (value?: string | null): Promise<AdminViewer | 
   }
 };
 
-const parseLegacySimpleSession = (value?: string | null): AdminViewer | null => {
-  const credentials = getAdminCredentials();
-  const expected = `simple:${credentials.username}:${credentials.password}`;
-  return value === expected ? getLegacyBootstrapViewer() : null;
+/** Length-independent constant-time comparison for base64url signatures. */
+const timingSafeEqual = (left: string, right: string) => {
+  if (left.length !== right.length) return false;
+  let diff = 0;
+  for (let i = 0; i < left.length; i += 1) {
+    diff |= left.charCodeAt(i) ^ right.charCodeAt(i);
+  }
+  return diff === 0;
 };
 
 export const buildAdminSessionValue = async (viewer: AdminViewer) => {
@@ -135,8 +155,11 @@ export const buildAdminSessionValue = async (viewer: AdminViewer) => {
   return `${encodedPayload}.${await signSessionPayload(encodedPayload)}`;
 };
 
+// The old `simple:<username>:<password>` cookie format is gone: it carried the
+// admin password in plaintext and never expired. Nothing issues it any more —
+// /api/admin/login always mints a signed session.
 export const parseAdminSessionValue = async (value?: string | null): Promise<AdminViewer | null> =>
-  (await parseSignedSession(value)) ?? parseLegacySimpleSession(value);
+  parseSignedSession(value);
 
 export const getLegacyAdminAccessToken = () => normalize(process.env.ADMIN_ACCESS_TOKEN || "");
 

@@ -1131,6 +1131,36 @@ const pickCollapsedRepresentative = (left: CatalogProductView, right: CatalogPro
   return right.legacyId > left.legacyId ? right : left;
 };
 
+/** Final price of a variant, or null when the legacy import left junk behind
+ *  (0 or 1 RSD placeholders) that must not drag a displayed range down. */
+const getUsableFinalPrice = (item: CatalogProductView): number | null => {
+  const finalGross = Number(item.priceFinalGross || 0);
+  return finalGross > 1 ? finalGross : null;
+};
+
+const readCollapsedPriceBound = (
+  item: CatalogProductView,
+  field: "collapsedPriceMin" | "collapsedPriceMax",
+): number | null => {
+  const stored = Number(item.rawPayload?.[field]);
+  if (Number.isFinite(stored) && stored > 1) return stored;
+  return getUsableFinalPrice(item);
+};
+
+/** Widens the stored price range as variants fold into one card. Collapse runs
+ *  twice (by model, then by SKU), so already-merged bounds are respected. */
+const mergeCollapsedPriceRange = (current: CatalogProductView, item: CatalogProductView) => {
+  const mins = [readCollapsedPriceBound(current, "collapsedPriceMin"), readCollapsedPriceBound(item, "collapsedPriceMin")]
+    .filter((value): value is number => value != null);
+  const maxes = [readCollapsedPriceBound(current, "collapsedPriceMax"), readCollapsedPriceBound(item, "collapsedPriceMax")]
+    .filter((value): value is number => value != null);
+
+  return {
+    collapsedPriceMin: mins.length ? Math.min(...mins) : null,
+    collapsedPriceMax: maxes.length ? Math.max(...maxes) : null,
+  };
+};
+
 const collapseCatalogProductsByKey = (
   items: CatalogProductView[],
   getKey: (item: CatalogProductView) => string,
@@ -1143,13 +1173,26 @@ const collapseCatalogProductsByKey = (
     if (!current) {
       const existingCollapsedVariantIds =
         (item.rawPayload?.collapsedVariantIds as number[] | undefined) || [item.legacyId];
+      // Collapse runs twice (by model, then by SKU). The second pass must carry
+      // the range the first pass computed, not reset it to the representative's
+      // own price.
+      const seedMin = readCollapsedPriceBound(item, "collapsedPriceMin");
+      const seedMax = readCollapsedPriceBound(item, "collapsedPriceMax");
       map.set(key, {
         ...item,
         categories: [...item.categories],
         images: [...item.images],
         hasDirectMedia: item.hasDirectMedia,
         attributes: { ...item.attributes },
-        rawPayload: { ...item.rawPayload, collapsedVariantIds: existingCollapsedVariantIds },
+        rawPayload: {
+          ...item.rawPayload,
+          collapsedVariantIds: existingCollapsedVariantIds,
+          // Listing cards need the spread across the collapsed model so they can
+          // render "od X RSD" instead of quoting the representative's price as
+          // if every size cost that.
+          collapsedPriceMin: seedMin,
+          collapsedPriceMax: seedMax,
+        },
       });
       continue;
     }
@@ -1203,6 +1246,7 @@ const collapseCatalogProductsByKey = (
       collapsedVariantIds: Array.from(collapsedVariantIds).sort((a, b) => a - b),
       collapsedVariantCount: collapsedVariantIds.size,
       collapsedRepresentativeLegacyId: representative.legacyId,
+      ...mergeCollapsedPriceRange(current, item),
     };
     if (directMediaSource) delete rawPayload.imageFallback;
 

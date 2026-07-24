@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
+import { trackAddToCart } from "@/lib/analytics/ecommerce";
 import type { StorefrontCartItem } from "@/lib/cart/types";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
@@ -20,6 +21,15 @@ export default function AddToCartButton({
 
   const handleClick = () => {
     addItem(item, 1);
+    trackAddToCart({
+      legacyId: item.legacyId,
+      sku: item.sku,
+      name: item.name,
+      price: item.price,
+      quantity: 1,
+      category: item.categoryLabel,
+      size: item.size,
+    });
     setAdded(true);
     window.setTimeout(() => setAdded(false), 1500);
   };

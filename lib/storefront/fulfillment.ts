@@ -43,6 +43,11 @@ export type FulfillmentSettings = {
   deliveryNote: string;
   deliveryNoteEn: string;
   deliveryServices: DeliveryService[];
+  /** Cart subtotal at or above which delivery is free. 0 disables the offer.
+   *  The storefront advertises this in the announcement bar, on the product
+   *  page and in the cart — before this existed the promise was hardcoded copy
+   *  that checkout never actually honoured. */
+  freeDeliveryThreshold: number;
   vouchers: Voucher[];
 };
 
@@ -76,8 +81,13 @@ export const DEFAULT_FULFILLMENT_SETTINGS: FulfillmentSettings = {
       isActive: true,
     },
   ],
+  freeDeliveryThreshold: 15000,
   vouchers: [],
 };
+
+// The threshold maths lives in a browser-safe module so the checkout client can
+// share it; re-exported here for existing server-side call sites.
+export { applyFreeDeliveryThreshold, getRemainingForFreeDelivery } from "@/lib/storefront/deliveryPricing";
 
 const normalizeText = (value: unknown, fallback = "") => String(value || fallback || "").trim();
 const normalizeCode = (value: unknown) => normalizeText(value).toUpperCase();
@@ -157,6 +167,10 @@ async function readFulfillmentUncached(): Promise<FulfillmentSettings> {
     deliveryNote: normalizeText(raw.deliveryNote, DEFAULT_FULFILLMENT_SETTINGS.deliveryNote),
     deliveryNoteEn: normalizeText(raw.deliveryNoteEn, DEFAULT_FULFILLMENT_SETTINGS.deliveryNoteEn),
     deliveryServices: normalizeDeliveryServices(raw.deliveryServices, DEFAULT_FULFILLMENT_SETTINGS.deliveryServices),
+    freeDeliveryThreshold: Math.max(
+      0,
+      normalizeNumber(raw.freeDeliveryThreshold, DEFAULT_FULFILLMENT_SETTINGS.freeDeliveryThreshold),
+    ),
     vouchers: normalizeVouchers(raw.vouchers),
   };
 }
@@ -184,6 +198,10 @@ export async function updateFulfillmentSettings(patch: Partial<FulfillmentSettin
     deliveryNote: patch.deliveryNote == null ? current.deliveryNote : normalizeText(patch.deliveryNote, current.deliveryNote),
     deliveryNoteEn: patch.deliveryNoteEn == null ? current.deliveryNoteEn : normalizeText(patch.deliveryNoteEn, current.deliveryNoteEn),
     deliveryServices: patch.deliveryServices == null ? current.deliveryServices : normalizeDeliveryServices(patch.deliveryServices, current.deliveryServices),
+    freeDeliveryThreshold:
+      patch.freeDeliveryThreshold == null
+        ? current.freeDeliveryThreshold
+        : Math.max(0, normalizeNumber(patch.freeDeliveryThreshold, current.freeDeliveryThreshold)),
     vouchers: patch.vouchers == null ? current.vouchers : normalizeVouchers(patch.vouchers),
   };
   await writePersistentJsonFile(FULFILLMENT_PATH, next);

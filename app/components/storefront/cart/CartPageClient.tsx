@@ -2,9 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useRef } from "react";
 import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSteps";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
 import StorefrontQuantityControl from "@/app/components/storefront/cart/StorefrontQuantityControl";
+import { trackViewCart } from "@/lib/analytics/ecommerce";
+import { getRemainingForFreeDelivery } from "@/lib/storefront/deliveryPricing";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 const formatRsd = (value: number) =>
@@ -16,11 +19,32 @@ const formatRsd = (value: number) =>
 
 export default function CartPageClient({
   lang = "sr",
+  freeDeliveryThreshold = 0,
 }: {
   lang?: StorefrontLanguage;
+  freeDeliveryThreshold?: number;
 }) {
   const { items, itemCount, subtotal, updateQuantity, removeItem, clearCart, isReady } = useCart();
   const isEn = lang === "en";
+  const remainingForFreeDelivery = getRemainingForFreeDelivery(subtotal, freeDeliveryThreshold);
+
+  // Once per visit to the cart, after localStorage hydration.
+  const viewCartSent = useRef(false);
+  useEffect(() => {
+    if (!isReady || viewCartSent.current || !items.length) return;
+    viewCartSent.current = true;
+    trackViewCart(
+      items.map((item) => ({
+        legacyId: item.legacyId,
+        sku: item.sku,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+        category: item.categoryLabel,
+        size: item.size,
+      })),
+    );
+  }, [isReady, items]);
 
   const withLang = (href: string) => {
     if (!isEn) return href;
@@ -160,8 +184,27 @@ export default function CartPageClient({
               </div>
               <div className="ss-order-summary__row">
                 <span>{isEn ? "Delivery" : "Dostava"}</span>
-                <strong>{isEn ? "Confirmed on order" : "Potvrda pri porudzbini"}</strong>
+                <strong>
+                  {freeDeliveryThreshold > 0 && subtotal >= freeDeliveryThreshold
+                    ? isEn
+                      ? "Free"
+                      : "Besplatno"
+                    : isEn
+                      ? "Confirmed on order"
+                      : "Potvrda pri porudzbini"}
+                </strong>
               </div>
+              {/* Real progress against the cart subtotal — the announcement bar
+                  promises this, so the cart has to show where the customer stands. */}
+              {remainingForFreeDelivery > 0 ? (
+                <div className="ss-order-summary__row">
+                  <span>
+                    {isEn
+                      ? `Add ${formatRsd(remainingForFreeDelivery)} more for free delivery`
+                      : `Dodaj jos ${formatRsd(remainingForFreeDelivery)} za besplatnu dostavu`}
+                  </span>
+                </div>
+              ) : null}
             </div>
 
             <div className="ss-order-summary__total">

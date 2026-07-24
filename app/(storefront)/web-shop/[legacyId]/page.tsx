@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { notFound, redirect } from "next/navigation";
 import JsonLd from "@/app/components/seo/JsonLd";
+import { TrackProductView } from "@/app/components/analytics/TrackProductView";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import StorefrontTestimonials from "@/app/components/storefront/StorefrontTestimonials";
@@ -26,7 +27,8 @@ import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
 import { decodeHtmlEntities } from "@/lib/catalog/presentation";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { BUNDLED_UNIFORM_IMAGES } from "@/lib/storefront/uniforms";
-import { resolveDisplayFinalPrice, resolveDisplayGrossPrice, calcDiscountPercent } from "@/lib/catalog/pricing";
+import { resolveSelectedVariantPrice, calcDiscountPercent } from "@/lib/catalog/pricing";
+import { getFulfillmentSettings } from "@/lib/storefront/fulfillment";
 import { resolveProductMediaOrder } from "@/lib/catalog/productMediaOrder";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getSiteContent } from "@/lib/storefront/siteContent";
@@ -331,17 +333,20 @@ export default async function WebShopProductPage({
     notFound();
   }
 
-  const [variants, sizeVariants] = await Promise.all([
-    getCatalogProductVariantsBySku(product.sku, {
-      applyPromotions: true,
-      activeOnly: true,
-      exportOnly: true,
-    }, getCatalogProductModelKey(product), product),
-    getCatalogProductVariantsBySku(product.sku, {
-      applyPromotions: true,
-      activeOnly: false,
-      exportOnly: true,
-    }, getCatalogProductModelKey(product), product),
+  const [{ freeDeliveryThreshold }, [variants, sizeVariants]] = await Promise.all([
+    getFulfillmentSettings(),
+    Promise.all([
+      getCatalogProductVariantsBySku(product.sku, {
+        applyPromotions: true,
+        activeOnly: true,
+        exportOnly: true,
+      }, getCatalogProductModelKey(product), product),
+      getCatalogProductVariantsBySku(product.sku, {
+        applyPromotions: true,
+        activeOnly: false,
+        exportOnly: true,
+      }, getCatalogProductModelKey(product), product),
+    ]),
   ]);
 
   const withLang = (href: string) => {
@@ -449,8 +454,10 @@ export default async function WebShopProductPage({
   const washCare = getProductWashCare(product, lang);
   const businessUniform = isBusinessUniformProduct(displayProduct) || isBusinessUniformProduct(product);
 
-  const displayPriceFinalGross = resolveDisplayFinalPrice(product, variants);
-  const displayPriceGross = resolveDisplayGrossPrice(product, variants);
+  // Price the selected size, not the most expensive one — this is the number
+  // that goes into the cart and into the Offer JSON-LD.
+  const { priceFinalGross: displayPriceFinalGross, priceGross: displayPriceGross } =
+    resolveSelectedVariantPrice(selectedProduct, product, variants);
   const discountAmount = Math.max(0, displayPriceGross - displayPriceFinalGross);
   const discountPercent = calcDiscountPercent(displayPriceGross, displayPriceFinalGross);
   const stockValue = selectedSizeOption
@@ -487,7 +494,8 @@ export default async function WebShopProductPage({
     name: displayName,
     size: selectedSize,
     material,
-    price: selectedProduct.priceFinalGross,
+    // Same number the page shows — see resolveSelectedVariantPrice.
+    price: displayPriceFinalGross,
     image: gallery[0] || product.coverImage || null,
     maxQuantity: stockValue > 0 ? stockValue : null,
     categoryLabel: displayProduct.categories[0]?.name || product.categories[0]?.name || null,
@@ -535,7 +543,7 @@ export default async function WebShopProductPage({
           "@type": "Offer",
           url: absoluteUrl(canonicalPath),
           priceCurrency: "RSD",
-          price: Number(selectedProduct.priceFinalGross || 0),
+          price: Number(displayPriceFinalGross || 0),
           availability:
             stockValue > 0
               ? "https://schema.org/InStock"
@@ -580,6 +588,18 @@ export default async function WebShopProductPage({
       <JsonLd data={productJsonLd} />
       {videoJsonLd ? <JsonLd data={videoJsonLd} /> : null}
       {faqJsonLd ? <JsonLd data={faqJsonLd} /> : null}
+      {businessUniform ? null : (
+        <TrackProductView
+          product={{
+            legacyId: selectedProduct.legacyId,
+            sku: selectedProduct.sku,
+            name: displayName,
+            price: displayPriceFinalGross,
+            category: categoryLabel,
+            size: selectedSize,
+          }}
+        />
+      )}
       <StorefrontHeader lang={lang} variant="contrast" />
       <main className="page-wrapper ss-commerce-page ss-product-page">
         <Reveal as="section" className="product-single container">
@@ -675,18 +695,22 @@ export default async function WebShopProductPage({
                     {isEn ? "Sold out online — contact us to check store availability" : "Rasprodato online — kontaktiraj nas za dostupnost u radnji"}
                   </p>
                 ) : null}
-                {!businessUniform && stockValue > 0 && displayPriceFinalGross < 15000 ? (
+                {!businessUniform && stockValue > 0 && freeDeliveryThreshold > 0 && displayPriceFinalGross < freeDeliveryThreshold ? (
                   <p className="ss-shipping-nudge">
                     <svg className="ss-shipping-nudge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M1 3h15v13H1zM16 8h4l3 3v5h-7V8z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
                       <circle cx="5.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.8" />
                       <circle cx="18.5" cy="18.5" r="1.5" stroke="currentColor" strokeWidth="1.8" />
                     </svg>
+                    {/* Stated as a threshold, not as "add X more": this page has no
+                        visibility into what is already in the cart, and the old
+                        wording implied a shortfall that may not exist. The real
+                        running total lives in the checkout summary. */}
                     {isEn
-                      ? `Add ${formatRsd(15000 - displayPriceFinalGross)} more for free delivery`
-                      : `Dodaj jos ${formatRsd(15000 - displayPriceFinalGross)} za besplatnu dostavu`}
+                      ? `Free delivery on orders over ${formatRsd(freeDeliveryThreshold)}`
+                      : `Besplatna dostava za porudzbine preko ${formatRsd(freeDeliveryThreshold)}`}
                   </p>
-                ) : !businessUniform && stockValue > 0 && displayPriceFinalGross >= 15000 ? (
+                ) : !businessUniform && stockValue > 0 && freeDeliveryThreshold > 0 && displayPriceFinalGross >= freeDeliveryThreshold ? (
                   <p className="ss-shipping-nudge">
                     <svg className="ss-shipping-nudge__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
                       <path d="M20 6L9 17l-5-5" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />

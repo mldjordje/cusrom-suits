@@ -94,6 +94,9 @@ export async function PATCH(req: NextRequest) {
   if ("pickupNoteEn" in row) patch.pickupNoteEn = String(row.pickupNoteEn || "");
   if ("deliveryNote" in row) patch.deliveryNote = String(row.deliveryNote || "");
   if ("deliveryNoteEn" in row) patch.deliveryNoteEn = String(row.deliveryNoteEn || "");
+  if ("freeDeliveryThreshold" in row) {
+    patch.freeDeliveryThreshold = Math.max(0, Number(row.freeDeliveryThreshold) || 0);
+  }
   if ("deliveryServices" in row) patch.deliveryServices = parseServices(row.deliveryServices);
   if ("vouchers" in row) patch.vouchers = parseVouchers(row.vouchers);
 

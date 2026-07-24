@@ -33,11 +33,12 @@ export default function HomeHeroIntroMotion({
       <div className="ss-home18-hero__intro text-white" data-hero-intro>
         <p className="fw-semi-bold mb-0 ss-home18-hero__eyebrow text-uppercase">{eyebrow}</p>
         <span className="ss-hero-gold-line" aria-hidden="true" />
-        <h2 className="hero-display fw-semi-bold lh-1 mb-5 text-white">
+        {/* The home page had no h1 at all — the hero headline is its primary topic. */}
+        <h1 className="hero-display fw-semi-bold lh-1 mb-5 text-white">
           {titleLine1}
           <br />
           {titleLine2}
-        </h2>
+        </h1>
         <div className="d-flex align-items-center gap-3 flex-wrap ss-home18-hero__cta">
           <Link
             href={primaryHref}
@@ -83,7 +84,7 @@ export default function HomeHeroIntroMotion({
         style={{ transformOrigin: "left" }}
       />
 
-      <m.h2
+      <m.h1
         className="hero-display fw-semi-bold lh-1 mb-5 text-white"
         variants={{
           hidden: { opacity: 0, y: 36 },
@@ -93,7 +94,7 @@ export default function HomeHeroIntroMotion({
         {titleLine1}
         <br />
         {titleLine2}
-      </m.h2>
+      </m.h1>
 
       <m.div
         className="d-flex align-items-center gap-3 flex-wrap ss-home18-hero__cta"
