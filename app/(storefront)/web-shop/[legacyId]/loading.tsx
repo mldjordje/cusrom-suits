@@ -15,7 +15,7 @@ export default function ProductDetailLoading() {
             className="ss-preloader__logo"
           />
         </div>
-        <span className="ss-preloader__caption">Tailored in silence</span>
+        <span className="ss-preloader__caption">Tailored in Serbia</span>
         <span className="ss-preloader__line" />
       </div>
     </div>
