@@ -426,6 +426,12 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
     const cover = patch.coverImage && imageUrls.includes(patch.coverImage)
       ? patch.coverImage
       : imageUrls[0] || null;
+    // The storefront derives the main image from the FIRST media row (ordered by
+    // `sort`), so persist the chosen cover at sort 0. Without this the `is_cover`
+    // flag was written but ignored on read, and picking "Glavna" had no effect.
+    const orderedUrls = cover
+      ? [cover, ...imageUrls.filter((url) => url !== cover)]
+      : imageUrls;
 
     // Find all variants (sizes) with the same SKU so images are shared across sizes
     const { data: skuRow } = await supabase
@@ -457,9 +463,9 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
       return { success: false, message: deleteError.message };
     }
 
-    if (imageUrls.length > 0) {
+    if (orderedUrls.length > 0) {
       const mediaRows = siblingIds.flatMap((id) =>
-        imageUrls.map((url, index) => ({
+        orderedUrls.map((url, index) => ({
           legacy_product_id: id,
           url,
           is_cover: cover ? url === cover : index === 0,
@@ -605,22 +611,18 @@ const createInSupabase = async (payload: ProductCreatePayload) => {
   } as never);
   if (error) return { success: false, message: error.message };
 
-  const mediaRows = images.map((url, index) => ({
+  // Keep the cover at sort 0 — the storefront reads the first media row as the
+  // main image.
+  const orderedImages = coverImage
+    ? [coverImage, ...images.filter((url) => url !== coverImage)]
+    : images;
+  const mediaRows = orderedImages.map((url, index) => ({
     legacy_product_id: legacyId,
     url,
     is_cover: coverImage ? coverImage === url : index === 0,
     sort: index,
     updated_at: now,
   }));
-  if (coverImage && !images.includes(coverImage)) {
-    mediaRows.unshift({
-      legacy_product_id: legacyId,
-      url: coverImage,
-      is_cover: true,
-      sort: 0,
-      updated_at: now,
-    });
-  }
   if (mediaRows.length > 0) {
     const { error: mediaError } = await supabase
       .from("catalog_product_media")

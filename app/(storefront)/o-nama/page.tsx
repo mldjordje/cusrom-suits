@@ -1,5 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
+import AboutHeroMedia from "@/app/components/storefront/AboutHeroMedia";
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import Reveal from "@/app/components/motion/Reveal";
@@ -25,15 +26,12 @@ export default async function AboutPage({
       <StorefrontHeader lang={lang} />
       <main className="page-wrapper">
         <Reveal as="section" className="position-relative">
-          <Image
-            src={aboutPage.heroImage}
-            width={1920}
-            height={900}
+          <AboutHeroMedia
+            posterSrc={aboutPage.heroImage}
+            videoSrc={aboutPage.heroVideo || undefined}
             alt={isEn ? aboutPage.heroAltEn : aboutPage.heroAlt}
-            className="w-100 h-auto object-fit-cover"
-            priority
           />
-          <div className="position-absolute top-50 start-50 translate-middle text-center text-white px-3">
+          <div className="position-absolute top-50 start-50 translate-middle text-center text-white px-3" style={{ zIndex: 2 }}>
             <h1 className="text-uppercase mb-2 text-white">{isEn ? aboutPage.heroTitleEn : aboutPage.heroTitle}</h1>
             <p className="mb-0">{isEn ? aboutPage.heroSubtitleEn : aboutPage.heroSubtitle}</p>
           </div>

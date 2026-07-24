@@ -181,6 +181,7 @@ export async function PATCH(req: NextRequest) {
     const value = row.aboutPage as Record<string, unknown>;
     patch.aboutPage = {
       heroImage: String(value.heroImage || "").trim(),
+      heroVideo: String(value.heroVideo || "").trim(),
       heroAlt: String(value.heroAlt || "").trim(),
       heroAltEn: String(value.heroAltEn || "").trim(),
       heroTitle: String(value.heroTitle || "").trim(),

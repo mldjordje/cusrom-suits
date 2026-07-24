@@ -44,13 +44,7 @@ export async function PATCH(req: NextRequest) {
     ? (rawPayload.categories as unknown[])
     : [];
 
-  // Keep legacy (non-admin) categories intact
-  const legacyCategories = existingCategories.filter((cat) => {
-    if (!cat || typeof cat !== "object") return true;
-    return !adminCategoryIds.has(Number((cat as Record<string, unknown>).id));
-  });
-
-  // Build the new admin category entries from the requested IDs
+  // Build the new admin category entries from the requested IDs.
   const newAdminCategories = categoryIds
     .map((id) => registryById.get(id))
     .filter(Boolean)
@@ -61,7 +55,21 @@ export async function PATCH(req: NextRequest) {
       parentId: cat!.parentId || 0,
     }));
 
-  rawPayload.categories = [...legacyCategories, ...newAdminCategories];
+  // The category editor is the authority on a product's category. Admin-selected
+  // categories go FIRST so `categories[0]` (the label shown on the storefront
+  // detail page and the group the product filters under) matches the client's
+  // choice. Any legacy (mOffice) category that also maps to a recognized shop
+  // group is dropped so the product actually MOVES to the new category instead
+  // of appearing under both the old and new one. Legacy tags that don't map to a
+  // group carry no visible meaning and are dropped too, leaving the admin
+  // selection as the single source of truth.
+  const legacyCategories = existingCategories.filter((cat) => {
+    if (!cat || typeof cat !== "object") return false;
+    return !adminCategoryIds.has(Number((cat as Record<string, unknown>).id));
+  });
+  const keepLegacy = newAdminCategories.length === 0 ? legacyCategories : [];
+
+  rawPayload.categories = [...newAdminCategories, ...keepLegacy];
 
   const { error: updateError } = await supabase
     .from("catalog_products")

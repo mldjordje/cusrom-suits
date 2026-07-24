@@ -64,6 +64,7 @@ type SiteContent = {
   };
   aboutPage: {
     heroImage: string;
+    heroVideo: string;
     heroAlt: string;
     heroAltEn: string;
     heroTitle: string;
@@ -182,6 +183,7 @@ const defaultContent: SiteContent = {
   },
   aboutPage: {
     heroImage: "",
+    heroVideo: "",
     heroAlt: "",
     heroAltEn: "",
     heroTitle: "",
@@ -623,7 +625,7 @@ export default function AdminSiteContentPage() {
           <section className="rounded-2xl border border-slate-200 p-4">
             <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">O nama strana</h3>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              {(["heroImage","heroAlt","heroAltEn","heroTitle","heroTitleEn","heroSubtitle","heroSubtitleEn","introTitle","introTitleEn","primaryCtaLabel","primaryCtaLabelEn","primaryCtaHref","secondaryCtaLabel","secondaryCtaLabelEn","secondaryCtaHref","secondaryImage","secondaryImageAlt","secondaryImageAltEn"] as Array<Exclude<keyof SiteContent["aboutPage"], "paragraphs" | "paragraphsEn">>).map((field) => (
+              {(["heroImage","heroVideo","heroAlt","heroAltEn","heroTitle","heroTitleEn","heroSubtitle","heroSubtitleEn","introTitle","introTitleEn","primaryCtaLabel","primaryCtaLabelEn","primaryCtaHref","secondaryCtaLabel","secondaryCtaLabelEn","secondaryCtaHref","secondaryImage","secondaryImageAlt","secondaryImageAltEn"] as Array<Exclude<keyof SiteContent["aboutPage"], "paragraphs" | "paragraphsEn">>).map((field) => (
                 <input key={`about-${String(field)}`} value={String(content.aboutPage[field] || "")} onChange={(e) => setContent((prev) => ({ ...prev, aboutPage: { ...prev.aboutPage, [field]: e.target.value } }))} placeholder={String(field)} className={fieldClass} />
               ))}
               <textarea value={content.aboutPage.paragraphs.join("\n")} onChange={(e) => setContent((prev) => ({ ...prev, aboutPage: { ...prev.aboutPage, paragraphs: e.target.value.split("\n") } }))} placeholder="Paragrafi SR, jedan red = jedan paragraf" className={`${fieldClass} min-h-[120px]`} />

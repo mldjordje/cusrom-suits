@@ -65,6 +65,9 @@ export type SiteStoresPageContent = {
 };
 export type SiteAboutPageContent = {
   heroImage: string;
+  /** Optional background video for the hero. When set, it plays behind the hero
+   *  title with `heroImage` as the poster/fallback. Relative /fajlovi/… path. */
+  heroVideo: string;
   heroAlt: string;
   heroAltEn: string;
   heroTitle: string;
@@ -205,6 +208,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   },
   aboutPage: {
     heroImage: "/img/hero.jpg",
+    heroVideo: "",
     heroAlt: "Santos & Santorini hero",
     heroAltEn: "Santos & Santorini hero",
     heroTitle: "O nama",
@@ -495,6 +499,7 @@ async function readSiteContentUncached(): Promise<SiteContent> {
     },
     aboutPage: {
       heroImage: String(raw.aboutPage?.heroImage || DEFAULT_SITE_CONTENT.aboutPage.heroImage).trim(),
+      heroVideo: String(raw.aboutPage?.heroVideo || DEFAULT_SITE_CONTENT.aboutPage.heroVideo).trim(),
       heroAlt: decodeText(raw.aboutPage?.heroAlt, DEFAULT_SITE_CONTENT.aboutPage.heroAlt),
       heroAltEn: decodeText(raw.aboutPage?.heroAltEn, DEFAULT_SITE_CONTENT.aboutPage.heroAltEn),
       heroTitle: decodeText(raw.aboutPage?.heroTitle, DEFAULT_SITE_CONTENT.aboutPage.heroTitle),
@@ -578,6 +583,7 @@ export async function updateSiteContent(patch: Partial<SiteContent>): Promise<Si
     },
     aboutPage: {
       heroImage: patch.aboutPage?.heroImage == null ? current.aboutPage.heroImage : String(patch.aboutPage.heroImage).trim() || current.aboutPage.heroImage,
+      heroVideo: patch.aboutPage?.heroVideo == null ? current.aboutPage.heroVideo : String(patch.aboutPage.heroVideo).trim(),
       heroAlt: patch.aboutPage?.heroAlt == null ? current.aboutPage.heroAlt : decodeText(patch.aboutPage.heroAlt, current.aboutPage.heroAlt),
       heroAltEn: patch.aboutPage?.heroAltEn == null ? current.aboutPage.heroAltEn : decodeText(patch.aboutPage.heroAltEn, current.aboutPage.heroAltEn),
       heroTitle: patch.aboutPage?.heroTitle == null ? current.aboutPage.heroTitle : decodeText(patch.aboutPage.heroTitle, current.aboutPage.heroTitle),

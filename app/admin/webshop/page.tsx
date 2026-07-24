@@ -2169,12 +2169,15 @@ export default function AdminWebshopPage() {
         setItems((prev) =>
           prev.map((item) => {
             if (item.legacyId !== savedLegacyId) return item;
-            const legacyCats = item.categories.filter((c) => !adminIds.has(c.id));
             const newAdminCats = Array.from(savedSelectedIds)
               .map((id) => registryById.get(id))
               .filter(Boolean)
               .map((cat) => ({ id: cat!.id, name: cat!.name, path: cat!.path }));
-            return { ...item, categories: [...legacyCats, ...newAdminCats] };
+            // Mirror the server: admin selection is authoritative. Admin categories
+            // go first; legacy categories are only kept when nothing is selected.
+            const legacyCats = item.categories.filter((c) => !adminIds.has(c.id));
+            const keepLegacy = newAdminCats.length === 0 ? legacyCats : [];
+            return { ...item, categories: [...newAdminCats, ...keepLegacy] };
           }),
         );
         setCategoryEditorId(null);
