@@ -29,7 +29,7 @@ const envByTarget = (environment: SyncEnvironment): AnanasEnv => {
   const clientId = process.env.ANANAS_STAGE_CLIENT_ID?.trim();
   const clientSecret = process.env.ANANAS_STAGE_CLIENT_SECRET?.trim();
   const baseUrl =
-    process.env.ANANAS_STAGE_API_BASE_URL?.trim() || "https://api.stage.ananastest.com";
+    process.env.ANANAS_STAGE_API_BASE_URL?.trim() || "https://api.qa2.ananastest.com";
   return { clientId: clientId || "", clientSecret: clientSecret || "", baseUrl };
 };
 
