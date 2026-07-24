@@ -11,7 +11,13 @@ const BUSINESS_UNIFORMS_NAV_ITEM: SiteNavItem = {
   labelEn: "Business uniforms",
 };
 
-const REQUIRED_NAV_ITEMS = [BUSINESS_UNIFORMS_NAV_ITEM];
+const ACCESSORIES_NAV_ITEM: SiteNavItem = {
+  href: "/web-shop?categoryGroup=aksesoari",
+  label: "Aksesoari",
+  labelEn: "Accessories",
+};
+
+const REQUIRED_NAV_ITEMS = [ACCESSORIES_NAV_ITEM, BUSINESS_UNIFORMS_NAV_ITEM];
 
 // Admins may type a bare category name (e.g. "Aksesoari") into a header link's
 // href instead of a path. A bare word would resolve to /Aksesoari (404). If it
