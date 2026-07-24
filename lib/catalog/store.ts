@@ -59,6 +59,10 @@ export type CatalogProductView = {
   brand: string | null;
   isActive: boolean;
   isExported: boolean;
+  /** Admin "hide from customer shop" flag. When true the product is dropped from
+   *  every storefront listing (web-shop, landing, related, feed) regardless of
+   *  stock/active/image state. Admin views pass `includeHidden` to still see it. */
+  hiddenFromShop: boolean;
   landingFeatured: boolean;
   landingPriority: number | null;
   categories: CatalogCategory[];
@@ -90,6 +94,9 @@ export type CatalogListInput = {
   onSale?: boolean;
   activeOnly?: boolean;
   exportOnly?: boolean;
+  /** Include products flagged `hiddenFromShop`. Storefront omits this (defaults to
+   *  false → hidden products excluded); admin listings pass true to manage them. */
+  includeHidden?: boolean;
   collapseBySku?: boolean;
   page?: number;
   pageSize?: number;
@@ -199,6 +206,7 @@ const makeCatalogListCacheKey = (input: {
   onSale: boolean;
   activeOnly: boolean;
   exportOnly: boolean;
+  includeHidden: boolean;
   collapseBySku: boolean;
   applyPromotions: boolean;
   priceMin: number;
@@ -225,6 +233,7 @@ const makeCatalogListCacheKey = (input: {
     input.onSale ? 1 : 0,
     input.activeOnly ? 1 : 0,
     input.exportOnly ? 1 : 0,
+    input.includeHidden ? 1 : 0,
     input.collapseBySku ? 1 : 0,
     input.applyPromotions ? 1 : 0,
     input.priceMin || 0,
@@ -327,6 +336,7 @@ const compactRawPayload = (
   if (source.seo && typeof source.seo === "object") compact.seo = source.seo;
   if (Array.isArray(source.washCareIcons)) compact.washCareIcons = source.washCareIcons;
   if (Object.prototype.hasOwnProperty.call(source, "declaration")) compact.declaration = source.declaration;
+  if (source.hiddenFromShop === true) compact.hiddenFromShop = true;
   if (source.productType) compact.productType = source.productType;
   if (source.source) compact.source = source.source;
   if (source.moffice && typeof source.moffice === "object") compact.moffice = source.moffice;
@@ -400,6 +410,7 @@ const normalizeCatalogRow = (
     brand: row.brand ? String(row.brand) : null,
     isActive: Boolean(row.is_active),
     isExported: Boolean(row.is_exported),
+    hiddenFromShop: rawPayloadSource.hiddenFromShop === true,
     landingFeatured: Boolean(landing.featured),
     landingPriority,
     categories,
@@ -436,6 +447,7 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
   brand: item.brand || null,
   isActive: String(item.status.active).toLowerCase() === "y",
   isExported: String(item.status.export).toLowerCase() === "y",
+  hiddenFromShop: (item.raw as Record<string, unknown> | undefined)?.hiddenFromShop === true,
   landingFeatured: Boolean(item.raw?.landing?.featured),
   landingPriority: Number.isFinite(Number(item.raw?.landing?.priority))
     ? Number(item.raw?.landing?.priority)
@@ -1543,6 +1555,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const onSale = Boolean(input.onSale);
   const activeOnly = input.activeOnly !== false;
   const exportOnly = input.exportOnly !== false;
+  const includeHidden = Boolean(input.includeHidden);
   const collapseBySku = Boolean(input.collapseBySku);
   const applyPromotions = input.applyPromotions !== false;
   const priceMin = Number.isFinite(Number(input.priceMin)) ? Math.max(0, Number(input.priceMin)) : 0;
@@ -1577,6 +1590,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     onSale,
     activeOnly,
     exportOnly,
+    includeHidden,
     collapseBySku,
     applyPromotions,
     priceMin,
@@ -1644,8 +1658,26 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   });
   const filterMs = Date.now() - filterStart;
 
+  // Admin "hide from shop" — remove the whole SKU (all size variants) when any
+  // variant is flagged, so the collapsed product disappears from the storefront.
+  // Admin listings pass includeHidden to keep managing hidden products.
+  let visibleSource = filteredSource;
+  if (!includeHidden) {
+    const hideKeyOf = (item: CatalogProductView) => {
+      const sku = String(item.sku || "").trim().toUpperCase();
+      return sku || `#${item.legacyId}`;
+    };
+    const hiddenKeys = new Set<string>();
+    for (const item of displayItems) {
+      if (item.hiddenFromShop) hiddenKeys.add(hideKeyOf(item));
+    }
+    if (hiddenKeys.size) {
+      visibleSource = filteredSource.filter((item) => !hiddenKeys.has(hideKeyOf(item)));
+    }
+  }
+
   const collapseStart = Date.now();
-  const collapsed = collapseBySku ? collapseCatalogProductsByModel(filteredSource) : filteredSource;
+  const collapsed = collapseBySku ? collapseCatalogProductsByModel(visibleSource) : visibleSource;
   const excludeFiltered = excludeLegacyIds.size
     ? collapsed.filter((item) => !excludeLegacyIds.has(item.legacyId))
     : collapsed;

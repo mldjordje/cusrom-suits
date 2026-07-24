@@ -280,6 +280,19 @@ export default function AdminSiteContentPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [uploadingHeroVideo, setUploadingHeroVideo] = useState(false);
+
+  const uploadSiteAsset = async (files: FileList | null): Promise<string> => {
+    const list = Array.from(files || []);
+    if (!list.length) return "";
+    const fd = new FormData();
+    for (const file of list) fd.append("files", file);
+    const res = await fetch("/api/admin/webshop/site-assets", { method: "POST", body: fd });
+    const json = await res.json();
+    if (!json?.success) throw new Error(json?.message || "Upload nije uspeo.");
+    const urls = Array.isArray(json.urls) ? (json.urls as string[]) : [];
+    return urls[0] || "";
+  };
 
   const load = async () => {
     setLoading(true);
@@ -624,8 +637,52 @@ export default function AdminSiteContentPage() {
 
           <section className="rounded-2xl border border-slate-200 p-4">
             <h3 className="text-sm font-semibold uppercase tracking-[0.12em] text-slate-700">O nama strana</h3>
+            <div className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">Hero video pozadina</p>
+              <p className="mt-1 text-xs text-slate-500">Zalepi YouTube link ili uploaduj video fajl (mp4/webm). Ako ostane prazno, prikazuje se hero slika. Slika (heroImage) se koristi kao poster dok se video ucitava.</p>
+              <div className="mt-2 flex flex-col gap-2 sm:flex-row">
+                <input
+                  value={content.aboutPage.heroVideo}
+                  onChange={(e) => setContent((prev) => ({ ...prev, aboutPage: { ...prev.aboutPage, heroVideo: e.target.value } }))}
+                  placeholder="https://youtu.be/... ili /fajlovi/...mp4"
+                  className={`${fieldClass} flex-1`}
+                />
+                <label className="cursor-pointer whitespace-nowrap rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-center text-xs font-semibold uppercase tracking-[0.12em] text-blue-700">
+                  <input
+                    type="file"
+                    accept="video/mp4,video/webm,video/quicktime"
+                    className="hidden"
+                    disabled={uploadingHeroVideo}
+                    onChange={async (e) => {
+                      if (!e.target.files?.length) return;
+                      setUploadingHeroVideo(true);
+                      setError(null);
+                      try {
+                        const url = await uploadSiteAsset(e.target.files);
+                        if (url) setContent((prev) => ({ ...prev, aboutPage: { ...prev.aboutPage, heroVideo: url } }));
+                      } catch (err) {
+                        setError(err instanceof Error ? err.message : "Upload videa nije uspeo.");
+                      } finally {
+                        setUploadingHeroVideo(false);
+                        e.currentTarget.value = "";
+                      }
+                    }}
+                  />
+                  {uploadingHeroVideo ? "Upload..." : "Upload video"}
+                </label>
+                {content.aboutPage.heroVideo ? (
+                  <button
+                    type="button"
+                    onClick={() => setContent((prev) => ({ ...prev, aboutPage: { ...prev.aboutPage, heroVideo: "" } }))}
+                    className="whitespace-nowrap rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700"
+                  >
+                    Ukloni
+                  </button>
+                ) : null}
+              </div>
+            </div>
             <div className="mt-3 grid gap-3 md:grid-cols-2">
-              {(["heroImage","heroVideo","heroAlt","heroAltEn","heroTitle","heroTitleEn","heroSubtitle","heroSubtitleEn","introTitle","introTitleEn","primaryCtaLabel","primaryCtaLabelEn","primaryCtaHref","secondaryCtaLabel","secondaryCtaLabelEn","secondaryCtaHref","secondaryImage","secondaryImageAlt","secondaryImageAltEn"] as Array<Exclude<keyof SiteContent["aboutPage"], "paragraphs" | "paragraphsEn">>).map((field) => (
+              {(["heroImage","heroAlt","heroAltEn","heroTitle","heroTitleEn","heroSubtitle","heroSubtitleEn","introTitle","introTitleEn","primaryCtaLabel","primaryCtaLabelEn","primaryCtaHref","secondaryCtaLabel","secondaryCtaLabelEn","secondaryCtaHref","secondaryImage","secondaryImageAlt","secondaryImageAltEn"] as Array<Exclude<keyof SiteContent["aboutPage"], "paragraphs" | "paragraphsEn" | "heroVideo">>).map((field) => (
                 <input key={`about-${String(field)}`} value={String(content.aboutPage[field] || "")} onChange={(e) => setContent((prev) => ({ ...prev, aboutPage: { ...prev.aboutPage, [field]: e.target.value } }))} placeholder={String(field)} className={fieldClass} />
               ))}
               <textarea value={content.aboutPage.paragraphs.join("\n")} onChange={(e) => setContent((prev) => ({ ...prev, aboutPage: { ...prev.aboutPage, paragraphs: e.target.value.split("\n") } }))} placeholder="Paragrafi SR, jedan red = jedan paragraf" className={`${fieldClass} min-h-[120px]`} />

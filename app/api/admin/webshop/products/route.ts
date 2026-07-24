@@ -32,6 +32,7 @@ type ProductUpdatePayload = {
   stockTotal?: number;
   isActive?: boolean;
   isExported?: boolean;
+  hiddenFromShop?: boolean;
   landingFeatured?: boolean;
   landingPriority?: number | null;
   videoUrl?: string | null;
@@ -155,6 +156,7 @@ const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
   if (hasOwn(row, "stockTotal")) out.stockTotal = toNumberOrUndefined(row.stockTotal);
   if (hasOwn(row, "isActive")) out.isActive = Boolean(row.isActive);
   if (hasOwn(row, "isExported")) out.isExported = Boolean(row.isExported);
+  if (hasOwn(row, "hiddenFromShop")) out.hiddenFromShop = Boolean(row.hiddenFromShop);
   if (hasOwn(row, "landingFeatured")) out.landingFeatured = Boolean(row.landingFeatured);
   if (hasOwn(row, "landingPriority")) {
     out.landingPriority = row.landingPriority == null ? null : toNumberOrUndefined(row.landingPriority) ?? null;
@@ -272,6 +274,7 @@ const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
             },
           }
         : {}),
+      ...(patch.hiddenFromShop !== undefined ? { hiddenFromShop: patch.hiddenFromShop } : {}),
       ...(patch.declaration !== undefined ? { declaration: patch.declaration || null } : {}),
       ...(patch.washCareIcons !== undefined ? { washCareIcons: patch.washCareIcons } : {}),
       ...(patch.seo !== undefined ? { seo: patch.seo } : {}),
@@ -354,6 +357,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
     patch.priceOverride !== undefined ||
     patch.declaration !== undefined ||
     patch.washCareIcons !== undefined ||
+    patch.hiddenFromShop !== undefined ||
     patch.seo !== undefined
   ) {
     const { data: existing, error: rawError } = await supabase
@@ -399,6 +403,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
           ...(patch.videoUrl !== undefined ? { videoUrl: patch.videoUrl } : {}),
           ...(patch.mediaOrder !== undefined ? { mediaOrder: patch.mediaOrder } : {}),
         },
+        ...(patch.hiddenFromShop !== undefined ? { hiddenFromShop: patch.hiddenFromShop } : {}),
         ...(patch.declaration !== undefined
           ? { declaration: patch.declaration || null }
           : {}),
@@ -705,6 +710,7 @@ export async function GET(req: NextRequest) {
     onSale: onSaleOnly,
     activeOnly,
     exportOnly,
+    includeHidden: true,
     applyPromotions: onSaleOnly,
     requireImages,
     requireDirectImages,

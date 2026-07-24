@@ -47,6 +47,7 @@ const makeProduct = (
   brand: null,
   isActive: true,
   isExported: true,
+  hiddenFromShop: false,
   landingFeatured: false,
   landingPriority: null,
   categories: [],

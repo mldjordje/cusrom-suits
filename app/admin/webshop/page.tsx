@@ -52,6 +52,7 @@ type CatalogProduct = {
   brand: string | null;
   isActive: boolean;
   isExported: boolean;
+  hiddenFromShop?: boolean;
   landingFeatured: boolean;
   landingPriority: number | null;
   categories: CatalogCategory[];
@@ -86,6 +87,7 @@ type ProductDraft = {
   stockTotal: string;
   isActive: boolean;
   isExported: boolean;
+  hiddenFromShop: boolean;
   landingFeatured: boolean;
   landingPriority: string;
   videoUrl: string;
@@ -733,6 +735,7 @@ const toDraft = (item: CatalogProduct): ProductDraft => {
     stockTotal: String(item.stockTotal),
     isActive: item.isActive,
     isExported: item.isExported,
+    hiddenFromShop: item.hiddenFromShop === true || item.rawPayload?.hiddenFromShop === true,
     landingFeatured: Boolean(item.landingFeatured),
     landingPriority: item.landingPriority == null ? "" : String(item.landingPriority),
     videoUrl,
@@ -822,7 +825,8 @@ const productQualityFlags = (item: CatalogProduct) => {
   if (item.videoUrl) flags.push({ label: "Ima video", tone: "emerald" });
   if (isMofficeProduct(item)) flags.push({ label: "mOffice", tone: "slate" });
   if (hasManualPriceOverride(item)) flags.push({ label: "Rucna cena", tone: "amber" });
-  if (!item.isActive || !item.isExported) flags.push({ label: "Sakriven", tone: "slate" });
+  if (item.hiddenFromShop === true || item.rawPayload?.hiddenFromShop === true) flags.push({ label: "Sakriven sa sajta", tone: "rose" });
+  else if (!item.isActive || !item.isExported) flags.push({ label: "Sakriven", tone: "slate" });
   if (!flags.length) flags.push({ label: "Spremno", tone: "emerald" });
   return flags;
 };
@@ -949,6 +953,7 @@ export default function AdminWebshopPage() {
   const [loading, setLoading] = useState(false);
   const [loadingSales, setLoadingSales] = useState(false);
   const [savingId, setSavingId] = useState<number | null>(null);
+  const [togglingHiddenId, setTogglingHiddenId] = useState<number | null>(null);
   const [creating, setCreating] = useState(false);
   const [bulkSaving, setBulkSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1810,6 +1815,7 @@ export default function AdminWebshopPage() {
           ...commercePatch,
           isActive: draft.isActive,
           isExported: draft.isExported,
+          hiddenFromShop: draft.hiddenFromShop,
           landingFeatured: draft.landingFeatured,
           landingPriority: draft.landingPriority.trim() ? toNumberOrNull(draft.landingPriority) : null,
           videoUrl: draft.videoUrl.trim() || null,
@@ -1977,6 +1983,39 @@ export default function AdminWebshopPage() {
 
   const setEditorCoverImage = (legacyId: number, url: string) => {
     updateDraft(legacyId, { coverImage: url });
+  };
+
+  // One-click hide/show from the customer shop. Sends a minimal PATCH (does not
+  // touch other unsaved draft edits) and persists immediately so the product
+  // disappears from / returns to every storefront listing.
+  const toggleHiddenFromShop = async (legacyId: number, hidden: boolean) => {
+    setTogglingHiddenId(legacyId);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/admin/webshop/products", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ legacyId, hiddenFromShop: hidden }),
+      });
+      const json = await res.json();
+      if (!json?.success) {
+        setError(json?.message || "Cuvanje nije uspelo.");
+        return;
+      }
+      setDrafts((prev) =>
+        prev[legacyId] ? { ...prev, [legacyId]: { ...prev[legacyId], hiddenFromShop: hidden } } : prev,
+      );
+      const patchItem = <T extends { legacyId: number }>(list: T[]) =>
+        list.map((it) => (it.legacyId === legacyId ? { ...it, hiddenFromShop: hidden } : it));
+      setItems((prev) => patchItem(prev));
+      setSaleItems((prev) => patchItem(prev));
+      setNotice(hidden ? `Sakriveno sa sajta #${legacyId}` : `Ponovo prikazano na sajtu #${legacyId}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Greska pri cuvanju.");
+    } finally {
+      setTogglingHiddenId(null);
+    }
   };
 
   const removeEditorImage = (legacyId: number, url: string) => {
@@ -4334,6 +4373,31 @@ export default function AdminWebshopPage() {
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(drafts[currentEditorItem.legacyId]?.isActive)} onChange={(e) => updateDraft(currentEditorItem.legacyId, { isActive: e.target.checked })} />Aktivan (vidljiv na sajtu)</label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(drafts[currentEditorItem.legacyId]?.isExported)} onChange={(e) => updateDraft(currentEditorItem.legacyId, { isExported: e.target.checked })} />Export (sinhronizacija)</label>
             </div>
+
+            {(() => {
+              const isHidden = Boolean(drafts[currentEditorItem.legacyId]?.hiddenFromShop);
+              const busy = togglingHiddenId === currentEditorItem.legacyId;
+              return (
+                <div className={`mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-3 ${isHidden ? "border-rose-200 bg-rose-50" : "border-slate-200 bg-slate-50"}`}>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-600">Vidljivost na sajtu</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {isHidden
+                        ? "Proizvod je SAKRIVEN — ne prikazuje se kupcima u web shopu."
+                        : "Proizvod je vidljiv kupcima. Sakrij ga da nestane iz web shopa (odmah, bez brisanja)."}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void toggleHiddenFromShop(currentEditorItem.legacyId, !isHidden)}
+                    className={`whitespace-nowrap rounded-full border px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] ${isHidden ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`}
+                  >
+                    {busy ? "Cuvanje..." : isHidden ? "Prikazi na sajtu" : "Sakrij sa sajta"}
+                  </button>
+                </div>
+              );
+            })()}
 
             <div className="mt-5 flex flex-wrap justify-end gap-2">
               <Link href={`/web-shop/${currentEditorItem.legacyId}`} target="_blank" className="rounded-full border border-slate-200 px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700">Pregled proizvoda</Link>
