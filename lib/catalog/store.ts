@@ -196,6 +196,67 @@ export const invalidateCatalogCaches = (bypassMs = 60_000) => {
   revalidateTag("catalog-product-by-id");
 };
 
+// ---------------------------------------------------------------------------
+// Cross-instance cache propagation.
+//
+// The snapshot/list caches above live in per-instance memory. `invalidateCatalogCaches`
+// only clears the instance that handled the admin write, so on Vercel (many lambdas)
+// other warm instances kept serving stale data until their 30-min TTL — that is why an
+// admin change (new product, images, category, price) could take minutes to appear.
+//
+// Fix: every admin mutation bumps `catalog_products.updated_at`. We poll the newest
+// updated_at (a cheap indexed query, cached ~15s per instance) and, when it changes,
+// clear the local caches. So any instance refreshes within ~15s of a change instead of
+// up to 30 min, without hammering the DB on every request.
+// ---------------------------------------------------------------------------
+const CATALOG_VERSION_TTL_MS = 15_000;
+
+type CatalogVersionState = { value: string; readAt: number; applied: string };
+
+const getCatalogVersionState = (): CatalogVersionState => {
+  const globalWithCache = globalThis as typeof globalThis & {
+    __catalogVersionState?: CatalogVersionState;
+  };
+  if (!globalWithCache.__catalogVersionState) {
+    globalWithCache.__catalogVersionState = { value: "", readAt: 0, applied: "" };
+  }
+  return globalWithCache.__catalogVersionState;
+};
+
+/** Poll the newest `updated_at`; when it changed since last applied, drop local
+ *  caches so this instance picks up the admin change on its next fetch. */
+const refreshCatalogDataVersion = async (): Promise<void> => {
+  const state = getCatalogVersionState();
+  const now = Date.now();
+  if (state.value && now - state.readAt < CATALOG_VERSION_TTL_MS) return;
+
+  const supabase = getServiceSupabase() || getAnonSupabase();
+  if (!supabase) return;
+
+  try {
+    const { data, error } = await supabase
+      .from("catalog_products")
+      .select("updated_at")
+      .order("updated_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+    if (error) return;
+    const version = data ? String((data as Record<string, unknown>).updated_at || "") : "";
+    state.value = version;
+    state.readAt = now;
+    if (version && version !== state.applied) {
+      // A newer change exists than what our caches were built from — drop them.
+      if (state.applied) {
+        getCatalogSnapshotCache().clear();
+        getCatalogListCache().clear();
+      }
+      state.applied = version;
+    }
+  } catch {
+    // Best-effort — fall back to TTL-based expiry on any failure.
+  }
+};
+
 const makeCatalogListCacheKey = (input: {
   page: number;
   pageSize: number;
@@ -1545,6 +1606,11 @@ async function loadCatalogProductFromFileByLegacyId(
 }
 
 export async function listCatalogProducts(input: CatalogListInput = {}): Promise<CatalogListResult> {
+  // Cross-instance freshness: drop stale local caches if an admin change landed
+  // on another instance (see refreshCatalogDataVersion). Runs before the cache
+  // lookup so a bumped version forces a refetch here too.
+  await refreshCatalogDataVersion();
+
   const startedAt = Date.now();
   const page = Math.max(1, Number(input.page || 1));
   const pageSize = clamp(Number(input.pageSize || 24), 1, 120);

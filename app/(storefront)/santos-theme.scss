@@ -124,6 +124,16 @@
   transition: transform 0.9s var(--ss-ease-out), opacity 0.6s ease;
 }
 
+/* Wide/small products (wallets, belts, shoes, bags, accessories) are landscape,
+   so `cover` chops their left/right edges. Show the whole item with `contain`
+   instead — the wrapper background fills the letterbox. Apparel stays on cover. */
+.ss-lux-grid .pc__img.pc__img--contain,
+.ss-lux-grid .pc__img.pc__img--contain.pc__img-second {
+  object-fit: contain;
+  object-position: center;
+  padding: 8%;
+}
+
 /* Quiet hover: slow scale + crossfade to second image. No dark veil. */
 .ss-lux-grid .pc__img-wrapper::after {
   display: none !important;
