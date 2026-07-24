@@ -12,10 +12,9 @@ import Reveal from "@/app/components/motion/Reveal";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import ProductCardPrice, { hasCardPriceRange } from "@/app/components/storefront/ProductCardPrice";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
-import { listCatalogProducts, normalizeCatalogCategoryGroupKey, productMatchesCategoryGroup, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
+import { getCatalogProductGroupLabel, listCatalogProducts, normalizeCatalogCategoryGroupKey, productMatchesCategoryGroup, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
 import { listCategoryRegistry, getAutoGroupSettings } from "@/lib/catalog/categories";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
-import { getCatalogProductCategoryLabel } from "@/lib/catalog/presentation";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { localizeDynamicCategoryLabel, localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
@@ -188,16 +187,16 @@ export default async function WebShopPage({
     getAutoGroupSettings(),
   ]);
 
-  const getCategoryLabel = (item: CatalogProductView) =>
-    getCatalogProductCategoryLabel(
-      {
-        name: item.name,
-        sku: item.sku,
-        categories: item.categories,
-        brand: item.brand,
-      },
-      lang,
-    );
+  // Card tag: show the article's real category. Prefer an assigned category name,
+  // else fall back to the resolved group label (Odela / Aksesoari / Obuca …) which
+  // also covers mOffice products with an empty categories[]. If nothing resolves,
+  // return "" so the tag is hidden — never the meaningless "Kolekcija" placeholder.
+  const getCategoryLabel = (item: CatalogProductView) => {
+    const assigned = item.categories.find((c) => String(c?.name || "").trim().length > 0);
+    if (assigned) return localizeCategory(String(assigned.name).trim());
+    const groupLabel = getCatalogProductGroupLabel(item);
+    return groupLabel ? localizeCategory(groupLabel) : "";
+  };
   const tx = (value: string, fallbackEn?: string) =>
     localizeDynamicStorefrontText(value, isEn ? "en" : "sr", fallbackEn);
   const localizeCategory = (value: string) => localizeDynamicCategoryLabel(value, isEn ? "en" : "sr");
@@ -495,6 +494,7 @@ export default async function WebShopPage({
     const containImage = CONTAIN_IMAGE_GROUPS.some((group) => productMatchesCategoryGroup(item, group));
     const imgClass = `pc__img object-position-top${containImage ? " pc__img--contain" : ""}`;
     const displayName = getLocalizedCatalogProductName(item, lang);
+    const categoryLabel = getCategoryLabel(item);
     const detailHref = isEn ? `/web-shop/${item.legacyId}?lang=en` : `/web-shop/${item.legacyId}`;
     const discountPercent = getDiscountPercent(item.priceGross, item.priceFinalGross);
     const businessUniform = isBusinessUniformProduct(item);
@@ -552,7 +552,7 @@ export default async function WebShopPage({
               </span>
             ) : null}
               <div className="pc__info hover__content position-absolute text-center top-0 left-0 w-100 d-none d-md-flex flex-column justify-content-center align-items-center">
-                <p className="pc__category">{getCategoryLabel(item)}</p>
+                {categoryLabel ? <p className="pc__category">{categoryLabel}</p> : null}
                 <h6 className="pc__title">
                   <Link href={detailHref} prefetch={false}>
                     {displayName}
@@ -570,7 +570,7 @@ export default async function WebShopPage({
             </div>
           </div>
           <div className="pc__info ss-card-mobile-info d-md-none">
-            <p className="pc__category">{getCategoryLabel(item)}</p>
+            {categoryLabel ? <p className="pc__category">{categoryLabel}</p> : null}
             <h6 className="pc__title mb-1">
               <Link href={detailHref} prefetch={false}>
                 {displayName}

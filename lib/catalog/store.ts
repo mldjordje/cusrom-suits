@@ -647,6 +647,21 @@ const getCatalogProductGroupKeys = (item: CatalogProductView): Set<string> => {
   return keys;
 };
 
+/**
+ * Best human category label for a product's card tag — the highest-priority
+ * resolved group (Odela, Aksesoari, Obuca, …). Covers mOffice products whose
+ * categories[] is empty but whose group is known from name/mOffice. Returns ""
+ * when nothing resolves, so the caller can render no tag at all (rather than a
+ * meaningless "Kolekcija" placeholder). Serbian labels — localize downstream.
+ */
+export const getCatalogProductGroupLabel = (item: CatalogProductView): string => {
+  const keys = [...getCatalogProductGroupKeys(item)];
+  if (!keys.length) return "";
+  keys.sort((a, b) => (CATEGORY_GROUP_PRIORITY[a] || 999) - (CATEGORY_GROUP_PRIORITY[b] || 999));
+  const best = keys[0];
+  return CATEGORY_GROUP_LABELS[best] || "";
+};
+
 export const productMatchesCategoryGroup = (item: CatalogProductView, groupKey: string) => {
   const wanted = normalizeCatalogCategoryGroupKey(groupKey);
   if (!wanted) return false;
