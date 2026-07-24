@@ -5,6 +5,7 @@ import { TrackProductListView } from "@/app/components/analytics/TrackProductVie
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import StorefrontTrustStrip from "@/app/components/storefront/StorefrontTrustStrip";
+import WebShopCategorySeo from "@/app/components/storefront/WebShopCategorySeo";
 import WebShopFilters from "@/app/components/storefront/WebShopFilters";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import Reveal from "@/app/components/motion/Reveal";
@@ -356,6 +357,17 @@ export default async function WebShopPage({
     ? localizeCategory(categoryNameById.get(categoryId) || registryNameById.get(categoryId) || `Kategorija ${categoryId}`)
     : "";
   const selectedCategoryGroupName = categoryGroup ? localizeCategory(categoryNameByGroup.get(categoryGroup) || categoryGroup) : "";
+
+  // Category SEO copy (Serbian only). Show a single category's block when a
+  // category filter is active, or the full accordion on the default view.
+  // Hidden on search results, since those aren't a stable category context.
+  const seoCategoryKey = categoryGroup
+    ? normalizeCatalogCategoryGroupKey(categoryGroup)
+    : categoryId > 0
+      ? normalizeCatalogCategoryGroupKey(categoryNameById.get(categoryId) || registryNameById.get(categoryId) || "")
+      : "";
+  const showCategorySeo = !isEn && !q.trim();
+
   const activeFilterChips: ActiveFilterChip[] = [];
 
   if (q.trim()) {
@@ -800,6 +812,12 @@ export default async function WebShopPage({
           ) : null}
           </Reveal>
         </section>
+
+        {showCategorySeo ? (
+          <Reveal as="div" delay={0.08} amount={0.1} y={16}>
+            <WebShopCategorySeo activeKey={seoCategoryKey || null} />
+          </Reveal>
+        ) : null}
 
         <Reveal as="div" delay={0.1} amount={0.15} y={12}>
           <StorefrontTrustStrip lang={lang} compact />

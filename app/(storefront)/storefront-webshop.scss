@@ -704,3 +704,91 @@
   font-size: 0.86rem;
   line-height: 1.55;
 }
+
+/* Category SEO copy block — sits below the product grid. Muted, editorial,
+   collapsible on the default view so mobile stays clean. */
+.ss-shop-seo {
+  margin-top: 2.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.ss-shop-seo__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+  margin: 0 0 0.9rem;
+}
+
+.ss-shop-seo__single .ss-shop-seo__title {
+  margin-bottom: 0.6rem;
+}
+
+.ss-shop-seo__body {
+  margin: 0;
+  color: #52606d;
+  font-size: 0.9rem;
+  line-height: 1.7;
+  max-width: 72ch;
+}
+
+.ss-shop-seo__grid {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.ss-shop-seo__item {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  background: #fff;
+}
+
+.ss-shop-seo__item[open] {
+  border-color: rgba(15, 23, 42, 0.16);
+}
+
+/* The global reset keeps <p> as display:block, which defeats the native
+   collapse of <details>. Force the body hidden until the item is open. */
+.ss-shop-seo__item:not([open]) .ss-shop-seo__body {
+  display: none;
+}
+
+.ss-shop-seo__summary {
+  cursor: pointer;
+  list-style: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+.ss-shop-seo__summary::-webkit-details-marker {
+  display: none;
+}
+
+.ss-shop-seo__summary::after {
+  content: "+";
+  font-size: 1.05rem;
+  line-height: 1;
+  color: #94a3b8;
+  transition: transform 0.18s ease;
+}
+
+.ss-shop-seo__item[open] .ss-shop-seo__summary::after {
+  content: "–";
+}
+
+.ss-shop-seo__item .ss-shop-seo__body {
+  margin-top: 0.7rem;
+}
+
+@media (min-width: 768px) {
+  .ss-shop-seo__grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.7rem 1.2rem;
+  }
+}
