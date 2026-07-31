@@ -96,7 +96,7 @@ export default function ProductDetailTabs({
             className={`nav-link nav-link_underscore ${tab === "declaration" ? "active" : ""}`}
             onClick={() => setTab("declaration")}
           >
-            {isEn ? "Country of origin" : "Zemlja porekla"}
+            {isEn ? "Declaration" : "Deklaracija"}
           </button>
         </li>
         <li className="nav-item" role="presentation">
