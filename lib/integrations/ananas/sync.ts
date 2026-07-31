@@ -972,18 +972,39 @@ type RunAnanasOptions = {
   skus?: string[];
 };
 
+/**
+ * listCatalogProducts silently clamps pageSize to 120 (see scanCatalogMediaHealth
+ * for the same pattern) — one call can never return the full catalog, so we
+ * page through it. collapseBySku stays off: each row here must remain one
+ * size/color variant, since that is exactly the granularity Ananas expects.
+ */
+async function loadFullCatalogForAnanas(): Promise<{ items: CatalogProductView[]; totalCount: number }> {
+  const items: CatalogProductView[] = [];
+  let page = 1;
+  let totalPages = 1;
+  let totalCount = 0;
+  do {
+    const listed = await listCatalogProducts({
+      page,
+      pageSize: 120,
+      activeOnly: true,
+      exportOnly: true,
+      includeHidden: true,
+      applyPromotions: false,
+    });
+    items.push(...listed.items);
+    totalCount = Number(listed.total) || items.length;
+    totalPages = Math.max(1, Number(listed.totalPages) || 1);
+    page += 1;
+  } while (page <= totalPages && page <= 200);
+  return { items, totalCount };
+}
+
 export async function runAnanasSync({ context, phases, skus }: RunAnanasOptions) {
   const selected = phases?.length ? phases : DEFAULT_ANANAS_PHASES;
   const now = new Date();
 
-  const catalog = await listCatalogProducts({
-    page: 1,
-    pageSize: 5000,
-    activeOnly: true,
-    exportOnly: true,
-    includeHidden: true,
-    applyPromotions: false,
-  });
+  const catalog = await loadFullCatalogForAnanas();
 
   const skuFilter = skus?.length ? new Set(skus) : null;
   const items = skuFilter ? catalog.items.filter((item) => skuFilter.has(item.sku)) : catalog.items;
@@ -1005,7 +1026,7 @@ export async function runAnanasSync({ context, phases, skus }: RunAnanasOptions)
   const meta: Record<string, unknown> = {
     phases: selected,
     catalogCount: items.length,
-    catalogTotalCount: catalog.items.length,
+    catalogTotalCount: catalog.totalCount,
     skuFilter: skuFilter ? [...skuFilter] : null,
     listedCount: states.filter((state) => state.merchantInventoryId).length,
   };
