@@ -1,4 +1,4 @@
-import { runAnanasSync } from "@/lib/integrations/ananas/sync";
+import { parseAnanasPhases, parseSkuFilter, runAnanasSync } from "@/lib/integrations/ananas/sync";
 import { parseSyncEnvironment, parseSyncMode, parseSyncTrigger } from "@/lib/integrations/core/config";
 import {
   completeSyncRun,
@@ -71,7 +71,12 @@ export async function executeDomainSync(
 
   try {
     if (domain === "ananas") {
-      domainResult = await runAnanasSync({ context });
+      // Phases are selected per cron/manual trigger; see lib/integrations/ananas/sync.ts.
+      domainResult = await runAnanasSync({
+        context,
+        phases: parseAnanasPhases(startInput.meta?.phases),
+        skus: parseSkuFilter(startInput.meta?.skus),
+      });
     } else if (domain === "stock_inbound") {
       domainResult = await runStockInboundSync({ context });
     } else if (domain === "stock_outbound") {

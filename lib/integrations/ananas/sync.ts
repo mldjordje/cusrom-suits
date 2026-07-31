@@ -1,372 +1,826 @@
+/**
+ * Ananas sync, split into the phases the platform actually expects.
+ *
+ *   catalog   → POST import      : new/changed products handed to the listing team (1×/day)
+ *   listings  → GET products     : pull merchantInventoryId + warehouse + status
+ *   prices    → PUT product/bulk : base price, "today for tomorrow", frozen during campaigns
+ *   stock     → PUT product/bulk : quantities, immediate, min 15 min apart, merchant warehouse only
+ *   discounts → discounts API    : SALE windows with duration/cooldown/overlap rules
+ *   publish   → publish/unpublish: opt-in, gated behind ANANAS_AUTO_PUBLISH
+ *
+ * Each phase is independent: one failing phase never blocks the rest, and every
+ * skip is recorded with a reason so the admin run view explains itself.
+ */
 import {
   cancelAnanasDiscountFor,
-  getAnanasDiscountsFor,
   getAnanasProductsFor,
   importAnanasProductsFor,
+  publishAnanasProductsFor,
   scheduleAnanasDiscountsFor,
+  unpublishAnanasProductsFor,
   updateAnanasDiscountsFor,
+  updateAnanasProductsFor,
 } from "@/lib/integrations/ananas/client";
-import { type AnanasDiscountInput, type AnanasDiscountUpdateInput } from "@/lib/integrations/ananas/types";
-import { listCatalogProducts } from "@/lib/catalog/store";
+import {
+  allowInternalEanFromEnv,
+  mapCatalogToAnanas,
+  type MapperRejection,
+} from "@/lib/integrations/ananas/mapper";
+import {
+  ANANAS_LIMITS,
+  addDays,
+  basePriceEffectiveDay,
+  canUpdateBasePrice,
+  chunkPayload,
+  formatAnanasDate,
+  parseAnanasDate,
+  startOfDay,
+  validateDiscountWindow,
+} from "@/lib/integrations/ananas/rules";
+import type {
+  AnanasDiscountInput,
+  AnanasDiscountUpdateInput,
+  AnanasProductRemote,
+  AnanasProductUpdateInput,
+  AnanasScheduleResponse,
+} from "@/lib/integrations/ananas/types";
+import { listCatalogProducts, type CatalogProductView } from "@/lib/catalog/store";
 import { createPayloadHash } from "@/lib/integrations/core/hash";
 import {
   addSyncRunItem,
   deactivateAnanasDiscountStateByDiscountId,
   getDeltaHash,
+  listAnanasDiscountStates,
+  listAnanasProductStates,
   setDeltaState,
   upsertAnanasDiscountState,
   upsertAnanasProductState,
+  type AnanasProductStateRecord,
 } from "@/lib/integrations/core/store";
 import type { IntegrationContext, SyncCounters } from "@/lib/integrations/core/types";
-import type { AnanasImportProduct } from "@/lib/legacy/types";
 
-type RunAnanasOptions = {
+export type AnanasPhase = "catalog" | "listings" | "prices" | "stock" | "discounts" | "publish";
+
+/** Cron default. `catalog` runs on its own once-a-day schedule. */
+export const DEFAULT_ANANAS_PHASES: AnanasPhase[] = ["listings", "stock", "prices", "discounts"];
+
+export const ALL_ANANAS_PHASES: AnanasPhase[] = [
+  "catalog",
+  "listings",
+  "prices",
+  "stock",
+  "discounts",
+  "publish",
+];
+
+export const parseAnanasPhases = (value: unknown): AnanasPhase[] => {
+  const raw = Array.isArray(value)
+    ? value
+    : String(value || "")
+        .split(",")
+        .map((entry) => entry.trim());
+  const phases = raw.filter((entry): entry is AnanasPhase =>
+    ALL_ANANAS_PHASES.includes(entry as AnanasPhase),
+  );
+  return phases.length ? phases : DEFAULT_ANANAS_PHASES;
+};
+
+/**
+ * Restricts a run to specific mOffice SKUs — used for the pilot Ananas asked
+ * for ("posaljete par proizvoda preko Add products", SKU 133342 / 133856)
+ * without touching the rest of the catalog.
+ */
+export const parseSkuFilter = (value: unknown): string[] => {
+  const raw = Array.isArray(value) ? value : String(value || "").split(",");
+  return raw.map((entry) => String(entry).trim()).filter(Boolean);
+};
+
+/** Kept well under the 30.000 API ceiling so one bad row fails a small batch. */
+const EDIT_BATCH_SIZE = 500;
+const DISCOUNT_BATCH_SIZE = ANANAS_LIMITS.discounts.maxItems;
+
+const SALE_WINDOW_DAYS = (() => {
+  const parsed = Number(process.env.ANANAS_SALE_WINDOW_DAYS || 7);
+  if (!Number.isFinite(parsed)) return 7;
+  return Math.min(30, Math.max(1, Math.floor(parsed)));
+})();
+
+const autoPublishEnabled = () =>
+  String(process.env.ANANAS_AUTO_PUBLISH || "").trim().toLowerCase() === "true";
+
+const toFixed = (value: number, digits = 2) =>
+  Number.parseFloat(Number(value || 0).toFixed(digits));
+
+const emptyCounters = (): SyncCounters => ({ total: 0, success: 0, failed: 0, skipped: 0 });
+
+const mergeCounters = (base: SyncCounters, next: SyncCounters): SyncCounters => ({
+  total: base.total + next.total,
+  success: base.success + next.success,
+  failed: base.failed + next.failed,
+  skipped: base.skipped + next.skipped,
+});
+
+type PhaseResult = {
+  counters: SyncCounters;
+  meta: Record<string, unknown>;
+};
+
+type PhaseInput = {
   context: IntegrationContext;
+  items: CatalogProductView[];
+  stateByLegacyId: Map<number, AnanasProductStateRecord>;
+  now: Date;
 };
 
-const toFixed = (value: number, digits = 2) => Number.parseFloat(Number(value || 0).toFixed(digits));
+/* ---------------------------------------------------------------- catalog */
 
-const toAnanasProduct = (item: Awaited<ReturnType<typeof listCatalogProducts>>["items"][number]): AnanasImportProduct => {
-  const category = item.categories[0]?.name || "Ostalo";
-  const stock = Math.max(0, Math.floor(item.stockWarehouse1 || 0));
-  const attributes: Record<string, string[]> = {};
-  const sizes = item.attributes?.size;
-  if (Array.isArray(sizes) && sizes.length) {
-    attributes["Velicina"] = sizes.map((entry) => String(entry));
-  }
-  return {
-    name: item.name || item.sku,
-    description: item.description || item.name || item.sku,
-    coverImage: item.coverImage || "https://santos.rs/fajlovi/product/no-image.jpg",
-    ean: item.ean || item.sku,
-    brand: item.brand || "Santos&Santorini",
-    gallery: item.images?.length ? item.images : item.coverImage ? [item.coverImage] : [],
-    parentEan: item.ean || item.sku,
-    packageWeightValue: "0.52",
-    packageWeightUnit: "kg",
-    basePrice: toFixed(item.priceGross || item.priceFinalGross, 2).toFixed(2),
-    vat: toFixed(item.taxPercent || 20, 2).toFixed(2),
-    stockLevel: stock,
-    sku: item.sku,
-    externalId: item.legacyId,
-    productType: category,
-    category,
-    attributes,
-  };
-};
+/**
+ * Hands new/changed products to the listing team. Products without a real GTIN
+ * are rejected locally — Ananas can only match on EAN, so sending our internal
+ * 9-digit mOffice code would create garbage listings.
+ */
+async function phaseCatalog({ context, items, stateByLegacyId }: PhaseInput): Promise<PhaseResult> {
+  const counters = emptyCounters();
+  const allowInternalEan = allowInternalEanFromEnv();
+  const visible = items.filter((item) => !item.hiddenFromShop);
+  const { products, rejected } = mapCatalogToAnanas(visible, { allowInternalEan });
 
-const normalizeDate = (date: Date) =>
-  `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
+  counters.total = visible.length;
+  counters.skipped += rejected.length;
 
-const normalizeIsoDay = (date: Date) =>
-  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+  const pending: typeof products = [];
+  for (const product of products) {
+    const state = stateByLegacyId.get(product.legacyId);
+    const payloadHash = createPayloadHash(product.payload);
+    const previousHash =
+      context.mode === "delta" ? await getDeltaHash("ananas", "product", String(product.legacyId)) : null;
 
-const parseDiscountRows = (payload: any): any[] => {
-  if (Array.isArray(payload)) return payload;
-  if (Array.isArray(payload?.data)) return payload.data;
-  if (Array.isArray(payload?.items)) return payload.items;
-  if (Array.isArray(payload?.discounts)) return payload.discounts;
-  return [];
-};
-
-const parseScheduleResults = (payload: any): Array<{ merchantInventoryId: number; discountId: string }> => {
-  const rows: any[] = Array.isArray(payload?.scheduleResult) ? payload.scheduleResult : [];
-  return rows
-    .map((entry: any) => entry?.data || entry)
-    .map((entry: any) => ({
-      merchantInventoryId: Number(entry?.merchantInventoryId || 0),
-      discountId: String(entry?.discountId || "").trim(),
-    }))
-    .filter((entry) => entry.merchantInventoryId > 0 && entry.discountId.length > 0);
-};
-
-const loadAllRemoteProducts = async (environment: IntegrationContext["environment"]) => {
-  const result: any[] = [];
-  const seen = new Set<string>();
-  for (let page = 0; page < 20; page += 1) {
-    let rows: any[] = [];
-    try {
-      rows = (await getAnanasProductsFor(page, 2000, environment)) || [];
-    } catch {
-      break;
-    }
-    if (!rows.length) break;
-    for (const row of rows) {
-      const externalId = row?.externalId == null ? "" : String(row.externalId);
-      const merchantInventoryId = Number(row?.id || 0);
-      const key = `${merchantInventoryId}:${externalId}`;
-      if (seen.has(key)) continue;
-      seen.add(key);
-      result.push(row);
-    }
-    if (rows.length < 2000) break;
-  }
-  return result;
-};
-
-export async function runAnanasSync({ context }: RunAnanasOptions) {
-  const counters: SyncCounters = { total: 0, success: 0, failed: 0, skipped: 0 };
-  const catalog = await listCatalogProducts({
-    page: 1,
-    pageSize: 5000,
-    activeOnly: true,
-    exportOnly: true,
-    applyPromotions: false,
-  });
-
-  const payloadByLegacyId = new Map<number, AnanasImportProduct>();
-  const changedPayload: AnanasImportProduct[] = [];
-  for (const item of catalog.items) {
-    const payload = toAnanasProduct(item);
-    payloadByLegacyId.set(item.legacyId, payload);
-    const payloadHash = createPayloadHash(payload);
-    const deltaKey = String(item.legacyId);
-    const previousHash = context.mode === "delta" ? await getDeltaHash("ananas", "product", deltaKey) : null;
-    if (context.mode === "full" || !previousHash || previousHash !== payloadHash) {
-      changedPayload.push(payload);
-    } else {
+    // Already listed and unchanged → nothing for the listing team to do.
+    if (context.mode === "delta" && previousHash === payloadHash && state?.merchantInventoryId) {
       counters.skipped += 1;
+      continue;
+    }
+    pending.push(product);
+  }
+
+  if (!pending.length) {
+    return {
+      counters,
+      meta: {
+        catalogCandidates: visible.length,
+        catalogRejected: rejected.length,
+        catalogRejectedSample: summarizeRejections(rejected),
+        catalogSent: 0,
+      },
+    };
+  }
+
+  const batches = chunkPayload(
+    pending,
+    { maxItems: ANANAS_LIMITS.import.maxItems, maxBytes: ANANAS_LIMITS.import.maxBytes },
+  );
+
+  for (const batch of batches) {
+    try {
+      const response = await importAnanasProductsFor(
+        batch.map((entry) => entry.payload),
+        context.environment,
+      );
+      for (const entry of batch) {
+        const hash = createPayloadHash(entry.payload);
+        await setDeltaState("ananas", "product", String(entry.legacyId), hash, context.runId);
+        await upsertAnanasProductState({
+          legacyProductId: entry.legacyId,
+          externalId: String(entry.legacyId),
+          payloadHash: hash,
+          ananasStatus: "SUBMITTED_FOR_LISTING",
+          syncError: null,
+        });
+        counters.success += 1;
+      }
       await addSyncRunItem(context.runId, {
         domain: "ananas",
-        entityType: "product",
-        entityId: deltaKey,
-        status: "skipped",
-        message: "No payload changes detected (delta mode).",
-        payloadHash,
-        payload,
+        entityType: "catalog_batch",
+        entityId: String((response as { id?: string })?.id || batch[0]?.legacyId || "batch"),
+        status: "success",
+        message: `Catalog batch of ${batch.length} products submitted for listing.`,
+        payloadHash: createPayloadHash(batch.map((entry) => entry.legacyId)),
+        payload: { count: batch.length, legacyIds: batch.slice(0, 50).map((entry) => entry.legacyId) },
+        response: (response as Record<string, unknown>) || null,
+      });
+    } catch (error: any) {
+      counters.failed += batch.length;
+      const message = error?.message || "Catalog import failed.";
+      for (const entry of batch) {
+        await upsertAnanasProductState({
+          legacyProductId: entry.legacyId,
+          externalId: String(entry.legacyId),
+          ananasStatus: "IMPORT_ERROR",
+          syncError: message,
+        });
+      }
+      await addSyncRunItem(context.runId, {
+        domain: "ananas",
+        entityType: "catalog_batch",
+        entityId: String(batch[0]?.legacyId || "batch"),
+        status: "failed",
+        message,
+        payloadHash: createPayloadHash(batch.map((entry) => entry.legacyId)),
+        payload: { count: batch.length, legacyIds: batch.slice(0, 50).map((entry) => entry.legacyId) },
         response: null,
       });
     }
   }
 
-  counters.total += payloadByLegacyId.size;
-
-  if (changedPayload.length > 0) {
-    try {
-      const importResponse = await importAnanasProductsFor(changedPayload, context.environment);
-      for (const payload of changedPayload) {
-        const hash = createPayloadHash(payload);
-        await setDeltaState("ananas", "product", String(payload.externalId), hash, context.runId);
-        await upsertAnanasProductState({
-          legacyProductId: Number(payload.externalId || 0),
-          externalId: payload.externalId,
-          payloadHash: hash,
-          ananasStatus: "synced",
-          syncError: null,
-        });
-        counters.success += 1;
-        await addSyncRunItem(context.runId, {
-          domain: "ananas",
-          entityType: "product",
-          entityId: String(payload.externalId),
-          status: "success",
-          message: "Product synced to Ananas.",
-          payloadHash: hash,
-          payload,
-          response: (importResponse as Record<string, unknown>) || null,
-        });
-      }
-    } catch (error: any) {
-      counters.failed += changedPayload.length;
-      for (const payload of changedPayload) {
-        await upsertAnanasProductState({
-          legacyProductId: Number(payload.externalId || 0),
-          externalId: payload.externalId,
-          payloadHash: createPayloadHash(payload),
-          ananasStatus: "error",
-          syncError: error?.message || "Product import failed.",
-        });
-        await addSyncRunItem(context.runId, {
-          domain: "ananas",
-          entityType: "product",
-          entityId: String(payload.externalId),
-          status: "failed",
-          message: error?.message || "Product import failed.",
-          payloadHash: createPayloadHash(payload),
-          payload,
-          response: null,
-        });
-      }
-    }
-  }
-
-  const today = new Date();
-  const tomorrow = new Date(today.getTime());
-  tomorrow.setDate(today.getDate() + 1);
-  const fromDisplay = normalizeDate(today);
-  const toDisplay = normalizeDate(tomorrow);
-  const fromIso = normalizeIsoDay(today);
-  const toIso = normalizeIsoDay(tomorrow);
-
-  const remoteProducts = await loadAllRemoteProducts(context.environment);
-
-  const merchantByExternalId = new Map<string, number>();
-  for (const row of remoteProducts) {
-    const externalId = row?.externalId == null ? "" : String(row.externalId);
-    const merchantInventoryId = Number(row?.id || 0);
-    if (!externalId || !merchantInventoryId) continue;
-    merchantByExternalId.set(externalId, merchantInventoryId);
-    await upsertAnanasProductState({
-      legacyProductId: Number(externalId || 0),
-      merchantInventoryId,
-      externalId,
-      ananasStatus: row?.status ? String(row.status) : "listed",
+  for (const rejection of rejected.slice(0, 200)) {
+    await addSyncRunItem(context.runId, {
+      domain: "ananas",
+      entityType: "product",
+      entityId: String(rejection.legacyId),
+      status: "skipped",
+      message: rejection.reason,
       payloadHash: null,
-      syncError: null,
+      payload: { sku: rejection.sku, ean: rejection.ean },
+      response: null,
     });
   }
 
-  const desiredDiscounts: AnanasDiscountInput[] = [];
-  const desiredByMerchantId = new Map<number, { legacyId: string; price: number }>();
+  return {
+    counters,
+    meta: {
+      catalogCandidates: visible.length,
+      catalogRejected: rejected.length,
+      catalogRejectedSample: summarizeRejections(rejected),
+      catalogSent: pending.length,
+      catalogBatches: batches.length,
+    },
+  };
+}
 
-  for (const item of catalog.items) {
-    if (!(item.priceGross > item.priceFinalGross)) continue;
-    const merchantInventoryId = merchantByExternalId.get(String(item.legacyId));
-    if (!merchantInventoryId) continue;
-    const discountPrice = toFixed(item.priceFinalGross, 2);
-    desiredDiscounts.push({
-      merchantInventoryId,
-      discountPrice,
-      discountPriceCurrency: "RSD",
-      dateFrom: fromDisplay,
-      dateTo: toDisplay,
-      discountType: "SALE",
-    });
-    desiredByMerchantId.set(merchantInventoryId, { legacyId: String(item.legacyId), price: discountPrice });
+const summarizeRejections = (rejections: MapperRejection[]) => {
+  const byReason = new Map<string, number>();
+  for (const rejection of rejections) {
+    // Reasons embed the offending EAN; group on the prefix only.
+    const key = rejection.reason.split("(")[0].trim();
+    byReason.set(key, (byReason.get(key) || 0) + 1);
+  }
+  return Object.fromEntries([...byReason.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10));
+};
+
+/* --------------------------------------------------------------- listings */
+
+/**
+ * Pulls listed products and records merchantInventoryId + warehouse. The same
+ * product can appear twice (merchant and Ananas warehouse) — both rows are
+ * stored, but only the merchant one may receive stock updates.
+ */
+async function phaseListings({ context, stateByLegacyId }: PhaseInput): Promise<PhaseResult> {
+  const counters = emptyCounters();
+  const size = ANANAS_LIMITS.getProducts.maxPageSize;
+  const knownIds = new Set(
+    [...stateByLegacyId.values()].map((state) => state.merchantInventoryId).filter(Boolean) as number[],
+  );
+
+  let page = 0;
+  let fetched = 0;
+  let stoppedEarly = false;
+  const seen = new Set<number>();
+
+  for (; page < 200; page += 1) {
+    let rows: AnanasProductRemote[] = [];
+    try {
+      rows = await getAnanasProductsFor({ page, size }, context.environment);
+    } catch (error: any) {
+      counters.failed += 1;
+      await addSyncRunItem(context.runId, {
+        domain: "ananas",
+        entityType: "listing_page",
+        entityId: String(page),
+        status: "failed",
+        message: error?.message || "Failed to fetch listed products.",
+        payloadHash: null,
+        payload: { page, size },
+        response: null,
+      });
+      break;
+    }
+
+    if (!rows.length) break;
+    fetched += rows.length;
+
+    let hitKnown = false;
+    for (const row of rows) {
+      const merchantInventoryId = Number(row?.id || 0);
+      if (!merchantInventoryId || seen.has(merchantInventoryId)) continue;
+      seen.add(merchantInventoryId);
+
+      const legacyProductId = Number(row?.externalId || 0);
+      if (!legacyProductId) {
+        counters.skipped += 1;
+        continue;
+      }
+      if (knownIds.has(merchantInventoryId)) hitKnown = true;
+
+      await upsertAnanasProductState({
+        legacyProductId,
+        merchantInventoryId,
+        externalId: String(row?.externalId ?? legacyProductId),
+        ananasStatus: row?.status ? String(row.status) : "LISTED",
+        warehouse: row?.warehouse ? String(row.warehouse) : null,
+        remoteBasePrice: row?.basePrice == null ? null : Number(row.basePrice),
+        remoteStockLevel: row?.stockLevel == null ? null : Number(row.stockLevel),
+        syncError: null,
+      });
+      counters.success += 1;
+    }
+
+    // Results are newest-first: once we reach ids we already stored, the rest is
+    // older and unchanged (their own pagination recommendation).
+    if (context.mode === "delta" && hitKnown && page > 0) {
+      stoppedEarly = true;
+      break;
+    }
+    if (rows.length < size) break;
   }
 
-  let activeDiscountRows: any[] = [];
-  try {
-    const activeDiscounts = await getAnanasDiscountsFor(fromDisplay, toDisplay, context.environment);
-    activeDiscountRows = parseDiscountRows(activeDiscounts);
-  } catch {
-    activeDiscountRows = [];
+  counters.total = fetched;
+  return {
+    counters,
+    meta: { listingsFetched: fetched, listingsPages: page + 1, listingsStoppedEarly: stoppedEarly },
+  };
+}
+
+/* ----------------------------------------------------------------- prices */
+
+async function phasePrices({ context, items, stateByLegacyId, now }: PhaseInput): Promise<PhaseResult> {
+  const counters = emptyCounters();
+  const discountStates = await listAnanasDiscountStates();
+  const activeByMerchantId = buildActiveDiscountMap(discountStates, now);
+
+  const rows: AnanasProductUpdateInput[] = [];
+  const legacyIdByMerchantId = new Map<number, number>();
+
+  for (const item of items) {
+    const state = stateByLegacyId.get(item.legacyId);
+    const merchantInventoryId = state?.merchantInventoryId || 0;
+    if (!merchantInventoryId) continue;
+
+    counters.total += 1;
+    const basePrice = toFixed(item.priceGross || item.priceFinalGross, 2);
+    if (!(basePrice > 0)) {
+      counters.skipped += 1;
+      continue;
+    }
+
+    // A running campaign freezes the base price on their side.
+    const activeDiscount = activeByMerchantId.get(merchantInventoryId) || null;
+    if (!canUpdateBasePrice(activeDiscount, now)) {
+      counters.skipped += 1;
+      await addSyncRunItem(context.runId, {
+        domain: "ananas",
+        entityType: "price",
+        entityId: String(item.legacyId),
+        status: "skipped",
+        message: "Base price frozen while a discount campaign is running.",
+        payloadHash: null,
+        payload: { merchantInventoryId, basePrice },
+        response: null,
+      });
+      continue;
+    }
+
+    const hash = createPayloadHash({ merchantInventoryId, basePrice });
+    const previousHash =
+      context.mode === "delta" ? await getDeltaHash("ananas", "price", String(item.legacyId)) : null;
+    if (previousHash === hash && state?.remoteBasePrice === basePrice) {
+      counters.skipped += 1;
+      continue;
+    }
+
+    rows.push({ id: merchantInventoryId, basePrice });
+    legacyIdByMerchantId.set(merchantInventoryId, item.legacyId);
   }
 
-  const existingByMerchant = new Map<number, any>();
-  const merchantByDiscountId = new Map<string, number>();
-  for (const row of activeDiscountRows) {
-    const payload = row?.data || row;
-    const merchantInventoryId = Number(payload?.merchantInventoryId || 0);
-    if (!merchantInventoryId) continue;
-    existingByMerchant.set(merchantInventoryId, payload);
-    if (payload?.discountId) {
-      merchantByDiscountId.set(String(payload.discountId), merchantInventoryId);
+  const applied = await pushProductUpdates({
+    context,
+    rows,
+    legacyIdByMerchantId,
+    counters,
+    entityType: "price",
+    deltaScope: "price",
+    hashOf: (row) => createPayloadHash({ merchantInventoryId: row.id, basePrice: row.basePrice }),
+  });
+
+  return {
+    counters,
+    meta: {
+      priceRowsSent: rows.length,
+      priceRowsApplied: applied,
+      priceEffectiveFrom: basePriceEffectiveDay(now),
+    },
+  };
+}
+
+/* ------------------------------------------------------------------ stock */
+
+async function phaseStock({ context, items, stateByLegacyId, now }: PhaseInput): Promise<PhaseResult> {
+  const counters = emptyCounters();
+
+  // Their rule: at most one stock push every 15 minutes.
+  const lastPush = await getDeltaHash("ananas", "stock_push", context.environment);
+  if (lastPush) {
+    const elapsed = now.getTime() - new Date(lastPush).getTime();
+    if (Number.isFinite(elapsed) && elapsed >= 0 && elapsed < ANANAS_LIMITS.stockMinIntervalMs) {
+      return {
+        counters,
+        meta: {
+          stockSkipped: "throttled",
+          stockNextAllowedAt: new Date(
+            new Date(lastPush).getTime() + ANANAS_LIMITS.stockMinIntervalMs,
+          ).toISOString(),
+        },
+      };
     }
   }
+
+  const rows: AnanasProductUpdateInput[] = [];
+  const legacyIdByMerchantId = new Map<number, number>();
+  let ananasWarehouseSkipped = 0;
+
+  for (const item of items) {
+    const state = stateByLegacyId.get(item.legacyId);
+    const merchantInventoryId = state?.merchantInventoryId || 0;
+    if (!merchantInventoryId) continue;
+
+    counters.total += 1;
+
+    // Fulfilled by Ananas → their warehouse owns the quantity.
+    if (state?.warehouse === "ANANAS_WAREHOUSE") {
+      ananasWarehouseSkipped += 1;
+      counters.skipped += 1;
+      continue;
+    }
+
+    // Hidden products stay listed but must not be sellable.
+    const stockLevel = item.hiddenFromShop ? 0 : Math.max(0, Math.floor(item.stockWarehouse1 || 0));
+    const hash = createPayloadHash({ merchantInventoryId, stockLevel });
+    const previousHash =
+      context.mode === "delta" ? await getDeltaHash("ananas", "stock", String(item.legacyId)) : null;
+    if (previousHash === hash && state?.remoteStockLevel === stockLevel) {
+      counters.skipped += 1;
+      continue;
+    }
+
+    rows.push({ id: merchantInventoryId, stockLevel });
+    legacyIdByMerchantId.set(merchantInventoryId, item.legacyId);
+  }
+
+  const applied = await pushProductUpdates({
+    context,
+    rows,
+    legacyIdByMerchantId,
+    counters,
+    entityType: "stock",
+    deltaScope: "stock",
+    hashOf: (row) => createPayloadHash({ merchantInventoryId: row.id, stockLevel: row.stockLevel }),
+  });
+
+  if (rows.length) {
+    await setDeltaState("ananas", "stock_push", context.environment, now.toISOString(), context.runId);
+  }
+
+  return {
+    counters,
+    meta: { stockRowsSent: rows.length, stockRowsApplied: applied, stockAnanasWarehouseSkipped: ananasWarehouseSkipped },
+  };
+}
+
+/* ------------------------------------------------- shared bulk-update push */
+
+async function pushProductUpdates(input: {
+  context: IntegrationContext;
+  rows: AnanasProductUpdateInput[];
+  legacyIdByMerchantId: Map<number, number>;
+  counters: SyncCounters;
+  entityType: "price" | "stock";
+  deltaScope: "price" | "stock";
+  hashOf: (row: AnanasProductUpdateInput) => string;
+}) {
+  const { context, rows, legacyIdByMerchantId, counters, entityType, deltaScope, hashOf } = input;
+  if (!rows.length) return 0;
+
+  let applied = 0;
+  const batches = chunkPayload(rows, {
+    maxItems: EDIT_BATCH_SIZE,
+    maxBytes: ANANAS_LIMITS.editProducts.maxBytes,
+  });
+
+  for (const batch of batches) {
+    try {
+      const results = await updateAnanasProductsFor(batch, context.environment);
+      const failureByProductId = new Map<number, string>();
+      for (const result of results) {
+        const productId = Number(result?.myProductId || 0);
+        const failed = String(result?.status || "").toUpperCase() !== "SUCCESS";
+        if (productId && failed) {
+          failureByProductId.set(productId, JSON.stringify(result?.errors || result?.status || "unknown error"));
+        }
+      }
+
+      for (const row of batch) {
+        const legacyId = legacyIdByMerchantId.get(row.id) || 0;
+        const failure = failureByProductId.get(row.id);
+        if (failure) {
+          counters.failed += 1;
+          await addSyncRunItem(context.runId, {
+            domain: "ananas",
+            entityType,
+            entityId: String(legacyId || row.id),
+            status: "failed",
+            message: `Ananas rejected the ${entityType} update: ${failure}`.slice(0, 500),
+            payloadHash: hashOf(row),
+            payload: row as unknown as Record<string, unknown>,
+            response: null,
+          });
+          continue;
+        }
+
+        applied += 1;
+        counters.success += 1;
+        if (legacyId) {
+          await setDeltaState("ananas", deltaScope, String(legacyId), hashOf(row), context.runId);
+          await upsertAnanasProductState({
+            legacyProductId: legacyId,
+            merchantInventoryId: row.id,
+            ...(entityType === "price" ? { remoteBasePrice: row.basePrice ?? null } : {}),
+            ...(entityType === "stock" ? { remoteStockLevel: row.stockLevel ?? null } : {}),
+            syncError: null,
+          });
+        }
+      }
+
+      await addSyncRunItem(context.runId, {
+        domain: "ananas",
+        entityType: `${entityType}_batch`,
+        entityId: String(batch[0]?.id || "batch"),
+        status: failureByProductId.size ? "failed" : "success",
+        message: `${entityType} batch: ${batch.length - failureByProductId.size}/${batch.length} applied.`,
+        payloadHash: createPayloadHash(batch.map((row) => row.id)),
+        payload: { count: batch.length },
+        response: { results: results.slice(0, 50) } as unknown as Record<string, unknown>,
+      });
+    } catch (error: any) {
+      counters.failed += batch.length;
+      const message = error?.message || `${entityType} update failed.`;
+      await addSyncRunItem(context.runId, {
+        domain: "ananas",
+        entityType: `${entityType}_batch`,
+        entityId: String(batch[0]?.id || "batch"),
+        status: "failed",
+        message,
+        payloadHash: createPayloadHash(batch.map((row) => row.id)),
+        payload: { count: batch.length, ids: batch.slice(0, 50).map((row) => row.id) },
+        response: null,
+      });
+    }
+  }
+
+  return applied;
+}
+
+/* -------------------------------------------------------------- discounts */
+
+type ActiveDiscount = { dateFrom: Date; dateTo: Date; price: number; discountId: string | null; type: string };
+
+const buildActiveDiscountMap = (
+  states: Awaited<ReturnType<typeof listAnanasDiscountStates>>,
+  now: Date,
+) => {
+  const today = startOfDay(now).getTime();
+  const map = new Map<number, ActiveDiscount>();
+  for (const state of states) {
+    if (!state.active) continue;
+    const from = parseAnanasDate(state.dateFrom);
+    const to = parseAnanasDate(state.dateTo);
+    if (!from || !to) continue;
+    if (startOfDay(to).getTime() < today) continue; // finished
+    const existing = map.get(state.merchantInventoryId);
+    // Keep the campaign that is running (or starts soonest).
+    if (existing && startOfDay(existing.dateFrom).getTime() <= startOfDay(from).getTime()) continue;
+    map.set(state.merchantInventoryId, {
+      dateFrom: from,
+      dateTo: to,
+      price: state.discountPrice,
+      discountId: state.discountId,
+      type: state.discountType,
+    });
+  }
+  return map;
+};
+
+const lastFinishedDiscountEnd = (
+  states: Awaited<ReturnType<typeof listAnanasDiscountStates>>,
+  now: Date,
+) => {
+  const today = startOfDay(now).getTime();
+  const map = new Map<number, Date>();
+  for (const state of states) {
+    const to = parseAnanasDate(state.dateTo);
+    if (!to) continue;
+    if (startOfDay(to).getTime() >= today) continue;
+    const existing = map.get(state.merchantInventoryId);
+    if (!existing || existing.getTime() < to.getTime()) map.set(state.merchantInventoryId, to);
+  }
+  return map;
+};
+
+async function phaseDiscounts({ context, items, stateByLegacyId, now }: PhaseInput): Promise<PhaseResult> {
+  const counters = emptyCounters();
+  const discountStates = await listAnanasDiscountStates();
+  const activeByMerchantId = buildActiveDiscountMap(discountStates, now);
+  const lastEndByMerchantId = lastFinishedDiscountEnd(discountStates, now);
+
+  const dateFrom = startOfDay(now);
+  const dateTo = addDays(now, SALE_WINDOW_DAYS - 1);
+  const fromDisplay = formatAnanasDate(dateFrom);
+  const toDisplay = formatAnanasDate(dateTo);
 
   const toCreate: AnanasDiscountInput[] = [];
   const toUpdate: AnanasDiscountUpdateInput[] = [];
-  const toCancel: { discountId: string; merchantInventoryId: number }[] = [];
+  const toCancel: { discountId: string; merchantInventoryId: number; legacyId: number }[] = [];
+  const legacyIdByMerchantId = new Map<number, number>();
+  const priceByMerchantId = new Map<number, number>();
+  const skipped: Record<string, number> = {};
+  const noteSkip = (reason: string) => {
+    skipped[reason] = (skipped[reason] || 0) + 1;
+    counters.skipped += 1;
+  };
 
-  for (const desired of desiredDiscounts) {
-    const existing = existingByMerchant.get(desired.merchantInventoryId);
-    if (!existing?.discountId) {
-      toCreate.push(desired);
+  for (const item of items) {
+    const state = stateByLegacyId.get(item.legacyId);
+    const merchantInventoryId = state?.merchantInventoryId || 0;
+    if (!merchantInventoryId) continue;
+
+    const basePrice = toFixed(item.priceGross, 2);
+    const discountPrice = toFixed(item.priceFinalGross, 2);
+    const wantsDiscount = !item.hiddenFromShop && basePrice > discountPrice && discountPrice > 0;
+    const active = activeByMerchantId.get(merchantInventoryId) || null;
+    legacyIdByMerchantId.set(merchantInventoryId, item.legacyId);
+
+    if (!wantsDiscount) {
+      if (active?.discountId) {
+        toCancel.push({ discountId: active.discountId, merchantInventoryId, legacyId: item.legacyId });
+      }
+      continue;
+    }
+
+    counters.total += 1;
+    priceByMerchantId.set(merchantInventoryId, discountPrice);
+
+    if (!active) {
+      const validation = validateDiscountWindow({
+        discountType: "SALE",
+        dateFrom,
+        dateTo,
+        basePrice,
+        discountPrice,
+        previousDateTo: lastEndByMerchantId.get(merchantInventoryId) || null,
+        today: now,
+      });
+      if (!validation.ok) {
+        noteSkip(validation.reason);
+        continue;
+      }
+      toCreate.push({
+        merchantInventoryId,
+        discountPrice,
+        discountPriceCurrency: "RSD",
+        dateFrom: fromDisplay,
+        dateTo: toDisplay,
+        discountType: "SALE",
+      });
+      continue;
+    }
+
+    if (!active.discountId) {
+      noteSkip("campaign exists without a discountId");
+      continue;
+    }
+
+    const started = startOfDay(active.dateFrom).getTime() <= startOfDay(now).getTime();
+    if (started) {
+      // Running campaign: price may only go down, dates and type must stay null.
+      if (discountPrice >= active.price) {
+        noteSkip("running campaign price can only be lowered");
+        continue;
+      }
+      toUpdate.push({
+        discountId: active.discountId,
+        newDateFrom: null,
+        newDateTo: null,
+        newDiscountPrice: discountPrice,
+        newDiscountPriceCurrency: "RSD",
+        newDiscountType: null,
+      });
+      continue;
+    }
+
+    // Pending campaign: fully editable, but must still satisfy every rule.
+    if (discountPrice === active.price && formatAnanasDate(active.dateTo) === toDisplay) {
+      noteSkip("pending campaign already matches");
+      continue;
+    }
+    const validation = validateDiscountWindow({
+      discountType: "SALE",
+      dateFrom: active.dateFrom,
+      dateTo,
+      basePrice,
+      discountPrice,
+      previousDateTo: lastEndByMerchantId.get(merchantInventoryId) || null,
+      today: now,
+    });
+    if (!validation.ok) {
+      noteSkip(validation.reason);
       continue;
     }
     toUpdate.push({
-      discountId: String(existing.discountId),
-      newDateFrom: fromDisplay,
+      discountId: active.discountId,
+      newDateFrom: formatAnanasDate(active.dateFrom),
       newDateTo: toDisplay,
-      newDiscountPrice: desired.discountPrice,
+      newDiscountPrice: discountPrice,
       newDiscountPriceCurrency: "RSD",
       newDiscountType: "SALE",
     });
   }
 
-  for (const [merchantInventoryId, existing] of existingByMerchant.entries()) {
-    if (desiredByMerchantId.has(merchantInventoryId)) continue;
-    if (existing?.discountId) {
-      toCancel.push({ discountId: String(existing.discountId), merchantInventoryId });
-    }
-  }
-
-  if (toCreate.length) {
+  /* create */
+  for (const batch of chunkPayload(toCreate, { maxItems: DISCOUNT_BATCH_SIZE })) {
     try {
-      const response = await scheduleAnanasDiscountsFor(toCreate, context.environment);
-      const scheduled = parseScheduleResults(response);
-      const discountIdByMerchant = new Map<number, string>(
-        scheduled.map((entry) => [entry.merchantInventoryId, entry.discountId]),
-      );
-      for (const row of toCreate) {
-        const mapRow = desiredByMerchantId.get(row.merchantInventoryId);
+      const response = (await scheduleAnanasDiscountsFor(batch, context.environment)) as AnanasScheduleResponse;
+      const discountIdByMerchant = new Map<number, string>();
+      const errorByMerchant = new Map<number, string>();
+      for (const entry of response?.scheduleResult || []) {
+        const merchantInventoryId = Number(entry?.data?.merchantInventoryId || 0);
+        if (!merchantInventoryId) continue;
+        if (entry?.success && entry?.data?.discountId) {
+          discountIdByMerchant.set(merchantInventoryId, String(entry.data.discountId));
+        } else {
+          errorByMerchant.set(merchantInventoryId, String(entry?.error?.errorMessage || "rejected"));
+        }
+      }
+
+      for (const row of batch) {
+        const legacyId = legacyIdByMerchantId.get(row.merchantInventoryId) || 0;
         const discountId = discountIdByMerchant.get(row.merchantInventoryId) || null;
-        if (mapRow) {
-          await upsertAnanasDiscountState({
-            legacyProductId: Number(mapRow.legacyId || 0),
-            merchantInventoryId: row.merchantInventoryId,
-            discountId,
-            discountType: row.discountType,
-            discountPrice: row.discountPrice,
-            discountPriceCurrency: row.discountPriceCurrency,
-            dateFrom: row.dateFrom,
-            dateTo: row.dateTo,
-            active: true,
-          });
+        const error = errorByMerchant.get(row.merchantInventoryId);
+        await upsertAnanasDiscountState({
+          legacyProductId: legacyId,
+          merchantInventoryId: row.merchantInventoryId,
+          discountId,
+          discountType: row.discountType,
+          discountPrice: row.discountPrice,
+          discountPriceCurrency: row.discountPriceCurrency,
+          dateFrom: row.dateFrom,
+          dateTo: row.dateTo,
+          active: Boolean(discountId),
+        });
+        if (discountId || (!error && !discountIdByMerchant.size)) {
+          counters.success += 1;
+        } else {
+          counters.failed += 1;
         }
         await addSyncRunItem(context.runId, {
           domain: "ananas",
           entityType: "discount",
-          entityId: mapRow?.legacyId || String(row.merchantInventoryId),
-          status: "success",
-          message: "Discount scheduled.",
+          entityId: String(legacyId || row.merchantInventoryId),
+          status: discountId ? "success" : "failed",
+          message: discountId ? "Discount scheduled." : `Discount rejected: ${error || "unknown"}`,
           payloadHash: createPayloadHash(row),
           payload: row as unknown as Record<string, unknown>,
-          response: (response as Record<string, unknown>) || null,
+          response: (response as unknown as Record<string, unknown>) || null,
         });
-        counters.success += 1;
       }
     } catch (error: any) {
-      counters.failed += toCreate.length;
-      for (const row of toCreate) {
-        const mapRow = desiredByMerchantId.get(row.merchantInventoryId);
-        if (mapRow) {
-          await upsertAnanasDiscountState({
-            legacyProductId: Number(mapRow.legacyId || 0),
-            merchantInventoryId: row.merchantInventoryId,
-            discountId: null,
-            discountType: row.discountType,
-            discountPrice: row.discountPrice,
-            discountPriceCurrency: row.discountPriceCurrency,
-            dateFrom: row.dateFrom,
-            dateTo: row.dateTo,
-            active: false,
-          });
-        }
-        await addSyncRunItem(context.runId, {
-          domain: "ananas",
-          entityType: "discount",
-          entityId: String(row.merchantInventoryId),
-          status: "failed",
-          message: error?.message || "Discount schedule failed.",
-          payloadHash: createPayloadHash(row),
-          payload: row as unknown as Record<string, unknown>,
-          response: null,
-        });
-      }
+      counters.failed += batch.length;
+      await addSyncRunItem(context.runId, {
+        domain: "ananas",
+        entityType: "discount_batch",
+        entityId: String(batch[0]?.merchantInventoryId || "batch"),
+        status: "failed",
+        message: error?.message || "Discount schedule failed.",
+        payloadHash: createPayloadHash(batch),
+        payload: { count: batch.length },
+        response: null,
+      });
     }
   }
 
-  if (toUpdate.length) {
+  /* update */
+  for (const batch of chunkPayload(toUpdate, { maxItems: DISCOUNT_BATCH_SIZE })) {
     try {
-      const response = await updateAnanasDiscountsFor(toUpdate, context.environment);
-      for (const row of toUpdate) {
-        const merchantInventoryId = merchantByDiscountId.get(row.discountId) || 0;
-        const mapRow = merchantInventoryId ? desiredByMerchantId.get(merchantInventoryId) : null;
-        if (merchantInventoryId && mapRow) {
-          await upsertAnanasDiscountState({
-            legacyProductId: Number(mapRow.legacyId || 0),
-            merchantInventoryId,
-            discountId: row.discountId,
-            discountType: row.newDiscountType,
-            discountPrice: row.newDiscountPrice,
-            discountPriceCurrency: row.newDiscountPriceCurrency,
-            dateFrom: row.newDateFrom,
-            dateTo: row.newDateTo,
-            active: true,
-          });
-        }
+      const response = await updateAnanasDiscountsFor(batch, context.environment);
+      for (const row of batch) {
+        counters.success += 1;
         await addSyncRunItem(context.runId, {
           domain: "ananas",
           entityType: "discount_update",
@@ -377,61 +831,44 @@ export async function runAnanasSync({ context }: RunAnanasOptions) {
           payload: row as unknown as Record<string, unknown>,
           response: (response as Record<string, unknown>) || null,
         });
-        counters.success += 1;
       }
     } catch (error: any) {
-      counters.failed += toUpdate.length;
-      for (const row of toUpdate) {
-        const merchantInventoryId = merchantByDiscountId.get(row.discountId) || 0;
-        const mapRow = merchantInventoryId ? desiredByMerchantId.get(merchantInventoryId) : null;
-        if (merchantInventoryId && mapRow) {
-          await upsertAnanasDiscountState({
-            legacyProductId: Number(mapRow.legacyId || 0),
-            merchantInventoryId,
-            discountId: row.discountId,
-            discountType: row.newDiscountType,
-            discountPrice: row.newDiscountPrice,
-            discountPriceCurrency: row.newDiscountPriceCurrency,
-            dateFrom: row.newDateFrom,
-            dateTo: row.newDateTo,
-            active: false,
-          });
-        }
-        await addSyncRunItem(context.runId, {
-          domain: "ananas",
-          entityType: "discount_update",
-          entityId: row.discountId,
-          status: "failed",
-          message: error?.message || "Discount update failed.",
-          payloadHash: createPayloadHash(row),
-          payload: row as unknown as Record<string, unknown>,
-          response: null,
-        });
-      }
+      counters.failed += batch.length;
+      await addSyncRunItem(context.runId, {
+        domain: "ananas",
+        entityType: "discount_update_batch",
+        entityId: String(batch[0]?.discountId || "batch"),
+        status: "failed",
+        message: error?.message || "Discount update failed.",
+        payloadHash: createPayloadHash(batch),
+        payload: { count: batch.length },
+        response: null,
+      });
     }
   }
 
+  /* cancel */
   for (const row of toCancel) {
     try {
       const response = await cancelAnanasDiscountFor(row.discountId, context.environment);
       await deactivateAnanasDiscountStateByDiscountId(row.discountId);
+      counters.success += 1;
       await addSyncRunItem(context.runId, {
         domain: "ananas",
         entityType: "discount_cancel",
-        entityId: row.discountId,
+        entityId: String(row.legacyId || row.discountId),
         status: "success",
         message: "Discount cancelled.",
         payloadHash: createPayloadHash(row),
         payload: row as unknown as Record<string, unknown>,
         response: (response as Record<string, unknown>) || null,
       });
-      counters.success += 1;
     } catch (error: any) {
       counters.failed += 1;
       await addSyncRunItem(context.runId, {
         domain: "ananas",
         entityType: "discount_cancel",
-        entityId: row.discountId,
+        entityId: String(row.legacyId || row.discountId),
         status: "failed",
         message: error?.message || "Discount cancellation failed.",
         payloadHash: createPayloadHash(row),
@@ -441,24 +878,165 @@ export async function runAnanasSync({ context }: RunAnanasOptions) {
     }
   }
 
-  await setDeltaState(
-    "ananas",
-    "discount_snapshot",
-    `${fromIso}_${toIso}`,
-    createPayloadHash({ toCreate, toUpdate, toCancel }),
-    context.runId,
-  );
-
   return {
     counters,
     meta: {
-      catalogCount: catalog.items.length,
-      changedProducts: changedPayload.length,
-      discounts: {
-        create: toCreate.length,
-        update: toUpdate.length,
-        cancel: toCancel.length,
-      },
+      discountWindow: `${fromDisplay} → ${toDisplay}`,
+      discountsCreated: toCreate.length,
+      discountsUpdated: toUpdate.length,
+      discountsCancelled: toCancel.length,
+      discountsSkipped: skipped,
     },
   };
+}
+
+/* ---------------------------------------------------------------- publish */
+
+/**
+ * Opt-in: flips READY_FOR_PUBLISH listings live and pulls hidden/out-of-stock
+ * ones back. Off by default so nothing goes public without a deliberate switch.
+ */
+async function phasePublish({ context, items, stateByLegacyId }: PhaseInput): Promise<PhaseResult> {
+  const counters = emptyCounters();
+  if (!autoPublishEnabled()) {
+    return { counters, meta: { publishSkipped: "ANANAS_AUTO_PUBLISH is not enabled" } };
+  }
+
+  const toPublish: number[] = [];
+  const toUnpublish: number[] = [];
+
+  for (const item of items) {
+    const state = stateByLegacyId.get(item.legacyId);
+    const merchantInventoryId = state?.merchantInventoryId || 0;
+    if (!merchantInventoryId) continue;
+    counters.total += 1;
+
+    const status = String(state?.ananasStatus || "").toUpperCase();
+    const sellable = !item.hiddenFromShop && (item.stockWarehouse1 || 0) > 0;
+
+    if (sellable && (status === "READY_FOR_PUBLISH" || status === "UNPUBLISHED")) {
+      toPublish.push(merchantInventoryId);
+    } else if (!sellable && status === "PUBLISHED") {
+      toUnpublish.push(merchantInventoryId);
+    } else {
+      counters.skipped += 1;
+    }
+  }
+
+  for (const [ids, action] of [
+    [toPublish, "publish"],
+    [toUnpublish, "unpublish"],
+  ] as const) {
+    for (const batch of chunkPayload(ids, { maxItems: EDIT_BATCH_SIZE })) {
+      try {
+        const response =
+          action === "publish"
+            ? await publishAnanasProductsFor(batch, context.environment)
+            : await unpublishAnanasProductsFor(batch, context.environment);
+        counters.success += batch.length;
+        await addSyncRunItem(context.runId, {
+          domain: "ananas",
+          entityType: `${action}_batch`,
+          entityId: String(batch[0] || "batch"),
+          status: "success",
+          message: `${action} requested for ${batch.length} products (async on their side).`,
+          payloadHash: createPayloadHash(batch),
+          payload: { count: batch.length, ids: batch.slice(0, 50) },
+          response: (response as Record<string, unknown>) || null,
+        });
+      } catch (error: any) {
+        counters.failed += batch.length;
+        await addSyncRunItem(context.runId, {
+          domain: "ananas",
+          entityType: `${action}_batch`,
+          entityId: String(batch[0] || "batch"),
+          status: "failed",
+          message: error?.message || `${action} failed.`,
+          payloadHash: createPayloadHash(batch),
+          payload: { count: batch.length },
+          response: null,
+        });
+      }
+    }
+  }
+
+  return { counters, meta: { published: toPublish.length, unpublished: toUnpublish.length } };
+}
+
+/* ------------------------------------------------------------- entrypoint */
+
+type RunAnanasOptions = {
+  context: IntegrationContext;
+  phases?: AnanasPhase[];
+  /** Restrict every phase to these mOffice SKUs (pilot/manual test runs). */
+  skus?: string[];
+};
+
+export async function runAnanasSync({ context, phases, skus }: RunAnanasOptions) {
+  const selected = phases?.length ? phases : DEFAULT_ANANAS_PHASES;
+  const now = new Date();
+
+  const catalog = await listCatalogProducts({
+    page: 1,
+    pageSize: 5000,
+    activeOnly: true,
+    exportOnly: true,
+    includeHidden: true,
+    applyPromotions: false,
+  });
+
+  const skuFilter = skus?.length ? new Set(skus) : null;
+  const items = skuFilter ? catalog.items.filter((item) => skuFilter.has(item.sku)) : catalog.items;
+
+  const states = await listAnanasProductStates();
+  const stateByLegacyId = new Map(states.map((state) => [state.legacyProductId, state]));
+  const input: PhaseInput = { context, items, stateByLegacyId, now };
+
+  const runners: Record<AnanasPhase, (phaseInput: PhaseInput) => Promise<PhaseResult>> = {
+    catalog: phaseCatalog,
+    listings: phaseListings,
+    prices: phasePrices,
+    stock: phaseStock,
+    discounts: phaseDiscounts,
+    publish: phasePublish,
+  };
+
+  let counters = emptyCounters();
+  const meta: Record<string, unknown> = {
+    phases: selected,
+    catalogCount: items.length,
+    catalogTotalCount: catalog.items.length,
+    skuFilter: skuFilter ? [...skuFilter] : null,
+    listedCount: states.filter((state) => state.merchantInventoryId).length,
+  };
+
+  for (const phase of selected) {
+    try {
+      // `listings` refreshes the map the later phases read from.
+      const result = await runners[phase]({ ...input, stateByLegacyId });
+      counters = mergeCounters(counters, result.counters);
+      Object.assign(meta, result.meta);
+      if (phase === "listings") {
+        const refreshed = await listAnanasProductStates();
+        stateByLegacyId.clear();
+        for (const state of refreshed) stateByLegacyId.set(state.legacyProductId, state);
+        meta.listedCount = refreshed.filter((state) => state.merchantInventoryId).length;
+      }
+    } catch (error: any) {
+      counters.failed += 1;
+      meta[`${phase}Error`] = error?.message || String(error);
+      await addSyncRunItem(context.runId, {
+        domain: "ananas",
+        entityType: "phase",
+        entityId: phase,
+        status: "failed",
+        message: error?.message || `Phase ${phase} failed.`,
+        payloadHash: null,
+        payload: { phase },
+        response: null,
+      });
+    }
+  }
+
+  return { counters, meta };
 }

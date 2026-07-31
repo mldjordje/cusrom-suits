@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
+import { parseAnanasPhases, parseSkuFilter } from "@/lib/integrations/ananas/sync";
 import { parseSyncEnvironment, requireProductionConfirm } from "@/lib/integrations/core/config";
 import { executeDomainSync, parseSyncInput } from "@/lib/integrations/orchestrator";
 
@@ -25,6 +26,9 @@ export async function POST(req: NextRequest) {
     ...input,
     environment,
     trigger: "manual",
+    // Admin can run a single phase (catalog / listings / prices / stock / discounts / publish)
+    // and/or restrict to specific SKUs (e.g. the Ananas-requested pilot test).
+    meta: { ...input.meta, phases: parseAnanasPhases(payload?.phases), skus: parseSkuFilter(payload?.skus) },
   });
   return NextResponse.json({ success: true, data: result });
 }

@@ -42,6 +42,15 @@ const formatDateTime = (value?: string | null) => {
   return new Date(value).toLocaleString("sr-RS");
 };
 
+const ANANAS_PHASE_BUTTONS = [
+  { id: "catalog", label: "Katalog", hint: "Salje nove/izmenjene proizvode timu za ulistavanje (max 1x dnevno)." },
+  { id: "listings", label: "Ulistani", hint: "Povlaci merchantInventoryId, warehouse i status." },
+  { id: "prices", label: "Cene", hint: "Osnovne cene; vaze od sutra (00:00-03:00 odmah)." },
+  { id: "stock", label: "Lager", hint: "Kolicine; ne cesce od 1x na 15 minuta." },
+  { id: "discounts", label: "Akcije", hint: "SALE akcije uz validaciju trajanja, pauze i limita popusta." },
+  { id: "publish", label: "Publish", hint: "Zahteva ANANAS_AUTO_PUBLISH=true." },
+] as const;
+
 export default function IntegrationsAdminPage() {
   const [runs, setRuns] = useState<Run[]>([]);
   const [loading, setLoading] = useState(false);
@@ -50,6 +59,7 @@ export default function IntegrationsAdminPage() {
   const [mode, setMode] = useState<"delta" | "full">("delta");
   const [confirmProduction, setConfirmProduction] = useState(false);
   const [runningAction, setRunningAction] = useState<string | null>(null);
+  const [ananasSkuFilter, setAnanasSkuFilter] = useState("");
 
   const loadRuns = async () => {
     setLoading(true);
@@ -73,11 +83,13 @@ export default function IntegrationsAdminPage() {
     loadRuns();
   }, []);
 
-  const runSync = async (endpoint: string, label: string) => {
+  const runSync = async (endpoint: string, label: string, phases?: string[], skus?: string[]) => {
     setRunningAction(label);
     setError(null);
     try {
       const body: Record<string, unknown> = { environment, mode };
+      if (phases?.length) body.phases = phases;
+      if (skus?.length) body.skus = skus;
       if (environment === "production" && confirmProduction) {
         body.confirmProduction = "CONFIRM_PRODUCTION_SYNC";
       }
@@ -188,6 +200,58 @@ export default function IntegrationsAdminPage() {
           >
             Refresh
           </button>
+        </div>
+
+        {/* Ananas caps how often each part of the flow may run (catalog 1x/day,
+            stock >=15 min apart), so each phase is also runnable on its own. */}
+        <div className="mt-4 border-t border-slate-100 pt-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Ananas — pojedinacne faze</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {ANANAS_PHASE_BUTTONS.map((phase) => (
+              <button
+                key={phase.id}
+                onClick={() => runSync("/api/admin/integrations/ananas/sync", `ananas-${phase.id}`, [phase.id])}
+                disabled={Boolean(runningAction)}
+                title={phase.hint}
+                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 hover:border-slate-300"
+              >
+                {runningAction === `ananas-${phase.id}` ? "Running..." : phase.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Scope any phase above to specific mOffice SKUs — e.g. the Ananas-requested
+            pilot test ("posaljite par proizvoda preko Add products", SKU 133342/133856)
+            without touching the rest of the catalog. */}
+        <div className="mt-4 border-t border-slate-100 pt-3">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+            Test SKU filter (opciono, zarezom odvojeni)
+          </p>
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <input
+              type="text"
+              value={ananasSkuFilter}
+              onChange={(event) => setAnanasSkuFilter(event.target.value)}
+              placeholder="npr. 133342, 133856"
+              className="w-64 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700"
+            />
+            <button
+              onClick={() =>
+                runSync(
+                  "/api/admin/integrations/ananas/sync",
+                  "ananas-catalog-filtered",
+                  ["catalog"],
+                  ananasSkuFilter.split(",").map((s) => s.trim()).filter(Boolean),
+                )
+              }
+              disabled={Boolean(runningAction) || !ananasSkuFilter.trim()}
+              title="Salje samo navedene SKU-ove kroz fazu Katalog (Add products)."
+              className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700 hover:border-emerald-300 disabled:opacity-50"
+            >
+              {runningAction === "ananas-catalog-filtered" ? "Running..." : "Posalji test SKU-ove (Katalog)"}
+            </button>
+          </div>
         </div>
       </div>
 

@@ -51,18 +51,23 @@ type OutboundArtifact = {
   createdAt: string;
 };
 
-type AnanasProductStateRecord = {
+export type AnanasProductStateRecord = {
   legacyProductId: number;
   merchantInventoryId: number | null;
   externalId: string | null;
   ananasStatus: string | null;
+  /** MERCHANT_WAREHOUSE | ANANAS_WAREHOUSE — stock is only pushed for the former. */
+  warehouse: string | null;
+  /** Last values reported by Ananas, used to skip no-op price/stock pushes. */
+  remoteBasePrice: number | null;
+  remoteStockLevel: number | null;
   payloadHash: string | null;
   lastSyncedAt: string | null;
   syncError: string | null;
   updatedAt: string;
 };
 
-type AnanasDiscountStateRecord = {
+export type AnanasDiscountStateRecord = {
   id: string;
   legacyProductId: number;
   merchantInventoryId: number;
@@ -479,11 +484,28 @@ const normalizeAnanasDate = (value: string) => {
   return trimmed;
 };
 
+const mapAnanasProductStateRow = (row: Record<string, any>): AnanasProductStateRecord => ({
+  legacyProductId: Number(row.legacy_product_id),
+  merchantInventoryId: row.merchant_inventory_id == null ? null : Number(row.merchant_inventory_id),
+  externalId: row.external_id == null ? null : String(row.external_id),
+  ananasStatus: row.ananas_status == null ? null : String(row.ananas_status),
+  warehouse: row.warehouse == null ? null : String(row.warehouse),
+  remoteBasePrice: row.remote_base_price == null ? null : Number(row.remote_base_price),
+  remoteStockLevel: row.remote_stock_level == null ? null : Number(row.remote_stock_level),
+  payloadHash: row.payload_hash == null ? null : String(row.payload_hash),
+  lastSyncedAt: row.last_synced_at || null,
+  syncError: row.sync_error == null ? null : String(row.sync_error),
+  updatedAt: row.updated_at || nowIso(),
+});
+
 export async function upsertAnanasProductState(input: {
   legacyProductId: number;
   merchantInventoryId?: number | null;
   externalId?: string | number | null;
   ananasStatus?: string | null;
+  warehouse?: string | null;
+  remoteBasePrice?: number | null;
+  remoteStockLevel?: number | null;
   payloadHash?: string | null;
   lastSyncedAt?: string | null;
   syncError?: string | null;
@@ -498,6 +520,9 @@ export async function upsertAnanasProductState(input: {
         ? null
         : String(input.externalId),
     ananasStatus: input.ananasStatus == null ? null : String(input.ananasStatus),
+    warehouse: input.warehouse == null ? null : String(input.warehouse),
+    remoteBasePrice: input.remoteBasePrice == null ? null : Number(input.remoteBasePrice),
+    remoteStockLevel: input.remoteStockLevel == null ? null : Number(input.remoteStockLevel),
     payloadHash: input.payloadHash == null ? null : String(input.payloadHash),
     lastSyncedAt: input.lastSyncedAt || now,
     syncError: input.syncError == null ? null : String(input.syncError),
@@ -512,6 +537,9 @@ export async function upsertAnanasProductState(input: {
         merchant_inventory_id: row.merchantInventoryId,
         external_id: row.externalId,
         ananas_status: row.ananasStatus,
+        warehouse: row.warehouse,
+        remote_base_price: row.remoteBasePrice,
+        remote_stock_level: row.remoteStockLevel,
         payload_hash: row.payloadHash,
         last_synced_at: row.lastSyncedAt,
         sync_error: row.syncError,
@@ -527,6 +555,55 @@ export async function upsertAnanasProductState(input: {
   if (idx >= 0) list[idx] = { ...list[idx], ...row };
   else list.push(row);
   await writeJsonFile(ANANAS_PRODUCT_STATE_FILE, list);
+}
+
+/** Full listing map (legacyId → merchantInventoryId/warehouse/status) for the sync phases. */
+export async function listAnanasProductStates(): Promise<AnanasProductStateRecord[]> {
+  const supabase = getServiceSupabase();
+  if (supabase) {
+    const rows: AnanasProductStateRecord[] = [];
+    const pageSize = 1000;
+    for (let page = 0; page < 50; page += 1) {
+      const { data, error } = await supabase
+        .from("integration_ananas_product_state")
+        .select("*")
+        .range(page * pageSize, page * pageSize + pageSize - 1);
+      if (error) break;
+      const batch = (data || []) as Array<Record<string, any>>;
+      rows.push(...batch.map(mapAnanasProductStateRow));
+      if (batch.length < pageSize) return rows;
+    }
+    if (rows.length) return rows;
+  }
+  return readJsonFile<AnanasProductStateRecord[]>(ANANAS_PRODUCT_STATE_FILE, []);
+}
+
+/** Discount campaigns we know about; used for cooldown and price-freeze checks. */
+export async function listAnanasDiscountStates(): Promise<AnanasDiscountStateRecord[]> {
+  const supabase = getServiceSupabase();
+  if (supabase) {
+    const { data, error } = await supabase
+      .from("integration_ananas_discount_state")
+      .select("*")
+      .order("date_to", { ascending: false })
+      .limit(20000);
+    if (!error && data) {
+      return (data as Array<Record<string, any>>).map((row) => ({
+        id: String(row.id),
+        legacyProductId: Number(row.legacy_product_id),
+        merchantInventoryId: Number(row.merchant_inventory_id),
+        discountId: row.discount_id == null ? null : String(row.discount_id),
+        discountType: String(row.discount_type || "SALE"),
+        discountPrice: Number(row.discount_price || 0),
+        discountPriceCurrency: String(row.discount_price_currency || "RSD"),
+        dateFrom: String(row.date_from),
+        dateTo: String(row.date_to),
+        active: row.active !== false,
+        updatedAt: row.updated_at || nowIso(),
+      }));
+    }
+  }
+  return readJsonFile<AnanasDiscountStateRecord[]>(ANANAS_DISCOUNT_STATE_FILE, []);
 }
 
 export async function upsertAnanasDiscountState(input: {

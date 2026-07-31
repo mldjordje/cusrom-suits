@@ -101,6 +101,7 @@ export type CatalogProductMediaRow = {
   sort: number;
 };
 
+/** Payload row for POST /product/api/v1/merchant-integration/import. */
 export type AnanasImportProduct = {
   name: string;
   description: string;
@@ -109,14 +110,22 @@ export type AnanasImportProduct = {
   brand: string;
   gallery: string[];
   parentEan: string;
-  packageWeightValue: string;
+  packageWeightValue: number;
   packageWeightUnit: string;
-  basePrice: string;
-  vat: string;
+  basePrice: number;
+  vat: number;
   stockLevel: number;
   sku: string;
-  externalId: number;
+  /** Our legacy product id, echoed back by get-all-products for mapping. */
+  externalId: string;
   productType: string;
   category: string;
   attributes: Record<string, string[]>;
+  packageHeightValue?: number;
+  packageWidthValue?: number;
+  packageLengthValue?: number;
+  productWeightValue?: number;
+  productHeightValue?: number;
+  productWidthValue?: number;
+  productLengthValue?: number;
 };
