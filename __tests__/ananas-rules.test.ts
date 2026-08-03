@@ -18,6 +18,7 @@ import {
   resolvePackageWeightKg,
   toAbsoluteImageUrl,
 } from "@/lib/integrations/ananas/mapper";
+import { resolveLegacyProductId } from "@/lib/integrations/ananas/sync";
 import type { CatalogProductView } from "@/lib/catalog/store";
 
 const day = (iso: string) => {
@@ -322,6 +323,28 @@ describe("catalog mapper", () => {
     expect(
       resolvePackageWeightKg(catalogItem({ name: "Muška košulja", categories: [{ id: 2, name: "Košulje" }] as never })),
     ).toBe(0.45);
+  });
+});
+
+describe("listing → catalog mapping", () => {
+  // Shapes taken verbatim from the Ananas QA response on 2026-07-31.
+  it("recovers legacyId from the sku suffix when externalId is null", () => {
+    expect(
+      resolveLegacyProductId({ id: 2512097, externalId: null, ean: null, sku: "133856_81092" }),
+    ).toBe(81092);
+    expect(
+      resolveLegacyProductId({ id: 2512096, externalId: null, ean: null, sku: "133342_13334256" }),
+    ).toBe(13334256);
+  });
+
+  it("prefers externalId when they do send it back", () => {
+    expect(resolveLegacyProductId({ id: 1, externalId: "4242", sku: "133342_13334256" })).toBe(4242);
+  });
+
+  it("returns 0 for rows it cannot tie to our catalog", () => {
+    expect(resolveLegacyProductId({ id: 1, externalId: null, sku: "133342" })).toBe(0);
+    expect(resolveLegacyProductId({ id: 1, externalId: null, sku: null })).toBe(0);
+    expect(resolveLegacyProductId({ id: 1 })).toBe(0);
   });
 });
 

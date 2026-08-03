@@ -270,6 +270,26 @@ const summarizeRejections = (rejections: MapperRejection[]) => {
 /* --------------------------------------------------------------- listings */
 
 /**
+ * Recovers our legacy product id from a listed row.
+ *
+ * Ananas does NOT echo back `externalId` — verified against QA on 2026-07-31,
+ * every listed row returns `externalId: null` (they also blank `ean` and issue
+ * their own `ananasCode` instead). The only field that survives their listing
+ * process is `sku`, which we submit as `<mOffice sku>_<legacyId>`, so the
+ * suffix is what ties a listing back to our catalog.
+ */
+export const resolveLegacyProductId = (row: AnanasProductRemote): number => {
+  const fromExternalId = Number(row?.externalId || 0);
+  if (Number.isFinite(fromExternalId) && fromExternalId > 0) return fromExternalId;
+
+  const sku = String(row?.sku || "").trim();
+  const suffix = /_(\d+)$/.exec(sku);
+  if (!suffix) return 0;
+  const parsed = Number(suffix[1]);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+};
+
+/**
  * Pulls listed products and records merchantInventoryId + warehouse. The same
  * product can appear twice (merchant and Ananas warehouse) — both rows are
  * stored, but only the merchant one may receive stock updates.
@@ -314,7 +334,7 @@ async function phaseListings({ context, stateByLegacyId }: PhaseInput): Promise<
       if (!merchantInventoryId || seen.has(merchantInventoryId)) continue;
       seen.add(merchantInventoryId);
 
-      const legacyProductId = Number(row?.externalId || 0);
+      const legacyProductId = resolveLegacyProductId(row);
       if (!legacyProductId) {
         counters.skipped += 1;
         continue;

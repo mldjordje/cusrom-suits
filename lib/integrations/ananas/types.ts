@@ -58,8 +58,14 @@ export type AnanasProductStatus =
 
 export type AnanasProductRemote = {
   id: number;
+  /** Always null in practice — they do not echo our externalId back (QA, 2026-07-31). */
   externalId?: string | number | null;
+  /** Also blanked on listing; replaced by `ananasCode`. */
   ean?: string | null;
+  /** Ananas' own product code, issued when EAN is absent. */
+  ananasCode?: string | null;
+  /** Shared by all variants of one style — their equivalent of our parentEan grouping. */
+  groupId?: string | null;
   sku?: string | null;
   name?: string | null;
   brand?: string | null;
@@ -67,6 +73,7 @@ export type AnanasProductRemote = {
   warehouse?: AnanasWarehouse | string | null;
   stockLevel?: number | null;
   basePrice?: number | null;
+  newBasePrice?: number | null;
   categories?: unknown;
 };
 
