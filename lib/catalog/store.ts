@@ -63,6 +63,10 @@ export type CatalogProductView = {
    *  every storefront listing (web-shop, landing, related, feed) regardless of
    *  stock/active/image state. Admin views pass `includeHidden` to still see it. */
   hiddenFromShop: boolean;
+  /** Admin opt-in: only products flagged true are eligible for the Ananas
+   *  marketplace sync (separate from `isExported`, which drives the storefront
+   *  and is overwritten by every mOffice sync). See lib/integrations/ananas/sync.ts. */
+  ananasExport: boolean;
   landingFeatured: boolean;
   landingPriority: number | null;
   categories: CatalogCategory[];
@@ -97,6 +101,9 @@ export type CatalogListInput = {
   /** Include products flagged `hiddenFromShop`. Storefront omits this (defaults to
    *  false → hidden products excluded); admin listings pass true to manage them. */
   includeHidden?: boolean;
+  /** Only products with `ananasExport: true`. Used by the Ananas sync to pull its
+   *  curated subset instead of the whole active+exported catalog. */
+  ananasExportOnly?: boolean;
   collapseBySku?: boolean;
   page?: number;
   pageSize?: number;
@@ -268,6 +275,7 @@ const makeCatalogListCacheKey = (input: {
   activeOnly: boolean;
   exportOnly: boolean;
   includeHidden: boolean;
+  ananasExportOnly: boolean;
   collapseBySku: boolean;
   applyPromotions: boolean;
   priceMin: number;
@@ -295,6 +303,7 @@ const makeCatalogListCacheKey = (input: {
     input.activeOnly ? 1 : 0,
     input.exportOnly ? 1 : 0,
     input.includeHidden ? 1 : 0,
+    input.ananasExportOnly ? 1 : 0,
     input.collapseBySku ? 1 : 0,
     input.applyPromotions ? 1 : 0,
     input.priceMin || 0,
@@ -398,6 +407,7 @@ const compactRawPayload = (
   if (Array.isArray(source.washCareIcons)) compact.washCareIcons = source.washCareIcons;
   if (Object.prototype.hasOwnProperty.call(source, "declaration")) compact.declaration = source.declaration;
   if (source.hiddenFromShop === true) compact.hiddenFromShop = true;
+  if (source.ananasExport === true) compact.ananasExport = true;
   if (source.productType) compact.productType = source.productType;
   if (source.source) compact.source = source.source;
   if (source.moffice && typeof source.moffice === "object") compact.moffice = source.moffice;
@@ -472,6 +482,7 @@ const normalizeCatalogRow = (
     isActive: Boolean(row.is_active),
     isExported: Boolean(row.is_exported),
     hiddenFromShop: rawPayloadSource.hiddenFromShop === true,
+    ananasExport: rawPayloadSource.ananasExport === true,
     landingFeatured: Boolean(landing.featured),
     landingPriority,
     categories,
@@ -509,6 +520,7 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
   isActive: String(item.status.active).toLowerCase() === "y",
   isExported: String(item.status.export).toLowerCase() === "y",
   hiddenFromShop: (item.raw as Record<string, unknown> | undefined)?.hiddenFromShop === true,
+  ananasExport: (item.raw as Record<string, unknown> | undefined)?.ananasExport === true,
   landingFeatured: Boolean(item.raw?.landing?.featured),
   landingPriority: Number.isFinite(Number(item.raw?.landing?.priority))
     ? Number(item.raw?.landing?.priority)
@@ -1637,6 +1649,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const activeOnly = input.activeOnly !== false;
   const exportOnly = input.exportOnly !== false;
   const includeHidden = Boolean(input.includeHidden);
+  const ananasExportOnly = Boolean(input.ananasExportOnly);
   const collapseBySku = Boolean(input.collapseBySku);
   const applyPromotions = input.applyPromotions !== false;
   const priceMin = Number.isFinite(Number(input.priceMin)) ? Math.max(0, Number(input.priceMin)) : 0;
@@ -1672,6 +1685,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     activeOnly,
     exportOnly,
     includeHidden,
+    ananasExportOnly,
     collapseBySku,
     applyPromotions,
     priceMin,
@@ -1755,6 +1769,9 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     if (hiddenKeys.size) {
       visibleSource = filteredSource.filter((item) => !hiddenKeys.has(hideKeyOf(item)));
     }
+  }
+  if (ananasExportOnly) {
+    visibleSource = visibleSource.filter((item) => item.ananasExport);
   }
 
   const collapseStart = Date.now();

@@ -48,6 +48,7 @@ const makeProduct = (
   isActive: true,
   isExported: true,
   hiddenFromShop: false,
+  ananasExport: false,
   landingFeatured: false,
   landingPriority: null,
   categories: [],

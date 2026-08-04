@@ -26,6 +26,7 @@ const makeProduct = (overrides: Partial<CatalogProductView> = {}): CatalogProduc
   isActive: true,
   isExported: true,
   hiddenFromShop: false,
+  ananasExport: false,
   landingFeatured: false,
   landingPriority: null,
   categories: [{ id: 10, name: "Kosulja", path: ["Odeca", "Kosulja"] }],

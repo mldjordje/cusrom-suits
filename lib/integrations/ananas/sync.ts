@@ -998,7 +998,15 @@ type RunAnanasOptions = {
  * page through it. collapseBySku stays off: each row here must remain one
  * size/color variant, since that is exactly the granularity Ananas expects.
  */
-async function loadFullCatalogForAnanas(): Promise<{ items: CatalogProductView[]; totalCount: number }> {
+async function loadFullCatalogForAnanas(options: {
+  /**
+   * Restrict to products admin explicitly flagged "Posalji na Ananas" in
+   * /admin/webshop — separate from `isExported`, which drives the storefront
+   * and is overwritten by every mOffice sync (stock > 0). Skipped for
+   * SKU-scoped test runs, since naming exact SKUs is itself the curation.
+   */
+  ananasExportOnly: boolean;
+}): Promise<{ items: CatalogProductView[]; totalCount: number }> {
   const items: CatalogProductView[] = [];
   let page = 1;
   let totalPages = 1;
@@ -1009,6 +1017,7 @@ async function loadFullCatalogForAnanas(): Promise<{ items: CatalogProductView[]
       pageSize: 120,
       activeOnly: true,
       exportOnly: true,
+      ananasExportOnly: options.ananasExportOnly,
       includeHidden: true,
       applyPromotions: false,
     });
@@ -1024,9 +1033,8 @@ export async function runAnanasSync({ context, phases, skus }: RunAnanasOptions)
   const selected = phases?.length ? phases : DEFAULT_ANANAS_PHASES;
   const now = new Date();
 
-  const catalog = await loadFullCatalogForAnanas();
-
   const skuFilter = skus?.length ? new Set(skus) : null;
+  const catalog = await loadFullCatalogForAnanas({ ananasExportOnly: !skuFilter });
   const items = skuFilter ? catalog.items.filter((item) => skuFilter.has(item.sku)) : catalog.items;
 
   const states = await listAnanasProductStates();
@@ -1048,6 +1056,7 @@ export async function runAnanasSync({ context, phases, skus }: RunAnanasOptions)
     catalogCount: items.length,
     catalogTotalCount: catalog.totalCount,
     skuFilter: skuFilter ? [...skuFilter] : null,
+    ananasExportOnly: !skuFilter,
     listedCount: states.filter((state) => state.merchantInventoryId).length,
   };
 

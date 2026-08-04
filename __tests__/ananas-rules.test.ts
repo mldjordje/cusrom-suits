@@ -239,6 +239,7 @@ const catalogItem = (overrides: Partial<CatalogProductView> = {}): CatalogProduc
     isActive: true,
     isExported: true,
     hiddenFromShop: false,
+    ananasExport: true,
     landingFeatured: false,
     landingPriority: null,
     categories: [{ id: 1, name: "Odela" }],

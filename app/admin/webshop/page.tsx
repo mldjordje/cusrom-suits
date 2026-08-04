@@ -53,6 +53,7 @@ type CatalogProduct = {
   isActive: boolean;
   isExported: boolean;
   hiddenFromShop?: boolean;
+  ananasExport?: boolean;
   landingFeatured: boolean;
   landingPriority: number | null;
   categories: CatalogCategory[];
@@ -88,6 +89,7 @@ type ProductDraft = {
   isActive: boolean;
   isExported: boolean;
   hiddenFromShop: boolean;
+  ananasExport: boolean;
   landingFeatured: boolean;
   landingPriority: string;
   videoUrl: string;
@@ -736,6 +738,7 @@ const toDraft = (item: CatalogProduct): ProductDraft => {
     isActive: item.isActive,
     isExported: item.isExported,
     hiddenFromShop: item.hiddenFromShop === true || item.rawPayload?.hiddenFromShop === true,
+    ananasExport: item.ananasExport === true || item.rawPayload?.ananasExport === true,
     landingFeatured: Boolean(item.landingFeatured),
     landingPriority: item.landingPriority == null ? "" : String(item.landingPriority),
     videoUrl,
@@ -827,6 +830,7 @@ const productQualityFlags = (item: CatalogProduct) => {
   if (hasManualPriceOverride(item)) flags.push({ label: "Rucna cena", tone: "amber" });
   if (item.hiddenFromShop === true || item.rawPayload?.hiddenFromShop === true) flags.push({ label: "Sakriven sa sajta", tone: "rose" });
   else if (!item.isActive || !item.isExported) flags.push({ label: "Sakriven", tone: "slate" });
+  if (item.ananasExport === true || item.rawPayload?.ananasExport === true) flags.push({ label: "Ananas", tone: "emerald" });
   if (!flags.length) flags.push({ label: "Spremno", tone: "emerald" });
   return flags;
 };
@@ -928,6 +932,7 @@ export default function AdminWebshopPage() {
   const [bulkStockDelta, setBulkStockDelta] = useState("");
   const [bulkActive, setBulkActive] = useState<"" | "1" | "0">("");
   const [bulkExported, setBulkExported] = useState<"" | "1" | "0">("");
+  const [bulkAnanasExport, setBulkAnanasExport] = useState<"" | "1" | "0">("");
 
   const [editorId, setEditorId] = useState<number | null>(null);
   const [saleEditorId, setSaleEditorId] = useState<number | null>(null);
@@ -1816,6 +1821,7 @@ export default function AdminWebshopPage() {
           isActive: draft.isActive,
           isExported: draft.isExported,
           hiddenFromShop: draft.hiddenFromShop,
+          ananasExport: draft.ananasExport,
           landingFeatured: draft.landingFeatured,
           landingPriority: draft.landingPriority.trim() ? toNumberOrNull(draft.landingPriority) : null,
           videoUrl: draft.videoUrl.trim() || null,
@@ -2065,6 +2071,7 @@ export default function AdminWebshopPage() {
       const update: Record<string, unknown> = { legacyId };
       if (bulkActive !== "") update.isActive = bulkActive === "1";
       if (bulkExported !== "") update.isExported = bulkExported === "1";
+      if (bulkAnanasExport !== "") update.ananasExport = bulkAnanasExport === "1";
       if (priceDelta != null) update.priceFinalGross = Math.max(0, Number((row.priceFinalGross * (1 + priceDelta / 100)).toFixed(2)));
       if (rebate != null) {
         const safeRebate = Math.max(0, Math.min(100, rebate));
@@ -2098,6 +2105,7 @@ export default function AdminWebshopPage() {
       setBulkStockDelta("");
       setBulkActive("");
       setBulkExported("");
+      setBulkAnanasExport("");
       await loadProducts(pagination.page);
     } finally {
       setBulkSaving(false);
@@ -2911,6 +2919,7 @@ export default function AdminWebshopPage() {
             <div className="grid gap-3 md:grid-cols-6">
               <select value={bulkActive} onChange={(e) => setBulkActive(e.target.value as "" | "1" | "0")} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="">Aktivnost bez promene</option><option value="1">Postavi aktivno</option><option value="0">Postavi neaktivno</option></select>
               <select value={bulkExported} onChange={(e) => setBulkExported(e.target.value as "" | "1" | "0")} className="rounded-xl border border-slate-200 px-3 py-2 text-sm"><option value="">Export bez promene</option><option value="1">Ukljuci export</option><option value="0">Iskljuci export</option></select>
+              <select value={bulkAnanasExport} onChange={(e) => setBulkAnanasExport(e.target.value as "" | "1" | "0")} className="rounded-xl border border-slate-200 px-3 py-2 text-sm" title="Odvojeno od Export flag-a — samo ovi idu na Ananas."><option value="">Ananas bez promene</option><option value="1">Posalji na Ananas</option><option value="0">Ukloni sa Ananas</option></select>
               <input value={bulkPriceDelta} onChange={(e) => setBulkPriceDelta(e.target.value)} placeholder="Promena cene %" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={bulkRebate} onChange={(e) => setBulkRebate(e.target.value)} placeholder="Akcija %" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <input value={bulkStockDelta} onChange={(e) => setBulkStockDelta(e.target.value)} placeholder="Promena lagera" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
@@ -4372,6 +4381,7 @@ export default function AdminWebshopPage() {
               </label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(drafts[currentEditorItem.legacyId]?.isActive)} onChange={(e) => updateDraft(currentEditorItem.legacyId, { isActive: e.target.checked })} />Aktivan (vidljiv na sajtu)</label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={Boolean(drafts[currentEditorItem.legacyId]?.isExported)} onChange={(e) => updateDraft(currentEditorItem.legacyId, { isExported: e.target.checked })} />Export (sinhronizacija)</label>
+              <label className="inline-flex items-center gap-2 text-sm" title="Odvojeno od gornjeg Export flag-a — samo ovi proizvodi idu na Ananas marketplace sync."><input type="checkbox" checked={Boolean(drafts[currentEditorItem.legacyId]?.ananasExport)} onChange={(e) => updateDraft(currentEditorItem.legacyId, { ananasExport: e.target.checked })} />Posalji na Ananas</label>
             </div>
 
             {(() => {

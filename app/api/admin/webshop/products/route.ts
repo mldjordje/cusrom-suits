@@ -33,6 +33,7 @@ type ProductUpdatePayload = {
   isActive?: boolean;
   isExported?: boolean;
   hiddenFromShop?: boolean;
+  ananasExport?: boolean;
   landingFeatured?: boolean;
   landingPriority?: number | null;
   videoUrl?: string | null;
@@ -157,6 +158,7 @@ const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
   if (hasOwn(row, "isActive")) out.isActive = Boolean(row.isActive);
   if (hasOwn(row, "isExported")) out.isExported = Boolean(row.isExported);
   if (hasOwn(row, "hiddenFromShop")) out.hiddenFromShop = Boolean(row.hiddenFromShop);
+  if (hasOwn(row, "ananasExport")) out.ananasExport = Boolean(row.ananasExport);
   if (hasOwn(row, "landingFeatured")) out.landingFeatured = Boolean(row.landingFeatured);
   if (hasOwn(row, "landingPriority")) {
     out.landingPriority = row.landingPriority == null ? null : toNumberOrUndefined(row.landingPriority) ?? null;
@@ -275,6 +277,7 @@ const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
           }
         : {}),
       ...(patch.hiddenFromShop !== undefined ? { hiddenFromShop: patch.hiddenFromShop } : {}),
+      ...(patch.ananasExport !== undefined ? { ananasExport: patch.ananasExport } : {}),
       ...(patch.declaration !== undefined ? { declaration: patch.declaration || null } : {}),
       ...(patch.washCareIcons !== undefined ? { washCareIcons: patch.washCareIcons } : {}),
       ...(patch.seo !== undefined ? { seo: patch.seo } : {}),
@@ -358,6 +361,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
     patch.declaration !== undefined ||
     patch.washCareIcons !== undefined ||
     patch.hiddenFromShop !== undefined ||
+    patch.ananasExport !== undefined ||
     patch.seo !== undefined
   ) {
     const { data: existing, error: rawError } = await supabase
@@ -404,6 +408,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
           ...(patch.mediaOrder !== undefined ? { mediaOrder: patch.mediaOrder } : {}),
         },
         ...(patch.hiddenFromShop !== undefined ? { hiddenFromShop: patch.hiddenFromShop } : {}),
+        ...(patch.ananasExport !== undefined ? { ananasExport: patch.ananasExport } : {}),
         ...(patch.declaration !== undefined
           ? { declaration: patch.declaration || null }
           : {}),
@@ -671,6 +676,7 @@ export async function GET(req: NextRequest) {
   const inStock = params.get("inStock") === "1";
   const activeOnly = params.get("activeOnly") === "1";
   const exportOnly = params.get("exportOnly") === "1";
+  const ananasExportOnly = params.get("ananasExportOnly") === "1";
   const onSaleOnly = params.get("onSaleOnly") === "1";
   const requireImages = params.get("requireImages") === "1";
   const requireDirectImages = params.get("requireDirectImages") === "1";
@@ -710,6 +716,7 @@ export async function GET(req: NextRequest) {
     onSale: onSaleOnly,
     activeOnly,
     exportOnly,
+    ananasExportOnly,
     includeHidden: true,
     applyPromotions: onSaleOnly,
     requireImages,
