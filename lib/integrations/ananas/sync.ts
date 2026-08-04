@@ -130,6 +130,9 @@ type PhaseInput = {
   items: CatalogProductView[];
   stateByLegacyId: Map<number, AnanasProductStateRecord>;
   now: Date;
+  /** True when the run was narrowed to specific SKUs, so `items` is not the
+   *  full picture and phases must not infer anything from what's missing. */
+  skuScoped: boolean;
 };
 
 /* ---------------------------------------------------------------- catalog */
@@ -443,7 +446,28 @@ async function phasePrices({ context, items, stateByLegacyId, now }: PhaseInput)
 
 /* ------------------------------------------------------------------ stock */
 
-async function phaseStock({ context, items, stateByLegacyId, now }: PhaseInput): Promise<PhaseResult> {
+/**
+ * Should a listing that no longer appears in our catalog be zeroed out?
+ *
+ * Sold-out and deactivated products disappear from the catalog query (the
+ * mOffice sync sets is_active/is_exported to `stock > 0`), so "missing from
+ * items" is our only signal that they went away.
+ */
+export const shouldZeroOrphanStock = (
+  state: Pick<AnanasProductStateRecord, "merchantInventoryId" | "warehouse" | "remoteStockLevel">,
+  inCatalog: boolean,
+): boolean => {
+  if (inCatalog) return false;
+  // Never listed, so there is nothing on their side to zero.
+  if (!state.merchantInventoryId) return false;
+  // Ananas-fulfilled inventory: their warehouse owns the quantity.
+  if (state.warehouse === "ANANAS_WAREHOUSE") return false;
+  // Already at zero on their side.
+  if (state.remoteStockLevel === 0) return false;
+  return true;
+};
+
+async function phaseStock({ context, items, stateByLegacyId, now, skuScoped }: PhaseInput): Promise<PhaseResult> {
   const counters = emptyCounters();
 
   // Their rule: at most one stock push every 15 minutes.
@@ -495,6 +519,35 @@ async function phaseStock({ context, items, stateByLegacyId, now }: PhaseInput):
     legacyIdByMerchantId.set(merchantInventoryId, item.legacyId);
   }
 
+  /**
+   * Sold-out and deactivated products vanish from `items` entirely: the mOffice
+   * sync sets is_active/is_exported to `stock > 0`, and the catalog query filters
+   * on both. Without this pass their last known quantity would stay live on the
+   * marketplace forever — Ananas would keep selling stock we do not have.
+   * Their rule: "Ukoliko proizvod više nije dostupan potrebno je poslati količinu 0".
+   *
+   * Skipped for SKU-scoped runs, where `items` is deliberately a small subset and
+   * everything else being "missing" means nothing.
+   */
+  let zeroedOrphans = 0;
+  if (!skuScoped) {
+    const inCatalog = new Set(items.map((item) => item.legacyId));
+    for (const [legacyProductId, state] of stateByLegacyId) {
+      if (!shouldZeroOrphanStock(state, inCatalog.has(legacyProductId))) continue;
+      const merchantInventoryId = state.merchantInventoryId as number;
+
+      const hash = createPayloadHash({ merchantInventoryId, stockLevel: 0 });
+      const previousHash =
+        context.mode === "delta" ? await getDeltaHash("ananas", "stock", String(legacyProductId)) : null;
+      if (previousHash === hash) continue;
+
+      counters.total += 1;
+      zeroedOrphans += 1;
+      rows.push({ id: merchantInventoryId, stockLevel: 0 });
+      legacyIdByMerchantId.set(merchantInventoryId, legacyProductId);
+    }
+  }
+
   const applied = await pushProductUpdates({
     context,
     rows,
@@ -511,7 +564,12 @@ async function phaseStock({ context, items, stateByLegacyId, now }: PhaseInput):
 
   return {
     counters,
-    meta: { stockRowsSent: rows.length, stockRowsApplied: applied, stockAnanasWarehouseSkipped: ananasWarehouseSkipped },
+    meta: {
+      stockRowsSent: rows.length,
+      stockRowsApplied: applied,
+      stockAnanasWarehouseSkipped: ananasWarehouseSkipped,
+      stockZeroedOrphans: zeroedOrphans,
+    },
   };
 }
 
@@ -1039,7 +1097,7 @@ export async function runAnanasSync({ context, phases, skus }: RunAnanasOptions)
 
   const states = await listAnanasProductStates();
   const stateByLegacyId = new Map(states.map((state) => [state.legacyProductId, state]));
-  const input: PhaseInput = { context, items, stateByLegacyId, now };
+  const input: PhaseInput = { context, items, stateByLegacyId, now, skuScoped: Boolean(skuFilter) };
 
   const runners: Record<AnanasPhase, (phaseInput: PhaseInput) => Promise<PhaseResult>> = {
     catalog: phaseCatalog,

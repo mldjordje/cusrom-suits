@@ -18,7 +18,7 @@ import {
   resolvePackageWeightKg,
   toAbsoluteImageUrl,
 } from "@/lib/integrations/ananas/mapper";
-import { resolveLegacyProductId } from "@/lib/integrations/ananas/sync";
+import { resolveLegacyProductId, shouldZeroOrphanStock } from "@/lib/integrations/ananas/sync";
 import type { CatalogProductView } from "@/lib/catalog/store";
 
 const day = (iso: string) => {
@@ -346,6 +346,32 @@ describe("listing → catalog mapping", () => {
     expect(resolveLegacyProductId({ id: 1, externalId: null, sku: "133342" })).toBe(0);
     expect(resolveLegacyProductId({ id: 1, externalId: null, sku: null })).toBe(0);
     expect(resolveLegacyProductId({ id: 1 })).toBe(0);
+  });
+});
+
+describe("sold-out listings", () => {
+  const listed = { merchantInventoryId: 2512097, warehouse: "MERCHANT_WAREHOUSE", remoteStockLevel: 15 };
+
+  it("zeroes a listing that dropped out of the catalog", () => {
+    // mOffice sets is_active/is_exported to `stock > 0`, so a sold-out product
+    // disappears from our catalog query entirely — this is the only signal.
+    expect(shouldZeroOrphanStock(listed, false)).toBe(true);
+  });
+
+  it("leaves products still in the catalog alone", () => {
+    expect(shouldZeroOrphanStock(listed, true)).toBe(false);
+  });
+
+  it("never touches Ananas-fulfilled inventory", () => {
+    expect(shouldZeroOrphanStock({ ...listed, warehouse: "ANANAS_WAREHOUSE" }, false)).toBe(false);
+  });
+
+  it("skips listings that are already at zero", () => {
+    expect(shouldZeroOrphanStock({ ...listed, remoteStockLevel: 0 }, false)).toBe(false);
+  });
+
+  it("skips products that were never listed", () => {
+    expect(shouldZeroOrphanStock({ ...listed, merchantInventoryId: null }, false)).toBe(false);
   });
 });
 
