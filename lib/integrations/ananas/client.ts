@@ -367,6 +367,12 @@ export const cancelAnanasDiscount = (discountId: string) =>
 /**
  * Effective prices per day — the only way to see what the platform actually
  * charges (base vs. sellable) and whether a discount is attached.
+ *
+ * NOT wired into any sync phase yet. Note before using it: on stage this
+ * endpoint lives on a different host than every other one — their docs give
+ * `api.svc.qa2.ananastest.com`, and hitting it on the usual
+ * `api.qa2.ananastest.com` returns 500 "No static resource" (verified
+ * 2026-08-04). Production is the normal `api.ananas.rs`.
  */
 export async function getAnanasPricesFor(
   merchantInventoryIds: number[],
