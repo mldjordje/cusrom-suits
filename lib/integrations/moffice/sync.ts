@@ -89,6 +89,18 @@ export type MofficePulledRow = {
 const nowIso = () => new Date().toISOString();
 
 const normalizeKey = (value: unknown) => String(value ?? "").trim();
+
+/**
+ * Numeric feed fields that never accept NaN. Also tolerates comma decimals,
+ * which mOffice sends for some articles.
+ */
+const safeNumber = (value: unknown, fallback: number) => {
+  if (typeof value === "number") return Number.isFinite(value) ? value : fallback;
+  const raw = String(value ?? "").trim().replace(/\s/g, "");
+  if (!raw) return fallback;
+  const parsed = Number(raw.includes(",") && !raw.includes(".") ? raw.replace(",", ".") : raw);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
 const normalizeLower = (value: unknown) => normalizeKey(value).toLowerCase();
 const normalizeSize = (value: unknown) => normalizeKey(value).toUpperCase().replace(/\s+/g, "");
 
@@ -568,10 +580,14 @@ export function buildMofficeSyncPlan(params: {
     const existingPayload = getRawPayload(existingRow?.raw_payload);
     const attributes = getPayloadAttributes(existingPayload);
     if (size) attributes.size = [size];
-    const mpPrice = Number(item.ARTIKAL_MP_CENA ?? 0);
-    const vpPrice = Number(item.ARTIKAL_VP_CENA ?? 0);
-    const tax = Number(item.ARTIKAL_PDV_STOPA ?? 20);
-    const stock = Math.max(0, Math.floor(Number(item.ARTIKAL_ZALIHE ?? 0)));
+    // Feed rows occasionally carry unparsable prices ("", "-", localized decimals).
+    // Number() turns those into NaN, which serializes to null and trips the
+    // NOT NULL constraint on catalog_products.price_net — taking the whole
+    // 100-row batch down with it (observed 2026-08-04, 100 failures per run).
+    const mpPrice = safeNumber(item.ARTIKAL_MP_CENA, 0);
+    const vpPrice = safeNumber(item.ARTIKAL_VP_CENA, 0);
+    const tax = safeNumber(item.ARTIKAL_PDV_STOPA, 20);
+    const stock = Math.max(0, Math.floor(safeNumber(item.ARTIKAL_ZALIHE, 0)));
     const keepManualPrice = hasManualPriceOverride(existingPayload);
 
     const payload: Record<string, unknown> = {

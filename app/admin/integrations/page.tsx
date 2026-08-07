@@ -42,14 +42,101 @@ const formatDateTime = (value?: string | null) => {
   return new Date(value).toLocaleString("sr-RS");
 };
 
+/**
+ * Listed in the order they are meant to be run. `manual` marks the two phases
+ * an admin actually triggers by hand; the rest have their own cron in vercel.json.
+ */
 const ANANAS_PHASE_BUTTONS = [
-  { id: "catalog", label: "Katalog", hint: "Salje nove/izmenjene proizvode timu za ulistavanje (cron 1x mesecno, 1. u mesecu)." },
-  { id: "listings", label: "Ulistani", hint: "Povlaci merchantInventoryId, warehouse i status." },
-  { id: "prices", label: "Cene", hint: "Osnovne cene; vaze od sutra (00:00-03:00 odmah)." },
-  { id: "stock", label: "Lager", hint: "Kolicine; ne cesce od 1x na 15 minuta." },
-  { id: "discounts", label: "Akcije", hint: "SALE akcije uz validaciju trajanja, pauze i limita popusta." },
-  { id: "publish", label: "Publish", hint: "Zahteva ANANAS_AUTO_PUBLISH=true." },
+  {
+    id: "catalog",
+    label: "Katalog",
+    what: "prijavljuje nove proizvode Ananasu",
+    hint: "Salje proizvode oznacene za Ananas njihovom timu na ulistavanje. Oni ih rucno objavljuju, pa ne treba slati cesce.",
+    schedule: "automatski 1. u mesecu u 01:00",
+    manual: true,
+  },
+  {
+    id: "listings",
+    label: "Ulistani",
+    what: "povlaci sta su oni objavili",
+    hint: "Vraca nam podatke o proizvodima koje je Ananas u medjuvremenu objavio. Pusti par dana posle Kataloga.",
+    schedule: "automatski svaki dan u 01:30",
+    manual: true,
+  },
+  {
+    id: "prices",
+    label: "Cene",
+    what: "salje cene",
+    hint: "Osnovne cene. Nova cena vazi od sutradan (izmedju 00:00 i 03:00 vazi odmah).",
+    schedule: "automatski svaki dan u 22:30",
+    manual: false,
+  },
+  {
+    id: "stock",
+    label: "Lager",
+    what: "salje kolicine",
+    hint: "Stanje zaliha, primenjuje se odmah. Ananas ne dozvoljava cesce od 1x na 15 minuta.",
+    schedule: "automatski na 30 minuta",
+    manual: false,
+  },
+  {
+    id: "discounts",
+    label: "Akcije",
+    what: "salje snizenja",
+    hint: "SALE akcije uz proveru trajanja, obavezne pauze izmedju akcija i limita popusta.",
+    schedule: "automatski svaki dan u 02:00",
+    manual: false,
+  },
+  {
+    id: "publish",
+    label: "Objava",
+    what: "objavljuje / skida sa prodaje",
+    hint: "Radi samo ako je ukljucena opcija ANANAS_AUTO_PUBLISH. Inace Ananas objavljuje rucno.",
+    schedule: "iskljuceno po podrazumevanom podesavanju",
+    manual: false,
+  },
 ] as const;
+
+const OTHER_SYNC_BUTTONS = [
+  {
+    id: "moffice",
+    label: "mOffice lager",
+    what: "povlaci zalihe i cene iz mOffice-a u nas katalog",
+    endpoint: "/api/admin/integrations/moffice/sync",
+  },
+  {
+    id: "legacy-stock-inbound",
+    label: "Stari ZIP lager",
+    what: "rezervni uvoz lagera iz ZIP fajla",
+    endpoint: "/api/admin/integrations/stock/inbound/sync",
+  },
+  {
+    id: "stock-outbound",
+    label: "Izvoz lagera",
+    what: "pravi izlazni fajl sa nasim stanjem zaliha",
+    endpoint: "/api/admin/integrations/stock/outbound/export",
+  },
+  {
+    id: "full-cycle",
+    label: "Ceo ciklus",
+    what: "pusta sve integracije redom — lager pa Ananas",
+    endpoint: "/api/admin/integrations/sync",
+  },
+] as const;
+
+function StepHeading({ step, title, hint }: { step: number; title: string; hint: string }) {
+  return (
+    <div className="flex items-start gap-3">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-slate-900 text-sm font-bold text-white">
+        {step}
+      </span>
+      <div>
+        <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+        <p className="text-sm text-slate-600">{hint}</p>
+      </div>
+    </div>
+  );
+}
 
 /** Bumped when the guide changes materially, so the popup re-opens once for everyone. */
 const TUTORIAL_SEEN_KEY = "santos.admin.ananasTutorial.v1";
@@ -298,10 +385,10 @@ export default function IntegrationsAdminPage() {
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Integrations</p>
-            <h1 className="mt-1 text-2xl font-bold text-slate-900">Ananas + Lager Sync</h1>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Integracije</p>
+            <h1 className="mt-1 text-2xl font-bold text-slate-900">Ananas i lager</h1>
             <p className="mt-1 text-sm text-slate-600">
-              Manual run operations, env/mode controls and run history with retry flow.
+              Idi redom kroz korake 1, 2 i 3. Ako nesto nije jasno, otvori Uputstvo.
             </p>
           </div>
           <button
@@ -313,140 +400,109 @@ export default function IntegrationsAdminPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-        <div className="grid gap-3 md:grid-cols-4">
-          <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Environment
+      {/* KORAK 1 — where the run is sent and how much of it goes out. */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <StepHeading
+          step={1}
+          title="Podesi gde i koliko saljes"
+          hint="Ovo vazi za svako dugme ispod — proveri pre svakog slanja."
+        />
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-slate-900">
+              Okruzenje{" "}
+              <span className="font-normal text-slate-500">(gde se salje: probni ili pravi Ananas)</span>
+            </span>
             <select
               value={environment}
               onChange={(event) => setEnvironment(event.target.value as "stage" | "production")}
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700"
             >
-              <option value="stage">Stage</option>
-              <option value="production">Production</option>
+              <option value="stage">Stage — probni sistem, kupci ne vide</option>
+              <option value="production">Production — pravi Ananas, uzivo</option>
             </select>
+            <span className="text-xs text-slate-500">
+              {environment === "production"
+                ? "Uzivo. Sve sto posaljes vide kupci na Ananasu."
+                : "Bezbedno za testiranje. Sve prvo probaj ovde."}
+            </span>
           </label>
-          <label className="flex flex-col gap-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Mode
+
+          <label className="flex flex-col gap-1">
+            <span className="text-sm font-semibold text-slate-900">
+              Obim{" "}
+              <span className="font-normal text-slate-500">(salje se samo izmenjeno ili bas sve)</span>
+            </span>
             <select
               value={mode}
               onChange={(event) => setMode(event.target.value as "delta" | "full")}
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700"
             >
-              <option value="delta">Delta</option>
-              <option value="full">Full</option>
+              <option value="delta">Delta — samo ono sto se promenilo</option>
+              <option value="full">Full — kompletan katalog ispocetka</option>
             </select>
+            <span className="text-xs text-slate-500">
+              {mode === "full"
+                ? "Salje sve, ignorise sta je vec poslato. Koristi se posle reset-a."
+                : "Za svakodnevni rad. Preskace proizvode koji se nisu menjali."}
+            </span>
           </label>
-          <div className="md:col-span-2 flex items-end">
-            <label className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-              <input
-                type="checkbox"
-                checked={confirmProduction}
-                onChange={(event) => setConfirmProduction(event.target.checked)}
-                className="h-4 w-4 rounded border-slate-300"
-              />
-              Confirm production sync
-            </label>
-          </div>
-        </div>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            onClick={() => runSync("/api/admin/integrations/sync", "full-cycle")}
-            disabled={Boolean(runningAction)}
-            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 hover:border-slate-300"
-          >
-            {runningAction === "full-cycle" ? "Running..." : "Run Full Cycle"}
-          </button>
-          <button
-            onClick={() => runSync("/api/admin/integrations/moffice/sync", "moffice")}
-            disabled={Boolean(runningAction)}
-            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 hover:border-slate-300"
-          >
-            {runningAction === "moffice" ? "Running..." : "Run mOffice Lager"}
-          </button>
-          <button
-            onClick={() => runSync("/api/admin/integrations/stock/inbound/sync", "legacy-stock-inbound")}
-            disabled={Boolean(runningAction)}
-            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 hover:border-slate-300"
-          >
-            {runningAction === "legacy-stock-inbound" ? "Running..." : "Run Legacy ZIP Sync"}
-          </button>
-          <button
-            onClick={() => runSync("/api/admin/integrations/ananas/sync", "ananas")}
-            disabled={Boolean(runningAction)}
-            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 hover:border-slate-300"
-          >
-            {runningAction === "ananas" ? "Running..." : "Run Ananas"}
-          </button>
-          <button
-            onClick={() => runSync("/api/admin/integrations/stock/outbound/export", "stock-outbound")}
-            disabled={Boolean(runningAction)}
-            className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 hover:border-slate-300"
-          >
-            {runningAction === "stock-outbound" ? "Running..." : "Run Stock Outbound"}
-          </button>
-          <button
-            onClick={loadRuns}
-            disabled={loading}
-            className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700 hover:border-blue-300"
-          >
-            Refresh
-          </button>
         </div>
 
-        {/* Ananas caps how often each part of the flow may run (catalog 1x/day,
-            stock >=15 min apart), so each phase is also runnable on its own. */}
-        <div className="mt-4 border-t border-slate-100 pt-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Ananas — pojedinacne faze</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {ANANAS_PHASE_BUTTONS.map((phase) => (
-              <button
-                key={phase.id}
-                onClick={() => runSync("/api/admin/integrations/ananas/sync", `ananas-${phase.id}`, [phase.id])}
-                disabled={Boolean(runningAction)}
-                title={phase.hint}
-                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700 hover:border-slate-300"
-              >
-                {runningAction === `ananas-${phase.id}` ? "Running..." : phase.label}
-              </button>
-            ))}
-          </div>
-        </div>
+        <label
+          className={`mt-4 flex items-start gap-3 rounded-xl border p-3 ${
+            environment === "production"
+              ? "border-amber-300 bg-amber-50"
+              : "border-slate-200 bg-slate-50 opacity-60"
+          }`}
+        >
+          <input
+            type="checkbox"
+            checked={confirmProduction}
+            onChange={(event) => setConfirmProduction(event.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-slate-300"
+          />
+          <span className="text-sm">
+            <span className="font-semibold text-slate-900">
+              Potvrda za Production{" "}
+              <span className="font-normal text-slate-500">(sigurnosna brava, obavezna za slanje uzivo)</span>
+            </span>
+            <span className="mt-0.5 block text-xs text-slate-600">
+              {environment === "production"
+                ? "Bez ove kvacice server odbija svako slanje na pravi Ananas."
+                : "Nije potrebna dok si na Stage okruzenju."}
+            </span>
+          </span>
+        </label>
 
-        {/* Ananas wiped our products on their side (2026-08-07), so the local
-            listing bookkeeping has to be cleared before the first prod catalog. */}
-        <div className="mt-4 border-t border-slate-100 pt-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Reset posle brisanja kod Ananasa
+        {environment === "production" && !confirmProduction ? (
+          <p className="mt-3 rounded-xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+            Izabrano je Production, a potvrda nije cekirana — slanje ce biti odbijeno.
           </p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <button
-              onClick={resetAnanasState}
-              disabled={Boolean(runningAction)}
-              title="Brise listing ID-eve, delta hesove i akcije. Nas katalog se ne dira."
-              className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-rose-700 hover:border-rose-300 disabled:opacity-50"
-            >
-              {runningAction === "ananas-reset" ? "Running..." : "Reset Ananas state"}
-            </button>
-            <span className="text-xs text-slate-500">Posle reset-a: Mode Full, pa faza Katalog.</span>
-          </div>
-          {resetNotice ? <p className="mt-2 text-xs text-emerald-700">{resetNotice}</p> : null}
-        </div>
+        ) : null}
+      </section>
 
-        {/* Scope any phase above to specific mOffice SKUs — e.g. the Ananas-requested
-            pilot test ("posaljite par proizvoda preko Add products", SKU 133342/133856)
-            without touching the rest of the catalog. */}
-        <div className="mt-4 border-t border-slate-100 pt-3">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
-            Test SKU filter (opciono, zarezom odvojeni)
-          </p>
-          <div className="mt-2 flex flex-wrap items-center gap-2">
+      {/* KORAK 2 — pilot run on a handful of SKUs before the full catalog. */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <StepHeading
+          step={2}
+          title="Probaj na par proizvoda"
+          hint="Uvek uradi ovo pre nego sto posaljes ceo katalog."
+        />
+
+        <div className="mt-4 flex flex-col gap-2">
+          <span className="text-sm font-semibold text-slate-900">
+            Sifre proizvoda{" "}
+            <span className="font-normal text-slate-500">(mOffice SKU, vise njih odvoji zarezom)</span>
+          </span>
+          <div className="flex flex-wrap items-center gap-2">
             <input
               type="text"
               value={ananasSkuFilter}
               onChange={(event) => setAnanasSkuFilter(event.target.value)}
               placeholder="npr. 133342, 133856"
-              className="w-64 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700"
+              className="w-full max-w-xs rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700"
             />
             <button
               onClick={() =>
@@ -458,31 +514,166 @@ export default function IntegrationsAdminPage() {
                 )
               }
               disabled={Boolean(runningAction) || !ananasSkuFilter.trim()}
-              title="Salje samo navedene SKU-ove kroz fazu Katalog (Add products)."
-              className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700 hover:border-emerald-300 disabled:opacity-50"
+              title="Salje samo navedene SKU-ove kroz fazu Katalog."
+              className="rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:border-emerald-400 disabled:opacity-50"
             >
-              {runningAction === "ananas-catalog-filtered" ? "Running..." : "Posalji test SKU-ove (Katalog)"}
+              {runningAction === "ananas-catalog-filtered" ? "Salje se..." : "Posalji probno"}
             </button>
           </div>
+          <span className="text-xs text-slate-500">
+            Salje samo te proizvode kroz fazu Katalog. Rezultat proveri klikom na Details u tabeli ispod.
+          </span>
         </div>
-      </div>
+      </section>
+
+      {/* KORAK 3 — the phases, in the order they are meant to be run. Ananas caps
+          how often each may run (catalog is monthly, stock >=15 min apart), so
+          every phase stays individually runnable. */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <StepHeading
+          step={3}
+          title="Pusti faze — ovim redom"
+          hint="Faze 1 i 2 pokreces rucno. Faze 3, 4 i 5 idu same po rasporedu."
+        />
+
+        <ol className="mt-4 flex flex-col gap-3">
+          {ANANAS_PHASE_BUTTONS.map((phase, index) => (
+            <li
+              key={phase.id}
+              className={`flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between ${
+                phase.manual ? "border-slate-300 bg-white" : "border-slate-200 bg-slate-50"
+              }`}
+            >
+              <div className="flex items-start gap-3">
+                <span
+                  className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold ${
+                    phase.manual ? "bg-blue-100 text-blue-700" : "bg-slate-200 text-slate-600"
+                  }`}
+                >
+                  {index + 1}
+                </span>
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">
+                    {phase.label} <span className="font-normal text-slate-500">({phase.what})</span>
+                  </p>
+                  <p className="mt-0.5 text-xs text-slate-600">{phase.hint}</p>
+                  <p className="mt-1 text-xs font-medium text-slate-500">
+                    {phase.manual ? "Pokreces rucno" : "Automatski"} — {phase.schedule}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => runSync("/api/admin/integrations/ananas/sync", `ananas-${phase.id}`, [phase.id])}
+                disabled={Boolean(runningAction)}
+                title={phase.hint}
+                className={`shrink-0 rounded-full border px-4 py-2 text-sm font-semibold disabled:opacity-50 ${
+                  phase.manual
+                    ? "border-blue-300 bg-blue-50 text-blue-800 hover:border-blue-400"
+                    : "border-slate-300 bg-white text-slate-700 hover:border-slate-400"
+                }`}
+              >
+                {runningAction === `ananas-${phase.id}` ? "Salje se..." : "Pusti"}
+              </button>
+            </li>
+          ))}
+        </ol>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+          <button
+            onClick={() => runSync("/api/admin/integrations/ananas/sync", "ananas")}
+            disabled={Boolean(runningAction)}
+            className="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400 disabled:opacity-50"
+          >
+            {runningAction === "ananas" ? "Salje se..." : "Pusti sve faze odjednom"}
+          </button>
+          <span className="text-xs text-slate-500">
+            (pusta ceo Ananas ciklus redom — koristi kad ne zelis fazu po fazu)
+          </span>
+        </div>
+      </section>
+
+      {/* Destructive: only after Ananas confirms they deleted our products. */}
+      <section className="rounded-2xl border border-rose-200 bg-rose-50/50 p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-rose-600">Opasna zona</p>
+        <h2 className="mt-1 text-lg font-bold text-slate-900">
+          Reset Ananas stanja{" "}
+          <span className="text-sm font-normal text-slate-600">(samo kada Ananas obrise nase proizvode kod sebe)</span>
+        </h2>
+        <p className="mt-1 text-sm text-slate-700">
+          Brise nase pamcenje o njihovom ulistavanju — ID-eve, hesove i akcije. Nas katalog i podaci o
+          proizvodima se NE diraju. Posle reset-a: Obim = Full, pa faza Katalog.
+        </p>
+        <div className="mt-3">
+          <button
+            onClick={resetAnanasState}
+            disabled={Boolean(runningAction)}
+            className="rounded-full border border-rose-300 bg-white px-4 py-2 text-sm font-semibold text-rose-700 hover:border-rose-400 disabled:opacity-50"
+          >
+            {runningAction === "ananas-reset" ? "Radi se..." : "Resetuj Ananas stanje"}
+          </button>
+        </div>
+        {resetNotice ? <p className="mt-2 text-sm text-emerald-700">{resetNotice}</p> : null}
+      </section>
+
+      {/* Everything that is not Ananas — kept out of the stepped flow above. */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Ostale sinhronizacije</p>
+        <h2 className="mt-1 text-lg font-bold text-slate-900">Lager i izvoz (nije Ananas)</h2>
+        <div className="mt-3 flex flex-col gap-2">
+          {OTHER_SYNC_BUTTONS.map((entry) => (
+            <div
+              key={entry.id}
+              className="flex flex-col gap-2 rounded-xl border border-slate-200 p-3 sm:flex-row sm:items-center sm:justify-between"
+            >
+              <p className="text-sm text-slate-800">
+                <span className="font-semibold">{entry.label}</span>{" "}
+                <span className="text-slate-500">({entry.what})</span>
+              </p>
+              <button
+                onClick={() => runSync(entry.endpoint, entry.id)}
+                disabled={Boolean(runningAction)}
+                className="shrink-0 rounded-full border border-slate-300 px-4 py-1.5 text-sm font-semibold text-slate-700 hover:border-slate-400 disabled:opacity-50"
+              >
+                {runningAction === entry.id ? "Radi se..." : "Pusti"}
+              </button>
+            </div>
+          ))}
+        </div>
+      </section>
 
       {error ? <p className="text-sm text-rose-600">{error}</p> : null}
       {loading ? <p className="text-sm text-slate-500">Ucitavanje run istorije...</p> : null}
 
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm overflow-x-auto">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <h2 className="text-lg font-bold text-slate-900">Istorija sinhronizacija</h2>
+            <p className="text-sm text-slate-600">
+              Svako pustanje ostaje zapisano. Klikni Detalji za tacan spisak poslatog i odbijenog.
+            </p>
+          </div>
+          <button
+            onClick={loadRuns}
+            disabled={loading}
+            className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 hover:border-blue-300 disabled:opacity-50"
+          >
+            {loading ? "Ucitava..." : "Osvezi"}
+          </button>
+        </div>
         <table className="min-w-full text-sm text-slate-700">
           <thead>
             <tr className="border-b border-slate-100 text-left text-xs uppercase tracking-[0.14em] text-slate-500">
-              <th className="px-2 py-2">Run</th>
-              <th className="px-2 py-2">Domain</th>
+              <th className="px-2 py-2">Sifra</th>
+              <th className="px-2 py-2">Sta je pusteno</th>
               <th className="px-2 py-2">Status</th>
-              <th className="px-2 py-2">Env</th>
-              <th className="px-2 py-2">Mode</th>
-              <th className="px-2 py-2">Counters</th>
-              <th className="px-2 py-2">Started</th>
-              <th className="px-2 py-2">Duration</th>
-              <th className="px-2 py-2">Actions</th>
+              <th className="px-2 py-2">Okruzenje</th>
+              <th className="px-2 py-2">Obim</th>
+              <th className="px-2 py-2" title="Ukupno / Uspesno / Greske / Preskoceno">
+                U / S / G / P
+              </th>
+              <th className="px-2 py-2">Pocetak</th>
+              <th className="px-2 py-2">Trajanje</th>
+              <th className="px-2 py-2">Detalji</th>
             </tr>
           </thead>
           <tbody>
@@ -497,8 +688,10 @@ export default function IntegrationsAdminPage() {
                 </td>
                 <td className="px-2 py-2">{run.environment}</td>
                 <td className="px-2 py-2">{run.mode}</td>
-                <td className="px-2 py-2 text-xs">
-                  T:{run.counters.total} S:{run.counters.success} F:{run.counters.failed} K:{run.counters.skipped}
+                <td className="px-2 py-2 text-xs" title="Ukupno / Uspesno / Greske / Preskoceno">
+                  {run.counters.total} / <span className="text-emerald-700">{run.counters.success}</span> /{" "}
+                  <span className={run.counters.failed ? "font-semibold text-rose-700" : ""}>{run.counters.failed}</span> /{" "}
+                  {run.counters.skipped}
                 </td>
                 <td className="px-2 py-2 text-xs">{formatDateTime(run.startedAt)}</td>
                 <td className="px-2 py-2 text-xs">
@@ -506,7 +699,7 @@ export default function IntegrationsAdminPage() {
                 </td>
                 <td className="px-2 py-2">
                   <Link href={`/admin/integrations/${run.id}`} className="text-xs font-semibold text-blue-700 hover:text-blue-800">
-                    Details
+                    Detalji
                   </Link>
                 </td>
               </tr>
