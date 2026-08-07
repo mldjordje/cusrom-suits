@@ -139,7 +139,7 @@ function StepHeading({ step, title, hint }: { step: number; title: string; hint:
 }
 
 /** Bumped when the guide changes materially, so the popup re-opens once for everyone. */
-const TUTORIAL_SEEN_KEY = "santos.admin.ananasTutorial.v1";
+const TUTORIAL_SEEN_KEY = "santos.admin.ananasTutorial.v2";
 
 /** Environment/mode survive a reload; the production confirm never does. */
 const ENV_PREFS_KEY = "santos.admin.integrations.envPrefs.v1";
@@ -179,21 +179,23 @@ const TUTORIAL_SECTIONS: TutorialSection[] = [
     ],
   },
   {
-    title: "4. Environment i mode",
+    title: "4. Okruzenje i obim — najcesca greska",
     lines: [
-      "Stage = njihov test sistem, sve sme da se proba. Production = pravi Ananas, kupci to vide.",
-      "Za production moras da cekiras \"Confirm production sync\" — bez toga server odbija zahtev.",
-      "Delta = salje samo ono sto se promenilo od poslednjeg puta. Full = salje sve, ignorise pamcenje.",
-      "Prvi katalog posle reset-a pusti u Full modu, posle toga ostavi Delta.",
+      "Stage = njihov test sistem, kupci ne vide nista. Production = pravi Ananas, uzivo.",
+      "PRE svakog klika pogledaj traku na vrhu strane. Ona stalno pise kuda ide slanje. Crvena = uzivo.",
+      "Za Production moras da cekiras \"Potvrda za Production\". Ta kvacica se namerno NE pamti — cekiras je svaki put.",
+      "Delta = salje samo ono sto se promenilo. Full = salje sve, ignorise sta je vec poslato.",
+      "Za redovan rad koristi Delta. Full samo posle reset-a, kada se salje kompletan katalog ispocetka.",
+      "Ne pusti Katalog u Full modu ako si nesto vec poslao — isti proizvod bi otisao dvaput i Ananas bi ga mogao objaviti duplo.",
     ],
   },
   {
     title: "5. Reset kada Ananas obrise nase proizvode",
     lines: [
-      "Ananas je 07.08.2026. obrisao nase proizvode iz svoje baze i trazi nov katalog.",
-      "Mi lokalno i dalje pamtimo njihove ID-eve i hesove — zbog toga bi Katalog preskocio skoro sve, a Cene/Lager bi gadjali nepostojece proizvode.",
-      "Dugme \"Reset Ananas state\" brise samo to pamcenje (listing ID-evi, hesevi, akcije). Nas katalog i podaci o proizvodima se NE diraju.",
-      "Redosled: Reset > Mode: Full > Environment: Production + confirm > faza Katalog. Posle par dana pusti fazu Ulistani.",
+      "Radi ovo SAMO ako Ananas javi da je obrisao nase proizvode kod sebe.",
+      "Dugme \"Resetuj Ananas stanje\" brise nase pamcenje njihovog ulistavanja (ID-evi, hesevi, akcije). Nas katalog i podaci o proizvodima se NE diraju.",
+      "Posle reset-a proizvodi se ponovo salju od nule: Obim = Full, Okruzenje = Production + potvrda, pa faza Katalog.",
+      "Bez reset-a nikada ne pusti Full — vec poslati proizvodi bi otisli drugi put.",
     ],
   },
   {

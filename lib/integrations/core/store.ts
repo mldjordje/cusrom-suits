@@ -4,6 +4,7 @@ import {
   type AddRunItemInput,
   type CompleteRunInput,
   type StartRunInput,
+  type SyncEnvironment,
   type SyncRun,
   type SyncRunItem,
 } from "@/lib/integrations/core/types";
@@ -53,6 +54,8 @@ type OutboundArtifact = {
 
 export type AnanasProductStateRecord = {
   legacyProductId: number;
+  /** Listing ids are issued per environment — a stage id is meaningless on production. */
+  environment: SyncEnvironment;
   merchantInventoryId: number | null;
   externalId: string | null;
   ananasStatus: string | null;
@@ -486,6 +489,7 @@ const normalizeAnanasDate = (value: string) => {
 
 const mapAnanasProductStateRow = (row: Record<string, any>): AnanasProductStateRecord => ({
   legacyProductId: Number(row.legacy_product_id),
+  environment: row.environment === "stage" ? "stage" : "production",
   merchantInventoryId: row.merchant_inventory_id == null ? null : Number(row.merchant_inventory_id),
   externalId: row.external_id == null ? null : String(row.external_id),
   ananasStatus: row.ananas_status == null ? null : String(row.ananas_status),
@@ -500,6 +504,8 @@ const mapAnanasProductStateRow = (row: Record<string, any>): AnanasProductStateR
 
 export async function upsertAnanasProductState(input: {
   legacyProductId: number;
+  /** Defaults to production only so older call sites keep their meaning. */
+  environment?: SyncEnvironment;
   merchantInventoryId?: number | null;
   externalId?: string | number | null;
   ananasStatus?: string | null;
@@ -513,6 +519,7 @@ export async function upsertAnanasProductState(input: {
   const now = nowIso();
   const row: AnanasProductStateRecord = {
     legacyProductId: Number(input.legacyProductId),
+    environment: input.environment === "stage" ? "stage" : "production",
     merchantInventoryId:
       input.merchantInventoryId == null ? null : Number(input.merchantInventoryId || 0) || null,
     externalId:
@@ -534,6 +541,7 @@ export async function upsertAnanasProductState(input: {
     const { error } = await supabase.from("integration_ananas_product_state").upsert(
       {
         legacy_product_id: row.legacyProductId,
+        environment: row.environment,
         merchant_inventory_id: row.merchantInventoryId,
         external_id: row.externalId,
         ananas_status: row.ananasStatus,
@@ -545,20 +553,26 @@ export async function upsertAnanasProductState(input: {
         sync_error: row.syncError,
         updated_at: row.updatedAt,
       } as never,
-      { onConflict: "legacy_product_id" },
+      { onConflict: "legacy_product_id,environment" },
     );
     if (!error) return;
   }
 
   const list = await readJsonFile<AnanasProductStateRecord[]>(ANANAS_PRODUCT_STATE_FILE, []);
-  const idx = list.findIndex((entry) => entry.legacyProductId === row.legacyProductId);
+  const idx = list.findIndex(
+    (entry) =>
+      entry.legacyProductId === row.legacyProductId &&
+      (entry.environment || "production") === row.environment,
+  );
   if (idx >= 0) list[idx] = { ...list[idx], ...row };
   else list.push(row);
   await writeJsonFile(ANANAS_PRODUCT_STATE_FILE, list);
 }
 
 /** Full listing map (legacyId → merchantInventoryId/warehouse/status) for the sync phases. */
-export async function listAnanasProductStates(): Promise<AnanasProductStateRecord[]> {
+export async function listAnanasProductStates(
+  environment: SyncEnvironment = "production",
+): Promise<AnanasProductStateRecord[]> {
   const supabase = getServiceSupabase();
   if (supabase) {
     const rows: AnanasProductStateRecord[] = [];
@@ -567,6 +581,7 @@ export async function listAnanasProductStates(): Promise<AnanasProductStateRecor
       const { data, error } = await supabase
         .from("integration_ananas_product_state")
         .select("*")
+        .eq("environment", environment)
         .range(page * pageSize, page * pageSize + pageSize - 1);
       if (error) break;
       const batch = (data || []) as Array<Record<string, any>>;
@@ -575,7 +590,8 @@ export async function listAnanasProductStates(): Promise<AnanasProductStateRecor
     }
     if (rows.length) return rows;
   }
-  return readJsonFile<AnanasProductStateRecord[]>(ANANAS_PRODUCT_STATE_FILE, []);
+  const list = await readJsonFile<AnanasProductStateRecord[]>(ANANAS_PRODUCT_STATE_FILE, []);
+  return list.filter((entry) => (entry.environment || "production") === environment);
 }
 
 /** Discount campaigns we know about; used for cooldown and price-freeze checks. */

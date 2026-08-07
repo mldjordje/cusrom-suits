@@ -112,6 +112,11 @@ const autoPublishEnabled = () =>
 const toFixed = (value: number, digits = 2) =>
   Number.parseFloat(Number(value || 0).toFixed(digits));
 
+/** Listing ids, hashes and statuses are per-environment: a stage run must never
+ *  make a production run believe a product is already listed or up to date. */
+const ananasDeltaScope = (environment: IntegrationContext["environment"]) =>
+  environment === "production" ? "ananas" : "ananas_stage";
+
 const emptyCounters = (): SyncCounters => ({ total: 0, success: 0, failed: 0, skipped: 0 });
 
 const mergeCounters = (base: SyncCounters, next: SyncCounters): SyncCounters => ({
@@ -157,7 +162,7 @@ async function phaseCatalog({ context, items, stateByLegacyId }: PhaseInput): Pr
     const state = stateByLegacyId.get(product.legacyId);
     const payloadHash = createPayloadHash(product.payload);
     const previousHash =
-      context.mode === "delta" ? await getDeltaHash("ananas", "product", String(product.legacyId)) : null;
+      context.mode === "delta" ? await getDeltaHash(ananasDeltaScope(context.environment), "product", String(product.legacyId)) : null;
 
     // Nothing for the listing team to do: either it is already listed, or it is
     // sitting in their manual queue from an earlier run. Resubmitting a queued
@@ -197,8 +202,9 @@ async function phaseCatalog({ context, items, stateByLegacyId }: PhaseInput): Pr
       );
       for (const entry of batch) {
         const hash = createPayloadHash(entry.payload);
-        await setDeltaState("ananas", "product", String(entry.legacyId), hash, context.runId);
+        await setDeltaState(ananasDeltaScope(context.environment), "product", String(entry.legacyId), hash, context.runId);
         await upsertAnanasProductState({
+          environment: context.environment,
           legacyProductId: entry.legacyId,
           externalId: String(entry.legacyId),
           payloadHash: hash,
@@ -222,6 +228,7 @@ async function phaseCatalog({ context, items, stateByLegacyId }: PhaseInput): Pr
       const message = error?.message || "Catalog import failed.";
       for (const entry of batch) {
         await upsertAnanasProductState({
+          environment: context.environment,
           legacyProductId: entry.legacyId,
           externalId: String(entry.legacyId),
           ananasStatus: "IMPORT_ERROR",
@@ -351,6 +358,7 @@ async function phaseListings({ context, stateByLegacyId }: PhaseInput): Promise<
       if (knownIds.has(merchantInventoryId)) hitKnown = true;
 
       await upsertAnanasProductState({
+        environment: context.environment,
         legacyProductId,
         merchantInventoryId,
         externalId: String(row?.externalId ?? legacyProductId),
@@ -420,7 +428,7 @@ async function phasePrices({ context, items, stateByLegacyId, now }: PhaseInput)
 
     const hash = createPayloadHash({ merchantInventoryId, basePrice });
     const previousHash =
-      context.mode === "delta" ? await getDeltaHash("ananas", "price", String(item.legacyId)) : null;
+      context.mode === "delta" ? await getDeltaHash(ananasDeltaScope(context.environment), "price", String(item.legacyId)) : null;
     if (previousHash === hash && state?.remoteBasePrice === basePrice) {
       counters.skipped += 1;
       continue;
@@ -477,7 +485,7 @@ async function phaseStock({ context, items, stateByLegacyId, now, skuScoped }: P
   const counters = emptyCounters();
 
   // Their rule: at most one stock push every 15 minutes.
-  const lastPush = await getDeltaHash("ananas", "stock_push", context.environment);
+  const lastPush = await getDeltaHash(ananasDeltaScope(context.environment), "stock_push", context.environment);
   if (lastPush) {
     const elapsed = now.getTime() - new Date(lastPush).getTime();
     if (Number.isFinite(elapsed) && elapsed >= 0 && elapsed < ANANAS_LIMITS.stockMinIntervalMs) {
@@ -515,7 +523,7 @@ async function phaseStock({ context, items, stateByLegacyId, now, skuScoped }: P
     const stockLevel = item.hiddenFromShop ? 0 : Math.max(0, Math.floor(item.stockWarehouse1 || 0));
     const hash = createPayloadHash({ merchantInventoryId, stockLevel });
     const previousHash =
-      context.mode === "delta" ? await getDeltaHash("ananas", "stock", String(item.legacyId)) : null;
+      context.mode === "delta" ? await getDeltaHash(ananasDeltaScope(context.environment), "stock", String(item.legacyId)) : null;
     if (previousHash === hash && state?.remoteStockLevel === stockLevel) {
       counters.skipped += 1;
       continue;
@@ -544,7 +552,7 @@ async function phaseStock({ context, items, stateByLegacyId, now, skuScoped }: P
 
       const hash = createPayloadHash({ merchantInventoryId, stockLevel: 0 });
       const previousHash =
-        context.mode === "delta" ? await getDeltaHash("ananas", "stock", String(legacyProductId)) : null;
+        context.mode === "delta" ? await getDeltaHash(ananasDeltaScope(context.environment), "stock", String(legacyProductId)) : null;
       if (previousHash === hash) continue;
 
       counters.total += 1;
@@ -565,7 +573,7 @@ async function phaseStock({ context, items, stateByLegacyId, now, skuScoped }: P
   });
 
   if (rows.length) {
-    await setDeltaState("ananas", "stock_push", context.environment, now.toISOString(), context.runId);
+    await setDeltaState(ananasDeltaScope(context.environment), "stock_push", context.environment, now.toISOString(), context.runId);
   }
 
   return {
@@ -632,8 +640,9 @@ async function pushProductUpdates(input: {
         applied += 1;
         counters.success += 1;
         if (legacyId) {
-          await setDeltaState("ananas", deltaScope, String(legacyId), hashOf(row), context.runId);
+          await setDeltaState(ananasDeltaScope(context.environment), deltaScope, String(legacyId), hashOf(row), context.runId);
           await upsertAnanasProductState({
+            environment: context.environment,
             legacyProductId: legacyId,
             merchantInventoryId: row.id,
             ...(entityType === "price" ? { remoteBasePrice: row.basePrice ?? null } : {}),
@@ -1101,7 +1110,7 @@ export async function runAnanasSync({ context, phases, skus }: RunAnanasOptions)
   const catalog = await loadFullCatalogForAnanas({ ananasExportOnly: !skuFilter });
   const items = skuFilter ? catalog.items.filter((item) => skuFilter.has(item.sku)) : catalog.items;
 
-  const states = await listAnanasProductStates();
+  const states = await listAnanasProductStates(context.environment);
   const stateByLegacyId = new Map(states.map((state) => [state.legacyProductId, state]));
   const input: PhaseInput = { context, items, stateByLegacyId, now, skuScoped: Boolean(skuFilter) };
 
@@ -1131,7 +1140,7 @@ export async function runAnanasSync({ context, phases, skus }: RunAnanasOptions)
       counters = mergeCounters(counters, result.counters);
       Object.assign(meta, result.meta);
       if (phase === "listings") {
-        const refreshed = await listAnanasProductStates();
+        const refreshed = await listAnanasProductStates(context.environment);
         stateByLegacyId.clear();
         for (const state of refreshed) stateByLegacyId.set(state.legacyProductId, state);
         meta.listedCount = refreshed.filter((state) => state.merchantInventoryId).length;
