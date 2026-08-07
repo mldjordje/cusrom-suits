@@ -204,11 +204,28 @@ export function mapCatalogItemToAnanas(
  */
 const resolveVariantGroupKey = (item: CatalogProductView): string | null => {
   const modelKey = getCatalogProductModelKey(item);
-  if (modelKey && !modelKey.startsWith("legacy:")) return `model:${modelKey}`;
+  if (modelKey && !modelKey.startsWith("legacy:") && !isGenericModelKey(modelKey)) {
+    return `model:${modelKey}`;
+  }
   const manufCode = item.manufCode?.trim();
   if (manufCode) return `manuf:${manufCode}`;
   const sku = String(item.sku || "").trim().toLowerCase();
   return sku ? `sku:${sku}` : null;
+};
+
+/**
+ * Products whose name is a bare code ("24/33/13", "36/195/17") get no usable
+ * display name, so the model key degrades to the placeholder "collection:
+ * kolekcija" — which lumps unrelated articles into one key. Harmless on the
+ * storefront (they still render as separate cards), but on Ananas it would
+ * publish nine different products as colour variants of one listing. Fall back
+ * to manuf_code/SKU for those.
+ */
+const GENERIC_MODEL_NAMES = new Set(["kolekcija", "collection", "ostalo", "proizvod"]);
+
+const isGenericModelKey = (modelKey: string): boolean => {
+  const namePart = modelKey.split(":").slice(1).join(":").trim();
+  return !namePart || GENERIC_MODEL_NAMES.has(namePart);
 };
 
 /**
