@@ -159,8 +159,13 @@ async function phaseCatalog({ context, items, stateByLegacyId }: PhaseInput): Pr
     const previousHash =
       context.mode === "delta" ? await getDeltaHash("ananas", "product", String(product.legacyId)) : null;
 
-    // Already listed and unchanged → nothing for the listing team to do.
-    if (context.mode === "delta" && previousHash === payloadHash && state?.merchantInventoryId) {
+    // Nothing for the listing team to do: either it is already listed, or it is
+    // sitting in their manual queue from an earlier run. Resubmitting a queued
+    // product is not a no-op on their side — listing is manual, so the same
+    // article would be worked twice and can end up published twice.
+    const alreadyHandled =
+      Boolean(state?.merchantInventoryId) || state?.ananasStatus === "SUBMITTED_FOR_LISTING";
+    if (context.mode === "delta" && previousHash === payloadHash && alreadyHandled) {
       counters.skipped += 1;
       continue;
     }
