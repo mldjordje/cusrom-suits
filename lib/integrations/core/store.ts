@@ -690,6 +690,62 @@ export async function deactivateAnanasDiscountStateByDiscountId(discountId: stri
   await writeJsonFile(ANANAS_DISCOUNT_STATE_FILE, list);
 }
 
+/**
+ * Wipes everything we remember about the remote Ananas catalog: listing ids,
+ * payload hashes and discount campaigns.
+ *
+ * Needed when Ananas deletes our products on their side (they did this on
+ * 2026-08-07 before the production re-listing). Without the reset the catalog
+ * phase would skip products whose hash still matches, and the price/stock
+ * phases would push to merchantInventoryIds that no longer exist.
+ *
+ * Our own catalog is untouched — only integration bookkeeping is cleared.
+ */
+export async function resetAnanasIntegrationState(): Promise<{
+  productStates: number;
+  deltaStates: number;
+  discountStates: number;
+}> {
+  const counts = { productStates: 0, deltaStates: 0, discountStates: 0 };
+  const supabase = getServiceSupabase();
+
+  if (supabase) {
+    const { count: productCount } = await supabase
+      .from("integration_ananas_product_state")
+      .delete({ count: "exact" })
+      .gte("legacy_product_id", 0);
+    counts.productStates = Number(productCount || 0);
+
+    const { count: discountCount } = await supabase
+      .from("integration_ananas_discount_state")
+      .delete({ count: "exact" })
+      .not("id", "is", null);
+    counts.discountStates = Number(discountCount || 0);
+
+    const { count: deltaCount } = await supabase
+      .from("integration_stock_delta_state")
+      .delete({ count: "exact" })
+      .eq("scope", "ananas");
+    counts.deltaStates = Number(deltaCount || 0);
+    return counts;
+  }
+
+  const products = await readJsonFile<AnanasProductStateRecord[]>(ANANAS_PRODUCT_STATE_FILE, []);
+  counts.productStates = products.length;
+  await writeJsonFile(ANANAS_PRODUCT_STATE_FILE, []);
+
+  const discounts = await readJsonFile<AnanasDiscountStateRecord[]>(ANANAS_DISCOUNT_STATE_FILE, []);
+  counts.discountStates = discounts.length;
+  await writeJsonFile(ANANAS_DISCOUNT_STATE_FILE, []);
+
+  const deltas = await readJsonFile<DeltaState[]>(DELTA_STATE_FILE, []);
+  const kept = deltas.filter((entry) => entry.scope !== "ananas");
+  counts.deltaStates = deltas.length - kept.length;
+  await writeJsonFile(DELTA_STATE_FILE, kept);
+
+  return counts;
+}
+
 export async function getLatestOutboundArtifact() {
   const list = await readJsonFile<OutboundArtifact[]>(OUTBOUND_FILE, []);
   return list[0] || null;

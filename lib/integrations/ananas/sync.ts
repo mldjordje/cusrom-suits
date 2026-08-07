@@ -1,7 +1,8 @@
 /**
  * Ananas sync, split into the phases the platform actually expects.
  *
- *   catalog   → POST import      : new/changed products handed to the listing team (1×/day)
+ *   catalog   → POST import      : new/changed products handed to the listing team (1× a month;
+ *                                  listing is manual on their side, see vercel.json cron)
  *   listings  → GET products     : pull merchantInventoryId + warehouse + status
  *   prices    → PUT product/bulk : base price, "today for tomorrow", frozen during campaigns
  *   stock     → PUT product/bulk : quantities, immediate, min 15 min apart, merchant warehouse only
