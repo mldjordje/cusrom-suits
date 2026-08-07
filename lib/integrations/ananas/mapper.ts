@@ -12,7 +12,7 @@
  *     the catalog: SKU "133342" has 7 rows, one per size). We suffix with the
  *     legacy row id to make it unique while keeping the style code readable.
  */
-import type { CatalogProductView } from "@/lib/catalog/store";
+import { getCatalogProductModelKey, type CatalogProductView } from "@/lib/catalog/store";
 import { isValidEan } from "@/lib/integrations/ananas/rules";
 import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
 import type { AnanasImportProduct } from "@/lib/legacy/types";
@@ -189,17 +189,33 @@ export function mapCatalogItemToAnanas(
       legacyId: item.legacyId,
       sku: ananasSku,
       payload,
-      variantGroupKey: item.manufCode?.trim() || null,
+      variantGroupKey: resolveVariantGroupKey(item),
     },
   };
 }
 
 /**
+ * Which variants belong to one product page.
+ *
+ * manuf_code alone is not enough: only ~45% of active rows carry one, so the
+ * rest would each become a standalone listing. The storefront already solves
+ * this — its model key is what collapses sizes (and colour codes) into a single
+ * card — so reuse it and let Ananas group exactly the way our own shop does.
+ */
+const resolveVariantGroupKey = (item: CatalogProductView): string | null => {
+  const modelKey = getCatalogProductModelKey(item);
+  if (modelKey && !modelKey.startsWith("legacy:")) return `model:${modelKey}`;
+  const manufCode = item.manufCode?.trim();
+  if (manufCode) return `manuf:${manufCode}`;
+  const sku = String(item.sku || "").trim().toLowerCase();
+  return sku ? `sku:${sku}` : null;
+};
+
+/**
  * Ananas groups size/color variants of one style under a single parentEan:
  * exactly one variant (the parent) has an empty parentEan, every sibling
- * carries the parent's EAN. mOffice already gives us that grouping via
- * manuf_code (one row per variant, shared code per style) — we just need to
- * pick a stable parent and wire the rest to it.
+ * carries the parent's EAN. We just pick a stable parent per group and wire the
+ * rest to it.
  */
 function resolveParentEans(products: MappedProduct[]): void {
   const byGroup = new Map<string, MappedProduct[]>();

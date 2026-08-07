@@ -296,14 +296,18 @@ describe("catalog mapper", () => {
     ).toBe(true);
   });
 
-  it("groups size variants under one parentEan via manuf_code, per Ananas' worked example", () => {
+  it("groups size variants under one parentEan the same way the storefront collapses cards", () => {
     // Real mOffice sku ("106338") is shared by every size — legacyId is what's
     // actually unique, and the group's lowest legacyId becomes the parent.
     const group = [
       catalogItem({ legacyId: 3, sku: "106338", ean: "6985698754785", manufCode: "106338" }), // XS
       catalogItem({ legacyId: 1, sku: "106338", ean: "1254698758987", manufCode: "106338" }), // L (parent)
       catalogItem({ legacyId: 2, sku: "106338", ean: "2564785987458", manufCode: "106338" }), // S
-      catalogItem({ legacyId: 4, sku: "999999", ean: "9788644105886", manufCode: null }),
+      catalogItem({ legacyId: 4, sku: "999999", ean: "9788644105886", manufCode: null, name: "M.KAIS CRNI" }),
+      // No manuf_code at all (~55% of the catalog), but the same model name as
+      // legacyId 5 — the storefront puts these on one card, so must Ananas.
+      catalogItem({ legacyId: 5, sku: "555111", ean: "3216549871234", manufCode: null, name: "M.KOSULJA BELA" }),
+      catalogItem({ legacyId: 6, sku: "555222", ean: "3216549875678", manufCode: null, name: "M.KOSULJA BELA" }),
     ];
     // Ananas' own worked-example codes aren't real GTINs either; exercise the
     // now-default-on internal-code path the same way sync.ts does.
@@ -315,8 +319,11 @@ describe("catalog mapper", () => {
     expect(byLegacyId.get(1)?.sku).toBe("106338_1");
     expect(byLegacyId.get(2)?.parentEan).toBe("1254698758987");
     expect(byLegacyId.get(3)?.parentEan).toBe("1254698758987");
-    // No manuf_code / lone variant: never grouped.
+    // Different model, on its own: never grouped.
     expect(byLegacyId.get(4)?.parentEan).toBe("");
+    // Grouped on the model name alone, with no manuf_code on either row.
+    expect(byLegacyId.get(5)?.parentEan).toBe("");
+    expect(byLegacyId.get(6)?.parentEan).toBe("3216549871234");
   });
 
   it("picks shipping weight from the product group", () => {
