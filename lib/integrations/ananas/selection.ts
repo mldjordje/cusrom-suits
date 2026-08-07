@@ -46,6 +46,8 @@ export type AnanasSelectionPreview = {
   toFlag: number;
   toUnflag: number;
   sampleSkus: string[];
+  /** Sizes that are listed on the card but currently sold out. */
+  variantsWithoutStock: number;
 };
 
 export type AnanasSelectionResult = AnanasSelectionPreview & {
@@ -65,14 +67,18 @@ export async function syncAnanasSelectionFromStorefront(options: {
   const collapsed = await loadStorefrontPages(true);
   const allVariants = await loadStorefrontPages(false);
 
-  // A model is identified by its SKU; sizes share it and each becomes its own
-  // Ananas listing.
-  const visibleSkus = new Set(
-    collapsed.map((item) => String(item.sku || "").trim().toLowerCase()).filter(Boolean),
-  );
-  const shouldFlag = allVariants.filter((item) =>
-    visibleSkus.has(String(item.sku || "").trim().toLowerCase()),
-  );
+  // Cards collapse by MODEL, not by SKU — "C8/51" and "C8/53" share one card —
+  // so the SKU of the representative would miss its siblings. The collapse
+  // itself records every variant it merged, which is the exact set Ananas needs
+  // (they list per variant).
+  const visibleVariantIds = new Set<number>();
+  for (const item of collapsed) {
+    const merged = item.rawPayload?.collapsedVariantIds as number[] | undefined;
+    if (Array.isArray(merged) && merged.length) merged.forEach((id) => visibleVariantIds.add(Number(id)));
+    else visibleVariantIds.add(item.legacyId);
+  }
+
+  const shouldFlag = allVariants.filter((item) => visibleVariantIds.has(item.legacyId));
 
   const shouldFlagIds = new Set(shouldFlag.map((item) => item.legacyId));
   const toFlag = shouldFlag.filter((item) => !item.ananasExport);
@@ -87,6 +93,7 @@ export async function syncAnanasSelectionFromStorefront(options: {
     toFlag: toFlag.length,
     toUnflag: staleFlagged.length,
     sampleSkus: Array.from(new Set(collapsed.slice(0, 10).map((item) => item.sku))).filter(Boolean),
+    variantsWithoutStock: shouldFlag.filter((item) => Number(item.stockTotal || 0) <= 0).length,
   };
 
   if (!options.apply) {
