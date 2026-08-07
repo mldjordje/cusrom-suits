@@ -27,6 +27,12 @@ const navSections: NavSection[] = [
   {
     items: [
       { href: "/admin", label: "Pregled", icon: "OV" },
+      {
+        href: "/admin/analytics",
+        label: "Analitika",
+        icon: "AN",
+        permission: "dashboard.view",
+      },
     ],
   },
   {

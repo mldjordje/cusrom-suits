@@ -86,7 +86,7 @@ const sections = [
       "Pravne stranice koje moraju postojati i ostati azurne su: `Polisa privatnosti`, `Uslovi kupovine`, `Reklamacije`, `Isporuka`, `Uslovi koriscenja kolacica` i `Nacin placanja`.",
       "Ako menjas logoe, slike bannera ili dokumenta, proveri javni sajt odmah posle cuvanja da bi bio siguran da se novi asset stvarno povukao na produkciji.",
       "Ako menjas kontakt podatke firme, prodajna mesta ili copy u footeru, proveri i javni sajt posle cuvanja jer su to odmah vidljive promene.",
-      "Na admin dashboardu postoji i `Vercel analytics overview` kao brzi pregled kljucnih signala i link ka punom analytics dashboardu.",
+      "Posebna `/admin/analytics` strana spaja Vercel Web Analytics sa poslovnim podacima: posete, top stranice, izvore, drzave, uredjaje, kampanje, custom evente, porudzbine, prihod i konverziju. Za live Vercel podatke postavi server-only `VERCEL_ANALYTICS_TOKEN`.",
     ],
   },
   {
@@ -136,6 +136,7 @@ const sections = [
 
 const quickLinks = [
   { href: "/admin/webshop", label: "Web Shop Hub" },
+  { href: "/admin/analytics", label: "Analitika" },
   { href: "/admin/webshop?tab=products", label: "Proizvodi i lager" },
   { href: "/admin/webshop?tab=akcije", label: "Akcije i snizenja" },
   { href: "/admin/landing", label: "Pocetna i sekcije" },

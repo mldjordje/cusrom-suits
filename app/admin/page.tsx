@@ -8,6 +8,7 @@ import { listNewsletterSubscribers } from "@/lib/newsletter/store";
 import { listRecentOrders } from "@/lib/orders/store";
 
 const cards = [
+  { href: "/admin/analytics", title: "Analitika", desc: "Posete, izvori, publika, kampanje i prodajne konverzije.", tag: "INSIGHTS" },
   { href: "/admin/webshop", title: "Web Shop Hub", desc: "Proizvodi, lager i centralni workflow.", tag: "CORE" },
   { href: "/admin/landing", title: "Pocetna i sekcije", desc: "Sekcije landinga i raspored proizvoda na home.", tag: "CONTENT" },
   { href: "/admin/webshop?tab=akcije", title: "Akcije i snizenja", desc: "Rucne akcije i automatska promo pravila.", tag: "SALES" },
@@ -112,12 +113,10 @@ export default async function AdminHome() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Link
-                href={analytics.dashboardUrl}
-                target="_blank"
-                rel="noreferrer"
+                href="/admin/analytics"
                 className="rounded-full border border-slate-300 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] text-slate-700"
               >
-                Otvori Vercel analytics
+                Detaljna analitika
               </Link>
               <Link
                 href={analytics.productionUrl}

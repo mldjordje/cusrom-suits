@@ -1,5 +1,6 @@
 import { Suspense, type ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import AnalyticsScripts from "@/app/components/analytics/AnalyticsScripts";
 import StorefrontAuthProvider from "@/app/components/storefront/StorefrontAuthProvider";
 import StorefrontCartProvider from "@/app/components/storefront/cart/StorefrontCartProvider";
@@ -40,6 +41,7 @@ export default async function StorefrontLayout({ children }: { children: ReactNo
               <AnalyticsScripts />
             </Suspense>
             <Analytics />
+            <SpeedInsights />
           </StorefrontCartProvider>
         </StorefrontAuthProvider>
       </div>

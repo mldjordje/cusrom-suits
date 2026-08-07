@@ -2,7 +2,8 @@ import { SITE_URL } from "@/lib/seo";
 
 type AnalyticsEventValue = string | number | boolean | null | undefined;
 
-const DEFAULT_DASHBOARD_URL = "https://vercel.com/dashboard";
+const DEFAULT_DASHBOARD_URL =
+  "https://vercel.com/djordjes-projects-7892938d/custom-suits/analytics";
 
 export const getVercelAnalyticsDashboardUrl = () =>
   process.env.VERCEL_ANALYTICS_DASHBOARD_URL?.trim() ||

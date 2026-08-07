@@ -41,6 +41,7 @@
         "@supabase/ssr": "^0.6.1",
         "@supabase/supabase-js": "^2.99.1",
         "@vercel/analytics": "^2.0.1",
+        "@vercel/speed-insights": "^2.0.0",
         "adm-zip": "^0.5.16",
         "basic-ftp": "^6.0.1",
         "framer-motion": "^12.35.2",
@@ -50,6 +51,7 @@
         "react": "^19.2.4",
         "react-dom": "^19.2.4",
         "resend": "^6.12.4",
+        "server-only": "^0.0.1",
         "sharp": "^0.33.5"
     },
     "devDependencies": {
