@@ -141,6 +141,9 @@ function StepHeading({ step, title, hint }: { step: number; title: string; hint:
 /** Bumped when the guide changes materially, so the popup re-opens once for everyone. */
 const TUTORIAL_SEEN_KEY = "santos.admin.ananasTutorial.v1";
 
+/** Environment/mode survive a reload; the production confirm never does. */
+const ENV_PREFS_KEY = "santos.admin.integrations.envPrefs.v1";
+
 type TutorialSection = { title: string; lines: string[] };
 
 const TUTORIAL_SECTIONS: TutorialSection[] = [
@@ -290,6 +293,31 @@ export default function IntegrationsAdminPage() {
     }
   }, []);
 
+  // Environment and mode used to reset to Stage/Delta on every reload, which
+  // silently sent a production run to the test system. The production confirm is
+  // deliberately NOT restored — it stays a per-session decision.
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(ENV_PREFS_KEY);
+      if (!saved) return;
+      const parsed = JSON.parse(saved) as { environment?: string; mode?: string };
+      if (parsed.environment === "production" || parsed.environment === "stage") {
+        setEnvironment(parsed.environment);
+      }
+      if (parsed.mode === "delta" || parsed.mode === "full") setMode(parsed.mode);
+    } catch {
+      // ignore unreadable prefs
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(ENV_PREFS_KEY, JSON.stringify({ environment, mode }));
+    } catch {
+      // ignore
+    }
+  }, [environment, mode]);
+
   const closeTutorial = () => {
     setShowTutorial(false);
     try {
@@ -393,6 +421,14 @@ export default function IntegrationsAdminPage() {
   }, []);
 
   const runSync = async (endpoint: string, label: string, phases?: string[], skus?: string[]) => {
+    // The server rejects this too, but failing here keeps the run out of the
+    // history and names the reason instead of showing a bare error.
+    if (environment === "production" && !confirmProduction) {
+      setError(
+        "Izabrano je Production, a potvrda nije cekirana. Cekiraj \"Potvrda za Production\" u Koraku 2.",
+      );
+      return;
+    }
     setRunningAction(label);
     setError(null);
     try {
@@ -423,6 +459,27 @@ export default function IntegrationsAdminPage() {
   return (
     <div className="flex flex-col gap-5">
       {showTutorial ? <AnanasTutorialModal onClose={closeTutorial} /> : null}
+
+      {/* Sticky, because the phase buttons sit far below the environment select —
+          a run that silently went to Stage cost us a confused round trip. */}
+      <div
+        className={`sticky top-0 z-30 flex flex-wrap items-center justify-between gap-2 rounded-xl border px-4 py-2 text-sm shadow-sm ${
+          environment === "production"
+            ? confirmProduction
+              ? "border-rose-300 bg-rose-50 text-rose-800"
+              : "border-amber-300 bg-amber-50 text-amber-900"
+            : "border-slate-300 bg-slate-100 text-slate-700"
+        }`}
+      >
+        <span className="font-semibold">
+          {environment === "production" ? "Svako dugme salje na PRAVI Ananas (uzivo)" : "Svako dugme salje na PROBNI sistem (stage)"}
+          {" — obim: "}
+          {mode === "full" ? "Full" : "Delta"}
+        </span>
+        {environment === "production" && !confirmProduction ? (
+          <span className="font-semibold">Potvrda nije cekirana — slanje ce biti odbijeno</span>
+        ) : null}
+      </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
