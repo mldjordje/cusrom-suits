@@ -45,6 +45,61 @@ describe("catalog model collapse", () => {
     expect(getCatalogProductModelKey(makeProduct({ name: "M. Kosulja C8/53" }))).toBe("kosulja:c8");
   });
 
+  it("keeps different shoe models apart when their names differ only by the model code", () => {
+    const shoe = (legacyId: number, sku: string, name: string, image: string) =>
+      makeProduct({
+        legacyId,
+        sku,
+        name,
+        manufCode: null,
+        categories: [{ id: 40, name: "Sportska", path: ["Obuca", "Sportska"] }],
+        coverImage: image,
+        images: [image],
+      });
+
+    // The display formatter renders both of these as "Blu" — the model key must
+    // not, or two unrelated shoes end up on one card.
+    expect(getCatalogProductModelKey(shoe(74289, "128337", "4022 BLU", "/shoes/4022-blu.jpg"))).not.toBe(
+      getCatalogProductModelKey(shoe(74288, "128336", "1290 BLU", "/shoes/1290-blu.jpg")),
+    );
+
+    const collapsed = collapseCatalogProductsByModel([
+      shoe(74289, "128337", "4022 BLU", "/shoes/4022-blu.jpg"),
+      shoe(74288, "128336", "1290 BLU", "/shoes/1290-blu.jpg"),
+    ]);
+
+    expect(collapsed).toHaveLength(2);
+  });
+
+  it("does not group unrelated articles that are only named after a colour", () => {
+    const generic = (legacyId: number, sku: string, name: string) =>
+      makeProduct({ legacyId, sku, name, manufCode: null, categories: [] });
+
+    // A belt, a shirt and a pair of socks all named "BLACK" in mOffice.
+    const collapsed = collapseCatalogProductsByModel([
+      generic(74409, "128466", "BLACK"),
+      generic(79581, "133164", "BLACK"),
+      generic(13459210, "134592", "BLACK"),
+    ]);
+
+    expect(collapsed).toHaveLength(3);
+  });
+
+  it("still collapses the sizes of one shoe model", () => {
+    const collapsed = collapseCatalogProductsByModel([
+      makeProduct({ legacyId: 79404, sku: "133051", name: "316 BLUE WHITE EVA", manufCode: null, attributes: { size: ["42"] } }),
+      makeProduct({
+        legacyId: 13305140,
+        sku: "133051",
+        name: "316 BLUE WHITE EVA                 M.Cipele",
+        manufCode: "316 BLUE WHITE EVA                 M.Cipele",
+        attributes: { size: ["43"] },
+      }),
+    ]);
+
+    expect(collapsed).toHaveLength(1);
+  });
+
   it("collapses same-model products even when each size has a different SKU", () => {
     const collapsed = collapseCatalogProductsByModel([
       makeProduct({

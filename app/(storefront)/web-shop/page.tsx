@@ -583,7 +583,9 @@ export default async function WebShopPage({
               </p>
             ) : isLowStock ? (
               <p className="ss-shop-card-stock-note">
-                {isEn ? `Only ${stockValue} left` : `Samo ${stockValue} komada`}
+                {isEn
+                  ? `Only ${stockValue} left`
+                  : `Samo ${stockValue} ${stockValue === 1 ? "komad" : "komada"}`}
               </p>
             ) : null}
           </div>

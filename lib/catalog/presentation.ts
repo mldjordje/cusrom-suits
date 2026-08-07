@@ -206,10 +206,13 @@ const inferProductTypeKey = (
   return null;
 };
 
+/** "4022 BLU" -> "4022 Blu". The model code is kept: it is the only thing that
+ *  tells two shoes of the same colour apart, and dropping it left several
+ *  unrelated models sharing the title "Blu". */
 const maybeHumanizeColorCode = (value: string) => {
-  const match = value.match(/^(?:[A-Z]?\d+(?:[./_-]\d+)*[\s/-]+)+([A-Z]{3,}(?:[\s/-][A-Z]{2,})*)$/u);
+  const match = value.match(/^((?:[A-Z]?\d+(?:[./_-]\d+)*[\s/-]+)+)([A-Z]{3,}(?:[\s/-][A-Z]{2,})*)$/u);
   if (!match) return value;
-  return titleCaseToken(match[1]);
+  return `${match[1].replace(COLLAPSE_WHITESPACE, " ").trim()} ${titleCaseToken(match[2])}`.trim();
 };
 
 const normalizeProductTypeHint = (value: string) =>
@@ -300,9 +303,13 @@ export function formatCatalogProductName(name: string, sku?: string | null) {
   }
 
   value = value.replace(/^[A-Z]\.(?=[\p{Lu}][\p{Ll}])/u, "");
-  value = maybeHumanizeColorCode(value);
+  const humanized = maybeHumanizeColorCode(value);
+  // A humanized colour code already keeps its model number on purpose — the
+  // generic code-prefix strip below would throw it away again.
+  const keepCodePrefix = humanized !== value;
+  value = humanized;
 
-  const titleCaseStart = value.match(/[\p{Lu}][\p{Ll}]/u);
+  const titleCaseStart = keepCodePrefix ? null : value.match(/[\p{Lu}][\p{Ll}]/u);
   if (titleCaseStart && typeof titleCaseStart.index === "number" && titleCaseStart.index > 0) {
     const prefix = value.slice(0, titleCaseStart.index).trim();
     const suffix = value.slice(titleCaseStart.index).trim();

@@ -1119,21 +1119,8 @@ const getCatalogProductTypePriority = (item: CatalogProductView) => {
   return 99;
 };
 
-export const getCatalogProductModelKey = (item: CatalogProductView) => {
-  const displayName = getCatalogProductDisplayName({
-    name: item.name,
-    sku: item.sku,
-    manufCode: item.manufCode,
-    categories: item.categories,
-    brand: item.brand,
-  });
-
-  // Always derive type from raw name — never from getCatalogProductCategoryLabel
-  // which returns inconsistent strings ("Košulje" vs "Kosulja") depending on
-  // whether the cats[] array is populated.
-  const typeToken = inferProductTypeToken(item.name || "", item.categories);
-
-  const normalizedName = normalizeDiacritics(displayName)
+const normalizeModelKeyName = (value: string) =>
+  normalizeDiacritics(value)
     .toLowerCase()
     .replace(/\s+/g, " ")
     .trim()
@@ -1148,7 +1135,58 @@ export const getCatalogProductModelKey = (item: CatalogProductView) => {
     .replace(/\/\d+$/, "")
     .trim();
 
+/** Words that identify no model on their own. mOffice ships plenty of rows whose
+ *  whole name is a bare colour ("BLACK", "GREEN"), an audience ("KIDS") or a bare
+ *  product type ("KRAVATA"), and those belong to completely unrelated articles.
+ *  Grouping them by name put a belt, a shirt and a pair of socks on one card with
+ *  a 1.590–3.650 RSD "od" range. Such names fall back to SKU grouping instead. */
+const NON_DISTINCTIVE_MODEL_WORDS = new Set([
+  // colours (en + sr)
+  "black", "white", "blue", "blu", "navy", "green", "red", "brown", "grey", "gray",
+  "beige", "bez", "orange", "yellow", "pink", "purple", "bordo", "cream", "camel",
+  "silver", "gold", "dark", "light", "crna", "crno", "bela", "belo", "plava", "plavo",
+  "zelena", "crvena", "braon", "siva", "sivo", "teget", "zuta", "narandzasta",
+  // audience / generic marketing words
+  "kids", "kid", "men", "man", "women", "woman", "unisex", "classic", "basic", "set",
+  // bare product types
+  "kravata", "maramica", "kacket", "kapa", "sal", "marama", "carape", "carapa",
+  "novcanik", "torba", "kais", "maska", "prsluk", "papuce", "patike", "cipele",
+]);
+
+/** True when every token in the name is non-distinctive, so the name cannot tell
+ *  two different articles apart. "1250 orange" is fine (has the model code);
+ *  "orange" alone is not. */
+const isNonDistinctiveModelName = (normalized: string) => {
+  const tokens = normalized.split(/[\s/_-]+/).filter(Boolean);
+  if (!tokens.length) return true;
+  return tokens.every((token) => NON_DISTINCTIVE_MODEL_WORDS.has(token));
+};
+
+export const getCatalogProductModelKey = (item: CatalogProductView) => {
+  // Always derive type from raw name — never from getCatalogProductCategoryLabel
+  // which returns inconsistent strings ("Košulje" vs "Kosulja") depending on
+  // whether the cats[] array is populated.
+  const typeToken = inferProductTypeToken(item.name || "", item.categories);
+
+  // Key off the RAW name, not the display name. The display formatter drops a
+  // leading model code when the rest of the name is an all-caps colour word
+  // ("4022 BLU" → "Blu", "1290 BLU" → "Blu"), which made every unrelated shoe of
+  // that colour collapse into one card with a bogus price range and a size
+  // switcher that jumped between different models.
+  const normalizedName =
+    normalizeModelKeyName(item.name || "") ||
+    normalizeModelKeyName(
+      getCatalogProductDisplayName({
+        name: item.name,
+        sku: item.sku,
+        manufCode: item.manufCode,
+        categories: item.categories,
+        brand: item.brand,
+      }),
+    );
+
   if (!normalizedName) return `legacy:${item.legacyId}`;
+  if (isNonDistinctiveModelName(normalizedName)) return `legacy:${item.legacyId}`;
 
   return `${typeToken}:${normalizedName}`;
 };
