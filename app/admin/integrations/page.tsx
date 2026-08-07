@@ -147,7 +147,8 @@ const TUTORIAL_SECTIONS: TutorialSection[] = [
   {
     title: "1. Kako biram proizvode koji idu na Ananas",
     lines: [
-      "Otvori Admin > Web Shop i za svaki proizvod ukljuci checkbox \"Posalji na Ananas\" (u editoru proizvoda).",
+      "Najbrze: dugme \"Oznaci sve sa web-shopa\" u Koraku 1 — oznacava tacno one proizvode koje kupac vidi na sajtu (sa slikom i lagerom).",
+      "Rucno, po proizvodu: Admin > Web Shop, u editoru proizvoda ukljuci checkbox \"Posalji na Ananas\".",
       "Za vise proizvoda odjednom: selektuj ih u listi pa u bulk traci izaberi \"Posalji na Ananas\" (ili \"Ukloni sa Ananas\").",
       "To je poseban flag od obicnog Export flag-a. Export = nas sajt, Ananas = marketplace. Ukljucen Export ne salje proizvod na Ananas.",
       "Proizvodi koji su ukljuceni imaju zelenu oznaku \"Ananas\" na kartici u Web Shopu.",
@@ -277,6 +278,8 @@ export default function IntegrationsAdminPage() {
   const [ananasSkuFilter, setAnanasSkuFilter] = useState("");
   const [showTutorial, setShowTutorial] = useState(false);
   const [resetNotice, setResetNotice] = useState<string | null>(null);
+  const [selectionNotice, setSelectionNotice] = useState<string | null>(null);
+  const [unflagOthers, setUnflagOthers] = useState(true);
 
   // Auto-open once per browser; the button below reopens it any time.
   useEffect(() => {
@@ -293,6 +296,45 @@ export default function IntegrationsAdminPage() {
       window.localStorage.setItem(TUTORIAL_SEEN_KEY, "1");
     } catch {
       // ignore
+    }
+  };
+
+  const runSelection = async (apply: boolean, unflagOthers: boolean) => {
+    if (apply) {
+      const confirmed = window.confirm(
+        unflagOthers
+          ? "Oznacice sve proizvode koji su trenutno na web-shop strani i SKINUTI oznaku sa onih koji vise nisu.\n\nNastaviti?"
+          : "Oznacice sve proizvode koji su trenutno na web-shop strani za slanje na Ananas.\n\nNastaviti?",
+      );
+      if (!confirmed) return;
+    }
+    setRunningAction(apply ? "selection-apply" : "selection-preview");
+    setError(null);
+    setSelectionNotice(null);
+    try {
+      const res = await fetch("/api/admin/integrations/ananas/selection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          ...(apply ? { confirmSelection: "CONFIRM_ANANAS_SELECTION" } : {}),
+          unflagOthers,
+        }),
+      });
+      const json = await res.json();
+      if (!json?.success) {
+        setError(json?.message || "Selekcija nije uspela.");
+      } else {
+        const d = json.data || {};
+        setSelectionNotice(
+          d.applied
+            ? `Gotovo: ${d.visibleModels} modela na sajtu = ${d.variants} artikala za Ananas. Novo oznaceno: ${d.flagged}. Skinuta oznaka: ${d.unflagged}.`
+            : `Provera: ${d.visibleModels} modela na sajtu = ${d.variants} artikala. Vec oznaceno: ${d.alreadyFlagged}. Bilo bi dodato: ${d.toFlag}. Bilo bi skinuto: ${d.toUnflag}.`,
+        );
+      }
+    } catch (err: any) {
+      setError(err?.message || "Selekcija nije uspela.");
+    } finally {
+      setRunningAction(null);
     }
   };
 
@@ -388,7 +430,7 @@ export default function IntegrationsAdminPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">Integracije</p>
             <h1 className="mt-1 text-2xl font-bold text-slate-900">Ananas i lager</h1>
             <p className="mt-1 text-sm text-slate-600">
-              Idi redom kroz korake 1, 2 i 3. Ako nesto nije jasno, otvori Uputstvo.
+              Idi redom kroz korake 1 do 4. Ako nesto nije jasno, otvori Uputstvo.
             </p>
           </div>
           <button
@@ -400,10 +442,68 @@ export default function IntegrationsAdminPage() {
         </div>
       </div>
 
-      {/* KORAK 1 — where the run is sent and how much of it goes out. */}
+      {/* KORAK 1 — pick the products, straight from what the storefront shows. */}
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <StepHeading
           step={1}
+          title="Izaberi proizvode"
+          hint="Na Ananas ide samo ono sto je oznaceno. Najlakse: preuzmi izbor sa web-shop strane."
+        />
+
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <p className="text-sm font-semibold text-slate-900">
+            Preuzmi sa web-shopa{" "}
+            <span className="font-normal text-slate-500">
+              (oznacava sve proizvode koje kupac trenutno vidi na sajtu — sa slikom i lagerom)
+            </span>
+          </p>
+          <p className="mt-1 text-xs text-slate-600">
+            Koristi identican filter kao sama web-shop strana. Svaka velicina jednog modela ide kao poseban
+            artikal na Ananas, jer ih oni tako ulistavaju.
+          </p>
+
+          <label className="mt-3 flex items-start gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={unflagOthers}
+              onChange={(event) => setUnflagOthers(event.target.checked)}
+              className="mt-0.5 h-4 w-4 rounded border-slate-300"
+            />
+            <span>
+              Skini oznaku sa proizvoda kojih vise nema na sajtu{" "}
+              <span className="text-slate-500">
+                (preporuceno — drzi izbor identican sajtu; iskljuci ako si nesto rucno dodao van sajta)
+              </span>
+            </span>
+          </label>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <button
+              onClick={() => runSelection(false, unflagOthers)}
+              disabled={Boolean(runningAction)}
+              className="rounded-full border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:border-slate-400 disabled:opacity-50"
+            >
+              {runningAction === "selection-preview" ? "Racuna se..." : "Prvo proveri (nista ne menja)"}
+            </button>
+            <button
+              onClick={() => runSelection(true, unflagOthers)}
+              disabled={Boolean(runningAction)}
+              className="rounded-full border border-emerald-300 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-800 hover:border-emerald-400 disabled:opacity-50"
+            >
+              {runningAction === "selection-apply" ? "Oznacava se..." : "Oznaci sve sa web-shopa"}
+            </button>
+          </div>
+          {selectionNotice ? <p className="mt-2 text-sm text-emerald-700">{selectionNotice}</p> : null}
+          <p className="mt-2 text-xs text-slate-500">
+            Pojedinacno dodavanje/skidanje radis kvacicom &quot;Posalji na Ananas&quot; u Web Shopu.
+          </p>
+        </div>
+      </section>
+
+      {/* KORAK 2 — where the run is sent and how much of it goes out. */}
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <StepHeading
+          step={2}
           title="Podesi gde i koliko saljes"
           hint="Ovo vazi za svako dugme ispod — proveri pre svakog slanja."
         />
@@ -483,10 +583,10 @@ export default function IntegrationsAdminPage() {
         ) : null}
       </section>
 
-      {/* KORAK 2 — pilot run on a handful of SKUs before the full catalog. */}
+      {/* KORAK 3 — pilot run on a handful of SKUs before the full catalog. */}
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <StepHeading
-          step={2}
+          step={3}
           title="Probaj na par proizvoda"
           hint="Uvek uradi ovo pre nego sto posaljes ceo katalog."
         />
@@ -526,12 +626,12 @@ export default function IntegrationsAdminPage() {
         </div>
       </section>
 
-      {/* KORAK 3 — the phases, in the order they are meant to be run. Ananas caps
+      {/* KORAK 4 — the phases, in the order they are meant to be run. Ananas caps
           how often each may run (catalog is monthly, stock >=15 min apart), so
           every phase stays individually runnable. */}
       <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
         <StepHeading
-          step={3}
+          step={4}
           title="Pusti faze — ovim redom"
           hint="Faze 1 i 2 pokreces rucno. Faze 3, 4 i 5 idu same po rasporedu."
         />
