@@ -97,3 +97,32 @@ export function classifySubmission(fields: SpamFields): SpamResult {
 
   return { verdict: "clean", reasons: [] };
 }
+
+export type NewsletterSignupFields = {
+  email: string;
+  firstName?: string;
+  lastName?: string;
+};
+
+/**
+ * Newsletter signups carry no free-text message, so the contact-form rules are
+ * too aggressive here. We only need to catch bots stuffing links/scripts into
+ * the name fields, and malformed addresses that would bounce the welcome email.
+ */
+export function classifyNewsletterSignup(fields: NewsletterSignupFields): SpamResult {
+  const email = fields.email || "";
+  const names = [fields.firstName || "", fields.lastName || ""].join(" ");
+  const reasons: string[] = [];
+
+  if (!EMAIL_PATTERN.test(email)) reasons.push("malformed-email");
+  if (URL_PATTERN.test(names)) reasons.push("url-in-name");
+  if (EMOJI_PATTERN.test(names)) reasons.push("emoji-in-name");
+  if (FOREIGN_SCRIPT_PATTERN.test(names)) reasons.push("foreign-script");
+  if (digitCount(names) >= 4) reasons.push("digits-in-name");
+  const keyword = SPAM_KEYWORDS.find((kw) => names.toLowerCase().includes(kw));
+  if (keyword) reasons.push(`keyword:${keyword}`);
+
+  return reasons.length > 0
+    ? { verdict: "spam", reasons }
+    : { verdict: "clean", reasons: [] };
+}

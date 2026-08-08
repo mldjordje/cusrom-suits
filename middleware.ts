@@ -15,6 +15,37 @@ const BLOCKED_HOST_SUFFIX = ".vercel.app";
 const IMAGE_OPTIMIZER_PATH = "/_next/image";
 const MAX_LEGACY_CRAWL_SEGMENTS = 5;
 
+// Paths we own and must never run the scanner heuristics against. `/api/`
+// matters most: `app/api/fabrics.php` is a real route whose name would
+// otherwise trip the PHP extension rule below.
+const SCANNER_SKIP_PREFIXES = [
+  "/api/",
+  "/_next/",
+  "/fajlovi/",
+  "/site-assets/",
+  "/uploads/",
+  "/assets/",
+  "/img/",
+  "/.well-known/",
+];
+
+// Server stacks this app does not run. A request for any of them is a
+// vulnerability scanner, never a customer.
+const SCANNER_EXTENSION_PATTERN =
+  /\.(php\d?|phtml|phar|asp|aspx|jsp|jspx|cgi|pl|sh|bak|old|sql|swp|env|ini|cfm|htm|html)$/i;
+
+// Known scanner roots. `/sqed/*` and `/banco*` are phishing-kit probes: bots
+// checking whether someone already dropped a phishing page on this host.
+const SCANNER_PREFIX_PATTERN =
+  /^\/(sqed|banco|bancopopular|wp|wordpress|wp-admin|wp-content|wp-includes|cgi-bin|phpmyadmin|phpmyadm|pma|myadmin|adminer|vendor|views|autodiscover|owa|ecp|solr|struts|actuator|telescope|_ignition|_profiler|\.git|\.env|\.aws|\.svn|\.vscode|\.idea)(\/|$)/i;
+
+const isKnownScannerPath = (pathname: string) => {
+  if (SCANNER_SKIP_PREFIXES.some((prefix) => pathname.startsWith(prefix))) return false;
+  if (pathname.includes("..") || pathname.includes("\0")) return true;
+  if (SCANNER_PREFIX_PATTERN.test(pathname)) return true;
+  return SCANNER_EXTENSION_PATTERN.test(pathname);
+};
+
 const isMalformedImageOptimizerRequest = (req: NextRequest) =>
   req.nextUrl.pathname === IMAGE_OPTIMIZER_PATH &&
   (!req.nextUrl.searchParams.has("url") ||
@@ -46,7 +77,13 @@ export async function middleware(req: NextRequest) {
   }
 
   const pathname = req.nextUrl.pathname;
-  if (isMalformedImageOptimizerRequest(req) || isLikelyMalformedLegacyCrawl(pathname)) {
+  if (
+    isKnownScannerPath(pathname) ||
+    isMalformedImageOptimizerRequest(req) ||
+    isLikelyMalformedLegacyCrawl(pathname)
+  ) {
+    // Plain 404 with no HTML: the analytics script never loads, so these stop
+    // showing up as "top pages" in Vercel Analytics.
     return new NextResponse("Not Found", { status: 404 });
   }
 

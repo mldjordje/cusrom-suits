@@ -13,7 +13,9 @@ export default function PromoPopups({ settings }: { settings: PopupSettings }) {
   const { modal, toast } = settings;
   const [showModal, setShowModal] = useState(false);
   const [showToast, setShowToast] = useState(false);
-  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", birthDate: "", gender: "" });
+  // `website` is a honeypot: spread into the request body with the rest of the
+  // form, empty for humans, filled by bots.
+  const [form, setForm] = useState({ firstName: "", lastName: "", email: "", birthDate: "", gender: "", website: "" });
   const [formState, setFormState] = useState<FormState>("idle");
   const [formMessage, setFormMessage] = useState("");
 
@@ -133,6 +135,17 @@ export default function PromoPopups({ settings }: { settings: PopupSettings }) {
                     <input className="santos-pop-field" placeholder="Prezime" value={form.lastName} onChange={set("lastName")} />
                   </div>
                   <input className="santos-pop-field" type="email" required placeholder="Mejl" value={form.email} onChange={set("email")} />
+                  {/* Honeypot — hidden from humans, bots fill it */}
+                  <input
+                    name="website"
+                    type="text"
+                    tabIndex={-1}
+                    autoComplete="off"
+                    aria-hidden="true"
+                    value={form.website}
+                    onChange={set("website")}
+                    style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", opacity: 0 }}
+                  />
                   <input
                     className="santos-pop-field"
                     type="text"

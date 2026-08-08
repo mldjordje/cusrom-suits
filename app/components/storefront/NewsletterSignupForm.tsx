@@ -11,6 +11,7 @@ export default function NewsletterSignupForm({
   lang?: StorefrontLanguage;
 }) {
   const [email, setEmail] = useState("");
+  const [website, setWebsite] = useState("");
   const [state, setState] = useState<SubmitState>("idle");
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,6 +29,7 @@ export default function NewsletterSignupForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email,
+          website,
           source: "storefront-footer",
         }),
       });
@@ -70,6 +72,17 @@ export default function NewsletterSignupForm({
         placeholder={isEn ? "Your email address" : "Vaša email adresa"}
         autoComplete="email"
         required
+      />
+      {/* Honeypot — hidden from humans, bots fill it */}
+      <input
+        name="website"
+        type="text"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        value={website}
+        onChange={(event) => setWebsite(event.target.value)}
+        style={{ position: "absolute", left: "-9999px", width: "1px", height: "1px", opacity: 0 }}
       />
       <button
         className="btn-link fw-medium bg-white position-absolute top-0 end-0 h-100 border-0 px-3"
