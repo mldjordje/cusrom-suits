@@ -3,30 +3,14 @@ import { trackVercelServerEvent } from "@/lib/analytics/vercel";
 import { appendContactMessage, type ContactMessage } from "@/lib/contact/messages";
 import { buildRateLimitHeaders, checkRateLimit } from "@/lib/security/rateLimit";
 import { sendContactNotifications } from "@/lib/email/notifications";
+import { classifySubmission } from "@/lib/security/spam";
 
 const sanitize = (value: FormDataEntryValue | null) =>
   String(value || "").trim().slice(0, 2000);
 
-const RATE_LIMIT = { limit: 5, windowMs: 60_000, scope: "contact" } as const;
-
-const URL_PATTERN = /https?:\/\/\S+|www\.\S+\.\S+|\b[a-z0-9][a-z0-9-]*\.[a-z]{2,}\/\S+/i;
-const SPAM_KEYWORDS = [
-  "casino", "slot", "poker", "betting", "gambling", "crypto", "bitcoin",
-  "earn money", "make money", "click here", "free money", "win cash",
-  "spin", "jackpot", "reel", "psee.io", "bit.ly", "tinyurl",
-  // crypto/phishing "transfer" scams (graph.org and similar redirect chains)
-  "transfer to you", "sign in >>>", "sign in <<<", "graph.org", "balance-",
-  // backlink / SEO outreach spam
-  "backlink", "guest post", "link exchange", "domain rating", "dr30",
-  "seo boost", "5 quality local business", "5 local business websites",
-];
-
-function isSpam(...fields: string[]): boolean {
-  const combined = fields.join(" ").toLowerCase();
-  if (URL_PATTERN.test(combined)) return true;
-  if (SPAM_KEYWORDS.some((kw) => combined.includes(kw))) return true;
-  return false;
-}
+// Burst limit plus an hourly cap, so one IP cannot drip-feed under the minute window.
+const RATE_LIMIT = { limit: 3, windowMs: 60_000, scope: "contact" } as const;
+const HOURLY_LIMIT = { limit: 10, windowMs: 3_600_000, scope: "contact-hour" } as const;
 
 export async function POST(req: NextRequest) {
   const rate = checkRateLimit(req, RATE_LIMIT);
@@ -34,6 +18,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { success: false, message: "Previse zahteva. Pokusaj za nekoliko sekundi." },
       { status: 429, headers: buildRateLimitHeaders(rate, RATE_LIMIT.limit) },
+    );
+  }
+  const hourly = checkRateLimit(req, HOURLY_LIMIT);
+  if (!hourly.ok) {
+    return NextResponse.json(
+      { success: false, message: "Previse zahteva. Pokusaj kasnije." },
+      { status: 429, headers: buildRateLimitHeaders(hourly, HOURLY_LIMIT.limit) },
     );
   }
   const contentType = req.headers.get("content-type") || "";
@@ -80,8 +71,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, data: null });
   }
 
-  // Basic spam detection
-  if (isSpam(name, email, phone, company, subject, message, preferredStore)) {
+  const spam = classifySubmission({ name, email, phone, company, subject, message, preferredStore });
+  if (spam.verdict === "spam") {
+    console.warn("[contact] dropped spam:", spam.reasons.join(","));
     return NextResponse.json({ success: true, data: null });
   }
 
@@ -104,15 +96,18 @@ export async function POST(req: NextRequest) {
     preferredStore: entry.preferredStore || "unspecified",
     hasPhone: entry.phone ? 1 : 0,
   });
-  void sendContactNotifications({
-    name: entry.name,
-    email: entry.email,
-    phone: entry.phone || undefined,
-    subject: entry.subject || undefined,
-    message: entry.message,
-    preferredStore: entry.preferredStore || undefined,
-    source: entry.source || undefined,
-  }).catch((err) => console.error("[contact] sendContactNotifications failed:", err));
+  // Quarantined messages stay in the admin inbox but never trigger an email.
+  if (spam.verdict !== "quarantine") {
+    void sendContactNotifications({
+      name: entry.name,
+      email: entry.email,
+      phone: entry.phone || undefined,
+      subject: entry.subject || undefined,
+      message: entry.message,
+      preferredStore: entry.preferredStore || undefined,
+      source: entry.source || undefined,
+    }).catch((err) => console.error("[contact] sendContactNotifications failed:", err));
+  }
 
   if (contentType.includes("application/json")) {
     return NextResponse.json({ success: true, data: entry });
