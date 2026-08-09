@@ -4406,6 +4406,19 @@ body.mobile-menu-opened {
   border-color: rgba(255, 255, 255, 0.08);
 }
 
+.ss-footer__credit-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.3);
+  text-underline-offset: 0.22em;
+  transition: color 0.2s ease, text-decoration-color 0.2s ease;
+}
+
+.ss-footer__credit-link:hover {
+  color: #fff;
+  text-decoration-color: currentColor;
+}
+
 .ss-viewfx {
   transition:
     transform 0.8s cubic-bezier(0.22, 1, 0.36, 1),

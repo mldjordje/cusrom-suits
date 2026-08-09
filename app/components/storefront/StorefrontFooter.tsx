@@ -118,6 +118,17 @@ export default async function StorefrontFooter({
           <span>
             {isEn ? footer.bottomTaglineEn : footer.bottomTagline}
           </span>
+          <span>
+            {isEn ? "Website by" : "Izrada sajta"}{" "}
+            <a
+              href="https://adspire.rs/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="ss-footer__credit-link"
+            >
+              Adspire
+            </a>
+          </span>
         </div>
       </div>
     </footer>
