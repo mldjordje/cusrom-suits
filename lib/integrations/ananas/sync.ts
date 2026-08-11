@@ -220,7 +220,11 @@ async function phaseCatalog({ context, items, stateByLegacyId }: PhaseInput): Pr
         status: "success",
         message: `Catalog batch of ${batch.length} products submitted for listing.`,
         payloadHash: createPayloadHash(batch.map((entry) => entry.legacyId)),
-        payload: { count: batch.length, legacyIds: batch.slice(0, 50).map((entry) => entry.legacyId) },
+        payload: {
+          count: batch.length,
+          legacyIds: batch.slice(0, 50).map((entry) => entry.legacyId),
+          skus: batch.slice(0, 50).map((entry) => entry.sku),
+        },
         response: (response as Record<string, unknown>) || null,
       });
     } catch (error: any) {
@@ -242,7 +246,11 @@ async function phaseCatalog({ context, items, stateByLegacyId }: PhaseInput): Pr
         status: "failed",
         message,
         payloadHash: createPayloadHash(batch.map((entry) => entry.legacyId)),
-        payload: { count: batch.length, legacyIds: batch.slice(0, 50).map((entry) => entry.legacyId) },
+        payload: {
+          count: batch.length,
+          legacyIds: batch.slice(0, 50).map((entry) => entry.legacyId),
+          skus: batch.slice(0, 50).map((entry) => entry.sku),
+        },
         response: null,
       });
     }

@@ -27,6 +27,10 @@ export type MofficeExistingRow = {
   ean: string | null;
   name_sr: string | null;
   raw_payload: Record<string, unknown> | null;
+  price_net: number | null;
+  price_gross: number | null;
+  price_final_gross: number | null;
+  rebate_percent: number | null;
 };
 
 export type MofficePostSyncRow = MofficeExistingRow & {
@@ -633,7 +637,12 @@ export function buildMofficeSyncPlan(params: {
       raw_payload: payload,
       updated_at: syncedAt,
       ...(keepManualPrice
-        ? {}
+        ? {
+            price_net: existingRow?.price_net ?? 0,
+            price_gross: existingRow?.price_gross ?? 0,
+            price_final_gross: existingRow?.price_final_gross ?? 0,
+            rebate_percent: existingRow?.rebate_percent ?? 0,
+          }
         : {
             price_net: Math.round(vpPrice * 100) / 100,
             price_gross: Math.round(mpPrice * 100) / 100,
@@ -868,7 +877,7 @@ async function executeMofficeSync(input: {
 
     const existingRaw = await loadAllCatalogRows<MofficeExistingRow>(
       supabase,
-      "legacy_id,sku,ean,name_sr,raw_payload",
+      "legacy_id,sku,ean,name_sr,raw_payload,price_net,price_gross,price_final_gross,rebate_percent",
     );
 
     const plan = buildMofficeSyncPlan({

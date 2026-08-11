@@ -12,6 +12,7 @@ type RunItem = {
   message: string | null;
   createdAt: string;
   payloadHash: string | null;
+  payload?: { skus?: string[]; sku?: string; legacyIds?: (number | string)[] } | null;
 };
 
 type Run = {
@@ -486,6 +487,11 @@ export default function IntegrationRunDetailPage() {
                   {statusLabel(item.status)}
                 </span>
               </div>
+              {item.payload?.sku || item.payload?.skus?.length ? (
+                <p className="mt-1 text-[11px] font-mono text-slate-500">
+                  SKU: {item.payload?.sku || item.payload?.skus?.join(", ")}
+                </p>
+              ) : null}
               {item.message ? <p className="mt-1 text-sm text-slate-700">{item.message}</p> : null}
               <p className="mt-1 text-[11px] text-slate-400">{new Date(item.createdAt).toLocaleString("sr-RS")}</p>
             </div>
