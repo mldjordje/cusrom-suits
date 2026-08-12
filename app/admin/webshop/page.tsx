@@ -963,6 +963,7 @@ export default function AdminWebshopPage() {
   const [hiddenCodeInput, setHiddenCodeInput] = useState("");
   const [hiddenCodesSaving, setHiddenCodesSaving] = useState(false);
   const [hiddenCodesResult, setHiddenCodesResult] = useState<string | null>(null);
+  const [hiddenCodesError, setHiddenCodesError] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [bulkSaving, setBulkSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -2010,20 +2011,47 @@ export default function AdminWebshopPage() {
   ): Promise<{ ok: boolean; updated: number; skus: number; notFound: string[] } | null> => {
     const clean = Array.from(new Set(codes.map((code) => String(code || "").trim()).filter(Boolean)));
     if (!clean.length) {
-      setError("Nema sifri za promenu.");
+      const message = "Nema sifri za promenu.";
+      setError(message);
+      setHiddenCodesError(message);
       return null;
     }
+    // Every failure path must produce a message the admin can act on: the global
+    // error banner sits at the top of a very long page, so the reason is repeated
+    // inside the panel that triggered the call.
+    const fail = (message: string) => {
+      setError(message);
+      setHiddenCodesError(message);
+      return null;
+    };
     try {
       const res = await fetch("/api/admin/webshop/products/visibility", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ skus: clean, hidden }),
       });
-      const json = await res.json();
-      if (!json?.success && !json?.updated) {
-        setError(json?.message || "Cuvanje nije uspelo.");
-        return null;
+      const rawBody = await res.text();
+      let json: any = null;
+      try {
+        json = rawBody ? JSON.parse(rawBody) : null;
+      } catch {
+        // 401 login redirect, 404 (ruta nije deployovana), 504 timeout … all answer
+        // with HTML, which used to surface as an unhelpful JSON parse error.
+        return fail(
+          `Server je vratio ${res.status} ${res.statusText || ""} umesto odgovora. ${
+            res.status === 401 || res.status === 403
+              ? "Prijavi se ponovo u admin."
+              : "Osvezi stranicu i probaj ponovo."
+          }`.trim(),
+        );
       }
+      if (!res.ok && !json?.updated) {
+        return fail(json?.message ? `${json.message} (HTTP ${res.status})` : `Cuvanje nije uspelo (HTTP ${res.status}).`);
+      }
+      if (!json?.success && !json?.updated) {
+        return fail(json?.message || "Cuvanje nije uspelo.");
+      }
+      setHiddenCodesError(null);
       if (!options?.silent) {
         const missing = Array.isArray(json.notFound) && json.notFound.length
           ? ` Nije pronadjeno: ${json.notFound.join(", ")}.`
@@ -2039,8 +2067,7 @@ export default function AdminWebshopPage() {
         notFound: Array.isArray(json.notFound) ? json.notFound.map(String) : [],
       };
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Greska pri cuvanju.");
-      return null;
+      return fail(e instanceof Error ? e.message : "Greska pri cuvanju.");
     }
   };
 
@@ -2106,25 +2133,38 @@ export default function AdminWebshopPage() {
     }
   };
 
-  // "Paste a list of sifre" panel — the client sends hide lists as plain text.
+  // "Paste a list of sifre" panel — the client sends hide lists as plain text, and
+  // that text carries section headings ("ODELA", "SAKOI") and model names next to
+  // the code ("128334 Bianco"). Sifre and legacy IDs are always numeric, so keep the
+  // numeric tokens and ignore the prose instead of sending words to the server.
   const applyHiddenCodeList = async (hidden: boolean) => {
-    const codes = hiddenCodeInput
+    const tokens = hiddenCodeInput
       .split(/[\s,;]+/)
       .map((code) => code.trim())
       .filter(Boolean);
+    const codes = tokens.filter((token) => /^\d{3,}$/.test(token));
+    const ignored = tokens.filter((token) => !/^\d{3,}$/.test(token));
     if (!codes.length) {
-      setError("Nalepi sifre artikala.");
+      const message = tokens.length
+        ? "Nijedna sifra nije prepoznata — nalepi brojeve sifri (npr. 128334), ne nazive artikala."
+        : "Nalepi sifre artikala.";
+      setError(message);
+      setHiddenCodesError(message);
+      setHiddenCodesResult(null);
       return;
     }
     setHiddenCodesSaving(true);
     setError(null);
     setNotice(null);
+    setHiddenCodesError(null);
+    setHiddenCodesResult(null);
     try {
       const result = await setHiddenForCodes(codes, hidden);
       if (result) {
         setHiddenCodesResult(
           `${hidden ? "Sakriveno" : "Vraceno"}: ${result.skus} sifri / ${result.updated} varijanti.` +
-            (result.notFound.length ? ` Nije pronadjeno: ${result.notFound.join(", ")}` : ""),
+            (result.notFound.length ? ` Nije pronadjeno: ${result.notFound.join(", ")}.` : "") +
+            (ignored.length ? ` Preskoceno (nije sifra): ${ignored.slice(0, 12).join(", ")}.` : ""),
         );
         await loadProducts(pagination.page);
       }
@@ -3083,8 +3123,17 @@ export default function AdminWebshopPage() {
               >
                 {hiddenCodesSaving ? "Cuvanje..." : "Vrati na sajt"}
               </button>
-              {hiddenCodesResult ? <span className="text-xs text-slate-600">{hiddenCodesResult}</span> : null}
             </div>
+            {hiddenCodesError ? (
+              <p className="mt-2 rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-800">
+                {hiddenCodesError}
+              </p>
+            ) : null}
+            {hiddenCodesResult ? (
+              <p className="mt-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900">
+                {hiddenCodesResult}
+              </p>
+            ) : null}
           </div>
 
           {loading ? <p className="text-sm text-slate-500">Ucitavanje...</p> : null}
