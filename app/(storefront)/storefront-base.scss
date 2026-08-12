@@ -1639,7 +1639,7 @@
 
 .ss-shop-main-section .ss-product-card .pc__img-wrapper {
   border-radius: 1.18rem;
-  background: linear-gradient(180deg, #f4efe8, #ede6dc);
+  background: #fff;
 }
 
 .ss-shop-main-section .ss-shop-gallery__header {
@@ -2212,13 +2212,13 @@
   position: relative;
   overflow: hidden;
   border-radius: 1.45rem;
-  background: linear-gradient(180deg, #f3efe8, #e8e2d7);
+  background: #fff;
 }
 
 /* Premium sekcije — čist, bez rounded i bez gradijenta */
 .ss-editorial-section .ss-product-card .pc__img-wrapper {
   border-radius: 0 !important;
-  background: var(--ss-bg-cream, #f5f0e8) !important;
+  background: #fff !important;
   overflow: hidden;
 }
 
@@ -3437,7 +3437,7 @@
   width: 100%;
   aspect-ratio: 0.9;
   max-height: 76vh;
-  background: #faf8f5;
+  background: #fff;
   border: 1px solid rgba(24, 20, 20, 0.06);
   overflow: hidden;
 }
@@ -8508,11 +8508,14 @@ button.ss-mobile-nav-quicklink,
   backdrop-filter: none;
 }
 
+/* Bela podloga ispod slike artikla. Beige/krem podloga se videla kao okvir oko
+   svake slike koja ne prekriva ceo tile (contain aksesoari, transparentni PNG,
+   uže fotografije) — na beloj stranici bela podloga je nevidljiva. */
 .ss-product-card .pc__img-wrapper,
 .ss-shop-main-section .ss-product-card .pc__img-wrapper,
 .ss-editorial-section .ss-product-card .pc__img-wrapper {
   border-radius: var(--ss-card-radius);
-  background: #e9e3da;
+  background: #fff;
   overflow: hidden;
 }
 

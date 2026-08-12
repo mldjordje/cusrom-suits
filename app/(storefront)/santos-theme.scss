@@ -108,7 +108,7 @@
   position: relative;
   overflow: hidden;
   aspect-ratio: 0.78;
-  background: var(--ss-paper-2);
+  background: #fff;
   border-radius: 0;
   border: none;
   box-shadow: none;
@@ -581,7 +581,7 @@
     border-radius: 0 !important;
     aspect-ratio: 0.78 !important;
     max-height: 92vh !important;
-    background: var(--ss-paper-2) !important;
+    background: #fff !important;
   }
 
   .ss-product-gallery__thumb {
@@ -957,7 +957,7 @@
    -------------------------------------------------------------------------- */
 
 .ss-home-page .ss-product-card .pc__img-wrapper {
-  background: var(--ss-paper-2);
+  background: #fff;
   border-radius: 0 !important;
   border: none !important;
   box-shadow: none !important;
