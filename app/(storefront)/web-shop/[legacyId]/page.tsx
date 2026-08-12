@@ -231,7 +231,7 @@ export async function generateMetadata({
     });
   }
   const product = await getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: false });
-  if (!product || !product.isActive || !product.isExported || !hasDirectProductImage(product)) {
+  if (!product || product.hiddenFromShop || !product.isActive || !product.isExported || !hasDirectProductImage(product)) {
     return buildSeoMetadata({
       title: "Product not found",
       description: "Trazeni proizvod nije pronadjen u Santos & Santorini web shopu.",
@@ -285,6 +285,9 @@ export default async function WebShopProductPage({
 
   const product = await getCatalogProductByLegacyId(id, { allowLegacyMediaFallback: true });
   if (!product) notFound();
+  // Admin "Sakrij sa sajta" must also kill the direct link, not just the listings —
+  // otherwise an old bookmark or Google result still sells a pulled product.
+  if (product.hiddenFromShop) notFound();
 
   const requestedSize = toStringParam(pageSearchParams.size).trim();
   const routeSize = getSelectedProductSize(product);

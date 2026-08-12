@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { listPosts } from "@/lib/blog/store";
 import { listCatalogProducts } from "@/lib/catalog/store";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
+import { CATEGORY_ROUTES, categoryRoutePath } from "@/lib/storefront/categoryRoutes";
 import { absoluteUrl, withStorefrontLanguage } from "@/lib/seo";
 
 const hreflangAlternates = (path: string): MetadataRoute.Sitemap[number]["alternates"] => ({
@@ -87,6 +88,18 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: path === "/" ? 1 : path === "/web-shop" || path === "/custom-suits" ? 0.9 : path === "/akcije" ? 0.85 : 0.7,
   }));
 
+  // Category landing pages sit between the shop root and the product pages in
+  // priority — they are the commercial entry points for the head terms.
+  const categoryEntries: MetadataRoute.Sitemap = CATEGORY_ROUTES.map((route) => {
+    const path = categoryRoutePath(route.slug);
+    return {
+      url: absoluteUrl(path),
+      alternates: hreflangAlternates(path),
+      changeFrequency: "weekly" as const,
+      priority: 0.85,
+    };
+  });
+
   const productEntries: MetadataRoute.Sitemap = productPaths.map(({ path }) => ({
     url: absoluteUrl(path),
     alternates: hreflangAlternates(path),
@@ -102,5 +115,5 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticEntries, ...productEntries, ...blogSitemapEntries];
+  return [...staticEntries, ...categoryEntries, ...productEntries, ...blogSitemapEntries];
 }

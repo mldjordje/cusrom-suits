@@ -6,6 +6,7 @@ import {
   sanitizeAdminNextPath,
 } from "@/lib/adminAuth";
 import { updateStorefrontSupabaseSession } from "@/lib/supabase/update-storefront-session";
+import { categoryPathForGroupKey } from "@/lib/storefront/categoryRoutes";
 
 // Bots/scrapers frequently crawl the raw *.vercel.app alias directly (it's
 // what shows up in Vercel's own dashboards/DNS scans), not through the real
@@ -85,6 +86,23 @@ export async function middleware(req: NextRequest) {
     // Plain 404 with no HTML: the analytics script never loads, so these stop
     // showing up as "top pages" in Vercel Analytics.
     return new NextResponse("Not Found", { status: 404 });
+  }
+
+  // `/web-shop?categoryGroup=sako` is the pre-category-route form of a category
+  // view. It renders the same products as /web-shop/kategorija/muski-sakoi, so
+  // send it there permanently and drop the now-redundant param — otherwise the
+  // two URLs compete and the query form keeps collecting links. Other params
+  // (sort, size, page …) are preserved. Groups without a dedicated route
+  // (kais, kravata, novcanik, torba) keep working as query filters.
+  if (pathname === "/web-shop") {
+    const groupKey = req.nextUrl.searchParams.get("categoryGroup") || "";
+    const categoryPath = groupKey ? categoryPathForGroupKey(groupKey) : null;
+    if (categoryPath) {
+      const target = req.nextUrl.clone();
+      target.pathname = categoryPath;
+      target.searchParams.delete("categoryGroup");
+      return NextResponse.redirect(target, 308);
+    }
   }
 
   const isAdminArea = pathname.startsWith("/admin") || pathname.startsWith("/api/admin");

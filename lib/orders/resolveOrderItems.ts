@@ -41,6 +41,8 @@ export type CatalogPriceSource = {
   priceFinalGross: number;
   isActive: boolean;
   isExported: boolean;
+  /** Admin "Sakrij sa sajta" flag — pulled from the public catalog. */
+  hiddenFromShop?: boolean;
   stockWarehouse1: number;
   stockTotal: number;
   coverImage: string | null;
@@ -153,7 +155,9 @@ export const resolveOrderItems = async (
       rejected.push({ legacyId: line.legacyId, reason: "not_found" });
       continue;
     }
-    if (!product.isActive || !product.isExported) {
+    // A cart saved in localStorage outlives the catalog: a product the admin has
+    // since pulled from the shop must not stay orderable.
+    if (!product.isActive || !product.isExported || product.hiddenFromShop) {
       rejected.push({ legacyId: line.legacyId, reason: "unavailable" });
       continue;
     }

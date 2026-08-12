@@ -693,7 +693,7 @@ export async function GET(req: NextRequest) {
   );
   const visibilityStatus = parseCatalogFilter<CatalogListInput["visibilityStatus"] & string>(
     params.get("visibilityStatus"),
-    ["all", "visible", "hidden"],
+    ["all", "visible", "hidden", "hidden_shop"],
     "all",
   );
   const sourceStatus = parseCatalogFilter<CatalogListInput["sourceStatus"] & string>(

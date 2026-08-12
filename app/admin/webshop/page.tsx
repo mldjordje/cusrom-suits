@@ -959,6 +959,10 @@ export default function AdminWebshopPage() {
   const [loadingSales, setLoadingSales] = useState(false);
   const [savingId, setSavingId] = useState<number | null>(null);
   const [togglingHiddenId, setTogglingHiddenId] = useState<number | null>(null);
+  /** "Sakrij po sifrarniku" panel — pasted list of mOffice sifri / legacy ID-jeva. */
+  const [hiddenCodeInput, setHiddenCodeInput] = useState("");
+  const [hiddenCodesSaving, setHiddenCodesSaving] = useState(false);
+  const [hiddenCodesResult, setHiddenCodesResult] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [bulkSaving, setBulkSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -1991,36 +1995,141 @@ export default function AdminWebshopPage() {
     updateDraft(legacyId, { coverImage: url });
   };
 
-  // One-click hide/show from the customer shop. Sends a minimal PATCH (does not
-  // touch other unsaved draft edits) and persists immediately so the product
-  // disappears from / returns to every storefront listing.
+  // Local mirror of the server rule: the flag can sit either on the flattened field
+  // or straight in raw_payload depending on which normalizer produced the row.
+  const isHiddenFromShop = (item: { hiddenFromShop?: boolean; rawPayload?: Record<string, any> | null }) =>
+    item.hiddenFromShop === true || item.rawPayload?.hiddenFromShop === true;
+
+  // Writes the hide flag for whole SKUs (all size variants) through the visibility
+  // endpoint. Storefront hiding is SKU-level, so flagging a single variant would hide
+  // the product on the site while the admin list still showed a "visible" sibling.
+  const setHiddenForCodes = async (
+    codes: string[],
+    hidden: boolean,
+    options?: { silent?: boolean },
+  ): Promise<{ ok: boolean; updated: number; skus: number; notFound: string[] } | null> => {
+    const clean = Array.from(new Set(codes.map((code) => String(code || "").trim()).filter(Boolean)));
+    if (!clean.length) {
+      setError("Nema sifri za promenu.");
+      return null;
+    }
+    try {
+      const res = await fetch("/api/admin/webshop/products/visibility", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ skus: clean, hidden }),
+      });
+      const json = await res.json();
+      if (!json?.success && !json?.updated) {
+        setError(json?.message || "Cuvanje nije uspelo.");
+        return null;
+      }
+      if (!options?.silent) {
+        const missing = Array.isArray(json.notFound) && json.notFound.length
+          ? ` Nije pronadjeno: ${json.notFound.join(", ")}.`
+          : "";
+        setNotice(
+          `${hidden ? "Sakriveno sa sajta" : "Vraceno na sajt"}: ${json.skus || 0} sifri (${json.updated || 0} varijanti).${missing}`,
+        );
+      }
+      return {
+        ok: Boolean(json.success),
+        updated: Number(json.updated || 0),
+        skus: Number(json.skus || 0),
+        notFound: Array.isArray(json.notFound) ? json.notFound.map(String) : [],
+      };
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Greska pri cuvanju.");
+      return null;
+    }
+  };
+
+  // One-click hide/show from the customer shop. Persists immediately (does not touch
+  // other unsaved draft edits) so the product disappears from / returns to every
+  // storefront listing, then patches the local rows of the same SKU.
   const toggleHiddenFromShop = async (legacyId: number, hidden: boolean) => {
+    const row = items.find((it) => it.legacyId === legacyId) || saleItems.find((it) => it.legacyId === legacyId);
+    const sku = String(row?.sku || "").trim();
     setTogglingHiddenId(legacyId);
     setError(null);
     setNotice(null);
     try {
-      const res = await fetch("/api/admin/webshop/products", {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ legacyId, hiddenFromShop: hidden }),
-      });
-      const json = await res.json();
-      if (!json?.success) {
-        setError(json?.message || "Cuvanje nije uspelo.");
-        return;
-      }
-      setDrafts((prev) =>
-        prev[legacyId] ? { ...prev, [legacyId]: { ...prev[legacyId], hiddenFromShop: hidden } } : prev,
+      const result = await setHiddenForCodes([sku || String(legacyId)], hidden, { silent: true });
+      if (!result) return;
+      const matchesRow = (candidate: { legacyId: number; sku?: string | null }) =>
+        sku ? String(candidate.sku || "").trim() === sku : candidate.legacyId === legacyId;
+      const patchItem = <T extends { legacyId: number; sku?: string | null }>(list: T[]) =>
+        list.map((it) => (matchesRow(it) ? { ...it, hiddenFromShop: hidden } : it));
+      const affectedIds = new Set(
+        [...items, ...saleItems].filter(matchesRow).map((it) => it.legacyId),
       );
-      const patchItem = <T extends { legacyId: number }>(list: T[]) =>
-        list.map((it) => (it.legacyId === legacyId ? { ...it, hiddenFromShop: hidden } : it));
+      affectedIds.add(legacyId);
+      setDrafts((prev) => {
+        let next = prev;
+        for (const id of affectedIds) {
+          if (!next[id]) continue;
+          if (next === prev) next = { ...prev };
+          next[id] = { ...next[id], hiddenFromShop: hidden };
+        }
+        return next;
+      });
       setItems((prev) => patchItem(prev));
       setSaleItems((prev) => patchItem(prev));
-      setNotice(hidden ? `Sakriveno sa sajta #${legacyId}` : `Ponovo prikazano na sajtu #${legacyId}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Greska pri cuvanju.");
+      setNotice(
+        hidden
+          ? `Sakriveno sa sajta ${sku ? `sifra ${sku}` : `#${legacyId}`} (${result.updated} varijanti)`
+          : `Ponovo prikazano na sajtu ${sku ? `sifra ${sku}` : `#${legacyId}`} (${result.updated} varijanti)`,
+      );
     } finally {
       setTogglingHiddenId(null);
+    }
+  };
+
+  // Bulk hide/show for the checkbox selection in the product list.
+  const setHiddenForSelection = async (hidden: boolean) => {
+    if (!selectedIds.length) {
+      setError("Selektuj proizvode.");
+      return;
+    }
+    const codes = selectedIds.map((legacyId) => {
+      const row = items.find((it) => it.legacyId === legacyId);
+      return String(row?.sku || "").trim() || String(legacyId);
+    });
+    setBulkSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await setHiddenForCodes(codes, hidden);
+      if (result) await loadProducts(pagination.page);
+    } finally {
+      setBulkSaving(false);
+    }
+  };
+
+  // "Paste a list of sifre" panel — the client sends hide lists as plain text.
+  const applyHiddenCodeList = async (hidden: boolean) => {
+    const codes = hiddenCodeInput
+      .split(/[\s,;]+/)
+      .map((code) => code.trim())
+      .filter(Boolean);
+    if (!codes.length) {
+      setError("Nalepi sifre artikala.");
+      return;
+    }
+    setHiddenCodesSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const result = await setHiddenForCodes(codes, hidden);
+      if (result) {
+        setHiddenCodesResult(
+          `${hidden ? "Sakriveno" : "Vraceno"}: ${result.skus} sifri / ${result.updated} varijanti.` +
+            (result.notFound.length ? ` Nije pronadjeno: ${result.notFound.join(", ")}` : ""),
+        );
+        await loadProducts(pagination.page);
+      }
+    } finally {
+      setHiddenCodesSaving(false);
     }
   };
 
@@ -2303,13 +2412,26 @@ export default function AdminWebshopPage() {
             {uploadingEditorImages === item.legacyId ? "⏳ Uploading..." : "📷 Dodaj slike — prevuci ili klikni"}
           </label>
         )}
-        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
           <button
             type="button"
             onClick={() => setEditorId(item.legacyId)}
             className="rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700"
           >
             Izmeni
+          </button>
+          <button
+            type="button"
+            disabled={togglingHiddenId === item.legacyId}
+            onClick={() => void toggleHiddenFromShop(item.legacyId, !isHiddenFromShop(item))}
+            title="Sklanja / vraca ceo artikal (sve velicine) na javni web shop"
+            className={`rounded-lg border px-2 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] ${
+              isHiddenFromShop(item)
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-rose-200 bg-rose-50 text-rose-700"
+            }`}
+          >
+            {togglingHiddenId === item.legacyId ? "..." : isHiddenFromShop(item) ? "Vrati na sajt" : "Sakrij"}
           </button>
           <button
             type="button"
@@ -2839,7 +2961,8 @@ export default function AdminWebshopPage() {
               <select value={visibilityStatus} onChange={(e) => setVisibilityStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
                 <option value="all">Sva vidljivost</option>
                 <option value="visible">Vidljivo na sajtu</option>
-                <option value="hidden">Sakriveno</option>
+                <option value="hidden">Sakriveno (neaktivno/bez exporta)</option>
+                <option value="hidden_shop">Sakriveno sa sajta (rucno)</option>
               </select>
               <select value={sourceStatus} onChange={(e) => setSourceStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
                 <option value="all">Svi izvori</option>
@@ -2925,6 +3048,43 @@ export default function AdminWebshopPage() {
               <input value={bulkStockDelta} onChange={(e) => setBulkStockDelta(e.target.value)} placeholder="Promena lagera" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               <button onClick={applyBulk} disabled={bulkSaving} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">{bulkSaving ? "Cuvanje..." : "Primeni bulk izmene"}</button>
             </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
+              <span className="text-xs text-slate-500">Javni web shop (vazi za celu sifru, sve velicine):</span>
+              <button onClick={() => void setHiddenForSelection(true)} disabled={bulkSaving || !selectedIds.length} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-700 disabled:opacity-50">Sakrij selektovane</button>
+              <button onClick={() => void setHiddenForSelection(false)} disabled={bulkSaving || !selectedIds.length} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700 disabled:opacity-50">Vrati selektovane</button>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Sakrij po sifrarniku</p>
+            <p className="mb-3 text-xs text-slate-500">
+              Nalepi sifre artikala (jedna po redu ili razdvojene zarezom). Skida ceo artikal sa javnog web shopa —
+              sve velicine, u svim listama i pretrazi. Lager i mOffice sync ostaju netaknuti.
+            </p>
+            <textarea
+              value={hiddenCodeInput}
+              onChange={(e) => setHiddenCodeInput(e.target.value)}
+              rows={5}
+              placeholder={"128334\n128335\n129135"}
+              className="w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-sm"
+            />
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <button
+                onClick={() => void applyHiddenCodeList(true)}
+                disabled={hiddenCodesSaving}
+                className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-700 disabled:opacity-50"
+              >
+                {hiddenCodesSaving ? "Cuvanje..." : "Sakrij sa sajta"}
+              </button>
+              <button
+                onClick={() => void applyHiddenCodeList(false)}
+                disabled={hiddenCodesSaving}
+                className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700 disabled:opacity-50"
+              >
+                {hiddenCodesSaving ? "Cuvanje..." : "Vrati na sajt"}
+              </button>
+              {hiddenCodesResult ? <span className="text-xs text-slate-600">{hiddenCodesResult}</span> : null}
+            </div>
           </div>
 
           {loading ? <p className="text-sm text-slate-500">Ucitavanje...</p> : null}
@@ -3008,7 +3168,7 @@ export default function AdminWebshopPage() {
                             <span className="mt-2 inline-flex rounded-lg border border-slate-200 px-2 py-1 text-[10px] text-slate-500">Rucni unos</span>
                           )}
                         </td>
-                        <td className="px-2 py-2"><div className="flex flex-col gap-1"><button onClick={() => saveProduct(item.legacyId)} disabled={savingId === item.legacyId || !draft} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">{savingId === item.legacyId ? "Cuvanje..." : "Sacuvaj"}</button><button onClick={() => setEditorId(item.legacyId)} className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">Otvori editor</button><button onClick={() => openCategoryEditor(item)} className="rounded border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-violet-700">Kategorije</button><Link href={`/web-shop/${item.legacyId}`} target="_blank" className="rounded border border-slate-200 px-2 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Pregled</Link></div></td>
+                        <td className="px-2 py-2"><div className="flex flex-col gap-1"><button onClick={() => saveProduct(item.legacyId)} disabled={savingId === item.legacyId || !draft} className="rounded border border-emerald-200 bg-emerald-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-emerald-700">{savingId === item.legacyId ? "Cuvanje..." : "Sacuvaj"}</button><button onClick={() => setEditorId(item.legacyId)} className="rounded border border-blue-200 bg-blue-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-700">Otvori editor</button><button onClick={() => openCategoryEditor(item)} className="rounded border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-violet-700">Kategorije</button><button onClick={() => void toggleHiddenFromShop(item.legacyId, !isHiddenFromShop(item))} disabled={togglingHiddenId === item.legacyId} title="Sklanja / vraca ceo artikal (sve velicine) na javni web shop" className={`rounded border px-2 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${isHiddenFromShop(item) ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-rose-200 bg-rose-50 text-rose-700"}`}>{togglingHiddenId === item.legacyId ? "..." : isHiddenFromShop(item) ? "Vrati na sajt" : "Sakrij sa sajta"}</button><Link href={`/web-shop/${item.legacyId}`} target="_blank" className="rounded border border-slate-200 px-2 py-1 text-center text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-700">Pregled</Link></div></td>
                       </tr>
                     );
                   })}

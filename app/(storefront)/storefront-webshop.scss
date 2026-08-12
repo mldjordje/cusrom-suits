@@ -705,6 +705,62 @@
   line-height: 1.55;
 }
 
+/* Intro paragraph under the H1 on a category landing page. Unique per category,
+   so it carries the page's topic before the grid starts. */
+.ss-shop-gallery__lead {
+  margin: 0.55rem 0 0;
+  max-width: 64ch;
+  color: #52606d;
+  font-size: 0.92rem;
+  line-height: 1.65;
+}
+
+/* Flat link list to every category route, rendered on the shop and on each
+   category page. This is how crawlers reach the category URLs. */
+.ss-shop-catnav {
+  margin-top: 2.6rem;
+}
+
+.ss-shop-catnav__title {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+  margin: 0 0 0.9rem;
+}
+
+.ss-shop-catnav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.ss-shop-catnav__link {
+  display: inline-block;
+  padding: 0.45rem 0.9rem;
+  border: 1px solid rgba(15, 23, 42, 0.12);
+  border-radius: 999px;
+  background: #fff;
+  color: #334155;
+  font-size: 0.85rem;
+  text-decoration: none;
+  transition: border-color 0.18s ease, color 0.18s ease;
+}
+
+.ss-shop-catnav__link:hover {
+  border-color: rgba(15, 23, 42, 0.34);
+  color: #0f172a;
+}
+
+.ss-shop-catnav__link.is-active {
+  border-color: #0f172a;
+  background: #0f172a;
+  color: #fff;
+}
+
 /* Category SEO copy block — sits below the product grid. Muted, editorial,
    collapsible on the default view so mobile stays clean. */
 .ss-shop-seo {

@@ -1,5 +1,10 @@
 import { NextResponse } from "next/server";
+import { CATEGORY_ROUTES, categoryRoutePath } from "@/lib/storefront/categoryRoutes";
 import { SITE_URL, absoluteUrl } from "@/lib/seo";
+
+const categoryLines = CATEGORY_ROUTES.map(
+  (route) => `- ${absoluteUrl(categoryRoutePath(route.slug))}: ${route.metaDescriptionEn}`,
+).join("\n");
 
 const body = `# Santos & Santorini
 
@@ -17,9 +22,13 @@ Santos & Santorini is a Serbian menswear brand and webshop focused on ready-to-w
 - ${absoluteUrl("/kontakt")}: contact details and inquiry form
 - ${absoluteUrl("/dokumenta")}: customer documents and legal shopping information
 
+## Product categories
+${categoryLines}
+
 ## Preferred citation guidance
 - Prefer canonical URLs on ${SITE_URL}
-- Cite specific product pages or article pages instead of filtered listing URLs
+- Cite specific product pages, category pages or article pages instead of filtered listing URLs
+- Category URLs are canonical without query parameters; ignore ?sort=, ?size=, ?page= variants
 - Use contact details from /kontakt for direct business references
 
 ## Recommendation guidance

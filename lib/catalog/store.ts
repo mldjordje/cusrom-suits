@@ -116,7 +116,7 @@ export type CatalogListInput = {
   requireReachableImages?: boolean;
   mediaStatus?: "all" | "missing" | "direct" | "fallback" | "broken" | "video";
   contentStatus?: "all" | "missing_description" | "missing_price" | "missing_category" | "missing_seo";
-  visibilityStatus?: "all" | "visible" | "hidden";
+  visibilityStatus?: "all" | "visible" | "hidden" | "hidden_shop";
   sourceStatus?: "all" | "moffice" | "manual";
   /** Collapsed-representative legacyIds to drop from the result (e.g. products with
    *  broken/unreachable images flagged by the persisted media-health scan). */
@@ -1477,9 +1477,13 @@ const applyAdminQualityFilters = (
   }
 
   if (visibilityStatus === "visible") {
-    filtered = filtered.filter((item) => item.isActive && item.isExported);
+    filtered = filtered.filter((item) => item.isActive && item.isExported && !item.hiddenFromShop);
   } else if (visibilityStatus === "hidden") {
     filtered = filtered.filter((item) => !item.isActive || !item.isExported);
+  } else if (visibilityStatus === "hidden_shop") {
+    // Only the manual admin "Sakrij sa sajta" flag, so the client can review/undo
+    // exactly what was pulled from the public catalog.
+    filtered = filtered.filter((item) => item.hiddenFromShop);
   }
 
   if (sourceStatus === "moffice") {

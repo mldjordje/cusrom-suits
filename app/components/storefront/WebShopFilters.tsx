@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 import { localizeDynamicCategoryLabel } from "@/lib/storefront/dynamicCopy";
+import { categoryPathForGroupKey } from "@/lib/storefront/categoryRoutes";
 
 type ShopCategory = {
   id?: number;
@@ -45,12 +46,18 @@ type WebShopFiltersProps = {
   priceMax?: number;
   priceFloor?: number;
   priceCeiling?: number;
+  /**
+   * URL the non-category filters (sort, size, price, stock, pagination) write
+   * back to. "/web-shop" on the plain shop, "/web-shop/kategorija/<slug>" on a
+   * category landing page so those links never drop the category.
+   */
+  basePath?: string;
   children: ReactNode;
 };
 
-const toShopHref = (lang: StorefrontLanguage, queryString?: string) => {
+const toShopHref = (lang: StorefrontLanguage, queryString?: string, basePath = "/web-shop") => {
   const suffix = lang === "en" ? (queryString ? `?${queryString}&lang=en` : "?lang=en") : queryString ? `?${queryString}` : "";
-  return `/web-shop${suffix}`;
+  return `${basePath}${suffix}`;
 };
 
 export default function WebShopFilters({
@@ -74,6 +81,7 @@ export default function WebShopFilters({
   priceMax = 0,
   priceFloor = 0,
   priceCeiling = 0,
+  basePath = "/web-shop",
   children,
 }: WebShopFiltersProps) {
   const isEn = lang === "en";
@@ -110,12 +118,31 @@ export default function WebShopFilters({
     setMobileFilterOpen(false);
   };
 
+  // Mirrors makeHref in WebShopView: a category group that owns a dedicated
+  // /web-shop/kategorija/<slug> route is expressed by the path, never by a
+  // `?categoryGroup=` param, so the sidebar and chip links point at indexable
+  // URLs. Groups without a route and admin categories keep the query form.
   const makeHref = (patch: Record<string, string | number | null>) => {
+    const patchHas = (key: string) => Object.prototype.hasOwnProperty.call(patch, key);
+    // Naming a category navigates — to its route, or back to /web-shop when
+    // cleared. Filter links that stay in the category omit both keys.
+    const changesCategory = patchHas("categoryGroup") || patchHas("categoryId");
+
+    const nextGroup = changesCategory ? String(patch.categoryGroup ?? "") : categoryGroup;
+    const nextCategoryId = changesCategory
+      ? String(patch.categoryId ?? "")
+      : categoryId > 0
+        ? String(categoryId)
+        : "";
+
+    const groupPath = nextGroup ? categoryPathForGroupKey(nextGroup) : null;
+    const targetBase = groupPath || (changesCategory ? "/web-shop" : basePath);
+
     const params = new URLSearchParams();
     const current: Record<string, string> = {
       q: query.trim(),
-      categoryId: categoryId > 0 ? String(categoryId) : "",
-      categoryGroup,
+      categoryId: nextCategoryId,
+      categoryGroup: groupPath ? "" : nextGroup,
       inStock: inStock ? "1" : "",
       onSale: onSale ? "1" : "",
       sort: sort !== "featured" ? sort : "",
@@ -128,6 +155,7 @@ export default function WebShopFilters({
       if (value) params.set(key, value);
     }
     for (const [key, value] of Object.entries(patch)) {
+      if (key === "categoryGroup" || key === "categoryId") continue;
       if (value == null || value === "") {
         params.delete(key);
       } else {
@@ -135,10 +163,12 @@ export default function WebShopFilters({
       }
     }
 
-    return toShopHref(lang, params.toString());
+    return toShopHref(lang, params.toString(), targetBase);
   };
 
-  const rootHref = toShopHref(lang);
+  // "Reset all" on a category page clears the filters but stays in the category —
+  // the category is the page, not a filter.
+  const rootHref = toShopHref(lang, "", basePath);
   const currentSortLabel = sortOptions.find((option) => option.value === sort)?.label || sortOptions[0]?.label || sort;
 
   const renderCategoryLinks = (className: string) => (

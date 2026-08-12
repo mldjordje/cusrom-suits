@@ -154,6 +154,16 @@ export async function POST(req: NextRequest) {
     }
 
     if (!items.length) {
+      // No telemetry exists on the storefront's actual conversion funnel today
+      // (no GA4/Pixel configured), so a checkout attempt that dies here left no
+      // trace anywhere. Surface it in Vercel Analytics so a real drop-off is
+      // distinguishable from "nobody tried".
+      void trackVercelServerEvent("order_rejected", {
+        source: "storefront",
+        reason: "empty_cart",
+        rejectedCount: resolved.rejected.length,
+        rejectedReasons: resolved.rejected.map((entry) => entry.reason).join(","),
+      });
       return NextResponse.json(
         { success: false, message: describeRejections(resolved.rejected) || "Korpa je prazna." },
         { status: 400 },
@@ -161,6 +171,13 @@ export async function POST(req: NextRequest) {
     }
 
     if (resolved.rejected.length) {
+      void trackVercelServerEvent("order_rejected", {
+        source: "storefront",
+        reason: "partial_unavailable",
+        rejectedCount: resolved.rejected.length,
+        rejectedReasons: resolved.rejected.map((entry) => entry.reason).join(","),
+        rejectedLegacyIds: resolved.rejected.map((entry) => entry.legacyId).join(","),
+      });
       return NextResponse.json(
         {
           success: false,
