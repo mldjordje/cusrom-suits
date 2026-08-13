@@ -206,6 +206,18 @@ const TUTORIAL_SECTIONS: TutorialSection[] = [
       "Svaki run ima Details link sa tacnim brojem poslatih, preskocenih i odbijenih stavki.",
     ],
   },
+  {
+    title: "7. mOffice lager — kako radi",
+    lines: [
+      "mOffice je izvor istine za stanje zaliha i cene. Sync povlaci njihov lager i upisuje ga u nas katalog — ne obrnuto.",
+      "Automatski se pusta sam, na svaka 2 sata, preko cPanel PHP cron-a (cpanel-cron/moffice-sync.php), NE preko Vercel crona. On zove mOffice API pa salje rezultat na /api/cron/moffice, zasticeno CRON_SECRET tokenom.",
+      "Dugme \"mOffice lager\" dole u \"Ostale sinhronizacije\" pusta isto rucno, odmah, van reda. Korisno posle promene u mOffice-u kad ne zelis da cekas do 2h.",
+      "Rucno dugme ide preko cPanel proxy-a (moffice-proxy.php) jer mOffice API prima pozive samo sa cPanel IP adrese — direktan poziv sa Vercel-a dobija 403. Proxy radi samo ako su MOFFICE_PROXY_URL i MOFFICE_PROXY_SECRET podeseni na Vercel-u.",
+      "Environment/Production pravilo vazi i ovde — isto kao kod Ananas dugmadi u traci na vrhu strane.",
+      "Lanac do Ananasa: mOffice -> nas katalog (do 2h) -> Ananas lager cron (na 30 min) = do 2.5h kasnjenja dok se promena u mOffice-u pojavi na Ananasu.",
+      "Nasa prodaja na sajtu ne skida lager sama — mOffice ostaje jedini izvor istine za kolicine.",
+    ],
+  },
 ];
 
 function AnanasTutorialModal({ onClose }: { onClose: () => void }) {
