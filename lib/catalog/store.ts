@@ -26,6 +26,25 @@ const DIACRITIC_MAP: Record<string, string> = {
 const normalizeDiacritics = (str: string) =>
   str.replace(/[šŠčČćĆžŽđĐdžDž]/g, (ch) => DIACRITIC_MAP[ch] ?? ch);
 
+/** Minimum shared prefix length to treat two words as the same Serbian stem
+ *  (e.g. "prsluk" vs "prsluci" — plain substring match misses this because
+ *  the inflected ending differs from the very next letter). */
+const STEM_MIN_LEN = 4;
+
+const wordsMatchByStem = (a: string, b: string) => {
+  const len = Math.min(a.length, b.length);
+  if (len < STEM_MIN_LEN) return false;
+  return a.slice(0, len) === b.slice(0, len);
+};
+
+/** True if any word in `haystack` shares a Serbian stem with any word in `query`. */
+const haystackMatchesQueryByStem = (haystack: string, query: string) => {
+  const queryWords = query.split(/\s+/).filter((w) => w.length >= STEM_MIN_LEN);
+  if (queryWords.length === 0) return false;
+  const haystackWords = haystack.split(/\s+/);
+  return queryWords.some((qw) => haystackWords.some((hw) => wordsMatchByStem(hw, qw)));
+};
+
 type CatalogCategory = {
   id: number;
   name: string;
@@ -757,7 +776,12 @@ const applyFilters = (
         .toLowerCase();
 
       const normalizedHaystack = normalizeDiacritics(haystack);
-      return exactOrStartsWithCode || haystack.includes(query) || normalizedHaystack.includes(normalizedQuery);
+      return (
+        exactOrStartsWithCode ||
+        haystack.includes(query) ||
+        normalizedHaystack.includes(normalizedQuery) ||
+        haystackMatchesQueryByStem(normalizedHaystack, normalizedQuery)
+      );
     });
   }
   return filtered;
