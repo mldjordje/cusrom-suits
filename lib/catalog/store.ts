@@ -30,19 +30,34 @@ const normalizeDiacritics = (str: string) =>
  *  (e.g. "prsluk" vs "prsluci" — plain substring match misses this because
  *  the inflected ending differs from the very next letter). */
 const STEM_MIN_LEN = 4;
+/** Longest inflectional ending allowed to differ after the shared stem, so
+ *  "prslu|k" ~ "prslu|ci" matches but "pant|alone" ~ "pant|er" does not. */
+const STEM_MAX_TAIL = 3;
+
+const sharedPrefixLength = (a: string, b: string) => {
+  const max = Math.min(a.length, b.length);
+  let i = 0;
+  while (i < max && a[i] === b[i]) i += 1;
+  return i;
+};
 
 const wordsMatchByStem = (a: string, b: string) => {
-  const len = Math.min(a.length, b.length);
-  if (len < STEM_MIN_LEN) return false;
-  return a.slice(0, len) === b.slice(0, len);
+  const shared = sharedPrefixLength(a, b);
+  if (shared < STEM_MIN_LEN) return false;
+  return a.length - shared <= STEM_MAX_TAIL && b.length - shared <= STEM_MAX_TAIL;
 };
+
+/** Words split on anything non-alphanumeric ("m.prsluk" → ["m", "prsluk"]), keeping
+ *  only words that contain a letter — pure codes must match exactly, not by stem. */
+const splitStemWords = (value: string) =>
+  value.split(/[^a-z0-9]+/).filter((word) => word.length >= STEM_MIN_LEN && /[a-z]/.test(word));
 
 /** True if any word in `haystack` shares a Serbian stem with any word in `query`. */
 const haystackMatchesQueryByStem = (haystack: string, query: string) => {
-  const queryWords = query.split(/\s+/).filter((w) => w.length >= STEM_MIN_LEN);
+  const queryWords = splitStemWords(query);
   if (queryWords.length === 0) return false;
-  const haystackWords = haystack.split(/\s+/);
-  return queryWords.some((qw) => haystackWords.some((hw) => wordsMatchByStem(hw, qw)));
+  const haystackWords = splitStemWords(haystack);
+  return queryWords.every((qw) => haystackWords.some((hw) => wordsMatchByStem(hw, qw)));
 };
 
 type CatalogCategory = {
