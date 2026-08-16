@@ -104,26 +104,46 @@
 
 /* ---------- 3. Shell + typography --------------------------------------- */
 
+/*
+ * SCOPE — read this before adding anything below.
+ *
+ * The dark theme applies to the LANDING PAGE ONLY, keyed off `.ss-home-page`
+ * (set on <main> in app/(storefront)/page.tsx).
+ *
+ * The first cut of this layer put the dark ground and the light type colours on
+ * `.ss-lux`, which wraps the whole storefront. But the shop, category, product,
+ * cart and checkout pages still paint their own light surfaces
+ * (`.page-wrapper.ss-shop-page` is #f4f1ec, `.ss-shop-gallery__header` is white).
+ * The result was near-white text on near-white panels — category titles and
+ * product names were invisible in production. 47 elements failed a 3:1 contrast
+ * check on one category page alone.
+ *
+ * So: anything that changes a COLOUR is scoped to the landing. Only things that
+ * are safe on a light page (type size, leading, focus rings) stay global.
+ * Converting the shop pages to dark is a deliberate job, not a side effect —
+ * until then they keep the template's light theme and stay readable.
+ */
+
+/* Safe everywhere: the template's 14px body is too small to read as premium. */
 .ss-lux {
-  background: var(--lux-ink-0);
-  color: var(--lux-fg);
   font-size: var(--lux-fs-body);
   line-height: var(--lux-leading-body);
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
 
-/* The template paints white on <body>; without this the dark shell stops at
-   the end of the content and the overscroll area flashes white.
-   The literal is deliberate: --lux-ink-0 is declared on .ss-lux, so it is out
-   of scope on the ancestor and var() would resolve to nothing here. Keeping
-   the palette off :root is what stops it leaking into /admin. */
-html:has(.ss-lux),
-body:has(.ss-lux) {
+/* Ground, landing only. The literal is deliberate: --lux-ink-0 is declared on
+   .ss-lux, so it is out of scope on these ancestors and var() would resolve to
+   nothing. Keeping the palette off :root is what stops it leaking into /admin. */
+html:has(.ss-home-page),
+body:has(.ss-home-page) {
   background: #0a0908;
 }
 
-.ss-lux {
+.ss-lux .ss-home-page {
+  background: var(--lux-ink-0);
+  color: var(--lux-fg);
+
   p,
   li,
   dd {
@@ -178,6 +198,71 @@ body:has(.ss-lux) {
   hr {
     border-color: var(--lux-line);
     opacity: 1;
+  }
+}
+
+/* --- Template surfaces on the landing ---------------------------------------
+ *
+ * `.ss-editorial-section` carries a cream background AND is a Bootstrap
+ * `.container`, so it is width-limited. Against the dark ground that rendered
+ * as a cream band with black bars down both sides of the page. Every light
+ * surface the landing paints has to be dealt with for the dark ground to read
+ * as intentional — except the plates behind product photography, which stay
+ * light on purpose (see --lux-plate).
+ */
+.ss-lux .ss-home-page {
+  .ss-editorial-section,
+  .ss-category-strip,
+  .banner-grid,
+  .blog-grid,
+  .products-grid {
+    background: transparent !important;
+  }
+
+  .ss-featured-tile,
+  .ss-story-card,
+  .ss-banner-panel,
+  .blog-grid__item {
+    background: var(--lux-ink-2) !important;
+  }
+
+  /* Product photography keeps its light plate. */
+  .ss-premium-card__img-wrap,
+  .pc__img-wrapper {
+    background: var(--lux-plate) !important;
+  }
+
+  /* Turning those surfaces dark exposed the mirror-image problem: template text
+     that was authored dark for a cream ground (tile labels, prices) became dark
+     on dark. These classes are not headings or paragraphs, so the typography
+     block above does not reach them. The light pills over product images keep
+     their own dark text and are not inside .ss-premium-card__info. */
+  .menu-link,
+  .money,
+  .price,
+  .ss-premium-card__info,
+  .ss-premium-card__info *,
+  .ss-featured-tile,
+  .ss-featured-tile * {
+    color: var(--lux-fg);
+  }
+
+  /* These two carry the template's own ink colour at a specificity this layer
+     cannot outrank from here — the same trade-off documented at the top. */
+  .menu-link,
+  .menu-link_us-s {
+    color: var(--lux-fg) !important;
+  }
+
+  .btn-outline-dark {
+    color: var(--lux-fg) !important;
+    border-color: var(--lux-line-strong);
+  }
+
+  .btn-outline-dark:hover {
+    background: var(--lux-gold);
+    border-color: var(--lux-gold);
+    color: var(--lux-ink-0);
   }
 }
 
@@ -285,33 +370,33 @@ body:has(.ss-lux) {
 }
 
 /* Product card — dark body, light plate behind the photograph. */
-.ss-lux .product-card {
+.ss-lux .ss-home-page .product-card {
   background: transparent;
   border: 0;
 }
 
-.ss-lux .product-card .pc__img-wrapper {
+.ss-lux .ss-home-page .product-card .pc__img-wrapper {
   position: relative;
   overflow: hidden;
   background: var(--lux-plate);
   box-shadow: inset 0 0 0 1px var(--lux-plate-edge);
 }
 
-.ss-lux .product-card .pc__img {
+.ss-lux .ss-home-page .product-card .pc__img {
   transition: transform 1.1s var(--lux-ease), filter var(--lux-dur) var(--lux-ease);
   will-change: transform;
 }
 
-.ss-lux .product-card:hover .pc__img {
+.ss-lux .ss-home-page .product-card:hover .pc__img {
   transform: scale(1.045);
 }
 
-.ss-lux .product-card .pc__info {
+.ss-lux .ss-home-page .product-card .pc__info {
   background: transparent;
   padding-top: 1.15rem;
 }
 
-.ss-lux .product-card .pc__category {
+.ss-lux .ss-home-page .product-card .pc__category {
   font-size: var(--lux-fs-eyebrow);
   letter-spacing: var(--lux-track-eyebrow);
   text-transform: uppercase;
@@ -319,8 +404,8 @@ body:has(.ss-lux) {
   margin-bottom: 0.4rem;
 }
 
-.ss-lux .product-card .pc__title,
-.ss-lux .product-card .pc__title a {
+.ss-lux .ss-home-page .product-card .pc__title,
+.ss-lux .ss-home-page .product-card .pc__title a {
   font-size: 0.98rem;
   font-weight: 500;
   letter-spacing: 0.01em;
@@ -328,23 +413,23 @@ body:has(.ss-lux) {
   text-decoration: none;
 }
 
-.ss-lux .product-card .product-card__price {
+.ss-lux .ss-home-page .product-card .product-card__price {
   margin-top: 0.5rem;
   gap: 0.6rem;
   align-items: baseline;
 }
 
-.ss-lux .product-card .money,
-.ss-lux .product-card .price {
+.ss-lux .ss-home-page .product-card .money,
+.ss-lux .ss-home-page .product-card .price {
   font-size: 1rem;
   font-weight: 600;
   color: var(--lux-fg);
 }
 
 /* Struck-through original price must recede, not compete. */
-.ss-lux .product-card .price-old,
-.ss-lux .product-card .compare-at-price,
-.ss-lux .product-card del {
+.ss-lux .ss-home-page .product-card .price-old,
+.ss-lux .ss-home-page .product-card .compare-at-price,
+.ss-lux .ss-home-page .product-card del {
   color: var(--lux-fg-faint);
   font-weight: 400;
   text-decoration-thickness: 1px;
@@ -440,8 +525,9 @@ body:has(.ss-lux) {
   transform-origin: left;
 }
 
-/* Template buttons that survive inside admin-authored content. */
-.ss-lux {
+/* Template buttons that survive inside admin-authored content. Landing only —
+   on the light shop pages these same classes need the template's own colours. */
+.ss-lux .ss-home-page {
   .btn-light,
   .btn-outline-light {
     background: transparent;
@@ -472,7 +558,10 @@ body:has(.ss-lux) {
 
 /* ---------- 7. Header / footer ------------------------------------------ */
 
-.ss-lux .header {
+/* Header colours only where the header actually sits on dark: over the landing
+   hero. Elsewhere it floats above light page surfaces and keeps the template's
+   dark-on-light treatment. */
+.ss-lux:has(.ss-home-page) .header {
   --_pad: clamp(0.9rem, 1.6vw, 1.4rem);
   color: var(--lux-fg);
 }
@@ -487,12 +576,12 @@ body:has(.ss-lux) {
   border-bottom: 1px solid var(--lux-line);
 }
 
-.ss-lux .header a,
-.ss-lux .header .navigation__link {
+.ss-lux:has(.ss-home-page) .header a,
+.ss-lux:has(.ss-home-page) .header .navigation__link {
   color: var(--lux-fg);
 }
 
-.ss-lux .header a:hover {
+.ss-lux:has(.ss-home-page) .header a:hover {
   color: var(--lux-gold);
 }
 
@@ -516,8 +605,13 @@ body:has(.ss-lux) {
 
 /* Checkout lives on this. Dark inputs are where dark themes usually lose the
    sale: the field has to read as obviously typeable. High-contrast text,
-   visible resting border, unmistakable focus ring. */
-.ss-lux {
+   visible resting border, unmistakable focus ring.
+
+   Landing and footer only for now. The shop filter sidebar and the checkout
+   form still sit on light panels, so dark fields there would be the same
+   light-on-light mistake in reverse. They convert when those pages do. */
+.ss-lux .ss-home-page,
+.ss-lux .ss-footer {
   .form-control,
   .form-select,
   input[type="text"],
@@ -1020,7 +1114,7 @@ body:has(.ss-lux) {
     transition: none;
   }
 
-  .ss-lux .product-card .pc__img,
+  .ss-lux .ss-home-page .product-card .pc__img,
   .ss-lux .lux-btn::after,
   .ss-lux .lux-link::after {
     transition: none;
