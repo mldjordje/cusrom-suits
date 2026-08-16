@@ -989,12 +989,52 @@ export default async function HomePage({
     return null;
   };
 
+  /*
+   * Landing cadence.
+   *
+   * Every section here renders at the same container width with the same
+   * title/link header, and the product sections are three identical four-up
+   * grids in a row — the page reads as one long undifferentiated block.
+   *
+   * Rather than fork the section renderers (they are admin-ordered, and the
+   * order is not known until request time), each entry gets a cadence class
+   * and santos-lux.scss restyles it from there: product grids alternate
+   * grid -> horizontal rail -> raised band, and editorial sections alternate
+   * between contained and full-bleed. Reordering sections in the admin panel
+   * reshuffles the cadence with them instead of breaking it.
+   */
+  const gridCadence = ["grid", "rail", "band"] as const;
+  const cadenceByIndex = (() => {
+    const result: string[] = [];
+    let gridSeen = 0;
+    let editorialSeen = 0;
+    orderedLandingPageEntries.forEach((entry) => {
+      if (entry.kind === "builtin" || entry.kind === "custom") {
+        result.push(`lux-act lux-act--${gridCadence[gridSeen % gridCadence.length]}`);
+        gridSeen += 1;
+        return;
+      }
+      result.push(`lux-act lux-act--${editorialSeen % 2 === 0 ? "wide" : "bleed"}`);
+      editorialSeen += 1;
+    });
+    return result;
+  })();
+
   const renderLandingPageEntry = (entry: (typeof orderedLandingPageEntries)[number], index: number) => {
     const key = entry.kind === "fixed" ? `fixed-${entry.key}` : entry.kind === "custom" ? `custom-${entry.id}` : `builtin-${entry.key}`;
     const custom = entry.kind === "custom" ? customGridSectionById.get(entry.id) : null;
     const content = entry.kind === "fixed" ? renderFixedSection(entry.key) : entry.kind === "custom" && custom ? renderCustomGridSection(custom.section, custom.items) : entry.kind === "builtin" ? renderGridSection(entry.key) : null;
     if (!content) return null;
-    return <Reveal key={key} as="div" delay={Math.min(0.04 * index, 0.24)} y={18} amount={0.08}>{content}{index < orderedLandingPageEntries.length - 1 ? <div className="ss-home-section-gap" /> : null}</Reveal>;
+    // Fixed sections bring their own <Reveal>; the product grids used to be
+    // wrapped in one here, so they get the lux reveal instead of nesting two
+    // competing animations on the same element.
+    const selfAnimates = entry.kind === "fixed";
+    return (
+      <div key={key} className={cadenceByIndex[index]} {...(selfAnimates ? {} : { "data-lux-reveal": "" })}>
+        {content}
+        {index < orderedLandingPageEntries.length - 1 ? <div className="ss-home-section-gap" /> : null}
+      </div>
+    );
   };
 
   const websiteJsonLd = buildWebSiteJsonLd();

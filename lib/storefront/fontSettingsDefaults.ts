@@ -66,6 +66,21 @@ export const resolveFontSettings = (
 
 const cssString = (value: string) => value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/[\r\n]/g, " ");
 
+/**
+ * Build the font-family stack for a record.
+ *
+ * The brand defaults (Montserrat / Playfair Display) are always kept in the chain
+ * ahead of the generic fallback. If the configured family fails to load — a typo in
+ * the admin font picker, a Google Fonts outage, a deleted upload — the page lands on
+ * the brand serif/sans instead of the browser's Times/Arial.
+ */
+const fontStack = (font: FontFamilyRecord) => {
+  const brandDefault = font.fallback === "serif" ? "Playfair Display" : "Montserrat";
+  const names = [font.name];
+  if (font.name.toLowerCase() !== brandDefault.toLowerCase()) names.push(brandDefault);
+  return `${names.map((name) => `"${cssString(name)}"`).join(",")},${font.fallback}`;
+};
+
 export const buildGoogleFontUrls = (settings: ResolvedFontSettings) => {
   const unique = new Map([settings.body, settings.heading].filter((font) => font.source === "google").map((font) => [font.id, font]));
   return Array.from(unique.values()).map((font) => {
@@ -78,8 +93,8 @@ export const buildStorefrontFontCss = (settings: ResolvedFontSettings) => {
   const faces = [settings.body, settings.heading].filter((font) => font.source === "uploaded").flatMap((font) =>
     font.weights.map((weight) => font.files?.[weight] ? `@font-face{font-family:"${cssString(font.name)}";src:url("/site-assets/${font.files[weight]}") format("woff2");font-style:normal;font-weight:${weight};font-display:swap;}` : "").filter(Boolean),
   );
-  const body = `"${cssString(settings.body.name)}",${settings.body.fallback}`;
-  const heading = `"${cssString(settings.heading.name)}",${settings.heading.fallback}`;
+  const body = fontStack(settings.body);
+  const heading = fontStack(settings.heading);
   faces.push(`.ss-storefront-font-scope{--font-montserrat:${body};--font-playfair-display:${heading};--font-family-base:${body};--font-heading:${heading};--font-display:${heading};--pf:${heading};font-family:${body};font-weight:${settings.bodyWeight};letter-spacing:${settings.letterSpacingBase}em}.ss-storefront-font-scope h1,.ss-storefront-font-scope h2,.ss-storefront-font-scope h3,.ss-storefront-font-scope .block-title,.ss-storefront-font-scope .ss-header-logo-text{font-family:${heading}!important;font-weight:${settings.headingWeight}}`);
   return faces.join("\n");
 };

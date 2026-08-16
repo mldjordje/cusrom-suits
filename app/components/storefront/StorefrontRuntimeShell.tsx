@@ -4,6 +4,10 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import StorefrontPreloader from "@/app/components/storefront/StorefrontPreloader";
+// Imported statically, not via next/dynamic: this drives the first reveals a
+// visitor sees, so it must not wait on a separate chunk round-trip. It carries
+// no heavy dependencies — an IntersectionObserver and one scroll listener.
+import LuxScrollFx from "@/app/components/storefront/LuxScrollFx";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
 
 const StorefrontViewportEffects = dynamic(
@@ -104,6 +108,7 @@ export default function StorefrontRuntimeShell() {
           }}
         />
       ) : null}
+      <LuxScrollFx />
       <StorefrontViewportEffects />
       {cartActivated ? <StorefrontCartDrawer /> : null}
       {searchActivated ? <StorefrontSearchOverlay /> : null}

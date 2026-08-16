@@ -1,75 +1,141 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-const MIN_VISIBLE_MS = 260;
-const EXIT_DURATION_MS = 260;
+/**
+ * Home-page intro.
+ *
+ * The previous version held for 260ms and faded out over 260ms, which read as
+ * a flicker rather than an entrance — long enough to notice, too short to mean
+ * anything. This one is a three-beat sequence: the mark is revealed, a rule
+ * tracks real load progress, then a curtain lifts and hands off to the hero.
+ *
+ * Guard rails, because an intro that annoys is worse than no intro:
+ *   - only on `/`, only once per session (StorefrontRuntimeShell owns that)
+ *   - never blocks longer than MAX_HOLD_MS even if something stalls
+ *   - prefers-reduced-motion skips straight to the page
+ */
+
+const MIN_HOLD_MS = 1150; // long enough to read the wordmark
+const MAX_HOLD_MS = 3000; // hard ceiling regardless of network
+const EXIT_MS = 1000; // curtain lift, overlaps the hero's own intro
+
+type Phase = "enter" | "exit" | "done";
 
 export default function StorefrontPreloader({ onExitComplete }: { onExitComplete?: () => void }) {
-  const [isVisible, setIsVisible] = useState(true);
-  const [isExiting, setIsExiting] = useState(false);
-  const startedAtRef = useRef(0);
+  const [phase, setPhase] = useState<Phase>("enter");
+  const [progress, setProgress] = useState(0);
+  const finishedRef = useRef(false);
+
+  const finish = useCallback(() => {
+    if (finishedRef.current) return;
+    finishedRef.current = true;
+    setPhase("done");
+    onExitComplete?.();
+  }, [onExitComplete]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    let releaseTimer: number | undefined;
-    let exitTimer: number | undefined;
-    let released = false;
+    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (prefersReduced) {
+      finish();
+      return;
+    }
 
-    startedAtRef.current = window.performance.now();
+    const startedAt = window.performance.now();
+    const timers: number[] = [];
+    let released = false;
+    let raf = 0;
+
+    /* The rule creeps toward 90% on its own and only completes when the page
+       actually reports ready. A bar that races to 100% and then waits is the
+       tell of a fake loader. */
+    const tick = () => {
+      const elapsed = window.performance.now() - startedAt;
+      const eased = 1 - Math.exp(-elapsed / 620);
+      setProgress((current) => Math.max(current, Math.min(0.9, eased * 0.9)));
+      raf = window.requestAnimationFrame(tick);
+    };
+    raf = window.requestAnimationFrame(tick);
 
     const release = () => {
       if (released) return;
       released = true;
-      const elapsed = window.performance.now() - startedAtRef.current;
-      const waitMs = Math.max(0, MIN_VISIBLE_MS - elapsed);
 
-      releaseTimer = window.setTimeout(() => {
-        setIsExiting(true);
-        exitTimer = window.setTimeout(() => {
-          setIsVisible(false);
-          onExitComplete?.();
-        }, EXIT_DURATION_MS);
-      }, waitMs);
+      const elapsed = window.performance.now() - startedAt;
+      const wait = Math.max(0, MIN_HOLD_MS - elapsed);
+
+      timers.push(
+        window.setTimeout(() => {
+          window.cancelAnimationFrame(raf);
+          setProgress(1);
+          // Let the rule visibly land before the curtain moves.
+          timers.push(
+            window.setTimeout(() => {
+              setPhase("exit");
+              timers.push(window.setTimeout(finish, EXIT_MS));
+            }, 260),
+          );
+        }, wait),
+      );
     };
 
     if (document.readyState === "complete") {
       release();
     } else {
       window.addEventListener("load", release, { once: true });
-      releaseTimer = window.setTimeout(release, 1200);
     }
+    timers.push(window.setTimeout(release, MAX_HOLD_MS));
 
     return () => {
       window.removeEventListener("load", release);
-      if (releaseTimer) window.clearTimeout(releaseTimer);
-      if (exitTimer) window.clearTimeout(exitTimer);
+      window.cancelAnimationFrame(raf);
+      timers.forEach((timer) => window.clearTimeout(timer));
     };
-  }, [onExitComplete]);
+  }, [finish]);
 
-  if (!isVisible) return null;
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (phase === "done") return;
+
+    // Nothing should scroll underneath the curtain.
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [phase]);
+
+  if (phase === "done") return null;
 
   return (
-    <div
-      className={`ss-preloader ${isExiting ? "is-exiting" : ""}`}
-      aria-hidden="true"
-    >
-      <div className="ss-preloader__backdrop" />
-      <div className="ss-preloader__mark">
-        <div className="ss-preloader__logo-wrap">
+    <div className={`lux-preloader${phase === "exit" ? " is-exiting" : ""}`} role="presentation" aria-hidden="true">
+      {/* Two panels so the lift has depth — the back one trails the front. */}
+      <span className="lux-preloader__panel lux-preloader__panel--back" />
+      <span className="lux-preloader__panel lux-preloader__panel--front" />
+
+      <div className="lux-preloader__mark">
+        <span className="lux-preloader__logo">
           <Image
             src="/img/logo-header.png"
-            alt="Santos and Santorini"
+            alt=""
             width={360}
             height={110}
             priority
-            className="ss-preloader__logo"
+            sizes="(max-width: 640px) 220px, 300px"
           />
-        </div>
-        <span className="ss-preloader__caption">Tailored in Serbia</span>
-        <span className="ss-preloader__line" />
+        </span>
+
+        <span className="lux-preloader__caption">Tailored in Serbia</span>
+
+        <span className="lux-preloader__rule">
+          <span
+            className="lux-preloader__rule-fill"
+            style={{ transform: `scaleX(${progress.toFixed(3)})` }}
+          />
+        </span>
       </div>
     </div>
   );

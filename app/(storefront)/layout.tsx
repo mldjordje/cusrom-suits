@@ -14,6 +14,9 @@ import { buildGoogleFontUrls, buildStorefrontFontCss, resolveFontSettings } from
 import "./storefront-base.scss";
 import "./storefront-webshop.scss";
 import "./santos-theme.scss";
+// Loaded last on purpose — the lux layer restates the design on top of the
+// purchased template rather than editing 9k lines of it in place.
+import "./santos-lux.scss";
 
 export default async function StorefrontLayout({ children }: { children: ReactNode }) {
   const [popupSettings, fontSettings, fontLibrary] = await Promise.all([
@@ -28,7 +31,7 @@ export default async function StorefrontLayout({ children }: { children: ReactNo
     <>
       {googleFontUrls.map((href) => <link key={href} rel="stylesheet" href={href} />)}
       <style dangerouslySetInnerHTML={{ __html: fontCss }} />
-      <div className="ss-storefront-font-scope">
+      <div className="ss-storefront-font-scope ss-lux">
         <StorefrontAuthProvider>
           <StorefrontCartProvider>
             <StorefrontRuntimeShell />
