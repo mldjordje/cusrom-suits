@@ -32,6 +32,11 @@ type LiveGroup = {
   registryChildren: RegistryChild[];
 };
 
+/** Green = customers see it. Grey = it exists but is switched off. */
+const StatusDot = ({ on }: { on: boolean }) => (
+  <span className={`h-2 w-2 shrink-0 rounded-full ${on ? "bg-emerald-500" : "bg-slate-300"}`} aria-hidden />
+);
+
 type ProductRow = {
   legacyId: number;
   sku: string;
@@ -49,6 +54,20 @@ type Target =
 
 const targetId = (target: Target) => (target.kind === "group" ? `g:${target.key}` : `c:${target.id}`);
 
+/** Main categories a loose one can be filed under. Mirrors ALL_AUTO_GROUPS. */
+const PARENT_CHOICES: Array<{ key: string; name: string }> = [
+  { key: "odelo", name: "Odela" },
+  { key: "sako", name: "Sakoi" },
+  { key: "pantalone", name: "Pantalone" },
+  { key: "kosulja", name: "Košulje" },
+  { key: "dzemper", name: "Džemperi" },
+  { key: "prsluk", name: "Prsluci" },
+  { key: "kaput", name: "Kaputi" },
+  { key: "jakna", name: "Jakne" },
+  { key: "obuca", name: "Obuća" },
+  { key: "aksesoari", name: "Aksesoari" },
+];
+
 export default function LiveCategoryTree({
   onChanged,
   onCreateSubcategory,
@@ -57,6 +76,7 @@ export default function LiveCategoryTree({
   onCreateSubcategory: (groupKey: string, groupName: string) => void;
 }) {
   const [groups, setGroups] = useState<LiveGroup[]>([]);
+  const [orphans, setOrphans] = useState<RegistryChild[]>([]);
   const [totals, setTotals] = useState<{ liveProducts: number; allProducts: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -70,24 +90,135 @@ export default function LiveCategoryTree({
   const [skuBusy, setSkuBusy] = useState(false);
   const [skuNotice, setSkuNotice] = useState<string | null>(null);
 
+  /** Auto-groups the shop is allowed to show. Empty until the first load. */
+  const [enabledGroups, setEnabledGroups] = useState<Set<string>>(new Set());
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+
   const loadTree = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/admin/webshop/categories/overview");
-      const json = await res.json();
+      const [treeRes, groupsRes] = await Promise.all([
+        fetch("/api/admin/webshop/categories/overview"),
+        fetch("/api/admin/webshop/categories/auto-groups"),
+      ]);
+      const json = await treeRes.json();
       if (!json?.success) {
         setError(json?.message || "Ucitavanje kategorija nije uspelo.");
         return;
       }
       setGroups(json.groups || []);
+      setOrphans(json.orphanRegistry || []);
       setTotals(json.totals || null);
+
+      const groupsJson = await groupsRes.json();
+      if (groupsJson?.success && Array.isArray(groupsJson.enabledGroups)) {
+        setEnabledGroups(new Set(groupsJson.enabledGroups.map(String)));
+      }
     } catch {
       setError("Ucitavanje kategorija nije uspelo.");
     } finally {
       setLoading(false);
     }
   }, []);
+
+  /* Main categories are switched on and off as a set, so the toggle sends the
+     whole enabled list back rather than a single key. */
+  const toggleGroupEnabled = async (groupKey: string, nextOn: boolean) => {
+    const next = new Set(enabledGroups);
+    if (nextOn) next.add(groupKey);
+    else next.delete(groupKey);
+    setEnabledGroups(next);
+    setBusyKey(groupKey);
+    try {
+      await fetch("/api/admin/webshop/categories/auto-groups", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabledGroups: [...next] }),
+      });
+      onChanged();
+    } catch {
+      setError("Promena vidljivosti kategorije nije uspela.");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const toggleChildVisible = async (child: RegistryChild, nextOn: boolean) => {
+    setBusyKey(`c${child.id}`);
+    try {
+      const res = await fetch("/api/admin/webshop/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: child.id, isVisible: nextOn }),
+      });
+      const json = await res.json();
+      if (!json?.success) {
+        setError(json?.message || "Promena vidljivosti nije uspela.");
+        return;
+      }
+      await loadTree();
+      onChanged();
+    } catch {
+      setError("Promena vidljivosti nije uspela.");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  /** File a loose category under a main one — it then shows in that menu. */
+  const setChildParent = async (child: RegistryChild, parentGroup: string) => {
+    setBusyKey(`c${child.id}`);
+    try {
+      const res = await fetch("/api/admin/webshop/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: child.id, parentGroup }),
+      });
+      const json = await res.json();
+      if (!json?.success) {
+        setError(json?.message || "Premestanje kategorije nije uspelo.");
+        return;
+      }
+      await loadTree();
+      onChanged();
+    } catch {
+      setError("Premestanje kategorije nije uspelo.");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  const deleteChild = async (child: RegistryChild) => {
+    /* Deleting a category that products still point at would leave them tagged
+       with something that no longer exists, so say what will happen and only
+       force when the admin confirms it. */
+    const message =
+      child.assigned > 0
+        ? `Obrisati podkategoriju "${child.name}"?\n\nDodeljena je na ${child.assigned} artikala — biće uklonjena sa njih. Artikli ostaju u shopu, samo gube ovu kategoriju.`
+        : `Obrisati podkategoriju "${child.name}"?`;
+    if (typeof window !== "undefined" && !window.confirm(message)) return;
+
+    setBusyKey(`c${child.id}`);
+    try {
+      const res = await fetch(
+        `/api/admin/webshop/categories?id=${child.id}${child.assigned > 0 ? "&force=1" : ""}`,
+        { method: "DELETE" },
+      );
+      const json = await res.json();
+      if (!json?.success) {
+        setError(json?.message || "Brisanje nije uspelo.");
+        return;
+      }
+      if (openTarget?.kind === "category" && openTarget.id === child.id) setOpenTarget(null);
+      await loadTree();
+      onChanged();
+    } catch {
+      setError("Brisanje nije uspelo.");
+    } finally {
+      setBusyKey(null);
+    }
+  };
 
   useEffect(() => {
     void loadTree();
@@ -296,6 +427,28 @@ export default function LiveCategoryTree({
         </div>
       </div>
 
+      {/* Legend: the colours carry meaning, so name it once instead of making
+          the admin infer it from three different chip styles. */}
+      <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-500">
+        <span className="flex items-center gap-1.5">
+          <StatusDot on />
+          prikazuje se kupcima
+        </span>
+        <span className="flex items-center gap-1.5">
+          <StatusDot on={false} />
+          postoji, ali je iskljucena
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-sky-400" />
+          automatska podkategorija (iz naziva artikala)
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="h-2 w-2 rounded-full bg-violet-400" />
+          rucno kreirana — moze da se sakrije ili obrise
+        </span>
+        <span>Glavne kategorije se ne brisu, samo se iskljucuju.</span>
+      </div>
+
       {error ? <p className="mb-3 rounded-xl bg-rose-50 p-2 text-xs text-rose-700">{error}</p> : null}
       {loading ? <p className="text-xs text-slate-400">Ucitavanje...</p> : null}
 
@@ -303,19 +456,36 @@ export default function LiveCategoryTree({
         {groups.map((group) => {
           const groupTarget: Target = { kind: "group", key: group.key, label: group.name };
           const isOpen = openTarget?.kind === "group" && openTarget.key === group.key;
+          const groupOn = enabledGroups.size === 0 || enabledGroups.has(group.key);
           return (
-            <div key={group.key} className="rounded-xl border border-slate-200 p-3">
+            <div key={group.key} className={`rounded-xl border p-3 ${groupOn ? "border-slate-200" : "border-slate-200 bg-slate-50/60"}`}>
               <div className="flex flex-wrap items-center gap-2">
                 <button
                   type="button"
                   onClick={() => toggleTarget(groupTarget)}
-                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                  className={`flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
                     isOpen ? "border-slate-800 bg-slate-800 text-white" : "border-slate-200 bg-slate-50 text-slate-700"
-                  }`}
+                  } ${groupOn ? "" : "opacity-60"}`}
                 >
+                  <StatusDot on={groupOn} />
                   {group.name}
-                  <span className="ml-2 opacity-70">{group.count}</span>
+                  <span className="opacity-70">{group.count}</span>
                 </button>
+
+                <label
+                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
+                    groupOn ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-500"
+                  }`}
+                  title="Da li se ova glavna kategorija prikazuje kupcima"
+                >
+                  <input
+                    type="checkbox"
+                    checked={groupOn}
+                    disabled={busyKey === group.key}
+                    onChange={(e) => void toggleGroupEnabled(group.key, e.target.checked)}
+                  />
+                  {groupOn ? "U meniju" : "Skrivena"}
+                </label>
 
                 {group.subGroups.map((sub) => {
                   const subTarget: Target = { kind: "group", key: sub.key, label: `${group.name} / ${sub.name}` };
@@ -350,27 +520,50 @@ export default function LiveCategoryTree({
                         ? "nema dostupnih"
                         : null;
                   return (
-                    <button
+                    <span
                       key={child.id}
-                      type="button"
-                      onClick={() => toggleTarget(childTarget)}
-                      className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors ${
+                      className={`inline-flex items-center gap-1 rounded-full border pr-1 text-[11px] font-semibold ${
                         childOpen
                           ? "border-violet-500 bg-violet-500 text-white"
                           : hiddenReason
                             ? "border-amber-300 bg-amber-50 text-amber-800"
                             : "border-violet-200 bg-violet-50 text-violet-700"
                       }`}
-                      title={
-                        hiddenReason
-                          ? "Ne prikazuje se kupcima — klikni pa dodaj artikle po SKU"
-                          : "Rucno kreirana podkategorija"
-                      }
                     >
-                      ↳ {child.name}
-                      <span className="ml-1.5 opacity-70">{child.sellable}</span>
-                      {hiddenReason ? <span className="ml-1.5 opacity-80">({hiddenReason})</span> : null}
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleTarget(childTarget)}
+                        className="flex items-center gap-1.5 px-3 py-1"
+                        title={
+                          hiddenReason
+                            ? "Ne prikazuje se kupcima — klikni pa dodaj artikle po SKU"
+                            : "Rucno kreirana podkategorija"
+                        }
+                      >
+                        <StatusDot on={!hiddenReason} />↳ {child.name}
+                        <span className="opacity-70">{child.sellable}</span>
+                        {hiddenReason ? <span className="opacity-80">({hiddenReason})</span> : null}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busyKey === `c${child.id}`}
+                        onClick={() => void toggleChildVisible(child, !child.isVisible)}
+                        className="rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-[0.08em] opacity-70 hover:bg-white/60 hover:opacity-100 disabled:opacity-40"
+                        title={child.isVisible ? "Sakrij od kupaca" : "Prikazi kupcima"}
+                      >
+                        {child.isVisible ? "sakrij" : "prikazi"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busyKey === `c${child.id}`}
+                        onClick={() => void deleteChild(child)}
+                        className="rounded-full px-1.5 py-0.5 text-[12px] leading-none opacity-60 hover:bg-rose-100 hover:text-rose-700 hover:opacity-100 disabled:opacity-40"
+                        title="Obrisi podkategoriju"
+                        aria-label={`Obrisi ${child.name}`}
+                      >
+                        ×
+                      </button>
+                    </span>
                   );
                 })}
 
@@ -392,6 +585,73 @@ export default function LiveCategoryTree({
           );
         })}
       </div>
+
+      {orphans.length > 0 ? (
+        <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-3">
+          <p className="text-xs font-semibold text-slate-700">Kategorije bez nadkategorije ({orphans.length})</p>
+          <p className="mb-2 text-[11px] text-slate-500">
+            Postoje u sistemu, ali ne vise ni pod jednom glavnom kategorijom — zato ih nema u meniju kao podkategorije.
+            Izaberi im nadkategoriju, ili ih obrisi ako se ne koriste.
+          </p>
+          <div className="grid gap-2">
+            {orphans.map((orphan) => {
+              const orphanTarget: Target = { kind: "category", id: orphan.id, label: orphan.name };
+              const isOpenOrphan = openTarget?.kind === "category" && openTarget.id === orphan.id;
+              return (
+                <div key={orphan.id} className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => toggleTarget(orphanTarget)}
+                    className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-[11px] font-semibold ${
+                      isOpenOrphan ? "border-slate-800 bg-slate-800 text-white" : "border-slate-200 bg-white text-slate-700"
+                    }`}
+                  >
+                    <StatusDot on={orphan.isVisible && orphan.sellable > 0} />
+                    {orphan.name}
+                    <span className="opacity-70">{orphan.sellable}</span>
+                  </button>
+                  <select
+                    value=""
+                    disabled={busyKey === `c${orphan.id}`}
+                    onChange={(e) => e.target.value && void setChildParent(orphan, e.target.value)}
+                    className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600"
+                    title="Prebaci pod glavnu kategoriju"
+                  >
+                    <option value="">— stavi pod... —</option>
+                    {PARENT_CHOICES.map((choice) => (
+                      <option key={choice.key} value={choice.key}>
+                        {choice.name}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    disabled={busyKey === `c${orphan.id}`}
+                    onClick={() => void toggleChildVisible(orphan, !orphan.isVisible)}
+                    className="rounded-full border border-slate-200 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-slate-500 disabled:opacity-40"
+                  >
+                    {orphan.isVisible ? "sakrij" : "prikazi"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyKey === `c${orphan.id}`}
+                    onClick={() => void deleteChild(orphan)}
+                    className="rounded-full border border-rose-200 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-rose-600 disabled:opacity-40"
+                  >
+                    obrisi
+                  </button>
+                  {orphan.assigned > 0 ? (
+                    <span className="text-[11px] text-slate-400">{orphan.assigned} artikala dodeljeno</span>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+          {openTarget?.kind === "category" && orphans.some((orphan) => orphan.id === openTarget.id)
+            ? renderProductPanel()
+            : null}
+        </div>
+      ) : null}
     </div>
   );
 }

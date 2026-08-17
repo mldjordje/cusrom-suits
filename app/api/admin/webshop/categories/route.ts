@@ -6,6 +6,7 @@ import {
   listAdminCatalogCategories,
   updateCategoryRegistryEntry,
 } from "@/lib/catalog/categories";
+import { invalidateCatalogCaches } from "@/lib/catalog/store";
 
 const parsePath = (value: unknown) =>
   Array.isArray(value)
@@ -79,9 +80,13 @@ export async function DELETE(req: NextRequest) {
   }
 
   const categoryId = Number(req.nextUrl.searchParams.get("id") || 0);
+  // force=1 detaches the category from its products first. Without it a category
+  // in use refuses to delete, which is the safe default.
+  const force = req.nextUrl.searchParams.get("force") === "1";
   try {
-    await deleteCategoryRegistryEntry(categoryId);
-    return NextResponse.json({ success: true });
+    const { detached } = await deleteCategoryRegistryEntry(categoryId, { force });
+    if (detached > 0) invalidateCatalogCaches();
+    return NextResponse.json({ success: true, detached });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Delete category failed";
     return NextResponse.json({ success: false, message }, { status: 400 });

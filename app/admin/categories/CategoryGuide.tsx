@@ -86,7 +86,26 @@ export default function CategoryGuide() {
           </section>
 
           <section>
-            <h3 className="mb-1 font-semibold">4. Sinhronizacija sa mOffice-om</h3>
+            <h3 className="mb-1 font-semibold">4. Iskljucivanje i brisanje</h3>
+            <ul className="ml-5 list-disc space-y-1">
+              <li>
+                <strong>Glavne kategorije se ne brisu.</strong> One su fiksne — kvacica „U meniju“ ih pali i gasi za
+                kupce. Iskljucena kategorija nestaje iz menija i filtera, ali artikli ostaju u shopu.
+              </li>
+              <li>
+                <strong>Podkategorije koje si ti kreirao</strong> imaju „sakrij“ i „×“. „Sakrij“ je povratno; „×“ brise
+                kategoriju zauvek.
+              </li>
+              <li>
+                Ako je podkategorija dodeljena artiklima, brisanje pita za potvrdu i kaze na koliko artikala je
+                dodeljena. Artikli se <strong>ne brisu</strong> — samo gube tu kategoriju i vracaju se pod svoju glavnu.
+              </li>
+              <li>Automatske (plave) podkategorije ne mogu da se obrisu — nastaju iz naziva artikala.</li>
+            </ul>
+          </section>
+
+          <section>
+            <h3 className="mb-1 font-semibold">5. Sinhronizacija sa mOffice-om</h3>
             <ul className="ml-5 list-disc space-y-1">
               <li>
                 mOffice sinhronizacija <strong>ne brise</strong> tvoje dodele. Pre upisa se ponovo procitaju kategorije iz
@@ -101,7 +120,7 @@ export default function CategoryGuide() {
           </section>
 
           <section>
-            <h3 className="mb-1 font-semibold">5. Sta Ananas dobija</h3>
+            <h3 className="mb-1 font-semibold">6. Sta Ananas dobija</h3>
             <ul className="ml-5 list-disc space-y-1">
               <li>
                 Ananas trazi svoju taksonomiju, ne nase nazive. Za artikle koji imaju upisanu Ananas kategoriju salje se
@@ -116,7 +135,7 @@ export default function CategoryGuide() {
           </section>
 
           <section>
-            <h3 className="mb-1 font-semibold">6. Zasto se artikal ne vidi u kategoriji</h3>
+            <h3 className="mb-1 font-semibold">7. Zasto se artikal ne vidi u kategoriji</h3>
             <p>U spisku artikala kolona „Status“ pokazuje razlog. Da bi kupac video artikal, mora sve od ovoga:</p>
             <ul className="ml-5 mt-1 list-disc space-y-1">
               <li>aktivan i izvezen (nije sakriven iz shopa),</li>
@@ -130,7 +149,7 @@ export default function CategoryGuide() {
           </section>
 
           <section>
-            <h3 className="mb-1 font-semibold">7. Redosled posla koji preporucujem</h3>
+            <h3 className="mb-1 font-semibold">8. Redosled posla koji preporucujem</h3>
             <ol className="ml-5 list-decimal space-y-1">
               <li>Prvo „Auto-rasporedi proizvode“ — pokupi sve sto se prepoznaje po nazivu.</li>
               <li>Onda kreiraj podkategorije koje ti trebaju (npr. Aksesoari → Manzetne).</li>

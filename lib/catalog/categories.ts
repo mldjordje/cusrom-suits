@@ -387,7 +387,13 @@ export async function updateCategoryRegistryEntry(
   }
 
   const registry = await listCategoryRegistry();
-  const existing = registry.find((item) => item.id === categoryId);
+  /* Categories that came in with the legacy catalog have no registry row until
+     the first edit. Falling back to the catalog copy is what keeps their name
+     and path when an admin only changes, say, the parent group — otherwise the
+     edit would rename them to "Kategorija <id>". */
+  const existing =
+    registry.find((item) => item.id === categoryId) ||
+    (await loadCatalogCategoryUsage()).find((item) => item.id === categoryId);
   const now = new Date().toISOString();
   const nextPath = patch.path && patch.path.length > 0 ? normalizePath(patch.path, patch.name || existing?.name || "") : undefined;
   const nextName = patch.name == null ? existing?.name || "" : String(patch.name).trim();
@@ -427,16 +433,59 @@ export async function updateCategoryRegistryEntry(
   return nextRegistryEntry;
 }
 
-export async function deleteCategoryRegistryEntry(categoryId: number) {
+/**
+ * Strip a category from every product that carries it. Deleting a category the
+ * shop still references would leave products pointing at a name that no longer
+ * exists, so this runs first when a delete is forced.
+ */
+export async function detachCategoryFromProducts(categoryId: number) {
+  const supabase = getServiceSupabase();
+  if (!supabase) return 0;
+
+  const { data, error } = await supabase
+    .from("catalog_products")
+    .select("legacy_id,raw_payload")
+    .filter("raw_payload->categories", "cs", JSON.stringify([{ id: categoryId }]));
+
+  if (error) throw new Error(error.message);
+
+  const rows = (data || []) as Array<{ legacy_id: number; raw_payload: Record<string, unknown> | null }>;
+  let detached = 0;
+
+  for (const row of rows) {
+    const rawPayload = { ...(row.raw_payload || {}) };
+    const categories = Array.isArray(rawPayload.categories) ? (rawPayload.categories as unknown[]) : [];
+    rawPayload.categories = categories.filter(
+      (entry) => !entry || typeof entry !== "object" || Number((entry as Record<string, unknown>).id) !== categoryId,
+    );
+
+    const { error: updateError } = await supabase
+      .from("catalog_products")
+      .update({ raw_payload: rawPayload, updated_at: new Date().toISOString() } as never)
+      .eq("legacy_id", row.legacy_id);
+    if (updateError) throw new Error(updateError.message);
+    detached += 1;
+  }
+
+  return detached;
+}
+
+export async function deleteCategoryRegistryEntry(categoryId: number, options?: { force?: boolean }) {
   const categories = await listAdminCatalogCategories();
   const target = categories.find((item) => item.id === categoryId);
   if (!target) {
     throw new Error("Kategorija nije pronadjena.");
   }
+
+  let detached = 0;
   if (target.usageCount > 0) {
-    throw new Error("Kategorija je dodeljena proizvodima. Prvo prebaci ili obrisi te proizvode.");
+    if (!options?.force) {
+      throw new Error("Kategorija je dodeljena proizvodima. Prvo prebaci ili obrisi te proizvode.");
+    }
+    detached = await detachCategoryFromProducts(categoryId);
   }
 
   const registry = await listCategoryRegistry();
   await writeCategoryRegistry(registry.filter((item) => item.id !== categoryId));
+  return { detached };
 }

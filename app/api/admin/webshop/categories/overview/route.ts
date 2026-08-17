@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
 import { listCatalogProducts } from "@/lib/catalog/store";
-import { listCategoryRegistry } from "@/lib/catalog/categories";
+import { listAdminCatalogCategories } from "@/lib/catalog/categories";
 import { getServiceSupabase } from "@/lib/supabase/server";
 
 /**
@@ -62,7 +62,10 @@ export async function GET(req: NextRequest) {
       collapseBySku: true,
       requireImages: true,
     }),
-    listCategoryRegistry(),
+    /* Not just the registry: categories that arrived with the legacy catalog
+       (Manžetne, Torbe, Šnale …) are assigned to real products and show in the
+       shop, so an admin has to be able to see and manage them here too. */
+    listAdminCatalogCategories(),
   ]);
 
   // Same query without the storefront's visibility filters — the difference
@@ -101,14 +104,19 @@ export async function GET(req: NextRequest) {
       })),
   }));
 
+  /* Loose categories: no parent group, so they are not a subcategory of
+     anything. Ones with products first — those are the ones worth filing. */
   const orphanRegistry = registry
     .filter((entry) => !entry.parentGroup)
+    .sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0))
     .map((entry) => ({
       id: entry.id,
       name: entry.name,
       path: entry.path,
       isVisible: entry.isVisible,
       isLive: liveCategoryIds.has(entry.id),
+      assigned: assignmentCounts.get(entry.id)?.assigned ?? 0,
+      sellable: assignmentCounts.get(entry.id)?.sellable ?? 0,
     }));
 
   return NextResponse.json({
