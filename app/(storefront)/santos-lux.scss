@@ -1283,15 +1283,53 @@ $lux-dark-surfaces: ".ss-home18-hero, .ss-story-card, .ss-banner-panel, .blog-gr
     color: #7a7369 !important;
   }
 
-  .ss-featured-tile .menu-link,
-  .ss-premium-card__info,
-  .ss-premium-card__info * {
+  /* Product card type. The same card component renders on the white ground and
+     inside the dark band (.lux-act--band), so these cannot be coloured by class
+     alone — the exclusion is what keeps the band's cards readable. .menu-link,
+     .money and .price are covered because the template colours them for a light
+     page and the lux layer had flipped them light for the old dark ground. */
+  :is(
+      .ss-featured-tile .menu-link,
+      .ss-premium-card__info,
+      .ss-premium-card__info *,
+      .pc__title,
+      .pc__title a,
+      .menu-link,
+      .money,
+      .price
+    ):not(:is(#{$lux-dark-surfaces}) *) {
     color: #0f0e0c !important;
   }
 
-  .ss-featured-tile__meta,
-  .ss-featured-tile__meta * {
+  :is(.ss-featured-tile__meta, .ss-featured-tile__meta *, .ss-premium-card__price):not(
+      :is(#{$lux-dark-surfaces}) *
+    ) {
     color: #56504a !important;
+  }
+
+  /* The gold badge is a light chip on both grounds, so its type is dark ink
+     regardless of which surface the card is on. */
+  .ss-premium-card__badge,
+  .ss-premium-card__badge * {
+    color: var(--lux-ink-0) !important;
+  }
+
+  /* Card category chip — a 4%-black pill, so it needs ink darker than body copy
+     to clear 3:1 against its own fill. */
+  .pc__category:not(:is(#{$lux-dark-surfaces}) *) {
+    color: #3d3833 !important;
+  }
+
+  /* The outline button was recoloured light for the old dark ground; on white
+     that leaves an invisible label inside a visible border. */
+  .btn-outline-dark:not(:is(#{$lux-dark-surfaces}) *) {
+    color: #0f0e0c !important;
+    border-color: rgba(15, 14, 12, 0.35) !important;
+  }
+
+  .btn-outline-dark:not(:is(#{$lux-dark-surfaces}) *):hover {
+    background: #0f0e0c !important;
+    color: #fff !important;
   }
 }
 
@@ -1301,6 +1339,16 @@ $lux-dark-surfaces: ".ss-home18-hero, .ss-story-card, .ss-banner-panel, .blog-gr
   :is(#{$lux-dark-surfaces}),
   :is(#{$lux-dark-surfaces}) :is(p, li, dd, h1, h2, h3, h4, h5, h6, span, a) {
     color: var(--lux-fg);
+  }
+
+  /* Product cards inside the dark band: the template's own ink would be
+     near-black on near-black, so restate the light palette for them. */
+  :is(#{$lux-dark-surfaces}) :is(.ss-premium-card__info, .ss-premium-card__info *, .pc__title, .pc__title a, .menu-link, .money, .price) {
+    color: var(--lux-fg) !important;
+  }
+
+  :is(#{$lux-dark-surfaces}) .ss-premium-card__price {
+    color: var(--lux-fg-soft) !important;
   }
 
   .ss-featured-tile__overlay-title {
