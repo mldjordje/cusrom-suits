@@ -229,8 +229,50 @@ export default async function WebShopView({
     // Skip admin categories whose group key is already covered by an enabled auto-group
     .filter((cat) => !cat.key || !enabledAutoGroupKeys.has(cat.key));
 
+  /* Subcategories per group. Two sources, same as the header menu: the
+     sub-groups the catalog folds into a parent (Kaisevi, Novcanici …) and admin
+     categories filed under that group. The sidebar used to be flat, so those
+     sub-groups had no entry at all and an admin subcategory sat next to its own
+     parent as if the two were unrelated. */
+  const registryChildrenByGroup = new Map<string, typeof adminNavCategories>();
+  for (const cat of registryCategories) {
+    if (!cat.isVisible || !cat.parentGroup) continue;
+    const list = registryChildrenByGroup.get(cat.parentGroup) || [];
+    list.push({
+      id: cat.id,
+      key: "",
+      name: cat.name,
+      filterMode: "id" as const,
+      isFeatured: cat.isFeatured,
+    });
+    registryChildrenByGroup.set(cat.parentGroup, list);
+  }
+
+  const childKeysInUse = new Set<string>();
+  const subGroupChildren = (groupKey: string) => {
+    const group = result.categoryGroups.find((entry: CatalogCategoryGroup) => entry.key === groupKey);
+    return (group?.children || [])
+      .filter((child) => child.count > 0)
+      .map((child) => {
+        childKeysInUse.add(child.key);
+        return { id: 0, key: child.key, name: child.name, filterMode: "group" as const, isFeatured: false };
+      });
+  };
+
+  const autoNavWithChildren = autoNavCategories.map((category) => {
+    const children = [...subGroupChildren(category.key), ...(registryChildrenByGroup.get(category.key) || [])];
+    return children.length > 0 ? { ...category, children } : category;
+  });
+
   // Combined list: auto-groups first, then any admin categories not overlapping with them
-  const sidebarNavCategories = [...autoNavCategories, ...adminNavCategories];
+  // and not already shown as somebody's child.
+  const childCategoryIds = new Set(
+    [...registryChildrenByGroup.values()].flat().map((cat) => cat.id),
+  );
+  const sidebarNavCategories = [
+    ...autoNavWithChildren,
+    ...adminNavCategories.filter((cat) => !childCategoryIds.has(cat.id) && !childKeysInUse.has(cat.key)),
+  ];
 
   // Horizontal chip bar: prefer admin categories explicitly marked isFeatured.
   // If none, fall back to first 5 of combined list.

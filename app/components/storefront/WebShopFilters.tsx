@@ -12,6 +12,8 @@ type ShopCategory = {
   name: string;
   /** "group" = filter by categoryGroup keyword; "id" = filter by exact admin categoryId */
   filterMode?: "group" | "id";
+  /** Subcategories, rendered indented under this one. */
+  children?: ShopCategory[];
 };
 
 type ActiveFilterChip = {
@@ -171,6 +173,37 @@ export default function WebShopFilters({
   const rootHref = toShopHref(lang, "", basePath);
   const currentSortLabel = sortOptions.find((option) => option.value === sort)?.label || sortOptions[0]?.label || sort;
 
+  /* One category link, plus its subcategories indented under it. A parent is
+     rendered even while a child is the active filter, so the customer can see
+     where they are and step back up. */
+  const renderCategoryLink = (category: ShopCategory, isChild: boolean) => {
+    // id-mode: no own group key — use exact categoryId for filtering
+    const useId = category.filterMode === "id" || (!category.key && Boolean(category.id));
+    const chipKey = useId ? `id-${category.id}` : category.key || String(category.id || "");
+    const isActive = useId
+      ? categoryId > 0 && categoryId === category.id
+      : Boolean(category.key) && categoryGroup === category.key;
+    const children = category.children || [];
+
+    return (
+      <div key={`${isChild ? "child-" : ""}${chipKey}`} className={isChild ? "ss-shop-filter-chip-child" : undefined}>
+        <Link
+          href={makeHref(
+            useId
+              ? { categoryId: isActive ? null : (category.id ?? null), categoryGroup: null, onSale: null, q: null }
+              : { categoryGroup: isActive ? null : (category.key ?? null), categoryId: null, onSale: null, q: null },
+          )}
+          className={`ss-shop-filter-chip ${isActive ? "is-active" : ""}`}
+        >
+          {localizeCategory(category.name)}
+        </Link>
+        {children.length > 0 ? (
+          <div className="ss-shop-filter-subchips">{children.map((child) => renderCategoryLink(child, true))}</div>
+        ) : null}
+      </div>
+    );
+  };
+
   const renderCategoryLinks = (className: string) => (
     <div className={className}>
       <Link
@@ -185,27 +218,7 @@ export default function WebShopFilters({
       >
         {isEn ? "Sale" : "Akcija"}
       </Link>
-      {featuredCategories.map((category) => {
-        // id-mode: no own group key — use exact categoryId for filtering
-        const useId = category.filterMode === "id" || (!category.key && Boolean(category.id));
-        const chipKey = useId ? `id-${category.id}` : (category.key || String(category.id || ""));
-        const isActive = useId
-          ? categoryId > 0 && categoryId === category.id
-          : Boolean(category.key) && categoryGroup === category.key;
-        return (
-          <Link
-            key={chipKey}
-            href={makeHref(
-              useId
-                ? { categoryId: isActive ? null : (category.id ?? null), categoryGroup: null, onSale: null, q: null }
-                : { categoryGroup: isActive ? null : (category.key ?? null), categoryId: null, onSale: null, q: null },
-            )}
-            className={`ss-shop-filter-chip ${isActive ? "is-active" : ""}`}
-          >
-            {localizeCategory(category.name)}
-          </Link>
-        );
-      })}
+      {featuredCategories.map((category) => renderCategoryLink(category, false))}
     </div>
   );
 

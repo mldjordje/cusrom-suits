@@ -3,7 +3,11 @@ import { listCatalogProducts } from "@/lib/catalog/store";
 import { listCategoryRegistry } from "@/lib/catalog/categories";
 import { applyPublicCache } from "@/lib/http/cache";
 
-export const revalidate = 600;
+/* One minute, not ten. This is the menu feed: when an admin files the first
+   product into a new category, the category should appear in the menu on the
+   next look, not after a coffee break. The edge cache above still absorbs the
+   traffic. */
+export const revalidate = 60;
 
 export async function GET() {
   const result = await listCatalogProducts({

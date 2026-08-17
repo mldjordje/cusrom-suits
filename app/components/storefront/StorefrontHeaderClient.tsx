@@ -169,12 +169,20 @@ export default function StorefrontHeaderClient({
     }
   }, []);
 
+  /* Refresh once per menu open, even when the session cache already painted the
+     menu. The cache is there so the dropdown is never empty on first hover, not
+     to pin the menu for the whole session — a category the shop started serving
+     ten minutes ago used to stay missing until the tab was closed. The cached
+     copy stays on screen until the fresh one arrives. */
+  const shopCategoriesFetchedRef = useRef(false);
+
   useEffect(() => {
-    if (!shouldLoadShopCategories || shopCategories.length > 0) return;
+    if (!shouldLoadShopCategories || shopCategoriesFetchedRef.current) return;
+    shopCategoriesFetchedRef.current = true;
     let active = true;
     const loadCategories = async () => {
       try {
-        const res = await fetch("/api/storefront/categories", { cache: "force-cache" });
+        const res = await fetch("/api/storefront/categories");
         const json = await res.json();
         if (!active || !json?.success || !Array.isArray(json.categories)) return;
         const categories = json.categories as ShopCategory[];
@@ -183,14 +191,14 @@ export default function StorefrontHeaderClient({
           window.sessionStorage.setItem(SHOP_CATEGORIES_SESSION_KEY, JSON.stringify(categories));
         }
       } catch {
-        if (active) setShopCategories([]);
+        // Keep whatever the cache painted; an empty menu is worse than a stale one.
       }
     };
     void loadCategories();
     return () => {
       active = false;
     };
-  }, [shouldLoadShopCategories, shopCategories.length]);
+  }, [shouldLoadShopCategories]);
 
   const desktopFloating = isHome && !isContrast;
   const closeMobileMenu = () => setMobileOpen(false);
