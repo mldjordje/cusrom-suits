@@ -219,11 +219,20 @@ body:has(.ss-home-page) {
     background: transparent !important;
   }
 
-  .ss-featured-tile,
   .ss-story-card,
   .ss-banner-panel,
   .blog-grid__item {
     background: var(--lux-ink-2) !important;
+  }
+
+  /* Featured tiles stay frameless — the dark plate + card padding read as a
+     black box around the product photo, which the client rejected. */
+  .ss-featured-tile {
+    background: transparent !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
   }
 
   /* Product photography keeps its light plate. */
