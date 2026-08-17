@@ -2011,3 +2011,32 @@ body.mobile-menu-opened {
   color: var(--ss-gold-light, #e8d5a3) !important;
   border-bottom-color: var(--ss-gold, #c9a96e);
 }
+
+/* Touch devices have no hover, so the name and price that only appear in the
+   overlay were unreachable there. Pin the overlay open: its own dark gradient
+   carries the contrast, so the text stays readable whatever the section ground
+   is. The CTA line is dropped — the whole tile is already the link. */
+@media (hover: none), (pointer: coarse) {
+  .ss-featured-tile__overlay {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+    padding: 1.25rem 1rem 1rem;
+  }
+
+  .ss-featured-tile__overlay-inner {
+    transform: none !important;
+  }
+
+  .ss-featured-tile__overlay-cta {
+    display: none !important;
+  }
+
+  /* The duplicate label under the image inherits a colour tuned for whichever
+     ground the layer above assumed; the overlay now carries that information,
+     so drop the copy instead of guessing its contrast. */
+  .ss-featured-tile .menu-link,
+  .ss-featured-tile__meta {
+    display: none !important;
+  }
+}
