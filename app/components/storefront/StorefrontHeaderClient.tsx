@@ -11,6 +11,7 @@ import { useStorefrontAuth } from "@/app/components/storefront/StorefrontAuthPro
 import StorefrontCartLink from "@/app/components/storefront/cart/StorefrontCartLink";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 import { localizeDynamicCategoryLabel } from "@/lib/storefront/dynamicCopy";
+import { CATEGORY_ROUTE_BY_SLUG } from "@/lib/storefront/categoryRoutes";
 
 type ShopCategoryChild = {
   id: string;
@@ -38,6 +39,29 @@ type HeaderSocialLinks = {
 /* v4: the payload gained per-category children, so a v3 cache would render the
    menu without its second level until the session storage expired. */
 const SHOP_CATEGORIES_SESSION_KEY = "ss-shop-categories-v4";
+
+/**
+ * Group key a header link points at, or "" when it is not a category link.
+ *
+ * Header links are admin-editable, and a category one can be written two ways:
+ * the filter form (/web-shop?categoryGroup=aksesoari) or the indexable landing
+ * route (/web-shop/kategorija/muski-aksesoari). Reading the key off the href is
+ * what keeps the dropdown dynamic — no list of "which nav items have menus"
+ * to keep in sync when the admin adds a category or renames a link.
+ */
+const navItemGroupKey = (href: string): string => {
+  const raw = String(href || "");
+  const queryMatch = raw.match(/[?&]categoryGroup=([^&#]+)/);
+  if (queryMatch) return decodeURIComponent(queryMatch[1]);
+
+  const routeMatch = raw.match(/\/web-shop\/kategorija\/([^/?#]+)/);
+  if (routeMatch) {
+    const route = CATEGORY_ROUTE_BY_SLUG[decodeURIComponent(routeMatch[1]).toLowerCase()];
+    if (route) return route.groupKey;
+  }
+
+  return "";
+};
 
 export default function StorefrontHeaderClient({
   lang = "sr",
@@ -324,21 +348,49 @@ export default function StorefrontHeaderClient({
 
             <nav className="navigation">
               <ul className="navigation__list list-unstyled d-flex">
-                {navItems.map((item) => (
+                {navItems.map((item) => {
+                  /* Any header link that points at a category gets the same
+                     dropdown treatment as Web shop, listing that category's
+                     subcategories straight from the live feed. */
+                  const itemGroupKey = navItemGroupKey(item.href);
+                  const itemCategory = itemGroupKey
+                    ? shopCategories.find((category) => category.id === itemGroupKey)
+                    : undefined;
+                  const itemChildren = itemCategory?.children || [];
+                  const hasOwnMenu = item.href === "/web-shop" || Boolean(itemGroupKey);
+                  return (
                   <li
                     key={item.href}
-                    className={`navigation__item ${isItemActive(item.href) ? "is-active" : ""} ${item.href === "/web-shop" ? "menu-item-has-children position-relative" : ""}`}
-                    onMouseEnter={item.href === "/web-shop" ? () => setShouldLoadShopCategories(true) : undefined}
+                    className={`navigation__item ${isItemActive(item.href) ? "is-active" : ""} ${hasOwnMenu ? "menu-item-has-children position-relative" : ""}`}
+                    onMouseEnter={hasOwnMenu ? () => setShouldLoadShopCategories(true) : undefined}
                     onMouseLeave={item.href === "/web-shop" ? () => setOpenShopSubmenu(null) : undefined}
                   >
                     <Link
                       href={withLang(item.href)}
                       prefetch={item.href === "/web-shop" || item.href.startsWith("/web-shop")}
                       className={`navigation__link ${isItemActive(item.href) ? "is-active" : ""}`}
-                      onFocus={item.href === "/web-shop" ? () => setShouldLoadShopCategories(true) : undefined}
+                      onFocus={hasOwnMenu ? () => setShouldLoadShopCategories(true) : undefined}
                     >
                       {item.label}
                     </Link>
+
+                    {itemGroupKey && itemChildren.length > 0 ? (
+                      <div className="default-menu ss-header-cat-submenu">
+                        <Link href={withLang(item.href)} prefetch className="ss-shop-dd-subcat ss-shop-dd-subcat--all">
+                          {isEn ? `All ${item.label.toLowerCase()}` : `Sve — ${item.label}`}
+                        </Link>
+                        {itemChildren.map((child) => (
+                          <Link
+                            key={child.href}
+                            href={withLang(child.href)}
+                            prefetch={false}
+                            className="ss-shop-dd-subcat"
+                          >
+                            {localizeDynamicCategoryLabel(child.name, isEn ? "en" : "sr")}
+                          </Link>
+                        ))}
+                      </div>
+                    ) : null}
                     {item.href === "/web-shop" && shopMenuLinks.length > 0 ? (
                       <div className="default-menu ss-header-shop-submenu">
                         <div className="ss-shop-dd-featured">
@@ -430,7 +482,8 @@ export default function StorefrontHeaderClient({
                       </div>
                     ) : null}
                   </li>
-                ))}
+                  );
+                })}
               </ul>
             </nav>
 
@@ -507,7 +560,12 @@ export default function StorefrontHeaderClient({
                     ? "Open navigation"
                     : "Otvori navigaciju"
               }
-              onClick={() => setMobileOpen((prev) => !prev)}
+              onClick={() => {
+                // Category nav items need the feed to list their subcategories,
+                // and on touch there is no hover to trigger the load.
+                setShouldLoadShopCategories(true);
+                setMobileOpen((prev) => !prev);
+              }}
             >
               <svg className="nav-icon" width="25" height="18" viewBox="0 0 25 18" xmlns="http://www.w3.org/2000/svg">
                 <rect width="25" height="2" y="0" />
@@ -690,17 +748,44 @@ export default function StorefrontHeaderClient({
                             </AnimatePresence>
                           </>
                         ) : (
-                          <Link
-                            href={withLang(item.href)}
-                            prefetch={item.href === "/web-shop" || item.href.startsWith("/web-shop")}
-                            className={`ss-mobile-nav-link ${isItemActive(item.href) ? "is-active" : ""}`}
-                            onClick={closeMobileMenu}
-                          >
-                            <span>{item.label}</span>
-                            <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                              <path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-                            </svg>
-                          </Link>
+                          <>
+                            <Link
+                              href={withLang(item.href)}
+                              prefetch={item.href === "/web-shop" || item.href.startsWith("/web-shop")}
+                              className={`ss-mobile-nav-link ${isItemActive(item.href) ? "is-active" : ""}`}
+                              onClick={closeMobileMenu}
+                            >
+                              <span>{item.label}</span>
+                              <svg width="16" height="16" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                                <path d="M6 3.5L10.5 8L6 12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </Link>
+                            {/* Category nav items list their subcategories inline —
+                                the mobile menu is one scrolling list, so there is no
+                                second panel to open. */}
+                            {(() => {
+                              const groupKey = navItemGroupKey(item.href);
+                              const children = groupKey
+                                ? shopCategories.find((category) => category.id === groupKey)?.children || []
+                                : [];
+                              if (children.length === 0) return null;
+                              return (
+                                <div className="ss-mobile-nav-submenu">
+                                  {children.map((child) => (
+                                    <Link
+                                      key={`mobile-${item.href}-${child.href}`}
+                                      href={withLang(child.href)}
+                                      prefetch={false}
+                                      className="ss-mobile-nav-submenu__link ss-mobile-nav-submenu__link--child"
+                                      onClick={closeMobileMenu}
+                                    >
+                                      {localizeDynamicCategoryLabel(child.name, isEn ? "en" : "sr")}
+                                    </Link>
+                                  ))}
+                                </div>
+                              );
+                            })()}
+                          </>
                         )}
                       </m.li>
                     ))}
