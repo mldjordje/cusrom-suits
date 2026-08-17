@@ -1129,3 +1129,190 @@ body:has(.ss-home-page) {
     transition: none;
   }
 }
+
+/* ============================================================
+   LANDING RHYTHM — spacing, type scale, responsive grid
+   ------------------------------------------------------------
+   The landing grew section by section, so each block carried its own
+   padding (`pb-5`, then a 5rem !important override), its own heading size and
+   its own grid gutter. Read top to bottom that produced no vertical rhythm and
+   headings that changed size between neighbouring sections. This block sets a
+   single scale for all of them. It is last in the last-loaded sheet, and the
+   base rules it replaces use !important, so these do too.
+   ============================================================ */
+
+.ss-lux .ss-home-page {
+  --ss-rhythm: clamp(3.25rem, 7vw, 6.5rem);
+  --ss-rhythm-tight: clamp(2rem, 4vw, 3.5rem);
+  --ss-gutter: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+.ss-lux .ss-home-page .ss-editorial-section,
+.ss-lux .ss-home-page .ss-category-strip {
+  padding-top: var(--ss-rhythm) !important;
+  padding-bottom: var(--ss-rhythm) !important;
+}
+
+/* Consecutive product grids read as one run, so they get the tighter gap
+   between them rather than two full rhythms stacked. */
+.ss-lux .ss-home-page .ss-editorial-section + .ss-editorial-section {
+  padding-top: var(--ss-rhythm-tight) !important;
+}
+
+/* ---- Heading block ---- */
+
+.ss-lux .ss-home-page .section-title,
+.ss-lux .ss-home-page .ss-section-title--premium {
+  margin: 0;
+  font-size: clamp(1.5rem, 3.2vw, 2.5rem) !important;
+  line-height: 1.12 !important;
+  letter-spacing: var(--lux-track-tight) !important;
+}
+
+.ss-lux .ss-home-page .ss-editorial-section > .d-flex:first-child {
+  gap: 1rem;
+  margin-bottom: clamp(1.5rem, 3vw, 2.5rem) !important;
+  padding-bottom: 0 !important;
+}
+
+/* The "view all" link is secondary to the heading — size it like an eyebrow
+   instead of body copy so the two do not compete. */
+.ss-lux .ss-home-page .ss-editorial-section .btn-link {
+  flex: 0 0 auto;
+  font-size: var(--lux-fs-eyebrow);
+  letter-spacing: var(--lux-track-eyebrow);
+  white-space: nowrap;
+}
+
+.ss-lux .ss-home-page .ss-category-strip__heading {
+  margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
+  font-size: var(--lux-fs-eyebrow);
+  letter-spacing: var(--lux-track-eyebrow);
+}
+
+/* ---- Product grids ---- */
+
+.ss-lux .ss-home-page .ss-feature-strip,
+.ss-lux .ss-home-page .products-grid .row {
+  --bs-gutter-x: var(--ss-gutter);
+  --bs-gutter-y: calc(var(--ss-gutter) * 1.4);
+}
+
+/* Tiles used the intrinsic ratio of whatever photo they got, so rows never
+   lined up. One ratio for every tile fixes the ragged baseline. */
+.ss-lux .ss-home-page .ss-featured-tile .ss-uniform-tile {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  object-position: center top;
+  margin-bottom: 0 !important;
+}
+
+.ss-lux .ss-home-page .ss-featured-tile {
+  height: 100%;
+}
+
+/* ---- Small screens ---- */
+
+@media (max-width: 575.98px) {
+  .ss-lux .ss-home-page .ss-editorial-section,
+  .ss-lux .ss-home-page .ss-category-strip {
+    padding-inline: 1rem !important;
+  }
+
+  .ss-lux .ss-home-page .ss-editorial-section > .d-flex:first-child {
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
+  /* Two columns at 375px leaves ~165px per tile: the overlay type has to come
+     down with it or the name wraps to three lines over the photo. */
+  .ss-lux .ss-home-page .ss-featured-tile__overlay {
+    padding: 0.9rem 0.7rem 0.7rem;
+  }
+
+  .ss-lux .ss-home-page .ss-featured-tile__overlay-category {
+    font-size: 0.55rem !important;
+    letter-spacing: 0.18em !important;
+  }
+
+  .ss-lux .ss-home-page .ss-featured-tile__overlay-title {
+    font-size: 0.82rem !important;
+    line-height: 1.25;
+  }
+
+  .ss-lux .ss-home-page .ss-featured-tile__overlay-price {
+    margin-top: 0.25rem !important;
+    font-size: 0.78rem;
+  }
+}
+
+/* ---- Ground is white, so on-ground type has to be dark ------------------
+   The lux layer painted the whole landing near-black and coloured every
+   heading, paragraph and label light to match. With the ground switched to
+   white, that same type is white on white. Flip the colours for anything that
+   sits directly on the ground, then re-assert light type inside the dark
+   surfaces (story cards, banner panels, blog cards, editorial cards), which
+   keep their near-black plate. Split this way there is exactly one rule per
+   direction instead of a :not() chain that has to list every dark class. */
+
+.ss-lux .ss-home-page {
+  background: #fff !important;
+  color: #0f0e0c;
+}
+
+/* Every surface on the landing that is dark by design. Type inside these keeps
+   the light palette; everything else sits on white and goes dark. Kept as one
+   list so the two directions can never drift apart. */
+$lux-dark-surfaces: ".ss-home18-hero, .ss-story-card, .ss-banner-panel, .blog-grid__item, .ss-editorial-card, .ss-featured-tile__overlay, .lux-act--band";
+
+.ss-lux .ss-home-page {
+  :is(h1, h2, h3, h4, h5, h6, .section-title, .block-title):not(
+      :is(#{$lux-dark-surfaces}) *
+    ) {
+    color: #0f0e0c !important;
+  }
+
+  :is(p, li, dd, .text-secondary, .text-muted):not(:is(#{$lux-dark-surfaces}) *) {
+    color: #56504a !important;
+  }
+
+  .ss-category-strip__heading:not(:is(#{$lux-dark-surfaces}) *),
+  .ss-editorial-section .btn-link:not(:is(#{$lux-dark-surfaces}) *) {
+    color: #7a7369 !important;
+  }
+
+  .ss-featured-tile .menu-link,
+  .ss-premium-card__info,
+  .ss-premium-card__info * {
+    color: #0f0e0c !important;
+  }
+
+  .ss-featured-tile__meta,
+  .ss-featured-tile__meta * {
+    color: #56504a !important;
+  }
+}
+
+/* Dark surfaces keep their own light type — including the pinned-open tile
+   overlay, whose gradient is dark by design. */
+.ss-lux .ss-home-page {
+  :is(#{$lux-dark-surfaces}),
+  :is(#{$lux-dark-surfaces}) :is(p, li, dd, h1, h2, h3, h4, h5, h6, span, a) {
+    color: var(--lux-fg);
+  }
+
+  .ss-featured-tile__overlay-title {
+    color: #fff !important;
+  }
+
+  .ss-featured-tile__overlay-category {
+    color: var(--lux-gold) !important;
+  }
+
+  .ss-featured-tile__overlay-price,
+  .ss-featured-tile__overlay-price * {
+    color: rgba(255, 255, 255, 0.92) !important;
+  }
+}

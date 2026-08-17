@@ -21,7 +21,7 @@
 }
 
 .page-wrapper {
-  background-color: #f7f7f7;
+  background-color: #fff;
 }
 
 .ss-home-page--cinematic {
@@ -59,7 +59,7 @@
 .ss-home-page {
   padding-top: 0 !important;
   margin-top: 0 !important;
-  background: linear-gradient(180deg, #10161d 0, #f7f4ef 11rem, #f7f7f7 36rem);
+  background: linear-gradient(180deg, #10161d 0, #fff 11rem, #fff 36rem);
 }
 
 .ss-home-page .ss-home18-hero {
@@ -5029,7 +5029,7 @@ body.mobile-menu-opened {
   }
 
   .ss-home18-hero__card-meta {
-    background: #f3ece7;
+    background: #fff;
     color: #5f5a57;
   }
 
@@ -7653,7 +7653,7 @@ button.ss-mobile-nav-quicklink,
    ============================================================ */
 
 .ss-editorial-section {
-  background: var(--ss-bg-cream, #f5f0e8);
+  background: #fff;
   border-radius: 0;
 }
 
@@ -7811,7 +7811,7 @@ button.ss-mobile-nav-quicklink,
    ============================================================ */
 
 .ss-home-page {
-  background: linear-gradient(180deg, #0a0908 0, var(--ss-bg-cream, #f5f0e8) 14rem, #f5f0e8 40rem) !important;
+  background: linear-gradient(180deg, #0a0908 0, #fff 14rem, #fff 40rem) !important;
 }
 
 /* ============================================================
@@ -7830,7 +7830,7 @@ button.ss-mobile-nav-quicklink,
   position: relative;
   overflow: hidden;
   /* Ista boja kao pozadina sekcije — placeholder je nevidljiv */
-  background: var(--ss-bg-cream, #f5f0e8);
+  background: #fff;
   aspect-ratio: 0.82;
 }
 
@@ -8130,7 +8130,7 @@ button.ss-mobile-nav-quicklink,
 
 .ss-atelier-section .ss-editorial-card,
 .ss-editorial-section .ss-editorial-card {
-  background: var(--ss-bg-cream-lt, #fdfcf9) !important;
+  background: #fff !important;
   border-color: rgba(15, 14, 12, 0.08) !important;
   border-radius: 4px !important;
 }

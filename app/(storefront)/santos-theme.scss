@@ -1233,13 +1233,13 @@ body.mobile-menu-opened {
   backdrop-filter: none !important;
 }
 
-/* Panel: cream white, full height, left-side slide-in */
+/* Panel: white, full height, left-side slide-in */
 .ss-mobile-nav-panel {
   position: fixed !important;
   inset: 0 !important;
   width: min(88vw, 380px) !important;
   right: auto !important;
-  background: #faf9f6 !important;
+  background: #fff !important;
   color: #14110c !important;
   box-shadow: 4px 0 32px rgba(0,0,0,0.18) !important;
   overflow: hidden !important;
