@@ -2,11 +2,30 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 
+/** Top-level shop groups a category can be filed under. Mirrors ALL_AUTO_GROUPS
+ *  in lib/catalog/categories.ts — the shop's first level is that list, not the
+ *  registry, so this is what "parent category" means here. */
+const PARENT_GROUPS: Array<{ key: string; name: string }> = [
+  { key: "odelo", name: "Odela" },
+  { key: "sako", name: "Sakoi" },
+  { key: "pantalone", name: "Pantalone" },
+  { key: "kosulja", name: "Košulje" },
+  { key: "dzemper", name: "Džemperi" },
+  { key: "prsluk", name: "Prsluci" },
+  { key: "kaput", name: "Kaputi" },
+  { key: "jakna", name: "Jakne" },
+  { key: "obuca", name: "Obuća" },
+  { key: "aksesoari", name: "Aksesoari" },
+];
+
+const parentGroupName = (key: string) => PARENT_GROUPS.find((group) => group.key === key)?.name || "";
+
 type CategoryRow = {
   id: number;
   name: string;
   path: string[];
   parentId: number;
+  parentGroup: string;
   description: string | null;
   mainColor: string | null;
   isVisible: boolean;
@@ -36,11 +55,15 @@ const sortByVisibility = (products: ProductMini[]): ProductMini[] =>
     return av === bv ? 0 : av ? -1 : 1;
   });
 
-type DraftState = Record<number, { name: string; path: string; mainColor: string; description: string; isVisible: boolean; isFeatured: boolean }>;
+type DraftState = Record<
+  number,
+  { name: string; path: string; parentGroup: string; mainColor: string; description: string; isVisible: boolean; isFeatured: boolean }
+>;
 
 const emptyCreateForm = {
   name: "",
   path: "",
+  parentGroup: "",
   mainColor: "#1f2937",
   description: "",
   isVisible: true,
@@ -50,6 +73,7 @@ const emptyCreateForm = {
 const emptyDraft = {
   name: "",
   path: "",
+  parentGroup: "",
   mainColor: "#1f2937",
   description: "",
   isVisible: true,
@@ -368,6 +392,7 @@ export default function AdminCategoriesPage() {
             {
               name: item.name,
               path: item.path.join(" / "),
+              parentGroup: item.parentGroup || "",
               mainColor: item.mainColor || "#1f2937",
               description: item.description || "",
               isVisible: item.isVisible,
@@ -637,6 +662,7 @@ export default function AdminCategoriesPage() {
         body: JSON.stringify({
           name: createForm.name,
           path: createForm.path || createForm.name,
+          parentGroup: createForm.parentGroup,
           mainColor: createForm.mainColor || null,
           description: createForm.description || null,
           isVisible: createForm.isVisible,
@@ -675,6 +701,7 @@ export default function AdminCategoriesPage() {
           id: categoryId,
           name: draft.name,
           path: draft.path,
+          parentGroup: draft.parentGroup,
           mainColor: draft.mainColor || null,
           description: draft.description || null,
           isVisible: draft.isVisible,
@@ -872,10 +899,32 @@ export default function AdminCategoriesPage() {
               placeholder="Naziv kategorije"
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
             />
+            <label className="grid gap-1 text-xs text-slate-500">
+              Nadkategorija
+              <select
+                value={createForm.parentGroup}
+                onChange={(e) => setCreateForm((prev) => ({ ...prev, parentGroup: e.target.value }))}
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-800"
+              >
+                <option value="">— samostalna kategorija —</option>
+                {PARENT_GROUPS.map((group) => (
+                  <option key={group.key} value={group.key}>
+                    {group.name}
+                  </option>
+                ))}
+              </select>
+              <span className="text-[11px] text-slate-400">
+                Podkategorija se prikazuje u drugom nivou menija ispod izabrane kategorije.
+              </span>
+            </label>
             <input
               value={createForm.path}
               onChange={(e) => setCreateForm((prev) => ({ ...prev, path: e.target.value }))}
-              placeholder="Putanja, npr. Obuca / Elegantna"
+              placeholder={
+                createForm.parentGroup
+                  ? `Putanja (opciono) — prefiks ${parentGroupName(createForm.parentGroup)} se dodaje sam`
+                  : "Putanja, npr. Obuca / Elegantna"
+              }
               className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
             />
             <div className="grid grid-cols-[1fr,84px] gap-3">
@@ -1001,6 +1050,11 @@ export default function AdminCategoriesPage() {
                             ★ Nav
                           </span>
                         ) : null}
+                        {row.parentGroup ? (
+                          <span className="rounded-full border border-sky-200 bg-sky-50 px-2 py-1 text-[11px] font-semibold text-sky-700">
+                            ↳ {parentGroupName(row.parentGroup) || row.parentGroup}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
@@ -1027,6 +1081,24 @@ export default function AdminCategoriesPage() {
                         placeholder="Putanja"
                         className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
                       />
+                      <select
+                        value={draft?.parentGroup || ""}
+                        onChange={(e) =>
+                          setDrafts((prev) => ({
+                            ...prev,
+                            [row.id]: { ...(prev[row.id] || draft || emptyDraft), parentGroup: e.target.value },
+                          }))
+                        }
+                        title="Nadkategorija"
+                        className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
+                      >
+                        <option value="">— bez nadkategorije —</option>
+                        {PARENT_GROUPS.map((group) => (
+                          <option key={group.key} value={group.key}>
+                            Podkategorija od: {group.name}
+                          </option>
+                        ))}
+                      </select>
                       <input
                         type="color"
                         value={draft?.mainColor || "#1f2937"}

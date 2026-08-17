@@ -38,6 +38,15 @@ export type CatalogCategoryRecord = {
   name: string;
   path: string[];
   parentId: number;
+  /**
+   * Auto-group key this category hangs under ("aksesoari", "odelo", …), or "".
+   * The shop's top level is the auto-group list in ALL_AUTO_GROUPS, not the
+   * registry, so a registry category cannot express "child of Aksesoari"
+   * through parentId — there is no registry row for Aksesoari to point at.
+   * This is that link, and it is what the storefront nav reads to build the
+   * second-level dropdown.
+   */
+  parentGroup: string;
   description: string | null;
   mainColor: string | null;
   isVisible: boolean;
@@ -60,6 +69,25 @@ const normalizePath = (value: unknown, fallbackName: string) => {
   return fallbackName ? [fallbackName] : [];
 };
 
+const VALID_GROUP_KEYS = new Set(ALL_AUTO_GROUPS.map((group) => group.key));
+
+const normalizeParentGroup = (value: unknown) => {
+  const key = String(value || "").trim().toLowerCase();
+  return VALID_GROUP_KEYS.has(key) ? key : "";
+};
+
+/**
+ * Path with the parent group as its first segment. Any leading segment that is
+ * itself a group name is dropped first, so re-parenting a category from one
+ * group to another replaces the prefix instead of stacking a second one.
+ */
+const applyParentGroupToPath = (path: string[], parentGroup: string) => {
+  const groupNames = new Set(ALL_AUTO_GROUPS.map((group) => group.name));
+  const bare = path.length > 1 && groupNames.has(path[0]) ? path.slice(1) : path;
+  const parentName = ALL_AUTO_GROUPS.find((group) => group.key === parentGroup)?.name || "";
+  return parentName ? [parentName, ...bare] : bare;
+};
+
 const normalizeRegistryRecord = (
   value: unknown,
   fallbackId = 0,
@@ -76,6 +104,7 @@ const normalizeRegistryRecord = (
     name,
     path: normalizePath(row.path, name),
     parentId: Number.isFinite(Number(row.parentId)) ? Number(row.parentId) : 0,
+    parentGroup: normalizeParentGroup(row.parentGroup),
     description: row.description == null ? null : String(row.description),
     mainColor: row.mainColor == null ? null : String(row.mainColor),
     isVisible: row.isVisible !== false,
@@ -134,6 +163,7 @@ async function loadCategoriesFromSupabase() {
           name,
           path: normalizePath(current.path, name),
           parentId: Number.isFinite(Number(current.parentId)) ? Number(current.parentId) : 0,
+          parentGroup: existing?.parentGroup || normalizeParentGroup(current.parentGroup),
           description: existing?.description || null,
           mainColor: existing?.mainColor || null,
           isVisible: existing?.isVisible ?? true,
@@ -169,6 +199,7 @@ async function loadCategoriesFromFile() {
         name,
         path: normalizePath(category.path, name),
         parentId: Number.isFinite(Number(category.parentId)) ? Number(category.parentId) : 0,
+        parentGroup: existing?.parentGroup || "",
         description: existing?.description || null,
         mainColor: existing?.mainColor || null,
         isVisible: existing?.isVisible ?? true,
@@ -303,6 +334,7 @@ export async function createCategoryRegistryEntry(input: {
   name: string;
   path?: string[];
   parentId?: number;
+  parentGroup?: string;
   description?: string | null;
   mainColor?: string | null;
   isVisible?: boolean;
@@ -317,11 +349,18 @@ export async function createCategoryRegistryEntry(input: {
   const catalog = await loadCatalogCategoryUsage();
   const nextId = [...registry, ...catalog].reduce((max, item) => Math.max(max, Number(item.id) || 0), 0) + 1;
   const now = new Date().toISOString();
+  const parentGroup = normalizeParentGroup(input.parentGroup);
+  /* A child's path starts at its parent group, so the storefront breadcrumb and
+     the group matcher (which reads name + path) both place it correctly without
+     the admin having to type "Aksesoari / Manžetne" by hand. */
+  const path = applyParentGroupToPath(normalizePath(input.path, name), parentGroup);
+
   const created: CatalogCategoryRecord = {
     id: nextId,
     name,
-    path: normalizePath(input.path, name),
+    path,
     parentId: Number.isFinite(Number(input.parentId)) ? Number(input.parentId) : 0,
+    parentGroup,
     description: input.description == null ? null : String(input.description),
     mainColor: input.mainColor == null ? null : String(input.mainColor),
     isVisible: input.isVisible !== false,
@@ -336,7 +375,12 @@ export async function createCategoryRegistryEntry(input: {
 
 export async function updateCategoryRegistryEntry(
   categoryId: number,
-  patch: Partial<Pick<CatalogCategoryRecord, "name" | "path" | "parentId" | "description" | "mainColor" | "isVisible" | "isFeatured">>,
+  patch: Partial<
+    Pick<
+      CatalogCategoryRecord,
+      "name" | "path" | "parentId" | "parentGroup" | "description" | "mainColor" | "isVisible" | "isFeatured"
+    >
+  >,
 ) {
   if (!Number.isFinite(categoryId) || categoryId <= 0) {
     throw new Error("ID kategorije nije validan.");
@@ -348,11 +392,19 @@ export async function updateCategoryRegistryEntry(
   const nextPath = patch.path && patch.path.length > 0 ? normalizePath(patch.path, patch.name || existing?.name || "") : undefined;
   const nextName = patch.name == null ? existing?.name || "" : String(patch.name).trim();
 
+  const parentGroup =
+    patch.parentGroup === undefined ? existing?.parentGroup || "" : normalizeParentGroup(patch.parentGroup);
+  const resolvedName = nextName || existing?.name || `Kategorija ${categoryId}`;
+  /* Same rule as on create: the parent group is the first path segment. Applied
+     here too so re-parenting an existing category moves its path with it. */
+  const finalPath = applyParentGroupToPath(nextPath || existing?.path || [resolvedName], parentGroup);
+
   const nextRegistryEntry: CatalogCategoryRecord = {
     id: categoryId,
-    name: nextName || existing?.name || `Kategorija ${categoryId}`,
-    path: nextPath || existing?.path || [nextName || existing?.name || `Kategorija ${categoryId}`],
+    name: resolvedName,
+    path: finalPath,
     parentId: patch.parentId == null ? existing?.parentId || 0 : Number(patch.parentId) || 0,
+    parentGroup,
     description: patch.description === undefined ? existing?.description || null : patch.description,
     mainColor: patch.mainColor === undefined ? existing?.mainColor || null : patch.mainColor,
     isVisible: patch.isVisible === undefined ? existing?.isVisible ?? true : patch.isVisible,

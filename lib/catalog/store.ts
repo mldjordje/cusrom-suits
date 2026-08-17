@@ -71,6 +71,9 @@ export type CatalogCategoryGroup = {
   name: string;
   ids: number[];
   count: number;
+  /** Sub-groups folded into this one, kept so callers (the nav) can offer them
+   *  as a second level instead of only the rolled-up parent. */
+  children?: Array<{ key: string; name: string; count: number }>;
 };
 
 export type CatalogProductView = {
@@ -845,11 +848,12 @@ const collectCategoryGroups = (items: CatalogProductView[]): CatalogCategoryGrou
   }
 
   // Synthesize the "Aksesoari" parent group from all accessory sub-keys.
-  const accessoryGroup: CatalogCategoryGroup = { key: "aksesoari", name: "Aksesoari", ids: [], count: 0 };
+  const accessoryGroup: CatalogCategoryGroup = { key: "aksesoari", name: "Aksesoari", ids: [], count: 0, children: [] };
   for (const subKey of ACCESSORY_SUB_KEYS) {
     const sub = map.get(subKey);
     if (!sub) continue;
     accessoryGroup.count += sub.count;
+    accessoryGroup.children?.push({ key: sub.key, name: sub.name, count: sub.count });
     for (const id of sub.ids) {
       if (!accessoryGroup.ids.includes(id)) accessoryGroup.ids.push(id);
     }

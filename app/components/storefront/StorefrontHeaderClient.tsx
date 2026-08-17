@@ -12,9 +12,16 @@ import StorefrontCartLink from "@/app/components/storefront/cart/StorefrontCartL
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 import { localizeDynamicCategoryLabel } from "@/lib/storefront/dynamicCopy";
 
+type ShopCategoryChild = {
+  id: string;
+  name: string;
+  href: string;
+};
+
 type ShopCategory = {
   id: string;
   name: string;
+  children?: ShopCategoryChild[];
 };
 
 type HeaderNavItem = {
@@ -28,7 +35,9 @@ type HeaderSocialLinks = {
   tiktokUrl?: string;
 };
 
-const SHOP_CATEGORIES_SESSION_KEY = "ss-shop-categories-v3";
+/* v4: the payload gained per-category children, so a v3 cache would render the
+   menu without its second level until the session storage expired. */
+const SHOP_CATEGORIES_SESSION_KEY = "ss-shop-categories-v4";
 
 export default function StorefrontHeaderClient({
   lang = "sr",
@@ -49,6 +58,9 @@ export default function StorefrontHeaderClient({
   const [isScrolled, setIsScrolled] = useState(false);
   const [shopCategories, setShopCategories] = useState<ShopCategory[]>([]);
   const [shouldLoadShopCategories, setShouldLoadShopCategories] = useState(false);
+  /* Which category in the shop dropdown has its subcategory panel open. Null =
+     none; only one at a time. */
+  const [openShopSubmenu, setOpenShopSubmenu] = useState<string | null>(null);
   const lockedScrollY = useRef(0);
   const { reduceMotion } = useAnimationBudget();
   const { user: authUser, loading: authLoading } = useStorefrontAuth();
@@ -138,6 +150,11 @@ export default function StorefrontHeaderClient({
     };
   }, []);
 
+  /* Navigating away leaves the panel open behind the new page otherwise. */
+  useEffect(() => {
+    setOpenShopSubmenu(null);
+  }, [pathname]);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const cached = window.sessionStorage.getItem(SHOP_CATEGORIES_SESSION_KEY);
@@ -207,13 +224,22 @@ export default function StorefrontHeaderClient({
   const shouldUseDarkLogo = isHome && !isContrast && !isScrolled;
   const desktopLogoSrc = shouldUseDarkLogo ? "/img/logo-header-dark.png" : "/img/logo-header.png";
   const mobileLogoSrc = shouldUseDarkLogo ? "/img/logo-header-dark-mobile.png" : "/img/logo-header-mobile.png";
-  const shopMenuLinks = [
+  const shopMenuLinks: Array<{ href: string; label: string; isChild?: boolean }> = [
     { href: "/web-shop", label: isEn ? "All products" : "Svi proizvodi" },
     { href: "/web-shop?categoryId=sale", label: isEn ? "Sale" : "Akcija" },
-    ...shopCategories.map((category) => ({
-      href: `/web-shop?categoryGroup=${category.id}`,
-      label: localizeDynamicCategoryLabel(category.name, isEn ? "en" : "sr"),
-    })),
+    ...shopCategories.flatMap((category) => [
+      {
+        href: `/web-shop?categoryGroup=${category.id}`,
+        label: localizeDynamicCategoryLabel(category.name, isEn ? "en" : "sr"),
+      },
+      /* The mobile menu is a single scrolling list, so subcategories are
+         indented children rather than a second panel. */
+      ...(category.children || []).map((child) => ({
+        href: child.href,
+        label: localizeDynamicCategoryLabel(child.name, isEn ? "en" : "sr"),
+        isChild: true,
+      })),
+    ]),
   ];
   type HeaderSocialItem = { key: "instagram" | "facebook" | "tiktok"; label: string; href?: string };
   const headerSocialItems = ([
@@ -295,6 +321,7 @@ export default function StorefrontHeaderClient({
                     key={item.href}
                     className={`navigation__item ${isItemActive(item.href) ? "is-active" : ""} ${item.href === "/web-shop" ? "menu-item-has-children position-relative" : ""}`}
                     onMouseEnter={item.href === "/web-shop" ? () => setShouldLoadShopCategories(true) : undefined}
+                    onMouseLeave={item.href === "/web-shop" ? () => setOpenShopSubmenu(null) : undefined}
                   >
                     <Link
                       href={withLang(item.href)}
@@ -329,16 +356,66 @@ export default function StorefrontHeaderClient({
                           <>
                             <div className="ss-shop-dd-divider" />
                             <div className="ss-shop-dd-cats">
-                              {shopCategories.map((category) => (
-                                <Link
-                                  key={`/web-shop?categoryGroup=${category.id}`}
-                                  href={withLang(`/web-shop?categoryGroup=${category.id}`)}
-                                  prefetch
-                                  className="ss-shop-dd-cat"
-                                >
-                                  {localizeDynamicCategoryLabel(category.name, isEn ? "en" : "sr")}
-                                </Link>
-                              ))}
+                              {shopCategories.map((category) => {
+                                const children = category.children || [];
+                                const label = localizeDynamicCategoryLabel(category.name, isEn ? "en" : "sr");
+                                const groupHref = `/web-shop?categoryGroup=${category.id}`;
+
+                                /* A category with subcategories opens a second panel on click
+                                   instead of navigating; the panel's first entry still links to
+                                   the whole group so the parent stays reachable. */
+                                if (children.length === 0) {
+                                  return (
+                                    <Link key={groupHref} href={withLang(groupHref)} prefetch className="ss-shop-dd-cat">
+                                      {label}
+                                    </Link>
+                                  );
+                                }
+
+                                const isOpen = openShopSubmenu === category.id;
+                                return (
+                                  <div key={groupHref} className={`ss-shop-dd-cat-group ${isOpen ? "is-open" : ""}`}>
+                                    <button
+                                      type="button"
+                                      className="ss-shop-dd-cat ss-shop-dd-cat--parent"
+                                      aria-expanded={isOpen}
+                                      aria-haspopup="true"
+                                      onClick={(event) => {
+                                        event.preventDefault();
+                                        setOpenShopSubmenu((current) => (current === category.id ? null : category.id));
+                                      }}
+                                    >
+                                      <span>{label}</span>
+                                      <svg width="12" height="12" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                                        <path d="M6 3l5 5-5 5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                                      </svg>
+                                    </button>
+                                    {isOpen ? (
+                                      <div className="ss-shop-dd-subcats" role="menu">
+                                        <Link
+                                          href={withLang(groupHref)}
+                                          prefetch
+                                          className="ss-shop-dd-subcat ss-shop-dd-subcat--all"
+                                          role="menuitem"
+                                        >
+                                          {isEn ? `All ${label.toLowerCase()}` : `Sve — ${label}`}
+                                        </Link>
+                                        {children.map((child) => (
+                                          <Link
+                                            key={child.href}
+                                            href={withLang(child.href)}
+                                            prefetch={false}
+                                            className="ss-shop-dd-subcat"
+                                            role="menuitem"
+                                          >
+                                            {localizeDynamicCategoryLabel(child.name, isEn ? "en" : "sr")}
+                                          </Link>
+                                        ))}
+                                      </div>
+                                    ) : null}
+                                  </div>
+                                );
+                              })}
                             </div>
                           </>
                         )}
@@ -594,7 +671,7 @@ export default function StorefrontHeaderClient({
                                       key={`mobile-${link.href}`}
                                       href={withLang(link.href)}
                                       prefetch={link.href.startsWith("/web-shop")}
-                                      className="ss-mobile-nav-submenu__link"
+                                      className={`ss-mobile-nav-submenu__link ${link.isChild ? "ss-mobile-nav-submenu__link--child" : ""}`}
                                       onClick={closeMobileMenu}
                                     >
                                       {link.label}
