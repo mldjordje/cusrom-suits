@@ -40,12 +40,12 @@ export default function CategoryGuide() {
                 dodelis kategoriju, artikal se seli u nju i vise se ne prikazuje pod starom.
               </li>
               <li>
-                <strong>Naziv artikla</strong> — sistem prepoznaje tip iz naziva i sifre modela („M. Kosulja", „Automatik
-                kais"…). Zato vecina artikala ima kategoriju iako im niko nista nije dodelio.
+                <strong>Naziv artikla</strong> — sistem prepoznaje tip iz naziva i sifre modela („M. Kosulja“, „Automatik
+                kais“…). Zato vecina artikala ima kategoriju iako im niko nista nije dodelio.
               </li>
               <li>
                 <strong>mOffice grupa artikla</strong> — polje ARTIKAL_GRUPA iz mOffice-a. Koristi se kada naziv nista ne
-                otkriva (npr. artikli koji se zovu samo „36/195/17").
+                otkriva (npr. artikli koji se zovu samo „36/195/17“).
               </li>
             </ol>
           </section>
@@ -55,11 +55,11 @@ export default function CategoryGuide() {
             <ul className="ml-5 list-disc space-y-1">
               <li>
                 <strong>Glavne kategorije</strong> (Odela, Sakoi, Aksesoari…) su fiksne. Ne mogu se preimenovati ovde, ali
-                mogu da se ukljuce/iskljuce iz prikaza dugmicima „Auto-kategorije".
+                mogu da se ukljuce/iskljuce iz prikaza dugmicima „Auto-kategorije“.
               </li>
               <li>
                 <strong>Podkategorije</strong> su dve vrste. Plave (↳ Kaisevi, ↳ Novcanici) sistem prepoznaje sam iz
-                naziva artikala. Ljubicaste su one koje ti kreiras dugmetom „+ podkategorija" i rucno im dodeljujes
+                naziva artikala. Ljubicaste su one koje ti kreiras dugmetom „+ podkategorija“ i rucno im dodeljujes
                 artikle.
               </li>
               <li>
@@ -72,8 +72,8 @@ export default function CategoryGuide() {
           <section>
             <h3 className="mb-1 font-semibold">3. Kako da dodas artikal u kategoriju</h3>
             <ol className="ml-5 list-decimal space-y-1">
-              <li>Klikni na kategoriju u panelu „Kategorije koje kupci vide" — otvara se spisak njenih artikala.</li>
-              <li>Upisi SKU artikla i klikni „Dodaj u kategoriju". „Izbaci iz kategorije" radi obrnuto.</li>
+              <li>Klikni na kategoriju u panelu „Kategorije koje kupci vide“ — otvara se spisak njenih artikala.</li>
+              <li>Upisi SKU artikla i klikni „Dodaj u kategoriju“. „Izbaci iz kategorije“ radi obrnuto.</li>
               <li>
                 Jedan SKU pokriva sve velicine tog modela, pa se izmena primenjuje na sve varijante odjednom. Broj
                 azuriranih varijanti se ispise posle akcije.
@@ -108,7 +108,7 @@ export default function CategoryGuide() {
                 ona.
               </li>
               <li>
-                Za sve ostale salje se <strong>naziv prve kategorije artikla</strong>, a ako je nema — „Ostalo". Znaci:
+                Za sve ostale salje se <strong>naziv prve kategorije artikla</strong>, a ako je nema — „Ostalo“. Znaci:
                 kategorija koju ovde dodelis zavrsi i u Ananas izvozu.
               </li>
               <li>Ako menjas kategorije artiklima koji idu na Ananas, javi da se proveri mapiranje pre sledeceg izvoza.</li>
@@ -117,7 +117,7 @@ export default function CategoryGuide() {
 
           <section>
             <h3 className="mb-1 font-semibold">6. Zasto se artikal ne vidi u kategoriji</h3>
-            <p>U spisku artikala kolona „Status" pokazuje razlog. Da bi kupac video artikal, mora sve od ovoga:</p>
+            <p>U spisku artikala kolona „Status“ pokazuje razlog. Da bi kupac video artikal, mora sve od ovoga:</p>
             <ul className="ml-5 mt-1 list-disc space-y-1">
               <li>aktivan i izvezen (nije sakriven iz shopa),</li>
               <li>stanje vece od nule,</li>
@@ -132,10 +132,10 @@ export default function CategoryGuide() {
           <section>
             <h3 className="mb-1 font-semibold">7. Redosled posla koji preporucujem</h3>
             <ol className="ml-5 list-decimal space-y-1">
-              <li>Prvo „Auto-rasporedi proizvode" — pokupi sve sto se prepoznaje po nazivu.</li>
+              <li>Prvo „Auto-rasporedi proizvode“ — pokupi sve sto se prepoznaje po nazivu.</li>
               <li>Onda kreiraj podkategorije koje ti trebaju (npr. Aksesoari → Manzetne).</li>
               <li>Rucno dodaj SKU-ove koji nisu prepoznati, ili koje hoces drugde nego sto ih je sistem stavio.</li>
-              <li>Na kraju proveri panel „Nedodeljeni proizvodi" — tu su artikli bez ijedne kategorije.</li>
+              <li>Na kraju proveri panel „Nedodeljeni proizvodi“ — tu su artikli bez ijedne kategorije.</li>
             </ol>
           </section>
         </div>
