@@ -117,6 +117,10 @@ const nextConfig: NextConfig = {
   },
   async redirects() {
     return [
+      // The old/long-form suit category slug is still being discovered by
+      // crawlers and currently falls through to a 200 noindex "not found"
+      // page. Redirect it to the canonical indexable category landing page.
+      { source: "/web-shop/kategorija/muska-odela", destination: "/web-shop/kategorija/odela", permanent: true },
       { source: "/shop", destination: "/web-shop", permanent: true },
       { source: "/shop/:path*", destination: "/web-shop", permanent: true },
       { source: "/pocetna", destination: "/", permanent: true },
