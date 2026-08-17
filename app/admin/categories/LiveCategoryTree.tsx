@@ -19,6 +19,9 @@ type RegistryChild = {
   path: string[];
   isVisible: boolean;
   isLive: boolean;
+  /** Products carrying this category, and how many of those a customer can buy. */
+  assigned: number;
+  sellable: number;
 };
 
 type LiveGroup = {
@@ -216,6 +219,13 @@ export default function LiveCategoryTree({
 
         {skuNotice ? <p className="mt-2 text-xs text-slate-600">{skuNotice}</p> : null}
 
+        {!productsLoading && productTotal === 0 ? (
+          <p className="mt-2 rounded-lg bg-amber-50 p-2 text-xs text-amber-800">
+            Ova kategorija je prazna, pa se <strong>ne prikazuje kupcima</strong> — meni preskace prazne kategorije da kupac
+            ne bi otvorio praznu stranu. Dodaj bar jedan artikal preko SKU polja iznad i pojavice se za par minuta.
+          </p>
+        ) : null}
+
         <div className="mt-3 max-h-80 overflow-auto rounded-xl border border-slate-200 bg-white">
           {productsLoading ? (
             <p className="p-3 text-xs text-slate-400">Ucitavanje artikala...</p>
@@ -329,18 +339,37 @@ export default function LiveCategoryTree({
                 {group.registryChildren.map((child) => {
                   const childTarget: Target = { kind: "category", id: child.id, label: `${group.name} / ${child.name}` };
                   const childOpen = openTarget?.kind === "category" && openTarget.id === child.id;
+                  /* Empty or unbuyable categories are hidden from the shop menu, so
+                     say so on the chip — that is the whole answer to "I made a
+                     category and it does not show up". */
+                  const hiddenReason = !child.isVisible
+                    ? "sakrivena"
+                    : child.assigned === 0
+                      ? "prazna"
+                      : child.sellable === 0
+                        ? "nema dostupnih"
+                        : null;
                   return (
                     <button
                       key={child.id}
                       type="button"
                       onClick={() => toggleTarget(childTarget)}
                       className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors ${
-                        childOpen ? "border-violet-500 bg-violet-500 text-white" : "border-violet-200 bg-violet-50 text-violet-700"
+                        childOpen
+                          ? "border-violet-500 bg-violet-500 text-white"
+                          : hiddenReason
+                            ? "border-amber-300 bg-amber-50 text-amber-800"
+                            : "border-violet-200 bg-violet-50 text-violet-700"
                       }`}
-                      title="Rucno kreirana podkategorija"
+                      title={
+                        hiddenReason
+                          ? "Ne prikazuje se kupcima — klikni pa dodaj artikle po SKU"
+                          : "Rucno kreirana podkategorija"
+                      }
                     >
                       ↳ {child.name}
-                      {!child.isVisible ? <span className="ml-1.5 opacity-70">(sakrivena)</span> : null}
+                      <span className="ml-1.5 opacity-70">{child.sellable}</span>
+                      {hiddenReason ? <span className="ml-1.5 opacity-80">({hiddenReason})</span> : null}
                     </button>
                   );
                 })}

@@ -49,9 +49,12 @@ export async function GET() {
     };
   });
 
+  /* Short edge TTL on purpose: this drives the shop menu, and an admin who has
+     just filled a new category should not wait an hour to see it there. The
+     stale window keeps it cheap. */
   return applyPublicCache(NextResponse.json({ success: true, categories }), {
-    maxAge: 300,
-    sMaxAge: 3600,
+    maxAge: 60,
+    sMaxAge: 300,
     staleWhileRevalidate: 86400,
   });
 }

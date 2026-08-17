@@ -2,6 +2,39 @@ import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
 import { listCatalogProducts } from "@/lib/catalog/store";
 import { listCategoryRegistry } from "@/lib/catalog/categories";
+import { getServiceSupabase } from "@/lib/supabase/server";
+
+/**
+ * How many products carry this category, and how many of those a customer can
+ * actually reach. A freshly created category has zero of both, which is the
+ * single most common reason for "I made a category and it does not show up" —
+ * the menu hides empty categories so nobody clicks into a blank page.
+ */
+async function countAssignments(categoryIds: number[]) {
+  const counts = new Map<number, { assigned: number; sellable: number }>();
+  const supabase = getServiceSupabase();
+  if (!supabase || categoryIds.length === 0) return counts;
+
+  for (const id of categoryIds) {
+    const filter = JSON.stringify([{ id }]);
+    const [{ count: assigned }, { count: sellable }] = await Promise.all([
+      supabase
+        .from("catalog_products")
+        .select("legacy_id", { count: "exact", head: true })
+        .filter("raw_payload->categories", "cs", filter),
+      supabase
+        .from("catalog_products")
+        .select("legacy_id", { count: "exact", head: true })
+        .filter("raw_payload->categories", "cs", filter)
+        .eq("is_active", true)
+        .eq("is_exported", true)
+        .gt("stock_total", 0),
+    ]);
+    counts.set(id, { assigned: assigned || 0, sellable: sellable || 0 });
+  }
+
+  return counts;
+}
 
 /**
  * The category tree exactly as customers see it.
@@ -42,6 +75,7 @@ export async function GET(req: NextRequest) {
   });
 
   const liveCategoryIds = new Set(storefront.categories.map((category) => category.id));
+  const assignmentCounts = await countAssignments(registry.map((entry) => entry.id));
 
   const groups = storefront.categoryGroups.map((group) => ({
     key: group.key,
@@ -62,6 +96,8 @@ export async function GET(req: NextRequest) {
         path: entry.path,
         isVisible: entry.isVisible,
         isLive: liveCategoryIds.has(entry.id),
+        assigned: assignmentCounts.get(entry.id)?.assigned ?? 0,
+        sellable: assignmentCounts.get(entry.id)?.sellable ?? 0,
       })),
   }));
 
