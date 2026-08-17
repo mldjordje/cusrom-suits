@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AnimatePresence, m } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartImage";
@@ -123,6 +123,103 @@ export default function ProductImageGallery({ images, name, videoUrl, media }: P
   }, [activeGallery]);
 
   const closeLightbox = useCallback(() => setLightboxIndex(null), []);
+
+  /* Zoom inside the lightbox. Pointer-driven, so it is desktop-only in
+     practice: the wheel handler is the entry point and touch keeps the
+     browser's own pinch-zoom. Scale and pan live in state; the transform is
+     the only thing that changes, so the browser never re-layouts. */
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const panStartRef = useRef<{ x: number; y: number; panX: number; panY: number } | null>(null);
+  const [isPanning, setIsPanning] = useState(false);
+  const zoomFrameRef = useRef<HTMLDivElement | null>(null);
+
+  const MAX_ZOOM = 4;
+
+  const resetZoom = useCallback(() => {
+    setZoom(1);
+    setPan({ x: 0, y: 0 });
+  }, []);
+
+  /* Reset whenever the lightbox opens, closes or swaps image — carrying a pan
+     offset over to a differently-sized photo leaves it parked off screen. */
+  useEffect(() => {
+    resetZoom();
+  }, [lightboxIndex, resetZoom]);
+
+  /* Anchor the zoom at the cursor: the point under the pointer has to stay
+     under it, otherwise zooming walks the image away from what you aimed at. */
+  const zoomAt = useCallback((nextZoom: number, clientX: number, clientY: number) => {
+    const frame = zoomFrameRef.current;
+    const clamped = Math.min(MAX_ZOOM, Math.max(1, nextZoom));
+
+    setZoom((currentZoom) => {
+      if (clamped === currentZoom) return currentZoom;
+      if (clamped === 1) {
+        setPan({ x: 0, y: 0 });
+        return 1;
+      }
+      if (frame) {
+        const rect = frame.getBoundingClientRect();
+        const offsetX = clientX - (rect.left + rect.width / 2);
+        const offsetY = clientY - (rect.top + rect.height / 2);
+        const ratio = clamped / currentZoom;
+        setPan((currentPan) => ({
+          x: offsetX - (offsetX - currentPan.x) * ratio,
+          y: offsetY - (offsetY - currentPan.y) * ratio,
+        }));
+      }
+      return clamped;
+    });
+  }, []);
+
+  /* Registered natively rather than via onWheel: React attaches wheel
+     listeners as passive, so preventDefault there is a no-op and the page
+     scrolls behind the lightbox while zooming. */
+  useEffect(() => {
+    const frame = zoomFrameRef.current;
+    if (lightboxIndex == null || !frame) return;
+    const onWheel = (event: WheelEvent) => {
+      event.preventDefault();
+      const factor = Math.exp(-event.deltaY * 0.0018);
+      zoomAt(zoom * factor, event.clientX, event.clientY);
+    };
+    frame.addEventListener("wheel", onWheel, { passive: false });
+    return () => frame.removeEventListener("wheel", onWheel);
+  }, [lightboxIndex, zoom, zoomAt]);
+
+  const handleZoomPointerDown = useCallback(
+    (event: React.PointerEvent<HTMLDivElement>) => {
+      if (zoom <= 1) return;
+      event.preventDefault();
+      panStartRef.current = { x: event.clientX, y: event.clientY, panX: pan.x, panY: pan.y };
+      setIsPanning(true);
+      event.currentTarget.setPointerCapture(event.pointerId);
+    },
+    [pan.x, pan.y, zoom],
+  );
+
+  const handleZoomPointerMove = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    const start = panStartRef.current;
+    if (!start) return;
+    setPan({ x: start.panX + (event.clientX - start.x), y: start.panY + (event.clientY - start.y) });
+  }, []);
+
+  const handleZoomPointerUp = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    if (!panStartRef.current) return;
+    panStartRef.current = null;
+    setIsPanning(false);
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+      event.currentTarget.releasePointerCapture(event.pointerId);
+    }
+  }, []);
+
+  const handleZoomDoubleClick = useCallback(
+    (event: React.MouseEvent<HTMLDivElement>) => {
+      zoomAt(zoom > 1 ? 1 : 2.5, event.clientX, event.clientY);
+    },
+    [zoom, zoomAt],
+  );
 
   const lightboxPrev = useCallback(() => {
     setLightboxIndex((i) => (i == null || i <= 0 ? imageItems.length - 1 : i - 1));
@@ -259,17 +356,64 @@ export default function ProductImageGallery({ images, name, videoUrl, media }: P
             </>
           ) : null}
           <div
-            style={{ maxWidth: "90vw", maxHeight: "90vh", position: "relative" }}
+            ref={zoomFrameRef}
+            style={{
+              maxWidth: "90vw",
+              maxHeight: "90vh",
+              position: "relative",
+              overflow: "hidden",
+              touchAction: "none",
+              cursor: zoom > 1 ? (isPanning ? "grabbing" : "grab") : "zoom-in",
+            }}
             onClick={(e) => e.stopPropagation()}
+            onDoubleClick={handleZoomDoubleClick}
+            onPointerDown={handleZoomPointerDown}
+            onPointerMove={handleZoomPointerMove}
+            onPointerUp={handleZoomPointerUp}
+            onPointerCancel={handleZoomPointerUp}
           >
             {imageItems[lightboxIndex] ? (
               <img
                 src={(imageItems[lightboxIndex] as { kind: "image"; src: string }).src}
                 alt={`${name} ${lightboxIndex + 1}`}
-                style={{ maxWidth: "90vw", maxHeight: "90vh", objectFit: "contain", display: "block" }}
+                draggable={false}
+                style={{
+                  maxWidth: "90vw",
+                  maxHeight: "90vh",
+                  objectFit: "contain",
+                  display: "block",
+                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+                  transformOrigin: "center center",
+                  transition: isPanning ? "none" : "transform 0.12s ease-out",
+                  userSelect: "none",
+                }}
               />
             ) : null}
           </div>
+          {zoom === 1 ? (
+            <div
+              style={{
+                position: "absolute", bottom: 16, right: 20,
+                color: "rgba(255,255,255,0.5)", fontSize: 12, letterSpacing: "0.06em",
+              }}
+              aria-hidden
+            >
+              Skrol ili dupli klik za zum
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={(e) => { e.stopPropagation(); resetZoom(); }}
+              style={{
+                position: "absolute", bottom: 16, right: 20,
+                background: "rgba(255,255,255,0.12)", border: "none", color: "#fff",
+                fontSize: 12, letterSpacing: "0.06em", padding: "8px 14px",
+                borderRadius: 4, cursor: "pointer",
+              }}
+            >
+              {Math.round(zoom * 100)}% — resetuj
+            </button>
+          )}
           {imageItems.length > 1 ? (
             <div style={{ position: "absolute", bottom: 16, left: "50%", transform: "translateX(-50%)", color: "rgba(255,255,255,0.5)", fontSize: 13 }}>
               {lightboxIndex + 1} / {imageItems.length}
