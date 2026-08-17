@@ -673,6 +673,9 @@ export async function GET(req: NextRequest) {
   const pageSize = Math.max(1, Math.min(120, Number.parseInt(params.get("pageSize") || "50", 10) || 50));
   const query = params.get("q") || "";
   const categoryId = Number.parseInt(params.get("categoryId") || "0", 10) || 0;
+  // Auto-group key ("aksesoari", "kais", …) — the level customers actually
+  // browse, which until now could not be listed from the admin side.
+  const categoryGroup = (params.get("categoryGroup") || "").trim();
   const inStock = params.get("inStock") === "1";
   const activeOnly = params.get("activeOnly") === "1";
   const exportOnly = params.get("exportOnly") === "1";
@@ -712,6 +715,7 @@ export async function GET(req: NextRequest) {
     pageSize,
     query,
     categoryId: categoryId || undefined,
+    categoryGroup: categoryGroup || undefined,
     inStock,
     onSale: onSaleOnly,
     activeOnly,

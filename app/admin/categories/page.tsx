@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import CategoryGuide from "./CategoryGuide";
+import LiveCategoryTree from "./LiveCategoryTree";
 
 /** Top-level shop groups a category can be filed under. Mirrors ALL_AUTO_GROUPS
  *  in lib/catalog/categories.ts — the shop's first level is that list, not the
@@ -359,6 +361,8 @@ export default function AdminCategoriesPage() {
   const [autoGroupSkuLoading, setAutoGroupSkuLoading] = useState<Set<string>>(new Set());
   const [forcingProduct, setForcingProduct] = useState<string | null>(null); // "legacyId-groupKey"
   const autoSkuTimers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  /** Scroll target for "+ podkategorija" in the live tree above. */
+  const createFormRef = useRef<HTMLDivElement | null>(null);
 
   // Per-category product management
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
@@ -812,6 +816,21 @@ export default function AdminCategoriesPage() {
         </div>
       ) : null}
 
+      <CategoryGuide />
+
+      <LiveCategoryTree
+        onChanged={load}
+        onCreateSubcategory={(groupKey, groupName) => {
+          /* Prefill the create form below and scroll to it, rather than opening a
+             second form — one place where categories get created. */
+          setCreateForm((prev) => ({ ...prev, parentGroup: groupKey, name: "", path: "" }));
+          setNotice(`Nova podkategorija ispod: ${groupName}. Upisi naziv u formi "Nova admin kategorija".`);
+          if (typeof window !== "undefined") {
+            createFormRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }}
+      />
+
       {/* Aktivne kategorije u sajtu */}
       <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
         <div className="px-4 py-3 border-b border-slate-100 bg-slate-50">
@@ -887,7 +906,7 @@ export default function AdminCategoriesPage() {
 
       <div className="grid gap-4 xl:grid-cols-[360px,minmax(0,1fr)]">
         {/* Create form */}
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div ref={createFormRef} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
           <p className="mb-1 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Nova admin kategorija</p>
           <p className="mb-3 text-xs text-slate-400">
             Koristite za posebne kolekcije, podtipove ili sezonske filere koji se ne pokrivaju auto-kategorijama.

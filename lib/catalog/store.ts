@@ -443,6 +443,12 @@ const compactRawPayload = (
   if (source.seo && typeof source.seo === "object") compact.seo = source.seo;
   if (Array.isArray(source.washCareIcons)) compact.washCareIcons = source.washCareIcons;
   if (Object.prototype.hasOwnProperty.call(source, "declaration")) compact.declaration = source.declaration;
+  /* Manual group overrides. getCatalogProductGroupKeys and
+     productMatchesCategoryGroup both read these, but they were being dropped
+     here, so forcing a product into (or out of) a group from the admin had no
+     effect on what the shop listed. */
+  if (Array.isArray(source.forcedCategoryGroups)) compact.forcedCategoryGroups = source.forcedCategoryGroups;
+  if (Array.isArray(source.excludedCategoryGroups)) compact.excludedCategoryGroups = source.excludedCategoryGroups;
   if (source.hiddenFromShop === true) compact.hiddenFromShop = true;
   if (source.ananasExport === true) compact.ananasExport = true;
   if (source.productType) compact.productType = source.productType;
