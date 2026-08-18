@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
-import { listCategoryRegistry } from "@/lib/catalog/categories";
+import { listAdminCatalogCategories } from "@/lib/catalog/categories";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { invalidateCatalogCaches, normalizeCatalogCategoryGroupKey } from "@/lib/catalog/store";
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const registryEntry = categoryId > 0 ? (await listCategoryRegistry()).find((item) => item.id === categoryId) : null;
+  const registryEntry = categoryId > 0 ? (await listAdminCatalogCategories()).find((item) => item.id === categoryId) : null;
   if (categoryId > 0 && !registryEntry) {
     return NextResponse.json({ success: false, message: "Kategorija nije pronadjena." }, { status: 404 });
   }

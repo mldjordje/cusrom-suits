@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
-import { listCategoryRegistry } from "@/lib/catalog/categories";
+import { listAdminCatalogCategories } from "@/lib/catalog/categories";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { invalidateCatalogCaches } from "@/lib/catalog/store";
 
@@ -35,9 +35,27 @@ export async function PATCH(req: NextRequest) {
   }
 
   const row = data as unknown as { raw_payload: Record<string, unknown> };
-  const registry = await listCategoryRegistry();
+  /* Resolve against the same list the editor renders: the registry file PLUS the
+     categories discovered on products. Resolving against the registry alone
+     silently dropped every pick that had no registry row of its own — which is
+     nearly all of them, the file holds one entry — and the product came back
+     saved as "bez kategorije". */
+  const registry = await listAdminCatalogCategories();
   const registryById = new Map(registry.map((c) => [c.id, c]));
   const adminCategoryIds = new Set(registry.map((c) => c.id));
+
+  const unknownIds = categoryIds.filter((id) => !registryById.has(id));
+  if (unknownIds.length) {
+    /* Refuse rather than write a partial set: silently saving fewer categories
+       than were ticked is what made this bug invisible for so long. */
+    return NextResponse.json(
+      {
+        success: false,
+        message: `Nepoznate kategorije: ${unknownIds.join(", ")}. Osvezi stranicu pa probaj ponovo.`,
+      },
+      { status: 400 },
+    );
+  }
 
   const rawPayload = { ...(row.raw_payload || {}) };
   const existingCategories = Array.isArray(rawPayload.categories)
