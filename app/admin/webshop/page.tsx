@@ -63,6 +63,18 @@ type CatalogProduct = {
   videoUrl?: string | null;
   mediaOrder?: ProductMediaItem[];
   rawPayload?: Record<string, unknown> | null;
+  categoryGroupStates?: CatalogProductGroupState[];
+};
+type CatalogProductGroupState = {
+  key: string;
+  label: string;
+  state: "derived" | "forced" | "excluded" | "off";
+  active: boolean;
+};
+type CategoryGroupCatalogueEntry = {
+  key: string;
+  label: string;
+  children: Array<{ key: string; label: string }>;
 };
 type ProductDraft = {
   name: string;
@@ -884,6 +896,7 @@ export default function AdminWebshopPage() {
   const [saleItems, setSaleItems] = useState<CatalogProduct[]>([]);
   const [catalogCategories, setCatalogCategories] = useState<CatalogCategory[]>([]);
   const [categoryRegistry, setCategoryRegistry] = useState<CatalogCategory[]>([]);
+  const [categoryGroupCatalogue, setCategoryGroupCatalogue] = useState<CategoryGroupCatalogueEntry[]>([]);
   const [drafts, setDrafts] = useState<Record<number, ProductDraft>>({});
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [pagination, setPagination] = useState<Pagination>({ page: 1, pageSize: 30, total: 0, totalPages: 1 });
@@ -943,6 +956,11 @@ export default function AdminWebshopPage() {
   const [categoryEditorSelectedIds, setCategoryEditorSelectedIds] = useState<Set<number>>(new Set());
   const [savingCategoryEditor, setSavingCategoryEditor] = useState(false);
   const [categoryEditorError, setCategoryEditorError] = useState<string | null>(null);
+  /** Auto-group rows for the product open in the category editor, kept local so a
+      toggle repaints instantly instead of waiting on the 5-min catalog cache. */
+  const [categoryEditorGroups, setCategoryEditorGroups] = useState<CatalogProductGroupState[]>([]);
+  const [categoryGroupBusyKey, setCategoryGroupBusyKey] = useState<string | null>(null);
+  const [categoryEditorQuery, setCategoryEditorQuery] = useState("");
 
   const [landingSettings, setLandingSettings] = useState<LandingSettings>(defaultLandingSettings);
   const [loadingLanding, setLoadingLanding] = useState(false);
@@ -1133,6 +1151,9 @@ export default function AdminWebshopPage() {
       const nextItems = (json.data || []) as CatalogProduct[];
       setItems(nextItems);
       setCatalogCategories((json.categories || []) as CatalogCategory[]);
+      if (Array.isArray(json.categoryGroupCatalogue)) {
+        setCategoryGroupCatalogue(json.categoryGroupCatalogue as CategoryGroupCatalogueEntry[]);
+      }
       setPagination((json.pagination || pagination) as Pagination);
       setSelected({});
       setDrafts((prev) => {
@@ -2376,7 +2397,45 @@ export default function AdminWebshopPage() {
     const adminIds = new Set(categoryRegistry.map((c) => c.id));
     const currentIds = new Set(item.categories.filter((c) => adminIds.has(c.id)).map((c) => c.id));
     setCategoryEditorSelectedIds(currentIds);
+    setCategoryEditorGroups(item.categoryGroupStates || []);
+    setCategoryEditorQuery("");
+    setCategoryEditorError(null);
     setCategoryEditorId(item.legacyId);
+  };
+
+  /* Auto-groups are what the shop nav actually lists a product under. They are
+     derived from the name / mOffice category, and the only way to override them
+     is the forced/excluded pair in raw_payload — surfaced here per group. */
+  const toggleCategoryGroup = async (groupKey: string, nextActive: boolean) => {
+    if (!categoryEditorId) return;
+    setCategoryGroupBusyKey(groupKey);
+    setCategoryEditorError(null);
+    try {
+      const res = await fetch("/api/admin/webshop/categories/force-group", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ legacyId: categoryEditorId, groupKey, action: nextActive ? "add" : "remove" }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setCategoryEditorError(json?.message || "Promena grupe nije uspela.");
+        return;
+      }
+      const nextGroups = categoryEditorGroups.map((group) =>
+        group.key === groupKey
+          ? { ...group, state: (nextActive ? "forced" : "excluded") as CatalogProductGroupState["state"], active: nextActive }
+          : group,
+      );
+      setCategoryEditorGroups(nextGroups);
+      const savedLegacyId = categoryEditorId;
+      setItems((prev) =>
+        prev.map((item) => (item.legacyId === savedLegacyId ? { ...item, categoryGroupStates: nextGroups } : item)),
+      );
+    } catch (e: unknown) {
+      setCategoryEditorError((e instanceof Error ? e.message : null) || "Greska pri promeni grupe.");
+    } finally {
+      setCategoryGroupBusyKey(null);
+    }
   };
 
   const saveCategoryEditor = async () => {
@@ -4701,7 +4760,7 @@ export default function AdminWebshopPage() {
       {categoryEditorId != null && currentCategoryEditorItem ? (
         <div className="fixed inset-0 z-50 flex items-end bg-slate-900/45 lg:items-center" onClick={() => { setCategoryEditorId(null); setCategoryEditorError(null); }}>
           <div
-            className="flex w-full flex-col rounded-t-2xl bg-white shadow-2xl lg:mx-auto lg:max-w-md lg:rounded-2xl"
+            className="flex w-full flex-col rounded-t-2xl bg-white shadow-2xl lg:mx-auto lg:max-w-2xl lg:rounded-2xl"
             style={{ maxHeight: "85vh" }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -4711,40 +4770,182 @@ export default function AdminWebshopPage() {
               <h2 className="mt-1 text-base font-semibold text-slate-900 line-clamp-2">{currentCategoryEditorItem.name}</h2>
               <p className="text-xs text-slate-500">#{currentCategoryEditorItem.legacyId} / {currentCategoryEditorItem.sku}</p>
 
-              <div className="mt-4">
+              {(() => {
+                const activeGroups = categoryEditorGroups.filter((group) => group.active);
+                const activeManual = categoryRegistry.filter((cat) => categoryEditorSelectedIds.has(cat.id));
+                if (!activeGroups.length && !activeManual.length) {
+                  return (
+                    <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                      Proizvod trenutno nije ni u jednoj kategoriji - na sajtu se nece pojaviti ni u jednoj listi.
+                    </p>
+                  );
+                }
+                return (
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    {activeGroups.map((group) => (
+                      <span key={`chip-g-${group.key}`} className="rounded-full border border-violet-200 bg-violet-50 px-2.5 py-1 text-[11px] font-semibold text-violet-700">
+                        {group.label}
+                      </span>
+                    ))}
+                    {activeManual.map((cat) => (
+                      <span key={`chip-m-${cat.id}`} className="rounded-full border border-sky-200 bg-sky-50 px-2.5 py-1 text-[11px] font-semibold text-sky-700">
+                        {cat.name}
+                      </span>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {/* --- Auto kategorije --- */}
+              <div className="mt-5">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Auto kategorije</p>
+                  <span className="text-[11px] text-slate-400">cuva se odmah</span>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+                  Sistem ih sam prepoznaje iz naziva i mOffice grupe. Po njima kupac pretrazuje i filtrira na sajtu.
+                  Ukljucivanjem ili iskljucivanjem rucno pregazis automatiku.
+                </p>
+
+                {categoryEditorGroups.length === 0 ? (
+                  <p className="mt-3 rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-500">
+                    Nema podataka o auto kategorijama. Osvezi listu proizvoda pa probaj ponovo.
+                  </p>
+                ) : (
+                  <div className="mt-3 grid gap-1.5">
+                    {(categoryGroupCatalogue.length
+                      ? categoryGroupCatalogue
+                      : categoryEditorGroups.map((group) => ({ key: group.key, label: group.label, children: [] as Array<{ key: string; label: string }> }))
+                    ).map((entry) => {
+                      const rows = [
+                        { key: entry.key, label: entry.label, isChild: false },
+                        ...entry.children.map((child) => ({ key: child.key, label: child.label, isChild: true })),
+                      ];
+                      return rows.map((row) => {
+                        const group = categoryEditorGroups.find((candidate) => candidate.key === row.key);
+                        if (!group) return null;
+                        const busy = categoryGroupBusyKey === row.key;
+                        const badge =
+                          group.state === "forced"
+                            ? { text: "rucno dodato", className: "border-violet-200 bg-violet-50 text-violet-700" }
+                            : group.state === "excluded"
+                              ? { text: "rucno sklonjeno", className: "border-rose-200 bg-rose-50 text-rose-700" }
+                              : group.state === "derived"
+                                ? { text: "automatski", className: "border-emerald-200 bg-emerald-50 text-emerald-700" }
+                                : null;
+                        return (
+                          <label
+                            key={`group-${row.key}`}
+                            className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition-colors ${
+                              group.active ? "border-violet-200 bg-violet-50/60" : "border-slate-200 hover:bg-slate-50"
+                            } ${row.isChild ? "ml-5" : ""} ${busy ? "opacity-50" : ""}`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={group.active}
+                              disabled={busy}
+                              onChange={(e) => void toggleCategoryGroup(row.key, e.target.checked)}
+                              className="h-4 w-4 accent-violet-600"
+                            />
+                            <span className="flex-1 text-sm font-semibold text-slate-900">
+                              {row.isChild ? "└ " : ""}
+                              {row.label}
+                            </span>
+                            {badge ? (
+                              <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.1em] ${badge.className}`}>
+                                {badge.text}
+                              </span>
+                            ) : null}
+                          </label>
+                        );
+                      });
+                    })}
+                  </div>
+                )}
+              </div>
+
+              {/* --- Rucne kategorije --- */}
+              <div className="mt-6">
+                <div className="flex items-baseline justify-between gap-2">
+                  <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Rucne kategorije</p>
+                  <span className="text-[11px] text-slate-400">trazi Sacuvaj</span>
+                </div>
+                <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+                  Kategorije napravljene u admin/categories. Podkategorije su uvucene ispod svoje nadkategorije.
+                </p>
+
                 {categoryRegistry.length === 0 ? (
-                  <p className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
                     Nema kreiranih kategorija. Dodaj kategorije u admin/categories.
                   </p>
                 ) : (
-                  <div className="grid gap-2">
-                    {categoryRegistry.map((cat) => {
-                      const checked = categoryEditorSelectedIds.has(cat.id);
-                      return (
-                        <label key={cat.id} className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 transition-colors ${checked ? "border-violet-200 bg-violet-50" : "border-slate-200 hover:bg-slate-50"}`}>
-                          <input
-                            type="checkbox"
-                            checked={checked}
-                            onChange={(e) => {
-                              setCategoryEditorSelectedIds((prev) => {
-                                const next = new Set(prev);
-                                if (e.target.checked) next.add(cat.id);
-                                else next.delete(cat.id);
-                                return next;
-                              });
-                            }}
-                            className="h-4 w-4 accent-violet-600"
-                          />
-                          <div>
-                            <p className="text-sm font-semibold text-slate-900">{cat.name}</p>
-                            {cat.path.length > 1 ? (
-                              <p className="text-xs text-slate-500">{cat.path.join(" / ")}</p>
-                            ) : null}
-                          </div>
-                        </label>
+                  <>
+                    {categoryRegistry.length > 8 ? (
+                      <input
+                        value={categoryEditorQuery}
+                        onChange={(e) => setCategoryEditorQuery(e.target.value)}
+                        placeholder="Pretrazi kategorije..."
+                        className="mt-3 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                      />
+                    ) : null}
+                    {(() => {
+                      const query = categoryEditorQuery.trim().toLowerCase();
+                      /* Sorting by full path puts every child right under its parent,
+                         and the depth indent then reads as a tree without building one. */
+                      const sorted = [...categoryRegistry].sort((a, b) =>
+                        (a.path || [a.name]).join(" / ").localeCompare((b.path || [b.name]).join(" / "), "sr", { sensitivity: "base" }),
                       );
-                    })}
-                  </div>
+                      const visible = query
+                        ? sorted.filter((cat) => (cat.path || [cat.name]).join(" / ").toLowerCase().includes(query))
+                        : sorted;
+                      if (!visible.length) {
+                        return (
+                          <p className="mt-3 rounded-xl border border-slate-200 px-3 py-2 text-xs text-slate-500">
+                            Nema pogodaka za tu pretragu.
+                          </p>
+                        );
+                      }
+                      return (
+                        <div className="mt-3 grid gap-1.5">
+                          {visible.map((cat) => {
+                            const checked = categoryEditorSelectedIds.has(cat.id);
+                            const path = cat.path || [cat.name];
+                            const depth = query ? 0 : Math.max(0, path.length - 1);
+                            return (
+                              <label
+                                key={cat.id}
+                                style={{ marginLeft: depth * 20 }}
+                                className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition-colors ${
+                                  checked ? "border-sky-200 bg-sky-50" : "border-slate-200 hover:bg-slate-50"
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={checked}
+                                  onChange={(e) => {
+                                    setCategoryEditorSelectedIds((prev) => {
+                                      const next = new Set(prev);
+                                      if (e.target.checked) next.add(cat.id);
+                                      else next.delete(cat.id);
+                                      return next;
+                                    });
+                                  }}
+                                  className="h-4 w-4 accent-sky-600"
+                                />
+                                <div className="min-w-0">
+                                  <p className="truncate text-sm font-semibold text-slate-900">
+                                    {depth > 0 ? "└ " : ""}
+                                    {cat.name}
+                                  </p>
+                                  {path.length > 1 ? <p className="truncate text-[11px] text-slate-500">{path.join(" / ")}</p> : null}
+                                </div>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      );
+                    })()}
+                  </>
                 )}
               </div>
             </div>

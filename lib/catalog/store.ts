@@ -721,6 +721,84 @@ export const getCatalogProductGroupLabel = (item: CatalogProductView): string =>
   return CATEGORY_GROUP_LABELS[best] || "";
 };
 
+/** Every auto-group the catalog knows about, parent first, sub-groups nested. */
+export const CATALOG_CATEGORY_GROUP_CATALOGUE: Array<{
+  key: string;
+  label: string;
+  children: Array<{ key: string; label: string }>;
+}> = (() => {
+  const parents = Object.keys(CATEGORY_GROUP_LABELS)
+    .filter((key) => !ACCESSORY_SUB_KEYS.has(key))
+    .sort((a, b) => (CATEGORY_GROUP_PRIORITY[a] || 99) - (CATEGORY_GROUP_PRIORITY[b] || 99));
+  return parents.map((key) => ({
+    key,
+    label: CATEGORY_GROUP_LABELS[key],
+    children:
+      key === "aksesoari"
+        ? [...ACCESSORY_SUB_KEYS]
+            .sort((a, b) => (CATEGORY_GROUP_PRIORITY[a] || 99) - (CATEGORY_GROUP_PRIORITY[b] || 99))
+            .map((subKey) => ({ key: subKey, label: CATEGORY_GROUP_LABELS[subKey] || subKey }))
+        : [],
+  }));
+})();
+
+export type CatalogProductGroupState = {
+  key: string;
+  label: string;
+  /** derived  = resolved from name/mOffice/categories, nobody touched it
+   *  forced    = admin added it by hand
+   *  excluded  = admin removed it by hand (wins over derived)
+   *  off       = not resolved and not forced */
+  state: "derived" | "forced" | "excluded" | "off";
+  /** True when the product actually lists under this group in the shop right now. */
+  active: boolean;
+};
+
+/**
+ * Per-product view of the auto-grouping, for the admin category editor.
+ *
+ * The shop lists a product under a group that its name, mOffice category or
+ * admin categories resolve to — a rule that is invisible from the admin side,
+ * which made "why is this in Sakoi?" unanswerable without reading the code.
+ * This spells out, per group, whether it was derived or set by hand.
+ */
+export const describeCatalogProductGroups = (item: CatalogProductView): CatalogProductGroupState[] => {
+  const forced = new Set<string>(
+    (Array.isArray(item.rawPayload?.forcedCategoryGroups) ? (item.rawPayload.forcedCategoryGroups as unknown[]) : [])
+      .map((value) => normalizeCatalogCategoryGroupKey(String(value)))
+      .filter(Boolean),
+  );
+  const excluded = new Set<string>(
+    (Array.isArray(item.rawPayload?.excludedCategoryGroups) ? (item.rawPayload.excludedCategoryGroups as unknown[]) : [])
+      .map((value) => normalizeCatalogCategoryGroupKey(String(value)))
+      .filter(Boolean),
+  );
+  /* getCatalogProductGroupKeys already folds the forced list in, so subtract it
+     back out to tell a derived hit apart from a hand-added one. */
+  const resolved = getCatalogProductGroupKeys(item);
+
+  const out: CatalogProductGroupState[] = [];
+  const push = (key: string, label: string) => {
+    const isForced = forced.has(key);
+    const isExcluded = excluded.has(key);
+    const isDerived = resolved.has(key) && !isForced;
+    const state: CatalogProductGroupState["state"] = isExcluded
+      ? "excluded"
+      : isForced
+        ? "forced"
+        : isDerived
+          ? "derived"
+          : "off";
+    out.push({ key, label, state, active: productMatchesCategoryGroup(item, key) });
+  };
+
+  for (const group of CATALOG_CATEGORY_GROUP_CATALOGUE) {
+    push(group.key, group.label);
+    for (const child of group.children) push(child.key, child.label);
+  }
+  return out;
+};
+
 export const productMatchesCategoryGroup = (item: CatalogProductView, groupKey: string) => {
   const wanted = normalizeCatalogCategoryGroupKey(groupKey);
   if (!wanted) return false;

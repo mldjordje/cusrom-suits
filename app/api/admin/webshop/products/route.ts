@@ -1,6 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
-import { invalidateCatalogCaches, listCatalogProducts, type CatalogListInput } from "@/lib/catalog/store";
+import {
+  CATALOG_CATEGORY_GROUP_CATALOGUE,
+  describeCatalogProductGroups,
+  invalidateCatalogCaches,
+  listCatalogProducts,
+  type CatalogListInput,
+} from "@/lib/catalog/store";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
 import { BUSINESS_UNIFORM_PRODUCT_TYPE } from "@/lib/catalog/productTypes";
@@ -742,10 +748,18 @@ export async function GET(req: NextRequest) {
     sort,
   });
 
+  /* The auto-group state is derived, not stored, so the admin cannot read it
+     off the row — attach it per item for the category editor. */
+  const items = result.items.map((item) => ({
+    ...item,
+    categoryGroupStates: describeCatalogProductGroups(item),
+  }));
+
   return NextResponse.json({
     success: true,
-    data: result.items,
+    data: items,
     categories: result.categories,
+    categoryGroupCatalogue: CATALOG_CATEGORY_GROUP_CATALOGUE,
     pagination: {
       page: result.page,
       pageSize: result.pageSize,
