@@ -1,13 +1,41 @@
 {
   "navigation": {
     "items": [
-      { "href": "/", "label": "Pocetna", "labelEn": "Home" },
-      { "href": "/web-shop", "label": "Web Shop", "labelEn": "Web Shop" },
-      { "href": "/akcije", "label": "Akcije", "labelEn": "Sale" },
-      { "href": "/o-nama", "label": "O nama", "labelEn": "About" },
-      { "href": "/poslovne-uniforme", "label": "Poslovne uniforme", "labelEn": "Business uniforms" },
-      { "href": "/blog", "label": "Blog", "labelEn": "Blog" },
-      { "href": "/kontakt", "label": "Kontakt", "labelEn": "Contact" }
+      {
+        "href": "/",
+        "label": "Pocetna",
+        "labelEn": "Home"
+      },
+      {
+        "href": "/web-shop",
+        "label": "Proizvodi",
+        "labelEn": "Products"
+      },
+      {
+        "href": "/akcije",
+        "label": "Akcije",
+        "labelEn": "Sale"
+      },
+      {
+        "href": "/o-nama",
+        "label": "O nama",
+        "labelEn": "About"
+      },
+      {
+        "href": "/poslovne-uniforme",
+        "label": "Poslovne uniforme",
+        "labelEn": "Business uniforms"
+      },
+      {
+        "href": "/blog",
+        "label": "Blog",
+        "labelEn": "Blog"
+      },
+      {
+        "href": "/kontakt",
+        "label": "Kontakt",
+        "labelEn": "Contact"
+      }
     ]
   },
   "footer": {
@@ -25,33 +53,93 @@
         "title": "Kompanija",
         "titleEn": "Company",
         "links": [
-          { "href": "/", "label": "Pocetna", "labelEn": "Home" },
-          { "href": "/o-nama", "label": "O nama", "labelEn": "About" },
-          { "href": "/poslovne-uniforme", "label": "Poslovne uniforme", "labelEn": "Business uniforms" },
-          { "href": "/loyalty-program", "label": "Loyalty program", "labelEn": "Loyalty program" },
-          { "href": "/blog", "label": "Blog", "labelEn": "Blog" },
-          { "href": "/kontakt", "label": "Kontakt", "labelEn": "Contact" }
+          {
+            "href": "/",
+            "label": "Pocetna",
+            "labelEn": "Home"
+          },
+          {
+            "href": "/o-nama",
+            "label": "O nama",
+            "labelEn": "About"
+          },
+          {
+            "href": "/poslovne-uniforme",
+            "label": "Poslovne uniforme",
+            "labelEn": "Business uniforms"
+          },
+          {
+            "href": "/loyalty-program",
+            "label": "Loyalty program",
+            "labelEn": "Loyalty program"
+          },
+          {
+            "href": "/blog",
+            "label": "Blog",
+            "labelEn": "Blog"
+          },
+          {
+            "href": "/kontakt",
+            "label": "Kontakt",
+            "labelEn": "Contact"
+          }
         ]
       },
       {
         "title": "Shop",
         "titleEn": "Shop",
         "links": [
-          { "href": "/web-shop", "label": "Web Shop", "labelEn": "Web Shop" },
-          { "href": "/akcije", "label": "Akcije", "labelEn": "Sale" },
-          { "href": "/web-shop?inStock=1", "label": "Na stanju", "labelEn": "In stock" },
-          { "href": "/dokumenta", "label": "Dokumenta", "labelEn": "Documents" },
-          { "href": "/checkout", "label": "Checkout", "labelEn": "Checkout" }
+          {
+            "href": "/web-shop",
+            "label": "Proizvodi",
+            "labelEn": "Products"
+          },
+          {
+            "href": "/akcije",
+            "label": "Akcije",
+            "labelEn": "Sale"
+          },
+          {
+            "href": "/web-shop?inStock=1",
+            "label": "Na stanju",
+            "labelEn": "In stock"
+          },
+          {
+            "href": "/dokumenta",
+            "label": "Dokumenta",
+            "labelEn": "Documents"
+          },
+          {
+            "href": "/checkout",
+            "label": "Checkout",
+            "labelEn": "Checkout"
+          }
         ]
       },
       {
         "title": "Pravno",
         "titleEn": "Legal",
         "links": [
-          { "href": "/uslovi_kupovine", "label": "Uslovi kupovine", "labelEn": "Purchase terms" },
-          { "href": "/polisa_privatnosti", "label": "Polisa privatnosti", "labelEn": "Privacy policy" },
-          { "href": "/reklamacije", "label": "Reklamacije", "labelEn": "Complaints" },
-          { "href": "/isporuka", "label": "Isporuka", "labelEn": "Delivery" }
+          {
+            "href": "/uslovi_kupovine",
+            "label": "Uslovi kupovine",
+            "labelEn": "Purchase terms"
+          },
+          {
+            "href": "/polisa_privatnosti",
+            "label": "Polisa privatnosti",
+            "labelEn": "Privacy policy"
+          },
+          {
+            "href": "/reklamacije",
+            "label": "Reklamacije",
+            "labelEn": "Complaints"
+          },
+          {
+            "href": "/isporuka",
+            "label": "Isporuka",
+            "labelEn": "Delivery"
+          }
         ]
       }
     ]
@@ -102,8 +190,8 @@
       "The brand is dedicated to elegant menswear, contemporary cuts and carefully selected materials. The focus is on balancing classic appearance with modern comfort.",
       "The web shop includes ready-to-wear pieces, selected sale offers and blog content following collections, style and brand news."
     ],
-    "primaryCtaLabel": "Web Shop",
-    "primaryCtaLabelEn": "Web Shop",
+    "primaryCtaLabel": "Proizvodi",
+    "primaryCtaLabelEn": "Proizvodi",
     "primaryCtaHref": "/web-shop",
     "secondaryCtaLabel": "Kontakt",
     "secondaryCtaLabelEn": "Contact",
@@ -125,8 +213,16 @@
       "phone": "+381 69 445 5106",
       "landline": "+381 18 514 276",
       "email": "santos.pobedina@gmail.com",
-      "hours": ["Pon-Pet: 09:00 - 21:00", "Subota: 09:00 - 20:00", "Nedelja: 10:00 - 17:00"],
-      "hoursEn": ["Mon-Fri: 09:00 - 21:00", "Saturday: 09:00 - 20:00", "Sunday: 10:00 - 17:00"],
+      "hours": [
+        "Pon-Pet: 09:00 - 21:00",
+        "Subota: 09:00 - 20:00",
+        "Nedelja: 10:00 - 17:00"
+      ],
+      "hoursEn": [
+        "Mon-Fri: 09:00 - 21:00",
+        "Saturday: 09:00 - 20:00",
+        "Sunday: 10:00 - 17:00"
+      ],
       "mapEmbedUrl": "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3639.7269588634736!2d21.892546976667187!3d43.320317373896415!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4755b0733fffffff%3A0x997bd3a90b12829c!2sSantos%20%26%20Santorini!5e1!3m2!1sen!2srs!4v1774780655927!5m2!1sen!2srs"
     },
     {
@@ -141,8 +237,16 @@
       "phone": "+381 69 44 55 104",
       "landline": "+381 37 443 960",
       "email": "santos.krusevac@gmail.com",
-      "hours": ["Pon-Pet: 09:00 - 21:00", "Subota: 09:00 - 18:00", "Nedelja: Ne radimo"],
-      "hoursEn": ["Mon-Fri: 09:00 - 21:00", "Saturday: 09:00 - 18:00", "Sunday: Closed"],
+      "hours": [
+        "Pon-Pet: 09:00 - 21:00",
+        "Subota: 09:00 - 18:00",
+        "Nedelja: Ne radimo"
+      ],
+      "hoursEn": [
+        "Mon-Fri: 09:00 - 21:00",
+        "Saturday: 09:00 - 18:00",
+        "Sunday: Closed"
+      ],
       "mapEmbedUrl": "https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d3624.143938196094!2d21.330695!3d43.579821!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x4756870062ccd25d%3A0x780e3454e14c0558!2sSantos%20%26%20Santorini!5e1!3m2!1sen!2srs!4v1774780623102!5m2!1sen!2srs"
     }
   ]

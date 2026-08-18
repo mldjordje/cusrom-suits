@@ -43,7 +43,7 @@ export default function StorefrontMobileShopNav({
     },
     {
       href: "/web-shop",
-      label: isEn ? "Shop" : "Shop",
+      label: isEn ? "Products" : "Proizvodi",
       isActive: pathname === "/web-shop" || pathname.startsWith("/web-shop/") || pathname === "/akcije",
       icon: (
         <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">

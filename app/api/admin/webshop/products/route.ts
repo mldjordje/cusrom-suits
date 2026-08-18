@@ -43,6 +43,8 @@ type ProductUpdatePayload = {
   businessUniform?: boolean;
   priceOverride?: boolean;
   declaration?: string | null;
+  /** Shipping weight in kg. Admin-only: never rendered on the storefront, used by the Ananas package payload. */
+  packageWeightKg?: number | null;
   washCareIcons?: WashCareSymbolKey[] | null;
   seo?: {
     seoTitle?: string;
@@ -174,6 +176,10 @@ const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
   if (hasOwn(row, "businessUniform")) out.businessUniform = Boolean(row.businessUniform);
   if (hasOwn(row, "priceOverride")) out.priceOverride = Boolean(row.priceOverride);
   if (hasOwn(row, "declaration")) out.declaration = row.declaration == null ? null : String(row.declaration);
+  if (hasOwn(row, "packageWeightKg")) {
+    const weight = toNumberOrUndefined(row.packageWeightKg);
+    out.packageWeightKg = weight === undefined || !(weight > 0) ? null : weight;
+  }
   if (hasOwn(row, "washCareIcons")) {
     const washCareIcons = validateWashCareSymbolKeys(row.washCareIcons);
     if (!washCareIcons) return null;
@@ -279,6 +285,7 @@ const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
       ...(patch.hiddenFromShop !== undefined ? { hiddenFromShop: patch.hiddenFromShop } : {}),
       ...(patch.ananasExport !== undefined ? { ananasExport: patch.ananasExport } : {}),
       ...(patch.declaration !== undefined ? { declaration: patch.declaration || null } : {}),
+      ...(patch.packageWeightKg !== undefined ? { packageWeightKg: patch.packageWeightKg } : {}),
       ...(patch.washCareIcons !== undefined ? { washCareIcons: patch.washCareIcons } : {}),
       ...(patch.seo !== undefined ? { seo: patch.seo } : {}),
     },
@@ -359,6 +366,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
     patch.businessUniform !== undefined ||
     patch.priceOverride !== undefined ||
     patch.declaration !== undefined ||
+    patch.packageWeightKg !== undefined ||
     patch.washCareIcons !== undefined ||
     patch.hiddenFromShop !== undefined ||
     patch.ananasExport !== undefined ||
@@ -412,6 +420,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
         ...(patch.declaration !== undefined
           ? { declaration: patch.declaration || null }
           : {}),
+        ...(patch.packageWeightKg !== undefined ? { packageWeightKg: patch.packageWeightKg } : {}),
         ...(patch.washCareIcons !== undefined ? { washCareIcons: patch.washCareIcons } : {}),
         ...(patch.seo !== undefined ? { seo: patch.seo || null } : {}),
       },
@@ -821,6 +830,37 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   if (!hasAdminToken(req)) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
+
+  /* `legacyIds=1,2,3` deletes a whole selection in one request — the admin
+     grid can hold hundreds of rows, and one HTTP call per row was the reason
+     clearing a category by hand took minutes. Single `legacyId` still works. */
+  const idsParam = req.nextUrl.searchParams.get("legacyIds");
+  if (idsParam) {
+    const legacyIds = [...new Set(
+      idsParam
+        .split(",")
+        .map((raw) => Number.parseInt(raw.trim(), 10))
+        .filter((value) => Number.isFinite(value)),
+    )];
+    if (!legacyIds.length) {
+      return NextResponse.json({ success: false, message: "Missing legacyIds." }, { status: 400 });
+    }
+
+    const results: Array<{ legacyId: number; success: boolean; message?: string }> = [];
+    for (const id of legacyIds) {
+      const outcome = await deleteInSupabase(id);
+      results.push({ legacyId: id, success: outcome.success, message: outcome.message });
+    }
+    const deleted = results.filter((row) => row.success).length;
+    if (deleted) invalidateCatalogCaches();
+    return NextResponse.json({
+      success: deleted === legacyIds.length,
+      partial: deleted > 0 && deleted < legacyIds.length,
+      deleted,
+      total: legacyIds.length,
+      results,
+    });
   }
 
   const legacyId = Number.parseInt(req.nextUrl.searchParams.get("legacyId") || "", 10);

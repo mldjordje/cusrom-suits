@@ -443,6 +443,9 @@ const compactRawPayload = (
   if (source.seo && typeof source.seo === "object") compact.seo = source.seo;
   if (Array.isArray(source.washCareIcons)) compact.washCareIcons = source.washCareIcons;
   if (Object.prototype.hasOwnProperty.call(source, "declaration")) compact.declaration = source.declaration;
+  /* Admin-entered shipping weight. Never rendered in the storefront — it only
+     feeds the Ananas package payload and the shipping quote. */
+  if (Object.prototype.hasOwnProperty.call(source, "packageWeightKg")) compact.packageWeightKg = source.packageWeightKg;
   /* Manual group overrides. getCatalogProductGroupKeys and
      productMatchesCategoryGroup both read these, but they were being dropped
      here, so forcing a product into (or out of) a group from the admin had no
@@ -615,7 +618,8 @@ export const normalizeCatalogCategoryGroupKey = (value: string) => {
   if (/jakn|jacket/.test(normalized)) return "jakna";
   if (/dzemper|džemper|knit|sweater/.test(normalized)) return "dzemper";
   if (/kais|kaisevi|automatik|beltran/.test(normalized)) return "kais";
-  if (/kravat/.test(normalized)) return "kravata";
+  // Bow ties live under the tie group — the shop has no separate rail for them.
+  if (/kravat|leptir masn|leptir-masn/.test(normalized)) return "kravata";
   if (/cipel|obuc|shoe/.test(normalized)) return "obuca";
   if (/novcan|wallet/.test(normalized)) return "novcanik";
   if (/card holder/.test(normalized)) return "card-holder";

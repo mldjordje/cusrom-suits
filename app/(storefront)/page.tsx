@@ -1083,7 +1083,7 @@ export default async function HomePage({
             heroEyebrow: (isEn && landingSettings.heroEyebrowEn.trim()) || tx(landingSettings.heroEyebrow, "Santos & Santorini"),
             heroTitleLine1: (isEn && landingSettings.heroTitleLine1En.trim()) || tx(landingSettings.heroTitleLine1, "New Collection"),
             heroTitleLine2: (isEn && landingSettings.heroTitleLine2En.trim()) || tx(landingSettings.heroTitleLine2),
-            heroPrimaryCtaLabel: (isEn && landingSettings.heroPrimaryCtaLabelEn.trim()) || tx(landingSettings.heroPrimaryCtaLabel, "Web Shop"),
+            heroPrimaryCtaLabel: (isEn && landingSettings.heroPrimaryCtaLabelEn.trim()) || tx(landingSettings.heroPrimaryCtaLabel, "Products"),
             heroPrimaryCtaHref: landingSettings.heroPrimaryCtaHref,
             heroSecondaryCtaLabel: (isEn && landingSettings.heroSecondaryCtaLabelEn.trim()) || tx(landingSettings.heroSecondaryCtaLabel, "Contact"),
             heroSecondaryCtaHref: landingSettings.heroSecondaryCtaHref,
@@ -1267,7 +1267,7 @@ export default async function HomePage({
                   ) : null}
                   {landingSettings.aboutSecondaryCtaLabel ? (
                     <Link href={withOptionalLang(landingSettings.aboutSecondaryCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                      {tx(landingSettings.aboutSecondaryCtaLabel, "Visit Web Shop")}
+                      {tx(landingSettings.aboutSecondaryCtaLabel, "View products")}
                     </Link>
                   ) : null}
                 </div>

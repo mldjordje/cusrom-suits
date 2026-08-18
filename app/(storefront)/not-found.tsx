@@ -69,7 +69,7 @@ export default function NotFound() {
               fontWeight: 500,
             }}
           >
-            Web Shop
+            Proizvodi
           </Link>
           <Link
             href="/"

@@ -51,7 +51,13 @@ const WEIGHT_BY_KEYWORD: Array<{ match: RegExp; kg: number }> = [
 
 export const DEFAULT_PACKAGE_WEIGHT_KG = 0.6;
 
-export const resolvePackageWeightKg = (item: Pick<CatalogProductView, "name" | "categories">): number => {
+export const resolvePackageWeightKg = (
+  item: Pick<CatalogProductView, "name" | "categories"> & Partial<Pick<CatalogProductView, "rawPayload">>,
+): number => {
+  /* An admin-entered weight wins over the keyword guess — the guess is only a
+     fallback for the thousands of legacy rows nobody has weighed yet. */
+  const manual = Number(item.rawPayload?.packageWeightKg);
+  if (Number.isFinite(manual) && manual > 0) return manual;
   const haystack = [item.name || "", ...(item.categories || []).map((cat) => cat.name || "")].join(" ");
   for (const rule of WEIGHT_BY_KEYWORD) {
     if (rule.match.test(haystack)) return rule.kg;

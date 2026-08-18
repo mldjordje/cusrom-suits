@@ -124,7 +124,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
   navigation: {
     items: [
       { href: "/", label: "Pocetna", labelEn: "Home" },
-      { href: "/web-shop", label: "Web Shop", labelEn: "Web Shop" },
+      { href: "/web-shop", label: "Proizvodi", labelEn: "Products" },
       { href: "/akcije", label: "Akcije", labelEn: "Sale" },
       { href: "/o-nama", label: "O nama", labelEn: "About" },
       { href: "/poslovne-uniforme", label: "Poslovne uniforme", labelEn: "Business uniforms" },
@@ -159,7 +159,7 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
         title: "Shop",
         titleEn: "Shop",
         links: [
-          { href: "/web-shop", label: "Web Shop", labelEn: "Web Shop" },
+          { href: "/web-shop", label: "Proizvodi", labelEn: "Products" },
           { href: "/akcije", label: "Akcije", labelEn: "Sale" },
           { href: "/web-shop?inStock=1", label: "Na stanju", labelEn: "In stock" },
           { href: "/dokumenta", label: "Dokumenta", labelEn: "Documents" },
@@ -225,8 +225,8 @@ export const DEFAULT_SITE_CONTENT: SiteContent = {
       "The brand is dedicated to elegant menswear, contemporary cuts and carefully selected materials. The focus is on balancing classic appearance with modern comfort.",
       "The web shop includes ready-to-wear pieces, selected sale offers and blog content following collections, style and brand news.",
     ],
-    primaryCtaLabel: "Web Shop",
-    primaryCtaLabelEn: "Web Shop",
+    primaryCtaLabel: "Proizvodi",
+    primaryCtaLabelEn: "Products",
     primaryCtaHref: "/web-shop",
     secondaryCtaLabel: "Kontakt",
     secondaryCtaLabelEn: "Contact",

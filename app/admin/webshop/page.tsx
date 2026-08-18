@@ -66,6 +66,7 @@ type CatalogProduct = {
 };
 type ProductDraft = {
   name: string;
+  packageWeightKg: string;
   brand: string;
   description: string;
   specification: string;
@@ -719,6 +720,8 @@ const toDraft = (item: CatalogProduct): ProductDraft => {
       typeof item.rawPayload?.declaration === "string"
         ? item.rawPayload.declaration
         : "",
+    packageWeightKg:
+      Number(item.rawPayload?.packageWeightKg) > 0 ? String(item.rawPayload?.packageWeightKg) : "",
     washCareIcons,
     seoTitle: String(seo.seoTitle || ""),
     metaDescription: String(seo.metaDescription || ""),
@@ -1821,6 +1824,7 @@ export default function AdminWebshopPage() {
           description: draft.description.trim() || null,
           specification: draft.specification.trim() || null,
           declaration: draft.declaration.trim() || null,
+          packageWeightKg: toNumberOrNull(draft.packageWeightKg),
           washCareIcons: draft.washCareIcons,
           ...commercePatch,
           isActive: draft.isActive,
@@ -2109,6 +2113,37 @@ export default function AdminWebshopPage() {
       );
     } finally {
       setTogglingHiddenId(null);
+    }
+  };
+
+  /* Permanent bulk delete for the checkbox selection. Deleting is the one action
+     here that cannot be undone from the UI, so it asks twice and spells out the
+     count — hiding (below) stays the reversible default for everyday cleanup. */
+  const deleteSelection = async () => {
+    if (!selectedIds.length) {
+      setError("Selektuj proizvode.");
+      return;
+    }
+    const count = selectedIds.length;
+    if (!window.confirm(`Trajno obrisati ${count} proizvod(a) iz baze? Ova akcija se ne moze vratiti.`)) return;
+    if (!window.confirm("Potvrdi jos jednom: brisanje je trajno. Ako zelis samo da ih skines sa sajta, koristi 'Sakrij selektovane'.")) return;
+
+    setBulkSaving(true);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/admin/webshop/products?legacyIds=${selectedIds.join(",")}`, { method: "DELETE" });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        const deleted = Number(json?.deleted || 0);
+        setError(deleted ? `Obrisano ${deleted}/${count}. Deo nije uspeo.` : json?.message || "Brisanje nije uspelo.");
+      } else {
+        setNotice(`Obrisano ${json.deleted ?? count} proizvod(a).`);
+      }
+      setSelected({});
+      await loadProducts(pagination.page);
+    } finally {
+      setBulkSaving(false);
     }
   };
 
@@ -3092,6 +3127,7 @@ export default function AdminWebshopPage() {
               <span className="text-xs text-slate-500">Javni web shop (vazi za celu sifru, sve velicine):</span>
               <button onClick={() => void setHiddenForSelection(true)} disabled={bulkSaving || !selectedIds.length} className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-rose-700 disabled:opacity-50">Sakrij selektovane</button>
               <button onClick={() => void setHiddenForSelection(false)} disabled={bulkSaving || !selectedIds.length} className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700 disabled:opacity-50">Vrati selektovane</button>
+              <button onClick={() => void deleteSelection()} disabled={bulkSaving || !selectedIds.length} title="Trajno brise selektovane proizvode iz baze." className="rounded-xl border border-rose-300 bg-rose-600 px-3 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-white disabled:opacity-50">Obrisi selektovane</button>
             </div>
           </div>
 
@@ -4380,6 +4416,17 @@ export default function AdminWebshopPage() {
               <label className="flex flex-col gap-1 md:col-span-2">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Deklaracija — napomena (opciono)</span>
                 <textarea value={drafts[currentEditorItem.legacyId]?.declaration || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { declaration: e.target.value })} rows={2} placeholder="Dodatna napomena koja se prikazuje u tabeli deklaracije na sajtu..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+              </label>
+              <label className="flex flex-col gap-1">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Tezina pakovanja (kg) — interno</span>
+                <input
+                  value={drafts[currentEditorItem.legacyId]?.packageWeightKg || ""}
+                  onChange={(e) => updateDraft(currentEditorItem.legacyId, { packageWeightKg: e.target.value })}
+                  placeholder="npr. 1.6"
+                  inputMode="decimal"
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                />
+                <span className="text-[11px] text-slate-500">Ne prikazuje se kupcima. Koristi se za Ananas paket i obracun dostave. Prazno = automatska procena po kategoriji.</span>
               </label>
               <WashCareSelector
                 value={drafts[currentEditorItem.legacyId]?.washCareIcons ?? []}
