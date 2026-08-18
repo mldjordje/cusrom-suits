@@ -125,19 +125,30 @@ export default function LiveCategoryTree({
   /* Main categories are switched on and off as a set, so the toggle sends the
      whole enabled list back rather than a single key. */
   const toggleGroupEnabled = async (groupKey: string, nextOn: boolean) => {
+    const previous = enabledGroups;
     const next = new Set(enabledGroups);
     if (nextOn) next.add(groupKey);
     else next.delete(groupKey);
     setEnabledGroups(next);
     setBusyKey(groupKey);
+    setError(null);
     try {
-      await fetch("/api/admin/webshop/categories/auto-groups", {
+      const res = await fetch("/api/admin/webshop/categories/auto-groups", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabledGroups: [...next] }),
       });
+      const json = await res.json().catch(() => null);
+      /* The response used to be ignored, so a rejected write still left the
+         switch looking flipped until the next reload. Put it back instead. */
+      if (!res.ok || !json?.success) {
+        setEnabledGroups(previous);
+        setError(json?.message || "Promena vidljivosti kategorije nije uspela.");
+        return;
+      }
       onChanged();
     } catch {
+      setEnabledGroups(previous);
       setError("Promena vidljivosti kategorije nije uspela.");
     } finally {
       setBusyKey(null);
@@ -456,7 +467,11 @@ export default function LiveCategoryTree({
         {groups.map((group) => {
           const groupTarget: Target = { kind: "group", key: group.key, label: group.name };
           const isOpen = openTarget?.kind === "group" && openTarget.key === group.key;
-          const groupOn = enabledGroups.size === 0 || enabledGroups.has(group.key);
+          /* No "empty means everything" fallback here: the API always answers with
+             the resolved list, so an empty set really is "nothing in the menu",
+             and pretending otherwise showed every group as on while the shop
+             showed none. While loading, hold the last known state. */
+          const groupOn = loading ? true : enabledGroups.has(group.key);
           return (
             <div key={group.key} className={`rounded-xl border p-3 ${groupOn ? "border-slate-200" : "border-slate-200 bg-slate-50/60"}`}>
               <div className="flex flex-wrap items-center gap-2">
@@ -473,10 +488,16 @@ export default function LiveCategoryTree({
                 </button>
 
                 <label
-                  className={`flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold ${
-                    groupOn ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-white text-slate-500"
-                  }`}
-                  title="Da li se ova glavna kategorija prikazuje kupcima"
+                  className={`flex cursor-pointer items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors ${
+                    groupOn
+                      ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                      : "border-amber-200 bg-amber-50 text-amber-700 hover:bg-amber-100"
+                  } ${busyKey === group.key ? "opacity-50" : ""}`}
+                  title={
+                    groupOn
+                      ? "Kupci vide ovu kategoriju u meniju. Klikni da je sklonis."
+                      : "Kupci NE vide ovu kategoriju. Klikni da je ukljucis u meni."
+                  }
                 >
                   <input
                     type="checkbox"
@@ -484,7 +505,9 @@ export default function LiveCategoryTree({
                     disabled={busyKey === group.key}
                     onChange={(e) => void toggleGroupEnabled(group.key, e.target.checked)}
                   />
-                  {groupOn ? "U meniju" : "Skrivena"}
+                  {/* Off state names the action, not the state: the old "Skrivena"
+                      label read as a status nobody realised was also the switch. */}
+                  {groupOn ? "U meniju" : "Ukljuci u meni"}
                 </label>
 
                 {group.subGroups.map((sub) => {

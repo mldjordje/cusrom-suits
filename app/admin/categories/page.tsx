@@ -726,6 +726,100 @@ export default function AdminCategoriesPage() {
     }
   };
 
+  /* One-click visibility, straight from the row header. It used to live only
+     inside the expanded edit form, so whether a category reached customers was
+     both hard to find and hard to read off the list. */
+  const setCategoryVisibility = async (categoryId: number, isVisible: boolean) => {
+    setSavingId(categoryId);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/admin/webshop/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: categoryId, isVisible, ...(isVisible ? {} : { isFeatured: false }) }),
+      });
+      const json = await res.json();
+      if (!json?.success) {
+        setError(json?.message || "Promena vidljivosti nije uspela.");
+        return;
+      }
+      setNotice(isVisible ? "Kategorija je sada vidljiva kupcima." : "Kategorija je sklonjena sa sajta.");
+      await load();
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : null) || "Promena vidljivosti nije uspela.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  /* Promote an mOffice category into an admin one. The PATCH creates the registry
+     row on first write, which is what moves it out of the read-only list. */
+  const activateLegacyCategory = async (row: CategoryRow) => {
+    setSavingId(row.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch("/api/admin/webshop/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: row.id,
+          name: row.name,
+          path: row.path,
+          parentGroup: row.parentGroup || (row.path.length > 1 ? row.path[0] : ""),
+          isVisible: true,
+        }),
+      });
+      const json = await res.json();
+      if (!json?.success) {
+        setError(json?.message || "Aktivacija kategorije nije uspela.");
+        return;
+      }
+      setNotice(`"${row.name}" je sada admin kategorija i vidljiva je kupcima.`);
+      await load();
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : null) || "Aktivacija kategorije nije uspela.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  /* Deleting a category that products still carry needs force=1, which detaches
+     it from them first. Asking twice, because neither step can be undone. */
+  const deleteCategoryWithProducts = async (row: CategoryRow) => {
+    const inUse = row.usageCount > 0;
+    const first = inUse
+      ? `Obrisati "${row.name}"? Kategorija je na ${row.usageCount} proizvoda - bice sklonjena sa svih.`
+      : `Obrisati "${row.name}"?`;
+    if (!window.confirm(first)) return;
+    if (inUse && !window.confirm("Potvrdi jos jednom: proizvodi ostaju, ali gube ovu kategoriju.")) return;
+
+    setSavingId(row.id);
+    setError(null);
+    setNotice(null);
+    try {
+      const res = await fetch(`/api/admin/webshop/categories?id=${row.id}${inUse ? "&force=1" : ""}`, {
+        method: "DELETE",
+      });
+      const json = await res.json();
+      if (!json?.success) {
+        setError(json?.message || "Brisanje kategorije nije uspelo.");
+        return;
+      }
+      setNotice(
+        json.detached > 0
+          ? `Obrisana kategorija "${row.name}" i sklonjena sa ${json.detached} proizvoda.`
+          : `Obrisana kategorija "${row.name}".`,
+      );
+      await load();
+    } catch (e: unknown) {
+      setError((e instanceof Error ? e.message : null) || "Brisanje kategorije nije uspelo.");
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   const deleteCategory = async (categoryId: number) => {
     setSavingId(categoryId);
     setError(null);
@@ -1057,13 +1151,23 @@ export default function AdminCategoriesPage() {
                         >
                           {isExpanded ? "Sakrij proizvode" : "Prikaži proizvode"}
                         </button>
-                        <span
-                          className={`rounded-full border px-2 py-1 text-[11px] font-semibold ${
-                            row.isVisible ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 text-slate-500"
+                        <button
+                          type="button"
+                          onClick={() => void setCategoryVisibility(row.id, !row.isVisible)}
+                          disabled={savingId === row.id}
+                          title={
+                            row.isVisible
+                              ? "Kupci je vide u filteru. Klikni da je sklonis."
+                              : "Kupci je ne vide. Klikni da je prikazes na sajtu."
+                          }
+                          className={`rounded-full border px-2.5 py-1 text-[11px] font-semibold transition-colors disabled:opacity-50 ${
+                            row.isVisible
+                              ? "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                              : "border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100"
                           }`}
                         >
-                          {row.isVisible ? "Vidljiva" : "Sakrivena"}
-                        </span>
+                          {row.isVisible ? "\u25cf Vidljiva kupcima" : "\u25cb Sakrivena"}
+                        </button>
                         {row.isFeatured && row.isVisible ? (
                           <span className="rounded-full border border-violet-200 bg-violet-50 px-2 py-1 text-[11px] font-semibold text-violet-700">
                             ★ Nav
@@ -1488,8 +1592,9 @@ export default function AdminCategoriesPage() {
         {showLegacy ? (
           <div className="border-t border-slate-100 px-4 pb-4 pt-3">
             <p className="mb-3 text-xs text-slate-500">
-              Ove kategorije dolaze iz mOffice-a i prikazuju se u adminu radi pregleda — ali se ne prikazuju u web-shop filteru.
-              Ako zelis da neka od njih postane web-shop filter, napred kreiraj novu <em>admin kategoriju</em> sa tim imenom.
+              Ove kategorije stizu iz mOffice-a i jos nisu ukljucene u web-shop filter.
+              <strong> Aktiviraj</strong> je pretvara u admin kategoriju koju kupci vide i koja se odavde moze menjati.
+              <strong> Obrisi</strong> je sklanja i sa proizvoda koji je nose.
             </p>
             <div className="grid gap-2">
               {visibleLegacyRows.map((row) => (
@@ -1503,9 +1608,29 @@ export default function AdminCategoriesPage() {
                     </p>
                     <p className="text-[10px] text-slate-400">#{row.id} · {row.usageCount} {row.usageCount === 1 ? "proizvod" : "proizvoda"}</p>
                   </div>
-                  <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500">
-                    mOffice
-                  </span>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <span className="rounded-full border border-slate-200 bg-white px-2 py-0.5 text-[10px] font-semibold text-slate-500">
+                      mOffice
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => void activateLegacyCategory(row)}
+                      disabled={savingId === row.id}
+                      title="Pretvori u admin kategoriju vidljivu kupcima"
+                      className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-emerald-700 transition-colors hover:bg-emerald-100 disabled:opacity-50"
+                    >
+                      {savingId === row.id ? "..." : "Aktiviraj"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void deleteCategoryWithProducts(row)}
+                      disabled={savingId === row.id}
+                      title="Obrisi kategoriju i skloni je sa svih proizvoda"
+                      className="rounded-full border border-rose-200 bg-rose-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-rose-700 transition-colors hover:bg-rose-100 disabled:opacity-50"
+                    >
+                      Obrisi
+                    </button>
+                  </div>
                 </div>
               ))}
               {visibleLegacyRows.length === 0 ? (
