@@ -4487,6 +4487,13 @@ export default function AdminWebshopPage() {
                 />
                 <span className="text-[11px] text-slate-500">Ne prikazuje se kupcima. Koristi se za Ananas paket i obracun dostave. Prazno = automatska procena po kategoriji.</span>
               </label>
+              {/* Say it where the shared fields are: the editor edits one size,
+                  and the client had no way to know which fields carry over. */}
+              <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-600">
+                Naziv, opis, specifikacija, brend, deklaracija, SEO, wash care, video i tezina se cuvaju za{" "}
+                <strong>sve velicine istog SKU-a</strong> — ne mora se unositi po velicini. Cena, lager, EAN i
+                aktivan/izvezen ostaju po velicini.
+              </p>
               <WashCareSelector
                 value={drafts[currentEditorItem.legacyId]?.washCareIcons ?? []}
                 onChange={(washCareIcons) => updateDraft(currentEditorItem.legacyId, { washCareIcons })}

@@ -345,6 +345,90 @@ const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
   return { success: true };
 };
 
+/**
+ * Fields that describe the model, not the individual size.
+ *
+ * A model is one row per size, all sharing a SKU, and the editor edits one row.
+ * So a wash-care set, a description or an SEO title typed once landed on a
+ * single size and the shop kept showing the old text for the others — the
+ * client was re-typing the same thing five times per product. Images already
+ * fanned out across the SKU; this is the rest of it.
+ *
+ * Everything left out is deliberately per-size: EAN, stock, price, and the
+ * active/export flags, which is how a single size gets taken out of the shop.
+ */
+const MODEL_LEVEL_COLUMNS = ["name_sr", "description_sr", "specification_sr", "brand"] as const;
+
+/** Which raw_payload keys a given patch field owns. */
+const MODEL_LEVEL_RAW_KEYS: Array<{ touched: (patch: ProductUpdatePayload) => boolean; key: string }> = [
+  { touched: (patch) => patch.declaration !== undefined, key: "declaration" },
+  { touched: (patch) => patch.packageWeightKg !== undefined, key: "packageWeightKg" },
+  { touched: (patch) => patch.washCareIcons !== undefined, key: "washCareIcons" },
+  { touched: (patch) => patch.seo !== undefined, key: "seo" },
+  { touched: (patch) => patch.hiddenFromShop !== undefined, key: "hiddenFromShop" },
+  { touched: (patch) => patch.videoUrl !== undefined || patch.mediaOrder !== undefined, key: "media" },
+  { touched: (patch) => patch.landingFeatured !== undefined || patch.landingPriority !== undefined, key: "landing" },
+  { touched: (patch) => patch.businessUniform !== undefined, key: "productType" },
+];
+
+const propagateToSkuSiblings = async (
+  supabase: NonNullable<ReturnType<typeof getServiceSupabase>>,
+  patch: ProductUpdatePayload,
+  update: Record<string, unknown>,
+) => {
+  const columnPatch: Record<string, unknown> = {};
+  for (const column of MODEL_LEVEL_COLUMNS) {
+    if (update[column] !== undefined) columnPatch[column] = update[column];
+  }
+  /* Keyed off the patch, not off the merged payload: the payload written to the
+     edited row carries every key it already had, so copying from it would push
+     unrelated fields onto the siblings on every save. */
+  const rawKeys = MODEL_LEVEL_RAW_KEYS.filter((entry) => entry.touched(patch)).map((entry) => entry.key);
+  if (Object.keys(columnPatch).length === 0 && rawKeys.length === 0) return;
+
+  const rawPatch = (update.raw_payload || {}) as Record<string, unknown>;
+
+  /* The row was just written, so its SKU is the new one when the patch renamed
+     it. Read it back rather than guessing. */
+  const { data: targetRow } = await supabase
+    .from("catalog_products")
+    .select("sku")
+    .eq("legacy_id", patch.legacyId)
+    .maybeSingle();
+  const sku = String((targetRow as Record<string, unknown> | null)?.sku || "").trim();
+  if (!sku) return;
+
+  const { data: siblings } = await supabase
+    .from("catalog_products")
+    .select("legacy_id,raw_payload")
+    .eq("sku", sku)
+    .neq("legacy_id", patch.legacyId);
+
+  const rows = (siblings || []) as Array<{ legacy_id: number; raw_payload: Record<string, unknown> | null }>;
+  const now = new Date().toISOString();
+
+  for (const row of rows) {
+    /* Merge into the sibling's own payload: it carries size-specific data
+       (its mOffice record, its attributes) that a wholesale copy would flatten. */
+    const nextRaw = { ...(row.raw_payload || {}) };
+    for (const key of rawKeys) {
+      /* productType is an absence when a product stops being a business
+         uniform, so a missing key means delete, not skip. */
+      if (key in rawPatch) nextRaw[key] = rawPatch[key];
+      else delete nextRaw[key];
+    }
+
+    await supabase
+      .from("catalog_products")
+      .update({
+        ...columnPatch,
+        ...(rawKeys.length > 0 ? { raw_payload: nextRaw } : {}),
+        updated_at: now,
+      } as never)
+      .eq("legacy_id", row.legacy_id);
+  }
+};
+
 const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
   const supabase = getServiceSupabase();
   if (!supabase) return applyUpdateToLegacyFile(patch);
@@ -442,6 +526,8 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
   if (error) {
     return { success: false, message: error.message };
   }
+
+  await propagateToSkuSiblings(supabase, patch, update);
 
   if (patch.images !== undefined || patch.coverImage !== undefined) {
     const now = new Date().toISOString();
