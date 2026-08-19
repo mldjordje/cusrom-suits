@@ -470,6 +470,79 @@ export async function detachCategoryFromProducts(categoryId: number) {
   return detached;
 }
 
+/**
+ * Fold one category into another: every product carrying `sourceId` gets
+ * `targetId` instead, then the source registry row goes away.
+ *
+ * The catalog grew two names for the same thing — a legacy mOffice "Odelo" next
+ * to the shop's "Odela" — and the only tools were delete (which drops the
+ * products' tag entirely) or re-tagging hundreds of products by hand. Neither
+ * is what "these are the same category" means.
+ */
+export async function mergeCategoryRegistryEntries(sourceId: number, targetId: number) {
+  if (!sourceId || !targetId) throw new Error("Nedostaje kategorija za spajanje.");
+  if (sourceId === targetId) throw new Error("Ne moze da se spoji sama sa sobom.");
+
+  const categories = await listAdminCatalogCategories();
+  const source = categories.find((item) => item.id === sourceId);
+  const target = categories.find((item) => item.id === targetId);
+  if (!source) throw new Error("Kategorija koja se spaja nije pronadjena.");
+  if (!target) throw new Error("Ciljna kategorija nije pronadjena.");
+
+  const supabase = getServiceSupabase();
+  if (!supabase) throw new Error("Baza nije dostupna.");
+
+  const { data, error } = await supabase
+    .from("catalog_products")
+    .select("legacy_id,raw_payload")
+    .filter("raw_payload->categories", "cs", JSON.stringify([{ id: sourceId }]));
+  if (error) throw new Error(error.message);
+
+  const targetEntry = { id: target.id, name: target.name, path: target.path, parentId: target.parentId || 0 };
+  const rows = (data || []) as Array<{ legacy_id: number; raw_payload: Record<string, unknown> | null }>;
+  let moved = 0;
+
+  for (const row of rows) {
+    const rawPayload = { ...(row.raw_payload || {}) };
+    const existing = Array.isArray(rawPayload.categories) ? (rawPayload.categories as unknown[]) : [];
+
+    /* Swap in place so the product keeps its category order — categories[0] is
+       the label the storefront shows, and reordering it would silently move
+       products to a different group. Duplicates collapse. */
+    const seen = new Set<number>();
+    rawPayload.categories = existing
+      .map((entry) => {
+        if (!entry || typeof entry !== "object") return entry;
+        const id = Number((entry as Record<string, unknown>).id);
+        return id === sourceId ? targetEntry : entry;
+      })
+      .filter((entry) => {
+        if (!entry || typeof entry !== "object") return true;
+        const id = Number((entry as Record<string, unknown>).id);
+        if (!Number.isFinite(id)) return true;
+        if (seen.has(id)) return false;
+        seen.add(id);
+        return true;
+      });
+
+    const { error: updateError } = await supabase
+      .from("catalog_products")
+      .update({ raw_payload: rawPayload, updated_at: new Date().toISOString() } as never)
+      .eq("legacy_id", row.legacy_id);
+    if (updateError) throw new Error(updateError.message);
+    moved += 1;
+  }
+
+  /* A category discovered off products has no registry row to drop — once no
+     product references it, it stops existing on its own. */
+  const registry = await listCategoryRegistry();
+  if (registry.some((item) => item.id === sourceId)) {
+    await writeCategoryRegistry(registry.filter((item) => item.id !== sourceId));
+  }
+
+  return { moved, sourceName: source.name, targetName: target.name };
+}
+
 export async function deleteCategoryRegistryEntry(categoryId: number, options?: { force?: boolean }) {
   const categories = await listAdminCatalogCategories();
   const target = categories.find((item) => item.id === categoryId);

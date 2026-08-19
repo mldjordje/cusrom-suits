@@ -105,9 +105,12 @@ export async function GET(req: NextRequest) {
   }));
 
   /* Loose categories: no parent group, so they are not a subcategory of
-     anything. Ones with products first — those are the ones worth filing. */
+     anything. Ones with products first — those are the ones worth filing.
+     A parentGroup pointing at a group that no longer exists counts as loose —
+     otherwise the category shows up nowhere and cannot be re-filed. */
+  const knownGroupKeys = new Set(groups.map((group) => group.key));
   const orphanRegistry = registry
-    .filter((entry) => !entry.parentGroup)
+    .filter((entry) => !entry.parentGroup || !knownGroupKeys.has(entry.parentGroup))
     .sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0))
     .map((entry) => ({
       id: entry.id,

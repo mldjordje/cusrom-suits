@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 /**
  * The category tree as customers browse it, with a product drill-down.
@@ -80,6 +80,16 @@ export default function LiveCategoryTree({
   const [totals, setTotals] = useState<{ liveProducts: number; allProducts: number } | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  /** Which group has its "attach an existing category" picker open. */
+  const [attachGroup, setAttachGroup] = useState<string | null>(null);
+
+  /** The full category list, folded away until asked for. */
+  const [showAll, setShowAll] = useState(false);
+  const [allFilter, setAllFilter] = useState("");
+  /* A category filed under a group is clickable in two places. Without this the
+     product panel would open in both at once. */
+  const [openedFromAll, setOpenedFromAll] = useState(false);
 
   const [openTarget, setOpenTarget] = useState<Target | null>(null);
   const [products, setProducts] = useState<ProductRow[]>([]);
@@ -200,6 +210,44 @@ export default function LiveCategoryTree({
     }
   };
 
+  /** Take a subcategory out of its main category. It stays in the system, it
+      just drops to the loose list — the opposite of "stavi pod...". */
+  const detachChild = (child: RegistryChild) => setChildParent(child, "");
+
+  /** Fold one category into another. Products move over; the source is gone. */
+  const mergeInto = async (source: RegistryChild, targetId: number) => {
+    const target = allCategories.find((row) => row.child.id === targetId)?.child;
+    if (!target) return;
+    const message =
+      `Spojiti "${source.name}" u "${target.name}"?
+
+` +
+      `${source.assigned} artikala prelazi u "${target.name}", a "${source.name}" nestaje. ` +
+      `Artikli ne gube kategoriju — samo dobijaju drugo ime.`;
+    if (typeof window !== "undefined" && !window.confirm(message)) return;
+
+    setBusyKey(`c${source.id}`);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/webshop/categories/merge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ sourceId: source.id, targetId }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setError(json?.message || "Spajanje nije uspelo.");
+        return;
+      }
+      await loadTree();
+      onChanged();
+    } catch {
+      setError("Spajanje nije uspelo.");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
   const deleteChild = async (child: RegistryChild) => {
     /* Deleting a category that products still point at would leave them tagged
        with something that no longer exists, so say what will happen and only
@@ -235,6 +283,20 @@ export default function LiveCategoryTree({
     void loadTree();
   }, [loadTree]);
 
+  /* Every registry category in one list, with the main category it currently
+     sits under. The picker on a group row needs to offer categories that
+     already exist somewhere else — that is the whole point of it. */
+  const allCategories = useMemo(() => {
+    const rows: Array<{ child: RegistryChild; parentKey: string; parentName: string }> = [];
+    for (const group of groups) {
+      for (const child of group.registryChildren) {
+        rows.push({ child, parentKey: group.key, parentName: group.name });
+      }
+    }
+    for (const orphan of orphans) rows.push({ child: orphan, parentKey: "", parentName: "" });
+    return rows.sort((a, b) => a.child.name.localeCompare(b.child.name, "sr"));
+  }, [groups, orphans]);
+
   const loadProducts = useCallback(async (target: Target) => {
     setProductsLoading(true);
     try {
@@ -259,6 +321,7 @@ export default function LiveCategoryTree({
   }, []);
 
   const toggleTarget = (target: Target) => {
+    setOpenedFromAll(false);
     setSkuNotice(null);
     setSkuInput("");
     if (openTarget && targetId(openTarget) === targetId(target)) {
@@ -430,6 +493,16 @@ export default function LiveCategoryTree({
           ) : null}
           <button
             type="button"
+            onClick={() => setShowAll((prev) => !prev)}
+            className={`rounded-full border px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] ${
+              showAll ? "border-slate-800 bg-slate-800 text-white" : "border-slate-200 text-slate-600"
+            }`}
+            title="Sve kategorije koje postoje, sa brojem artikala"
+          >
+            Sve kategorije ({allCategories.length})
+          </button>
+          <button
+            type="button"
             onClick={() => void loadTree()}
             className="rounded-full border border-slate-200 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-600"
           >
@@ -576,6 +649,17 @@ export default function LiveCategoryTree({
                       >
                         {child.isVisible ? "sakrij" : "prikazi"}
                       </button>
+                      {/* Removing a subcategory from a menu is not the same as
+                          deleting it. This detaches; the × still deletes. */}
+                      <button
+                        type="button"
+                        disabled={busyKey === `c${child.id}`}
+                        onClick={() => void detachChild(child)}
+                        className="rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-[0.08em] opacity-70 hover:bg-white/60 hover:opacity-100 disabled:opacity-40"
+                        title="Izbaci iz ove glavne kategorije (kategorija ostaje u sistemu)"
+                      >
+                        izbaci
+                      </button>
                       <button
                         type="button"
                         disabled={busyKey === `c${child.id}`}
@@ -590,12 +674,50 @@ export default function LiveCategoryTree({
                   );
                 })}
 
+                {/* Two different jobs that used to be one button: file a category
+                    that already exists under this group, or type a brand new one.
+                    Only the second existed, so "add manzetne to Aksesoari" forced
+                    a duplicate category instead of moving the real one. */}
+                {attachGroup === group.key ? (
+                  <select
+                    autoFocus
+                    value=""
+                    className="rounded-full border border-slate-300 px-2 py-1 text-[11px] text-slate-700"
+                    onChange={(e) => {
+                      const picked = allCategories.find((row) => String(row.child.id) === e.target.value);
+                      setAttachGroup(null);
+                      if (picked) void setChildParent(picked.child, group.key);
+                    }}
+                    onBlur={() => setAttachGroup(null)}
+                  >
+                    <option value="">— izaberi postojecu kategoriju —</option>
+                    {allCategories
+                      .filter((row) => row.parentKey !== group.key)
+                      .map((row) => (
+                        <option key={row.child.id} value={row.child.id}>
+                          {row.child.name} ({row.child.assigned}){" "}
+                          {row.parentName ? `— sada u: ${row.parentName}` : "— bez nadkategorije"}
+                        </option>
+                      ))}
+                  </select>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setAttachGroup(group.key)}
+                    className="rounded-full border border-dashed border-slate-300 px-3 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-50"
+                    title="Zakaci vec postojecu kategoriju pod ovu glavnu"
+                  >
+                    + postojeca podkategorija
+                  </button>
+                )}
+
                 <button
                   type="button"
                   onClick={() => onCreateSubcategory(group.key, group.name)}
                   className="rounded-full border border-dashed border-slate-300 px-3 py-1 text-[11px] font-semibold text-slate-500 hover:bg-slate-50"
+                  title="Napravi potpuno novu kategoriju pod ovom glavnom"
                 >
-                  + podkategorija
+                  + nova podkategorija
                 </button>
               </div>
 
@@ -608,6 +730,107 @@ export default function LiveCategoryTree({
           );
         })}
       </div>
+
+      {/* The whole registry in one table. Until this existed the only way to see
+          a category was to find the group it happened to be under, so duplicates
+          like "Odelo" next to "Odela" were invisible and admins made a third. */}
+      {showAll ? (
+        <div className="mt-4 rounded-xl border border-slate-200 p-3">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <p className="text-xs font-semibold text-slate-700">Sve kategorije ({allCategories.length})</p>
+            <input
+              value={allFilter}
+              onChange={(e) => setAllFilter(e.target.value)}
+              placeholder="Trazi po imenu..."
+              className="rounded-full border border-slate-200 px-3 py-1 text-[11px] text-slate-700"
+            />
+          </div>
+          <p className="mb-2 text-[11px] text-slate-500">
+            Broj u zagradi = artikala dodeljeno / od toga kupci mogu da kupe. &quot;Stavi pod&quot; je dodaje u meni te
+            glavne kategorije. &quot;Spoji u&quot; prebacuje sve njene artikle u drugu kategoriju i gasi ovu — za
+            duplikate tipa Odelo/Odela.
+          </p>
+          <div className="grid gap-1">
+            {allCategories
+              .filter((row) => row.child.name.toLowerCase().includes(allFilter.trim().toLowerCase()))
+              .map((row) => (
+                <div
+                  key={row.child.id}
+                  className="flex flex-wrap items-center gap-2 rounded-lg px-2 py-1 odd:bg-slate-50/70"
+                >
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toggleTarget({ kind: "category", id: row.child.id, label: row.child.name });
+                      setOpenedFromAll(true);
+                    }}
+                    className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-700"
+                    title="Prikazi artikle ove kategorije"
+                  >
+                    <StatusDot on={row.child.isVisible && row.child.sellable > 0} />
+                    {row.child.name}
+                  </button>
+                  <span className="text-[11px] text-slate-500">
+                    {row.child.assigned} / {row.child.sellable}
+                  </span>
+                  <span className="text-[11px] text-slate-400">
+                    {row.parentName ? `u: ${row.parentName}` : "bez nadkategorije"}
+                  </span>
+                  <select
+                    value=""
+                    disabled={busyKey === `c${row.child.id}`}
+                    onChange={(e) => {
+                      if (!e.target.value) return;
+                      void setChildParent(row.child, e.target.value === "__none" ? "" : e.target.value);
+                    }}
+                    className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600"
+                  >
+                    <option value="">— stavi pod... —</option>
+                    {PARENT_CHOICES.filter((choice) => choice.key !== row.parentKey).map((choice) => (
+                      <option key={choice.key} value={choice.key}>
+                        {choice.name}
+                      </option>
+                    ))}
+                    {row.parentKey ? <option value="__none">— izbaci iz {row.parentName} —</option> : null}
+                  </select>
+                  <select
+                    value=""
+                    disabled={busyKey === `c${row.child.id}`}
+                    onChange={(e) => e.target.value && void mergeInto(row.child, Number(e.target.value))}
+                    className="rounded-full border border-slate-200 px-2 py-1 text-[11px] text-slate-600"
+                    title="Spoji ovu kategoriju u drugu"
+                  >
+                    <option value="">— spoji u... —</option>
+                    {allCategories
+                      .filter((other) => other.child.id !== row.child.id)
+                      .map((other) => (
+                        <option key={other.child.id} value={other.child.id}>
+                          {other.child.name} ({other.child.assigned})
+                        </option>
+                      ))}
+                  </select>
+                  <button
+                    type="button"
+                    disabled={busyKey === `c${row.child.id}`}
+                    onClick={() => void toggleChildVisible(row.child, !row.child.isVisible)}
+                    className="rounded-full border border-slate-200 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-slate-500 disabled:opacity-40"
+                  >
+                    {row.child.isVisible ? "sakrij" : "prikazi"}
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyKey === `c${row.child.id}`}
+                    onClick={() => void deleteChild(row.child)}
+                    className="rounded-full border border-rose-200 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-rose-600 disabled:opacity-40"
+                  >
+                    obrisi
+                  </button>
+                </div>
+              ))}
+          </div>
+          {openTarget?.kind === "category" && openedFromAll ? renderProductPanel() : null}
+        </div>
+      ) : null}
 
       {orphans.length > 0 ? (
         <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-3">
