@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { getSiteContent } from "@/lib/storefront/siteContent";
@@ -28,8 +29,15 @@ export default async function StorefrontFooter({
                 <p className="ss-footer__eyebrow">
                   {isEn ? footer.eyebrowEn : footer.eyebrow}
                 </p>
-                <Link href={withLang("/")} className="ss-footer__logo">
-                  SANTOS & SANTORINI
+                <Link href={withLang("/")} className="ss-footer__logo" aria-label="Santos & Santorini">
+                  <Image
+                    src="/img/logo-header-dark.png"
+                    alt="Santos & Santorini"
+                    width={340}
+                    height={96}
+                    sizes="(min-width: 992px) 220px, 190px"
+                    className="ss-footer__logo-img"
+                  />
                 </Link>
                 <p className="ss-footer__copy">
                   {isEn ? footer.brandCopyEn : footer.brandCopy}

@@ -4290,18 +4290,19 @@ body.mobile-menu-opened {
 .ss-footer__logo {
   display: inline-block;
   margin-bottom: 0.75rem;
-  color: var(--ss-gold, #c9a96e);
+  line-height: 0;
   text-decoration: none;
-  font-family: var(--font-playfair-display), "Playfair Display", serif;
-  font-size: clamp(1.3rem, 2.4vw, 1.9rem);
-  font-weight: 600;
-  line-height: 1;
-  letter-spacing: 0.02em;
-  transition: color 0.28s ease;
+  transition: opacity 0.28s ease;
+}
+
+.ss-footer__logo-img {
+  width: clamp(160px, 18vw, 220px);
+  height: auto;
+  object-fit: contain;
 }
 
 .ss-footer__logo:hover {
-  color: var(--ss-gold-light, #e8d5a3);
+  opacity: 0.82;
 }
 
 .ss-footer__copy,
