@@ -688,8 +688,10 @@ export default function LiveCategoryTree({
                       setAttachGroup(null);
                       if (picked) void setChildParent(picked.child, group.key);
                     }}
-                    onBlur={() => setAttachGroup(null)}
                   >
+                    {/* No onBlur close: blur can land before change and the pick
+                        is lost with the unmounted select. Cancel is the option
+                        below instead. */}
                     <option value="">— izaberi postojecu kategoriju —</option>
                     {allCategories
                       .filter((row) => row.parentKey !== group.key)

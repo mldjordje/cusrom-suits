@@ -391,9 +391,9 @@ export async function updateCategoryRegistryEntry(
      the first edit. Falling back to the catalog copy is what keeps their name
      and path when an admin only changes, say, the parent group — otherwise the
      edit would rename them to "Kategorija <id>". */
+  const registryRow = registry.find((item) => item.id === categoryId);
   const existing =
-    registry.find((item) => item.id === categoryId) ||
-    (await loadCatalogCategoryUsage()).find((item) => item.id === categoryId);
+    registryRow || (await loadCatalogCategoryUsage()).find((item) => item.id === categoryId);
   const now = new Date().toISOString();
   const nextPath = patch.path && patch.path.length > 0 ? normalizePath(patch.path, patch.name || existing?.name || "") : undefined;
   const nextName = patch.name == null ? existing?.name || "" : String(patch.name).trim();
@@ -419,7 +419,11 @@ export async function updateCategoryRegistryEntry(
     updatedAt: now,
   };
 
-  const nextRegistry = existing
+  /* Test the registry, not `existing` — `existing` also matches a category that
+     only exists on products. Mapping over a registry that has no such row wrote
+     nothing at all, so every edit to a legacy category (the ones with no row
+     yet, which is most of them) reported success and changed nothing. */
+  const nextRegistry = registryRow
     ? registry.map((item) => (item.id === categoryId ? nextRegistryEntry : item))
     : [...registry, nextRegistryEntry];
 
