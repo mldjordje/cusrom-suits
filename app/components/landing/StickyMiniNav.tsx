@@ -49,7 +49,9 @@ const StickyMiniNav = ({ variant = "default" }: Props) => {
   const pillPadding = isCompact
     ? "px-3 py-2 text-[10px] sm:text-[10px]"
     : "px-4 py-2 text-[10px] sm:text-[11px]";
-
+  const compactActiveClasses =
+    "bg-[#111111] text-white border border-black/10 shadow-[0_16px_32px_rgba(0,0,0,0.28)]";
+  
   return (
     <div className={`fixed z-30 w-full ${wrapperClasses}`}>
       <nav
@@ -60,7 +62,9 @@ const StickyMiniNav = ({ variant = "default" }: Props) => {
           const baseClasses =
             `flex-1 whitespace-nowrap rounded-full ${pillPadding} font-semibold uppercase tracking-[0.2em] transition focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#b3202a]`;
           const stateClasses = active
-            ? "bg-[#f8f3ee] text-[#1b1b1b] border border-[#c9b8ae] shadow-[0_12px_28px_rgba(0,0,0,0.16)]"
+            ? isCompact
+              ? compactActiveClasses
+              : "bg-[#f8f3ee] text-[#1b1b1b] border border-[#c9b8ae] shadow-[0_12px_28px_rgba(0,0,0,0.16)]"
             : "bg-white text-[#1b1b1b] shadow-[0_8px_16px_rgba(0,0,0,0.05)] hover:bg-[#f3eee8]";
           const className = `${baseClasses} ${stateClasses}`;
 
