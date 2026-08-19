@@ -102,6 +102,9 @@ export default function LiveCategoryTree({
 
   /** Auto-groups the shop is allowed to show. Empty until the first load. */
   const [enabledGroups, setEnabledGroups] = useState<Set<string>>(new Set());
+  /** Auto sub-groups the admin unhooked from their parent, and the full list. */
+  const [detachedSubGroups, setDetachedSubGroups] = useState<Set<string>>(new Set());
+  const [allSubGroups, setAllSubGroups] = useState<Array<{ key: string; name: string; parentKey: string }>>([]);
   const [busyKey, setBusyKey] = useState<string | null>(null);
 
   const loadTree = useCallback(async () => {
@@ -124,6 +127,10 @@ export default function LiveCategoryTree({
       const groupsJson = await groupsRes.json();
       if (groupsJson?.success && Array.isArray(groupsJson.enabledGroups)) {
         setEnabledGroups(new Set(groupsJson.enabledGroups.map(String)));
+      }
+      if (groupsJson?.success) {
+        setDetachedSubGroups(new Set((groupsJson.detachedSubGroups || []).map(String)));
+        setAllSubGroups(Array.isArray(groupsJson.allSubGroups) ? groupsJson.allSubGroups : []);
       }
     } catch {
       setError("Ucitavanje kategorija nije uspelo.");
@@ -160,6 +167,39 @@ export default function LiveCategoryTree({
     } catch {
       setEnabledGroups(previous);
       setError("Promena vidljivosti kategorije nije uspela.");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  /* Automatic sub-groups are derived from product names, so they cannot be
+     deleted — but they can stop belonging to their parent. Detaching Kaisevi
+     takes belts out of Aksesoari in the menu AND out of its product list. */
+  const toggleSubGroupDetached = async (subKey: string, nextDetached: boolean) => {
+    const previous = detachedSubGroups;
+    const next = new Set(detachedSubGroups);
+    if (nextDetached) next.add(subKey);
+    else next.delete(subKey);
+    setDetachedSubGroups(next);
+    setBusyKey(`s${subKey}`);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/webshop/categories/auto-groups", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ enabledGroups: [...enabledGroups], detachedSubGroups: [...next] }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setDetachedSubGroups(previous);
+        setError(json?.message || "Promena podkategorije nije uspela.");
+        return;
+      }
+      await loadTree();
+      onChanged();
+    } catch {
+      setDetachedSubGroups(previous);
+      setError("Promena podkategorije nije uspela.");
     } finally {
       setBusyKey(null);
     }
@@ -587,20 +627,57 @@ export default function LiveCategoryTree({
                   const subTarget: Target = { kind: "group", key: sub.key, label: `${group.name} / ${sub.name}` };
                   const subOpen = openTarget?.kind === "group" && openTarget.key === sub.key;
                   return (
-                    <button
+                    <span
                       key={sub.key}
-                      type="button"
-                      onClick={() => toggleTarget(subTarget)}
-                      className={`rounded-full border px-3 py-1 text-[11px] font-semibold transition-colors ${
+                      className={`inline-flex items-center rounded-full border pr-1 text-[11px] font-semibold transition-colors ${
                         subOpen ? "border-sky-500 bg-sky-500 text-white" : "border-sky-200 bg-sky-50 text-sky-700"
                       }`}
-                      title="Automatska podkategorija — prepoznata iz naziva artikla"
                     >
-                      ↳ {sub.name}
-                      <span className="ml-1.5 opacity-70">{sub.count}</span>
-                    </button>
+                      <button
+                        type="button"
+                        onClick={() => toggleTarget(subTarget)}
+                        className="px-3 py-1"
+                        title="Automatska podkategorija — prepoznata iz naziva artikla"
+                      >
+                        ↳ {sub.name}
+                        <span className="ml-1.5 opacity-70">{sub.count}</span>
+                      </button>
+                      {/* Automatic, so there is nothing to delete — but it can
+                          stop being part of this main category. */}
+                      <button
+                        type="button"
+                        disabled={busyKey === `s${sub.key}`}
+                        onClick={() => void toggleSubGroupDetached(sub.key, true)}
+                        className="rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-[0.08em] opacity-70 hover:bg-white/60 hover:opacity-100 disabled:opacity-40"
+                        title={`Izbaci ${sub.name} iz kategorije ${group.name} — artikli vise nisu u toj kategoriji`}
+                      >
+                        izbaci
+                      </button>
+                    </span>
                   );
                 })}
+
+                {/* Detached sub-groups are gone from the tree, so the only place
+                    they can be put back is under the parent they left. */}
+                {allSubGroups
+                  .filter((sub) => sub.parentKey === group.key && detachedSubGroups.has(sub.key))
+                  .map((sub) => (
+                    <span
+                      key={sub.key}
+                      className="inline-flex items-center rounded-full border border-dashed border-slate-300 bg-slate-50 pr-1 text-[11px] font-semibold text-slate-400"
+                    >
+                      <span className="px-3 py-1 line-through">↳ {sub.name}</span>
+                      <button
+                        type="button"
+                        disabled={busyKey === `s${sub.key}`}
+                        onClick={() => void toggleSubGroupDetached(sub.key, false)}
+                        className="rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-[0.08em] text-slate-500 hover:bg-white disabled:opacity-40"
+                        title={`Vrati ${sub.name} u ${group.name}`}
+                      >
+                        vrati
+                      </button>
+                    </span>
+                  ))}
 
                 {group.registryChildren.map((child) => {
                   const childTarget: Target = { kind: "category", id: child.id, label: `${group.name} / ${child.name}` };

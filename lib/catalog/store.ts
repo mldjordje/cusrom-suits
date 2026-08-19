@@ -15,6 +15,7 @@ import {
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { parseProductMediaOrder, type ProductMediaItem } from "@/lib/catalog/productMediaOrder";
+import { getAutoGroupSettings } from "@/lib/catalog/categories";
 
 const LEGACY_PRODUCTS_PATH = "data/legacy-products.json";
 
@@ -669,6 +670,28 @@ const CATEGORY_GROUP_PRIORITY: Record<string, number> = {
 export const ACCESSORY_SUB_KEYS = new Set(["kais", "kravata", "novcanik", "card-holder", "torba"]);
 
 /**
+ * Sub-groups an admin unhooked from their parent.
+ *
+ * The roll-up is derived from product names, so "belts are not accessories" was
+ * a decision the admin had no way to express — the only lever, the parent's own
+ * switch, would have taken ties and wallets down with them. Held here because
+ * the grouping functions are synchronous and read by both the shop and the
+ * admin; `listCatalogProducts` refreshes it before it filters anything.
+ */
+let detachedSubGroupKeys = new Set<string>();
+
+export const getDetachedSubGroupKeys = () => detachedSubGroupKeys;
+
+const refreshDetachedSubGroups = async () => {
+  try {
+    const settings = await getAutoGroupSettings();
+    detachedSubGroupKeys = new Set(settings.detachedSubGroups);
+  } catch {
+    // Setting unreadable: fall back to the catalog's own roll-up.
+  }
+};
+
+/**
  * Group keys a product belongs to. Derived from (in order):
  *  1. admin categories in categories[]
  *  2. name + manufCode (catches rows like "BRANDO/74 M.Košulja")
@@ -809,7 +832,12 @@ export const productMatchesCategoryGroup = (item: CatalogProductView, groupKey: 
   if (excluded.map(normalizeCatalogCategoryGroupKey).includes(wanted)) return false;
   const keys = getCatalogProductGroupKeys(item);
   if (wanted === "aksesoari") {
-    return keys.has("aksesoari") || [...keys].some((k) => ACCESSORY_SUB_KEYS.has(k));
+    /* A detached sub-group no longer pulls its products into the parent — that
+       is the whole point of detaching it. */
+    return (
+      keys.has("aksesoari") ||
+      [...keys].some((k) => ACCESSORY_SUB_KEYS.has(k) && !detachedSubGroupKeys.has(k))
+    );
   }
   return keys.has(wanted);
 };
@@ -940,6 +968,12 @@ const collectCategoryGroups = (items: CatalogProductView[]): CatalogCategoryGrou
   for (const subKey of ACCESSORY_SUB_KEYS) {
     const sub = map.get(subKey);
     if (!sub) continue;
+    /* Detached: drop it from the tree rather than fold it in. It stays out of
+       the parent's count and out of its menu. */
+    if (detachedSubGroupKeys.has(subKey)) {
+      map.delete(subKey);
+      continue;
+    }
     accessoryGroup.count += sub.count;
     accessoryGroup.children?.push({ key: sub.key, name: sub.name, count: sub.count });
     for (const id of sub.ids) {
@@ -1810,6 +1844,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   // on another instance (see refreshCatalogDataVersion). Runs before the cache
   // lookup so a bumped version forces a refetch here too.
   await refreshCatalogDataVersion();
+  await refreshDetachedSubGroups();
 
   const startedAt = Date.now();
   const page = Math.max(1, Number(input.page || 1));

@@ -20,17 +20,29 @@ export const ALL_AUTO_GROUPS: Array<{ key: string; name: string }> = [
   { key: "aksesoari", name: "Aksesoari" },
 ];
 
-export async function getAutoGroupSettings(): Promise<{ enabledGroups: string[] }> {
-  const data = await readPersistentJsonFile<{ enabledGroups?: unknown }>(AUTO_GROUP_SETTINGS_PATH, {});
+export async function getAutoGroupSettings(): Promise<{ enabledGroups: string[]; detachedSubGroups: string[] }> {
+  const data = await readPersistentJsonFile<{ enabledGroups?: unknown; detachedSubGroups?: unknown }>(
+    AUTO_GROUP_SETTINGS_PATH,
+    {},
+  );
   const stored = Array.isArray(data.enabledGroups)
     ? (data.enabledGroups as unknown[]).map(String).filter(Boolean)
     : null;
+  /* Auto sub-groups the admin took out of their parent (Kaisevi out of
+     Aksesoari, say). Empty by default — the catalog folds them all in. */
+  const detached = Array.isArray(data.detachedSubGroups)
+    ? (data.detachedSubGroups as unknown[]).map(String).filter(Boolean)
+    : [];
   // Default: all groups enabled
-  return { enabledGroups: stored ?? ALL_AUTO_GROUPS.map((g) => g.key) };
+  return { enabledGroups: stored ?? ALL_AUTO_GROUPS.map((g) => g.key), detachedSubGroups: detached };
 }
 
-export async function setAutoGroupSettings(enabledGroups: string[]): Promise<void> {
-  await writePersistentJsonFile(AUTO_GROUP_SETTINGS_PATH, { enabledGroups });
+export async function setAutoGroupSettings(enabledGroups: string[], detachedSubGroups?: string[]): Promise<void> {
+  const current = await getAutoGroupSettings();
+  await writePersistentJsonFile(AUTO_GROUP_SETTINGS_PATH, {
+    enabledGroups,
+    detachedSubGroups: detachedSubGroups ?? current.detachedSubGroups,
+  });
 }
 
 export type CatalogCategoryRecord = {
