@@ -4,17 +4,21 @@ import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { SITE_ASSET_BUCKET, ensureSiteAssetBucket } from "@/lib/storage/siteAssets";
+import { buildSignedCpanelUploadUrl, isFtpConfigured } from "@/lib/ftp/cpanel";
 
 /**
  * Hands the browser a short-lived signed upload URL so big files (hero videos)
- * go straight to Supabase Storage. The regular /site-assets route runs inside a
+ * go straight to the asset host. The regular /site-assets route runs inside a
  * serverless function, whose request body is capped at ~4.5MB on Vercel — that
  * cap is what made every real video upload fail, regardless of our own limit.
+ *
+ * Target is assets.santos.rs (same place the images live) whenever the cPanel
+ * endpoint is configured; Supabase Storage is the fallback.
  */
 
 export const maxDuration = 30;
 
-const MAX_FILE_SIZE_BYTES = 500 * 1024 * 1024;
+const MAX_FILE_SIZE_BYTES = 200 * 1024 * 1024;
 const ALLOWED_EXTENSIONS = new Set([
   ".jpg",
   ".jpeg",
@@ -61,7 +65,7 @@ export async function POST(req: NextRequest) {
 
   if (size > MAX_FILE_SIZE_BYTES) {
     return NextResponse.json(
-      { success: false, message: `"${filename}" prelazi limit od 500MB.` },
+      { success: false, message: `"${filename}" prelazi limit od 200MB.` },
       { status: 400 },
     );
   }
@@ -72,6 +76,23 @@ export async function POST(req: NextRequest) {
       { success: false, message: `"${filename}" nije podrzan tip fajla.` },
       { status: 400 },
     );
+  }
+
+  const today = new Date().toISOString().slice(0, 10);
+  const baseName = sanitizeFileSegment(path.basename(filename, ext)) || "fajl";
+  const cleanExt = `.${sanitizeFileSegment(ext.replace(/^\./, ""))}`;
+  const finalName = `${Date.now()}-${randomUUID()}-${baseName}${cleanExt}`;
+
+  if (isFtpConfigured()) {
+    const ticket = buildSignedCpanelUploadUrl(finalName, today);
+    if (ticket) {
+      return NextResponse.json({
+        success: true,
+        signedUrl: ticket.uploadUrl,
+        url: ticket.url,
+        method: "POST",
+      });
+    }
   }
 
   const supabase = getServiceSupabase();
@@ -90,10 +111,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const today = new Date().toISOString().slice(0, 10);
-  const baseName = sanitizeFileSegment(path.basename(filename, ext)) || "fajl";
-  const cleanExt = `.${sanitizeFileSegment(ext.replace(/^\./, ""))}`;
-  const storagePath = `${today}/${Date.now()}-${randomUUID()}-${baseName}${cleanExt}`;
+  const storagePath = `${today}/${finalName}`;
 
   const { data, error } = await supabase.storage
     .from(SITE_ASSET_BUCKET)
@@ -110,5 +128,6 @@ export async function POST(req: NextRequest) {
     success: true,
     signedUrl: data.signedUrl,
     url: `/site-assets/${storagePath}`,
+    method: "PUT",
   });
 }

@@ -1,3 +1,5 @@
+import { createHmac } from "crypto";
+
 /**
  * Upload files to cPanel via the PHP upload endpoint at assets.santos.rs.
  * Much more reliable than FTP from serverless — just plain HTTP POST.
@@ -51,4 +53,34 @@ export async function uploadViaCpanel(
   if (!data.url)  throw new Error("PHP response missing url field");
 
   return data.url;
+}
+
+/**
+ * Builds a short-lived, signature-authorized upload URL the browser can POST to
+ * directly. Keeps big files (hero videos) out of the serverless function, whose
+ * request body is capped at ~4.5MB on Vercel. The secret never leaves the server.
+ */
+export function buildSignedCpanelUploadUrl(
+  remoteName: string,
+  subDir: string,
+  ttlSeconds = 600,
+): { uploadUrl: string; url: string } | null {
+  if (!PHP_UPLOAD_URL || !PHP_UPLOAD_TOKEN) return null;
+
+  const exp = Math.floor(Date.now() / 1000) + ttlSeconds;
+  const signature = createHmac("sha256", PHP_UPLOAD_TOKEN)
+    .update(`${subDir}|${remoteName}|${exp}`)
+    .digest("hex");
+
+  const query = new URLSearchParams({
+    subdir: subDir,
+    filename: remoteName,
+    exp: String(exp),
+    sig: signature,
+  });
+
+  return {
+    uploadUrl: `${PHP_UPLOAD_URL}?${query.toString()}`,
+    url: `/fajlovi/site-assets/${subDir}/${remoteName}`,
+  };
 }

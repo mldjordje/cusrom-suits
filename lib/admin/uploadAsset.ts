@@ -4,8 +4,9 @@
  * Uploads one admin asset and returns its public `/site-assets/...` path.
  *
  * Small files keep going through the API route (it also compresses images).
- * Anything above the serverless body cap is sent straight to Supabase Storage
- * with a signed upload URL, so hero videos are no longer stuck at ~4.5MB.
+ * Anything above the serverless body cap is sent straight to the asset host —
+ * assets.santos.rs when the cPanel endpoint is configured, Supabase Storage
+ * otherwise — so hero videos are no longer stuck at ~4.5MB.
  */
 
 const DIRECT_UPLOAD_THRESHOLD_BYTES = 4 * 1024 * 1024;
@@ -21,13 +22,19 @@ async function uploadDirect(file: File): Promise<string> {
     throw new Error(ticket?.message || "Upload nije uspeo");
   }
 
-  const putRes = await fetch(ticket.signedUrl as string, {
-    method: "PUT",
-    headers: file.type ? { "Content-Type": file.type } : undefined,
+  const uploadRes = await fetch(ticket.signedUrl as string, {
+    method: ticket.method === "POST" ? "POST" : "PUT",
+    headers: { "Content-Type": file.type || "application/octet-stream" },
     body: file,
   });
-  if (!putRes.ok) {
-    throw new Error(`Upload nije uspeo (${putRes.status})`);
+  if (!uploadRes.ok) {
+    let detail = "";
+    try {
+      detail = ((await uploadRes.json())?.error as string) || "";
+    } catch {
+      // Non-JSON error body (PHP fatal, proxy page) — status alone will do.
+    }
+    throw new Error(detail || `Upload nije uspeo (${uploadRes.status})`);
   }
 
   return ticket.url as string;
