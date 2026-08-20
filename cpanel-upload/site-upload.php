@@ -43,11 +43,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 header('Content-Type: application/json');
 header('X-Content-Type-Options: nosniff');
 
-// Token se cita iz okruzenja. Hardkodovana vrednost ostaje samo kao fallback
-// dok se env var ne postavi — zameni je novim tokenom, stari je kompromitovan.
+// Token se cita iz okruzenja, a ako env var nije dostupan (cest slucaj na
+// PHP-FPM hostingu) upisi ga direktno u $fallbackSecret ispod.
+//
+// NIKAD ne ostavljaj placeholder vrednost: dok je ona tu, endpoint odbija sve
+// zahteve. Ranije je fallback bio javno poznat string iz repoa, sto je znacilo
+// da svako moze da uploaduje fajlove na asset host.
+$fallbackSecret = 'PROMENI-ME-novi-token-ovde';
+
 $secret = getenv('UPLOAD_SECRET');
 if ($secret === false || $secret === '') {
-    $secret = 'PROMENI-ME-novi-token-ovde';
+    $secret = $fallbackSecret;
+}
+
+if ($secret === '' || $secret === 'PROMENI-ME-novi-token-ovde' || $secret === 'REPLACE_THIS_WITH_YOUR_SECRET_TOKEN') {
+    http_response_code(500);
+    echo json_encode(['error' => 'Upload secret not configured on the server']);
+    exit;
 }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
