@@ -22,11 +22,19 @@ async function uploadDirect(file: File): Promise<string> {
     throw new Error(ticket?.message || "Upload nije uspeo");
   }
 
-  const uploadRes = await fetch(ticket.signedUrl as string, {
-    method: ticket.method === "POST" ? "POST" : "PUT",
-    headers: { "Content-Type": file.type || "application/octet-stream" },
-    body: file,
-  });
+  let uploadRes: Response;
+  try {
+    uploadRes = await fetch(ticket.signedUrl as string, {
+      method: ticket.method === "POST" ? "POST" : "PUT",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file,
+    });
+  } catch {
+    // A cross-origin failure never reaches the response, so name the usual cause.
+    throw new Error(
+      "Ne mogu da dodjem do servera za fajlove (CORS ili mreza). Proveri /api/admin/webshop/site-assets/direct-upload",
+    );
+  }
   if (!uploadRes.ok) {
     let detail = "";
     try {

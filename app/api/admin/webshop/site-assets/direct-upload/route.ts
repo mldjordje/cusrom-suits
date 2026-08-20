@@ -131,3 +131,62 @@ export async function POST(req: NextRequest) {
     method: "PUT",
   });
 }
+
+/**
+ * Diagnostics for the upload path. Open it in the browser while signed into
+ * the admin: it reports which target is configured and probes the cPanel
+ * endpoint with a real signature, so a 401 here means the two secrets differ
+ * rather than anything being wrong with the browser or the file.
+ */
+export async function GET(req: NextRequest) {
+  if (!hasAdminToken(req)) {
+    return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
+  }
+
+  const cpanelConfigured = isFtpConfigured();
+  const target = cpanelConfigured ? "cpanel" : getServiceSupabase() ? "supabase" : "none";
+
+  const result: Record<string, unknown> = {
+    success: true,
+    target,
+    cpanelConfigured,
+    uploadUrlHost: (() => {
+      try {
+        return new URL(process.env.PHP_UPLOAD_URL || "").host || null;
+      } catch {
+        return null;
+      }
+    })(),
+  };
+
+  if (cpanelConfigured) {
+    // Deliberately uses a rejected extension so the probe never writes a file:
+    // the endpoint checks the signature before it checks the extension.
+    const ticket = buildSignedCpanelUploadUrl("probe.exe", "diag", 120);
+    if (ticket) {
+      try {
+        const res = await fetch(ticket.uploadUrl, {
+          method: "POST",
+          headers: { "Content-Type": "application/octet-stream" },
+          body: "probe",
+        });
+        const body = await res.text();
+        result.probeStatus = res.status;
+        result.probeBody = body.slice(0, 200);
+        result.probeVerdict =
+          res.status === 415
+            ? "OK — potpis prihvacen (fajl nije upisan, ekstenzija odbijena)"
+            : res.status === 401
+              ? "PHP_UPLOAD_TOKEN na Vercelu se ne poklapa sa tokenom u site-upload.php"
+              : res.status === 500
+                ? "site-upload.php nema postavljen token, ili puca na serveru"
+                : `Neocekivan status ${res.status}`;
+      } catch (err) {
+        result.probeStatus = null;
+        result.probeVerdict = `Ne mogu da dodjem do endpointa: ${err instanceof Error ? err.message : String(err)}`;
+      }
+    }
+  }
+
+  return NextResponse.json(result);
+}
