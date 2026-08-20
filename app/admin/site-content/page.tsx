@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
+import { uploadAssetFile } from "@/lib/admin/uploadAsset";
 
 type SiteNavItem = { href: string; label: string; labelEn: string };
 type SiteFooterGroup = { title: string; titleEn: string; links: SiteNavItem[] };
@@ -285,13 +286,7 @@ export default function AdminSiteContentPage() {
   const uploadSiteAsset = async (files: FileList | null): Promise<string> => {
     const list = Array.from(files || []);
     if (!list.length) return "";
-    const fd = new FormData();
-    for (const file of list) fd.append("files", file);
-    const res = await fetch("/api/admin/webshop/site-assets", { method: "POST", body: fd });
-    const json = await res.json();
-    if (!json?.success) throw new Error(json?.message || "Upload nije uspeo.");
-    const urls = Array.isArray(json.urls) ? (json.urls as string[]) : [];
-    return urls[0] || "";
+    return uploadAssetFile(list[0]);
   };
 
   const load = async () => {

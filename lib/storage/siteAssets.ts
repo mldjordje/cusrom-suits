@@ -2,6 +2,8 @@ import { getAnonSupabase, getServiceSupabase } from "@/lib/supabase/server";
 import fs from "fs/promises";
 import path from "path";
 
+export const SITE_ASSET_MAX_BYTES = 500 * 1024 * 1024;
+
 export const SITE_ASSET_BUCKET = process.env.SUPABASE_SITE_ASSET_BUCKET || "site-assets";
 
 const getBucketCache = () => {
@@ -32,6 +34,14 @@ export async function ensureSiteAssetBucket(bucket = SITE_ASSET_BUCKET) {
   try {
     const { data } = await supabase.storage.getBucket(bucket);
     if (data) {
+      // Hero videos are far bigger than the default per-bucket cap.
+      if ((data.file_size_limit ?? 0) < SITE_ASSET_MAX_BYTES) {
+        try {
+          await supabase.storage.updateBucket(bucket, { public: false, fileSizeLimit: SITE_ASSET_MAX_BYTES });
+        } catch {
+          // Non-fatal: the project-level limit still applies.
+        }
+      }
       cache.set(bucket, true);
       return true;
     }
@@ -42,6 +52,7 @@ export async function ensureSiteAssetBucket(bucket = SITE_ASSET_BUCKET) {
   try {
     const { error } = await supabase.storage.createBucket(bucket, {
       public: false,
+      fileSizeLimit: SITE_ASSET_MAX_BYTES,
     });
     if (!error) {
       cache.set(bucket, true);

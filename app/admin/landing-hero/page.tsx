@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { uploadAssetFile } from "@/lib/admin/uploadAsset";
 
 type HeroVideoSettings = {
   heroVideoUrl: string;
@@ -33,14 +34,7 @@ function UploadButton({
     setState("uploading");
     setError(null);
     try {
-      const form = new FormData();
-      form.append("files", file);
-      const res = await fetch("/api/admin/webshop/site-assets", { method: "POST", body: form });
-      const json = await res.json();
-      if (!json?.success || !json?.urls?.[0]) {
-        throw new Error(json?.message || "Upload nije uspeo");
-      }
-      onUploaded(json.urls[0] as string);
+      onUploaded(await uploadAssetFile(file));
       setState("done");
       setTimeout(() => setState("idle"), 3000);
     } catch (e: unknown) {
@@ -287,7 +281,7 @@ export default function AdminLandingHeroPage() {
 
             <VideoField
               label="Desktop video"
-              description="Prikazuje se na ekranima ≥768px. MP4 ili WebM, preporuka do 15MB za brzo učitavanje."
+              description="Prikazuje se na ekranima ≥768px. MP4 ili WebM. Veliki fajlovi idu direktno na storage, ali preporuka je do 15MB radi brzine sajta."
               value={form.heroVideoUrl}
               onChange={patch("heroVideoUrl")}
             />
