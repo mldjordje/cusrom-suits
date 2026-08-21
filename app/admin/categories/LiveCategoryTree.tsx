@@ -279,6 +279,42 @@ export default function LiveCategoryTree({
     }
   };
 
+  /* Renaming lives here too, not only inside the registry editor's expanded
+     form — this panel is where categories are actually managed, and a category
+     typed in a hurry ("Majce") had no visible way back to a correct name. The
+     PATCH propagates the new name onto every product that carries it. */
+  const renameChild = async (child: RegistryChild) => {
+    if (typeof window === "undefined") return;
+    const nextName = window.prompt(`Novi naziv kategorije "${child.name}":`, child.name);
+    if (nextName === null) return;
+    const clean = nextName.trim();
+    if (!clean || clean === child.name) return;
+
+    setBusyKey(`c${child.id}`);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/webshop/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: child.id, name: clean }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setError(json?.message || "Preimenovanje nije uspelo.");
+        return;
+      }
+      if (openTarget?.kind === "category" && openTarget.id === child.id) {
+        setOpenTarget({ kind: "category", id: child.id, label: clean });
+      }
+      await loadTree();
+      onChanged();
+    } catch {
+      setError("Preimenovanje nije uspelo.");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
   /** Take a subcategory out of its main category. It stays in the system, it
       just drops to the loose list — the opposite of "stavi pod...". */
   const detachChild = (child: RegistryChild) => setChildParent(child, "");
@@ -775,6 +811,15 @@ export default function LiveCategoryTree({
                       <button
                         type="button"
                         disabled={busyKey === `c${child.id}`}
+                        onClick={() => void renameChild(child)}
+                        className="rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-[0.08em] opacity-70 hover:bg-white/60 hover:opacity-100 disabled:opacity-40"
+                        title="Promeni naziv kategorije"
+                      >
+                        preimenuj
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busyKey === `c${child.id}`}
                         onClick={() => void toggleChildVisible(child, !child.isVisible)}
                         className="rounded-full px-1.5 py-0.5 text-[10px] uppercase tracking-[0.08em] opacity-70 hover:bg-white/60 hover:opacity-100 disabled:opacity-40"
                         title={child.isVisible ? "Sakrij od kupaca" : "Prikazi kupcima"}
@@ -947,6 +992,15 @@ export default function LiveCategoryTree({
                   <button
                     type="button"
                     disabled={busyKey === `c${row.child.id}`}
+                    onClick={() => void renameChild(row.child)}
+                    className="rounded-full border border-slate-200 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-slate-500 disabled:opacity-40"
+                    title="Promeni naziv kategorije"
+                  >
+                    preimenuj
+                  </button>
+                  <button
+                    type="button"
+                    disabled={busyKey === `c${row.child.id}`}
                     onClick={() => void toggleChildVisible(row.child, !row.child.isVisible)}
                     className="rounded-full border border-slate-200 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-slate-500 disabled:opacity-40"
                   >
@@ -1006,6 +1060,15 @@ export default function LiveCategoryTree({
                       </option>
                     ))}
                   </select>
+                  <button
+                    type="button"
+                    disabled={busyKey === `c${orphan.id}`}
+                    onClick={() => void renameChild(orphan)}
+                    className="rounded-full border border-slate-200 px-2 py-1 text-[10px] uppercase tracking-[0.08em] text-slate-500 disabled:opacity-40"
+                    title="Promeni naziv kategorije"
+                  >
+                    preimenuj
+                  </button>
                   <button
                     type="button"
                     disabled={busyKey === `c${orphan.id}`}

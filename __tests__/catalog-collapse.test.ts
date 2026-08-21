@@ -45,6 +45,33 @@ describe("catalog model collapse", () => {
     expect(getCatalogProductModelKey(makeProduct({ name: "M. Kosulja C8/53" }))).toBe("kosulja:c8");
   });
 
+  it("keeps hand-uploaded articles apart even when the name differs only by the trailing code", () => {
+    const shirt = (legacyId: number, sku: string, name: string, image: string) =>
+      makeProduct({
+        legacyId,
+        sku,
+        name,
+        manufCode: null,
+        categories: [{ id: 326, name: "Majce", path: ["majice"] }],
+        coverImage: image,
+        images: [image],
+        rawPayload: { media: { mediaOrder: [{ src: image, kind: "image" }] } },
+      });
+
+    const a = shirt(82255, "134402", "SANTORINI/43/7", "/a.webp");
+    const b = shirt(82257, "134404", "SANTORINI/43/5", "/b.webp");
+    const c = shirt(82259, "134406", "SANTORINI/43/10", "/c.webp");
+
+    expect(new Set([a, b, c].map(getCatalogProductModelKey)).size).toBe(3);
+    expect(collapseCatalogProductsByModel([a, b, c])).toHaveLength(3);
+  });
+
+  it("still collapses colour variants that carry no hand-picked media", () => {
+    const a = makeProduct({ legacyId: 1, sku: "S1", name: "M. Kosulja C8/51" });
+    const b = makeProduct({ legacyId: 2, sku: "S2", name: "M. Kosulja C8/53" });
+    expect(collapseCatalogProductsByModel([a, b])).toHaveLength(1);
+  });
+
   it("keeps different shoe models apart when their names differ only by the model code", () => {
     const shoe = (legacyId: number, sku: string, name: string, image: string) =>
       makeProduct({

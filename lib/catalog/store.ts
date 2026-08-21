@@ -1327,6 +1327,15 @@ const isNonDistinctiveModelName = (normalized: string) => {
   return tokens.every((token) => NON_DISTINCTIVE_MODEL_WORDS.has(token));
 };
 
+/** True when the product carries a hand-picked media order from the admin
+ *  editor (rather than images inferred from the legacy file server). */
+const hasAdminUploadedMedia = (item: CatalogProductView) => {
+  const media = item.rawPayload?.media;
+  if (!media || typeof media !== "object") return false;
+  const order = (media as Record<string, unknown>).mediaOrder;
+  return Array.isArray(order) && order.length > 0;
+};
+
 export const getCatalogProductModelKey = (item: CatalogProductView) => {
   // Always derive type from raw name — never from getCatalogProductCategoryLabel
   // which returns inconsistent strings ("Košulje" vs "Kosulja") depending on
@@ -1352,6 +1361,18 @@ export const getCatalogProductModelKey = (item: CatalogProductView) => {
 
   if (!normalizedName) return `legacy:${item.legacyId}`;
   if (isNonDistinctiveModelName(normalizedName)) return `legacy:${item.legacyId}`;
+
+  // Products whose photos an admin uploaded by hand are curated one by one, so
+  // the trailing "/N" they carry is a real article, not a colour of one card.
+  // Three SANTORINI/43/5, /43/7, /43/10 shirts each got their own shoot and each
+  // must get its own card — without this they collapsed into a single listing
+  // and two of the three vanished from the shop. Same-SKU size variants are
+  // unaffected: the second collapse pass merges them by SKU regardless.
+  if (hasAdminUploadedMedia(item)) {
+    const imageKey = normalizeCatalogImageKey(item.coverImage || item.images[0]);
+    if (imageKey) return `${typeToken}:${normalizedName}:${imageKey}`;
+    return `${typeToken}:${normalizedName}:#${item.legacyId}`;
+  }
 
   return `${typeToken}:${normalizedName}`;
 };
