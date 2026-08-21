@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { CHECKOUT_COPY_FIELDS } from "@/lib/storefront/checkoutCopy";
 
 type DeliveryService = {
   id: string;
@@ -41,6 +42,8 @@ type FulfillmentSettings = {
   deliveryNoteEn: string;
   deliveryServices: DeliveryService[];
   freeDeliveryThreshold: number;
+  /** Per-key overrides for the checkout wording. Empty = shipped default. */
+  checkoutCopy: Record<string, { sr?: string; en?: string }>;
   vouchers: Voucher[];
 };
 
@@ -96,6 +99,7 @@ const defaultSettings: FulfillmentSettings = {
   deliveryNoteEn: "",
   deliveryServices: [],
   freeDeliveryThreshold: 0,
+  checkoutCopy: {},
   vouchers: [],
 };
 
@@ -105,6 +109,7 @@ export default function AdminFulfillmentPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
+  const [copyFilter, setCopyFilter] = useState("");
 
   const load = async () => {
     setLoading(true);
@@ -113,7 +118,7 @@ export default function AdminFulfillmentPage() {
       const res = await fetch("/api/admin/fulfillment");
       const json = await res.json();
       if (!json?.success) throw new Error(json?.message || "Ne mogu da ucitam fulfillment.");
-      setSettings(json.settings || defaultSettings);
+      setSettings({ ...defaultSettings, ...(json.settings || {}), checkoutCopy: json.settings?.checkoutCopy || {} });
     } catch (err: any) {
       setError(err?.message || "Greska pri ucitavanju.");
     } finally {
@@ -163,7 +168,7 @@ export default function AdminFulfillmentPage() {
       });
       const json = await res.json();
       if (!json?.success) throw new Error(json?.message || "Snimanje nije uspelo.");
-      setSettings(json.settings || defaultSettings);
+      setSettings({ ...defaultSettings, ...(json.settings || {}), checkoutCopy: json.settings?.checkoutCopy || {} });
       setNotice("Fulfillment podesavanja su sacuvana.");
     } catch (err: any) {
       setError(err?.message || "Snimanje nije uspelo.");
@@ -171,6 +176,31 @@ export default function AdminFulfillmentPage() {
       setSaving(false);
     }
   };
+
+  const setCopy = (key: string, lang: "sr" | "en", value: string) =>
+    setSettings((prev) => ({
+      ...prev,
+      checkoutCopy: { ...prev.checkoutCopy, [key]: { ...prev.checkoutCopy[key], [lang]: value } },
+    }));
+
+  /* An empty box means "use the default", so clearing a field is how an admin
+     undoes an edit — no separate reset button to explain. */
+  const copyValue = (key: string, lang: "sr" | "en") => settings.checkoutCopy[key]?.[lang] ?? "";
+
+  const visibleCopyFields = useMemo(() => {
+    const needle = copyFilter.trim().toLowerCase();
+    if (!needle) return CHECKOUT_COPY_FIELDS;
+    return CHECKOUT_COPY_FIELDS.filter(
+      (field) =>
+        field.sr.toLowerCase().includes(needle) ||
+        field.en.toLowerCase().includes(needle) ||
+        copyValue(field.key, "sr").toLowerCase().includes(needle),
+    );
+  }, [copyFilter, settings.checkoutCopy]);
+
+  const changedCopyCount = Object.values(settings.checkoutCopy).filter(
+    (entry) => (entry?.sr || "").trim() || (entry?.en || "").trim(),
+  ).length;
 
   return (
     <div className="flex flex-col gap-5">
@@ -218,6 +248,60 @@ export default function AdminFulfillmentPage() {
             />
           </label>
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900">Tekstovi na checkout stranici</h2>
+            <p className="text-sm text-slate-600">
+              Svaki tekst koji kupac vidi na strani za porudzbinu. Prazno polje = ostaje fabricki tekst desno.
+              Izmenjeno: <strong>{changedCopyCount}</strong> od {CHECKOUT_COPY_FIELDS.length}.
+            </p>
+          </div>
+          <input
+            value={copyFilter}
+            onChange={(e) => setCopyFilter(e.target.value)}
+            placeholder="Trazi tekst..."
+            className={fieldClass}
+          />
+        </div>
+        <div className="max-h-[560px] space-y-2 overflow-auto pr-1">
+          {visibleCopyFields.map((field) => (
+            <div key={field.key} className="grid gap-2 rounded-xl border border-slate-100 p-3 md:grid-cols-2">
+              <label className="flex flex-col gap-1 text-xs text-slate-600">
+                <span className="text-slate-500">
+                  SR — fabricki: <span className="text-slate-400">{field.sr}</span>
+                </span>
+                <textarea
+                  value={copyValue(field.key, "sr")}
+                  onChange={(e) => setCopy(field.key, "sr", e.target.value)}
+                  placeholder={field.sr}
+                  rows={field.sr.length > 60 ? 3 : 1}
+                  className={fieldClass}
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-slate-600">
+                <span className="text-slate-500">
+                  EN — fabricki: <span className="text-slate-400">{field.en}</span>
+                </span>
+                <textarea
+                  value={copyValue(field.key, "en")}
+                  onChange={(e) => setCopy(field.key, "en", e.target.value)}
+                  placeholder={field.en}
+                  rows={field.en.length > 60 ? 3 : 1}
+                  className={fieldClass}
+                />
+              </label>
+            </div>
+          ))}
+          {visibleCopyFields.length === 0 ? (
+            <p className="p-2 text-sm text-slate-400">Nema teksta koji odgovara pretrazi.</p>
+          ) : null}
+        </div>
+        <p className="mt-2 text-xs text-slate-400">
+          &quot;{"{iznos}"}&quot; u tekstu o besplatnoj dostavi se zamenjuje iznosom koji fali do praga.
+        </p>
       </div>
 
       <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">

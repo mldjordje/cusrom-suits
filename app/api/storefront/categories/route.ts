@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { listCatalogProducts } from "@/lib/catalog/store";
-import { listCategoryRegistry } from "@/lib/catalog/categories";
+import { listCategoryRegistry, resolveShowInMenu } from "@/lib/catalog/categories";
 import { applyPublicCache } from "@/lib/http/cache";
 
 /* One minute, not ten. This is the menu feed: when an admin files the first
@@ -25,7 +25,6 @@ export async function GET() {
    *  - categories the admin created under a group, which filter by categoryId
    * Both are exposed the same way so the nav does not care which it renders. */
   const registry = await listCategoryRegistry();
-  const stockedCategoryIds = new Set(result.categories.map((category) => category.id));
 
   const categories = result.categoryGroups.map((group) => {
     const children: Array<{ id: string; name: string; href: string }> = [];
@@ -37,8 +36,11 @@ export async function GET() {
 
     for (const entry of registry) {
       if (entry.parentGroup !== group.key || !entry.isVisible) continue;
-      // A category with nothing in it is a dead link in the menu.
-      if (!stockedCategoryIds.has(entry.id)) continue;
+      /* The menu used to also require the category to hold a sellable product,
+         which made "I switched it on and it still is not there" the normal
+         outcome. The admin's checkbox decides now — an empty category in the
+         menu is a choice someone made, not a bug. */
+      if (!resolveShowInMenu(entry)) continue;
       children.push({
         id: String(entry.id),
         name: entry.name,
@@ -53,10 +55,21 @@ export async function GET() {
     };
   });
 
+  /* Categories the admin put in the menu without filing them under a main
+     group sit at the top level of the dropdown, next to Odela and Sakoi. */
+  const topLevelRegistry = registry
+    .filter((entry) => !entry.parentGroup && entry.isVisible && resolveShowInMenu(entry))
+    .map((entry) => ({
+      id: `id:${entry.id}`,
+      name: entry.name,
+      children: [] as Array<{ id: string; name: string; href: string }>,
+      href: `/web-shop?categoryId=${entry.id}`,
+    }));
+
   /* Short edge TTL on purpose: this drives the shop menu, and an admin who has
      just filled a new category should not wait an hour to see it there. The
      stale window keeps it cheap. */
-  return applyPublicCache(NextResponse.json({ success: true, categories }), {
+  return applyPublicCache(NextResponse.json({ success: true, categories: [...categories, ...topLevelRegistry] }), {
     maxAge: 60,
     sMaxAge: 300,
     staleWhileRevalidate: 86400,

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { hasAdminToken } from "@/lib/auth/admin";
 import { listCatalogProducts } from "@/lib/catalog/store";
-import { listAdminCatalogCategories } from "@/lib/catalog/categories";
+import { listAdminCatalogCategories, resolveShowInMenu } from "@/lib/catalog/categories";
 import { getServiceSupabase } from "@/lib/supabase/server";
 
 /**
@@ -98,6 +98,7 @@ export async function GET(req: NextRequest) {
         name: entry.name,
         path: entry.path,
         isVisible: entry.isVisible,
+        showInMenu: resolveShowInMenu(entry),
         isLive: liveCategoryIds.has(entry.id),
         assigned: assignmentCounts.get(entry.id)?.assigned ?? 0,
         sellable: assignmentCounts.get(entry.id)?.sellable ?? 0,
@@ -117,6 +118,7 @@ export async function GET(req: NextRequest) {
       name: entry.name,
       path: entry.path,
       isVisible: entry.isVisible,
+      showInMenu: resolveShowInMenu(entry),
       isLive: liveCategoryIds.has(entry.id),
       assigned: assignmentCounts.get(entry.id)?.assigned ?? 0,
       sellable: assignmentCounts.get(entry.id)?.sellable ?? 0,

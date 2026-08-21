@@ -23,7 +23,13 @@ type ShopCategory = {
   id: string;
   name: string;
   children?: ShopCategoryChild[];
+  /** Set for admin-made top-level categories, which filter by id, not group. */
+  href?: string;
 };
+
+/** A main category filters by group key unless the feed spelled out a link. */
+const shopCategoryHref = (category: ShopCategory) =>
+  category.href || `/web-shop?categoryGroup=${category.id}`;
 
 type HeaderNavItem = {
   href: string;
@@ -261,7 +267,7 @@ export default function StorefrontHeaderClient({
     { href: "/web-shop?categoryId=sale", label: isEn ? "Sale" : "Akcija" },
     ...shopCategories.flatMap((category) => [
       {
-        href: `/web-shop?categoryGroup=${category.id}`,
+        href: shopCategoryHref(category),
         label: localizeDynamicCategoryLabel(category.name, isEn ? "en" : "sr"),
       },
       /* The mobile menu is a single scrolling list, so subcategories are
@@ -419,7 +425,7 @@ export default function StorefrontHeaderClient({
                               {shopCategories.map((category) => {
                                 const children = category.children || [];
                                 const label = localizeDynamicCategoryLabel(category.name, isEn ? "en" : "sr");
-                                const groupHref = `/web-shop?categoryGroup=${category.id}`;
+                                const groupHref = shopCategoryHref(category);
 
                                 /* A category with subcategories opens a second panel on click
                                    instead of navigating; the panel's first entry still links to

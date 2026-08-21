@@ -1,6 +1,10 @@
 import crypto from "crypto";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
+import {
+  normalizeCheckoutCopyOverrides,
+  type CheckoutCopyOverrides,
+} from "@/lib/storefront/checkoutCopy";
 
 const FULFILLMENT_PATH = "data/fulfillment-settings.json";
 const FULFILLMENT_CACHE_TAG = "fulfillment-settings";
@@ -48,6 +52,8 @@ export type FulfillmentSettings = {
    *  page and in the cart — before this existed the promise was hardcoded copy
    *  that checkout never actually honoured. */
   freeDeliveryThreshold: number;
+  /** Admin edits for the checkout page wording. Missing key = shipped default. */
+  checkoutCopy: CheckoutCopyOverrides;
   vouchers: Voucher[];
 };
 
@@ -82,6 +88,7 @@ export const DEFAULT_FULFILLMENT_SETTINGS: FulfillmentSettings = {
     },
   ],
   freeDeliveryThreshold: 15000,
+  checkoutCopy: {},
   vouchers: [],
 };
 
@@ -171,6 +178,7 @@ async function readFulfillmentUncached(): Promise<FulfillmentSettings> {
       0,
       normalizeNumber(raw.freeDeliveryThreshold, DEFAULT_FULFILLMENT_SETTINGS.freeDeliveryThreshold),
     ),
+    checkoutCopy: normalizeCheckoutCopyOverrides(raw.checkoutCopy),
     vouchers: normalizeVouchers(raw.vouchers),
   };
 }
@@ -202,6 +210,8 @@ export async function updateFulfillmentSettings(patch: Partial<FulfillmentSettin
       patch.freeDeliveryThreshold == null
         ? current.freeDeliveryThreshold
         : Math.max(0, normalizeNumber(patch.freeDeliveryThreshold, current.freeDeliveryThreshold)),
+    checkoutCopy:
+      patch.checkoutCopy == null ? current.checkoutCopy : normalizeCheckoutCopyOverrides(patch.checkoutCopy),
     vouchers: patch.vouchers == null ? current.vouchers : normalizeVouchers(patch.vouchers),
   };
   await writePersistentJsonFile(FULFILLMENT_PATH, next);

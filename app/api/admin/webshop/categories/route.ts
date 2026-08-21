@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
       path: parsePath(payload?.path),
       parentId: Number(payload?.parentId || 0),
       parentGroup: payload?.parentGroup == null ? "" : String(payload.parentGroup),
+      showInMenu: payload?.showInMenu === undefined ? null : payload.showInMenu === null ? null : payload.showInMenu === true,
       description: payload?.description == null ? null : String(payload.description),
       mainColor: payload?.mainColor == null ? null : String(payload.mainColor),
       isVisible: payload?.isVisible !== false,
@@ -62,6 +63,10 @@ export async function PATCH(req: NextRequest) {
       path: payload?.path == null ? undefined : parsePath(payload.path),
       parentId: payload?.parentId == null ? undefined : Number(payload.parentId || 0),
       parentGroup: payload?.parentGroup === undefined ? undefined : String(payload.parentGroup || ""),
+      /* Tri-state on purpose: `null` clears the admin's choice and hands the
+         category back to the default rule, so `== null` would swallow it. */
+      showInMenu:
+        payload?.showInMenu === undefined ? undefined : payload.showInMenu === null ? null : payload.showInMenu === true,
       description: payload?.description == null ? undefined : String(payload.description),
       mainColor: payload?.mainColor == null ? undefined : String(payload.mainColor),
       isVisible: payload?.isVisible == null ? undefined : Boolean(payload.isVisible),

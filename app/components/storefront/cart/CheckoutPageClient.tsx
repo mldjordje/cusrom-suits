@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import StorefrontOrderSteps from "@/app/components/storefront/StorefrontOrderSteps";
 import { useStorefrontAuth } from "@/app/components/storefront/StorefrontAuthProvider";
+import type { CheckoutCopy } from "@/lib/storefront/checkoutCopy";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
 import { trackBeginCheckout, trackPurchase, type AnalyticsProduct } from "@/lib/analytics/ecommerce";
 import { applyFreeDeliveryThreshold, getRemainingForFreeDelivery } from "@/lib/storefront/deliveryPricing";
@@ -69,12 +70,15 @@ export default function CheckoutPageClient({
   pickupStores,
   deliveryServices,
   fulfillmentCopy,
+  copy,
   freeDeliveryThreshold = 0,
 }: {
   lang?: StorefrontLanguage;
   pickupStores: PickupStoreOption[];
   deliveryServices: DeliveryServiceOption[];
   fulfillmentCopy: FulfillmentCopy;
+  /** Page wording for this language, admin overrides already applied. */
+  copy: CheckoutCopy;
   freeDeliveryThreshold?: number;
 }) {
   const { items, subtotal, clearCart, isReady } = useCart();
@@ -163,14 +167,14 @@ export default function CheckoutPageClient({
       });
       const json = await res.json();
       if (!json?.success) {
-        setVoucherError(json?.message || (isEn ? "Invalid voucher." : "Neispravan vaucer."));
+        setVoucherError(json?.message || (copy.invalidVoucher));
         setVoucherDiscount(0);
         return;
       }
       setVoucherDiscount(Number(json.discountAmount || 0));
       setAppliedVoucherCode(code);
     } catch {
-      setVoucherError(isEn ? "Could not validate voucher." : "Greska pri proveri vaucera.");
+      setVoucherError(copy.couldNotValidateVoucher);
     } finally {
       setVoucherApplying(false);
     }
@@ -187,15 +191,15 @@ export default function CheckoutPageClient({
     event.preventDefault();
     setTouched({ fullName: true, email: true, phone: true });
     if (!canSubmit) {
-      setError(isEn ? "Enter name, email and phone before submitting the order." : "Unesi ime, email i telefon pre slanja porudzbine.");
+      setError(copy.enterNameEmailAndPhoneBeforeSubmittingTh);
       return;
     }
     if (form.deliveryMethod === "pickup" && !form.pickupStoreSlug) {
-      setError(isEn ? "Select a pickup store before sending the order." : "Izaberi radnju za preuzimanje pre slanja porudzbine.");
+      setError(copy.selectAPickupStoreBeforeSendingTheOrder);
       return;
     }
     if (form.deliveryMethod === "delivery" && !selectedDeliveryService) {
-      setError(isEn ? "Select a delivery service before sending the order." : "Izaberi kurirsku sluzbu pre slanja porudzbine.");
+      setError(copy.selectADeliveryServiceBeforeSendingTheOr);
       return;
     }
 
@@ -226,7 +230,7 @@ export default function CheckoutPageClient({
       });
       const json = await res.json();
       if (!json?.success) {
-        setError(json?.message || (isEn ? "Order submission failed." : "Slanje porudzbine nije uspelo."));
+        setError(json?.message || (copy.orderSubmissionFailed));
         return;
       }
       const confirmedTotal = Number(json.finalTotal || checkoutTotal);
@@ -252,14 +256,14 @@ export default function CheckoutPageClient({
         deliveryServiceId: deliveryServices[0]?.id || "",
       });
     } catch (e: any) {
-      setError(e?.message || (isEn ? "Order submission failed." : "Slanje porudzbine nije uspelo."));
+      setError(e?.message || (copy.orderSubmissionFailed));
     } finally {
       setSubmitting(false);
     }
   };
 
   if (!isReady) {
-    return <div className="ss-commerce-loading" aria-busy="true" aria-label={isEn ? "Loading order form" : "Ucitavam formu za porudzbinu"} />;
+    return <div className="ss-commerce-loading" aria-busy="true" aria-label={copy.loadingOrderForm} />;
   }
 
   if (orderId) {
@@ -267,41 +271,35 @@ export default function CheckoutPageClient({
       <div className="ss-commerce-stack">
         <StorefrontOrderSteps lang={lang} current="checkout" />
         <div className="ss-order-state-card text-center">
-          <p className="ss-order-state-card__eyebrow">{isEn ? "Order received" : "Porudzbina primljena"}</p>
+          <p className="ss-order-state-card__eyebrow">{copy.orderReceived}</p>
           <h1>
-            {isEn
-              ? "Thank you! We received your order."
-              : "Hvala! Tvoja porudzbina je primljena."}
+            {copy.thankYouWeReceivedYourOrder}
           </h1>
           <p className="fs-6 mt-2">
-            {isEn
-              ? "Our team will call you within 2 hours (Mon-Sat, 09-20h) to confirm size, delivery and payment method."
-              : "Nas tim ce te pozvati u roku od 2 sata (Pon-Sub, 09-20h) radi potvrde velicine, dostave i nacina placanja."}
+            {copy.ourTeamWillCallYouWithin2HoursMonSat0920}
           </p>
           <p className="mt-3">
-            {isEn ? "Order number" : "Broj porudzbine"}: <strong>{orderNumber || orderId}</strong>
+            {copy.orderNumber}: <strong>{orderNumber || orderId}</strong>
           </p>
           {submittedTotal != null ? (
             <p>
-              {isEn ? "Total" : "Ukupno"}: <strong>{formatRsd(submittedTotal)}</strong>
+              {copy.total}: <strong>{formatRsd(submittedTotal)}</strong>
             </p>
           ) : null}
           {appliedVoucherCode ? (
             <p>
-              {isEn ? "Voucher applied" : "Primenjen vaucer"}: <strong>{appliedVoucherCode}</strong>
+              {copy.voucherApplied}: <strong>{appliedVoucherCode}</strong>
             </p>
           ) : null}
           <p className="text-secondary small mt-2">
-            {isEn
-              ? "Tip: save the order number. If you don't hear from us within 2 hours, please contact us directly."
-              : "Savet: sacuvaj broj porudzbine. Ako se ne javimo u roku od 2 sata, slobodno nas pozovi."}
+            {copy.tipSaveTheOrderNumberIfYouDonTHearFromUs}
           </p>
           <div className="d-flex flex-wrap justify-content-center gap-2 mt-3">
             <Link href={withLang("/web-shop")} className="btn btn-primary text-uppercase fw-medium">
-              {isEn ? "Continue shopping" : "Nastavi kupovinu"}
+              {copy.continueShopping}
             </Link>
             <Link href={withLang("/kontakt")} className="btn btn-outline-dark text-uppercase fw-medium">
-              {isEn ? "Contact us" : "Kontaktiraj nas"}
+              {copy.contactUs}
             </Link>
           </div>
         </div>
@@ -314,15 +312,13 @@ export default function CheckoutPageClient({
       <div className="ss-commerce-stack">
         <StorefrontOrderSteps lang={lang} current="checkout" />
         <div className="ss-order-state-card text-center">
-          <p className="ss-order-state-card__eyebrow">{isEn ? "Order form is empty" : "Forma za porudzbinu je prazna"}</p>
-          <h1>{isEn ? "Add products to the cart before sending the order." : "Dodaj proizvode u korpu pre slanja porudzbine."}</h1>
+          <p className="ss-order-state-card__eyebrow">{copy.orderFormIsEmpty}</p>
+          <h1>{copy.addProductsToTheCartBeforeSendingTheOrde}</h1>
           <p>
-            {isEn
-              ? "The simplest route is product, cart review, then this order form."
-              : "Najjednostavniji put je proizvod, pregled korpe, pa tek onda forma za porudzbinu."}
+            {copy.theSimplestRouteIsProductCartReviewThenT}
           </p>
           <Link href={withLang("/web-shop")} className="btn btn-primary text-uppercase fw-medium">
-            {isEn ? "Go to web shop" : "Idi na web shop"}
+            {copy.goToWebShop}
           </Link>
         </div>
       </div>
@@ -335,43 +331,39 @@ export default function CheckoutPageClient({
 
       <div className="ss-commerce-intro">
         <div>
-          <p className="ss-commerce-intro__eyebrow">{isEn ? "Step 3" : "Korak 3"}</p>
+          <p className="ss-commerce-intro__eyebrow">{copy.step3}</p>
           <h1 className="ss-commerce-intro__title">
-            {isEn ? "Send the order with only the essential details." : "Posalji porudzbinu uz samo neophodne podatke."}
+            {copy.sendTheOrderWithOnlyTheEssentialDetails}
           </h1>
         </div>
         <p className="ss-commerce-intro__copy">
-          {isEn
-            ? "Enter your contact details and, if you like, a delivery address or note. No online payment is required upfront."
-            : "Unesi kontakt podatke i po zelji adresu ili napomenu. Placanje unapred nije potrebno."}
+          {copy.enterYourContactDetailsAndIfYouLikeADeli}
         </p>
       </div>
 
-      <div className="ss-checkout-mini-summary" aria-label={isEn ? "Order overview" : "Pregled porudzbine"}>
+      <div className="ss-checkout-mini-summary" aria-label={copy.orderOverview}>
         <div className="ss-checkout-mini-summary__item">
-          <span>{isEn ? "Items" : "Artikli"}</span>
+          <span>{copy.items}</span>
           <strong>{totalUnits}</strong>
         </div>
         <div className="ss-checkout-mini-summary__item">
-          <span>{isEn ? "Products" : "Proizvodi"}</span>
+          <span>{copy.products}</span>
           <strong>{formatRsd(subtotal)}</strong>
         </div>
         <div className="ss-checkout-mini-summary__item">
-          <span>{isEn ? "Delivery" : "Dostava"}</span>
+          <span>{copy.delivery}</span>
           <strong>
-            {freeDeliveryApplied ? (isEn ? "Free" : "Besplatno") : formatRsd(deliveryCost)}
+            {freeDeliveryApplied ? (copy.free) : formatRsd(deliveryCost)}
           </strong>
         </div>
         <div className="ss-checkout-mini-summary__item ss-checkout-mini-summary__item--wide">
-          <span>{isEn ? "Current total" : "Trenutni ukupno"}</span>
+          <span>{copy.currentTotal}</span>
           <strong>{formatRsd(checkoutTotal)}</strong>
         </div>
         {missingForFreeDelivery > 0 ? (
           <div className="ss-checkout-mini-summary__item ss-checkout-mini-summary__item--wide">
             <span>
-              {isEn
-                ? `Add ${formatRsd(missingForFreeDelivery)} more for free delivery`
-                : `Dodaj jos ${formatRsd(missingForFreeDelivery)} za besplatnu dostavu`}
+              {copy.freeDeliveryNudge.replace("{iznos}", formatRsd(missingForFreeDelivery))}
             </span>
           </div>
         ) : null}
@@ -382,47 +374,43 @@ export default function CheckoutPageClient({
           <form onSubmit={handleSubmit} className="ss-order-panel ss-order-panel--form">
             <div className="ss-order-panel__header">
               <div>
-                <p className="ss-order-panel__eyebrow">{isEn ? "Order form" : "Porudzbina"}</p>
-                <h2>{isEn ? "Customer details" : "Podaci kupca"}</h2>
+                <p className="ss-order-panel__eyebrow">{copy.orderForm}</p>
+                <h2>{copy.customerDetails}</h2>
               </div>
               <Link href={withLang("/cart")} className="btn btn-outline-dark text-uppercase fw-medium">
-                {isEn ? "Back to cart" : "Nazad na korpu"}
+                {copy.backToCart}
               </Link>
             </div>
 
             <div className="ss-order-form-section">
-              <h3>{isEn ? "Required contact" : "Obavezni kontakt podaci"}</h3>
+              <h3>{copy.requiredContact}</h3>
               <p className="ss-order-form-section__copy">
-                {isEn
-                  ? "These three fields are enough for the team to confirm the order quickly."
-                  : "Ova tri polja su dovoljna da tim brzo potvrdi porudzbinu."}
+                {copy.theseThreeFieldsAreEnoughForTheTeamToCon}
               </p>
               {authUser && !authLoading ? (
                 <p className="small text-success mb-3 mb-md-4">
-                  {isEn
-                    ? "You are signed in. The order is linked to your account when the email matches your login."
-                    : "Ulogovan si. Porudzbina se vezuje za nalog kada email u formi odgovara prijavi."}
+                  {copy.youAreSignedInTheOrderIsLinkedToYourAcco}
                 </p>
               ) : null}
               <div className="row g-3">
                 <div className="col-md-6">
-                  <label htmlFor="checkout-full-name" className="form-label">{isEn ? "Full name" : "Ime i prezime"}</label>
+                  <label htmlFor="checkout-full-name" className="form-label">{copy.fullName}</label>
                   <input
                     id="checkout-full-name"
                     value={form.fullName}
                     onChange={(e) => setForm((prev) => ({ ...prev, fullName: e.target.value }))}
                     onBlur={() => markTouched("fullName")}
                     className={`form-control${fieldError("fullName") ? " is-invalid" : touched.fullName && form.fullName.trim() ? " is-valid" : ""}`}
-                    placeholder={isEn ? "First and last name" : "Ime i prezime"}
+                    placeholder={copy.firstAndLastName}
                     autoComplete="name"
                     required
                   />
                   {fieldError("fullName") ? (
-                    <div className="invalid-feedback">{isEn ? "Name is required." : "Ime je obavezno."}</div>
+                    <div className="invalid-feedback">{copy.nameIsRequired}</div>
                   ) : null}
                 </div>
                 <div className="col-md-6">
-                  <label htmlFor="checkout-phone" className="form-label">{isEn ? "Phone" : "Telefon"}</label>
+                  <label htmlFor="checkout-phone" className="form-label">{copy.phone}</label>
                   <input
                     id="checkout-phone"
                     type="tel"
@@ -430,13 +418,13 @@ export default function CheckoutPageClient({
                     onChange={(e) => setForm((prev) => ({ ...prev, phone: e.target.value }))}
                     onBlur={() => markTouched("phone")}
                     className={`form-control${fieldError("phone") ? " is-invalid" : touched.phone && form.phone.trim() ? " is-valid" : ""}`}
-                    placeholder={isEn ? "Mobile or landline number" : "Mobilni ili fiksni broj"}
+                    placeholder={copy.mobileOrLandlineNumber}
                     autoComplete="tel"
                     inputMode="tel"
                     required
                   />
                   {fieldError("phone") ? (
-                    <div className="invalid-feedback">{isEn ? "Phone is required." : "Telefon je obavezan."}</div>
+                    <div className="invalid-feedback">{copy.phoneIsRequired}</div>
                   ) : null}
                 </div>
                 <div className="col-12">
@@ -453,21 +441,21 @@ export default function CheckoutPageClient({
                     required
                   />
                   {fieldError("email") ? (
-                    <div className="invalid-feedback">{isEn ? "Enter a valid email address." : "Unesite ispravnu email adresu."}</div>
+                    <div className="invalid-feedback">{copy.enterAValidEmailAddress}</div>
                   ) : null}
                 </div>
               </div>
             </div>
 
             <div className="ss-order-form-section">
-              <h3>{isEn ? "Delivery or pickup" : "Dostava ili preuzimanje"}</h3>
+              <h3>{copy.deliveryOrPickup}</h3>
               <p className="ss-order-form-section__copy">
                 {form.deliveryMethod === "pickup" ? fulfillmentCopy.pickupNote : fulfillmentCopy.deliveryNote}
               </p>
               <div className="row g-3">
                 {fulfillmentCopy.pickupEnabled ? (
                   <div className="col-md-6">
-                    <label className="form-label d-block">{isEn ? "Option" : "Opcija"}</label>
+                    <label className="form-label d-block">{copy.option}</label>
                     <label className="d-flex gap-2 align-items-center">
                       <input
                         type="radio"
@@ -480,7 +468,7 @@ export default function CheckoutPageClient({
                 ) : null}
                 {fulfillmentCopy.deliveryEnabled ? (
                   <div className="col-md-6">
-                    <label className="form-label d-block">{isEn ? "Option" : "Opcija"}</label>
+                    <label className="form-label d-block">{copy.option}</label>
                     <label className="d-flex gap-2 align-items-center">
                       <input
                         type="radio"
@@ -495,7 +483,7 @@ export default function CheckoutPageClient({
                 {form.deliveryMethod === "pickup" ? (
                   <div className="col-12">
                     <label htmlFor="checkout-pickup-store" className="form-label">
-                      {isEn ? "Pickup store" : "Radnja za preuzimanje"}
+                      {copy.pickupStore}
                     </label>
                     <select
                       id="checkout-pickup-store"
@@ -515,7 +503,7 @@ export default function CheckoutPageClient({
                 {form.deliveryMethod === "delivery" ? (
                   <div className="col-12">
                     <label htmlFor="checkout-delivery-service" className="form-label">
-                      {isEn ? "Delivery service" : "Kurirska sluzba"}
+                      {copy.deliveryService}
                     </label>
                     <select
                       id="checkout-delivery-service"
@@ -538,52 +526,50 @@ export default function CheckoutPageClient({
             </div>
 
             <div className="ss-order-form-section">
-              <h3>{isEn ? "Optional delivery details" : "Opcioni podaci za dostavu"}</h3>
+              <h3>{copy.optionalDeliveryDetails}</h3>
               <p className="ss-order-form-section__copy">
-                {isEn
-                  ? "Add address details now only if you already know them."
-                  : "Dodaj podatke za dostavu sada samo ako ih vec znas."}
+                {copy.addAddressDetailsNowOnlyIfYouAlreadyKnow}
               </p>
               <div className="row g-3">
                 <div className="col-12">
                   <label htmlFor="checkout-address" className="form-label">
-                    {isEn ? "Address" : "Adresa"}{" "}
-                    <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({isEn ? "optional" : "opciono"})</span>
+                    {copy.address}{" "}
+                    <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({copy.optional})</span>
                   </label>
                   <input
                     id="checkout-address"
                     value={form.address}
                     onChange={(e) => setForm((prev) => ({ ...prev, address: e.target.value }))}
                     className="form-control"
-                    placeholder={isEn ? "Street and number" : "Ulica i broj"}
+                    placeholder={copy.streetAndNumber}
                     autoComplete="street-address"
                   />
                 </div>
                 <div className="col-md-7">
                   <label htmlFor="checkout-city" className="form-label">
-                    {isEn ? "City" : "Grad"}{" "}
-                    <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({isEn ? "optional" : "opciono"})</span>
+                    {copy.city}{" "}
+                    <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({copy.optional})</span>
                   </label>
                   <input
                     id="checkout-city"
                     value={form.city}
                     onChange={(e) => setForm((prev) => ({ ...prev, city: e.target.value }))}
                     className="form-control"
-                    placeholder={isEn ? "City" : "Grad"}
+                    placeholder={copy.city}
                     autoComplete="address-level2"
                   />
                 </div>
                 <div className="col-md-5">
                   <label htmlFor="checkout-postal-code" className="form-label">
-                    {isEn ? "Postal code" : "Postanski broj"}{" "}
-                    <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({isEn ? "optional" : "opciono"})</span>
+                    {copy.postalCode}{" "}
+                    <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({copy.optional})</span>
                   </label>
                   <input
                     id="checkout-postal-code"
                     value={form.postalCode}
                     onChange={(e) => setForm((prev) => ({ ...prev, postalCode: e.target.value }))}
                     className="form-control"
-                    placeholder={isEn ? "Postal code" : "Postanski broj"}
+                    placeholder={copy.postalCode}
                     autoComplete="postal-code"
                     inputMode="numeric"
                   />
@@ -592,14 +578,12 @@ export default function CheckoutPageClient({
             </div>
 
             <div className="ss-order-form-section">
-              <h3>{isEn ? "Note for the team" : "Napomena za tim"}</h3>
+              <h3>{copy.noteForTheTeam}</h3>
               <p className="ss-order-form-section__copy">
-                {isEn
-                  ? "Use this for size remarks, pickup preference or anything the team should know."
-                  : "Ovde upisi napomenu o velicini, nacinu preuzimanja ili bilo sta sto tim treba da zna."}
+                {copy.useThisForSizeRemarksPickupPreferenceOrA}
               </p>
               <label htmlFor="checkout-note" className="visually-hidden">
-                {isEn ? "Note for the team" : "Napomena za tim"}
+                {copy.noteForTheTeam}
               </label>
               <textarea
                 id="checkout-note"
@@ -607,7 +591,7 @@ export default function CheckoutPageClient({
                 onChange={(e) => setForm((prev) => ({ ...prev, note: e.target.value }))}
                 className="form-control"
                 rows={4}
-                placeholder={isEn ? "Sizes, pickup time, delivery note..." : "Velicine, vreme preuzimanja, napomena za dostavu..."}
+                placeholder={copy.sizesPickupTimeDeliveryNote}
               />
             </div>
 
@@ -615,21 +599,17 @@ export default function CheckoutPageClient({
 
             <div className="ss-order-panel__footer">
               <p className="ss-order-panel__hint">
-                {isEn
-                  ? "After you send the order, our team calls you to confirm availability, delivery and payment."
-                  : "Nakon slanja porudzbine nas tim te poziva da potvrdi dostupnost, dostavu i placanje."}
+                {copy.afterYouSendTheOrderOurTeamCallsYouToCon}
               </p>
               <p className="ss-order-panel__hint mt-1">
-                {isEn
-                  ? "We accept: cash on delivery, card, bank transfer."
-                  : "Prihvatamo: placanje pouzecam, karticom, uplatnicom."}
+                {copy.weAcceptCashOnDeliveryCardBankTransfer}
               </p>
               <div className="d-flex flex-wrap gap-2">
                 <button type="submit" disabled={!canSubmit || submitting} className="btn btn-primary text-uppercase fw-medium">
-                  {submitting ? (isEn ? "Sending..." : "Slanje...") : (isEn ? "Send order" : "Posalji porudzbinu")}
+                  {submitting ? (copy.sending) : (copy.sendOrder)}
                 </button>
                 <Link href={withLang("/cart")} className="btn btn-outline-dark text-uppercase fw-medium">
-                  {isEn ? "Edit cart" : "Izmeni korpu"}
+                  {copy.editCart}
                 </Link>
               </div>
             </div>
@@ -638,16 +618,16 @@ export default function CheckoutPageClient({
 
         <div className="col-lg-5">
           <div className="ss-order-summary ss-order-summary--sticky">
-            <p className="ss-order-panel__eyebrow">{isEn ? "Order summary" : "Pregled porudzbine"}</p>
-            <h2>{isEn ? "Everything you're sending." : "Sve sto upravo saljes."}</h2>
+            <p className="ss-order-panel__eyebrow">{copy.orderSummary}</p>
+            <h2>{copy.everythingYouReSending}</h2>
 
             <div className="ss-order-summary__items">
               {items.map((item) => (
                 <div key={item.legacyId} className="ss-order-summary__item">
                   <div>
                     <p className="ss-order-summary__item-title">{item.name}</p>
-                    {item.size ? <p className="ss-order-summary__item-meta">{isEn ? "Size" : "Velicina"}: {item.size}</p> : null}
-                    {item.material ? <p className="ss-order-summary__item-meta">{isEn ? "Material" : "Materijal"}: {item.material}</p> : null}
+                    {item.size ? <p className="ss-order-summary__item-meta">{copy.size}: {item.size}</p> : null}
+                    {item.material ? <p className="ss-order-summary__item-meta">{copy.material}: {item.material}</p> : null}
                     <p className="ss-order-summary__item-meta">
                       {item.quantity} x {formatRsd(item.price)}
                     </p>
@@ -659,8 +639,8 @@ export default function CheckoutPageClient({
 
             <div className="ss-order-summary__voucher">
               <label htmlFor="checkout-voucher" className="form-label">
-                {isEn ? "Voucher code" : "Vaučer kod"}{" "}
-                <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({isEn ? "optional" : "opciono"})</span>
+                {copy.voucherCode}{" "}
+                <span className="text-secondary fw-normal" style={{ fontSize: "0.78em" }}>({copy.optional})</span>
               </label>
               <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                 <input
@@ -673,7 +653,7 @@ export default function CheckoutPageClient({
                     setAppliedVoucherCode(null);
                   }}
                   className="form-control form-control-sm"
-                  placeholder={isEn ? "Enter voucher code" : "Unesi vaučer kod"}
+                  placeholder={copy.enterVoucherCode}
                   style={{ flex: 1 }}
                 />
                 <button
@@ -683,7 +663,7 @@ export default function CheckoutPageClient({
                   className="btn btn-outline-secondary btn-sm"
                   style={{ whiteSpace: "nowrap" }}
                 >
-                  {voucherApplying ? "..." : isEn ? "Apply" : "Primeni"}
+                  {voucherApplying ? "..." : copy.apply}
                 </button>
               </div>
               {voucherError ? (
@@ -691,7 +671,7 @@ export default function CheckoutPageClient({
               ) : null}
               {voucherDiscount > 0 && appliedVoucherCode ? (
                 <p style={{ marginTop: "4px", fontSize: "0.82em", color: "#27ae60" }}>
-                  {isEn ? "Discount applied" : "Popust primenjen"}: &minus;{formatRsd(voucherDiscount)}
+                  {copy.discountApplied}: &minus;{formatRsd(voucherDiscount)}
                 </p>
               ) : null}
             </div>
@@ -700,24 +680,22 @@ export default function CheckoutPageClient({
               {voucherDiscount > 0 ? (
                 <>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9em", color: "#555", marginBottom: "4px" }}>
-                    <span>{isEn ? "Subtotal" : "Međuzbir"}</span>
+                    <span>{copy.subtotal}</span>
                     <span>{formatRsd(subtotal + deliveryCost)}</span>
                   </div>
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: "0.9em", color: "#27ae60", marginBottom: "4px" }}>
-                    <span>{isEn ? "Voucher discount" : "Popust (vaučer)"}</span>
+                    <span>{copy.voucherDiscount}</span>
                     <span>&minus;{formatRsd(voucherDiscount)}</span>
                   </div>
                 </>
               ) : null}
-              <span>{isEn ? "Total" : "Ukupno"}</span>
+              <span>{copy.total}</span>
               <strong>{formatRsd(checkoutTotal)}</strong>
             </div>
 
             <div className="ss-order-summary__note">
               <p>
-                {isEn
-                  ? "Payment on delivery, by card or bank transfer — you choose when our team calls to confirm the order."
-                  : "Placanje pouzecem, karticom ili uplatnicom — biras kada te nas tim pozove radi potvrde porudzbine."}
+                {copy.paymentOnDeliveryByCardOrBankTransferYou}
               </p>
             </div>
           </div>

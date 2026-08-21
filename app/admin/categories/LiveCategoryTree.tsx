@@ -18,6 +18,8 @@ type RegistryChild = {
   name: string;
   path: string[];
   isVisible: boolean;
+  /** Resolved menu opt-in: whether the shop dropdown lists this category. */
+  showInMenu: boolean;
   isLive: boolean;
   /** Products carrying this category, and how many of those a customer can buy. */
   assigned: number;
@@ -200,6 +202,33 @@ export default function LiveCategoryTree({
     } catch {
       setDetachedSubGroups(previous);
       setError("Promena podkategorije nije uspela.");
+    } finally {
+      setBusyKey(null);
+    }
+  };
+
+  /* The menu no longer decides for itself which categories are worth listing —
+     stock and images stopped being a condition. This switch is the whole rule,
+     for a category filed under a main one and for a loose one alike (loose ones
+     land in the top level of the dropdown, next to Odela and Sakoi). */
+  const toggleChildInMenu = async (child: RegistryChild, nextOn: boolean) => {
+    setBusyKey(`c${child.id}`);
+    setError(null);
+    try {
+      const res = await fetch("/api/admin/webshop/categories", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: child.id, showInMenu: nextOn }),
+      });
+      const json = await res.json().catch(() => null);
+      if (!res.ok || !json?.success) {
+        setError(json?.message || "Promena menija nije uspela.");
+        return;
+      }
+      await loadTree();
+      onChanged();
+    } catch {
+      setError("Promena menija nije uspela.");
     } finally {
       setBusyKey(null);
     }
@@ -413,6 +442,30 @@ export default function LiveCategoryTree({
     }
   };
 
+  /** The menu switch, identical wherever a registry category is listed. */
+  const renderMenuToggle = (child: RegistryChild) => (
+    <label
+      className={`flex cursor-pointer items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.08em] ${
+        child.showInMenu
+          ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+          : "border-slate-200 bg-white text-slate-500"
+      } ${busyKey === `c${child.id}` ? "opacity-40" : ""}`}
+      title={
+        child.showInMenu
+          ? "Stoji u meniju na sajtu. Klikni da je sklonis."
+          : "Nije u meniju. Klikni da je dodas — prazna kategorija se svejedno prikazuje."
+      }
+    >
+      <input
+        type="checkbox"
+        checked={child.showInMenu}
+        disabled={busyKey === `c${child.id}`}
+        onChange={(e) => void toggleChildInMenu(child, e.target.checked)}
+      />
+      u meniju
+    </label>
+  );
+
   const renderProductPanel = () => {
     if (!openTarget) return null;
     return (
@@ -522,7 +575,8 @@ export default function LiveCategoryTree({
         <div>
           <p className="text-sm font-semibold text-slate-800">Kategorije koje kupci vide</p>
           <p className="text-xs text-slate-500">
-            Isti izvor kao web-shop: aktivan + izvezen + ima sliku + spojene velicine. Klik na kategoriju otvara njene artikle.
+            Isti izvor kao web-shop: aktivan + izvezen + ima sliku + spojene velicine. Klik na kategoriju otvara njene
+            artikle. Sta stoji u meniju odlucuje cekboks &quot;u meniju&quot; — broj artikala vise nije uslov.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -682,15 +736,15 @@ export default function LiveCategoryTree({
                 {group.registryChildren.map((child) => {
                   const childTarget: Target = { kind: "category", id: child.id, label: `${group.name} / ${child.name}` };
                   const childOpen = openTarget?.kind === "category" && openTarget.id === child.id;
-                  /* Empty or unbuyable categories are hidden from the shop menu, so
-                     say so on the chip — that is the whole answer to "I made a
-                     category and it does not show up". */
+                  /* What keeps this category out of the menu, if anything. Empty
+                     is no longer a reason on its own — it is worth saying on the
+                     chip, but the switch below is what decides. */
                   const hiddenReason = !child.isVisible
                     ? "sakrivena"
-                    : child.assigned === 0
-                      ? "prazna"
-                      : child.sellable === 0
-                        ? "nema dostupnih"
+                    : !child.showInMenu
+                      ? "nije u meniju"
+                      : child.assigned === 0
+                        ? "prazna"
                         : null;
                   return (
                     <span
@@ -717,6 +771,7 @@ export default function LiveCategoryTree({
                         <span className="opacity-70">{child.sellable}</span>
                         {hiddenReason ? <span className="opacity-80">({hiddenReason})</span> : null}
                       </button>
+                      {renderMenuToggle(child)}
                       <button
                         type="button"
                         disabled={busyKey === `c${child.id}`}
@@ -855,6 +910,7 @@ export default function LiveCategoryTree({
                   <span className="text-[11px] text-slate-400">
                     {row.parentName ? `u: ${row.parentName}` : "bez nadkategorije"}
                   </span>
+                  {renderMenuToggle(row.child)}
                   <select
                     value=""
                     disabled={busyKey === `c${row.child.id}`}
@@ -915,8 +971,8 @@ export default function LiveCategoryTree({
         <div className="mt-4 rounded-xl border border-dashed border-slate-300 p-3">
           <p className="text-xs font-semibold text-slate-700">Kategorije bez nadkategorije ({orphans.length})</p>
           <p className="mb-2 text-[11px] text-slate-500">
-            Postoje u sistemu, ali ne vise ni pod jednom glavnom kategorijom — zato ih nema u meniju kao podkategorije.
-            Izaberi im nadkategoriju, ili ih obrisi ako se ne koriste.
+            Postoje u sistemu, ali ne vise ni pod jednom glavnom kategorijom. Cekiraj &quot;u meniju&quot; i kategorija ide
+            u glavni meni kao zasebna stavka, uz Odela i Sakoe. Ili joj izaberi nadkategoriju, ili je obrisi.
           </p>
           <div className="grid gap-2">
             {orphans.map((orphan) => {
@@ -935,6 +991,7 @@ export default function LiveCategoryTree({
                     {orphan.name}
                     <span className="opacity-70">{orphan.sellable}</span>
                   </button>
+                  {renderMenuToggle(orphan)}
                   <select
                     value=""
                     disabled={busyKey === `c${orphan.id}`}

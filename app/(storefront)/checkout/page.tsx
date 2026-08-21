@@ -3,6 +3,7 @@ import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
 import CheckoutPageClient from "@/app/components/storefront/cart/CheckoutPageClient";
 import { getFulfillmentSettings } from "@/lib/storefront/fulfillment";
+import { resolveCheckoutCopy } from "@/lib/storefront/checkoutCopy";
 import { getSiteContent } from "@/lib/storefront/siteContent";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 
@@ -47,6 +48,7 @@ export default async function CheckoutPage({
             pickupStores={pickupStores}
             deliveryServices={deliveryServices}
             freeDeliveryThreshold={fulfillment.freeDeliveryThreshold}
+            copy={resolveCheckoutCopy(fulfillment.checkoutCopy, lang)}
             fulfillmentCopy={{
               pickupEnabled: fulfillment.pickupEnabled,
               deliveryEnabled: fulfillment.deliveryEnabled,

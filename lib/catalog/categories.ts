@@ -59,6 +59,14 @@ export type CatalogCategoryRecord = {
    * second-level dropdown.
    */
   parentGroup: string;
+  /**
+   * Explicit menu opt-in. `true` puts the category in the shop dropdown no
+   * matter how many products it holds, `false` keeps it out, `null` means the
+   * admin never said — fall back to `resolveShowInMenu`. Categories filed under
+   * a main group default to showing; loose ones default to hidden, otherwise
+   * every stray legacy category would land in the top level of the menu.
+   */
+  showInMenu: boolean | null;
   description: string | null;
   mainColor: string | null;
   isVisible: boolean;
@@ -100,6 +108,15 @@ const applyParentGroupToPath = (path: string[], parentGroup: string) => {
   return parentName ? [parentName, ...bare] : bare;
 };
 
+const normalizeShowInMenu = (value: unknown): boolean | null =>
+  value === undefined || value === null ? null : value === true;
+
+/** What the storefront menu actually asks: does this category belong there? */
+export const resolveShowInMenu = (entry: {
+  showInMenu?: boolean | null;
+  parentGroup?: string;
+}): boolean => (entry.showInMenu == null ? Boolean(entry.parentGroup) : entry.showInMenu);
+
 const normalizeRegistryRecord = (
   value: unknown,
   fallbackId = 0,
@@ -117,6 +134,7 @@ const normalizeRegistryRecord = (
     path: normalizePath(row.path, name),
     parentId: Number.isFinite(Number(row.parentId)) ? Number(row.parentId) : 0,
     parentGroup: normalizeParentGroup(row.parentGroup),
+    showInMenu: normalizeShowInMenu(row.showInMenu),
     description: row.description == null ? null : String(row.description),
     mainColor: row.mainColor == null ? null : String(row.mainColor),
     isVisible: row.isVisible !== false,
@@ -176,6 +194,7 @@ async function loadCategoriesFromSupabase() {
           path: normalizePath(current.path, name),
           parentId: Number.isFinite(Number(current.parentId)) ? Number(current.parentId) : 0,
           parentGroup: existing?.parentGroup || normalizeParentGroup(current.parentGroup),
+          showInMenu: existing?.showInMenu ?? null,
           description: existing?.description || null,
           mainColor: existing?.mainColor || null,
           isVisible: existing?.isVisible ?? true,
@@ -212,6 +231,7 @@ async function loadCategoriesFromFile() {
         path: normalizePath(category.path, name),
         parentId: Number.isFinite(Number(category.parentId)) ? Number(category.parentId) : 0,
         parentGroup: existing?.parentGroup || "",
+        showInMenu: existing?.showInMenu ?? null,
         description: existing?.description || null,
         mainColor: existing?.mainColor || null,
         isVisible: existing?.isVisible ?? true,
@@ -347,6 +367,7 @@ export async function createCategoryRegistryEntry(input: {
   path?: string[];
   parentId?: number;
   parentGroup?: string;
+  showInMenu?: boolean | null;
   description?: string | null;
   mainColor?: string | null;
   isVisible?: boolean;
@@ -373,6 +394,7 @@ export async function createCategoryRegistryEntry(input: {
     path,
     parentId: Number.isFinite(Number(input.parentId)) ? Number(input.parentId) : 0,
     parentGroup,
+    showInMenu: normalizeShowInMenu(input.showInMenu),
     description: input.description == null ? null : String(input.description),
     mainColor: input.mainColor == null ? null : String(input.mainColor),
     isVisible: input.isVisible !== false,
@@ -390,7 +412,15 @@ export async function updateCategoryRegistryEntry(
   patch: Partial<
     Pick<
       CatalogCategoryRecord,
-      "name" | "path" | "parentId" | "parentGroup" | "description" | "mainColor" | "isVisible" | "isFeatured"
+      | "name"
+      | "path"
+      | "parentId"
+      | "parentGroup"
+      | "showInMenu"
+      | "description"
+      | "mainColor"
+      | "isVisible"
+      | "isFeatured"
     >
   >,
 ) {
@@ -423,6 +453,8 @@ export async function updateCategoryRegistryEntry(
     path: finalPath,
     parentId: patch.parentId == null ? existing?.parentId || 0 : Number(patch.parentId) || 0,
     parentGroup,
+    showInMenu:
+      patch.showInMenu === undefined ? existing?.showInMenu ?? null : normalizeShowInMenu(patch.showInMenu),
     description: patch.description === undefined ? existing?.description || null : patch.description,
     mainColor: patch.mainColor === undefined ? existing?.mainColor || null : patch.mainColor,
     isVisible: patch.isVisible === undefined ? existing?.isVisible ?? true : patch.isVisible,

@@ -7,6 +7,7 @@ import {
   type FulfillmentSettings,
   type Voucher,
 } from "@/lib/storefront/fulfillment";
+import { normalizeCheckoutCopyOverrides } from "@/lib/storefront/checkoutCopy";
 
 type FulfillmentPatch = Partial<FulfillmentSettings>;
 
@@ -99,6 +100,9 @@ export async function PATCH(req: NextRequest) {
   }
   if ("deliveryServices" in row) patch.deliveryServices = parseServices(row.deliveryServices);
   if ("vouchers" in row) patch.vouchers = parseVouchers(row.vouchers);
+  /* Unknown keys and blank strings are dropped by the store's normalizer, so
+     the page can post the whole map back without curating it here. */
+  if ("checkoutCopy" in row) patch.checkoutCopy = normalizeCheckoutCopyOverrides(row.checkoutCopy);
 
   const settings = await updateFulfillmentSettings(patch);
   return NextResponse.json({ success: true, settings });
