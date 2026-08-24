@@ -126,6 +126,11 @@ export type CatalogListResult = {
   categories: CatalogCategory[];
   categoryGroups: CatalogCategoryGroup[];
   priceRange: { min: number; max: number };
+  /* True when the catalog could not be read at all — Supabase unreachable or
+     restricted, and the on-disk fallback held nothing either. Callers must show
+     an outage state instead of "no products match your filters", which is what
+     an empty result otherwise looks like. */
+  degraded?: boolean;
 };
 
 export type CatalogListInput = {
@@ -181,6 +186,10 @@ type ImageReachabilityCacheEntry = {
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const CATALOG_SNAPSHOT_TTL_MS = 1_800_000; // 30 min — reduces cold-start Supabase hits on Vercel
 const CATALOG_LIST_TTL_MS = 1_800_000;
+/* A degraded (catalog-unreadable) result must not sit in the cache for the full
+   half hour: once the database answers again the shop would still serve an empty
+   page per instance until the entry expired. */
+const CATALOG_DEGRADED_TTL_MS = 30_000;
 const CATALOG_LIST_CACHE_MAX_ENTRIES = 220;
 const CATALOG_LIST_CACHE_VERSION = "v6";
 const IMAGE_REACHABILITY_TTL_MS = 3_600_000;
@@ -1733,6 +1742,11 @@ const sortCatalogProducts = (
   });
 };
 
+/* Every column the catalog reads, shared by the snapshot and the single-product
+   query so the two cannot drift apart. */
+const CATALOG_SELECT_WITH_RAW_PAYLOAD =
+  "legacy_id,sku,ean,manuf_code,brand,is_active,is_exported,name_sr,name_en,description_sr,description_en,specification_sr,specification_en,price_gross,price_final_gross,tax_percent,rebate_percent,stock_warehouse_1,stock_total,raw_payload";
+
 async function fetchCatalogSnapshotFromSupabase(filters: {
   activeOnly: boolean;
   exportOnly: boolean;
@@ -1746,9 +1760,7 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
     const to = from + pageSize - 1;
     let query = supabase
       .from("catalog_products")
-      .select(
-        "legacy_id,sku,ean,manuf_code,brand,is_active,is_exported,name_sr,name_en,description_sr,description_en,specification_sr,specification_en,price_gross,price_final_gross,tax_percent,rebate_percent,stock_warehouse_1,stock_total,raw_payload",
-      )
+      .select(CATALOG_SELECT_WITH_RAW_PAYLOAD)
       .order("legacy_id", { ascending: true });
 
     if (filters.activeOnly) query = query.eq("is_active", true);
@@ -1760,6 +1772,7 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
     products.push(...batch);
     if (batch.length < pageSize) break;
   }
+
   if (!products.length) return [];
 
   const legacyIds = products
@@ -1825,18 +1838,10 @@ async function loadFromSupabase(filters: {
   }
 
   try {
-    const shouldBypassPersistentCache = getCatalogCacheBypassUntil() > Date.now();
-    let items: CatalogProductView[] | null = null;
-
     // Next.js unstable_cache has a hard per-item size limit (~2MB). Our admin snapshots
     // can exceed that significantly, which may trigger unhandled rejections in dev/prod.
     // Use direct Supabase fetch + in-memory TTL cache for reliability.
-    if (shouldBypassPersistentCache) {
-      items = await fetchCatalogSnapshotFromSupabase(filters);
-    } else {
-      items = await fetchCatalogSnapshotFromSupabase(filters);
-    }
-
+    const items = await fetchCatalogSnapshotFromSupabase(filters);
     if (!items) return null;
     cache.set(cacheKey, {
       items,
@@ -1961,6 +1966,9 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const baseItems = supabaseItems || (await loadFromFile());
   const loadMs = Date.now() - loadStart;
   const source: "supabase" | "file" = supabaseItems ? "supabase" : "file";
+  /* Supabase gave us nothing and the on-disk fallback is empty too, so this is an
+     outage rather than a catalog that genuinely has no matching products. */
+  const degraded = !supabaseItems && baseItems.length === 0;
 
   const promoStart = Date.now();
   const promotionRules = applyPromotions ? await listPromotionRulesCached() : [];
@@ -2053,11 +2061,12 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     categories,
     categoryGroups,
     priceRange,
+    ...(degraded ? { degraded: true } : {}),
   };
 
   listCache.set(cacheKey, {
     value: result,
-    expiresAt: Date.now() + CATALOG_LIST_TTL_MS,
+    expiresAt: Date.now() + (degraded ? CATALOG_DEGRADED_TTL_MS : CATALOG_LIST_TTL_MS),
     source,
   });
   while (listCache.size > CATALOG_LIST_CACHE_MAX_ENTRIES) {
@@ -2193,9 +2202,7 @@ async function fetchCatalogProductByLegacyIdFromSupabase(
 
   const { data: row } = await supabase
     .from("catalog_products")
-    .select(
-      "legacy_id,sku,ean,manuf_code,brand,is_active,is_exported,name_sr,name_en,description_sr,description_en,specification_sr,specification_en,price_gross,price_final_gross,tax_percent,rebate_percent,stock_warehouse_1,stock_total,raw_payload",
-    )
+    .select(CATALOG_SELECT_WITH_RAW_PAYLOAD)
     .eq("legacy_id", legacyId)
     .maybeSingle();
 

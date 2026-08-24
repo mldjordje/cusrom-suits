@@ -66,10 +66,23 @@ export async function GET() {
       href: `/web-shop?categoryId=${entry.id}`,
     }));
 
+  const payload = { success: true, categories: [...categories, ...topLevelRegistry] };
+
+  /* Never cache an outage. With the normal headers below a menu emptied by an
+     unreadable catalog would be served from the edge for a day
+     (staleWhileRevalidate), so the shop would stay menu-less long after the
+     database came back. */
+  if (result.degraded) {
+    return NextResponse.json(
+      { ...payload, degraded: true },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
   /* Short edge TTL on purpose: this drives the shop menu, and an admin who has
      just filled a new category should not wait an hour to see it there. The
      stale window keeps it cheap. */
-  return applyPublicCache(NextResponse.json({ success: true, categories: [...categories, ...topLevelRegistry] }), {
+  return applyPublicCache(NextResponse.json(payload), {
     maxAge: 60,
     sMaxAge: 300,
     staleWhileRevalidate: 86400,
