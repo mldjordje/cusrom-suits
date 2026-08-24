@@ -15,12 +15,6 @@ export default async function StorefrontTrustStrip({
   const primaryStore = (await getSiteContent()).stores[0];
   const items = [
     {
-      title: isEn ? "Direct confirmation" : "Direktna potvrda",
-      body: isEn
-        ? "Every order goes to the team first, so availability and sizing get confirmed before anything moves further."
-        : "Svaka porudzbina prvo ide timu, pa se dostupnost i velicina potvrde pre sledeceg koraka.",
-    },
-    {
       title: isEn ? "Showroom support" : "Showroom podrska",
       body: isEn
         ? `Need help? Visit ${primaryStore?.cityEn || primaryStore?.city || "our store"} or call us for quick guidance.`
@@ -68,7 +62,7 @@ export default async function StorefrontTrustStrip({
 
         <div className="row g-3">
           {items.map((item) => (
-            <div key={item.title} className="col-12 col-lg-4">
+            <div key={item.title} className="col-12 col-lg-6">
               <div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}>
                 <p
                   className="text-uppercase fw-medium mb-2"
