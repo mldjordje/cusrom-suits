@@ -195,6 +195,9 @@ export default async function WebShopView({
     localizeDynamicStorefrontText(value, isEn ? "en" : "sr", fallbackEn);
   const localizeCategory = (value: string) => localizeDynamicCategoryLabel(value, isEn ? "en" : "sr");
 
+  /* An outage must not render as an empty catalogue: the shop shows a temporary
+     notice, and the page asks robots not to index the empty state. */
+  const catalogUnavailable = Boolean(result.degraded);
   const items = sortItems(result.items, sort);
   const sortedCategoryGroups = sortCategoriesForShop(result.categoryGroups);
 
@@ -819,7 +822,9 @@ export default async function WebShopView({
                   <h1 className="ss-shop-gallery__title">
                     {categoryLock
                       ? categoryPageLabel
-                      : items.length === 0
+                      : catalogUnavailable
+                        ? isEn ? "Web shop" : "Web Shop"
+                        : items.length === 0
                         ? isEn ? "No products found" : "Nema pronadjenih proizvoda"
                         : q.trim()
                           ? `"${q.trim()}"`
@@ -833,12 +838,35 @@ export default async function WebShopView({
                     <p className="ss-shop-gallery__lead">{categoryLead}</p>
                   ) : null}
                 </div>
-                <p className="ss-shop-gallery__meta">
-                  {items.length} / {result.total} {isEn ? "products" : "proizvoda"}
-                </p>
+                {catalogUnavailable ? null : (
+                  <p className="ss-shop-gallery__meta">
+                    {items.length} / {result.total} {isEn ? "products" : "proizvoda"}
+                  </p>
+                )}
               </div>
 
-              {items.length === 0 ? (
+              {catalogUnavailable ? (
+                /* The catalog could not be read at all (see CatalogListResult.degraded).
+                   Saying "no products match your filters" here would blame the shopper's
+                   filters for an outage and tell search engines the shop is empty. */
+                <div className="ss-shop-empty-state">
+                  <div className="ss-shop-empty-state__card">
+                    <p className="ss-shop-empty-state__eyebrow">
+                      {isEn ? "Temporarily unavailable" : "Trenutno nedostupno"}
+                    </p>
+                    <h3>
+                      {isEn
+                        ? "The product catalogue is temporarily unavailable."
+                        : "Katalog proizvoda je trenutno nedostupan."}
+                    </h3>
+                    <p>
+                      {isEn
+                        ? "We are working on it. Please try again in a few minutes."
+                        : "Radimo na tome. Pokusajte ponovo za nekoliko minuta."}
+                    </p>
+                  </div>
+                </div>
+              ) : items.length === 0 ? (
                 <div className="ss-shop-empty-state">
                   <div className="ss-shop-empty-state__card">
                     <p className="ss-shop-empty-state__eyebrow">{isEn ? "No results" : "Nema rezultata"}</p>

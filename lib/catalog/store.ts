@@ -14,6 +14,7 @@ import {
 } from "@/lib/catalog/promotions";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { revalidateTag, unstable_cache } from "next/cache";
+import { fetchSharedCatalogSnapshot } from "@/lib/catalog/sharedSnapshot";
 import { parseProductMediaOrder, type ProductMediaItem } from "@/lib/catalog/productMediaOrder";
 import { getAutoGroupSettings } from "@/lib/catalog/categories";
 
@@ -126,6 +127,11 @@ export type CatalogListResult = {
   categories: CatalogCategory[];
   categoryGroups: CatalogCategoryGroup[];
   priceRange: { min: number; max: number };
+  /* True when the catalog could not be read at all — Supabase unreachable or
+     restricted, and the on-disk fallback held nothing either. Callers must show
+     an outage state instead of "no products match your filters", which is what
+     an empty result otherwise looks like. */
+  degraded?: boolean;
 };
 
 export type CatalogListInput = {
@@ -181,6 +187,10 @@ type ImageReachabilityCacheEntry = {
 const clamp = (value: number, min: number, max: number) => Math.max(min, Math.min(max, value));
 const CATALOG_SNAPSHOT_TTL_MS = 1_800_000; // 30 min — reduces cold-start Supabase hits on Vercel
 const CATALOG_LIST_TTL_MS = 1_800_000;
+/* A degraded (catalog-unreadable) result must not sit in the cache for the full
+   half hour: once the database answers again the shop would still serve an empty
+   page per instance until the entry expired. */
+const CATALOG_DEGRADED_TTL_MS = 30_000;
 const CATALOG_LIST_CACHE_MAX_ENTRIES = 220;
 const CATALOG_LIST_CACHE_VERSION = "v6";
 const IMAGE_REACHABILITY_TTL_MS = 3_600_000;
@@ -431,7 +441,7 @@ const parseCategories = (rawPayload: Record<string, unknown> | null | undefined)
     .filter((cat): cat is CatalogCategory => Boolean(cat));
 };
 
-const compactRawPayload = (
+export const compactRawPayload = (
   rawPayload: Record<string, unknown> | null | undefined,
 ): Record<string, unknown> => {
   const source = rawPayload && typeof rawPayload === "object" ? rawPayload : {};
@@ -1733,6 +1743,79 @@ const sortCatalogProducts = (
   });
 };
 
+/* Keys compactRawPayload keeps. The snapshot query selects exactly these out of
+   raw_payload instead of the whole column: everything else in there (legacyRaw,
+   stockWarehouses and the rest of the mOffice/legacy record) is discarded the
+   moment it arrives, so transferring it is pure egress cost — and this query
+   pulls every product row on every cold start. Keep this list in step with
+   compactRawPayload; a key missing here arrives undefined and is dropped. */
+export const RAW_PAYLOAD_LIST_KEYS = [
+  "categories",
+  "landing",
+  "attributes",
+  "media",
+  "seo",
+  "washCareIcons",
+  "declaration",
+  "packageWeightKg",
+  "forcedCategoryGroups",
+  "excludedCategoryGroups",
+  "hiddenFromShop",
+  "ananasExport",
+  "productType",
+  "source",
+  "moffice",
+  "syncSource",
+  "imageFallback",
+] as const;
+
+const RAW_PAYLOAD_ALIAS_PREFIX = "rp_";
+const CATALOG_ROW_COLUMNS =
+  "legacy_id,sku,ean,manuf_code,brand,is_active,is_exported,name_sr,name_en,description_sr,description_en,specification_sr,specification_en,price_gross,price_final_gross,tax_percent,rebate_percent,stock_warehouse_1,stock_total";
+/* Full column, used by the single-product read and as the fallback if a server
+   rejects the JSON-key projection below. */
+const CATALOG_SELECT_WITH_RAW_PAYLOAD = `${CATALOG_ROW_COLUMNS},raw_payload`;
+export const CATALOG_SELECT_TRIMMED_PAYLOAD = [
+  CATALOG_ROW_COLUMNS,
+  ...RAW_PAYLOAD_LIST_KEYS.map((key) => `${RAW_PAYLOAD_ALIAS_PREFIX}${key}:raw_payload->${key}`),
+].join(",");
+
+/**
+ * Whether an error says the select itself was not understood — an undefined
+ * column (42703) or a PostgREST parse failure. Only those are worth retrying
+ * with the full raw_payload column.
+ *
+ * The distinction matters: retrying on every error means an unreachable or
+ * restricted database gets asked a second time, in the heavier form, for every
+ * page of every snapshot — which is exactly the traffic this projection exists
+ * to remove.
+ */
+export const isSelectShapeError = (error: { code?: string | null; message?: string | null }) => {
+  const code = String(error?.code || "");
+  if (code === "42703" || code.startsWith("PGRST1")) return true;
+  const message = String(error?.message || "").toLowerCase();
+  return message.includes("does not exist") || message.includes("failed to parse select");
+};
+
+/* Turns the rp_* aliases back into the raw_payload object the rest of the module
+   expects. Rows that already carry raw_payload (full select) pass through. */
+export const rehydrateRawPayloadAliases = (row: Record<string, unknown>): Record<string, unknown> => {
+  if (row.raw_payload && typeof row.raw_payload === "object") return row;
+
+  const rawPayload: Record<string, unknown> = {};
+  const rest: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(row)) {
+    if (!key.startsWith(RAW_PAYLOAD_ALIAS_PREFIX)) {
+      rest[key] = value;
+      continue;
+    }
+    if (value === null || value === undefined) continue;
+    rawPayload[key.slice(RAW_PAYLOAD_ALIAS_PREFIX.length)] = value;
+  }
+  rest.raw_payload = rawPayload;
+  return rest;
+};
+
 async function fetchCatalogSnapshotFromSupabase(filters: {
   activeOnly: boolean;
   exportOnly: boolean;
@@ -1742,21 +1825,36 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
 
   const pageSize = 1000;
   const products: Record<string, unknown>[] = [];
+  /* Flipped for the rest of the run if the trimmed projection is rejected, so a
+     PostgREST version that cannot alias JSON keys degrades to the old behaviour
+     (correct, just chattier) instead of emptying the shop. */
+  let useTrimmedPayload = true;
   for (let from = 0; ; from += pageSize) {
     const to = from + pageSize - 1;
-    let query = supabase
-      .from("catalog_products")
-      .select(
-        "legacy_id,sku,ean,manuf_code,brand,is_active,is_exported,name_sr,name_en,description_sr,description_en,specification_sr,specification_en,price_gross,price_final_gross,tax_percent,rebate_percent,stock_warehouse_1,stock_total,raw_payload",
-      )
-      .order("legacy_id", { ascending: true });
 
-    if (filters.activeOnly) query = query.eq("is_active", true);
-    if (filters.exportOnly) query = query.eq("is_exported", true);
+    const runQuery = (select: string) => {
+      let query = supabase
+        .from("catalog_products")
+        .select(select)
+        .order("legacy_id", { ascending: true });
+      if (filters.activeOnly) query = query.eq("is_active", true);
+      if (filters.exportOnly) query = query.eq("is_exported", true);
+      return query.range(from, to);
+    };
 
-    const { data, error } = await query.range(from, to);
+    let { data, error } = await runQuery(
+      useTrimmedPayload ? CATALOG_SELECT_TRIMMED_PAYLOAD : CATALOG_SELECT_WITH_RAW_PAYLOAD,
+    );
+    if (error && useTrimmedPayload && isSelectShapeError(error)) {
+      console.warn(
+        "[catalog] trimmed raw_payload projection rejected, falling back to the full column:",
+        error.message,
+      );
+      useTrimmedPayload = false;
+      ({ data, error } = await runQuery(CATALOG_SELECT_WITH_RAW_PAYLOAD));
+    }
     if (error) return null;
-    const batch = (data || []) as Record<string, unknown>[];
+    const batch = ((data || []) as Record<string, unknown>[]).map(rehydrateRawPayloadAliases);
     products.push(...batch);
     if (batch.length < pageSize) break;
   }
@@ -1810,10 +1908,21 @@ async function fetchCatalogSnapshotFromSupabase(filters: {
   });
 }
 
-async function loadFromSupabase(filters: {
-  activeOnly: boolean;
-  exportOnly: boolean;
-}): Promise<CatalogProductView[] | null> {
+/**
+ * The catalog snapshot, from the cheapest source that can supply it.
+ *
+ * Note on caching: Next.js unstable_cache has a hard per-item size limit (~2MB)
+ * and the snapshot goes well past it, which caused unhandled rejections. Hence
+ * the in-memory TTL cache here, and the shared endpoint below for the reads that
+ * this cache cannot absorb — the ones on a cold instance, which is most of them.
+ *
+ * @param allowShared pass false to force a direct read. The endpoint backing the
+ *   shared snapshot uses this to serve its own body without calling itself.
+ */
+async function loadCatalogSnapshot(
+  filters: { activeOnly: boolean; exportOnly: boolean },
+  { allowShared = true }: { allowShared?: boolean } = {},
+): Promise<CatalogProductView[] | null> {
   const supabase = getServiceSupabase() || getAnonSupabase();
   if (!supabase) return null;
 
@@ -1825,17 +1934,12 @@ async function loadFromSupabase(filters: {
   }
 
   try {
-    const shouldBypassPersistentCache = getCatalogCacheBypassUntil() > Date.now();
-    let items: CatalogProductView[] | null = null;
-
-    // Next.js unstable_cache has a hard per-item size limit (~2MB). Our admin snapshots
-    // can exceed that significantly, which may trigger unhandled rejections in dev/prod.
-    // Use direct Supabase fetch + in-memory TTL cache for reliability.
-    if (shouldBypassPersistentCache) {
-      items = await fetchCatalogSnapshotFromSupabase(filters);
-    } else {
-      items = await fetchCatalogSnapshotFromSupabase(filters);
-    }
+    /* Right after an admin write the CDN copy is by definition behind, so the
+       bypass window reads straight from the database. */
+    const bypassSharedSnapshot = getCatalogCacheBypassUntil() > Date.now();
+    const items =
+      (allowShared && !bypassSharedSnapshot ? await fetchSharedCatalogSnapshot(filters) : null) ||
+      (await fetchCatalogSnapshotFromSupabase(filters));
 
     if (!items) return null;
     cache.set(cacheKey, {
@@ -1846,6 +1950,21 @@ async function loadFromSupabase(filters: {
   } catch {
     return null;
   }
+}
+
+async function loadFromSupabase(filters: {
+  activeOnly: boolean;
+  exportOnly: boolean;
+}): Promise<CatalogProductView[] | null> {
+  return loadCatalogSnapshot(filters);
+}
+
+/** Snapshot for /api/internal/catalog-snapshot, read straight from the database. */
+export async function loadCatalogSnapshotDirect(filters: {
+  activeOnly: boolean;
+  exportOnly: boolean;
+}): Promise<CatalogProductView[] | null> {
+  return loadCatalogSnapshot(filters, { allowShared: false });
 }
 
 async function loadFromFile(): Promise<CatalogProductView[]> {
@@ -1961,6 +2080,9 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
   const baseItems = supabaseItems || (await loadFromFile());
   const loadMs = Date.now() - loadStart;
   const source: "supabase" | "file" = supabaseItems ? "supabase" : "file";
+  /* Supabase gave us nothing and the on-disk fallback is empty too, so this is an
+     outage rather than a catalog that genuinely has no matching products. */
+  const degraded = !supabaseItems && baseItems.length === 0;
 
   const promoStart = Date.now();
   const promotionRules = applyPromotions ? await listPromotionRulesCached() : [];
@@ -2053,11 +2175,12 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     categories,
     categoryGroups,
     priceRange,
+    ...(degraded ? { degraded: true } : {}),
   };
 
   listCache.set(cacheKey, {
     value: result,
-    expiresAt: Date.now() + CATALOG_LIST_TTL_MS,
+    expiresAt: Date.now() + (degraded ? CATALOG_DEGRADED_TTL_MS : CATALOG_LIST_TTL_MS),
     source,
   });
   while (listCache.size > CATALOG_LIST_CACHE_MAX_ENTRIES) {
@@ -2193,9 +2316,7 @@ async function fetchCatalogProductByLegacyIdFromSupabase(
 
   const { data: row } = await supabase
     .from("catalog_products")
-    .select(
-      "legacy_id,sku,ean,manuf_code,brand,is_active,is_exported,name_sr,name_en,description_sr,description_en,specification_sr,specification_en,price_gross,price_final_gross,tax_percent,rebate_percent,stock_warehouse_1,stock_total,raw_payload",
-    )
+    .select(CATALOG_SELECT_WITH_RAW_PAYLOAD)
     .eq("legacy_id", legacyId)
     .maybeSingle();
 
