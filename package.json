@@ -33,8 +33,7 @@
         "import:legacy-catalog": "node scripts/import-legacy-catalog-to-supabase.mjs",
         "extract:legacy-content": "node scripts/extract-legacy-content.mjs",
         "import:legacy-content": "node scripts/import-legacy-content-to-supabase.mjs",
-        "check:supabase-content": "node scripts/check-supabase-content-schema.mjs",
-        "verify:catalog-projection": "node scripts/verify-catalog-projection.mjs"
+        "check:supabase-content": "node scripts/check-supabase-content-schema.mjs"
     },
     "dependencies": {
         "@headlessui/react": "^2.2.9",
