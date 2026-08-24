@@ -19,7 +19,19 @@ import {
   getOrderedGridEntries,
   type LandingGridOrderRef,
 } from "@/lib/catalog/landingSectionOrder";
-import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
+import { isBusinessUniformProduct, isFootwearProduct } from "@/lib/catalog/productTypes";
+import {
+  EMPTY_SHOE_SPEC,
+  SHOE_INSOLE_OPTIONS,
+  SHOE_LINING_OPTIONS,
+  SHOE_SIZE_LADDER,
+  SHOE_SOLE_OPTIONS,
+  SHOE_UPPER_OPTIONS,
+  getShoeSpec,
+  shoeMaterialSummary,
+  shoeTotalStock,
+  type ShoeSpec,
+} from "@/lib/catalog/shoeSpecs";
 import {
   PRODUCT_IMAGE_ACCEPT,
   PRODUCT_VIDEO_ACCEPT,
@@ -111,6 +123,8 @@ type ProductDraft = {
   coverImage: string;
   businessUniform: boolean;
   priceOverride: boolean;
+  footwear: boolean;
+  shoe: ShoeSpec;
 };
 type Pagination = { page: number; pageSize: number; total: number; totalPages: number };
 type CreateDraft = {
@@ -132,6 +146,8 @@ type CreateDraft = {
   landingPriority: string;
   videoUrl: string;
   businessUniform: boolean;
+  footwear: boolean;
+  shoe: ShoeSpec;
 };
 type LandingDocument = {
   title: string;
@@ -349,6 +365,8 @@ const defaultCreateDraft: CreateDraft = {
   landingPriority: "",
   videoUrl: "",
   businessUniform: false,
+  footwear: false,
+  shoe: EMPTY_SHOE_SPEC,
 };
 
 const defaultLandingSettings: LandingSettings = {
@@ -762,7 +780,146 @@ const toDraft = (item: CatalogProduct): ProductDraft => {
     coverImage: item.rawPayload?.imageFallback ? "" : item.coverImage || item.images?.[0] || "",
     businessUniform: isBusinessUniformProduct(item),
     priceOverride: Boolean((item.rawPayload?.commerceOverrides as Record<string, unknown> | undefined)?.price),
+    footwear: isFootwearProduct(item),
+    shoe: getShoeSpec(item.rawPayload) ?? EMPTY_SHOE_SPEC,
   };
+};
+
+/**
+ * Footwear form. Shoes are sized by an EU number plus an insole length in cm,
+ * and described by four separate materials — none of which fits the single
+ * free-text "specification" box the garments use.
+ *
+ * The ladder is a tick list rather than free entry so two people entering the
+ * same model cannot produce "42" and "42 " as different sizes.
+ */
+const ShoeSpecEditor = ({
+  value,
+  onChange,
+  onApplyStock,
+}: {
+  value: ShoeSpec;
+  onChange: (next: ShoeSpec) => void;
+  onApplyStock?: (total: number) => void;
+}) => {
+  const byLabel = new Map(value.sizes.map((entry) => [entry.size, entry]));
+  const total = shoeTotalStock(value);
+
+  const toggleSize = (size: string, on: boolean) => {
+    const next = on
+      ? [...value.sizes, { size, insoleCm: "", stock: 1 }]
+      : value.sizes.filter((entry) => entry.size !== size);
+    next.sort((a, b) => Number(a.size) - Number(b.size));
+    onChange({ ...value, sizes: next });
+  };
+
+  const patchSize = (size: string, patch: Partial<{ insoleCm: string; stock: number }>) => {
+    onChange({
+      ...value,
+      sizes: value.sizes.map((entry) => (entry.size === size ? { ...entry, ...patch } : entry)),
+    });
+  };
+
+  const materialField = (
+    key: "upper" | "lining" | "sole" | "insole",
+    label: string,
+    options: readonly string[],
+  ) => (
+    <label className="flex flex-col gap-1">
+      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">{label}</span>
+      <input
+        list={`shoe-${key}-options`}
+        value={value[key]}
+        onChange={(e) => onChange({ ...value, [key]: e.target.value })}
+        placeholder={options[0]}
+        className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+      />
+      <datalist id={`shoe-${key}-options`}>
+        {options.map((option) => (
+          <option key={option} value={option} />
+        ))}
+      </datalist>
+    </label>
+  );
+
+  return (
+    <div className="rounded-2xl border border-orange-200 bg-orange-50/60 p-3">
+      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-orange-800">Obuća — brojevi i materijal</p>
+      <p className="mt-1 text-xs text-orange-900/80">
+        Štiklirajte brojeve koje imate na stanju i upišite dužinu gazišta u cm za svaki. Kupac na sajtu dobija
+        tabelu &bdquo;Ovaj model&ldquo; iznad opšte tabele obuće.
+      </p>
+
+      <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+        {SHOE_SIZE_LADDER.map((size) => {
+          const entry = byLabel.get(size);
+          const on = Boolean(entry);
+          return (
+            <div
+              key={size}
+              className={`rounded-xl border px-2.5 py-2 ${on ? "border-orange-300 bg-white" : "border-slate-200 bg-white/60"}`}
+            >
+              <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                <input type="checkbox" checked={on} onChange={(e) => toggleSize(size, e.target.checked)} />
+                Broj {size}
+              </label>
+              {entry ? (
+                <div className="mt-2 grid grid-cols-2 gap-2">
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Gazište (cm)</span>
+                    <input
+                      inputMode="decimal"
+                      value={entry.insoleCm}
+                      onChange={(e) => patchSize(size, { insoleCm: e.target.value })}
+                      placeholder="26.5"
+                      className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                    />
+                  </label>
+                  <label className="flex flex-col gap-1">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.1em] text-slate-500">Lager</span>
+                    <input
+                      type="number"
+                      min="0"
+                      inputMode="numeric"
+                      value={entry.stock}
+                      onChange={(e) => patchSize(size, { stock: Number(e.target.value) || 0 })}
+                      className="rounded-lg border border-slate-200 px-2 py-1.5 text-sm"
+                    />
+                  </label>
+                </div>
+              ) : null}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+        <span className="font-semibold">Ukupno pari: {total}</span>
+        {onApplyStock ? (
+          <button
+            type="button"
+            onClick={() => onApplyStock(total)}
+            className="rounded-full border border-orange-300 bg-white px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-orange-800"
+          >
+            Upiši u lager
+          </button>
+        ) : null}
+      </div>
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2">
+        {materialField("upper", "Lice", SHOE_UPPER_OPTIONS)}
+        {materialField("lining", "Postava", SHOE_LINING_OPTIONS)}
+        {materialField("sole", "Đon", SHOE_SOLE_OPTIONS)}
+        {materialField("insole", "Tabanica", SHOE_INSOLE_OPTIONS)}
+      </div>
+
+      {shoeMaterialSummary(value) ? (
+        <p className="mt-2 rounded-lg bg-white px-2.5 py-2 text-[11px] text-slate-600">
+          Deklaracija na sajtu: <span className="font-semibold">{shoeMaterialSummary(value)}</span>
+        </p>
+      ) : null}
+    </div>
+  );
 };
 
 const WashCareAdminPreview = ({ icons }: { icons: WashCareSymbolKey[] }) => {
@@ -1859,6 +2016,8 @@ export default function AdminWebshopPage() {
           images: draft.images,
           coverImage: draft.coverImage || draft.images[0] || null,
           businessUniform: draft.businessUniform,
+          footwear: draft.footwear,
+          shoe: draft.footwear ? draft.shoe : null,
           seo: {
             seoTitle: draft.seoTitle.trim(),
             metaDescription: draft.metaDescription.trim(),
@@ -1866,7 +2025,9 @@ export default function AdminWebshopPage() {
             occasionTags: parseCsvDraftList(draft.occasionTags),
             styleTags: parseCsvDraftList(draft.styleTags),
             fit: draft.fit.trim(),
-            material: draft.material.trim(),
+            material: draft.footwear
+              ? shoeMaterialSummary(draft.shoe) || draft.material.trim()
+              : draft.material.trim(),
             color: draft.color.trim(),
             targetUse: draft.targetUse.trim(),
             faq: parseFaqDraftText(draft.faqText),
@@ -1910,7 +2071,10 @@ export default function AdminWebshopPage() {
             categoryPath: category?.path ?? null,
             brand: createDraft.brand || null,
             description: createDraft.description.trim() || null,
-            specification: createDraft.specification.trim() || null,
+            specification:
+              createDraft.specification.trim() ||
+              (createDraft.footwear ? shoeMaterialSummary(createDraft.shoe) : "") ||
+              null,
             priceGross: toNumberOrNull(createDraft.priceGross) ?? 0,
             priceFinalGross: toNumberOrNull(createDraft.priceFinalGross) ?? 0,
             rebatePercent: toNumberOrNull(createDraft.rebatePercent) ?? 0,
@@ -1921,6 +2085,8 @@ export default function AdminWebshopPage() {
             images: createImages,
             videoUrl: createDraft.videoUrl.trim() || null,
             businessUniform: createDraft.businessUniform,
+            footwear: createDraft.footwear,
+            shoe: createDraft.footwear ? createDraft.shoe : null,
             isActive: createDraft.isActive,
             isExported: createDraft.isExported,
             landingFeatured: createDraft.landingFeatured,
@@ -2827,6 +2993,42 @@ export default function AdminWebshopPage() {
               <input value={createDraft.name} onChange={(e) => setCreateDraft((p) => ({ ...p, name: e.target.value }))} placeholder="Naziv proizvoda*" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
               <textarea value={createDraft.description} onChange={(e) => setCreateDraft((p) => ({ ...p, description: e.target.value }))} rows={3} placeholder="Opis proizvoda za web shop" className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
               <textarea value={createDraft.specification} onChange={(e) => setCreateDraft((p) => ({ ...p, specification: e.target.value }))} rows={3} placeholder="Specifikacija, materijal, dimenzije..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2" />
+              <label className="text-xs font-medium text-slate-600 md:col-span-2">
+                Tip artikla
+                <select
+                  value={createDraft.businessUniform ? "uniform" : createDraft.footwear ? "footwear" : "apparel"}
+                  onChange={(e) => {
+                    const kind = e.target.value;
+                    setCreateDraft((p) => ({
+                      ...p,
+                      footwear: kind === "footwear",
+                      businessUniform: kind === "uniform",
+                      ...(kind === "uniform"
+                        ? { priceGross: "0", priceFinalGross: "0", rebatePercent: "0", stockWarehouse1: "0", stockTotal: "0" }
+                        : {}),
+                    }));
+                  }}
+                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                >
+                  <option value="apparel">Odeća (odelo, sako, košulja...)</option>
+                  <option value="footwear">Obuća / cipele</option>
+                  <option value="uniform">Poslovna uniforma (bez cene i lagera)</option>
+                </select>
+                <span className="mt-1 block text-[11px] text-slate-500">
+                  Obuća dobija svoja polja za brojeve, dužinu gazišta i materijal.
+                </span>
+              </label>
+              {createDraft.footwear ? (
+                <div className="md:col-span-6">
+                  <ShoeSpecEditor
+                    value={createDraft.shoe}
+                    onChange={(shoe) => setCreateDraft((p) => ({ ...p, shoe }))}
+                    onApplyStock={(total) =>
+                      setCreateDraft((p) => ({ ...p, stockTotal: String(total), stockWarehouse1: String(total) }))
+                    }
+                  />
+                </div>
+              ) : null}
               <select value={createDraft.categoryId} onChange={(e) => setCreateDraft((p) => ({ ...p, categoryId: e.target.value }))} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
                 <option value="">Bez kategorije</option>
                 {categories.map((c) => (
@@ -3010,28 +3212,6 @@ export default function AdminWebshopPage() {
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-3">
-              <label className="inline-flex items-center gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={createDraft.businessUniform}
-                  onChange={(e) =>
-                    setCreateDraft((p) => ({
-                      ...p,
-                      businessUniform: e.target.checked,
-                      ...(e.target.checked
-                        ? {
-                            priceGross: "0",
-                            priceFinalGross: "0",
-                            rebatePercent: "0",
-                            stockWarehouse1: "0",
-                            stockTotal: "0",
-                          }
-                        : {}),
-                    }))
-                  }
-                />
-                Poslovna uniforma (bez cene i lagera)
-              </label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={createDraft.isActive} onChange={(e) => setCreateDraft((p) => ({ ...p, isActive: e.target.checked }))} />Aktivan (vidljiv na sajtu)</label>
               <label className="inline-flex items-center gap-2 text-sm"><input type="checkbox" checked={createDraft.isExported} onChange={(e) => setCreateDraft((p) => ({ ...p, isExported: e.target.checked }))} />Export (sinhronizacija)</label>
               <button onClick={createProduct} disabled={creating} className="rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-emerald-700">{creating ? "Kreiranje..." : "Kreiraj proizvod"}</button>
@@ -4422,6 +4602,33 @@ export default function AdminWebshopPage() {
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Specifikacija / materijal</span>
                 <textarea value={drafts[currentEditorItem.legacyId]?.specification || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { specification: e.target.value })} rows={3} placeholder="Materijal, kroj, dimenzije, napomene iz radnje..." className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
               </label>
+              <div className="md:col-span-2">
+                <label className="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(drafts[currentEditorItem.legacyId]?.footwear)}
+                    onChange={(e) => updateDraft(currentEditorItem.legacyId, { footwear: e.target.checked })}
+                  />
+                  Ovo je obuća (cipele)
+                </label>
+                <p className="mt-1 text-[11px] text-slate-500">
+                  Uključivanjem artikal dobija tabelu brojeva i dužine gazišta umesto tabele za odeću.
+                </p>
+                {drafts[currentEditorItem.legacyId]?.footwear ? (
+                  <div className="mt-3">
+                    <ShoeSpecEditor
+                      value={drafts[currentEditorItem.legacyId]?.shoe ?? EMPTY_SHOE_SPEC}
+                      onChange={(shoe) => updateDraft(currentEditorItem.legacyId, { shoe })}
+                      onApplyStock={(total) =>
+                        updateDraft(currentEditorItem.legacyId, {
+                          stockTotal: String(total),
+                          stockWarehouse1: String(total),
+                        })
+                      }
+                    />
+                  </div>
+                ) : null}
+              </div>
               <div className="md:col-span-2 rounded-2xl border border-amber-200 bg-amber-50/60 p-3">
                 <div className="mb-3">
                   <p className="text-xs font-semibold uppercase tracking-[0.14em] text-amber-800">SEO / AI preporuke</p>

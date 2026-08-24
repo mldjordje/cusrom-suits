@@ -10,6 +10,12 @@ import {
   type SizeGuideGroup,
   type SizeGuideTable,
 } from "@/lib/catalog/sizeGuides";
+import { isFootwearProduct } from "@/lib/catalog/productTypes";
+import {
+  getShoeSpec,
+  shoeMaterialSummary,
+  shoeSpecToSizeGuideTable,
+} from "@/lib/catalog/shoeSpecs";
 import type { CatalogProductView } from "@/lib/catalog/store";
 import {
   getLocalizedWashCareItems,
@@ -273,6 +279,12 @@ const foldLatinSrForMatch = (value: string) =>
     .replace(/ž/g, "z");
 
 const getProductGroups = (product: CatalogProductView): SizeGuideGroup[] => {
+  /* A shoe measures nothing a jacket table describes, so an explicitly marked
+     pair gets the footwear table alone. Without the short-circuit a model named
+     after its last ("Derbi 042") matched none of the regexes and was handed
+     every table in the guide. */
+  if (isFootwearProduct(product)) return ["shoes"];
+
   const haystack = foldLatinSrForMatch(getProductHaystack(product));
   const groups = new Set<SizeGuideGroup>();
   const isSuit = /odel|suit/.test(haystack);
@@ -473,6 +485,11 @@ export const getProductMaterial = (
   product: CatalogProductView,
   lang: StorefrontLanguage,
 ) => {
+  /* Footwear carries a structured breakdown (upper / lining / sole / footbed).
+     It is more precise than the free-text specification, so it wins. */
+  const shoeMaterial = shoeMaterialSummary(getShoeSpec(product.rawPayload), lang === "en" ? "en" : "sr");
+  if (shoeMaterial) return shoeMaterial;
+
   const specification = stripHtml(getLocalizedCatalogSpecification(product, lang));
   if (specification.length > 0 && specification.length <= 140) {
     return specification;
@@ -611,7 +628,17 @@ export const getProductSizeGuide = async (
     return table.fit === fit;
   });
 
-  const visibleTables = tables.length ? tables : relevantTables;
+  const baseTables = tables.length ? tables : relevantTables;
+
+  /* Insole lengths typed for this exact model beat the generic shoes table:
+     lasts differ, and a 42 in one model is not a 42 in the next. The global
+     table stays below it as the cross-model reference. */
+  const modelTable = shoeSpecToSizeGuideTable(
+    getShoeSpec(product.rawPayload),
+    product.legacyId,
+    lang === "en" ? "en" : "sr",
+  );
+  const visibleTables = modelTable ? [modelTable, ...baseTables] : baseTables;
 
   return {
     title: lang === "en" ? "How to determine your size" : "Kako da odredite velicinu",
