@@ -465,6 +465,9 @@ const compactRawPayload = (
   if (source.hiddenFromShop === true) compact.hiddenFromShop = true;
   if (source.ananasExport === true) compact.ananasExport = true;
   if (source.productType) compact.productType = source.productType;
+  /* Footwear size ladder + material breakdown. Dropping it here would have made
+     the admin's shoe form look saved and render nothing on the product page. */
+  if (source.shoe && typeof source.shoe === "object") compact.shoe = source.shoe;
   if (source.source) compact.source = source.source;
   if (source.moffice && typeof source.moffice === "object") compact.moffice = source.moffice;
   if (source.syncSource) compact.syncSource = source.syncSource;
@@ -603,6 +606,7 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
           ? { videoUrl: extractProductVideoUrl(item.raw as Record<string, unknown>) }
           : undefined,
     productType: item.raw?.productType,
+    shoe: item.raw?.shoe,
     washCareIcons: item.raw?.washCareIcons,
     declaration: item.raw?.declaration,
   }),

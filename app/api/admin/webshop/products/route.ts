@@ -9,7 +9,8 @@ import {
 } from "@/lib/catalog/store";
 import { getServiceSupabase } from "@/lib/supabase/server";
 import { readJsonFile, writeJsonFile } from "@/lib/storage/jsonStore";
-import { BUSINESS_UNIFORM_PRODUCT_TYPE } from "@/lib/catalog/productTypes";
+import { BUSINESS_UNIFORM_PRODUCT_TYPE, FOOTWEAR_PRODUCT_TYPE } from "@/lib/catalog/productTypes";
+import { normalizeShoeSpec, shoeSizeLabels, type ShoeSpec } from "@/lib/catalog/shoeSpecs";
 import type { LegacyCatalogProduct, LegacyCategory } from "@/lib/legacy/types";
 import { parseProductMediaOrder, type ProductMediaItem } from "@/lib/catalog/productMediaOrder";
 import { validateWashCareSymbolKeys, type WashCareSymbolKey } from "@/lib/catalog/washCare";
@@ -52,6 +53,10 @@ type ProductUpdatePayload = {
   /** Shipping weight in kg. Admin-only: never rendered on the storefront, used by the Ananas package payload. */
   packageWeightKg?: number | null;
   washCareIcons?: WashCareSymbolKey[] | null;
+  /** Marks the product as footwear, which switches the storefront size table. */
+  footwear?: boolean;
+  /** Footwear size ladder + material breakdown. null clears it. */
+  shoe?: ShoeSpec | null;
   seo?: {
     seoTitle?: string;
     metaDescription?: string;
@@ -90,6 +95,8 @@ type ProductCreatePayload = {
   coverImage?: string | null;
   videoUrl?: string | null;
   businessUniform?: boolean;
+  footwear?: boolean;
+  shoe?: ShoeSpec | null;
 };
 
 const hasOwn = (obj: Record<string, unknown>, key: string) =>
@@ -191,6 +198,8 @@ const parseUpdatePayload = (raw: unknown): ProductUpdatePayload | null => {
     if (!washCareIcons) return null;
     out.washCareIcons = washCareIcons;
   }
+  if (hasOwn(row, "footwear")) out.footwear = Boolean(row.footwear);
+  if (hasOwn(row, "shoe")) out.shoe = normalizeShoeSpec(row.shoe);
   if (hasOwn(row, "seo")) out.seo = parseSeoPayload(row.seo);
   return out;
 };
@@ -226,6 +235,8 @@ const parseCreatePayload = (raw: unknown): ProductCreatePayload | null => {
     coverImage: row.coverImage == null ? null : String(row.coverImage),
     videoUrl: row.videoUrl == null ? null : String(row.videoUrl || "").trim() || null,
     businessUniform: Boolean(row.businessUniform),
+    footwear: Boolean(row.footwear),
+    shoe: normalizeShoeSpec(row.shoe),
   };
 };
 
@@ -247,17 +258,57 @@ const normalizeLegacyCategory = (input: ProductCreatePayload): LegacyCategory[] 
   ];
 };
 
+/**
+ * productType is a single slot shared by every manual classification, so a save
+ * that only touched one of them must not wipe the other. Clearing on
+ * `businessUniform: false` unconditionally is what would have dropped the
+ * footwear flag on the next unrelated edit — the shoe would silently go back to
+ * being matched by its name.
+ */
 const withProductType = (
   rawPayload: Record<string, unknown>,
   businessUniform: boolean | undefined,
+  footwear?: boolean | undefined,
 ) => {
-  if (businessUniform === undefined) return rawPayload;
+  if (businessUniform === undefined && footwear === undefined) return rawPayload;
   const next = { ...rawPayload };
+  const current = String(next.productType || "");
+
   if (businessUniform) {
     next.productType = BUSINESS_UNIFORM_PRODUCT_TYPE;
-  } else {
-    delete next.productType;
+    return next;
   }
+  if (footwear) {
+    next.productType = FOOTWEAR_PRODUCT_TYPE;
+    return next;
+  }
+  if (businessUniform === false && current === BUSINESS_UNIFORM_PRODUCT_TYPE) delete next.productType;
+  if (footwear === false && current === FOOTWEAR_PRODUCT_TYPE) delete next.productType;
+  return next;
+};
+
+/**
+ * Manual footwear has no mOffice sibling rows to carry the sizes, so the ladder
+ * the admin ticked is mirrored into `attributes.size` — the one place
+ * `extractSizes()` reads. Without the mirror the product page renders no size
+ * selector at all.
+ */
+const withShoeAttributes = (
+  rawPayload: Record<string, unknown>,
+  shoe: ShoeSpec | null | undefined,
+) => {
+  if (shoe === undefined) return rawPayload;
+  const next = { ...rawPayload };
+  const attributes = {
+    ...((next.attributes && typeof next.attributes === "object"
+      ? next.attributes
+      : {}) as Record<string, unknown>),
+  };
+  const labels = shoeSizeLabels(shoe);
+  if (labels.length > 0) attributes.size = labels;
+  else delete attributes.size;
+  next.attributes = attributes;
+  next.shoe = shoe;
   return next;
 };
 
@@ -293,12 +344,18 @@ const applyUpdateToLegacyFile = async (patch: ProductUpdatePayload) => {
       ...(patch.declaration !== undefined ? { declaration: patch.declaration || null } : {}),
       ...(patch.packageWeightKg !== undefined ? { packageWeightKg: patch.packageWeightKg } : {}),
       ...(patch.washCareIcons !== undefined ? { washCareIcons: patch.washCareIcons } : {}),
+      ...(patch.shoe !== undefined ? { shoe: patch.shoe } : {}),
       ...(patch.seo !== undefined ? { seo: patch.seo } : {}),
     },
     patch.businessUniform,
+    patch.footwear,
   );
   const next: LegacyCatalogProduct = {
     ...current,
+    attributes:
+      patch.shoe !== undefined
+        ? { ...current.attributes, size: shoeSizeLabels(patch.shoe) }
+        : current.attributes,
     sku: patch.sku ?? current.sku,
     ean: patch.ean !== undefined ? patch.ean : current.ean,
     brand: patch.brand !== undefined ? patch.brand : current.brand,
@@ -368,7 +425,10 @@ const MODEL_LEVEL_RAW_KEYS: Array<{ touched: (patch: ProductUpdatePayload) => bo
   { touched: (patch) => patch.hiddenFromShop !== undefined, key: "hiddenFromShop" },
   { touched: (patch) => patch.videoUrl !== undefined || patch.mediaOrder !== undefined, key: "media" },
   { touched: (patch) => patch.landingFeatured !== undefined || patch.landingPriority !== undefined, key: "landing" },
-  { touched: (patch) => patch.businessUniform !== undefined, key: "productType" },
+  { touched: (patch) => patch.businessUniform !== undefined || patch.footwear !== undefined, key: "productType" },
+  /* The shoe block describes the model (materials, the whole size ladder), so a
+     SKU that does have sibling rows keeps one copy of it rather than five. */
+  { touched: (patch) => patch.shoe !== undefined, key: "shoe" },
 ];
 
 const propagateToSkuSiblings = async (
@@ -460,6 +520,8 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
     patch.washCareIcons !== undefined ||
     patch.hiddenFromShop !== undefined ||
     patch.ananasExport !== undefined ||
+    patch.footwear !== undefined ||
+    patch.shoe !== undefined ||
     patch.seo !== undefined
   ) {
     const { data: existing, error: rawError } = await supabase
@@ -515,6 +577,11 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
         ...(patch.seo !== undefined ? { seo: patch.seo || null } : {}),
       },
       patch.businessUniform,
+      patch.footwear,
+    );
+    update.raw_payload = withShoeAttributes(
+      update.raw_payload as Record<string, unknown>,
+      patch.shoe,
     );
   }
 
@@ -641,7 +708,7 @@ const createInLegacyFile = async (payload: ProductCreatePayload) => {
     images,
     coverImage,
     attributes: {
-      size: [],
+      size: shoeSizeLabels(payload.shoe ?? null),
     },
     raw: {
       taxId: 0,
@@ -655,7 +722,12 @@ const createInLegacyFile = async (payload: ProductCreatePayload) => {
       media: {
         videoUrl: payload.videoUrl ?? null,
       },
-      ...(payload.businessUniform ? { productType: BUSINESS_UNIFORM_PRODUCT_TYPE } : {}),
+      ...(payload.businessUniform
+        ? { productType: BUSINESS_UNIFORM_PRODUCT_TYPE }
+        : payload.footwear
+          ? { productType: FOOTWEAR_PRODUCT_TYPE }
+          : {}),
+      ...(payload.shoe ? { shoe: payload.shoe } : {}),
     },
   };
 
@@ -711,8 +783,13 @@ const createInSupabase = async (payload: ProductCreatePayload) => {
       media: {
         videoUrl: payload.videoUrl ?? null,
       },
-      ...(payload.businessUniform ? { productType: BUSINESS_UNIFORM_PRODUCT_TYPE } : {}),
-      attributes: {},
+      ...(payload.businessUniform
+        ? { productType: BUSINESS_UNIFORM_PRODUCT_TYPE }
+        : payload.footwear
+          ? { productType: FOOTWEAR_PRODUCT_TYPE }
+          : {}),
+      ...(payload.shoe ? { shoe: payload.shoe } : {}),
+      attributes: payload.shoe ? { size: shoeSizeLabels(payload.shoe) } : {},
       stockWarehouses: [],
       legacyRaw: {
         ts: now,
