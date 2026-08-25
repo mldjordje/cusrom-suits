@@ -2211,7 +2211,8 @@
 .ss-product-card .pc__img-wrapper {
   position: relative;
   overflow: hidden;
-  border-radius: 1.45rem;
+  /* Rounding clips the photo's corners, which is a visible edge. */
+  border-radius: 0;
   background: #fff;
   aspect-ratio: var(--ss-product-ratio, 1);
   /* The purchased template sizes this box with the old ratio hack
@@ -3445,7 +3446,10 @@
   aspect-ratio: var(--ss-product-ratio, 1);
   max-height: 76vh;
   background: #fff;
-  border: 1px solid rgba(24, 20, 20, 0.06);
+  /* No hairline and no rounding: the photo covers the stage edge to edge, and
+     any frame drawn around it is the artefact this change set removes. */
+  border: none;
+  border-radius: 0;
   overflow: hidden;
 }
 
@@ -8533,7 +8537,10 @@ button.ss-mobile-nav-quicklink,
 .ss-product-card .pc__img-wrapper,
 .ss-shop-main-section .ss-product-card .pc__img-wrapper,
 .ss-editorial-section .ss-product-card .pc__img-wrapper {
-  border-radius: var(--ss-card-radius);
+  /* This is the rule that actually reaches the card stage - it outranks the
+     base one, which is why the live grid still showed 6px rounded corners
+     after that was zeroed. Squared off so the photo runs to the edge. */
+  border-radius: 0;
   background: #fff;
   overflow: hidden;
 }
