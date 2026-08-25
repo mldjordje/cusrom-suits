@@ -7,6 +7,9 @@ import type { StorefrontLanguage } from "@/lib/storefront/language";
 import type { ProductSizeGuide } from "@/lib/storefront/product-details";
 import { computeRecommendedSize } from "@/lib/storefront/sizeRecommendation";
 
+/** Blank line separates paragraphs in the admin-written size-guide copy. */
+const SPLIT_PARAGRAPHS = /\n\s*\n/;
+
 type Props = {
   lang?: StorefrontLanguage;
   sizeGuide: ProductSizeGuide | null;
@@ -71,7 +74,9 @@ export default function ProductSizeGuideButton({
                   <div className="ss-size-guide-modal__header">
                     <div>
                       <p className="ss-size-guide-modal__eyebrow">
-                        {isEn ? "Fit helper" : "Pomoc za fit"}
+                        {sizeGuide.customText
+                          ? isEn ? "Good to know" : "Dobro je znati"
+                          : isEn ? "Fit helper" : "Pomoc za fit"}
                       </p>
                       <Dialog.Title className="ss-size-guide-modal__title">
                         {sizeGuide.modalTitle}
@@ -91,6 +96,21 @@ export default function ProductSizeGuideButton({
                   </div>
 
                   <div className="ss-size-guide-modal__body">
+                    {/* A category the admin switched to free text has no tables,
+                        no diagram and nothing to compute — it shows exactly the
+                        copy they wrote and stops. */}
+                    {sizeGuide.customText ? (
+                      <div className="ss-size-guide-modal__custom-text">
+                        {sizeGuide.customText
+                          .split(SPLIT_PARAGRAPHS)
+                          .map((paragraph) => paragraph.trim())
+                          .filter(Boolean)
+                          .map((paragraph, index) => (
+                            <p key={index}>{paragraph}</p>
+                          ))}
+                      </div>
+                    ) : null}
+
                     {sizeGuide.imageSrc ? (
                       <div className="ss-size-guide-modal__image-wrap">
                         <Image
@@ -103,11 +123,14 @@ export default function ProductSizeGuideButton({
                       </div>
                     ) : null}
 
-                    <div className="ss-size-guide-modal__intro">
-                      <h3>{sizeGuide.title}</h3>
-                      <p>{sizeGuide.intro}</p>
-                    </div>
+                    {sizeGuide.intro ? (
+                      <div className="ss-size-guide-modal__intro">
+                        <h3>{sizeGuide.title}</h3>
+                        <p>{sizeGuide.intro}</p>
+                      </div>
+                    ) : null}
 
+                    {sizeGuide.showRecommender ? (
                     <div className="ss-size-guide-recommender">
                       <div>
                         <h3>{isEn ? "Size recommendation" : "Preporuka velicine"}</h3>
@@ -159,6 +182,7 @@ export default function ProductSizeGuideButton({
                         </div>
                       ) : null}
                     </div>
+                    ) : null}
 
                     {sizeGuide.bullets.length ? (
                       <ul className="ss-size-guide-modal__bullets">

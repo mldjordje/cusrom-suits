@@ -21,6 +21,8 @@ import {
   getCatalogProductModelKey,
   filterReachableCatalogImages,
   listCatalogProducts,
+  getCatalogProductGroupKey,
+  normalizeCatalogCategoryGroupKey,
 } from "@/lib/catalog/store";
 import CompleteTheLook from "@/app/components/storefront/CompleteTheLook";
 import AddToCartButton from "@/app/components/storefront/cart/AddToCartButton";
@@ -30,6 +32,14 @@ import { BUNDLED_UNIFORM_IMAGES } from "@/lib/storefront/uniforms";
 import { resolveSelectedVariantPrice, calcDiscountPercent } from "@/lib/catalog/pricing";
 import { getFulfillmentSettings } from "@/lib/storefront/fulfillment";
 import { resolveProductMediaOrder } from "@/lib/catalog/productMediaOrder";
+import {
+  categoryImageStyle,
+  productCategoryContentKeys,
+  resolveCategoryContent,
+} from "@/lib/catalog/categoryContent";
+import {
+  getCategoryContentSettings,
+} from "@/lib/catalog/categoryContent.server";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { getSiteContent } from "@/lib/storefront/siteContent";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
@@ -445,6 +455,20 @@ export default async function WebShopProductPage({
       ? [product, ...variants, ...sizeVariants].find((variant) => variant.legacyId === selectedSizeOption.legacyId)
       : null) ||
     product;
+  /* Same stage settings the grid card uses, so a suit does not switch shape
+     between the listing and the detail page. The variables are set on the media
+     wrapper and inherited by the gallery's own rules. */
+  const galleryStageStyle = categoryImageStyle(
+    resolveCategoryContent(
+      await getCategoryContentSettings(),
+      productCategoryContentKeys(
+        product.categories,
+        normalizeCatalogCategoryGroupKey,
+        getCatalogProductGroupKey(product),
+      ),
+    ),
+  );
+
   const sizeGuide = await getProductSizeGuide(product, lang, sizeOptions);
   const showSizeGuide = productSupportsSizeGuide(product) && Boolean(sizeGuide?.tables.length);
   const declaration = getProductDeclaration(
@@ -608,7 +632,7 @@ export default async function WebShopProductPage({
         <Reveal as="section" className="product-single container">
           <div className="row g-0 g-lg-5 ss-pdp-row">
             <div className="col-lg-8 col-xl-8">
-              <div className="product-single__media" data-media-type="scroll-snap">
+              <div className="product-single__media" data-media-type="scroll-snap" style={galleryStageStyle}>
                 <ProductImageGallery images={gallery} name={displayName} videoUrl={productVideoUrl} media={orderedMedia} />
               </div>
               <div className="ss-product-tabs-under-media d-none d-lg-block">
@@ -749,18 +773,27 @@ export default async function WebShopProductPage({
                   </div>
                 ) : null}
 
-                <div className="ss-product-size-guide-row">
-                  <ProductSizeGuideButton lang={lang} sizeGuide={sizeGuide} />
-                  <p className="ss-product-size-guide-row__copy">
-                    {businessUniform
-                      ? isEn
-                        ? "Open the size table and compare measurements before sending an inquiry."
-                        : "Otvorite tabelu velicina i uporedite mere pre slanja upita."
-                      : isEn
-                        ? "Open the size table and compare measurements before adding the item to cart."
-                        : "Otvorite tabelu velicina i uporedite mere pre dodavanja artikla u korpu."}
-                  </p>
-                </div>
+                {/* The whole row goes when the category has no guide: cufflinks
+                    and belts were showing "open the size table" next to a button
+                    that no longer exists. */}
+                {sizeGuide ? (
+                  <div className="ss-product-size-guide-row">
+                    <ProductSizeGuideButton lang={lang} sizeGuide={sizeGuide} />
+                    <p className="ss-product-size-guide-row__copy">
+                      {sizeGuide.customText
+                        ? isEn
+                          ? "Everything worth knowing about this item before you order."
+                          : "Sve sto treba da znate o ovom artiklu pre porudzbine."
+                        : businessUniform
+                          ? isEn
+                            ? "Open the size table and compare measurements before sending an inquiry."
+                            : "Otvorite tabelu velicina i uporedite mere pre slanja upita."
+                          : isEn
+                            ? "Open the size table and compare measurements before adding the item to cart."
+                            : "Otvorite tabelu velicina i uporedite mere pre dodavanja artikla u korpu."}
+                    </p>
+                  </div>
+                ) : null}
 
                 <div className="product-single__addtocart">
                   <div className="d-flex flex-wrap gap-2 ss-product-cta-actions">

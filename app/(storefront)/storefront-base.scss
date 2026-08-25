@@ -1639,7 +1639,7 @@
 
 .ss-shop-main-section .ss-product-card .pc__img-wrapper {
   border-radius: 1.18rem;
-  background: #fff;
+  background: var(--ss-product-pad-bg, #fff);
 }
 
 .ss-shop-main-section .ss-shop-gallery__header {
@@ -2187,13 +2187,14 @@
   position: relative;
   aspect-ratio: var(--ss-product-ratio, 1);
   overflow: hidden;
+  background: var(--ss-product-pad-bg, #fff);
 }
 
 .ss-mobile-grid__img-wrapper .pc__img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: var(--ss-product-fit, cover);
+  object-position: var(--ss-product-position, center top);
 }
 
 .ss-uniform-tile {
@@ -2213,7 +2214,7 @@
   overflow: hidden;
   /* Rounding clips the photo's corners, which is a visible edge. */
   border-radius: 0;
-  background: #fff;
+  background: var(--ss-product-pad-bg, #fff);
   aspect-ratio: var(--ss-product-ratio, 1);
   /* The purchased template sizes this box with the old ratio hack
      (`.pc__img-wrapper { height: 0; padding-top: 121.212% }`). `aspect-ratio`
@@ -2330,17 +2331,17 @@
   transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.ss-product-card .pc__img.object-position-top {
-  object-position: center top;
-}
-
+/* The hover image has to track the primary one exactly, or a category set to
+   `contain` would snap to a cropped `cover` frame the moment the pointer lands
+   on the card. Its selector is more specific than the grid rule, so the
+   variables have to be repeated here rather than inherited. */
 .ss-product-card .pc__img.pc__img-second {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: var(--ss-product-fit, cover);
+  object-position: var(--ss-product-position, center top);
   z-index: 1;
   opacity: 0;
   pointer-events: none;
@@ -3445,7 +3446,7 @@
   width: 100%;
   aspect-ratio: var(--ss-product-ratio, 1);
   max-height: 76vh;
-  background: #fff;
+  background: var(--ss-product-pad-bg, #fff);
   /* No hairline and no rounding: the photo covers the stage edge to edge, and
      any frame drawn around it is the artefact this change set removes. */
   border: none;
@@ -3456,12 +3457,12 @@
 .ss-product-gallery__main-image {
   width: 100%;
   height: 100%;
-  /* `cover`, not `contain`: the sources keep their own aspect now, so
-     `contain` would letterbox a portrait photo inside the 1:1 stage and
-     put the bars straight back. Filling the box crops the long edge
-     instead, which is what the brief asks for. */
-  object-fit: cover;
-  object-position: center top;
+  /* Both the stage shape and the fit are per-category knobs — see
+     lib/catalog/categoryContent.ts. `cover` on a 1:1 stage is the default and
+     reproduces the previous behaviour; a suit category set to 2:3 keeps the
+     whole figure, trousers and shoes included. */
+  object-fit: var(--ss-product-fit, cover);
+  object-position: var(--ss-product-position, center top);
 }
 
 .ss-product-gallery__main-video {
@@ -6032,6 +6033,21 @@ body.mobile-menu-opened {
   overflow-wrap: anywhere;
 }
 
+/* Admin-written copy for a category with no size table. Same reading measure as
+   the generated intro so the two modes look like one dialog. */
+.ss-size-guide-modal__custom-text {
+  display: grid;
+  gap: 0.85rem;
+}
+
+.ss-size-guide-modal__custom-text p {
+  margin: 0;
+  color: #475569;
+  line-height: 1.72;
+  overflow-wrap: anywhere;
+  white-space: pre-line;
+}
+
 .ss-size-guide-modal__bullets {
   display: grid;
   gap: 0.55rem;
@@ -7802,7 +7818,9 @@ button.ss-mobile-nav-quicklink,
 .ss-editorial-section .pc__img {
   border-radius: 0 !important;
   aspect-ratio: var(--ss-product-ratio, 1);
-  object-fit: cover;
+  object-fit: var(--ss-product-fit, cover);
+  object-position: var(--ss-product-position, center top);
+  background: var(--ss-product-pad-bg, #fff);
   transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -7847,7 +7865,7 @@ button.ss-mobile-nav-quicklink,
   position: relative;
   overflow: hidden;
   /* Ista boja kao pozadina sekcije — placeholder je nevidljiv */
-  background: #fff;
+  background: var(--ss-product-pad-bg, #fff);
   aspect-ratio: var(--ss-product-ratio, 1);
 }
 
@@ -7856,8 +7874,8 @@ button.ss-mobile-nav-quicklink,
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  object-fit: var(--ss-product-fit, cover);
+  object-position: var(--ss-product-position, center top);
   transition: transform 0.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.45s ease;
 }
 
@@ -8541,7 +8559,10 @@ button.ss-mobile-nav-quicklink,
      base one, which is why the live grid still showed 6px rounded corners
      after that was zeroed. Squared off so the photo runs to the edge. */
   border-radius: 0;
-  background: #fff;
+  /* The pad colour is a per-category setting: under `contain` the stage shows
+     around the photo, and on a cream page a white pad reads as the frame the
+     client asked us to remove. Defaults to white, as before. */
+  background: var(--ss-product-pad-bg, #fff);
   overflow: hidden;
 }
 
@@ -9339,4 +9360,56 @@ button.ss-mobile-nav-quicklink,
   flex-wrap: wrap;
   gap: 0.5rem;
   width: 100%;
+}
+
+/* --- Category hero (admin-configured, per category) -----------------------
+   Reuses the shop hero's box so a category that opts in lines up with the one
+   that does not. The video fills the same stage an image would. */
+.ss-category-hero__media {
+  position: relative;
+  overflow: hidden;
+}
+
+.ss-category-hero__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center;
+}
+
+.ss-category-hero__ui {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.ss-category-hero__lead {
+  max-width: 46ch;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.95rem;
+  line-height: 1.5;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
+}
+
+@media (max-width: 575px) {
+  .ss-category-hero__lead {
+    font-size: 0.86rem;
+  }
+}
+
+/* A looping background video is decoration. Anyone who asked the OS to stop
+   motion gets the poster frame instead. */
+@media (prefers-reduced-motion: reduce) {
+  .ss-category-hero__video {
+    display: none;
+  }
+
+  .ss-category-hero__media {
+    background-color: #eee;
+    background-position: center;
+    background-size: cover;
+  }
 }

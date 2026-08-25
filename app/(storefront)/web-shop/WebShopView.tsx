@@ -12,8 +12,18 @@ import Reveal from "@/app/components/motion/Reveal";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import ProductCardPrice, { hasCardPriceRange } from "@/app/components/storefront/ProductCardPrice";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
-import { getCatalogProductGroupLabel, listCatalogProducts, normalizeCatalogCategoryGroupKey, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
+import { getCatalogProductGroupKey, getCatalogProductGroupLabel, listCatalogProducts, normalizeCatalogCategoryGroupKey, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
 import { listCategoryRegistry, getAutoGroupSettings } from "@/lib/catalog/categories";
+import {
+  categoryImageBox,
+  categoryImageStyle,
+  productCategoryContentKeys,
+  resolveCategoryContent,
+  type CategoryContentEntry,
+} from "@/lib/catalog/categoryContent";
+import {
+  getCategoryContentSettings,
+} from "@/lib/catalog/categoryContent.server";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { localizeDynamicCategoryLabel, localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
@@ -175,6 +185,23 @@ export default async function WebShopView({
     listCategoryRegistry(),
     getAutoGroupSettings(),
   ]);
+  const categoryContent = await getCategoryContentSettings();
+
+  const contentForProduct = (item: CatalogProductView) =>
+    resolveCategoryContent(
+      categoryContent,
+      productCategoryContentKeys(
+        item.categories,
+        normalizeCatalogCategoryGroupKey,
+        getCatalogProductGroupKey(item),
+      ),
+    );
+
+  /* The locked category's own entry drives the hero and, when a product carries
+     no category of its own, the image stage too. */
+  const lockedContent: CategoryContentEntry | null = categoryLock
+    ? resolveCategoryContent(categoryContent, [categoryLock.groupKey, categoryLock.label])
+    : null;
 
   // Card tag: show the article's real category. Prefer an assigned category name,
   // else fall back to the resolved group label (Odela / Aksesoari / Obuca …) which
@@ -555,19 +582,22 @@ export default async function WebShopView({
     const wrapperClassName = options?.wrapperClassName || "product-card-wrapper";
     const cardClassName = options?.cardClassName || "product-card ss-card-hover ss-product-card h-100 mb-2 pb-1 pb-md-0";
     const imageWrapperClassName = options?.imageWrapperClassName || "pc__img-wrapper hover-container p-lg-0";
-    // Square by default: every product photo is normalized to a 1:1 canvas at
-    // rest, and the card stage is `--ss-product-ratio: 1`. Matching intrinsic
-    // dimensions keep Next's reserved box the same shape as the painted one, so
-    // nothing shifts while the image loads.
-    const imageWidth = options?.imageWidth || 690;
-    const imageHeight = options?.imageHeight || 690;
+    /* Stage shape, fit and focus come from the product's category (admin ->
+       Kategorije: izgled). Nothing configured means 1:1 on `cover`, which is
+       what every card did before the settings existed. Next's intrinsic box is
+       derived from the same ratio so the reserved space matches the painted
+       stage and nothing reflows while the photo loads. */
+    const content = contentForProduct(item) || lockedContent;
+    const stageStyle = categoryImageStyle(content);
+    const box = categoryImageBox(content, options?.imageWidth || 690);
+    const imageWidth = box.width;
+    const imageHeight = options?.imageHeight && !content ? options.imageHeight : box.height;
     const fallbackImage = options?.fallbackImage || "/img/odela2.jpg";
     const motionIndex = options?.motionIndex || 0;
     const imageSources = getCatalogProductImageSources(item, [], [fallbackImage]);
-    // Every card fills its 1:1 stage on `cover`. Accessories used to opt into
-    // `object-fit: contain` here so their landscape frame showed whole, but that
-    // is exactly what produced the white bars around them.
-    const imgClass = "pc__img object-position-top";
+    /* No `object-position` utility class here: the focus point is a CSS
+       variable now, and a utility class would outrank it. */
+    const imgClass = "pc__img";
     const displayName = getLocalizedCatalogProductName(item, lang);
     const categoryLabel = getCategoryLabel(item);
     const detailHref = isEn ? `/web-shop/${item.legacyId}?lang=en` : `/web-shop/${item.legacyId}`;
@@ -593,7 +623,7 @@ export default async function WebShopView({
     return (
       <ProductItemMotion key={key} className={wrapperClassName} index={motionIndex}>
         <div className={cardClassName}>
-          <div className={imageWrapperClassName}>
+          <div className={imageWrapperClassName} style={stageStyle}>
             <Link href={detailHref} prefetch={false}>
               <StorefrontImage
                 sources={imageSources}
@@ -669,8 +699,57 @@ export default async function WebShopView({
     );
   };
 
+  /* Not overridable: this is the page's H1 and its breadcrumb, and these routes
+     exist to rank for the plural head term ("muska odela"). A hero headline is
+     marketing copy and lives on the hero only — see `categoryHero`. */
   const categoryPageLabel = categoryLock ? (isEn ? categoryLock.labelEn : categoryLock.label) : "";
-  const categoryLead = categoryLock ? (isEn ? categoryLock.leadEn : categoryLock.lead) : "";
+  const categoryLead = (() => {
+    if (!categoryLock) return "";
+    const override = isEn ? lockedContent?.heroLeadEn : lockedContent?.heroLead;
+    return override?.trim() || (isEn ? categoryLock.leadEn : categoryLock.lead);
+  })();
+
+  /* The category's own hero, or null to fall through to the shared shop banner.
+     `heroMedia: "inherit"` (the default) is that fall-through; "video" and
+     "image" each additionally need their source filled in, so a half-configured
+     category never renders an empty black box. */
+  const categoryHero = (() => {
+    if (!categoryLock || !lockedContent) return null;
+    const title = (isEn ? lockedContent.heroTitleEn : lockedContent.heroTitle).trim();
+    const lead = (isEn ? lockedContent.heroLeadEn : lockedContent.heroLead).trim();
+    const shared = {
+      title,
+      lead,
+      showActions: lockedContent.showHeroActions,
+    };
+
+    if (lockedContent.heroMedia === "video" && lockedContent.heroVideoUrl) {
+      return {
+        ...shared,
+        kind: "video" as const,
+        videoUrl: lockedContent.heroVideoUrl,
+        poster: lockedContent.heroVideoPoster,
+        image: "",
+      };
+    }
+    if (lockedContent.heroMedia === "image" && lockedContent.heroImage) {
+      return {
+        ...shared,
+        kind: "image" as const,
+        videoUrl: "",
+        poster: "",
+        image: lockedContent.heroImage,
+      };
+    }
+    return null;
+  })();
+
+  /* On a category page the shared pills link back to the whole shop and to a
+     sale filter that leaves the category — the client asked for them gone.
+     They stay on /web-shop, which is the page they were written for. */
+  const showSharedHeroActions = categoryLock
+    ? Boolean(lockedContent?.showHeroActions)
+    : true;
   const canonicalListingPath = isEn ? `${basePath}?lang=en` : basePath;
 
   const breadcrumbJsonLd = buildBreadcrumbJsonLd([
@@ -730,6 +809,68 @@ export default async function WebShopView({
       <main className="page-wrapper ss-shop-page">
         <Reveal as="section" className="ss-shop-hero-section" delay={0} amount={0.05} y={12}>
           <div className="container ss-shop-hero">
+            {categoryHero ? (
+              /* A locked category renders its own hero instead of the shared shop
+                 banner: the client asked for a different video per category, and
+                 for the generic "Kolekcija" / "Akcija" pills to stop sitting on
+                 top of it. Both are admin settings, so a category with nothing
+                 configured still falls through to the shared banner below. */
+              <div className="ss-shop-hero-stack">
+                <div
+                  className="ss-shop-hero__media ss-category-hero__media"
+                  /* Painted behind the video so the reduced-motion fallback,
+                     which hides the element, still shows the poster frame
+                     rather than an empty grey box. */
+                  style={
+                    categoryHero.kind === "video" && categoryHero.poster
+                      ? { backgroundImage: `url(${JSON.stringify(categoryHero.poster)})` }
+                      : undefined
+                  }
+                >
+                  {categoryHero.kind === "video" ? (
+                    <video
+                      className="ss-category-hero__video"
+                      src={categoryHero.videoUrl}
+                      poster={categoryHero.poster || undefined}
+                      autoPlay
+                      muted
+                      loop
+                      playsInline
+                      preload="metadata"
+                    />
+                  ) : (
+                    <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
+                      <Image
+                        src={categoryHero.image}
+                        width={1759}
+                        height={620}
+                        alt={categoryHero.title || categoryPageLabel}
+                        className="slideshow-bg__img object-fit-cover"
+                        priority
+                        sizes="100vw"
+                      />
+                    </div>
+                  )}
+                  <div className="ss-shop-hero__overlay" />
+                  <div className="ss-shop-hero__ui ss-category-hero__ui">
+                    <span className="ss-shop-hero__brand">{categoryHero.title || categoryPageLabel}</span>
+                    {categoryHero.lead ? (
+                      <p className="ss-category-hero__lead">{categoryHero.lead}</p>
+                    ) : null}
+                    {categoryHero.showActions ? (
+                      <div className="ss-shop-hero__inline-actions">
+                        <Link href="#shop-products" className="ss-hero-pill">
+                          {isEn ? "Collection" : "Kolekcija"}
+                        </Link>
+                        <Link href={makeHref({ categoryId: null, onSale: 1, page: 1 })} className="ss-hero-pill ss-hero-pill--sale">
+                          {isEn ? "Sale" : "Akcija"}
+                        </Link>
+                      </div>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            ) : (
             <div className="ss-shop-hero-stack">
               {landingSettings.shopHeroSections.map((section, heroIndex) => (
                 <div key={section.id} className="ss-shop-hero__media">
@@ -748,6 +889,7 @@ export default async function WebShopView({
                   {heroIndex === 0 ? (
                     <div className="ss-shop-hero__ui">
                       <span className="ss-shop-hero__brand">Santos &amp; Santorini</span>
+                      {showSharedHeroActions ? (
                       <div className="ss-shop-hero__inline-actions">
                         <Link href="#shop-products" className="ss-hero-pill">
                           {isEn ? "Collection" : "Kolekcija"}
@@ -756,6 +898,7 @@ export default async function WebShopView({
                           {isEn ? "Sale" : "Akcija"}
                         </Link>
                       </div>
+                      ) : null}
                     </div>
                   ) : null}
                   {section.showPromo && section.promoLabel ? (
@@ -770,6 +913,7 @@ export default async function WebShopView({
                 </div>
               ))}
             </div>
+            )}
             <div className="ss-shop-hero__categories">
               {heroCategoryLinks.map((link) => (
                 <Link

@@ -114,7 +114,7 @@
      here or the stage stays 0.82 portrait no matter what ratio we declare. */
   height: auto;
   padding-top: 0;
-  background: #fff;
+  background: var(--ss-product-pad-bg, #fff);
   border-radius: 0;
   border: none;
   box-shadow: none;
@@ -125,8 +125,12 @@
   inset: 0;
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  object-position: center top;
+  /* Fit and focus are per-category knobs now (lib/catalog/categoryContent.ts):
+     a full-length suit shot and a belt laid flat cannot share one framing rule,
+     and hard-coding `cover` here is what cropped the trousers and shoes off the
+     suit cards. The defaults reproduce the previous behaviour exactly. */
+  object-fit: var(--ss-product-fit, cover);
+  object-position: var(--ss-product-position, center top);
   transition: transform 0.9s var(--ss-ease-out), opacity 0.6s ease;
 }
 
@@ -608,8 +612,8 @@
 }
 
 .ss-product-gallery__main-image {
-  object-fit: cover !important;
-  object-position: center top !important;
+  object-fit: var(--ss-product-fit, cover) !important;
+  object-position: var(--ss-product-position, center top) !important;
 }
 
 /* Flatten the buy-panel box — name/price/CTA sit directly on the page */

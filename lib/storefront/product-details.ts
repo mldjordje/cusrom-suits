@@ -16,7 +16,18 @@ import {
   shoeMaterialSummary,
   shoeSpecToSizeGuideTable,
 } from "@/lib/catalog/shoeSpecs";
-import type { CatalogProductView } from "@/lib/catalog/store";
+import {
+  getCatalogProductGroupKey,
+  normalizeCatalogCategoryGroupKey,
+  type CatalogProductView,
+} from "@/lib/catalog/store";
+import {
+  productCategoryContentKeys,
+  resolveCategoryContent,
+} from "@/lib/catalog/categoryContent";
+import {
+  getCategoryContentSettings,
+} from "@/lib/catalog/categoryContent.server";
 import {
   getLocalizedWashCareItems,
   type LocalizedWashCareItem,
@@ -47,6 +58,16 @@ export type ProductSizeGuide = {
   imageAlt: string;
   tables: SizeGuideTable[];
   fallbackNote: string | null;
+  /**
+   * Free text written by the admin for this category, shown instead of the
+   * measurement tables and the recommender. Cufflinks, chains and belts have no
+   * size to recommend, so offering a chest-and-waist calculator on them was
+   * noise; this is the replacement the client asked to be able to word
+   * themselves. `null` keeps the generated guide.
+   */
+  customText: string | null;
+  /** False for a custom-text guide: there is nothing to compute. */
+  showRecommender: boolean;
 };
 
 export type ProductWashCareIcon = WashCareSymbolKey;
@@ -609,6 +630,38 @@ export const getProductSizeGuide = async (
   lang: StorefrontLanguage,
   sizeOptions: ProductSizeOption[],
 ): Promise<ProductSizeGuide | null> => {
+  /* The category's own answer comes first: it can switch the guide off
+     entirely (accessories with no sizes) or replace the tables with text the
+     admin wrote. Only "auto" falls through to the generated guide below. */
+  const categoryContent = resolveCategoryContent(
+    await getCategoryContentSettings(),
+    productCategoryContentKeys(
+      product.categories,
+      normalizeCatalogCategoryGroupKey,
+      getCatalogProductGroupKey(product),
+    ),
+  );
+
+  if (categoryContent?.sizeGuideMode === "off") return null;
+
+  if (categoryContent?.sizeGuideMode === "text") {
+    const text = (lang === "en" ? categoryContent.sizeGuideTextEn : categoryContent.sizeGuideText).trim();
+    if (!text) return null;
+    return {
+      title: lang === "en" ? "Product information" : "Informacije o proizvodu",
+      intro: "",
+      bullets: [],
+      buttonLabel: lang === "en" ? "More information" : "Vise informacija",
+      modalTitle: lang === "en" ? "Product information" : "Informacije o proizvodu",
+      imageSrc: null,
+      imageAlt: "",
+      tables: [],
+      fallbackNote: null,
+      customText: text,
+      showRecommender: false,
+    };
+  }
+
   const groups = getProductGroups(product);
   const settings = await getSizeGuideSettings();
   const fit = getProductFit(product, sizeOptions);
@@ -661,6 +714,8 @@ export const getProductSizeGuide = async (
     imageAlt: settings.imageAlt,
     tables: visibleTables,
     fallbackNote: visibleTables.length ? null : localizedFallback,
+    customText: null,
+    showRecommender: true,
   };
 };
 

@@ -52,6 +52,7 @@ const navSections: NavSection[] = [
       },
       { href: "/admin/orders", label: "Porudzbine", icon: "OR", matchPaths: ["/admin/orders"] },
       { href: "/admin/categories", label: "Kategorije", icon: "KT" },
+      { href: "/admin/category-content", label: "Kategorije: izgled", icon: "KI" },
       { href: "/admin/size-guides", label: "Tabele velicina", icon: "SZ" },
     ],
   },

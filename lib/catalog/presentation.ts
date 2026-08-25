@@ -443,6 +443,19 @@ export function getCatalogProductDisplayName(
     }
   }
 
+  /* Last resort: name the product after what it is. The category label is
+     plural ("Muška odela", "Sakoi") because it names a shelf, and a product
+     titled after its shelf reads as a listing header rather than an article —
+     which is what the client kept reporting. The product-type label is the
+     singular form of the same thing, so it is preferred whenever the type can
+     be inferred; the category label stays as the fallback for categories with
+     no matching type (Kaiševi, Manžetne, Lančići …). */
+  const fallbackTypeKey = inferProductTypeKey(
+    input.name || input.manufCode || "",
+    input.categories,
+  );
+  if (fallbackTypeKey) return getProductTypeLabel(fallbackTypeKey, lang);
+
   if (categoryLabel) return categoryLabel;
 
   return lang === "en" ? "Santos product" : "Santos proizvod";

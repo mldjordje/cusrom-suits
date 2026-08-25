@@ -749,11 +749,22 @@ const getCatalogProductGroupKeys = (item: CatalogProductView): Set<string> => {
  * when nothing resolves, so the caller can render no tag at all (rather than a
  * meaningless "Kolekcija" placeholder). Serbian labels — localize downstream.
  */
-export const getCatalogProductGroupLabel = (item: CatalogProductView): string => {
+/**
+ * The single group a product belongs to, by the same priority the shop uses to
+ * label it. Exported because presentation settings key off the group, and a
+ * large part of the catalogue carries no `categories` at all — those products
+ * are grouped from their name, which only this resolver knows how to do.
+ */
+export const getCatalogProductGroupKey = (item: CatalogProductView): string => {
   const keys = [...getCatalogProductGroupKeys(item)];
   if (!keys.length) return "";
   keys.sort((a, b) => (CATEGORY_GROUP_PRIORITY[a] || 999) - (CATEGORY_GROUP_PRIORITY[b] || 999));
-  const best = keys[0];
+  return keys[0] || "";
+};
+
+export const getCatalogProductGroupLabel = (item: CatalogProductView): string => {
+  const best = getCatalogProductGroupKey(item);
+  if (!best) return "";
   return CATEGORY_GROUP_LABELS[best] || "";
 };
 
