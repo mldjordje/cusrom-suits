@@ -2,6 +2,42 @@ const IMAGE_PATH_EXTENSION_RE = /\.(avif|webp|png|jpe?g|gif|svg|ico|bmp)(?:$|[?#
 const KNOWN_EXTENSIONLESS_IMAGE_PATHS = ["/storage/v1/object/public/", "/uploads/"];
 const LEGACY_SANTOS_HOSTS = new Set(["santos.rs", "www.santos.rs", "assets.santos.rs", "www.assets.santos.rs"]);
 
+/**
+ * Bumped when the bytes behind an existing image URL change.
+ *
+ * Product photos are served with `Cache-Control: max-age=31536000` from both
+ * assets.santos.rs and Supabase Storage, and they are overwritten in place so
+ * that the paths stored in catalog_product_media never have to move. That
+ * combination means a visitor who loaded a photo before it was rewritten keeps
+ * the old bytes for a year. It bit us for real: a pass that padded every
+ * non-square photo out to 1:1 shipped, was reverted within hours, and anyone
+ * who browsed in between would have gone on seeing blurred bands around the
+ * cards long after the files themselves were fixed.
+ *
+ * Appending this token gives those users a URL they have never cached, at the
+ * cost of one re-download. Bump it only when existing files change in place —
+ * new uploads already carry a UUID in their path and never need it.
+ *
+ * Deliberately NOT part of sanitizeStorefrontImageSrc: that function also feeds
+ * the Ananas mapper and the Google Merchant feed, and those publish image URLs
+ * to partners who ingest them. A cache token has no business in a product feed.
+ * It is applied at render time instead, by the storefront image components.
+ */
+const IMAGE_CACHE_VERSION = "2";
+
+export const withStorefrontImageCacheVersion = (src: string) => {
+  if (!src || src.startsWith("data:")) return src;
+
+  // Some stored URLs already carry a `v` from an earlier cache bust, so this
+  // replaces that key rather than appending a second one.
+  const [base, query = ""] = src.split("?");
+  const params = query
+    .split("&")
+    .filter((pair) => pair && !/^v=/.test(pair));
+  params.push(`v=${IMAGE_CACHE_VERSION}`);
+  return `${base}?${params.join("&")}`;
+};
+
 const toLegacyAssetPath = (pathname: string, search = "") =>
   pathname.startsWith("/fajlovi/") ? `${pathname}${search}` : "";
 

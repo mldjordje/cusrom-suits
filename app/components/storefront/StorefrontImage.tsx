@@ -1,7 +1,7 @@
 "use client";
 import Image, { type ImageProps } from "next/image";
 import { useCallback, useState } from "react";
-import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
+import { sanitizeStorefrontImageSrc, withStorefrontImageCacheVersion } from "@/lib/storefront/image-utils";
 
 type StorefrontImageProps = Omit<ImageProps, "src" | "alt" | "onError"> & {
   alt: string;
@@ -16,7 +16,7 @@ export default function StorefrontImage({
   ...props
 }: StorefrontImageProps) {
   const candidates = [...sources, fallbackSrc]
-    .map((value) => sanitizeStorefrontImageSrc(value))
+    .map((value) => withStorefrontImageCacheVersion(sanitizeStorefrontImageSrc(value)))
     .filter((value) => value.length > 0);
 
   const [index, setIndex] = useState(0);

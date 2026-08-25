@@ -2,7 +2,7 @@
 
 import Image, { type ImageProps } from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
+import { sanitizeStorefrontImageSrc, withStorefrontImageCacheVersion } from "@/lib/storefront/image-utils";
 
 type StorefrontSmartImageProps = Omit<ImageProps, "src" | "alt"> & {
   alt: string;
@@ -20,7 +20,7 @@ export default function StorefrontSmartImage({
   const candidates = useMemo(() => {
     const rawCandidates = fallbackSrc ? [...sources, fallbackSrc] : sources;
     const normalized = rawCandidates
-      .map((value) => sanitizeStorefrontImageSrc(value))
+      .map((value) => withStorefrontImageCacheVersion(sanitizeStorefrontImageSrc(value)))
       .filter((value) => value.length > 0);
 
     return Array.from(new Set(normalized));
