@@ -3452,7 +3452,12 @@
 .ss-product-gallery__main-image {
   width: 100%;
   height: 100%;
-  object-fit: contain;
+  /* `cover`, not `contain`: the sources keep their own aspect now, so
+     `contain` would letterbox a portrait photo inside the 1:1 stage and
+     put the bars straight back. Filling the box crops the long edge
+     instead, which is what the brief asks for. */
+  object-fit: cover;
+  object-position: center top;
 }
 
 .ss-product-gallery__main-video {

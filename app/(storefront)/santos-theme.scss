@@ -130,19 +130,13 @@
   transition: transform 0.9s var(--ss-ease-out), opacity 0.6s ease;
 }
 
-/* Wide/small products (wallets, belts, shoes, bags, accessories) used to be
-   landscape, so `cover` chopped their sides and the card fell back to
-   `contain` + padding. That fallback is what produced the white bars the
-   client asked us to remove. The sources are squared at rest now — see
-   scripts/normalize-legacy-images.mjs — so every product fills a 1:1 stage on
-   `cover` with nothing cropped and no letterbox. The rule is kept as a safety
-   net for any image that somehow arrives non-square, minus the padding that
-   made the bars obvious. */
-.ss-lux-grid .pc__img.pc__img--contain,
-.ss-lux-grid .pc__img.pc__img--contain.pc__img-second {
-  object-fit: contain;
-  object-position: center;
-}
+/* Wide/small products (wallets, belts, shoes, bags, accessories) are landscape,
+   so the card used to switch them to `contain` and let the wrapper background
+   fill the gap. That gap is the white frame the client asked us to remove, and
+   `contain` reintroduces it for any source that is not exactly 1:1 — which is
+   every source now that nothing is padded at rest. Everything fills the stage
+   on `cover`; a landscape item loses its left and right edges rather than
+   floating in bars. */
 
 /* Quiet hover: slow scale + crossfade to second image. No dark veil. */
 .ss-lux-grid .pc__img-wrapper::after {
@@ -614,8 +608,8 @@
 }
 
 .ss-product-gallery__main-image {
-  object-fit: contain !important;
-  object-position: center center !important;
+  object-fit: cover !important;
+  object-position: center top !important;
 }
 
 /* Flatten the buy-panel box — name/price/CTA sit directly on the page */

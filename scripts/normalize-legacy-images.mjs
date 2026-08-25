@@ -198,61 +198,30 @@ const buildOne = async (relPath) => {
   if (!meta.width || !meta.height) return { relPath, status: "unreadable" };
 
   const border = await detectBorderColour(original);
-  const flatBorder = border.spread <= BORDER_UNIFORM_TOLERANCE;
   const wasSquare = meta.width === meta.height;
 
   // Fit the whole photo inside a square without ever scaling it up: the square
   // side is the longest source edge, capped at MAX_SIDE.
   const side = Math.min(Math.max(meta.width, meta.height), MAX_SIDE);
 
-  // Two ways to reach a square, picked per image:
+  // Nothing is baked into the canvas any more. An earlier pass padded every
+  // non-square photo out to 1:1 — flat colour where the border was uniform, a
+  // blurred mirror of the edge where it was not — so that `cover` would have
+  // nothing to crop. About a quarter of the catalogue needed it, and on the
+  // suit categories, where the shots are portrait, that quarter is most of what
+  // you see: the result read as a blurred frame around every card, which is the
+  // opposite of the brief.
   //
-  //  - flat border (studio cut-out on a seamless): pad with that exact colour.
-  //    The band is the same colour as the backdrop, so it is invisible.
-  //
-  //  - non-flat border (lifestyle shot on burlap, a wall, a table): a flat band
-  //    would read as a stripe across the texture — the very "frame" this whole
-  //    job exists to remove. Mirror the photo's own edge into the pad and blur
-  //    that band, then lay the untouched photo back on top. Blurring matters:
-  //    a bare mirror duplicates whatever touches the edge (a chin, an oak leaf)
-  //    and the eye catches it instantly, while a blurred one reads as depth of
-  //    field. The subject itself is never blurred.
-  //
-  // Neither path crops or scales the subject up.
+  // The photo now keeps its own aspect and the 1:1 card stage is filled by CSS
+  // `object-fit: cover` at render time. That fills the box edge to edge with
+  // real photograph, leaves the stored file uncropped, and is reversible in a
+  // stylesheet rather than in 1616 re-encoded files.
   const fitted = await sharp(original, { limitInputPixels: false })
     .rotate() // honour EXIF orientation before measuring anything
     .resize({ width: side, height: side, fit: "inside", withoutEnlargement: true })
     .toBuffer({ resolveWithObject: true });
 
-  const padLeft = Math.floor((side - fitted.info.width) / 2);
-  const padTop = Math.floor((side - fitted.info.height) / 2);
-  const needsPad = padLeft > 0 || padTop > 0;
-
-  const extend = {
-    left: padLeft,
-    right: side - fitted.info.width - padLeft,
-    top: padTop,
-    bottom: side - fitted.info.height - padTop,
-  };
-
-  let base;
-  if (!needsPad) {
-    base = sharp(fitted.data).flatten({ background: { r: border.r, g: border.g, b: border.b } });
-  } else if (flatBorder) {
-    base = sharp(fitted.data)
-      .extend({ ...extend, background: { r: border.r, g: border.g, b: border.b, alpha: 1 } })
-      .flatten({ background: { r: border.r, g: border.g, b: border.b } });
-  } else {
-    const padPx = Math.max(extend.left, extend.right, extend.top, extend.bottom);
-    const sigma = Math.min(40, Math.max(8, padPx / 5));
-    const blurredBackdrop = await sharp(fitted.data)
-      .extend({ ...extend, extendWith: "mirror" })
-      .blur(sigma)
-      .toBuffer();
-    base = sharp(blurredBackdrop)
-      .composite([{ input: fitted.data, left: extend.left, top: extend.top }])
-      .flatten({ background: { r: border.r, g: border.g, b: border.b } });
-  }
+  const base = sharp(fitted.data).flatten({ background: { r: border.r, g: border.g, b: border.b } });
 
   const jpeg = await base.clone().jpeg({ quality: JPEG_QUALITY, mozjpeg: true }).toBuffer();
   const webp = await base.clone().webp({ quality: WEBP_QUALITY }).toBuffer();
@@ -274,11 +243,10 @@ const buildOne = async (relPath) => {
     srcDim: `${meta.width}x${meta.height}`,
     outDim: `${outMeta.width}x${outMeta.height}`,
     wasSquare,
-    padded: needsPad,
-    padMode: needsPad ? (flatBorder ? "flat-colour" : "mirror-blur") : "none",
-    flatBorder,
+    // Kept because the card crops non-square sources at render time: a very wide
+    // or very tall source loses more to `cover`, and this is how you find them.
+    aspect: +(meta.width / meta.height).toFixed(3),
     borderColour: `rgb(${border.r},${border.g},${border.b})`,
-    borderSpread: border.spread,
     srcBytes: original.length,
     jpegBytes: jpeg.length,
     webpBytes: webp.length,
@@ -320,7 +288,9 @@ const runBuild = async () => {
   const srcBytes = built.reduce((sum, r) => sum + r.srcBytes, 0);
   const jpegBytes = built.reduce((sum, r) => sum + r.jpegBytes, 0);
   const webpBytes = built.reduce((sum, r) => sum + r.webpBytes, 0);
-  const notFlat = built.filter((r) => r.padded && !r.flatBorder);
+  // A 1:1 card crops whatever is not square. Anything past roughly 3:2 either
+  // way loses a third of its frame, which is worth eyeballing before it ships.
+  const heavyCrop = built.filter((r) => r.aspect && (r.aspect > 1.5 || r.aspect < 0.667));
 
   const summary = {
     total: results.length,
@@ -330,8 +300,8 @@ const runBuild = async () => {
     skippedLarger: results.filter((r) => r.status === "skipped-larger").length,
     errors: results.filter((r) => r.status === "error").length,
     alreadySquare: built.filter((r) => r.wasSquare).length,
-    paddedToSquare: built.filter((r) => r.padded).length,
-    paddedWithNonFlatBorder: notFlat.length,
+    nonSquareCroppedByCss: built.filter((r) => !r.wasSquare).length,
+    heavyCrop: heavyCrop.length,
     srcMB: +(srcBytes / 1048576).toFixed(1),
     jpegMB: +(jpegBytes / 1048576).toFixed(1),
     webpMB: +(webpBytes / 1048576).toFixed(1),
@@ -343,10 +313,10 @@ const runBuild = async () => {
   fs.writeFileSync(REPORT, JSON.stringify({ summary, results }, null, 2));
 
   console.log(JSON.stringify(summary, null, 2));
-  if (notFlat.length) {
-    console.log(`\n${notFlat.length} image(s) padded despite a non-uniform border — eyeball these:`);
-    for (const r of notFlat.slice(0, 20)) {
-      console.log(`  ${r.relPath}  ${r.srcDim} border ${r.borderColour} spread ${r.borderSpread}`);
+  if (heavyCrop.length) {
+    console.log(`\n${heavyCrop.length} image(s) further than 3:2 from square — the 1:1 card crops these hardest:`);
+    for (const r of heavyCrop.slice(0, 20)) {
+      console.log(`  ${r.relPath}  ${r.srcDim}  aspect ${r.aspect}`);
     }
   }
   console.log(`\nreport -> ${REPORT}\noutput -> ${OUT_DIR}`);
@@ -561,43 +531,39 @@ const runSupabase = async () => {
       console.log(`  miss ${object} (${res.status})`);
       continue;
     }
-    const original = Buffer.from(await res.arrayBuffer());
-    const meta = await sharp(original, { limitInputPixels: false }).metadata();
-    if (meta.width === meta.height) {
-      already += 1;
-      continue;
-    }
+    const remoteBuffer = Buffer.from(await res.arrayBuffer());
 
     // Keep a local copy before overwriting — Storage upsert has no undo.
     const backupFile = path.join(backupDir, object);
     ensureDir(path.dirname(backupFile));
-    if (!fs.existsSync(backupFile)) fs.writeFileSync(backupFile, original);
+    if (!fs.existsSync(backupFile)) fs.writeFileSync(backupFile, remoteBuffer);
+
+    // An earlier pass padded these out to 1:1 and uploaded the result, so what
+    // is on Storage today may already be a padded square. Always work from the
+    // local backup when there is one — re-deriving from the padded copy would
+    // bake that padding in permanently.
+    const source = fs.readFileSync(backupFile);
+    const original = source;
+    const meta = await sharp(source, { limitInputPixels: false }).metadata();
 
     const contentType = res.headers.get("content-type") || "image/jpeg";
     const isWebp = contentType.includes("webp");
-    const border = await detectBorderColour(original);
-    const flatBorder = border.spread <= BORDER_UNIFORM_TOLERANCE;
+    const border = await detectBorderColour(source);
     const side = Math.min(Math.max(meta.width, meta.height), MAX_SIDE);
-    const fitted = await sharp(original, { limitInputPixels: false })
+    // Downscale only — no padding. The card fills its 1:1 stage with `cover`.
+    const fitted = await sharp(source, { limitInputPixels: false })
       .rotate()
       .resize({ width: side, height: side, fit: "inside", withoutEnlargement: true })
       .toBuffer({ resolveWithObject: true });
-    const left = Math.floor((side - fitted.info.width) / 2);
-    const top = Math.floor((side - fitted.info.height) / 2);
-    const extend = { left, top, right: side - fitted.info.width - left, bottom: side - fitted.info.height - top };
-    const background = { r: border.r, g: border.g, b: border.b };
 
-    let pipeline;
-    if (flatBorder) {
-      pipeline = sharp(fitted.data).extend({ ...extend, background: { ...background, alpha: 1 } }).flatten({ background });
-    } else {
-      const padPx = Math.max(extend.left, extend.right, extend.top, extend.bottom);
-      const backdrop = await sharp(fitted.data)
-        .extend({ ...extend, extendWith: "mirror" })
-        .blur(Math.min(40, Math.max(8, padPx / 5)))
-        .toBuffer();
-      pipeline = sharp(backdrop).composite([{ input: fitted.data, left: extend.left, top: extend.top }]).flatten({ background });
+    // Nothing to do when Storage already holds exactly what this pass produces.
+    const remoteMeta = await sharp(remoteBuffer, { limitInputPixels: false }).metadata();
+    if (remoteMeta.width === fitted.info.width && remoteMeta.height === fitted.info.height) {
+      already += 1;
+      continue;
     }
+
+    const pipeline = sharp(fitted.data).flatten({ background: { r: border.r, g: border.g, b: border.b } });
 
     const out = isWebp
       ? await pipeline.webp({ quality: WEBP_QUALITY }).toBuffer()

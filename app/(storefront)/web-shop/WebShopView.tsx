@@ -12,7 +12,7 @@ import Reveal from "@/app/components/motion/Reveal";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import ProductCardPrice, { hasCardPriceRange } from "@/app/components/storefront/ProductCardPrice";
 import { getLandingSettings } from "@/lib/catalog/landingSettings";
-import { getCatalogProductGroupLabel, listCatalogProducts, normalizeCatalogCategoryGroupKey, productMatchesCategoryGroup, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
+import { getCatalogProductGroupLabel, listCatalogProducts, normalizeCatalogCategoryGroupKey, type CatalogCategoryGroup, type CatalogProductView } from "@/lib/catalog/store";
 import { listCategoryRegistry, getAutoGroupSettings } from "@/lib/catalog/categories";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
@@ -44,11 +44,6 @@ const getDiscountPercent = (priceGross: number, priceFinalGross: number) => {
   if (gross <= 0 || gross <= finalGross) return 0;
   return Math.round(((gross - finalGross) / gross) * 100);
 };
-
-// Category groups whose products are landscape/small (wallets, belts, shoes,
-// bags, accessories). Their catalog thumbnails render with `object-fit: contain`
-// so the whole item shows instead of being cropped by the portrait card.
-const CONTAIN_IMAGE_GROUPS = ["obuca", "novcanik", "kais", "torba", "card-holder", "aksesoari"];
 
 const toStringParam = (value: string | string[] | undefined) =>
   Array.isArray(value) ? value[0] || "" : value || "";
@@ -569,10 +564,10 @@ export default async function WebShopView({
     const fallbackImage = options?.fallbackImage || "/img/odela2.jpg";
     const motionIndex = options?.motionIndex || 0;
     const imageSources = getCatalogProductImageSources(item, [], [fallbackImage]);
-    // Wide/small items (wallets, belts, shoes, bags, accessories) are landscape,
-    // so the portrait card's `cover` crops their sides. Render them with `contain`.
-    const containImage = CONTAIN_IMAGE_GROUPS.some((group) => productMatchesCategoryGroup(item, group));
-    const imgClass = `pc__img object-position-top${containImage ? " pc__img--contain" : ""}`;
+    // Every card fills its 1:1 stage on `cover`. Accessories used to opt into
+    // `object-fit: contain` here so their landscape frame showed whole, but that
+    // is exactly what produced the white bars around them.
+    const imgClass = "pc__img object-position-top";
     const displayName = getLocalizedCatalogProductName(item, lang);
     const categoryLabel = getCategoryLabel(item);
     const detailHref = isEn ? `/web-shop/${item.legacyId}?lang=en` : `/web-shop/${item.legacyId}`;
