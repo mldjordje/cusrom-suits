@@ -560,8 +560,12 @@ export default async function WebShopView({
     const wrapperClassName = options?.wrapperClassName || "product-card-wrapper";
     const cardClassName = options?.cardClassName || "product-card ss-card-hover ss-product-card h-100 mb-2 pb-1 pb-md-0";
     const imageWrapperClassName = options?.imageWrapperClassName || "pc__img-wrapper hover-container p-lg-0";
+    // Square by default: every product photo is normalized to a 1:1 canvas at
+    // rest, and the card stage is `--ss-product-ratio: 1`. Matching intrinsic
+    // dimensions keep Next's reserved box the same shape as the painted one, so
+    // nothing shifts while the image loads.
     const imageWidth = options?.imageWidth || 690;
-    const imageHeight = options?.imageHeight || 714;
+    const imageHeight = options?.imageHeight || 690;
     const fallbackImage = options?.fallbackImage || "/img/odela2.jpg";
     const motionIndex = options?.motionIndex || 0;
     const imageSources = getCatalogProductImageSources(item, [], [fallbackImage]);
@@ -897,7 +901,7 @@ export default async function WebShopView({
                       cardClassName: "product-card ss-card-hover ss-product-card ss-shop-grid-card mb-0",
                       imageWrapperClassName: "pc__img-wrapper hover-container",
                       imageWidth: 330,
-                      imageHeight: 400,
+                      imageHeight: 330,
                       motionIndex: index,
                     }),
                   )}

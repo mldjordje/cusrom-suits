@@ -2185,7 +2185,7 @@
 
 .ss-mobile-grid__img-wrapper {
   position: relative;
-  aspect-ratio: 0.78;
+  aspect-ratio: var(--ss-product-ratio, 1);
   overflow: hidden;
 }
 
@@ -2213,6 +2213,13 @@
   overflow: hidden;
   border-radius: 1.45rem;
   background: #fff;
+  aspect-ratio: var(--ss-product-ratio, 1);
+  /* The purchased template sizes this box with the old ratio hack
+     (`.pc__img-wrapper { height: 0; padding-top: 121.212% }`). `aspect-ratio`
+     is ignored while an explicit height is set, so the hack has to be unset
+     here or the stage stays 0.82 portrait no matter what ratio we declare. */
+  height: auto;
+  padding-top: 0;
 }
 
 /* Premium sekcije — čist, bez rounded i bez gradijenta */
@@ -3435,7 +3442,7 @@
 
 .ss-product-gallery__main {
   width: 100%;
-  aspect-ratio: 0.9;
+  aspect-ratio: var(--ss-product-ratio, 1);
   max-height: 76vh;
   background: #fff;
   border: 1px solid rgba(24, 20, 20, 0.06);
@@ -3467,7 +3474,7 @@
 .ss-product-gallery__thumb {
   flex: 0 0 auto;
   width: 84px;
-  height: 96px;
+  height: 84px;
   border: 1px solid rgba(24, 20, 20, 0.14);
   background: #fff;
   padding: 0;
@@ -3655,7 +3662,7 @@
   }
 
   .ss-mobile-grid__img-wrapper {
-    aspect-ratio: 0.74;
+    aspect-ratio: var(--ss-product-ratio, 1);
   }
 
   .ss-card-mobile-info .pc__title {
@@ -3688,7 +3695,7 @@
 
   .ss-product-gallery__thumb {
     width: 72px;
-    height: 84px;
+    height: 72px;
   }
 
   .ss-home-page--cinematic::before,
@@ -6797,7 +6804,7 @@ button.ss-mobile-nav-quicklink,
 
 .ss-cart-drawer .cart-drawer-item__img {
   width: 100%;
-  aspect-ratio: 4 / 5;
+  aspect-ratio: var(--ss-product-ratio, 1);
   height: auto;
   object-fit: cover;
   object-position: top center;
@@ -7785,7 +7792,7 @@ button.ss-mobile-nav-quicklink,
 /* Slika — no border-radius za editorial look */
 .ss-editorial-section .pc__img {
   border-radius: 0 !important;
-  aspect-ratio: 0.82;
+  aspect-ratio: var(--ss-product-ratio, 1);
   object-fit: cover;
   transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
@@ -7832,7 +7839,7 @@ button.ss-mobile-nav-quicklink,
   overflow: hidden;
   /* Ista boja kao pozadina sekcije — placeholder je nevidljiv */
   background: #fff;
-  aspect-ratio: 0.82;
+  aspect-ratio: var(--ss-product-ratio, 1);
 }
 
 .ss-premium-card__img {
@@ -8489,6 +8496,12 @@ button.ss-mobile-nav-quicklink,
   --ss-ink-soft: #6f6557;
   --ss-hairline: rgba(23, 20, 15, 0.1);
   --ss-card-radius: 6px;
+  /* Every product photo on assets.santos.rs is normalized to a square canvas by
+     scripts/normalize-legacy-images.mjs, and the admin upload pipeline squares
+     new ones on the way in. One ratio for every product image stage means the
+     source fills the box exactly: no `contain` letterbox, no crop. Change this
+     in one place if the catalogue ever moves off 1:1. */
+  --ss-product-ratio: 1;
 }
 
 /* Toplija „paper" pozadina umesto sterilno sive */

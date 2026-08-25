@@ -34,7 +34,7 @@ export default function PremiumProductCard({
           sources={[primarySrc]}
           fallbackSrc="/img/odela.jpg"
           width={330}
-          height={400}
+          height={330}
           alt={title}
           className={`ss-premium-card__img ss-premium-card__img--primary${hasHover ? " ss-premium-card__img--has-hover" : ""}`}
           sizes={sizes}
@@ -46,7 +46,7 @@ export default function PremiumProductCard({
             sources={[hoverSrc]}
             fallbackSrc="/img/odela.jpg"
             width={330}
-            height={400}
+            height={330}
             alt={title}
             className="ss-premium-card__img ss-premium-card__img--hover"
             sizes={sizes}

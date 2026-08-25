@@ -107,7 +107,13 @@
 .ss-lux-grid .pc__img-wrapper {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 0.78;
+  aspect-ratio: var(--ss-product-ratio, 1);
+  /* The purchased template sizes this box with the old ratio hack
+     (`.pc__img-wrapper { height: 0; padding-top: 121.212% }`). `aspect-ratio`
+     is ignored while an explicit height is set, so the hack has to be unset
+     here or the stage stays 0.82 portrait no matter what ratio we declare. */
+  height: auto;
+  padding-top: 0;
   background: #fff;
   border-radius: 0;
   border: none;
@@ -124,14 +130,18 @@
   transition: transform 0.9s var(--ss-ease-out), opacity 0.6s ease;
 }
 
-/* Wide/small products (wallets, belts, shoes, bags, accessories) are landscape,
-   so `cover` chops their left/right edges. Show the whole item with `contain`
-   instead — the wrapper background fills the letterbox. Apparel stays on cover. */
+/* Wide/small products (wallets, belts, shoes, bags, accessories) used to be
+   landscape, so `cover` chopped their sides and the card fell back to
+   `contain` + padding. That fallback is what produced the white bars the
+   client asked us to remove. The sources are squared at rest now — see
+   scripts/normalize-legacy-images.mjs — so every product fills a 1:1 stage on
+   `cover` with nothing cropped and no letterbox. The rule is kept as a safety
+   net for any image that somehow arrives non-square, minus the padding that
+   made the bars obvious. */
 .ss-lux-grid .pc__img.pc__img--contain,
 .ss-lux-grid .pc__img.pc__img--contain.pc__img-second {
   object-fit: contain;
   object-position: center;
-  padding: 8%;
 }
 
 /* Quiet hover: slow scale + crossfade to second image. No dark veil. */
@@ -579,14 +589,14 @@
 
   .ss-product-gallery__main {
     border-radius: 0 !important;
-    aspect-ratio: 0.78 !important;
+    aspect-ratio: var(--ss-product-ratio, 1) !important;
     max-height: 92vh !important;
     background: #fff !important;
   }
 
   .ss-product-gallery__thumb {
     width: 78px !important;
-    height: 96px !important;
+    height: 78px !important;
     border-radius: 0 !important;
     border: 1px solid transparent !important;
     opacity: 0.7;

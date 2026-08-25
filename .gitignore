@@ -83,3 +83,6 @@ next-*.log
 .mcp.json
 
 .vercel
+
+# Working set for scripts/normalize-legacy-images.mjs (downloads + rebuilt images)
+/tmp/

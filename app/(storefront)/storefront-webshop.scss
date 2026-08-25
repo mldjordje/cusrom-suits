@@ -614,7 +614,7 @@
   .ss-product-gallery__main {
     grid-column: 2 !important;
     grid-row: 1 !important;
-    aspect-ratio: 0.83 !important;
+    aspect-ratio: var(--ss-product-ratio, 1) !important;
     max-height: 86vh !important;
     border-radius: 6px !important;
   }
@@ -633,7 +633,7 @@
 
   .ss-product-gallery__thumb {
     width: 66px !important;
-    height: 78px !important;
+    height: 66px !important;
     border-radius: 4px !important;
   }
 }
