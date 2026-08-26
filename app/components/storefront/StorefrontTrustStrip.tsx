@@ -36,9 +36,12 @@ export default async function StorefrontTrustStrip({
       >
         <div className="d-flex flex-wrap align-items-start justify-content-between gap-3 mb-3">
           <div>
+            {/* Colour lives in the stylesheet, not inline: an inline value
+                cannot be themed, and the hard-coded red stayed put when the
+                page around it went dark. */}
             <p
-              className="text-uppercase mb-2"
-              style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "#ab3331" }}
+              className="ss-trust-strip__eyebrow text-uppercase mb-2"
+              style={{ letterSpacing: "0.18em", fontSize: "0.72rem" }}
             >
               {isEn ? "Why shop here" : "Zasto kupovati ovde"}
             </p>
@@ -65,8 +68,8 @@ export default async function StorefrontTrustStrip({
             <div key={item.title} className="col-12 col-lg-6">
               <div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}>
                 <p
-                  className="text-uppercase fw-medium mb-2"
-                  style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "#ab3331" }}
+                  className="ss-trust-strip__eyebrow text-uppercase fw-medium mb-2"
+                  style={{ letterSpacing: "0.12em", fontSize: "0.66rem" }}
                 >
                   {item.title}
                 </p>
