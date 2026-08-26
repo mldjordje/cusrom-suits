@@ -760,12 +760,21 @@ export default async function WebShopProductPage({
                         options={sizePickerOptions}
                         currentLegacyId={selectedSizeOption?.legacyId || product.legacyId}
                       />
-                      <p className="small text-secondary mt-2 mb-0">
-                        {selectedSize
-                          ? `${isEn ? "Selected size" : "Odabrana velicina"}: ${selectedSize}`
-                          : isEn
-                            ? "Pick the size you want before adding the item to cart."
-                            : "Izaberite zeljenu velicinu pre dodavanja artikla u korpu."}
+                      <p className="ss-product-selected-size">
+                        {selectedSize ? (
+                          <>
+                            <span className="ss-product-selected-size__label">
+                              {isEn ? "Selected size" : "Odabrana velicina"}
+                            </span>
+                            <span className="ss-product-selected-size__value">{selectedSize}</span>
+                          </>
+                        ) : (
+                          <span className="ss-product-selected-size__prompt">
+                            {isEn
+                              ? "Pick the size you want before adding the item to cart."
+                              : "Izaberite zeljenu velicinu pre dodavanja artikla u korpu."}
+                          </span>
+                        )}
                       </p>
                     </div>
                   </div>
@@ -831,18 +840,18 @@ export default async function WebShopProductPage({
                     <span className="ss-pdp-trust-strip__sep" aria-hidden>·</span>
                     <div className="ss-pdp-trust-strip__item">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
-                        <path d="M12 7v5l3 3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                        <rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                        <path d="M2 10h20" stroke="currentColor" strokeWidth="1.8" />
                       </svg>
-                      <span>{isEn ? "Confirmed within 2h" : "Potvrda za 2h"}</span>
+                      <span>{isEn ? "Pay on delivery" : "Placanje pouzecem"}</span>
                     </div>
                     <span className="ss-pdp-trust-strip__sep" aria-hidden>·</span>
                     <div className="ss-pdp-trust-strip__item">
                       <svg width="15" height="15" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                        <rect x="2" y="6" width="20" height="14" rx="2" stroke="currentColor" strokeWidth="1.8" />
-                        <path d="M2 10h20" stroke="currentColor" strokeWidth="1.8" />
+                        <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="1.8" />
+                        <path d="M7 9h10M7 13h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
                       </svg>
-                      <span>{isEn ? "Pay on delivery" : "Placanje pouzecam"}</span>
+                      <span>{isEn ? "Bank transfer" : "Placanje preko racuna"}</span>
                     </div>
                   </div>
                 ) : null}

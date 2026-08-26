@@ -329,6 +329,13 @@ const getProductGroups = (product: CatalogProductView): SizeGuideGroup[] => {
      every table in the guide. */
   if (isFootwearProduct(product)) return ["shoes"];
 
+  /* The catalogue's own group resolver is the one signal that survives a
+     stripped name: "4022 BLU M.Cipele" reaches the storefront as "4022 Blu"
+     under the category "Elegantna", and only this resolver still knows it is
+     a shoe (it reads the category path and the mOffice record). */
+  const resolvedGroup = getCatalogProductGroupKey(product);
+  if (resolvedGroup === "obuca") return ["shoes"];
+
   /* What the product IS decides the tables, not what the copy suggests wearing
      with it: a suit description that ends "nosite uz belu kosulju i cipele"
      used to pull the shirt and footwear tables into a blazer's size guide.
@@ -340,6 +347,7 @@ const getProductGroups = (product: CatalogProductView): SizeGuideGroup[] => {
       product.nameEn || "",
       product.categories.flatMap((category) => category.path).join(" "),
       product.categories.map((category) => category.name).join(" "),
+      resolvedGroup,
       Object.values(product.attributes || {})
         .flatMap((value) => (Array.isArray(value) ? value : [value]))
         .join(" "),
@@ -739,7 +747,7 @@ export const getProductSizeGuide = async (
     /* Numeric sizes alone do not mean a tailored garment: a shoe is a 42 too,
        and telling its buyer to measure their chest was the same mistake as
        showing them the calculator. */
-    bullets: getSizeGuideBullets(lang, hasNumericSizes && !isFootwearProduct(product)),
+    bullets: getSizeGuideBullets(lang, hasNumericSizes && !groups.includes("shoes")),
     buttonLabel: lang === "en" ? "Determine size" : "Odredite velicinu",
     modalTitle: lang === "en" ? "Size guide" : "Tabela velicina",
     imageSrc: (() => {
@@ -764,9 +772,7 @@ export const getProductSizeGuide = async (
        tailoring question: a shoe is picked by insole length, and offering
        "obim grudi" on a pair of derbies was noise. It shows only where a
        garment table can actually answer it. */
-    showRecommender:
-      !isFootwearProduct(product) &&
-      visibleTables.some((table) => table.group !== "shoes"),
+    showRecommender: visibleTables.some((table) => table.group !== "shoes"),
   };
 };
 

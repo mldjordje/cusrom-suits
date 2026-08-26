@@ -1018,23 +1018,72 @@
    POLISH — size-guide trigger & quiet stock note
    -------------------------------------------------------------------------- */
 
+/* The trigger sits between the size picker and Add to cart, where a hairline
+   outline read as disabled. It keeps the square, uppercase lux shape but takes
+   an ink border and real weight, so it looks like something to press. */
 .ss-size-guide-trigger {
-  background: transparent !important;
-  border: 1px solid var(--ss-hairline) !important;
+  background: rgba(20, 17, 12, 0.04) !important;
+  border: 1.5px solid var(--ss-ink) !important;
   border-radius: 0 !important;
   color: var(--ss-ink) !important;
   font-family: var(--font-montserrat), sans-serif;
-  font-size: 0.68rem !important;
-  font-weight: 500 !important;
+  font-size: 0.72rem !important;
+  font-weight: 700 !important;
   letter-spacing: 0.16em !important;
   text-transform: uppercase;
-  padding: 0.7rem 1.3rem !important;
-  transition: border-color 0.3s ease, color 0.3s ease;
+  padding: 0.78rem 1.4rem !important;
+  transition: background 0.3s ease, color 0.3s ease;
 }
 
-.ss-size-guide-trigger:hover {
-  border-color: var(--ss-ink) !important;
-  color: var(--ss-ink) !important;
+.ss-size-guide-trigger:hover,
+.ss-size-guide-trigger:focus-visible {
+  background: var(--ss-ink) !important;
+  color: #fff !important;
+}
+
+/* The line under it explains what the button opens; at #64748b it disappeared
+   against the card. */
+.ss-product-size-guide-row__copy {
+  color: var(--ss-ink-soft);
+  font-size: 0.86rem;
+  font-weight: 500;
+}
+
+/* "Odabrana velicina: 43" is the confirmation that the picker registered the
+   click — the number is the part worth seeing. */
+.ss-product-selected-size {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.75rem 0 0;
+}
+
+.ss-product-selected-size__label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ss-ink-faint);
+}
+
+.ss-product-selected-size__value {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 2rem;
+  padding: 0.15rem 0.55rem;
+  border: 1px solid var(--ss-ink);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--ss-ink);
+}
+
+.ss-product-selected-size__prompt {
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--ss-ink-soft);
 }
 
 /* The "only N left" note → quiet meta, not a loud banner */
