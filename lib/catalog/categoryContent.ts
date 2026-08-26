@@ -76,7 +76,7 @@ export const CATEGORY_IMAGE_RATIO_OPTIONS: Array<{
   label: string;
   hint: string;
 }> = [
-  { value: "auto", label: "Podrazumevano (1:1)", hint: "Kvadrat — kao do sada" },
+  { value: "auto", label: "Automatski", hint: "Prema kategoriji: odela uspravno, ostalo kvadrat" },
   { value: "1-1", label: "1:1 kvadrat", hint: "Aksesoari, detalji" },
   { value: "4-5", label: "4:5 blago uspravno", hint: "Košulje, džemperi" },
   { value: "3-4", label: "3:4 uspravno", hint: "Sakoi, kaputi" },
@@ -184,6 +184,78 @@ export const normalizeCategoryContentEntry = (
 };
 
 /**
+ * Shipped defaults, applied where the admin has saved nothing.
+ *
+ * These are not "no opinion" values. The catalogue's suit, blazer, coat, jacket
+ * and trouser photography is full-length: a man standing, shot head to shoes. On
+ * the 1:1 stage this shop used, `cover` cut the bottom third off every one of
+ * them — the trousers and shoes the client kept asking for. A 2:3 stage matches
+ * how those photos were actually taken, so the common case now crops nothing at
+ * all; a square legacy source loses its left and right margin instead, which is
+ * backdrop rather than subject.
+ *
+ * Everything not listed here keeps the 1:1 square, which is right for the
+ * accessories and shot-flat items that make up the rest of the catalogue.
+ *
+ * Stored settings still win outright — this is the starting point, not a lock.
+ */
+export const DEFAULT_CATEGORY_CONTENT: Record<string, Partial<CategoryContentEntry>> = {
+  odelo: { imageRatio: "2-3", imageFocus: "top" },
+  sako: { imageRatio: "3-4", imageFocus: "top" },
+  kaput: { imageRatio: "2-3", imageFocus: "top" },
+  jakna: { imageRatio: "3-4", imageFocus: "top" },
+  pantalone: { imageRatio: "2-3", imageFocus: "top" },
+  /* Shot flat or on a plain ground, wider than they are tall. Stated rather
+     than left implicit so a category page can assert the square even when one
+     of its articles is grouped elsewhere — a pocket square named "... za odelo"
+     is filed under suits by the catalog's own priority order. */
+  obuca: { imageRatio: "1-1", imageFocus: "center" },
+  aksesoari: { imageRatio: "1-1", imageFocus: "center" },
+  kais: { imageRatio: "1-1", imageFocus: "center" },
+  kravata: { imageRatio: "1-1", imageFocus: "center" },
+  novcanik: { imageRatio: "1-1", imageFocus: "center" },
+  torba: { imageRatio: "1-1", imageFocus: "center" },
+  "card-holder": { imageRatio: "1-1", imageFocus: "center" },
+};
+
+/** Label used when a default has to be materialised without a catalog lookup. */
+const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
+  odelo: "Odela",
+  sako: "Sakoi",
+  kaput: "Kaputi",
+  jakna: "Jakne",
+  pantalone: "Pantalone",
+  obuca: "Obuća",
+  aksesoari: "Aksesoari",
+  kais: "Kaiševi",
+  kravata: "Kravate",
+  novcanik: "Novčanici",
+  torba: "Torbe",
+  "card-holder": "Card holder",
+};
+
+const defaultEntryFor = (key: string): CategoryContentEntry | null => {
+  const preset = DEFAULT_CATEGORY_CONTENT[key];
+  if (!preset) return null;
+  return makeCategoryContentEntry(key, DEFAULT_CATEGORY_LABELS[key] || key, preset);
+};
+
+/**
+ * `imageRatio: "auto"` means "whatever suits this category", not "force a
+ * square". The difference is not academic: saving any unrelated field on a suit
+ * category — a hero video, a line of size-guide copy — used to write `auto`
+ * alongside it and silently pin those cards back to 1:1, cropping the trousers
+ * and shoes off again. A stored row therefore only overrides the framing it
+ * actually chose.
+ */
+const withDefaultFraming = (entry: CategoryContentEntry): CategoryContentEntry => {
+  if (entry.imageRatio !== "auto") return entry;
+  const preset = DEFAULT_CATEGORY_CONTENT[entry.key];
+  if (!preset?.imageRatio) return entry;
+  return { ...entry, imageRatio: preset.imageRatio, imageFocus: preset.imageFocus || entry.imageFocus };
+};
+
+/**
  * First stored entry matching any of `keys`, in the order given.
  *
  * Callers pass candidates most-specific-first ("manzetne" before "aksesoari"),
@@ -193,9 +265,19 @@ export const resolveCategoryContent = (
   settings: CategoryContentSettings,
   keys: Array<string | null | undefined>,
 ): CategoryContentEntry | null => {
-  for (const raw of keys) {
-    const key = categoryContentKey(String(raw || ""));
-    if (key && settings[key]) return settings[key];
+  const normalized = keys
+    .map((raw) => categoryContentKey(String(raw || "")))
+    .filter(Boolean);
+
+  /* Saved settings first, across every candidate: an admin choice on the parent
+     group must still beat a shipped default for a subcategory. */
+  for (const key of normalized) {
+    const stored = settings[key];
+    if (stored) return withDefaultFraming(stored);
+  }
+  for (const key of normalized) {
+    const fallback = defaultEntryFor(key);
+    if (fallback) return fallback;
   }
   return null;
 };

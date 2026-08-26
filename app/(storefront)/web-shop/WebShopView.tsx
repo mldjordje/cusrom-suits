@@ -587,7 +587,13 @@ export default async function WebShopView({
        what every card did before the settings existed. Next's intrinsic box is
        derived from the same ratio so the reserved space matches the painted
        stage and nothing reflows while the photo loads. */
-    const content = contentForProduct(item) || lockedContent;
+    /* On a category page the category decides the framing, not the individual
+       article. The catalog groups by a priority order in which "odelo" outranks
+       everything, so a pocket square with "odelo" in its name lands in the suit
+       group and would otherwise take a tall stage in the middle of a grid of
+       accessories. A mixed listing (/web-shop, search) has no such context and
+       falls back to the article's own group. */
+    const content = lockedContent || contentForProduct(item);
     const stageStyle = categoryImageStyle(content);
     const box = categoryImageBox(content, options?.imageWidth || 690);
     const imageWidth = box.width;

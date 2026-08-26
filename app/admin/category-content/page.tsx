@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   CATEGORY_IMAGE_RATIO_OPTIONS,
   CATEGORY_IMAGE_RATIO_VALUES,
+  DEFAULT_CATEGORY_CONTENT,
   makeCategoryContentEntry,
   type CategoryContentEntry,
   type CategoryImageFit,
@@ -170,12 +171,26 @@ export default function AdminCategoryContentPage() {
     }
   };
 
+  /* Falls back to the shipped preset, not to a blank row, so the screen shows
+     the framing the shop is actually using — a suit category reads "2:3" here
+     even before anyone has saved anything. */
   const entryFor = (category: ConfigurableCategory) =>
-    entries[category.key] || makeCategoryContentEntry(category.key, category.label);
+    entries[category.key] ||
+    makeCategoryContentEntry(
+      category.key,
+      category.label,
+      DEFAULT_CATEGORY_CONTENT[category.key] || {},
+    );
 
   const patch = (category: ConfigurableCategory, next: Partial<CategoryContentEntry>) => {
     setEntries((prev) => {
-      const current = prev[category.key] || makeCategoryContentEntry(category.key, category.label);
+      const current =
+        prev[category.key] ||
+        makeCategoryContentEntry(
+          category.key,
+          category.label,
+          DEFAULT_CATEGORY_CONTENT[category.key] || {},
+        );
       return {
         ...prev,
         [category.key]: {
@@ -203,7 +218,6 @@ export default function AdminCategoryContentPage() {
   }, [categories]);
 
   const summarize = (entry: CategoryContentEntry, configured: boolean) => {
-    if (!configured) return "Podrazumevano";
     const bits: string[] = [];
     if (entry.imageRatio !== "auto") bits.push(RATIO_LABEL.get(entry.imageRatio) || entry.imageRatio);
     if (entry.imageFit === "contain") bits.push("cela slika");
@@ -211,7 +225,8 @@ export default function AdminCategoryContentPage() {
     if (entry.heroMedia === "image") bits.push("hero slika");
     if (entry.sizeGuideMode === "off") bits.push("bez tabele veličina");
     if (entry.sizeGuideMode === "text") bits.push("svoj tekst");
-    return bits.length ? bits.join(" · ") : "Podrazumevano";
+    const summary = bits.length ? bits.join(" · ") : "1:1 kvadrat";
+    return configured ? summary : `${summary} (podrazumevano)`;
   };
 
   const renderCategory = (category: ConfigurableCategory) => {
