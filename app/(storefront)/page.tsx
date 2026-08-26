@@ -931,19 +931,43 @@ export default async function HomePage({
     if (key === "customSuits") return <CustomSuitsEditorialBanner lang={lang} backgroundImage={landingSettings.heroVideoPosterUrl || undefined} />;
 
     if (key === "aboutContact") {
+      const [aboutLede, ...aboutRest] = aboutParagraphs;
       return (
-        <Reveal as="section" id="o-nama" className="container pb-5 ss-editorial-section ss-atelier-section" delay={0.16}>
-          <div className="row g-4 align-items-stretch">
-            <div className="col-12 col-lg-7"><div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
-              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(landingSettings.aboutEyebrow, "About")}</p>
-              <div className="row g-3">{aboutParagraphs.map((paragraph) => <div key={paragraph} className="col-12 col-md-6"><p className="text-secondary mb-0">{paragraph}</p></div>)}</div>
-            </div></div>
-            <div className="col-12 col-lg-5"><div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
-              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(landingSettings.contactEyebrow, "Contact")}</p>
-              <h3 className="h4 text-uppercase mb-3">{tx(landingSettings.contactTitle, "Support and personal recommendations")}</h3>
-              <p className="text-secondary mb-4">{tx(landingSettings.contactText)}</p>
-              <div className="d-grid gap-2">{contactPoints.map((point) => <div key={point.label} className="border px-3 py-2" style={{ borderRadius: 14 }}><div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(point.label)}</div><div>{point.value}</div></div>)}</div>
-            </div></div>
+        <Reveal as="section" id="o-nama" className="lux-atelier" delay={0.16}>
+          <div className="lux-atelier__inner lux-shell">
+            <div className="lux-atelier__story">
+              <span className="lux-eyebrow">{tx(landingSettings.aboutEyebrow, "About")}</span>
+              {aboutLede ? <p className="lux-atelier__lede">{aboutLede}</p> : null}
+              {aboutRest.length > 0 ? (
+                <div className="lux-atelier__copy">
+                  {aboutRest.map((paragraph) => (
+                    <p key={paragraph}>{paragraph}</p>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            <aside className="lux-atelier__contact">
+              <span className="lux-eyebrow">{tx(landingSettings.contactEyebrow, "Contact")}</span>
+              <h3 className="lux-atelier__contact-title">
+                {tx(landingSettings.contactTitle, "Support and personal recommendations")}
+              </h3>
+              {landingSettings.contactText ? (
+                <p className="lux-atelier__contact-text">{tx(landingSettings.contactText)}</p>
+              ) : null}
+              {contactPoints.length > 0 ? (
+                <dl className="lux-atelier__points">
+                  {contactPoints.map((point) => (
+                    <div key={point.label} className="lux-atelier__point">
+                      <dt>{tx(point.label)}</dt>
+                      <dd>{point.value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              ) : null}
+              <Link href={withLang("/kontakt")} className="lux-link lux-atelier__cta">
+                {isEn ? "Contact us" : "Kontaktirajte nas"}
+              </Link>
+            </aside>
           </div>
         </Reveal>
       );
@@ -954,19 +978,119 @@ export default async function HomePage({
     }
 
     if (key === "uniforms") {
+      const uniformShots = landingUniformImages.slice(0, 3);
       return (
-        <Reveal as="section" className="container pb-5 ss-editorial-section" delay={0.175}>
-          <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4"><div><p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(landingSettings.uniformsEyebrow, "Business Uniforms")}</p><SectionHeadingReveal className="section-title text-uppercase mb-0">{tx(landingSettings.uniformsTitle, "Business Uniforms")}</SectionHeadingReveal></div><Link href={withOptionalLang(landingSettings.uniformsCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">{tx(landingSettings.uniformsCtaLabel, "View Uniforms")}</Link></div>
-          <div className="row g-4 align-items-stretch"><div className="col-12 col-lg-5"><div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}><p className="text-secondary mb-0">{tx(landingSettings.uniformsText)}</p></div></div><div className="col-12 col-lg-7"><div className="row g-3">{landingUniformImages.slice(0, 3).map((item) => <div key={`${item.image}-${item.title}`} className="col-12 col-md-4"><div className="border bg-white h-100 p-2 ss-editorial-card" style={{ borderRadius: 20 }}><Image src={item.image} alt={item.alt || tx(item.title || landingSettings.uniformsTitle, "Business Uniforms")} width={420} height={520} className="w-100 h-auto" style={{ borderRadius: 16, objectFit: "cover" }} />{item.title ? <p className="mt-3 mb-1 fw-medium text-uppercase small">{tx(item.title)}</p> : null}</div></div>)}</div></div></div>
+        <Reveal as="section" className="lux-uniforms" delay={0.175}>
+          <div className="lux-uniforms__inner lux-shell">
+            <div className="lux-uniforms__text">
+              <span className="lux-eyebrow">{tx(landingSettings.uniformsEyebrow, "Business Uniforms")}</span>
+              <SectionHeadingReveal className="lux-uniforms__title">
+                {tx(landingSettings.uniformsTitle, "Business Uniforms")}
+              </SectionHeadingReveal>
+              {landingSettings.uniformsText ? (
+                <p className="lux-uniforms__copy">{tx(landingSettings.uniformsText)}</p>
+              ) : null}
+              <Link href={withOptionalLang(landingSettings.uniformsCtaHref)} className="lux-btn lux-btn--ink">
+                <span>{tx(landingSettings.uniformsCtaLabel, "View Uniforms")}</span>
+              </Link>
+            </div>
+            {uniformShots.length > 0 ? (
+              <div className="lux-uniforms__gallery" data-count={uniformShots.length}>
+                {uniformShots.map((item) => (
+                  <figure key={`${item.image}-${item.title}`} className="lux-uniforms__shot">
+                    <Image
+                      src={item.image}
+                      alt={item.alt || tx(item.title || landingSettings.uniformsTitle, "Business Uniforms")}
+                      width={640}
+                      height={800}
+                      sizes="(max-width: 991px) 45vw, 26vw"
+                    />
+                    {item.title ? <figcaption>{tx(item.title)}</figcaption> : null}
+                  </figure>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </Reveal>
       );
     }
 
     if (key === "blog") {
+      const [leadPost, ...restPosts] = posts.items;
+      if (!leadPost) return null;
+      const postDate = (value: string | null) => {
+        if (!value) return "";
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return "";
+        // sr-RS resolves to Cyrillic month names; the rest of the storefront is Latin.
+        return parsed.toLocaleDateString(isEn ? "en-GB" : "sr-Latn-RS", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric",
+        });
+      };
       return (
-        <Reveal as="section" className="blog-grid container ss-editorial-section ss-editorial-section--blog" delay={0.18}>
-          <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2"><SectionHeadingReveal className="section-title">{tx(landingSettings.blogSectionTitle, "Latest Blog")}</SectionHeadingReveal>{landingSettings.blogSectionCtaLabel ? <Link href={withOptionalLang(landingSettings.blogSectionCtaHref)} className="btn-link default-underline text-uppercase fw-medium">{tx(landingSettings.blogSectionCtaLabel, "View All")}</Link> : null}</div>
-          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4">{posts.items.map((post) => <article key={post.id} className="mb-4"><div className="blog-grid__item ss-blog-card"><div className="blog-grid__item-image-wrap"><Link href={withLang(`/blog/${post.slug}`)} prefetch={false}><StorefrontImage sources={[post.coverImage || "/img/hero.jpg"]} width={330} height={230} alt={post.title} className="w-100 h-auto" /></Link></div><div className="blog-grid__item-detail"><h6 className="blog-grid__item-title"><Link href={withLang(`/blog/${post.slug}`)} prefetch={false}>{post.title}</Link></h6><p className="text-secondary">{(post.excerpt || "").slice(0, 85) || (isEn ? "Continue reading." : "Nastavite sa citanjem.")}</p></div></div></article>)}</div>
+        <Reveal as="section" className="lux-journal" delay={0.18}>
+          <div className="lux-journal__inner lux-shell">
+            <div className="lux-head lux-journal__head">
+              <div>
+                <SectionHeadingReveal className="lux-head__title">
+                  {tx(landingSettings.blogSectionTitle, "Latest Blog")}
+                </SectionHeadingReveal>
+              </div>
+              {landingSettings.blogSectionCtaLabel ? (
+                <Link href={withOptionalLang(landingSettings.blogSectionCtaHref)} className="lux-link">
+                  {tx(landingSettings.blogSectionCtaLabel, "View All")}
+                </Link>
+              ) : null}
+            </div>
+            <div className="lux-journal__grid" data-rest={restPosts.length}>
+              <article className="lux-journal__lead">
+                <Link href={withLang(`/blog/${leadPost.slug}`)} prefetch={false} className="lux-journal__media">
+                  <StorefrontImage
+                    sources={[leadPost.coverImage || "/img/hero.jpg"]}
+                    width={880}
+                    height={560}
+                    alt={leadPost.title}
+                    sizes="(max-width: 991px) 100vw, 52vw"
+                  />
+                </Link>
+                <div className="lux-journal__body">
+                  <span className="lux-journal__meta">{postDate(leadPost.publishedAt || leadPost.createdAt)}</span>
+                  <h3 className="lux-journal__title">
+                    <Link href={withLang(`/blog/${leadPost.slug}`)} prefetch={false}>
+                      {leadPost.title}
+                    </Link>
+                  </h3>
+                  <p className="lux-journal__excerpt">
+                    {(leadPost.excerpt || "").slice(0, 160) || (isEn ? "Continue reading." : "Nastavite sa citanjem.")}
+                  </p>
+                </div>
+              </article>
+              <ol className="lux-journal__list">
+                {restPosts.map((post, postIndex) => (
+                  <li key={post.id} className="lux-journal__item">
+                    <Link href={withLang(`/blog/${post.slug}`)} prefetch={false} className="lux-journal__item-link">
+                      <span className="lux-journal__index">{String(postIndex + 2).padStart(2, "0")}</span>
+                      <span className="lux-journal__item-thumb">
+                        <StorefrontImage
+                          sources={[post.coverImage || "/img/hero.jpg"]}
+                          width={240}
+                          height={240}
+                          alt={post.title}
+                          sizes="120px"
+                        />
+                      </span>
+                      <span className="lux-journal__item-copy">
+                        <span className="lux-journal__meta">{postDate(post.publishedAt || post.createdAt)}</span>
+                        <span className="lux-journal__item-title">{post.title}</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ol>
+            </div>
+          </div>
         </Reveal>
       );
     }
