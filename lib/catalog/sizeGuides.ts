@@ -1,4 +1,5 @@
 import { readPersistentJsonFile, writePersistentJsonFile } from "@/lib/storage/persistentJson";
+import { categoryContentKey } from "@/lib/catalog/categoryContent";
 
 const SIZE_GUIDES_PATH = "data/size-guides.json";
 
@@ -14,13 +15,24 @@ export type SizeGuideTable = {
   id: string;
   title: string;
   group: SizeGuideGroup;
+  /**
+   * Slugified category name this table belongs to ("odelo", "kosulje"). When
+   * set, the table is shown only on products in that category and the coarse
+   * `group` no longer pulls it into other products' guides. Empty means the
+   * old behaviour: the table serves its whole group.
+   */
+  categoryKey: string;
   fit: SizeGuideFit;
   headers: string[];
   rows: SizeGuideRow[];
   notes: string[];
 };
 
-export type SizeGuideCategoryImages = Partial<Record<SizeGuideGroup, string>>;
+/**
+ * Keyed by group ("blazer") or by slugified category ("odelo"). A category key
+ * wins over the group key, which wins over the single global image.
+ */
+export type SizeGuideCategoryImages = Record<string, string>;
 
 export type SizeGuideSettings = {
   updatedAt: string | null;
@@ -47,6 +59,7 @@ export const DEFAULT_SIZE_GUIDE_SETTINGS: SizeGuideSettings = {
       id: "blazer-slim",
       title: "Sako - Slim fit",
       group: "blazer",
+      categoryKey: "",
       fit: "slim",
       headers: ["Velicina", "Grudi", "Struk", "Ramena", "Duzina ledja"],
       rows: makeRows("blazer-slim", [
@@ -64,6 +77,7 @@ export const DEFAULT_SIZE_GUIDE_SETTINGS: SizeGuideSettings = {
       id: "blazer-regular",
       title: "Sako - Regular fit",
       group: "blazer",
+      categoryKey: "",
       fit: "regular",
       headers: ["Velicina", "Grudi", "Struk", "Ramena", "Duzina ledja"],
       rows: makeRows("blazer-regular", [
@@ -82,6 +96,7 @@ export const DEFAULT_SIZE_GUIDE_SETTINGS: SizeGuideSettings = {
       id: "trousers-slim",
       title: "Pantalone - Slim fit",
       group: "trousers",
+      categoryKey: "",
       fit: "slim",
       headers: ["Velicina", "Struk", "Kukovi"],
       rows: makeRows("trousers-slim", [
@@ -99,6 +114,7 @@ export const DEFAULT_SIZE_GUIDE_SETTINGS: SizeGuideSettings = {
       id: "trousers-regular",
       title: "Pantalone - Regular fit",
       group: "trousers",
+      categoryKey: "",
       fit: "regular",
       headers: ["Velicina", "Struk", "Kukovi"],
       rows: makeRows("trousers-regular", [
@@ -117,6 +133,7 @@ export const DEFAULT_SIZE_GUIDE_SETTINGS: SizeGuideSettings = {
       id: "shirt-slim",
       title: "Kosulje - Slim fit",
       group: "shirt",
+      categoryKey: "",
       fit: "slim",
       headers: ["Velicina", "B", "C", "D", "E", "F"],
       rows: makeRows("shirt-slim", [
@@ -136,6 +153,7 @@ export const DEFAULT_SIZE_GUIDE_SETTINGS: SizeGuideSettings = {
       id: "shirt-regular",
       title: "Kosulje - Regular fit",
       group: "shirt",
+      categoryKey: "",
       fit: "regular",
       headers: ["Velicina", "B", "C", "D", "E", "F"],
       rows: makeRows("shirt-regular", [
@@ -157,6 +175,7 @@ export const DEFAULT_SIZE_GUIDE_SETTINGS: SizeGuideSettings = {
       id: "shoes-standard",
       title: "Obuca",
       group: "shoes",
+      categoryKey: "",
       fit: "standard",
       headers: ["Broj", "Duzina gazista"],
       rows: makeRows("shoes-standard", [
@@ -214,6 +233,7 @@ const normalizeTable = (value: unknown, index: number): SizeGuideTable | null =>
     id,
     title,
     group: ["blazer", "trousers", "shirt", "shoes"].includes(group) ? group : "shirt",
+    categoryKey: categoryContentKey(normalizeString(row.categoryKey)),
     fit: ["slim", "regular", "standard"].includes(fit) ? fit : "standard",
     headers,
     rows,
@@ -221,13 +241,21 @@ const normalizeTable = (value: unknown, index: number): SizeGuideTable | null =>
   };
 };
 
+const SIZE_GUIDE_GROUPS: SizeGuideGroup[] = ["blazer", "trousers", "shirt", "shoes"];
+
 const normalizeCategoryImages = (value: unknown): SizeGuideCategoryImages => {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   const obj = value as Record<string, unknown>;
   const result: SizeGuideCategoryImages = {};
-  for (const group of ["blazer", "trousers", "shirt", "shoes"] as SizeGuideGroup[]) {
-    const src = normalizeString(obj[group]);
-    if (src) result[group] = src;
+  for (const [rawKey, rawSrc] of Object.entries(obj)) {
+    /* Group keys stay verbatim; anything else is a category name and is
+       slugified the same way the storefront slugifies a product's categories,
+       so both sides meet on "muske-kosulje" no matter how it was typed. */
+    const key = SIZE_GUIDE_GROUPS.includes(rawKey as SizeGuideGroup)
+      ? rawKey
+      : categoryContentKey(normalizeString(rawKey));
+    const src = normalizeString(rawSrc);
+    if (key && src) result[key] = src;
   }
   return result;
 };

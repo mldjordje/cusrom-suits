@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isAdminRequestAuthenticated } from "@/lib/adminAuth";
+import { categoryContentKey } from "@/lib/catalog/categoryContent";
 import {
   getSizeGuideSettings,
   updateSizeGuideSettings,
@@ -55,6 +56,7 @@ const parseTables = (value: unknown): SizeGuideTable[] => {
         id,
         title: parseString(entry.title) || `Tabela ${index + 1}`,
         group: (parseString(entry.group) || "shirt") as SizeGuideTable["group"],
+        categoryKey: categoryContentKey(parseString(entry.categoryKey)),
         fit: (parseString(entry.fit) || "standard") as SizeGuideTable["fit"],
         headers,
         rows: parseRows(id, headers, entry.rows),

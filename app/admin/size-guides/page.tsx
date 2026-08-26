@@ -2,7 +2,13 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import type { SizeGuideCategoryImages, SizeGuideGroup, SizeGuideSettings } from "@/lib/catalog/sizeGuides";
+import type { SizeGuideGroup, SizeGuideSettings } from "@/lib/catalog/sizeGuides";
+
+type ConfigurableCategory = {
+  key: string;
+  label: string;
+  parent: string;
+};
 
 const emptySettings: SizeGuideSettings = {
   updatedAt: null,
@@ -11,6 +17,8 @@ const emptySettings: SizeGuideSettings = {
   categoryImages: {},
   tables: [],
 };
+
+const GROUP_KEYS: SizeGuideGroup[] = ["blazer", "trousers", "shirt", "shoes"];
 
 const CATEGORY_LABELS: Record<SizeGuideGroup, string> = {
   blazer: "Sako",
@@ -21,10 +29,12 @@ const CATEGORY_LABELS: Record<SizeGuideGroup, string> = {
 
 export default function AdminSizeGuidesPage() {
   const [settings, setSettings] = useState<SizeGuideSettings>(emptySettings);
+  const [categories, setCategories] = useState<ConfigurableCategory[]>([]);
+  const [newImageCategory, setNewImageCategory] = useState("");
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [uploadingImage, setUploadingImage] = useState(false);
-  const [uploadingCategoryImage, setUploadingCategoryImage] = useState<SizeGuideGroup | null>(null);
+  const [uploadingCategoryImage, setUploadingCategoryImage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -39,6 +49,14 @@ export default function AdminSizeGuidesPage() {
         return;
       }
       setSettings(json.settings || emptySettings);
+      /* The category list is the same one the category-content screen shows, so
+         a table scoped here and a hero configured there name one category with
+         one key. */
+      const categoriesRes = await fetch("/api/admin/webshop/category-content");
+      const categoriesJson = await categoriesRes.json().catch(() => null);
+      if (categoriesJson?.success && Array.isArray(categoriesJson.categories)) {
+        setCategories(categoriesJson.categories as ConfigurableCategory[]);
+      }
     } catch (e: any) {
       setError(e?.message || "Ucitavanje tabela velicina nije uspelo.");
     } finally {
@@ -67,6 +85,7 @@ export default function AdminSizeGuidesPage() {
           id,
           title: "Nova tabela",
           group: "shirt",
+          categoryKey: "",
           fit: "standard",
           headers: ["Velicina", "Grudi", "Struk"],
           rows: [{ id: `${id}-row-1`, cells: ["", "", ""] }],
@@ -132,10 +151,10 @@ export default function AdminSizeGuidesPage() {
     }
   };
 
-  const uploadCategoryImage = async (group: SizeGuideGroup, files: FileList | null) => {
+  const uploadCategoryImage = async (scopeKey: string, scopeLabel: string, files: FileList | null) => {
     const file = files?.[0];
     if (!file) return;
-    setUploadingCategoryImage(group);
+    setUploadingCategoryImage(scopeKey);
     setError(null);
     setNotice(null);
     try {
@@ -150,16 +169,28 @@ export default function AdminSizeGuidesPage() {
         ...prev,
         categoryImages: {
           ...prev.categoryImages,
-          [group]: json.urls[0],
+          [scopeKey]: json.urls[0],
         },
       }));
-      setNotice(`Slika za kategoriju "${CATEGORY_LABELS[group]}" uploadovana. Klikni Sacuvaj sve.`);
+      setNotice(`Slika za "${scopeLabel}" uploadovana. Klikni Sacuvaj sve.`);
     } catch (e: any) {
       setError(e?.message || "Upload slike nije uspeo.");
     } finally {
       setUploadingCategoryImage(null);
     }
   };
+
+  const categoryLabel = (key: string) => {
+    const match = categories.find((category) => category.key === key);
+    if (!match) return key;
+    return match.parent ? `${match.parent} / ${match.label}` : match.label;
+  };
+
+  /* Only the keys the admin added by category — the four group slots have their
+     own cards above. */
+  const categoryImageEntries = Object.entries(settings.categoryImages || {}).filter(
+    ([key]) => !GROUP_KEYS.includes(key as SizeGuideGroup),
+  );
 
   const save = async () => {
     setSaving(true);
@@ -316,7 +347,11 @@ export default function AdminSizeGuidesPage() {
                       onClick={() =>
                         setSettings((prev) => ({
                           ...prev,
-                          categoryImages: { ...prev.categoryImages, [group]: undefined },
+                          categoryImages: (() => {
+                            const next = { ...(prev.categoryImages || {}) };
+                            delete next[group];
+                            return next;
+                          })(),
                         }))
                       }
                       className="absolute right-2 top-2 rounded-full border border-rose-200 bg-white/90 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-700 backdrop-blur-sm"
@@ -336,7 +371,7 @@ export default function AdminSizeGuidesPage() {
                       accept="image/*"
                       className="hidden"
                       onChange={(e) => {
-                        void uploadCategoryImage(group, e.target.files);
+                        void uploadCategoryImage(group, CATEGORY_LABELS[group], e.target.files);
                         e.currentTarget.value = "";
                       }}
                     />
@@ -347,7 +382,7 @@ export default function AdminSizeGuidesPage() {
                     onChange={(e) =>
                       setSettings((prev) => ({
                         ...prev,
-                        categoryImages: { ...prev.categoryImages, [group]: e.target.value || undefined },
+                        categoryImages: { ...prev.categoryImages, [group]: e.target.value },
                       }))
                     }
                     placeholder="ili URL"
@@ -357,6 +392,108 @@ export default function AdminSizeGuidesPage() {
               </div>
             );
           })}
+        </div>
+
+        <div className="mt-6 border-t border-slate-200 pt-5">
+          <h3 className="text-sm font-semibold text-slate-900">Slika za pojedinacnu kategoriju</h3>
+          <p className="mt-1 text-sm text-slate-600">
+            Preciznije od grupe: ova slika se prikazuje samo na proizvodima te kategorije.
+          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <select
+              value={newImageCategory}
+              onChange={(e) => setNewImageCategory(e.target.value)}
+              className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+            >
+              <option value="">Izaberi kategoriju...</option>
+              {categories.map((category) => (
+                <option key={category.key} value={category.key}>
+                  {category.parent ? `${category.parent} / ${category.label}` : category.label}
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              disabled={!newImageCategory || settings.categoryImages?.[newImageCategory] !== undefined}
+              onClick={() => {
+                setSettings((prev) => ({
+                  ...prev,
+                  categoryImages: { ...prev.categoryImages, [newImageCategory]: "" },
+                }));
+                setNewImageCategory("");
+              }}
+              className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700 disabled:opacity-50"
+            >
+              Dodaj kategoriju
+            </button>
+          </div>
+
+          <div className="mt-4 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            {categoryImageEntries.length ? (
+              categoryImageEntries.map(([key, src]) => {
+                const label = categoryLabel(key);
+                const uploading = uploadingCategoryImage === key;
+                return (
+                  <div key={key} className="flex flex-col gap-2">
+                    <p className="text-sm font-semibold text-slate-800">{label}</p>
+                    {src ? (
+                      <Image
+                        src={src}
+                        alt={label}
+                        width={400}
+                        height={220}
+                        className="h-36 w-full rounded-xl border border-slate-200 object-cover"
+                      />
+                    ) : (
+                      <div className="flex h-36 items-center justify-center rounded-xl border border-dashed border-slate-300 text-xs text-slate-500">
+                        Nema slike
+                      </div>
+                    )}
+                    <div className="grid grid-cols-2 gap-1">
+                      <label className="cursor-pointer rounded-lg border border-blue-200 bg-blue-50 px-2 py-1.5 text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-700">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => {
+                            void uploadCategoryImage(key, label, e.target.files);
+                            e.currentTarget.value = "";
+                          }}
+                        />
+                        {uploading ? "Uploading..." : "Upload"}
+                      </label>
+                      <input
+                        value={src}
+                        onChange={(e) =>
+                          setSettings((prev) => ({
+                            ...prev,
+                            categoryImages: { ...prev.categoryImages, [key]: e.target.value },
+                          }))
+                        }
+                        placeholder="ili URL"
+                        className="min-w-0 rounded-lg border border-slate-200 px-2 py-1.5 text-[11px]"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSettings((prev) => {
+                          const next = { ...(prev.categoryImages || {}) };
+                          delete next[key];
+                          return { ...prev, categoryImages: next };
+                        })
+                      }
+                      className="rounded-lg border border-rose-200 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] text-rose-700"
+                    >
+                      Ukloni kategoriju
+                    </button>
+                  </div>
+                );
+              })
+            ) : (
+              <p className="text-sm text-slate-500">Jos nema slika po kategorijama.</p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -377,7 +514,7 @@ export default function AdminSizeGuidesPage() {
                 Obrisi tabelu
               </button>
             </div>
-            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr),180px,180px]">
+            <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr),180px,220px,180px]">
               <label className="grid gap-2 text-sm text-slate-700">
                 <span className="font-semibold text-slate-900">Naslov tabele</span>
                 <input
@@ -398,6 +535,26 @@ export default function AdminSizeGuidesPage() {
                   <option value="shirt">Kosulja</option>
                   <option value="shoes">Obuca</option>
                 </select>
+              </label>
+              <label className="grid gap-2 text-sm text-slate-700">
+                <span className="font-semibold text-slate-900">Vazi za</span>
+                <select
+                  value={table.categoryKey || ""}
+                  onChange={(e) =>
+                    updateTable(table.id, (current) => ({ ...current, categoryKey: e.target.value }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2"
+                >
+                  <option value="">Celu grupu (kao do sada)</option>
+                  {categories.map((category) => (
+                    <option key={category.key} value={category.key}>
+                      {category.parent ? `${category.parent} / ${category.label}` : category.label}
+                    </option>
+                  ))}
+                </select>
+                <span className="text-[11px] text-slate-500">
+                  Kad izaberes kategoriju, tabela se vidi samo na njoj i zamenjuje tabele grupe.
+                </span>
               </label>
               <label className="grid gap-2 text-sm text-slate-700">
                 <span className="font-semibold text-slate-900">Fit</span>

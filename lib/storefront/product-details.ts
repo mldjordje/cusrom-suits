@@ -299,14 +299,7 @@ const foldLatinSrForMatch = (value: string) =>
     .replace(/š/g, "s")
     .replace(/ž/g, "z");
 
-const getProductGroups = (product: CatalogProductView): SizeGuideGroup[] => {
-  /* A shoe measures nothing a jacket table describes, so an explicitly marked
-     pair gets the footwear table alone. Without the short-circuit a model named
-     after its last ("Derbi 042") matched none of the regexes and was handed
-     every table in the guide. */
-  if (isFootwearProduct(product)) return ["shoes"];
-
-  const haystack = foldLatinSrForMatch(getProductHaystack(product));
+const matchSizeGuideGroups = (haystack: string): SizeGuideGroup[] => {
   const groups = new Set<SizeGuideGroup>();
   const isSuit = /odel|suit/.test(haystack);
 
@@ -327,6 +320,36 @@ const getProductGroups = (product: CatalogProductView): SizeGuideGroup[] => {
   }
 
   return Array.from(groups);
+};
+
+const getProductGroups = (product: CatalogProductView): SizeGuideGroup[] => {
+  /* A shoe measures nothing a jacket table describes, so an explicitly marked
+     pair gets the footwear table alone. Without the short-circuit a model named
+     after its last ("Derbi 042") matched none of the regexes and was handed
+     every table in the guide. */
+  if (isFootwearProduct(product)) return ["shoes"];
+
+  /* What the product IS decides the tables, not what the copy suggests wearing
+     with it: a suit description that ends "nosite uz belu kosulju i cipele"
+     used to pull the shirt and footwear tables into a blazer's size guide.
+     Category and name are checked first; the description only answers when
+     they say nothing at all. */
+  const identity = foldLatinSrForMatch(
+    [
+      product.name,
+      product.nameEn || "",
+      product.categories.flatMap((category) => category.path).join(" "),
+      product.categories.map((category) => category.name).join(" "),
+      Object.values(product.attributes || {})
+        .flatMap((value) => (Array.isArray(value) ? value : [value]))
+        .join(" "),
+    ].join(" "),
+  );
+
+  const identityGroups = matchSizeGuideGroups(identity);
+  if (identityGroups.length) return identityGroups;
+
+  return matchSizeGuideGroups(foldLatinSrForMatch(getProductHaystack(product)));
 };
 
 const isTailoredProduct = (product: CatalogProductView) => {
@@ -665,6 +688,11 @@ export const getProductSizeGuide = async (
   const groups = getProductGroups(product);
   const settings = await getSizeGuideSettings();
   const fit = getProductFit(product, sizeOptions);
+  const categoryKeys = productCategoryContentKeys(
+    product.categories,
+    normalizeCatalogCategoryGroupKey,
+    getCatalogProductGroupKey(product),
+  );
   const joined = sizeOptions.map((option) => option.label).join(", ");
   const hasNumericSizes = sizeOptions.some((option) => /^\d/.test(option.label));
   const localizedFallback =
@@ -672,9 +700,20 @@ export const getProductSizeGuide = async (
       ? "This item does not have a dedicated size table yet. Use the selector above or contact us for a recommendation."
       : "Ovaj model jos nema posebnu tabelu velicina. Iskoristite izbor velicine iznad ili nas kontaktirajte za preporuku.";
 
-  const relevantTables = groups.length
-    ? settings.tables.filter((table) => groups.includes(table.group))
-    : settings.tables;
+  /* A table written for one category answers only for that category. When the
+     admin has made one, it replaces the coarse group tables outright — a
+     "Kosulje" table must not surface on a suit just because both are shirts to
+     the group matcher. */
+  const categoryTables = settings.tables.filter(
+    (table) => table.categoryKey && categoryKeys.includes(table.categoryKey),
+  );
+  const groupTables = settings.tables.filter((table) => !table.categoryKey);
+
+  const relevantTables = categoryTables.length
+    ? categoryTables
+    : groups.length
+      ? groupTables.filter((table) => groups.includes(table.group))
+      : groupTables;
   const tables = relevantTables.filter((table) => {
     if (!fit) return true;
     if (table.fit === "standard") return true;
@@ -703,10 +742,15 @@ export const getProductSizeGuide = async (
     buttonLabel: lang === "en" ? "Determine size" : "Odredite velicinu",
     modalTitle: lang === "en" ? "Size guide" : "Tabela velicina",
     imageSrc: (() => {
-      if (settings.categoryImages && groups.length) {
+      const images = settings.categoryImages;
+      if (images) {
+        /* The category's own drawing first, then the group's, then the one
+           global fallback. */
+        for (const key of categoryKeys) {
+          if (images[key]) return images[key];
+        }
         for (const group of groups) {
-          const src = settings.categoryImages[group as import("@/lib/catalog/sizeGuides").SizeGuideGroup];
-          if (src) return src;
+          if (images[group]) return images[group];
         }
       }
       return settings.imageSrc;

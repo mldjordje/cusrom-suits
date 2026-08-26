@@ -185,6 +185,7 @@ export const shoeSpecToSizeGuideTable = (
     id,
     title: lang === "en" ? "This model" : "Ovaj model",
     group: "shoes",
+    categoryKey: "",
     fit: "standard",
     headers:
       lang === "en" ? ["Size", "Insole length (cm)"] : ["Broj", "Dužina gazišta (cm)"],
