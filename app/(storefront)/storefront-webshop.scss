@@ -223,11 +223,12 @@
   scrollbar-width: thin;
 }
 
+/* No cap and no nested scroller here. The category list is thirteen items long,
+   and a max-height of 44svh showed the first seven and swallowed the rest — a
+   scroll container nested inside the already-scrolling panel does not take a
+   touch on iOS, so the hidden half simply read as missing categories. The
+   panel's own scroll carries the whole list. */
 .ss-mobile-nav-submenu {
-  max-height: min(44svh, 360px) !important;
-  overflow-y: auto !important;
-  -webkit-overflow-scrolling: touch !important;
-  overscroll-behavior: contain !important;
   padding-right: 3px !important;
 }
 
