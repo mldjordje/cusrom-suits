@@ -2868,6 +2868,145 @@ export default function AdminWebshopPage() {
 
       {activeTab === "products" ? (
         <>
+          {/* Search first. This is the page the catalogue is actually worked
+              on: finding one article by SKU is the reason it gets opened, and
+              that field used to sit below five explanatory panels, off the
+              bottom of the screen. */}
+          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pretraga i filteri</p>
+                <p className="mt-1 text-xs text-slate-500">Search radi po SKU, EAN, ID, nazivu, brendu i opisu. Enter odmah primenjuje filter.</p>
+              </div>
+              <select
+                value={pagination.pageSize}
+                onChange={(e) => setPagination((prev) => ({ ...prev, pageSize: Number(e.target.value || 30) }))}
+                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"
+              >
+                <option value={24}>24 po strani</option>
+                <option value={30}>30 po strani</option>
+                <option value={60}>60 po strani</option>
+                <option value={120}>120 po strani</option>
+              </select>
+            </div>
+            <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-6">
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") void loadProducts(1);
+                }}
+                placeholder="SKU, EAN, ID, naziv, brend..."
+                className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
+              />
+              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="">Sve kategorije</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.id}>{c.path.join(" / ")}</option>
+                ))}
+              </select>
+              <select value={mediaStatus} onChange={(e) => setMediaStatusWithAutoSort(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="all">Sve slike</option>
+                <option value="missing">Bez direktne slike</option>
+                <option value="direct">Ima direktnu sliku</option>
+                <option value="fallback">Pozajmljena/fallback slika</option>
+                <option value="broken">Nema validne svoje slike</option>
+                <option value="video">Ima video</option>
+              </select>
+              <select value={contentStatus} onChange={(e) => setContentStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="all">Sav sadrzaj</option>
+                <option value="missing_description">Nema opis</option>
+                <option value="missing_price">Nema cenu</option>
+                <option value="missing_category">Bez kategorije</option>
+                <option value="missing_seo">SEO nedostaje</option>
+              </select>
+              <select value={visibilityStatus} onChange={(e) => setVisibilityStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="all">Sva vidljivost</option>
+                <option value="visible">Vidljivo na sajtu</option>
+                <option value="hidden">Sakriveno (neaktivno/bez exporta)</option>
+                <option value="hidden_shop">Sakriveno sa sajta (rucno)</option>
+              </select>
+              <select value={sourceStatus} onChange={(e) => setSourceStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="all">Svi izvori</option>
+                <option value="moffice">Moffice/lager</option>
+                <option value="manual">Rucni/stari unos</option>
+              </select>
+              <select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
+                <option value="featured">Podrazumevano</option>
+                <option value="no_image_first">Bez slike prvo</option>
+                <option value="stock_desc">Lager najveci</option>
+                <option value="stock_asc">Lager najmanji</option>
+                <option value="price_desc">Cena najveca</option>
+                <option value="price_asc">Cena najmanja</option>
+                <option value="name_asc">Naziv A-Z</option>
+                <option value="name_desc">Naziv Z-A</option>
+                <option value="newest">Najnoviji ID</option>
+                <option value="oldest">Najstariji ID</option>
+              </select>
+              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={inStock} onChange={(e) => setInStock(e.target.checked)} />Na stanju</label>
+              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} />Samo aktivni</label>
+              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={exportOnly} onChange={(e) => setExportOnly(e.target.checked)} />Samo export</label>
+              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={onSaleOnly} onChange={(e) => setOnSaleOnly(e.target.checked)} />Samo akcija</label>
+            </div>
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <button onClick={() => loadProducts(1)} className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Primeni filtere</button>
+              <button onClick={() => loadProducts(pagination.page)} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">Osvezi</button>
+              <button
+                type="button"
+                onClick={() => {
+                  setQ("");
+                  setCategoryId("");
+                  setInStock(false);
+                  setActiveOnly(true);
+                  setExportOnly(true);
+                  setOnSaleOnly(false);
+                  setMediaStatus("all");
+                  setContentStatus("all");
+                  setVisibilityStatus("all");
+                  setSourceStatus("all");
+                  setSort("featured");
+                }}
+                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
+              >
+                Reset filtera
+              </button>
+              <div className="ml-auto hidden flex-wrap items-center gap-1 lg:flex">
+                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Desktop</span>
+                <button
+                  type="button"
+                  onClick={() => setProductsCatalogView("grid")}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${
+                    productsCatalogView === "grid"
+                      ? "border border-blue-200 bg-blue-50 text-blue-800"
+                      : "border border-slate-200 text-slate-600"
+                  }`}
+                >
+                  Mreža
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProductsCatalogView("table")}
+                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${
+                    productsCatalogView === "table"
+                      ? "border border-blue-200 bg-blue-50 text-blue-800"
+                      : "border border-slate-200 text-slate-600"
+                  }`}
+                >
+                  Tabela
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* The guidance and the counts still matter, but they are read once
+              and then rarely again, so they no longer take the top of the
+              screen on every visit. Closed by default; <details> keeps it
+              keyboard- and screen-reader-navigable with no extra state. */}
+          <details className="admin-ws-help rounded-2xl border border-slate-200 bg-white">
+            <summary className="cursor-pointer list-none px-4 py-3 text-sm font-semibold text-slate-700">
+              Uputstvo, stanje kataloga i brzi filteri
+            </summary>
+            <div className="flex flex-col gap-3 border-t border-slate-200 p-4">
           <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
             <p className="font-semibold uppercase tracking-[0.12em]">Kako koristiti - Proizvodi</p>
             <p className="mt-1">
@@ -2966,6 +3105,9 @@ export default function AdminWebshopPage() {
               ))}
             </div>
           </div>
+
+            </div>
+          </details>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -3224,131 +3366,6 @@ export default function AdminWebshopPage() {
             )}
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Pretraga i filteri</p>
-                <p className="mt-1 text-xs text-slate-500">Search radi po SKU, EAN, ID, nazivu, brendu i opisu. Enter odmah primenjuje filter.</p>
-              </div>
-              <select
-                value={pagination.pageSize}
-                onChange={(e) => setPagination((prev) => ({ ...prev, pageSize: Number(e.target.value || 30) }))}
-                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold text-slate-700"
-              >
-                <option value={24}>24 po strani</option>
-                <option value={30}>30 po strani</option>
-                <option value={60}>60 po strani</option>
-                <option value={120}>120 po strani</option>
-              </select>
-            </div>
-            <div className="grid gap-3 md:grid-cols-4 xl:grid-cols-6">
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") void loadProducts(1);
-                }}
-                placeholder="SKU, EAN, ID, naziv, brend..."
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
-              />
-              <select value={categoryId} onChange={(e) => setCategoryId(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <option value="">Sve kategorije</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.id}>{c.path.join(" / ")}</option>
-                ))}
-              </select>
-              <select value={mediaStatus} onChange={(e) => setMediaStatusWithAutoSort(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <option value="all">Sve slike</option>
-                <option value="missing">Bez direktne slike</option>
-                <option value="direct">Ima direktnu sliku</option>
-                <option value="fallback">Pozajmljena/fallback slika</option>
-                <option value="broken">Nema validne svoje slike</option>
-                <option value="video">Ima video</option>
-              </select>
-              <select value={contentStatus} onChange={(e) => setContentStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <option value="all">Sav sadrzaj</option>
-                <option value="missing_description">Nema opis</option>
-                <option value="missing_price">Nema cenu</option>
-                <option value="missing_category">Bez kategorije</option>
-                <option value="missing_seo">SEO nedostaje</option>
-              </select>
-              <select value={visibilityStatus} onChange={(e) => setVisibilityStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <option value="all">Sva vidljivost</option>
-                <option value="visible">Vidljivo na sajtu</option>
-                <option value="hidden">Sakriveno (neaktivno/bez exporta)</option>
-                <option value="hidden_shop">Sakriveno sa sajta (rucno)</option>
-              </select>
-              <select value={sourceStatus} onChange={(e) => setSourceStatus(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <option value="all">Svi izvori</option>
-                <option value="moffice">Moffice/lager</option>
-                <option value="manual">Rucni/stari unos</option>
-              </select>
-              <select value={sort} onChange={(e) => setSort(e.target.value)} className="rounded-xl border border-slate-200 px-3 py-2 text-sm">
-                <option value="featured">Podrazumevano</option>
-                <option value="no_image_first">Bez slike prvo</option>
-                <option value="stock_desc">Lager najveci</option>
-                <option value="stock_asc">Lager najmanji</option>
-                <option value="price_desc">Cena najveca</option>
-                <option value="price_asc">Cena najmanja</option>
-                <option value="name_asc">Naziv A-Z</option>
-                <option value="name_desc">Naziv Z-A</option>
-                <option value="newest">Najnoviji ID</option>
-                <option value="oldest">Najstariji ID</option>
-              </select>
-              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={inStock} onChange={(e) => setInStock(e.target.checked)} />Na stanju</label>
-              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={activeOnly} onChange={(e) => setActiveOnly(e.target.checked)} />Samo aktivni</label>
-              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={exportOnly} onChange={(e) => setExportOnly(e.target.checked)} />Samo export</label>
-              <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm"><input type="checkbox" checked={onSaleOnly} onChange={(e) => setOnSaleOnly(e.target.checked)} />Samo akcija</label>
-            </div>
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <button onClick={() => loadProducts(1)} className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-blue-700">Primeni filtere</button>
-              <button onClick={() => loadProducts(pagination.page)} className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700">Osvezi</button>
-              <button
-                type="button"
-                onClick={() => {
-                  setQ("");
-                  setCategoryId("");
-                  setInStock(false);
-                  setActiveOnly(true);
-                  setExportOnly(true);
-                  setOnSaleOnly(false);
-                  setMediaStatus("all");
-                  setContentStatus("all");
-                  setVisibilityStatus("all");
-                  setSourceStatus("all");
-                  setSort("featured");
-                }}
-                className="rounded-full border border-slate-200 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.14em] text-slate-700"
-              >
-                Reset filtera
-              </button>
-              <div className="ml-auto hidden flex-wrap items-center gap-1 lg:flex">
-                <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">Desktop</span>
-                <button
-                  type="button"
-                  onClick={() => setProductsCatalogView("grid")}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${
-                    productsCatalogView === "grid"
-                      ? "border border-blue-200 bg-blue-50 text-blue-800"
-                      : "border border-slate-200 text-slate-600"
-                  }`}
-                >
-                  Mreža
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setProductsCatalogView("table")}
-                  className={`rounded-full px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.1em] ${
-                    productsCatalogView === "table"
-                      ? "border border-blue-200 bg-blue-50 text-blue-800"
-                      : "border border-slate-200 text-slate-600"
-                  }`}
-                >
-                  Tabela
-                </button>
-              </div>
-            </div>
-          </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">Bulk akcije ({selectedIds.length} selektovano)</p>

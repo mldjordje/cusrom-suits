@@ -550,3 +550,109 @@
     display: none !important;
   }
 }
+
+
+/* =========================================================================
+   LEGIBILITY
+   =========================================================================
+
+   These screens were built almost entirely out of Tailwind's `text-xs`, which
+   is 12px, with labels in `text-slate-400` on white — roughly 2.8:1. Reading a
+   SKU or a price off that means leaning into the monitor, all day. Nothing
+   about an internal tool justifies it: the constraint that pushes public pages
+   toward small type (fitting a marketing layout) does not exist here, and the
+   people using this screen are working in it for hours.
+
+   Rather than rewrite the class on several thousand elements, the two sizes the
+   admin actually uses are redefined inside the shell. `text-xs` becomes 13px
+   and `text-sm` 15px — still a clear hierarchy between them, both above the
+   threshold where numerals stop being guessable. The faint greys are darkened
+   to clear 4.5:1 on white.
+
+   Scoped to `.admin-shell-content` so no storefront page is affected.
+   ========================================================================= */
+
+.admin-shell-content {
+  font-size: 15px;
+}
+
+.admin-shell-content .text-xs {
+  font-size: 0.8125rem; /* 13px */
+  line-height: 1.45;
+}
+
+.admin-shell-content .text-sm {
+  font-size: 0.9375rem; /* 15px */
+  line-height: 1.5;
+}
+
+.admin-shell-content .text-\[10px\],
+.admin-shell-content .text-\[11px\] {
+  font-size: 0.75rem; /* 12px, and only on badges */
+  line-height: 1.35;
+}
+
+.admin-shell-content .text-base {
+  font-size: 1rem;
+}
+
+.admin-shell-content .text-lg {
+  font-size: 1.125rem;
+}
+
+/* Slate 400 on white is about 2.8:1 and was used for real labels, not just
+   decoration. Each step is darkened to the next one that clears AA. */
+.admin-shell-content .text-slate-400 {
+  color: #6b7280;
+}
+
+.admin-shell-content .text-slate-500 {
+  color: #57606f;
+}
+
+/* Uppercase micro-labels were tracked at 0.14em–0.16em at 12px, which spaces a
+   word out past the point where it reads as a word. */
+.admin-shell-content .tracking-\[0\.14em\],
+.admin-shell-content .tracking-\[0\.16em\],
+.admin-shell-content .tracking-\[0\.12em\] {
+  letter-spacing: 0.08em;
+}
+
+/* Inputs and selects: the values typed into these are the point of the screen,
+   so they get the largest step, and a target height that is comfortable to hit. */
+.admin-shell-content input:not([type="checkbox"]):not([type="radio"]),
+.admin-shell-content textarea,
+.admin-shell-content select {
+  font-size: 0.9375rem;
+  min-height: 2.5rem;
+}
+
+.admin-shell-content table th,
+.admin-shell-content table td {
+  font-size: 0.875rem;
+}
+
+/* The collapsible guidance panel on the web-shop screen. */
+.admin-ws-help > summary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.admin-ws-help > summary::-webkit-details-marker {
+  display: none;
+}
+
+.admin-ws-help > summary::before {
+  content: "▸";
+  color: #94a3b8;
+  font-size: 0.8em;
+}
+
+.admin-ws-help[open] > summary::before {
+  content: "▾";
+}
+
+.admin-ws-help > summary:hover {
+  background: #f8fafc;
+}

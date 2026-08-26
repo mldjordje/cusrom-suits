@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import AdminAssetUpload from "@/app/admin/components/AdminAssetUpload";
 import {
   CATEGORY_IMAGE_RATIO_OPTIONS,
   CATEGORY_IMAGE_RATIO_VALUES,
@@ -400,47 +401,31 @@ export default function AdminCategoryContentPage() {
                 </div>
 
                 {entry.heroMedia === "image" ? (
-                  <div>
-                    <label className={labelClass}>URL slike</label>
-                    <input
-                      type="text"
-                      value={entry.heroImage}
-                      onChange={(e) => patch(category, { heroImage: e.target.value })}
-                      placeholder="/img/hero-odela.jpg"
-                      className={inputClass}
-                    />
-                    <p className={hintClass}>Preporuka: široka panorama, oko 1760×620px.</p>
-                  </div>
+                  <AdminAssetUpload
+                    kind="image"
+                    label="Slika"
+                    hint="Široka panorama, oko 1760×620px. JPG, PNG ili WEBP, do 80MB."
+                    value={entry.heroImage}
+                    onChange={(url) => patch(category, { heroImage: url })}
+                  />
                 ) : null}
 
                 {entry.heroMedia === "video" ? (
                   <>
-                    <div>
-                      <label className={labelClass}>URL videa (.mp4 ili .webm)</label>
-                      <input
-                        type="text"
-                        value={entry.heroVideoUrl}
-                        onChange={(e) => patch(category, { heroVideoUrl: e.target.value })}
-                        placeholder="https://assets.santos.rs/fajlovi/video/odela.mp4"
-                        className={inputClass}
-                      />
-                      <p className={hintClass}>
-                        Vrti se u petlji, bez zvuka. Držite fajl ispod ~8 MB da se strana brzo učita.
-                      </p>
-                    </div>
-                    <div>
-                      <label className={labelClass}>Naslovna slika videa (poster)</label>
-                      <input
-                        type="text"
-                        value={entry.heroVideoPoster}
-                        onChange={(e) => patch(category, { heroVideoPoster: e.target.value })}
-                        placeholder="/img/hero-odela.jpg"
-                        className={inputClass}
-                      />
-                      <p className={hintClass}>
-                        Prikazuje se dok se video učitava i posetiocima koji su isključili animacije.
-                      </p>
-                    </div>
+                    <AdminAssetUpload
+                      kind="video"
+                      label="Video"
+                      hint="Vrti se u petlji, bez zvuka. Držite fajl ispod ~8MB da se strana brzo učita."
+                      value={entry.heroVideoUrl}
+                      onChange={(url) => patch(category, { heroVideoUrl: url })}
+                    />
+                    <AdminAssetUpload
+                      kind="image"
+                      label="Naslovna slika videa"
+                      hint="Prikazuje se dok se video učitava. Ako je ne postavite, dok se učitava stoji siva površina."
+                      value={entry.heroVideoPoster}
+                      onChange={(url) => patch(category, { heroVideoPoster: url })}
+                    />
                   </>
                 ) : null}
 
