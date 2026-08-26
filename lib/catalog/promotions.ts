@@ -193,8 +193,14 @@ const readRules = async () => {
     await readJsonFile<unknown[]>(PROMOTION_RULES_PATH, []),
   );
 
-  // Always write back so the file exists in storage and future reads don't 400.
-  await writeRulesToSupabaseStorage(fileRules);
+  /* Seed storage from the file so future reads do not 400 — but only with
+     something. `readRulesFromSupabaseStorage` returns null for a missing object
+     and for a transient download failure alike, and the bundled file is empty
+     on every deployment, so writing it back unconditionally meant one blip
+     could erase the live rules and nobody would know until the sale vanished. */
+  if (fileRules.length > 0) {
+    await writeRulesToSupabaseStorage(fileRules);
+  }
 
   return fileRules;
 };

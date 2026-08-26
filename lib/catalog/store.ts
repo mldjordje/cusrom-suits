@@ -11,6 +11,7 @@ import {
   applyPromotionRulesToProduct,
   applyPromotionRulesToProducts,
   listPromotionRules,
+  type PromotionRule,
 } from "@/lib/catalog/promotions";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { revalidateTag, unstable_cache } from "next/cache";
@@ -337,6 +338,8 @@ const makeCatalogListCacheKey = (input: {
   sourceStatus: string;
   excludeKey: string;
   sort: string;
+  /** Fingerprint of the promotion rules the entry was priced with. */
+  promotionSignature: string;
 }) =>
   [
     CATALOG_LIST_CACHE_VERSION,
@@ -365,7 +368,28 @@ const makeCatalogListCacheKey = (input: {
     input.sourceStatus,
     input.excludeKey,
     input.sort,
+    input.promotionSignature,
   ].join("|");
+
+/**
+ * Identifies the promotion rules a cached page was priced with.
+ *
+ * The list cache lives in each lambda's own memory and is only cleared by the
+ * instance that handled a write, or when a product's `updated_at` moves. A
+ * promotion rule changes neither — so after a sale was switched off, every
+ * warm instance kept serving pages it had priced while the sale was on, and a
+ * 30%-off-everything rule that had already been deleted stayed on the shop.
+ *
+ * Putting this in the cache key means those entries are simply never read
+ * again: a different rule set asks a different question.
+ */
+const promotionRulesSignature = (rules: PromotionRule[]): string => {
+  if (!rules.length) return "promo:none";
+  return `promo:${rules
+    .map((rule) => `${rule.id}@${rule.updatedAt}${rule.isActive ? "" : "!"}`)
+    .sort()
+    .join(",")}`;
+};
 
 const maybeLogCatalogPerformance = (payload: {
   source: "supabase" | "file";
@@ -1923,6 +1947,13 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     ? `x${excludeLegacyIds.size}:${Array.from(excludeLegacyIds).sort((a, b) => a - b).join(",")}`
     : "";
 
+  /* Loaded before the cache key so the key can carry which rules these prices
+     were computed with. The read is itself cached (and tag-invalidated on every
+     rule write), so this costs nothing per request. */
+  const promoStart = Date.now();
+  const promotionRules = applyPromotions ? await listPromotionRulesCached() : [];
+  const promoMs = Date.now() - promoStart;
+
   const cacheKey = makeCatalogListCacheKey({
     page,
     pageSize,
@@ -1949,6 +1980,7 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
     sourceStatus,
     excludeKey,
     sort,
+    promotionSignature: promotionRulesSignature(promotionRules),
   });
   const listCache = getCatalogListCache();
   const cached = listCache.get(cacheKey);
@@ -1985,10 +2017,8 @@ export async function listCatalogProducts(input: CatalogListInput = {}): Promise
      outage rather than a catalog that genuinely has no matching products. */
   const degraded = !supabaseItems && baseItems.length === 0;
 
-  const promoStart = Date.now();
-  const promotionRules = applyPromotions ? await listPromotionRulesCached() : [];
-  const displayItems = promotionRules.length > 0 ? applyPromotionRulesToProducts(baseItems, promotionRules) : baseItems;
-  const promoMs = Date.now() - promoStart;
+  const displayItems =
+    promotionRules.length > 0 ? applyPromotionRulesToProducts(baseItems, promotionRules) : baseItems;
 
   const filterStart = Date.now();
   const filteredSource = applyFilters(displayItems, {
