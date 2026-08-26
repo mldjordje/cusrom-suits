@@ -56,7 +56,6 @@ import {
   getProductSizeOptions,
   getProductWashCare,
   getSelectedProductSize,
-  productSupportsSizeGuide,
 } from "@/lib/storefront/product-details";
 import {
   ORGANIZATION_JSONLD_ID,
@@ -470,7 +469,6 @@ export default async function WebShopProductPage({
   );
 
   const sizeGuide = await getProductSizeGuide(product, lang, sizeOptions);
-  const showSizeGuide = productSupportsSizeGuide(product) && Boolean(sizeGuide?.tables.length);
   const declaration = getProductDeclaration(
     displayProduct,
     lang,
@@ -897,21 +895,6 @@ export default async function WebShopProductPage({
                   </div>
                 )}
               </div>
-
-              {showSizeGuide && sizeGuide ? (
-                <div className="rounded-4 border p-3 mt-3 bg-white ss-product-glass-card">
-                  <p className="text-uppercase fw-medium text-secondary mb-2">
-                    {sizeGuide.title}
-                  </p>
-                  <ul className="mb-0 ps-3">
-                    {sizeGuide.bullets.slice(0, 2).map((bullet) => (
-                      <li key={bullet} className="mb-1">
-                        {bullet}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ) : null}
 
               {productSeo.faq.length ? (
                 <div className="rounded-4 border p-3 mt-3 bg-white ss-product-glass-card">

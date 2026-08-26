@@ -392,8 +392,6 @@ const getSizeGuideBullets = (
   ];
 };
 
-export const productSupportsSizeGuide = (_product: CatalogProductView) => true;
-
 export const getLocalizedCatalogProductName = (
   product: CatalogProductView,
   lang: StorefrontLanguage,
@@ -738,7 +736,10 @@ export const getProductSizeGuide = async (
       lang === "en"
         ? `Available sizes: ${joined || "check the selector above"}. Use the guide below to compare the product measurements with a garment you already own.`
         : `Dostupne velicine: ${joined || "pogledajte iznad"}. Uporedite mere iz vodica sa komadom koji vam vec odgovara.`,
-    bullets: getSizeGuideBullets(lang, hasNumericSizes),
+    /* Numeric sizes alone do not mean a tailored garment: a shoe is a 42 too,
+       and telling its buyer to measure their chest was the same mistake as
+       showing them the calculator. */
+    bullets: getSizeGuideBullets(lang, hasNumericSizes && !isFootwearProduct(product)),
     buttonLabel: lang === "en" ? "Determine size" : "Odredite velicinu",
     modalTitle: lang === "en" ? "Size guide" : "Tabela velicina",
     imageSrc: (() => {
@@ -759,7 +760,13 @@ export const getProductSizeGuide = async (
     tables: visibleTables,
     fallbackNote: visibleTables.length ? null : localizedFallback,
     customText: null,
-    showRecommender: true,
+    /* The calculator reads chest and waist against the tables, which is a
+       tailoring question: a shoe is picked by insole length, and offering
+       "obim grudi" on a pair of derbies was noise. It shows only where a
+       garment table can actually answer it. */
+    showRecommender:
+      !isFootwearProduct(product) &&
+      visibleTables.some((table) => table.group !== "shoes"),
   };
 };
 
