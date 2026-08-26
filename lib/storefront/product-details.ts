@@ -715,11 +715,15 @@ export const getProductSizeGuide = async (
   );
   const groupTables = settings.tables.filter((table) => !table.categoryKey);
 
+  /* No group resolved means the product is none of the four the shipped tables
+     describe — a t-shirt, a jumper, a scarf. Handing it all of them was the
+     "sve tabele" the client kept seeing; it gets the fallback note instead, and
+     the admin can give the category a table of its own. */
   const relevantTables = categoryTables.length
     ? categoryTables
     : groups.length
       ? groupTables.filter((table) => groups.includes(table.group))
-      : groupTables;
+      : [];
   const tables = relevantTables.filter((table) => {
     if (!fit) return true;
     if (table.fit === "standard") return true;
