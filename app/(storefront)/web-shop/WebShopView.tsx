@@ -821,18 +821,12 @@ export default async function WebShopView({
                  for the generic "Kolekcija" / "Akcija" pills to stop sitting on
                  top of it. Both are admin settings, so a category with nothing
                  configured still falls through to the shared banner below. */
-              <div className="ss-shop-hero-stack">
-                <div
-                  className="ss-shop-hero__media ss-category-hero__media"
-                  /* Painted behind the video so the reduced-motion fallback,
-                     which hides the element, still shows the poster frame
-                     rather than an empty grey box. */
-                  style={
-                    categoryHero.kind === "video" && categoryHero.poster
-                      ? { backgroundImage: `url(${JSON.stringify(categoryHero.poster)})` }
-                      : undefined
-                  }
-                >
+              /* One composed block rather than a picture with two captions
+                 floating on it: an eyebrow naming the category, the title, and
+                 one line of copy, stacked on a baseline at the bottom-left over
+                 a gradient that darkens only where the type sits. */
+              <div className="ss-category-hero">
+                <div className="ss-category-hero__media">
                   {categoryHero.kind === "video" ? (
                     <video
                       className="ss-category-hero__video"
@@ -845,24 +839,29 @@ export default async function WebShopView({
                       preload="metadata"
                     />
                   ) : (
-                    <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
-                      <Image
-                        src={categoryHero.image}
-                        width={1759}
-                        height={620}
-                        alt={categoryHero.title || categoryPageLabel}
-                        className="slideshow-bg__img object-fit-cover"
-                        priority
-                        sizes="100vw"
-                      />
-                    </div>
+                    <Image
+                      src={categoryHero.image}
+                      width={1920}
+                      height={900}
+                      alt={categoryHero.title || categoryPageLabel}
+                      className="ss-category-hero__image"
+                      priority
+                      sizes="100vw"
+                    />
                   )}
-                  <div className="ss-shop-hero__overlay" />
-                  <div className="ss-shop-hero__ui ss-category-hero__ui">
-                    <span className="ss-shop-hero__brand">{categoryHero.title || categoryPageLabel}</span>
+                  <div className="ss-category-hero__scrim" />
+
+                  <div className="ss-category-hero__body">
+                    <p className="ss-category-hero__eyebrow">{categoryPageLabel}</p>
+                    <h2 className="ss-category-hero__title">
+                      {categoryHero.title || categoryPageLabel}
+                    </h2>
                     {categoryHero.lead ? (
                       <p className="ss-category-hero__lead">{categoryHero.lead}</p>
                     ) : null}
+                    <a href="#shop-products" className="ss-category-hero__cta">
+                      {isEn ? "View the collection" : "Pogledaj kolekciju"}
+                    </a>
                     {categoryHero.showActions ? (
                       <div className="ss-shop-hero__inline-actions">
                         <Link href="#shop-products" className="ss-hero-pill">

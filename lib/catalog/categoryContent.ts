@@ -216,11 +216,22 @@ const FLAT_FRAME: Partial<CategoryContentEntry> = {
   imageFit: "cover",
 };
 
-/* Same asset the landing page shows behind its own hero. Using it here means
-   every category opens with a real image on day one instead of falling back to
-   the shared shop banner, and it is the obvious thing to replace: the admin
-   screen uploads a picture or a video per category. */
-export const DEFAULT_CATEGORY_HERO_IMAGE = "/img/hero2.jpg";
+/* The clip the landing hero is actually playing in production, reused so every
+   category opens with motion on day one instead of the shared shop banner. Kept
+   as a relative /fajlovi path, not the full santos.rs URL, because the two
+   hosts are separate origins from the browser's point of view and the rewrite
+   in next.config.ts proxies this path to the asset server.
+   
+   Placeholder, and deliberately so: this footage is portrait 478x850, shot for
+   the landing's tall frame. A wide category hero fills with `cover`, so only
+   its middle column is visible. Replacing it per category is one upload in
+   admin -> Kategorije: izgled. */
+export const DEFAULT_CATEGORY_HERO_VIDEO =
+  "/fajlovi/site-assets/2026-08-21/1787302307595-39dcdc2a-6f15-4a07-9b7b-ade379a2cd80-proizvodnja-santos-video-hero.mp4";
+
+/* Shown while the clip loads, and to anyone who asked the system to stop
+   motion. The same poster the landing uses. */
+export const DEFAULT_CATEGORY_HERO_POSTER = "/img/hero.jpg";
 
 export const DEFAULT_CATEGORY_CONTENT: Record<string, Partial<CategoryContentEntry>> = {
   /* ---- Garments worn on a model --------------------------------------
@@ -379,8 +390,9 @@ const defaultEntryFor = (key: string): CategoryContentEntry | null => {
     ...preset,
     ...(copy
       ? {
-          heroMedia: "image" as const,
-          heroImage: DEFAULT_CATEGORY_HERO_IMAGE,
+          heroMedia: "video" as const,
+          heroVideoUrl: DEFAULT_CATEGORY_HERO_VIDEO,
+          heroVideoPoster: DEFAULT_CATEGORY_HERO_POSTER,
           heroTitle: copy.title,
           heroTitleEn: copy.titleEn,
           heroLead: copy.lead,
@@ -426,8 +438,13 @@ const withDefaultFraming = (entry: CategoryContentEntry): CategoryContentEntry =
     if (fallback && fallback.heroMedia !== "inherit") {
       next = {
         ...next,
+        /* Every source field is copied, not just the image one: the default is
+           a video, and carrying the mode across without its URL reproduces
+           exactly the half-configured state this branch exists to repair. */
         heroMedia: fallback.heroMedia,
         heroImage: fallback.heroImage,
+        heroVideoUrl: fallback.heroVideoUrl,
+        heroVideoPoster: next.heroVideoPoster.trim() || fallback.heroVideoPoster,
         heroTitle: next.heroTitle.trim() || fallback.heroTitle,
         heroTitleEn: next.heroTitleEn.trim() || fallback.heroTitleEn,
         heroLead: next.heroLead.trim() || fallback.heroLead,

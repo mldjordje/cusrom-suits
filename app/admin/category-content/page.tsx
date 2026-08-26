@@ -415,14 +415,14 @@ export default function AdminCategoryContentPage() {
                     <AdminAssetUpload
                       kind="video"
                       label="Video"
-                      hint="Vrti se u petlji, bez zvuka. Držite fajl ispod ~8MB da se strana brzo učita."
+                      hint="Format: položeno 16:9, 1920×1080, MP4 (H.264). Traje 5–10 sekundi i vrti se u petlji, bez zvuka — ubacite snimak koji lepo izgleda kad se ponavlja. Do ~8MB da se strana brzo učita. Uspravan snimak sa telefona NE radi ovde: okvir je širok, pa bi se video sredina, a levo i desno bi se odseklo."
                       value={entry.heroVideoUrl}
                       onChange={(url) => patch(category, { heroVideoUrl: url })}
                     />
                     <AdminAssetUpload
                       kind="image"
                       label="Naslovna slika videa"
-                      hint="Prikazuje se dok se video učitava. Ako je ne postavite, dok se učitava stoji siva površina."
+                      hint="Prikazuje se dok se video učitava i posetiocima koji su isključili animacije. Ista širina kao video (16:9), npr. 1920×1080."
                       value={entry.heroVideoPoster}
                       onChange={(url) => patch(category, { heroVideoPoster: url })}
                     />

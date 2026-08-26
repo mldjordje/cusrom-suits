@@ -9362,54 +9362,157 @@ button.ss-mobile-nav-quicklink,
   width: 100%;
 }
 
-/* --- Category hero (admin-configured, per category) -----------------------
-   Reuses the shop hero's box so a category that opts in lines up with the one
-   that does not. The video fills the same stage an image would. */
+/* --- Category hero -------------------------------------------------------
+
+   The first version was a picture with two pieces of text dropped on it: a
+   small label in one corner, a sentence in the other, and a flat grey wash over
+   the whole image. Nothing was related to anything else, and the wash dulled
+   the photograph everywhere instead of only where it had to.
+
+   This is one composed block. A single stack sits on a baseline at the
+   bottom-left — eyebrow, title, one line of copy, one link — over a gradient
+   that darkens only the band the type occupies, so the top two thirds of the
+   photograph stay at full contrast. The stack is capped at a reading measure so
+   the line never runs the width of a monitor.
+
+   Video note: the hero fills its frame with `cover`. A portrait clip in a wide
+   frame therefore shows only its middle column. Supply landscape footage —
+   1920x1080, H.264 MP4, muted, a few seconds on a clean loop.
+   -------------------------------------------------------------------------- */
+
+.ss-category-hero {
+  margin-bottom: clamp(1.75rem, 3vw, 3rem);
+}
+
 .ss-category-hero__media {
   position: relative;
   overflow: hidden;
+  /* Taller than the old banner and square-cornered. A 16:9 letterbox with
+     rounded corners reads as an embedded player, not as the opening of a
+     collection. */
+  height: clamp(320px, 56vh, 560px);
+  background-color: #17140f;
+  border-radius: 0;
 }
 
-.ss-category-hero__video {
-  display: block;
+.ss-category-hero__video,
+.ss-category-hero__image {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center;
 }
 
-.ss-category-hero__ui {
+/* Only the lower band is darkened, and it fades to nothing well before the top
+   edge. `to top` rather than a flat rgba() so the photograph is untouched where
+   no text sits on it. */
+.ss-category-hero__scrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(10, 9, 8, 0.82) 0%,
+    rgba(10, 9, 8, 0.62) 24%,
+    rgba(10, 9, 8, 0.18) 52%,
+    rgba(10, 9, 8, 0) 78%
+  );
+}
+
+.ss-category-hero__body {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.6rem;
+  gap: 0.55rem;
+  padding: clamp(1.5rem, 4vw, 3.25rem);
+}
+
+.ss-category-hero__eyebrow {
+  margin: 0;
+  color: var(--ss-gold, #c9a96e);
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+/* Two classes deep on purpose: the template sets `.page-wrapper h2` to its ink
+   colour, which is a class plus a type selector and therefore outranks a single
+   class. A near-black heading on the scrim is invisible, not merely off-brand. */
+.ss-category-hero .ss-category-hero__title {
+  max-width: 18ch;
+  margin: 0;
+  color: #fff;
+  font-size: clamp(1.9rem, 4.2vw, 3.6rem);
+  font-weight: 500;
+  line-height: 1.04;
+  letter-spacing: -0.02em;
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.35);
 }
 
 .ss-category-hero__lead {
+  /* A measure, not the width of the screen: a single line of copy stretched
+     across 1600px is not read, it is skipped. */
   max-width: 46ch;
   margin: 0;
-  color: rgba(255, 255, 255, 0.88);
-  font-size: 0.95rem;
-  line-height: 1.5;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
+  color: rgba(255, 255, 255, 0.86);
+  font-size: clamp(0.92rem, 1.1vw, 1.06rem);
+  line-height: 1.55;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.45);
+}
+
+.ss-category-hero__cta {
+  margin-top: 0.6rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45);
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition:
+    border-color 0.28s cubic-bezier(0.65, 0, 0.35, 1),
+    color 0.28s cubic-bezier(0.65, 0, 0.35, 1);
+}
+
+.ss-category-hero__cta:hover,
+.ss-category-hero__cta:focus-visible {
+  border-bottom-color: var(--ss-gold, #c9a96e);
+  color: var(--ss-gold, #c9a96e);
 }
 
 @media (max-width: 575px) {
+  .ss-category-hero__media {
+    height: clamp(260px, 46vh, 360px);
+  }
+
+  .ss-category-hero__title {
+    max-width: 100%;
+  }
+
   .ss-category-hero__lead {
-    font-size: 0.86rem;
+    /* Two lines of copy over a photograph on a phone is already the limit;
+       past that the image is a texture behind a paragraph. */
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
   }
 }
 
-/* A looping background video is decoration. Anyone who asked the OS to stop
-   motion gets the poster frame instead. */
+/* A looping background clip is decoration. If the reader asked the system to
+   stop motion, the poster frame stands in — the <video> keeps its `poster`
+   attribute, so pausing it leaves a real image rather than a black rectangle. */
 @media (prefers-reduced-motion: reduce) {
   .ss-category-hero__video {
-    display: none;
-  }
-
-  .ss-category-hero__media {
-    background-color: #eee;
-    background-position: center;
-    background-size: cover;
+    /* Paused via the poster; nothing is hidden, so the frame is never empty. */
+    animation: none;
   }
 }
