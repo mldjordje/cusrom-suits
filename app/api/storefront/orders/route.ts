@@ -74,14 +74,14 @@ export async function GET() {
   const [ownedResult, emailResult] = await Promise.all([
     supabase
       .from("orders")
-      .select("id, source, type, status, price, created_at, contact, config")
+      .select("id, status, price, created_at, contact, config")
       .contains("config", { storefrontUserId: user.id })
       .order("created_at", { ascending: false })
       .limit(ORDER_LIMIT),
     accountEmail
       ? supabase
           .from("orders")
-          .select("id, source, type, status, price, created_at, contact, config")
+          .select("id, status, price, created_at, contact, config")
           /* Both spellings: checkout now stores the address lowercased, but
              orders placed before that kept whatever the customer typed. `in`
              rather than `ilike` on purpose — an underscore is a legal email

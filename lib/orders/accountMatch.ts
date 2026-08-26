@@ -31,9 +31,16 @@ export const matchOrderToAccount = (
   userId: string,
   accountEmail: string,
 ): AccountOrderMatch | null => {
-  if (order.source !== "storefront" || order.type !== "webshop") return null;
-
   const config = order.config && typeof order.config === "object" ? order.config : null;
+
+  /* Where an order says what it is depends on where it is stored. The Supabase
+     `orders` table has no `source`/`type` columns — both live inside the config
+     JSON — while the JSON file fallback writes them at the top level too. Read
+     whichever one is there rather than assuming a shape. */
+  const source = String(order.source ?? config?.source ?? "");
+  const type = String(order.type ?? config?.type ?? "");
+  if (source !== "storefront" || type !== "webshop") return null;
+
   if (userId && config && String(config.storefrontUserId || "") === userId) return "account";
 
   if (!accountEmail) return null;

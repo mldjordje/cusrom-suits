@@ -5,10 +5,18 @@ import { getProfileCompleteness, readStorefrontProfile } from "@/lib/storefront/
 const USER_ID = "11111111-2222-3333-4444-555555555555";
 const EMAIL = "marko@example.com";
 
+/** A row as the JSON file fallback stores it: source and type at the top level. */
 const order = (extra: Record<string, unknown> = {}) => ({
   source: "storefront",
   type: "webshop",
   config: null,
+  contact: null,
+  ...extra,
+});
+
+/** A row as Supabase stores it: no source/type columns, both inside config. */
+const dbOrder = (config: Record<string, unknown> = {}, extra: Record<string, unknown> = {}) => ({
+  config: { source: "storefront", type: "webshop", ...config },
   contact: null,
   ...extra,
 });
@@ -59,6 +67,21 @@ describe("matchOrderToAccount", () => {
     const foreign = order({ source: "ananas", contact: { email: EMAIL } });
     expect(matchOrderToAccount(custom, USER_ID, EMAIL)).toBeNull();
     expect(matchOrderToAccount(foreign, USER_ID, EMAIL)).toBeNull();
+  });
+
+
+  it("reads source and type out of config, the way Supabase stores them", () => {
+    /* The `orders` table has no source/type columns. Requiring them at the top
+       level made every database row fail the shape check — and asking Postgres
+       for them made the query itself fail with "column orders.source does not
+       exist". */
+    expect(matchOrderToAccount(dbOrder({ storefrontUserId: USER_ID }), USER_ID, EMAIL)).toBe("account");
+    expect(matchOrderToAccount(dbOrder({}, { contact: { email: EMAIL } }), USER_ID, EMAIL)).toBe("email");
+  });
+
+  it("still rejects a config-shaped row from another part of the system", () => {
+    const custom = dbOrder({ type: "custom-suit" }, { contact: { email: EMAIL } });
+    expect(matchOrderToAccount(custom, USER_ID, EMAIL)).toBeNull();
   });
 
   it("does not treat an empty stored email as a match", () => {
