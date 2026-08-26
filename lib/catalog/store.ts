@@ -418,10 +418,19 @@ const maybeLogCatalogPerformance = (payload: {
   );
 };
 
+/* v3, and five minutes rather than an hour.
+ *
+ * This entry lives in Vercel's Data Cache, which survives deployments. A sale
+ * that had already been deleted from storage stayed on the shop because every
+ * instance kept answering from the hour-old copy of the rules, and redeploying
+ * did not touch it — only renaming the cache key does. Bumping the key retires
+ * the poisoned entry; the shorter window caps the worst case at five minutes of
+ * a stale price instead of an hour, on a read that is cheap and already
+ * tag-invalidated on every rule write. */
 const listPromotionRulesCached = unstable_cache(
   async () => listPromotionRules(),
-  ["catalog-promotion-rules-v2"],
-  { revalidate: 3600, tags: [PROMOTION_RULES_CACHE_TAG] },
+  ["catalog-promotion-rules-v3"],
+  { revalidate: 300, tags: [PROMOTION_RULES_CACHE_TAG] },
 );
 
 const getAvailableStockValue = (item: Pick<CatalogProductView, "stockWarehouse1" | "stockTotal">) => {
