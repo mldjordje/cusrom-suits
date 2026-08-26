@@ -5,6 +5,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 import { localizeDynamicCategoryLabel } from "@/lib/storefront/dynamicCopy";
 import { categoryPathForGroupKey } from "@/lib/storefront/categoryRoutes";
+import { nounForCount } from "@/lib/storefront/plural";
 
 type ShopCategory = {
   id?: number;
@@ -453,8 +454,8 @@ export default function WebShopFilters({
               className="ss-shop-mobile-toolbar__summary ss-shop-mobile-toolbar__summary--compact"
               aria-label={
                 isEn
-                  ? `Showing ${showingCount} of ${totalCount} products`
-                  : `Prikazano ${showingCount} od ${totalCount} proizvoda`
+                  ? `Showing ${showingCount} of ${totalCount} ${nounForCount(totalCount, "proizvod", "product", true)}`
+                  : `Prikazano ${showingCount} od ${totalCount} ${nounForCount(totalCount, "proizvod", "product", false)}`
               }
             >
               <strong>

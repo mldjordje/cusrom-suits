@@ -6,6 +6,7 @@ import { getLandingSettings } from "@/lib/catalog/landingSettings";
 import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { sanitizeStorefrontImageSrc } from "@/lib/storefront/image-utils";
+import { nounForCount } from "@/lib/storefront/plural";
 import {
   buildUniformProducts,
   resolveUniformImages,
@@ -91,7 +92,7 @@ export default async function BusinessUniformsPage({
                 <h2 className="ss-uniform-section-title mb-0">{isEn ? "Models" : "Modeli"}</h2>
               </div>
               <span className="ss-uniform-count">
-                {products.length ? `${products.length} ${isEn ? "models" : "modela"}` : ""}
+                {products.length ? `${products.length} ${nounForCount(products.length, "model", "model", isEn)}` : ""}
               </span>
             </div>
 

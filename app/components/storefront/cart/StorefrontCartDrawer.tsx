@@ -7,6 +7,7 @@ import StorefrontSmartImage from "@/app/components/storefront/StorefrontSmartIma
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
 import StorefrontQuantityControl from "@/app/components/storefront/cart/StorefrontQuantityControl";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
+import { nounForCount } from "@/lib/storefront/plural";
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -159,7 +160,9 @@ export default function StorefrontCartDrawer({
             <div>
               <h6 className="fs-base fw-medium mb-1">{isEn ? "Current total" : "Ukupno za sada"}</h6>
               <p className="ss-cart-drawer__summary-copy mb-0">
-                {isEn ? `${itemCount} item(s) ready for order` : `${itemCount} artikala spremno za porudzbinu`}
+                {isEn
+                  ? `${itemCount} ${nounForCount(itemCount, "artikal", "item", true)} ready for order`
+                  : `${itemCount} ${nounForCount(itemCount, "artikal", "item", false)} ${itemCount === 1 ? "spreman" : "spremno"} za porudzbinu`}
               </p>
             </div>
             <span className="cart-subtotal fw-medium">{formatRsd(subtotal)}</span>

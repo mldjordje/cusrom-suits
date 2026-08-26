@@ -9,6 +9,7 @@ import StorefrontQuantityControl from "@/app/components/storefront/cart/Storefro
 import { trackViewCart } from "@/lib/analytics/ecommerce";
 import { getRemainingForFreeDelivery } from "@/lib/storefront/deliveryPricing";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
+import { nounForCount } from "@/lib/storefront/plural";
 
 const formatRsd = (value: number) =>
   new Intl.NumberFormat("sr-RS", {
@@ -100,7 +101,9 @@ export default function CartPageClient({
             <div className="ss-order-panel__header">
               <div>
                 <p className="ss-order-panel__eyebrow">{isEn ? "Cart" : "Korpa"}</p>
-                <h2>{isEn ? `${itemCount} items ready for review` : `${itemCount} artikala spremno za pregled`}</h2>
+                <h2>{isEn
+                    ? `${itemCount} ${nounForCount(itemCount, "artikal", "item", true)} ready for review`
+                    : `${itemCount} ${nounForCount(itemCount, "artikal", "item", false)} ${itemCount === 1 ? "spreman" : "spremno"} za pregled`}</h2>
               </div>
               <button type="button" onClick={clearCart} className="btn btn-outline-dark text-uppercase fw-medium">
                 {isEn ? "Clear cart" : "Isprazni korpu"}

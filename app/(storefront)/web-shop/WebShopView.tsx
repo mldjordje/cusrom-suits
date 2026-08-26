@@ -28,6 +28,7 @@ import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
 import { isBusinessUniformProduct } from "@/lib/catalog/productTypes";
 import { localizeDynamicCategoryLabel, localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
+import { nounForCount } from "@/lib/storefront/plural";
 import { getCatalogProductImageSources, getLocalizedCatalogProductName } from "@/lib/storefront/product-details";
 import {
   CATEGORY_ROUTES,
@@ -988,7 +989,7 @@ export default async function WebShopView({
                 </div>
                 {catalogUnavailable ? null : (
                   <p className="ss-shop-gallery__meta">
-                    {items.length} / {result.total} {isEn ? "products" : "proizvoda"}
+                    {items.length} / {result.total} {nounForCount(result.total, "proizvod", "product", isEn)}
                   </p>
                 )}
               </div>

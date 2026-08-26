@@ -1,7 +1,12 @@
 "use client";
 import Image, { type ImageProps } from "next/image";
 import { useCallback, useState } from "react";
-import { sanitizeStorefrontImageSrc, withStorefrontImageCacheVersion } from "@/lib/storefront/image-utils";
+import {
+  isSupabaseStorageImageSrc,
+  sanitizeStorefrontImageSrc,
+  storefrontImageVariantSrc,
+  withStorefrontImageCacheVersion,
+} from "@/lib/storefront/image-utils";
 
 type StorefrontImageProps = Omit<ImageProps, "src" | "alt" | "onError"> & {
   alt: string;
@@ -15,9 +20,22 @@ export default function StorefrontImage({
   fallbackSrc = "/img/odela.jpg",
   ...props
 }: StorefrontImageProps) {
-  const candidates = [...sources, fallbackSrc]
-    .map((value) => withStorefrontImageCacheVersion(sanitizeStorefrontImageSrc(value)))
-    .filter((value) => value.length > 0);
+  const requestedQuality = typeof props.quality === "number" ? props.quality : 75;
+  const layoutWidth =
+    typeof props.width === "number" && !("fill" in props && props.fill) ? props.width : null;
+
+  // Each source expands to [size variant, original]. If the variant has not
+  // been generated for this image yet, onError falls straight through to the
+  // original rather than to a different product's photo.
+  const candidates = Array.from(
+    new Set(
+      [...sources, fallbackSrc]
+        .map((value) => sanitizeStorefrontImageSrc(value))
+        .flatMap((value) => [storefrontImageVariantSrc(value, layoutWidth), value])
+        .filter((value) => value.length > 0)
+        .map((value) => withStorefrontImageCacheVersion(value)),
+    ),
+  );
 
   const [index, setIndex] = useState(0);
   const activeSrc = candidates[index] || fallbackSrc;
@@ -27,7 +45,6 @@ export default function StorefrontImage({
     setIndex((prev) => Math.min(prev + 1, candidates.length - 1));
   }, [candidates.length]);
 
-  const requestedQuality = typeof props.quality === "number" ? props.quality : 75;
   const normalizedQuality = requestedQuality <= 64 ? 60 : 75;
   const normalizedSizes =
     props.sizes ??
@@ -35,7 +52,8 @@ export default function StorefrontImage({
   const shouldBypassOptimization =
     props.unoptimized == null &&
     (activeSrc.startsWith("data:image/") ||
-      activeSrc.toLowerCase().includes(".svg"));
+      activeSrc.toLowerCase().includes(".svg") ||
+      isSupabaseStorageImageSrc(activeSrc));
 
   return (
     <Image

@@ -2,7 +2,12 @@
 
 import Image, { type ImageProps } from "next/image";
 import { useEffect, useMemo, useState } from "react";
-import { sanitizeStorefrontImageSrc, withStorefrontImageCacheVersion } from "@/lib/storefront/image-utils";
+import {
+  isSupabaseStorageImageSrc,
+  sanitizeStorefrontImageSrc,
+  storefrontImageVariantSrc,
+  withStorefrontImageCacheVersion,
+} from "@/lib/storefront/image-utils";
 
 type StorefrontSmartImageProps = Omit<ImageProps, "src" | "alt"> & {
   alt: string;
@@ -17,17 +22,24 @@ export default function StorefrontSmartImage({
   onError,
   ...props
 }: StorefrontSmartImageProps) {
+  const requestedQuality = typeof props.quality === "number" ? props.quality : 75;
+  const layoutWidth =
+    typeof props.width === "number" && !("fill" in props && props.fill) ? props.width : null;
+
   const candidates = useMemo(() => {
     const rawCandidates = fallbackSrc ? [...sources, fallbackSrc] : sources;
+    // Each source expands to [size variant, original], so an image whose
+    // variant has not been generated yet falls back to its own full-size file.
     const normalized = rawCandidates
-      .map((value) => withStorefrontImageCacheVersion(sanitizeStorefrontImageSrc(value)))
-      .filter((value) => value.length > 0);
+      .map((value) => sanitizeStorefrontImageSrc(value))
+      .flatMap((value) => [storefrontImageVariantSrc(value, layoutWidth), value])
+      .filter((value) => value.length > 0)
+      .map((value) => withStorefrontImageCacheVersion(value));
 
     return Array.from(new Set(normalized));
-  }, [fallbackSrc, sources]);
+  }, [fallbackSrc, sources, layoutWidth]);
 
   const [activeIndex, setActiveIndex] = useState(0);
-  const requestedQuality = typeof props.quality === "number" ? props.quality : 75;
   const normalizedQuality = requestedQuality <= 64 ? 60 : 75;
   const normalizedSizes =
     props.sizes ??
@@ -45,7 +57,7 @@ export default function StorefrontSmartImage({
     props.unoptimized == null &&
     (activeSrc.startsWith("data:image/") ||
       activeSrc.toLowerCase().includes(".svg") ||
-      activeSrc.includes("/storage/v1/object/public/"));
+      isSupabaseStorageImageSrc(activeSrc));
 
   return (
     <Image

@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from "next/server";
 import sharp from "sharp";
 import { hasAdminToken } from "@/lib/auth/admin";
 import { getServiceSupabase } from "@/lib/supabase/server";
+import {
+  STOREFRONT_IMAGE_VARIANT_WIDTHS,
+  storefrontImageVariantPath,
+} from "@/lib/storefront/image-utils";
 
 const bucketName = process.env.SUPABASE_PRODUCTS_BUCKET || "products";
 const MAX_FILES_PER_REQUEST = 12;
@@ -64,6 +68,31 @@ const normalizeImage = async (file: File) => {
   return { buffer, ext: "jpg", contentType: "image/jpeg" };
 };
 
+/**
+ * Small WebP copies of the stored photo, one per width the storefront asks for.
+ *
+ * The full file stays exactly as it was — these sit next to it and are what the
+ * grid cards and gallery thumbnails actually download. They are plain objects
+ * in the bucket on purpose: no Supabase render endpoint, no Vercel optimizer,
+ * nothing that meters per image or has to be re-bought on another host.
+ *
+ * `withoutEnlargement` means a photo narrower than a variant width simply is
+ * not written at that size; the storefront falls back to the original for it.
+ */
+const buildImageVariants = async (source: Buffer) => {
+  const variants: Array<{ width: number; buffer: Buffer }> = [];
+
+  for (const width of STOREFRONT_IMAGE_VARIANT_WIDTHS) {
+    const buffer = await sharp(source, { limitInputPixels: false })
+      .resize({ width, withoutEnlargement: true })
+      .webp({ quality: 74 })
+      .toBuffer();
+    variants.push({ width, buffer });
+  }
+
+  return variants;
+};
+
 export async function POST(req: NextRequest) {
   if (!hasAdminToken(req)) {
     return NextResponse.json({ success: false, message: "Unauthorized" }, { status: 401 });
@@ -108,6 +137,18 @@ export async function POST(req: NextRequest) {
       if (uploadError) {
         return NextResponse.json({ success: false, message: uploadError.message }, { status: 500 });
       }
+      // A variant that fails to upload is not fatal: the storefront keeps the
+      // original as the next candidate, so the photo still renders.
+      for (const variant of await buildImageVariants(normalized.buffer)) {
+        await supabase.storage
+          .from(bucketName)
+          .upload(storefrontImageVariantPath(path, variant.width), variant.buffer, {
+            upsert: true,
+            contentType: "image/webp",
+            cacheControl: "31536000",
+          });
+      }
+
       const { data: publicData } = supabase.storage.from(bucketName).getPublicUrl(path);
       if (publicData?.publicUrl) {
         urls.push(publicData.publicUrl);

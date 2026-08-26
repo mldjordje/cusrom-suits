@@ -1138,6 +1138,16 @@ const isReachableCatalogImage = async (src: string) => {
   const url = String(src || "").trim();
   if (!url) return false;
   if (url.startsWith("data:image/")) return true;
+  // Supabase Storage holds our own uploads: the media row and the file are
+  // written and deleted together, so a HEAD probe only ever confirms what the
+  // row already says. Probing them anyway put up to eight blocking round trips
+  // in front of every product page render, which is most of why a page with a
+  // full gallery felt slow even though each photo is small. A file that does
+  // go missing still degrades gracefully — the storefront image components
+  // fall through their candidate list on the first onError.
+  if (url.includes("/storage/v1/object/public/") || url.includes("/storage/v1/render/image/public/")) {
+    return true;
+  }
   const legacyAssetOrigin =
     process.env.LEGACY_ASSET_ORIGIN?.trim().replace(/\/$/, "") || "https://assets.santos.rs";
   const probeUrl = url.startsWith("/fajlovi/") ? `${legacyAssetOrigin}${url}` : url;
@@ -1150,7 +1160,7 @@ const isReachableCatalogImage = async (src: string) => {
   }
 
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 2500);
+  const timeout = setTimeout(() => controller.abort(), 1500);
   try {
     const response = await fetch(probeUrl, {
       method: "HEAD",
