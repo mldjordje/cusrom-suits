@@ -311,7 +311,6 @@ export default async function HomePage({
   );
   const aboutParagraphs = landingSettings.aboutParagraphs.filter(Boolean);
   const contactPoints = landingSettings.contactPoints.filter((item) => item.label || item.value);
-  const landingDocuments = landingSettings.documents.filter((item) => item.title && item.url);
   const landingUniformImages = [
     ...landingSettings.uniformsImages.filter((item) => item.image),
     ...landingSettings.uniformsVideos
@@ -951,21 +950,7 @@ export default async function HomePage({
     }
 
     if (key === "customerInfo") {
-      return (
-        <Reveal as="section" className="container pb-5 ss-editorial-section" delay={0.17}>
-          <div className="row g-4">
-            <div className="col-12 col-lg-7"><div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
-              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(landingSettings.customerInfoEyebrow, "Customer Information")}</p>
-              <SectionHeadingReveal className="section-title text-uppercase mb-4">{tx(landingSettings.customerInfoTitle, "Customer rights and purchase guide")}</SectionHeadingReveal>
-              <div className="row g-3">{[[landingSettings.customerRightsTitle, "Customer Rights", landingSettings.customerRightsText], [landingSettings.purchaseGuideTitle, "Purchase Guide", landingSettings.purchaseGuideText]].map(([title, fallback, text]) => <div key={fallback} className="col-12 col-md-6"><div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}><p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(title, fallback)}</p><p className="text-secondary mb-0">{tx(text)}</p></div></div>)}</div>
-            </div></div>
-            <div className="col-12 col-lg-5"><div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
-              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>{tx(landingSettings.companyDetailsEyebrow, "Company Details")}</p>
-              <div className="d-grid gap-2"><div className="border px-3 py-2" style={{ borderRadius: 14 }}><div className="text-uppercase fw-medium mb-1">{tx(landingSettings.companyPibLabel, "Tax ID")}</div><div>{landingSettings.companyPib}</div></div><div className="border px-3 py-2" style={{ borderRadius: 14 }}><div className="text-uppercase fw-medium mb-1">{tx(landingSettings.companyMbLabel, "Registration No.")}</div><div>{landingSettings.companyMb}</div></div></div>
-            </div></div>
-          </div>
-        </Reveal>
-      );
+      return null;
     }
 
     if (key === "uniforms") {
@@ -1308,101 +1293,6 @@ export default async function HomePage({
         </Reveal>
 
         <div className="mb-2 pb-3" />
-
-        <Reveal as="section" className="container pb-5 ss-editorial-section" delay={0.17}>
-          <div className="row g-4">
-            <div className="col-12 col-lg-7">
-              <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>
-                  {tx(landingSettings.customerInfoEyebrow, "Customer Information")}
-                </p>
-                <SectionHeadingReveal className="section-title text-uppercase mb-4">
-                  {tx(landingSettings.customerInfoTitle, "Customer rights and purchase guide")}
-                </SectionHeadingReveal>
-                <div className="row g-3">
-                  <div className="col-12 col-md-6">
-                    <div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}>
-                      <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
-                        {tx(landingSettings.customerRightsTitle, "Customer Rights")}
-                      </p>
-                      <p className="text-secondary mb-0">{tx(landingSettings.customerRightsText)}</p>
-                    </div>
-                  </div>
-                  <div className="col-12 col-md-6">
-                    <div className="border h-100 px-3 py-3" style={{ borderRadius: 18 }}>
-                      <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
-                        {tx(landingSettings.purchaseGuideTitle, "Purchase Guide")}
-                      </p>
-                      <p className="text-secondary mb-0">{tx(landingSettings.purchaseGuideText)}</p>
-                    </div>
-                  </div>
-                </div>
-                <div className="d-flex flex-wrap gap-2 mt-4">
-                  {landingSettings.customerInfoPrimaryCtaLabel ? (
-                    <Link href={withOptionalLang(landingSettings.customerInfoPrimaryCtaHref)} className="btn btn-dark btn-sm text-uppercase fw-medium">
-                      {tx(landingSettings.customerInfoPrimaryCtaLabel, "Open Checkout")}
-                    </Link>
-                  ) : null}
-                  {landingSettings.customerInfoSecondaryCtaLabel ? (
-                    <Link href={withOptionalLang(landingSettings.customerInfoSecondaryCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                      {tx(landingSettings.customerInfoSecondaryCtaLabel, "Documents")}
-                    </Link>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-            <div className="col-12 col-lg-5">
-              <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>
-                  {tx(landingSettings.companyDetailsEyebrow, "Company Details")}
-                </p>
-                <div className="d-grid gap-2">
-                  <div className="border px-3 py-2" style={{ borderRadius: 14 }}>
-                    <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
-                      {tx(landingSettings.companyPibLabel, "Tax ID")}
-                    </div>
-                    <div>{landingSettings.companyPib}</div>
-                  </div>
-                  <div className="border px-3 py-2" style={{ borderRadius: 14 }}>
-                    <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
-                      {tx(landingSettings.companyMbLabel, "Registration No.")}
-                    </div>
-                    <div>{landingSettings.companyMb}</div>
-                  </div>
-                </div>
-                <div className="mt-4">
-                  <p className="text-uppercase fw-medium mb-2" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
-                    {tx(landingSettings.documentsTitle, "Documents")}
-                  </p>
-                  <p className="text-secondary mb-3">{tx(landingSettings.documentsSubtitle)}</p>
-                  <div className="ss-document-download-list">
-                    {landingDocuments.length > 0 ? (
-                      landingDocuments.slice(0, 3).map((item) => (
-                        <a
-                          key={`${item.title}-${item.url}`}
-                          href={item.url}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="ss-document-download-card"
-                        >
-                          <span>
-                            <span className="ss-document-download-card__title">{tx(item.title)}</span>
-                            {item.description ? <span className="ss-document-download-card__description d-block">{tx(item.description)}</span> : null}
-                          </span>
-                          <span className="ss-document-download-card__action">{isEn ? "Download" : "Preuzmi"}</span>
-                        </a>
-                      ))
-                    ) : (
-                      <div className="border px-3 py-3 text-secondary" style={{ borderRadius: 14 }}>
-                        {tx(landingSettings.documentsEmptyText, "Documents will appear here as soon as they are added.")}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Reveal>
 
         <div className="mb-3 mb-xl-4 pt-xl-1 pb-3" />
 
