@@ -30,7 +30,7 @@ export default function SignupForm({ lang }: { lang: StorefrontLanguage }) {
 
   useEffect(() => {
     if (authLoading || !user) return;
-    router.replace(withLang("/nalog/porudzbine"));
+    router.replace(withLang("/nalog"));
   }, [authLoading, user, router, withLang]);
 
   const handleSubmit = async (e: FormEvent) => {
@@ -59,7 +59,7 @@ export default function SignupForm({ lang }: { lang: StorefrontLanguage }) {
       }
       if (data.session) {
         router.refresh();
-        router.replace(withLang("/nalog/porudzbine"));
+        router.replace(withLang("/nalog"));
         return;
       }
       setNotice(

@@ -534,7 +534,7 @@ export default function StorefrontHeaderClient({
               <span className="ss-header-tools__divider d-none d-md-inline-block" aria-hidden="true" />
 
               <Link
-                href={withLang(authUser ? "/nalog/porudzbine" : "/nalog/prijava")}
+                href={withLang(authUser ? "/nalog" : "/nalog/prijava")}
                 className="ss-inline-link text-uppercase fw-medium d-none d-md-inline-flex"
               >
                 {authLoading ? "…" : authUser ? (isEn ? "My orders" : "Moje porudzbine") : isEn ? "Sign in" : "Prijava"}
@@ -816,7 +816,7 @@ export default function StorefrontHeaderClient({
                       </div>
                     ) : null}
                     <Link
-                      href={withLang(authUser ? "/nalog/porudzbine" : "/nalog/prijava")}
+                      href={withLang(authUser ? "/nalog" : "/nalog/prijava")}
                       className="ss-mobile-nav-account ss-mobile-nav-pill"
                       onClick={closeMobileMenu}
                     >

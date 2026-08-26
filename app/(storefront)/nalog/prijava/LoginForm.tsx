@@ -10,7 +10,7 @@ import type { StorefrontLanguage } from "@/lib/storefront/language";
 
 const safeNextPath = (raw: string | null) => {
   const next = String(raw || "").trim();
-  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/api/")) return "/nalog/porudzbine";
+  if (!next.startsWith("/") || next.startsWith("//") || next.startsWith("/api/")) return "/nalog";
   return next;
 };
 

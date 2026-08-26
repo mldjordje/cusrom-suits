@@ -1,19 +1,19 @@
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
-import OrdersList from "@/app/(storefront)/nalog/porudzbine/OrdersList";
+import ProfileForm from "@/app/components/storefront/account/ProfileForm";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { buildSeoMetadata } from "@/lib/seo";
 
 export const metadata = {
   ...buildSeoMetadata({
-    title: "Moje porudzbine",
-    description: "Pregled web shop porudzbina na nalogu Santos & Santorini.",
-    path: "/nalog/porudzbine",
+    title: "Moj profil",
+    description: "Podaci za dostavu sacuvani na nalogu Santos & Santorini.",
+    path: "/nalog/profil",
     noIndex: true,
   }),
 };
 
-export default async function NalogPorudzbinePage({
+export default async function NalogProfilPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -28,16 +28,14 @@ export default async function NalogPorudzbinePage({
         <section className="container ss-commerce-shell py-4 py-md-5">
           <div className="ss-commerce-intro mb-4">
             <p className="ss-commerce-intro__eyebrow">{isEn ? "Account" : "Nalog"}</p>
-            <h1 className="ss-commerce-intro__title">
-              {isEn ? "Your orders" : "Tvoje porudzbine"}
-            </h1>
+            <h1 className="ss-commerce-intro__title">{isEn ? "Your profile" : "Tvoj profil"}</h1>
             <p className="ss-commerce-intro__copy mb-0">
               {isEn
-                ? "Every web shop order placed on this account, plus guest orders sent from your confirmed email address."
-                : "Sve web shop porudzbine sa ovog naloga, plus one poslate kao gost sa tvoje potvrdjene email adrese."}
+                ? "Fill this in once — checkout takes it from here."
+                : "Popuni jednom — naplata dalje radi sama."}
             </p>
           </div>
-          <OrdersList lang={lang} />
+          <ProfileForm lang={lang} />
         </section>
       </main>
       <StorefrontFooter lang={lang} />

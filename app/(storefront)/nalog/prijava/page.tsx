@@ -34,8 +34,8 @@ export default async function NalogPrijavaPage({
             </h1>
             <p className="ss-commerce-intro__copy mb-0">
               {isEn
-                ? "Use the same email at checkout to link new orders to this account."
-                : "Koristi isti email na checkout-u da nove porudzbine budu vezane za ovaj nalog."}
+                ? "Orders you placed as a guest with this email address are waiting here too."
+                : "I porudzbine koje si poslao kao gost sa ove email adrese cekaju te ovde."}
             </p>
           </div>
           <Suspense fallback={<p className="text-secondary">{isEn ? "Loading..." : "Ucitavanje..."}</p>}>

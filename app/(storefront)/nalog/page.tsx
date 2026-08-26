@@ -1,19 +1,19 @@
 import StorefrontFooter from "@/app/components/storefront/StorefrontFooter";
 import StorefrontHeader from "@/app/components/storefront/StorefrontHeader";
-import OrdersList from "@/app/(storefront)/nalog/porudzbine/OrdersList";
+import AccountOverview from "@/app/components/storefront/account/AccountOverview";
 import { resolveStorefrontLanguage } from "@/lib/storefront/server-language";
 import { buildSeoMetadata } from "@/lib/seo";
 
 export const metadata = {
   ...buildSeoMetadata({
-    title: "Moje porudzbine",
-    description: "Pregled web shop porudzbina na nalogu Santos & Santorini.",
-    path: "/nalog/porudzbine",
+    title: "Moj nalog",
+    description: "Pregled naloga, porudzbina i podataka za dostavu.",
+    path: "/nalog",
     noIndex: true,
   }),
 };
 
-export default async function NalogPorudzbinePage({
+export default async function NalogPage({
   searchParams,
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -28,16 +28,14 @@ export default async function NalogPorudzbinePage({
         <section className="container ss-commerce-shell py-4 py-md-5">
           <div className="ss-commerce-intro mb-4">
             <p className="ss-commerce-intro__eyebrow">{isEn ? "Account" : "Nalog"}</p>
-            <h1 className="ss-commerce-intro__title">
-              {isEn ? "Your orders" : "Tvoje porudzbine"}
-            </h1>
+            <h1 className="ss-commerce-intro__title">{isEn ? "Your account" : "Tvoj nalog"}</h1>
             <p className="ss-commerce-intro__copy mb-0">
               {isEn
-                ? "Every web shop order placed on this account, plus guest orders sent from your confirmed email address."
-                : "Sve web shop porudzbine sa ovog naloga, plus one poslate kao gost sa tvoje potvrdjene email adrese."}
+                ? "Orders, delivery details and everything checkout should already know about you."
+                : "Porudzbine, podaci za dostavu i sve sto naplata vec treba da zna o tebi."}
             </p>
           </div>
-          <OrdersList lang={lang} />
+          <AccountOverview lang={lang} />
         </section>
       </main>
       <StorefrontFooter lang={lang} />

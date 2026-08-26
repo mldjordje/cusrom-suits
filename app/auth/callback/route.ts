@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 function safeRedirectTarget(origin: string, next: string | null): URL {
-  const fallback = "/nalog/porudzbine";
+  const fallback = "/nalog";
   const raw = (next || fallback).trim();
   if (!raw.startsWith("/") || raw.startsWith("//") || raw.startsWith("/api/")) {
     return new URL(fallback, origin);

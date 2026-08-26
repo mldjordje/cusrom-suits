@@ -9,6 +9,11 @@ import type { CheckoutCopy } from "@/lib/storefront/checkoutCopy";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
 import { trackBeginCheckout, trackPurchase, type AnalyticsProduct } from "@/lib/analytics/ecommerce";
 import { applyFreeDeliveryThreshold, getRemainingForFreeDelivery } from "@/lib/storefront/deliveryPricing";
+import {
+  getProfileCompleteness,
+  readStorefrontProfile,
+  toStorefrontProfileMetadata,
+} from "@/lib/storefront/accountProfile";
 import type { StorefrontCartItem } from "@/lib/cart/types";
 import type { StorefrontLanguage } from "@/lib/storefront/language";
 
@@ -82,7 +87,7 @@ export default function CheckoutPageClient({
   freeDeliveryThreshold?: number;
 }) {
   const { items, subtotal, clearCart, isReady } = useCart();
-  const { user: authUser, loading: authLoading } = useStorefrontAuth();
+  const { user: authUser, loading: authLoading, supabase } = useStorefrontAuth();
   const [form, setForm] = useState(() => ({
     ...initialForm,
     deliveryMethod: fulfillmentCopy.deliveryEnabled ? "delivery" : "pickup",
@@ -99,6 +104,9 @@ export default function CheckoutPageClient({
   const [voucherApplying, setVoucherApplying] = useState(false);
   const [voucherError, setVoucherError] = useState<string | null>(null);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  /* Offered only to signed-in customers, and only while their profile is still
+     missing something — once it is complete this is noise on the page. */
+  const [saveToProfile, setSaveToProfile] = useState(true);
   const isEn = lang === "en";
 
   const withLang = (href: string) => {
@@ -139,17 +147,55 @@ export default function CheckoutPageClient({
     trackBeginCheckout(items.map(toAnalyticsProduct));
   }, [isReady, items]);
 
+  /* A signed-in customer should never retype what their profile already holds.
+     Only empty fields are filled, so this can run again on a token refresh
+     without overwriting a one-off address someone is mid-way through typing. */
   useEffect(() => {
     if (!authUser) return;
-    const metaName =
-      typeof authUser.user_metadata?.full_name === "string" ? authUser.user_metadata.full_name.trim() : "";
+    const profile = readStorefrontProfile(authUser.user_metadata);
     const mail = authUser.email?.trim() || "";
     setForm((prev) => ({
       ...prev,
-      fullName: prev.fullName.trim() ? prev.fullName : metaName,
+      fullName: prev.fullName.trim() ? prev.fullName : profile.fullName,
       email: prev.email.trim() ? prev.email : mail,
+      phone: prev.phone.trim() ? prev.phone : profile.phone,
+      address: prev.address.trim() ? prev.address : profile.address,
+      city: prev.city.trim() ? prev.city : profile.city,
+      postalCode: prev.postalCode.trim() ? prev.postalCode : profile.postalCode,
     }));
   }, [authUser]);
+
+  const storedProfile = useMemo(
+    () => readStorefrontProfile(authUser?.user_metadata),
+    [authUser],
+  );
+  const profileIsComplete = useMemo(
+    () => getProfileCompleteness(storedProfile).isComplete,
+    [storedProfile],
+  );
+  const canOfferProfileSave = Boolean(authUser) && !authLoading && !profileIsComplete;
+
+  /* Writes the delivery details onto the customer's own auth metadata after the
+     order is safely in. It runs after the order, never before: a failure here
+     must not cost anyone a purchase, so it stays fire-and-forget. */
+  const persistProfileFromForm = async () => {
+    if (!canOfferProfileSave || !saveToProfile || !supabase) return;
+    try {
+      await supabase.auth.updateUser({
+        data: toStorefrontProfileMetadata({
+          fullName: form.fullName || storedProfile.fullName,
+          phone: form.phone || storedProfile.phone,
+          address: form.address || storedProfile.address,
+          city: form.city || storedProfile.city,
+          postalCode: form.postalCode || storedProfile.postalCode,
+          marketingOptIn: storedProfile.marketingOptIn,
+        }),
+      });
+    } catch {
+      /* The order went through; a profile that did not save is a nuisance the
+         customer can fix on /nalog/profil, not an error worth showing here. */
+    }
+  };
 
   const markTouched = (field: string) =>
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -238,6 +284,7 @@ export default function CheckoutPageClient({
       setOrderNumber(String(json.orderNumber || json.orderId || ""));
       setSubmittedTotal(confirmedTotal);
       setAppliedVoucherCode(json.voucherCode ? String(json.voucherCode) : null);
+      void persistProfileFromForm();
       // Report the server's total, not the client's — the server re-prices every
       // line, so these can legitimately differ.
       trackPurchase({
@@ -575,6 +622,23 @@ export default function CheckoutPageClient({
                   />
                 </div>
               </div>
+
+              {canOfferProfileSave ? (
+                <div className="form-check mt-3">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    id="checkout-save-profile"
+                    checked={saveToProfile}
+                    onChange={(e) => setSaveToProfile(e.target.checked)}
+                  />
+                  <label className="form-check-label small" htmlFor="checkout-save-profile">
+                    {isEn
+                      ? "Save these details to my account for next time"
+                      : "Sacuvaj ove podatke na nalog za sledeci put"}
+                  </label>
+                </div>
+              ) : null}
             </div>
 
             <div className="ss-order-form-section">

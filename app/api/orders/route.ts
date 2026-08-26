@@ -192,7 +192,10 @@ export async function POST(req: NextRequest) {
       ? (payload.customer as Record<string, unknown>)
       : {};
     const fullName = String(customer.fullName || "").trim();
-    const email = String(customer.email || "").trim();
+    /* Lowercased on the way in. The account page finds a customer's guest
+       orders by matching this address against their confirmed account email,
+       and that match should not turn on how they held the shift key. */
+    const email = String(customer.email || "").trim().toLowerCase();
     const phone = String(customer.phone || "").trim();
     if (!fullName || !email || !phone) {
       return NextResponse.json(
@@ -251,8 +254,15 @@ export async function POST(req: NextRequest) {
     const finalTotal = Math.max(0, subtotal + deliveryCost - voucherDiscount);
     const { user: sessionUser } = await getStorefrontUserFromCookies();
     const sessionEmail = sessionUser?.email?.trim().toLowerCase() || "";
-    const storefrontUserId =
-      sessionUser?.id && sessionEmail && sessionEmail === email.toLowerCase() ? sessionUser.id : null;
+    /* Whoever is signed in owns the order, even when they had it shipped to a
+       different address than the one they sign in with. Requiring the two
+       emails to match used to drop the order out of the customer's own history
+       the moment they ordered something for a family member. The delivery email
+       still travels on `contact`; this is only the "whose account is this" link. */
+    const storefrontUserId = sessionUser?.id || null;
+    /* Kept alongside so support can see at a glance whether the order was
+       placed under the account's own address or someone else's. */
+    const orderedForOtherEmail = Boolean(storefrontUserId && sessionEmail && sessionEmail !== email);
 
     const contact = {
       ime: fullName,
@@ -281,7 +291,8 @@ export async function POST(req: NextRequest) {
       source: "storefront",
       type: "webshop",
       publicOrderNumber,
-      ...(storefrontUserId ? { storefrontUserId } : {}),
+      ...(storefrontUserId ? { storefrontUserId, accountEmail: sessionEmail || null } : {}),
+      ...(orderedForOtherEmail ? { orderedForOtherEmail: true } : {}),
       items,
       totals: {
         subtotal,
