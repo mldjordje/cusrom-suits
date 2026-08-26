@@ -199,32 +199,169 @@ export const normalizeCategoryContentEntry = (
  *
  * Stored settings still win outright — this is the starting point, not a lock.
  */
-export const DEFAULT_CATEGORY_CONTENT: Record<string, Partial<CategoryContentEntry>> = {
-  odelo: { imageRatio: "2-3", imageFocus: "top" },
-  sako: { imageRatio: "3-4", imageFocus: "top" },
-  kaput: { imageRatio: "2-3", imageFocus: "top" },
-  jakna: { imageRatio: "3-4", imageFocus: "top" },
-  pantalone: { imageRatio: "2-3", imageFocus: "top" },
-  /* Shot flat or on a plain ground, wider than they are tall. Stated rather
-     than left implicit so a category page can assert the square even when one
-     of its articles is grouped elsewhere — a pocket square named "... za odelo"
-     is filed under suits by the catalog's own priority order. */
-  obuca: { imageRatio: "1-1", imageFocus: "center" },
-  aksesoari: { imageRatio: "1-1", imageFocus: "center" },
-  kais: { imageRatio: "1-1", imageFocus: "center" },
-  kravata: { imageRatio: "1-1", imageFocus: "center" },
-  novcanik: { imageRatio: "1-1", imageFocus: "center" },
-  torba: { imageRatio: "1-1", imageFocus: "center" },
-  "card-holder": { imageRatio: "1-1", imageFocus: "center" },
+/* The shape the catalogue is actually photographed in: a full-length shot of a
+   man, head to shoes. Every garment category uses it, so the grid is one rhythm
+   instead of a different card height per category. */
+const SUIT_FRAME: Partial<CategoryContentEntry> = {
+  imageRatio: "2-3",
+  imageFocus: "top",
+  imageFit: "cover",
 };
 
-/** Label used when a default has to be materialised without a catalog lookup. */
+/* Wide objects shot from above. The one documented exception to the frame
+   above — see the note on the entries that use it. */
+const FLAT_FRAME: Partial<CategoryContentEntry> = {
+  imageRatio: "1-1",
+  imageFocus: "center",
+  imageFit: "cover",
+};
+
+/* Same asset the landing page shows behind its own hero. Using it here means
+   every category opens with a real image on day one instead of falling back to
+   the shared shop banner, and it is the obvious thing to replace: the admin
+   screen uploads a picture or a video per category. */
+export const DEFAULT_CATEGORY_HERO_IMAGE = "/img/hero2.jpg";
+
+export const DEFAULT_CATEGORY_CONTENT: Record<string, Partial<CategoryContentEntry>> = {
+  /* ---- Garments worn on a model --------------------------------------
+     One frame for all of them, and it is the suit frame. Side by side the
+     catalogue made the inconsistency obvious: a suit card stood tall while a
+     blazer card beside it was squat, so the grid read as broken rather than as
+     varied. 2:3 is the shape the photography was actually shot in, so it also
+     crops the least. */
+  odelo: SUIT_FRAME,
+  sako: SUIT_FRAME,
+  kaput: SUIT_FRAME,
+  jakna: SUIT_FRAME,
+  pantalone: SUIT_FRAME,
+  kosulja: SUIT_FRAME,
+  dzemper: SUIT_FRAME,
+  prsluk: SUIT_FRAME,
+
+  /* ---- Shot flat, on a plain ground -----------------------------------
+     These are the exception the brief allows for. A belt or a wallet is a wide
+     object photographed from above; forcing it into the tall suit frame would
+     crop both ends off and leave the middle. The square is what fits them, and
+     stating it here also lets a category page assert its own shape even when
+     one of its articles is filed under suits by the catalog's priority order —
+     a pocket square named "... za odelo" is. */
+  obuca: FLAT_FRAME,
+  aksesoari: FLAT_FRAME,
+  kais: FLAT_FRAME,
+  kravata: FLAT_FRAME,
+  novcanik: FLAT_FRAME,
+  torba: FLAT_FRAME,
+  "card-holder": FLAT_FRAME,
+};
+
+/* Hero copy per category. Written to be true of the whole category rather than
+   of any one article, so it stays correct as stock turns over, and kept to one
+   line: this sits over a photograph, and a paragraph there is unreadable.
+   All of it is editable in the admin — these are a starting point, not a
+   position. */
+const HERO_COPY: Record<string, { title: string; titleEn: string; lead: string; leadEn: string }> = {
+  odelo: {
+    title: "Odelo koje stoji kako treba",
+    titleEn: "A suit that sits right",
+    lead: "Za venčanje, posao i svečane prilike — klasični i moderni krojevi.",
+    leadEn: "For weddings, business and formal occasions — classic and modern cuts.",
+  },
+  sako: {
+    title: "Sako za svaku priliku",
+    titleEn: "A blazer for any occasion",
+    lead: "Najbrži put do elegantnog izgleda bez kompletnog odela.",
+    leadEn: "The fastest route to a sharp look without a full suit.",
+  },
+  kosulja: {
+    title: "Košulje koje se nose svaki dan",
+    titleEn: "Shirts made for every day",
+    lead: "Jednobojni i dezenirani modeli za posao i svečane prilike.",
+    leadEn: "Plain and patterned models for business and formal wear.",
+  },
+  pantalone: {
+    title: "Pantalone za posao i izlazak",
+    titleEn: "Trousers for work and evening",
+    lead: "Klasične i strukirane, uz sako ili samostalno.",
+    leadEn: "Classic and tailored, with a blazer or on their own.",
+  },
+  kaput: {
+    title: "Kaput za hladne dane",
+    titleEn: "A coat for the cold months",
+    lead: "Topli materijali i krojevi koji lepo stoje preko odela.",
+    leadEn: "Warm fabrics, cut to sit properly over a suit.",
+  },
+  jakna: {
+    title: "Jakne za prelazne dane",
+    titleEn: "Jackets for the in-between days",
+    lead: "Lakši modeli za jesen i proleće, uz košulju ili džemper.",
+    leadEn: "Lighter models for spring and autumn, over a shirt or knit.",
+  },
+  prsluk: {
+    title: "Prsluk koji zaokružuje kroj",
+    titleEn: "The waistcoat that completes the cut",
+    lead: "Uz odelo za trodelni izgled ili samostalno uz košulju.",
+    leadEn: "With a suit for a three-piece look, or on its own over a shirt.",
+  },
+  dzemper: {
+    title: "Džemperi za slojevito nošenje",
+    titleEn: "Knitwear for layering",
+    lead: "Preko košulje, ispod sakoa ili samostalno.",
+    leadEn: "Over a shirt, under a blazer, or on its own.",
+  },
+  obuca: {
+    title: "Cipele koje izdrže",
+    titleEn: "Shoes built to last",
+    lead: "Klasični i moderni modeli za posao i svečane prilike.",
+    leadEn: "Classic and modern models for business and formal wear.",
+  },
+  aksesoari: {
+    title: "Detalji koji se pamte",
+    titleEn: "The details people remember",
+    lead: "Kaiševi, kravate, manžetne i sitnice koje zaokružuju kombinaciju.",
+    leadEn: "Belts, ties, cufflinks and the small things that finish a look.",
+  },
+  kais: {
+    title: "Kaiševi od prave kože",
+    titleEn: "Belts in real leather",
+    lead: "Klasične i automatik kopče, uz odelo i uz farmerke.",
+    leadEn: "Classic and automatic buckles, for a suit or for jeans.",
+  },
+  kravata: {
+    title: "Kravate i leptir-mašne",
+    titleEn: "Ties and bow ties",
+    lead: "Jednobojne i dezenirane, za svečane i poslovne prilike.",
+    leadEn: "Plain and patterned, for formal and business occasions.",
+  },
+  novcanik: {
+    title: "Novčanici koji traju",
+    titleEn: "Wallets that last",
+    lead: "Kompaktni modeli od kože, za svaki dan.",
+    leadEn: "Compact leather models for everyday carry.",
+  },
+  torba: {
+    title: "Torbe za posao i put",
+    titleEn: "Bags for work and travel",
+    lead: "Modeli za laptop, dokumenta i kratka putovanja.",
+    leadEn: "Models for a laptop, documents and short trips.",
+  },
+  "card-holder": {
+    title: "Držači za kartice",
+    titleEn: "Card holders",
+    lead: "Tanki kožni modeli kada novčanik nije potreban.",
+    leadEn: "Slim leather models for when a wallet is too much.",
+  },
+};
+
+/** Human name for a default, used when the catalog is not consulted. */
 const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
   odelo: "Odela",
   sako: "Sakoi",
+  kosulja: "Košulje",
+  pantalone: "Pantalone",
   kaput: "Kaputi",
   jakna: "Jakne",
-  pantalone: "Pantalone",
+  prsluk: "Prsluci",
+  dzemper: "Džemperi",
   obuca: "Obuća",
   aksesoari: "Aksesoari",
   kais: "Kaiševi",
@@ -237,7 +374,20 @@ const DEFAULT_CATEGORY_LABELS: Record<string, string> = {
 const defaultEntryFor = (key: string): CategoryContentEntry | null => {
   const preset = DEFAULT_CATEGORY_CONTENT[key];
   if (!preset) return null;
-  return makeCategoryContentEntry(key, DEFAULT_CATEGORY_LABELS[key] || key, preset);
+  const copy = HERO_COPY[key];
+  return makeCategoryContentEntry(key, DEFAULT_CATEGORY_LABELS[key] || key, {
+    ...preset,
+    ...(copy
+      ? {
+          heroMedia: "image" as const,
+          heroImage: DEFAULT_CATEGORY_HERO_IMAGE,
+          heroTitle: copy.title,
+          heroTitleEn: copy.titleEn,
+          heroLead: copy.lead,
+          heroLeadEn: copy.leadEn,
+        }
+      : {}),
+  });
 };
 
 /**
@@ -249,10 +399,44 @@ const defaultEntryFor = (key: string): CategoryContentEntry | null => {
  * actually chose.
  */
 const withDefaultFraming = (entry: CategoryContentEntry): CategoryContentEntry => {
-  if (entry.imageRatio !== "auto") return entry;
-  const preset = DEFAULT_CATEGORY_CONTENT[entry.key];
-  if (!preset?.imageRatio) return entry;
-  return { ...entry, imageRatio: preset.imageRatio, imageFocus: preset.imageFocus || entry.imageFocus };
+  let next = entry;
+
+  if (next.imageRatio === "auto") {
+    const preset = DEFAULT_CATEGORY_CONTENT[next.key];
+    if (preset?.imageRatio) {
+      next = { ...next, imageRatio: preset.imageRatio, imageFocus: preset.imageFocus || next.imageFocus };
+    }
+  }
+
+  /* Same principle applied to the hero. "inherit" with nothing uploaded is not
+     a choice to show the shared shop banner — it is the field never having been
+     touched. A row saved for some unrelated reason (a size-guide note, a change
+     of framing) used to write "inherit" alongside it and silently opt that one
+     category out of the hero every other category now gets. */
+  /* The test is whether a source was actually supplied, not which mode is
+     selected. Picking "Video za ovu kategoriju" and then not uploading one is
+     the common half-finished state, and it used to leave the category with no
+     hero at all — worse than the default it replaced. */
+  const hasHeroSource =
+    (next.heroMedia === "video" && next.heroVideoUrl.trim().length > 0) ||
+    (next.heroMedia === "image" && next.heroImage.trim().length > 0);
+
+  if (!hasHeroSource) {
+    const fallback = defaultEntryFor(next.key);
+    if (fallback && fallback.heroMedia !== "inherit") {
+      next = {
+        ...next,
+        heroMedia: fallback.heroMedia,
+        heroImage: fallback.heroImage,
+        heroTitle: next.heroTitle.trim() || fallback.heroTitle,
+        heroTitleEn: next.heroTitleEn.trim() || fallback.heroTitleEn,
+        heroLead: next.heroLead.trim() || fallback.heroLead,
+        heroLeadEn: next.heroLeadEn.trim() || fallback.heroLeadEn,
+      };
+    }
+  }
+
+  return next;
 };
 
 /**
