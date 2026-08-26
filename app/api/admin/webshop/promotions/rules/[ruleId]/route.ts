@@ -29,8 +29,10 @@ const parseScopeValues = (value: unknown) => {
     .filter((item): item is number | string => item != null);
 };
 
-const parsePatchPayload = (raw: unknown): PromotionRulePatch | null => {
-  if (!raw || typeof raw !== "object") return null;
+type ParseFailure = { message: string };
+
+const parsePatchPayload = (raw: unknown): PromotionRulePatch | ParseFailure => {
+  if (!raw || typeof raw !== "object") return { message: "Invalid patch payload." };
   const row = raw as Record<string, unknown>;
   const patch: PromotionRulePatch = {};
 
@@ -38,23 +40,31 @@ const parsePatchPayload = (raw: unknown): PromotionRulePatch | null => {
   if (Object.prototype.hasOwnProperty.call(row, "isActive")) patch.isActive = Boolean(row.isActive);
   if (Object.prototype.hasOwnProperty.call(row, "scopeType")) {
     const scopeType = parseScopeType(row.scopeType);
-    if (!scopeType) return null;
+    if (!scopeType) return { message: "Invalid patch payload." };
+    /* Widening an existing rule to the whole catalogue is the same decision as
+       creating one that way, so it needs the same explicit confirmation. */
+    if (scopeType === "all" && row.confirmAllProducts !== true) {
+      return {
+        message:
+          "Popust na sve artikle mora biti potvrdjen (confirmAllProducts). Za jednu grupu koristi scope 'category'.",
+      };
+    }
     patch.scopeType = scopeType;
   }
   if (Object.prototype.hasOwnProperty.call(row, "scopeValues")) patch.scopeValues = parseScopeValues(row.scopeValues);
   if (Object.prototype.hasOwnProperty.call(row, "discountType")) {
     const discountType = parseDiscountType(row.discountType);
-    if (!discountType) return null;
+    if (!discountType) return { message: "Invalid patch payload." };
     patch.discountType = discountType;
   }
   if (Object.prototype.hasOwnProperty.call(row, "discountValue")) {
     const discountValue = Number(row.discountValue);
-    if (!Number.isFinite(discountValue)) return null;
+    if (!Number.isFinite(discountValue)) return { message: "Invalid patch payload." };
     patch.discountValue = discountValue;
   }
   if (Object.prototype.hasOwnProperty.call(row, "priority")) {
     const priority = Number(row.priority);
-    if (!Number.isFinite(priority)) return null;
+    if (!Number.isFinite(priority)) return { message: "Invalid patch payload." };
     patch.priority = priority;
   }
   if (Object.prototype.hasOwnProperty.call(row, "startAt")) {
@@ -79,8 +89,8 @@ export async function PATCH(req: NextRequest, { params }: Params) {
   const { ruleId } = await params;
   const payload = await req.json().catch(() => null);
   const patch = parsePatchPayload(payload);
-  if (!patch) {
-    return NextResponse.json({ success: false, message: "Invalid patch payload." }, { status: 400 });
+  if ("message" in patch) {
+    return NextResponse.json({ success: false, message: patch.message }, { status: 400 });
   }
 
   const rule = await updatePromotionRule(String(ruleId), patch);

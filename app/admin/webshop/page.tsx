@@ -292,6 +292,10 @@ type PromotionDraft = {
   isActive: boolean;
   scopeType: PromotionScopeType;
   scopeValuesText: string;
+  /** Categories picked from the list, not typed as raw ids. */
+  scopeCategoryIds: number[];
+  /** Must be ticked before an "all products" rule can be created. */
+  confirmAllProducts: boolean;
   discountType: PromotionDiscountType;
   discountValue: string;
   priority: string;
@@ -508,8 +512,13 @@ const defaultLandingSettings: LandingSettings = {
 const defaultPromotionDraft: PromotionDraft = {
   name: "",
   isActive: true,
-  scopeType: "all",
+  /* Not "all". This form used to open on a site-wide sale, so filling in a name
+     and a percentage and pressing create — without touching the scope select —
+     discounted the entire catalogue. That is exactly what happened once. */
+  scopeType: "category",
   scopeValuesText: "",
+  scopeCategoryIds: [],
+  confirmAllProducts: false,
   discountType: "percent",
   discountValue: "10",
   priority: "0",
@@ -1399,11 +1408,33 @@ export default function AdminWebshopPage() {
       return;
     }
 
+    const scopeValues =
+      promotionDraft.scopeType === "category"
+        ? promotionDraft.scopeCategoryIds
+        : parseScopeValuesText(promotionDraft.scopeType, promotionDraft.scopeValuesText);
+
+    /* A rule with a scope but no values silently behaves like "everything".
+       Refuse it here rather than let it out onto the shop. */
+    if (promotionDraft.scopeType !== "all" && scopeValues.length === 0) {
+      setError(
+        promotionDraft.scopeType === "category"
+          ? "Izaberi bar jednu kategoriju."
+          : "Unesi bar jednu vrednost za izabrani scope.",
+      );
+      return;
+    }
+
+    if (promotionDraft.scopeType === "all" && !promotionDraft.confirmAllProducts) {
+      setError("Popust na SVE artikle mora da se potvrdi kvacicom ispod.");
+      return;
+    }
+
     const payload = {
       name,
       isActive: promotionDraft.isActive,
       scopeType: promotionDraft.scopeType,
-      scopeValues: parseScopeValuesText(promotionDraft.scopeType, promotionDraft.scopeValuesText),
+      confirmAllProducts: promotionDraft.confirmAllProducts,
+      scopeValues,
       discountType: promotionDraft.discountType,
       discountValue,
       priority: toNumberOrNull(promotionDraft.priority) ?? 0,
@@ -4386,21 +4417,42 @@ export default function AdminWebshopPage() {
                 <option value="brand">Scope: Brendovi</option>
                 <option value="product">Scope: Proizvodi</option>
               </select>
-              <input
-                value={promotionDraft.scopeValuesText}
-                onChange={(e) => setPromotionDraft((prev) => ({ ...prev, scopeValuesText: e.target.value }))}
-                placeholder={
-                  promotionDraft.scopeType === "all"
-                    ? "Nije potrebno"
-                    : promotionDraft.scopeType === "category"
-                      ? "ID kategorija: 12,45"
+              {promotionDraft.scopeType === "category" ? (
+                /* Picked from the real category list. Typing raw ids into a text
+                   box is how a shoes-only sale becomes a catalogue-wide one. */
+                <select
+                  multiple
+                  size={Math.min(6, Math.max(3, categories.length))}
+                  value={promotionDraft.scopeCategoryIds.map(String)}
+                  onChange={(e) =>
+                    setPromotionDraft((prev) => ({
+                      ...prev,
+                      scopeCategoryIds: Array.from(e.target.selectedOptions, (option) => Number(option.value)),
+                    }))
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
+                >
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.path.join(" / ")}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <input
+                  value={promotionDraft.scopeValuesText}
+                  onChange={(e) => setPromotionDraft((prev) => ({ ...prev, scopeValuesText: e.target.value }))}
+                  placeholder={
+                    promotionDraft.scopeType === "all"
+                      ? "Nije potrebno"
                       : promotionDraft.scopeType === "product"
                         ? "Legacy ID proizvoda: 101,205"
                         : "Brendovi: hugo,boss"
-                }
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
-                disabled={promotionDraft.scopeType === "all"}
-              />
+                  }
+                  className="rounded-xl border border-slate-200 px-3 py-2 text-sm md:col-span-2"
+                  disabled={promotionDraft.scopeType === "all"}
+                />
+              )}
               <select
                 value={promotionDraft.discountType}
                 onChange={(e) => setPromotionDraft((prev) => ({ ...prev, discountType: e.target.value as PromotionDiscountType }))}
@@ -4434,6 +4486,23 @@ export default function AdminWebshopPage() {
                 className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
               />
             </div>
+
+            {promotionDraft.scopeType === "all" ? (
+              <label className="mt-3 flex items-start gap-2 rounded-xl border border-red-300 bg-red-50 px-3 py-2 text-sm text-red-800">
+                <input
+                  type="checkbox"
+                  checked={promotionDraft.confirmAllProducts}
+                  onChange={(e) =>
+                    setPromotionDraft((prev) => ({ ...prev, confirmAllProducts: e.target.checked }))
+                  }
+                  className="mt-1"
+                />
+                <span>
+                  <strong>Ovo snizuje ceo katalog.</strong> Svaki artikal u web shopu dobija ovaj popust.
+                  Za akciju na jednu grupu izaberi <em>Scope: Kategorije</em>. Potvrdi da zaista zelis sve.
+                </span>
+              </label>
+            ) : null}
 
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <label className="inline-flex items-center gap-2 text-sm">

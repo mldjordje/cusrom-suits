@@ -29,20 +29,40 @@ const parseScopeValues = (value: unknown) => {
     .filter((item): item is number | string => item != null);
 };
 
-const parseCreatePayload = (raw: unknown): PromotionRuleInput | null => {
-  if (!raw || typeof raw !== "object") return null;
+type ParseFailure = { message: string };
+
+const parseCreatePayload = (raw: unknown): PromotionRuleInput | ParseFailure => {
+  if (!raw || typeof raw !== "object") return { message: "Invalid promotion payload." };
   const row = raw as Record<string, unknown>;
   const name = String(row.name || "").trim();
   const scopeType = parseScopeType(row.scopeType);
   const discountType = parseDiscountType(row.discountType);
   const discountValue = Number(row.discountValue);
-  if (!name || !scopeType || !discountType || !Number.isFinite(discountValue)) return null;
+  if (!name || !scopeType || !discountType || !Number.isFinite(discountValue)) {
+    return { message: "Invalid promotion payload." };
+  }
+
+  const scopeValues = parseScopeValues(row.scopeValues);
+
+  /* Two ways a rule ends up discounting the whole catalogue: asking for it, and
+     naming a scope without ever saying which categories. The first needs an
+     explicit confirmation from the admin UI; the second is always a mistake.
+     The shop had a 30%-off-everything day because neither was checked here. */
+  if (scopeType === "all" && row.confirmAllProducts !== true) {
+    return {
+      message:
+        "Popust na sve artikle mora biti potvrdjen (confirmAllProducts). Za jednu grupu koristi scope 'category'.",
+    };
+  }
+  if (scopeType !== "all" && scopeValues.length === 0) {
+    return { message: `Scope '${scopeType}' zahteva bar jednu vrednost.` };
+  }
 
   return {
     name,
     isActive: row.isActive == null ? true : Boolean(row.isActive),
     scopeType,
-    scopeValues: parseScopeValues(row.scopeValues),
+    scopeValues,
     discountType,
     discountValue,
     priority: Number.isFinite(Number(row.priority)) ? Number(row.priority) : 0,
@@ -67,8 +87,8 @@ export async function POST(req: NextRequest) {
 
   const payload = await req.json().catch(() => null);
   const parsed = parseCreatePayload(payload);
-  if (!parsed) {
-    return NextResponse.json({ success: false, message: "Invalid promotion payload." }, { status: 400 });
+  if ("message" in parsed) {
+    return NextResponse.json({ success: false, message: parsed.message }, { status: 400 });
   }
 
   const rule = await createPromotionRule(parsed);
