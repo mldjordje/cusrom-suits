@@ -13,6 +13,22 @@ import { categoryPathForGroupKey } from "@/lib/storefront/categoryRoutes";
 // domain a customer would type. Block it at the edge so that traffic never
 // reaches the app or gets counted as real visitors.
 const BLOCKED_HOST_SUFFIX = ".vercel.app";
+
+/**
+ * Preview deployments are served from *.vercel.app too, so the block above
+ * used to 404 every one of them — the whole point of a preview URL is that a
+ * human can open it, and nobody could.
+ *
+ * Written as "allow only on a known preview" rather than "block only on a
+ * known production" on purpose. If VERCEL_ENV ever fails to reach this
+ * runtime, this reads false, the block stays on, and the worst case is a
+ * preview URL that 404s — which is exactly today's behaviour. The inverted
+ * form would fail the other way and quietly expose the production alias.
+ *
+ * next.config.ts sends X-Robots-Tag: noindex on every non-production
+ * deployment, so nothing reachable here can be indexed.
+ */
+const isPreviewDeployment = process.env.VERCEL_ENV === "preview";
 const IMAGE_OPTIMIZER_PATH = "/_next/image";
 const MAX_LEGACY_CRAWL_SEGMENTS = 5;
 
@@ -73,7 +89,7 @@ const isLikelyMalformedLegacyCrawl = (pathname: string) => {
 
 export async function middleware(req: NextRequest) {
   const host = req.headers.get("host") || "";
-  if (host.toLowerCase().endsWith(BLOCKED_HOST_SUFFIX)) {
+  if (!isPreviewDeployment && host.toLowerCase().endsWith(BLOCKED_HOST_SUFFIX)) {
     return new NextResponse("Not Found", { status: 404 });
   }
 

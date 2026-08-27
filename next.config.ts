@@ -90,10 +90,24 @@ const nextConfig: NextConfig = {
         value: "max-age=63072000; includeSubDomains; preload",
       },
     ];
+    /* Preview and development deployments are reachable (see the note in
+       middleware.ts) but must never end up in an index.
+
+       Tested for a known non-production value rather than for "not
+       production", so a missing VERCEL_ENV cannot put noindex on the live
+       site. The two possible mistakes here are not equal: a preview that
+       fails to send the header is a nuisance, a production build that sends
+       it deindexes the shop. */
+    const vercelEnv = process.env.VERCEL_ENV;
+    const isNonProductionDeployment = vercelEnv === "preview" || vercelEnv === "development";
+    const indexingHeaders = isNonProductionDeployment
+      ? [{ key: "X-Robots-Tag", value: "noindex, nofollow" }]
+      : [];
+
     return [
       {
         source: "/:path*",
-        headers: securityHeaders,
+        headers: [...securityHeaders, ...indexingHeaders],
       },
       {
         source: "/_next/static/:path*",
