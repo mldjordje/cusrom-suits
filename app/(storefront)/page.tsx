@@ -9,6 +9,7 @@ import GsapParallaxProducts from "@/app/components/landing/GsapParallaxProducts"
 import GsapBespokeScrubStage from "@/app/components/landing/GsapBespokeScrubStage";
 import GsapHorizontalLookbook from "@/app/components/landing/GsapHorizontalLookbook";
 import GsapHeritageCounter from "@/app/components/landing/GsapHeritageCounter";
+import Landing3DLookbook from "@/app/components/landing/Landing3DLookbook";
 import LandingTrustPillars from "@/app/components/landing/LandingTrustPillars";
 import type { ProductItem } from "@/app/components/landing/LandingFeaturedProducts";
 
@@ -149,6 +150,20 @@ export default async function HomePage({
     .slice(0, 4)
     .map((item) => mapCatalogToProductItem(item, lang));
 
+  const lookbook3DItems = (catalog.items || [])
+    .filter((item) => item.coverImage && item.coverImage.trim().length > 0)
+    .slice(0, 6)
+    .map((item, index) => {
+      const p = mapCatalogToProductItem(item, lang);
+      return {
+        id: String(item.legacyId || index),
+        title: p.title,
+        subtitle: p.categoryName || "SARTORIA 2026",
+        image: p.image,
+        href: p.href,
+      };
+    });
+
   const findCategoryImg = (group: string, fallbackIdx: number) => {
     const found = (catalog.items || []).find(
       (item) => productMatchesCategoryGroup(item, group) && item.coverImage && item.coverImage.trim().length > 0,
@@ -243,13 +258,18 @@ export default async function HomePage({
       {/* 7. GSAP Pinned Horizontal Runway Lookbook */}
       <GsapHorizontalLookbook lang={lang} />
 
-      {/* 8. GSAP Heritage ScrollTrigger Counter & Showrooms */}
+      {/* 8. 3D Cylindrical Rolling Gallery */}
+      {lookbook3DItems.length >= 4 && (
+        <Landing3DLookbook items={lookbook3DItems} lang={lang} />
+      )}
+
+      {/* 9. GSAP Heritage ScrollTrigger Counter & Showrooms */}
       <GsapHeritageCounter lang={lang} />
 
-      {/* 9. Luxury Trust Pillars */}
+      {/* 10. Luxury Trust Pillars */}
       <LandingTrustPillars lang={lang} />
 
-      {/* 10. Storefront Footer */}
+      {/* 11. Storefront Footer */}
       <StorefrontFooter lang={lang} />
     </div>
   );

@@ -6,6 +6,7 @@ import Image from "next/image";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import SilkWaves from "@/app/components/motion/SilkWaves";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -91,7 +92,10 @@ export default function GsapBespokeScrubStage({ lang = "sr" }: Props) {
         color: "#f2eee7",
       }}
     >
-      <div className="container h-100 d-flex flex-column justify-content-center" style={{ minHeight: "100vh" }}>
+      {/* Ambient Silk Waves Canvas Background */}
+      <SilkWaves />
+
+      <div className="container h-100 d-flex flex-column justify-content-center position-relative" style={{ minHeight: "100vh", zIndex: 2 }}>
         {/* Eyebrow / Progress */}
         <div className="d-flex align-items-center justify-content-between border-bottom border-dark pb-3 mb-4">
           <div>

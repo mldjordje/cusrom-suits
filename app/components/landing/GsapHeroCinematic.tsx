@@ -7,6 +7,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import ShinyText from "@/app/components/motion/ShinyText";
+import LightRays from "@/app/components/motion/LightRays";
 
 if (typeof window !== "undefined") {
   gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -105,6 +106,9 @@ export default function GsapHeroCinematic({
           />
         )}
       </div>
+
+      {/* Ambient Champagne Light Rays */}
+      <LightRays count={6} color="rgba(201, 169, 110, 0.18)" />
 
       {/* Cinematic Tint Overlay */}
       <div
