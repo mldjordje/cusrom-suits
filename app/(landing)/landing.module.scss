@@ -1,0 +1,832 @@
+/* =========================================================================
+   SANTOS & SANTORINI — LANDING v3
+   Closed design system. Imports nothing, inherits nothing.
+
+   Two type sizes only: display and meta. The gap between them IS the design.
+   No accent colour. No gold. No shadows. No border-radius.
+   ========================================================================= */
+
+.root {
+  --paper: #f2f0ed;
+  --paper-2: #fffdfb;
+  --ink: #121212;
+  --ink-soft: #2a2a2a;
+  --meta: #6e6a64;
+  --line: rgba(18, 18, 18, 0.13);
+  --line-strong: rgba(18, 18, 18, 0.26);
+  --invert: #f2f0ed;
+
+  --gutter: clamp(16px, 3.2vw, 44px);
+  --col-gap: clamp(12px, 1.6vw, 24px);
+
+  --ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.83, 0, 0.17, 1);
+
+  --d-fast: 420ms;
+  --d-base: 760ms;
+  --d-slow: 1100ms;
+
+  position: relative;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--lx-sans), "Inter Tight", system-ui, sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: clip;
+
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
+  }
+
+  h1, h2, h3, h4, p, figure, blockquote, ul, ol {
+    margin: 0;
+    padding: 0;
+  }
+
+  ul, ol { list-style: none; }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  img, video {
+    display: block;
+    max-width: 100%;
+  }
+
+  button {
+    font: inherit;
+    color: inherit;
+    background: none;
+    border: 0;
+    padding: 0;
+    cursor: pointer;
+  }
+}
+
+/* ---------------------------------------------------------------- type --- */
+
+.display {
+  font-family: var(--lx-display), "Marcellus", Georgia, serif;
+  font-weight: 400;
+  text-transform: uppercase;
+  letter-spacing: -0.03em;
+  line-height: 0.94;
+  text-wrap: balance;
+}
+
+.dXl { @extend .display; font-size: clamp(2.75rem, 7.2vw, 6.5rem); }
+.dLg { @extend .display; font-size: clamp(2.25rem, 5.2vw, 4.5rem); }
+.dMd { @extend .display; font-size: clamp(1.75rem, 3.4vw, 3rem); }
+
+.meta {
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: 0.02em;
+  line-height: 1.5;
+}
+
+.micro {
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  line-height: 1;
+  color: var(--meta);
+}
+
+/* Sole link treatment on the page: a rule that draws itself in from the left.
+   No buttons anywhere — buttons are what make a fashion site look like a shop. */
+.rule {
+  position: relative;
+  display: inline-block;
+  padding-bottom: 4px;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(1);
+    transform-origin: left;
+    transition: transform var(--d-base) var(--ease);
+  }
+
+  &:hover::after { transform: scaleX(0); transform-origin: right; }
+}
+
+/* --------------------------------------------------------------- layout --- */
+
+.section { position: relative; }
+.paper { background: var(--paper); }
+.paper2 { background: var(--paper-2); }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--col-gap);
+  padding-inline: var(--gutter);
+}
+
+/* The 12-column baseline is visible, not implied. Hairlines at 1/4/7/10 give
+   the eye something to measure the asymmetry against. */
+.rails {
+  position: absolute;
+  inset: 0;
+  padding-inline: var(--gutter);
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--col-gap);
+  pointer-events: none;
+  z-index: 0;
+
+  span {
+    grid-row: 1;
+    border-left: 1px solid var(--line);
+    opacity: 0.55;
+  }
+
+  span:nth-child(1) { grid-column: 1; }
+  span:nth-child(2) { grid-column: 4; }
+  span:nth-child(3) { grid-column: 7; }
+  span:nth-child(4) { grid-column: 10; }
+}
+
+@media (max-width: 900px) {
+  .rails { display: none; }
+}
+
+/* ---------------------------------------------------------------- shell --- */
+
+/* mix-blend-mode: difference is the whole trick — the header never needs to
+   know whether the frame behind it is light or dark, it inverts itself. */
+.header {
+  position: fixed;
+  inset: 0 0 auto 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px var(--gutter);
+  color: var(--invert);
+  mix-blend-mode: difference;
+  transition: transform var(--d-base) var(--ease);
+}
+
+.headerHidden { transform: translateY(-100%); }
+
+.wordmark {
+  font-family: var(--lx-display), "Marcellus", Georgia, serif;
+  font-size: 15px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: clamp(18px, 2.4vw, 38px);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.navLink {
+  position: relative;
+  padding-bottom: 3px;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 1px;
+    background: currentColor;
+    transform: scaleX(0);
+    transform-origin: right;
+    transition: transform 520ms var(--ease);
+  }
+
+  &:hover::after { transform: scaleX(1); transform-origin: left; }
+}
+
+@media (max-width: 820px) {
+  .nav :global(.lx-nav-wide) { display: none; }
+}
+
+/* 8px dot, no trail, no lag on the ring — anything more reads as a demo. */
+.cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 90;
+  width: 8px;
+  height: 8px;
+  margin: -4px 0 0 -4px;
+  border-radius: 50%;
+  background: var(--invert);
+  mix-blend-mode: difference;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 300ms linear, width 420ms var(--ease), height 420ms var(--ease), margin 420ms var(--ease);
+}
+
+.cursorOn { opacity: 1; }
+
+.cursorWide {
+  width: 46px;
+  height: 46px;
+  margin: -23px 0 0 -23px;
+}
+
+@media (hover: none), (pointer: coarse) {
+  .cursor { display: none; }
+}
+
+.consent {
+  position: fixed;
+  inset: auto var(--gutter) var(--gutter) var(--gutter);
+  z-index: 80;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px 32px;
+  padding: 18px 22px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 12px;
+  letter-spacing: 0.03em;
+
+  a { text-decoration: underline; text-underline-offset: 3px; }
+
+  button {
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+}
+
+.consentActions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+/* ----------------------------------------------------------------- hero --- */
+
+.hero {
+  position: relative;
+  height: 100svh;
+  min-height: 560px;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.heroMedia {
+  position: absolute;
+  inset: -6% 0 -6% 0;
+  will-change: transform;
+
+  img, video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 42%;
+  }
+}
+
+/* A flat 18% wash, not a gradient scrim. Gradients over fashion photography
+   are the single fastest way to look like a 2017 template. */
+.heroWash {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.18);
+}
+
+.heroInner {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--col-gap);
+  align-content: end;
+  padding: 0 var(--gutter) clamp(28px, 5vh, 64px);
+  color: var(--paper);
+}
+
+.heroTitle {
+  grid-column: 1 / span 9;
+}
+
+.heroCorner {
+  position: absolute;
+  top: 96px;
+  right: var(--gutter);
+  z-index: 2;
+  text-align: right;
+  color: var(--paper);
+  opacity: 0.72;
+}
+
+.heroFoot {
+  grid-column: 10 / span 3;
+  align-self: end;
+  justify-self: end;
+  text-align: right;
+  color: var(--paper);
+  opacity: 0.72;
+}
+
+@media (max-width: 720px) {
+  .heroTitle { grid-column: 1 / span 12; }
+  .heroFoot { grid-column: 1 / span 12; justify-self: start; text-align: left; margin-top: 18px; }
+  .heroCorner { top: 78px; }
+}
+
+/* ------------------------------------------------------------- manifesto --- */
+
+.manifesto {
+  padding: clamp(110px, 17vh, 210px) 0;
+}
+
+.manifestoInner {
+  grid-column: 2 / span 9;
+}
+
+.manifestoMeta {
+  grid-column: 1 / span 12;
+  margin-bottom: clamp(48px, 8vh, 96px);
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+@media (max-width: 900px) {
+  .manifestoInner { grid-column: 1 / span 12; }
+}
+
+/* ----------------------------------------------------------- categories --- */
+
+.cats {
+  padding: clamp(80px, 12vh, 150px) 0 clamp(100px, 16vh, 200px);
+  position: relative;
+}
+
+.catsHead {
+  grid-column: 1 / span 12;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: clamp(36px, 6vh, 72px);
+}
+
+.catList {
+  grid-column: 1 / span 12;
+  border-top: 1px solid var(--line);
+}
+
+.catRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: clamp(28px, 4.4vh, 56px) 0;
+  border-bottom: 1px solid var(--line);
+  transition: opacity var(--d-fast) var(--ease);
+}
+
+.catName {
+  display: inline-block;
+  transition: transform var(--d-base) var(--ease);
+  will-change: transform;
+}
+
+.catRow:hover .catName { transform: translateX(28px); }
+
+/* Dimming the siblings rather than highlighting the target — the hover reads
+   as the list stepping back, not as a button lighting up. */
+.catListHot .catRow { opacity: 0.32; }
+.catListHot .catRow:hover { opacity: 1; }
+
+.catIndex {
+  flex: none;
+  align-self: flex-start;
+  padding-top: 10px;
+}
+
+/* Cursor-following plate. Position is written by rAF in JS; the element itself
+   only animates opacity so the follow never fights a CSS transition. */
+.catPlate {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 40;
+  width: 280px;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 460ms var(--ease);
+  will-change: transform;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.catPlateOn { opacity: 1; }
+
+@media (max-width: 900px) {
+  .catPlate { display: none; }
+
+  .catRow {
+    display: grid;
+    grid-template-columns: 1fr 96px;
+    align-items: center;
+  }
+
+  .catRow:hover .catName { transform: none; }
+  .catListHot .catRow { opacity: 1; }
+}
+
+.catThumbMobile {
+  display: none;
+  width: 96px;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+@media (max-width: 900px) {
+  .catThumbMobile { display: block; }
+}
+
+/* -------------------------------------------------------------- bespoke --- */
+
+/* No GSAP pin anywhere on this page. `position: sticky` does the same job,
+   survives resize, and degrades to a plain stack when JS never boots. */
+.bespoke {
+  position: relative;
+  padding: clamp(80px, 12vh, 160px) 0 clamp(80px, 12vh, 160px);
+}
+
+.bespokeGrid {
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: var(--col-gap);
+  padding-inline: var(--gutter);
+  align-items: start;
+}
+
+.bespokeStage {
+  grid-column: 1 / span 6;
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  display: flex;
+  align-items: center;
+}
+
+.bespokeFrame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  max-height: 78svh;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.bespokeShot {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 720ms var(--ease);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+.bespokeShotOn { opacity: 1; }
+
+.bespokeStageIndex {
+  position: absolute;
+  left: 18px;
+  bottom: 16px;
+  z-index: 2;
+  color: var(--paper);
+  opacity: 0.8;
+}
+
+.bespokeSteps {
+  grid-column: 8 / span 5;
+  display: flex;
+  flex-direction: column;
+}
+
+.bespokeStep {
+  min-height: 84svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 20px;
+  padding: 40px 0;
+  opacity: 0.34;
+  transition: opacity var(--d-base) var(--ease);
+}
+
+.bespokeStepOn { opacity: 1; }
+
+.bespokeStepCopy {
+  color: var(--meta);
+  max-width: 46ch;
+}
+
+@media (max-width: 900px) {
+  .bespokeStage {
+    grid-column: 1 / span 12;
+    height: auto;
+    position: relative;
+    top: auto;
+    margin-bottom: 32px;
+  }
+
+  .bespokeFrame { aspect-ratio: 3 / 4; max-height: none; }
+  .bespokeSteps { grid-column: 1 / span 12; }
+
+  .bespokeStep {
+    min-height: 0;
+    padding: 34px 0;
+    border-top: 1px solid var(--line);
+    opacity: 1;
+  }
+}
+
+/* ----------------------------------------------------------------- edit --- */
+
+.edit {
+  padding: clamp(100px, 16vh, 200px) 0 clamp(120px, 18vh, 220px);
+  position: relative;
+}
+
+.editHead {
+  grid-column: 1 / span 12;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding-bottom: clamp(48px, 8vh, 100px);
+}
+
+/* Column, row and offset all arrive as custom properties from the component —
+   see PLACEMENT in LxEdit. The media query below can still override them
+   because it targets the same selector later in the cascade. */
+.editItem {
+  grid-column: var(--lx-col, span 4);
+  grid-row: var(--lx-row, auto);
+  margin-top: var(--lx-top, 0px);
+}
+
+.editFigure {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: rgba(18, 18, 18, 0.05);
+  margin-bottom: 16px;
+}
+
+.editShot {
+  position: absolute;
+  inset: 0;
+  transition: opacity 600ms var(--ease);
+
+  img { width: 100%; height: 100%; object-fit: cover; }
+}
+
+/* Crossfade only. No zoom on hover — scale on a garment photo is the tell. */
+.editShotAlt { opacity: 0; }
+.editItem:hover .editShotAlt { opacity: 1; }
+
+.editCaption {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.editName { color: var(--ink); }
+.editPrice { color: var(--meta); white-space: nowrap; }
+
+@media (max-width: 900px) {
+  .editItem {
+    grid-column: span 6;
+    grid-row: auto;
+    margin-top: 0;
+  }
+
+  .editItem:nth-of-type(even) { margin-top: clamp(24px, 8vw, 56px); }
+}
+
+/* -------------------------------------------------------------- ateliers --- */
+
+.ateliers {
+  background: var(--ink);
+  color: var(--paper);
+  padding: clamp(100px, 16vh, 190px) 0 0;
+
+  --line: rgba(242, 240, 237, 0.16);
+  --meta: rgba(242, 240, 237, 0.55);
+}
+
+.ateliersHead {
+  grid-column: 1 / span 12;
+  padding-bottom: clamp(56px, 9vh, 110px);
+}
+
+.atelier {
+  grid-column: span 5;
+  padding-top: 28px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.atelier:nth-child(odd) { grid-column: 1 / span 5; }
+.atelier:nth-child(even) { grid-column: 7 / span 5; }
+
+.atelierLines {
+  color: var(--meta);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.guarantees {
+  grid-column: 1 / span 12;
+  margin-top: clamp(70px, 10vh, 120px);
+  padding: 20px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px clamp(20px, 4vw, 56px);
+}
+
+@media (max-width: 820px) {
+  .atelier,
+  .atelier:nth-child(odd),
+  .atelier:nth-child(even) {
+    grid-column: 1 / span 12;
+  }
+
+  .atelier + .atelier { margin-top: 44px; }
+}
+
+/* --------------------------------------------------------------- footer --- */
+
+.footer {
+  background: var(--ink);
+  color: var(--paper);
+  padding: clamp(70px, 11vh, 130px) 0 32px;
+
+  --line: rgba(242, 240, 237, 0.16);
+  --meta: rgba(242, 240, 237, 0.55);
+}
+
+.footerBrand { grid-column: 1 / span 4; }
+
+.footerCol {
+  grid-column: span 2;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.footerCol:nth-of-type(2) { grid-column: 7 / span 2; }
+.footerCol:nth-of-type(3) { grid-column: 9 / span 2; }
+.footerCol:nth-of-type(4) { grid-column: 11 / span 2; }
+
+.footerColHead { margin-bottom: 8px; }
+
+.footerLink {
+  color: var(--meta);
+  font-size: 14px;
+  transition: color var(--d-fast) var(--ease);
+
+  &:hover { color: var(--paper); }
+}
+
+.footerBase {
+  grid-column: 1 / span 12;
+  margin-top: clamp(60px, 10vh, 110px);
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px 24px;
+}
+
+@media (max-width: 820px) {
+  .footerBrand { grid-column: 1 / span 12; margin-bottom: 44px; }
+
+  .footerCol,
+  .footerCol:nth-of-type(2),
+  .footerCol:nth-of-type(3),
+  .footerCol:nth-of-type(4) {
+    grid-column: span 6;
+    margin-bottom: 28px;
+  }
+}
+
+/* ------------------------------------------------------------------- fx --- */
+
+/* Clip-path reveal, not opacity+translate. The image arrives by being
+   uncovered, which is how a print page turns; fading is how a slideshow works. */
+.reveal {
+  clip-path: inset(0 0 100% 0);
+  transition: clip-path var(--d-slow) var(--ease);
+  will-change: clip-path;
+}
+
+.revealOn { clip-path: inset(0 0 0 0); }
+
+.lines {
+  display: block;
+}
+
+.line {
+  display: block;
+  overflow: hidden;
+}
+
+.lineInner {
+  display: block;
+  transform: translateY(112%);
+  transition: transform var(--d-base) var(--ease);
+  will-change: transform;
+}
+
+.linesOn .lineInner { transform: translateY(0); }
+
+.fade {
+  opacity: 0;
+  transition: opacity var(--d-base) var(--ease);
+}
+
+.fadeOn { opacity: 1; }
+
+/* Every motion state above resolves to its finished value here, so the page
+   reads identically with animation switched off. */
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root *::before,
+  .root *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+  }
+
+  .reveal { clip-path: inset(0 0 0 0); }
+  .lineInner { transform: none; }
+  .fade { opacity: 1; }
+  .bespokeStep { opacity: 1; }
+  .catPlate { display: none; }
+  .cursor { display: none; }
+}
+
+/* ------------------------------------------------------------ overrides --- */
+
+/* .micro carries --meta by default; over photography it has to inherit the
+   frame's own colour instead. */
+.heroCorner .micro,
+.heroFoot.micro,
+.bespokeStageIndex.micro {
+  color: inherit;
+}
+
+@media (max-width: 900px) {
+  /* The mobile row is a two-column grid — the index numeral has no slot. */
+  .catIndex { display: none; }
+}
