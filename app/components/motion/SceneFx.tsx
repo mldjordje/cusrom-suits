@@ -271,6 +271,76 @@ export default function SceneFx() {
         });
       });
 
+      /* Handheld gets the same authored scroll language without fixed pins.
+         Pinning against Safari's collapsing address bar causes jumps; scrubbed
+         depth and chapter changes retain the narrative while native scrolling
+         remains fully in charge. */
+      editorialMedia.add(MQ.handheld, () => {
+        gsap.utils.toArray<HTMLElement>(".ss-home-page .section-title").forEach((heading) => {
+          gsap.fromTo(
+            heading,
+            { xPercent: -8 },
+            {
+              xPercent: 0,
+              ease: "none",
+              scrollTrigger: { trigger: heading, start: "top 96%", end: "top 58%", scrub: 0.7 },
+            },
+          );
+        });
+
+        gsap.utils.toArray<HTMLElement>(".ss-home-page .ss-uniform-tile").forEach((image, index) => {
+          const frame = image.closest(".ss-featured-tile") || image.parentElement;
+          if (!frame) return;
+          gsap.fromTo(
+            image,
+            { yPercent: index % 2 === 0 ? -4 : 3, scale: 1.045 },
+            {
+              yPercent: index % 2 === 0 ? 4 : -3,
+              scale: 1.09,
+              ease: "none",
+              scrollTrigger: { trigger: frame, start: "top bottom", end: "bottom top", scrub: 0.9 },
+            },
+          );
+        });
+
+        gsap.utils.toArray<HTMLElement>("[data-m-collection-rail] .ss-category-tile").forEach((tile, index) => {
+          gsap.fromTo(
+            tile,
+            { y: index % 2 === 0 ? 34 : 62, scale: 0.94 },
+            {
+              y: index % 2 === 0 ? -12 : -28,
+              scale: 1,
+              ease: "none",
+              scrollTrigger: { trigger: tile, start: "top 95%", end: "bottom 28%", scrub: 0.8 },
+            },
+          );
+        });
+
+        gsap.utils.toArray<HTMLElement>("[data-m-tailoring-story]").forEach((section) => {
+          const image = section.querySelector<HTMLElement>(".ss-editorial-banner__img");
+          const steps = gsap.utils.toArray<HTMLElement>("[data-m-tailoring-step]", section);
+          if (image) {
+            gsap.fromTo(image, { scale: 1.04, yPercent: -3 }, {
+              scale: 1.14,
+              yPercent: 4,
+              ease: "none",
+              scrollTrigger: { trigger: section, start: "top bottom", end: "bottom top", scrub: 0.9 },
+            });
+          }
+          if (steps.length > 0) {
+            ScrollTrigger.create({
+              trigger: section,
+              start: "top 78%",
+              end: "bottom 32%",
+              onUpdate: (self) => {
+                const active = Math.min(steps.length - 1, Math.floor(self.progress * steps.length));
+                steps.forEach((item, itemIndex) => item.classList.toggle("is-active", itemIndex === active));
+              },
+            });
+          }
+        });
+      });
+
       /* ---- panels that brought their own reveal ------------------------- */
 
       gsap.utils.toArray<HTMLElement>(PANEL_SELECTOR).forEach((el, index) => {
