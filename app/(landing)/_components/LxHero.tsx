@@ -31,7 +31,9 @@ const COPY = {
  */
 export default function LxHero({ lang, image, video, poster }: LxHeroProps) {
   const mediaRef = useRef<HTMLDivElement | null>(null);
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [entered, setEntered] = useState(false);
+  const [videoReady, setVideoReady] = useState(false);
   const copy = COPY[lang];
 
   useEffect(() => {
@@ -62,29 +64,44 @@ export default function LxHero({ lang, image, video, poster }: LxHeroProps) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
+  // Nothing here waits on the video. The still is the LCP element and is
+  // always painted; the clip fades in over it only once it reports it can
+  // play, and pauses whenever the hero leaves the viewport.
+  useEffect(() => {
+    const node = videoRef.current;
+    if (!node || typeof IntersectionObserver === "undefined") return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) void node.play().catch(() => undefined);
+        else node.pause();
+      },
+      { threshold: 0.05 },
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [video]);
+
   return (
     <section className={styles.hero}>
       <div ref={mediaRef} className={styles.heroMedia}>
+        <StorefrontImage sources={[poster || image]} alt="" fill priority sizes="100vw" />
         {video ? (
           <video
+            ref={videoRef}
+            className={`${styles.heroVideo} ${videoReady ? styles.heroVideoOn : ""}`}
             autoPlay
             muted
             loop
             playsInline
             preload="metadata"
-            poster={poster || image}
+            onCanPlay={() => setVideoReady(true)}
+            onError={() => setVideoReady(false)}
           >
             <source src={video} type="video/mp4" />
           </video>
-        ) : (
-          <StorefrontImage
-            sources={[image]}
-            alt=""
-            fill
-            priority
-            sizes="100vw"
-          />
-        )}
+        ) : null}
       </div>
 
       <div className={styles.heroWash} />

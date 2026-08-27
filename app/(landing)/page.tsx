@@ -118,7 +118,7 @@ export default async function LandingPage({
     (item) => item.coverImage && item.coverImage.trim().length > 0,
   );
 
-  const products: LxProduct[] = items.slice(0, 6).map((item) => toProduct(item, lang));
+  const products: LxProduct[] = items.slice(0, 4).map((item) => toProduct(item, lang));
 
   const categoryImage = (group: string, fallbackIndex: number) => {
     const found = items.find((item) => productMatchesCategoryGroup(item, group));

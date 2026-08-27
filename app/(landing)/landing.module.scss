@@ -311,6 +311,17 @@
 
 /* A flat 18% wash, not a gradient scrim. Gradients over fashion photography
    are the single fastest way to look like a 2017 template. */
+/* Layered over the still, transparent until the clip can actually play, so a
+   missing or broken video URL costs one failed request and nothing else. */
+.heroVideo {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 900ms var(--ease);
+}
+
+.heroVideoOn { opacity: 1; }
+
 .heroWash {
   position: absolute;
   inset: 0;
@@ -396,89 +407,60 @@
   padding-bottom: clamp(36px, 6vh, 72px);
 }
 
-.catList {
-  grid-column: 1 / span 12;
-  border-top: 1px solid var(--line);
+/* Alternating widths give the run its rhythm; the vertical offset on the
+   second frame of each pair keeps the two rows from reading as a table. */
+.catTile {
+  display: block;
+  margin-bottom: clamp(28px, 5vw, 72px);
 }
 
-.catRow {
+.catTile:nth-of-type(even) { margin-top: clamp(40px, 7vw, 110px); }
+
+.catFrame {
   position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  padding: clamp(28px, 4.4vh, 56px) 0;
-  border-bottom: 1px solid var(--line);
-  transition: opacity var(--d-fast) var(--ease);
-}
-
-.catName {
-  display: inline-block;
-  transition: transform var(--d-base) var(--ease);
-  will-change: transform;
-}
-
-.catRow:hover .catName { transform: translateX(28px); }
-
-/* Dimming the siblings rather than highlighting the target — the hover reads
-   as the list stepping back, not as a button lighting up. */
-.catListHot .catRow { opacity: 0.32; }
-.catListHot .catRow:hover { opacity: 1; }
-
-.catIndex {
-  flex: none;
-  align-self: flex-start;
-  padding-top: 10px;
-}
-
-/* Cursor-following plate. Position is written by rAF in JS; the element itself
-   only animates opacity so the follow never fights a CSS transition. */
-.catPlate {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 40;
-  width: 280px;
-  aspect-ratio: 3 / 4;
+  width: 100%;
+  aspect-ratio: 4 / 5;
   overflow: hidden;
-  pointer-events: none;
-  opacity: 0;
-  transition: opacity 460ms var(--ease);
-  will-change: transform;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-.catPlateOn { opacity: 1; }
-
-@media (max-width: 900px) {
-  .catPlate { display: none; }
-
-  .catRow {
-    display: grid;
-    grid-template-columns: 1fr 96px;
-    align-items: center;
-  }
-
-  .catRow:hover .catName { transform: none; }
-  .catListHot .catRow { opacity: 1; }
-}
-
-.catThumbMobile {
-  display: none;
-  width: 96px;
-  aspect-ratio: 3 / 4;
-  overflow: hidden;
+  background: rgba(18, 18, 18, 0.05);
 
   img { width: 100%; height: 100%; object-fit: cover; }
 }
 
+/* A flat wash across the lower third, only as dark as the caption needs. */
+.catScrim {
+  position: absolute;
+  inset: 55% 0 0 0;
+  background: linear-gradient(to bottom, rgba(10, 10, 10, 0), rgba(10, 10, 10, 0.46));
+}
+
+.catTileIndex {
+  position: absolute;
+  top: 20px;
+  left: 22px;
+  color: var(--paper);
+  opacity: 0.85;
+}
+
+.catTileFoot {
+  position: absolute;
+  inset: auto 22px 20px 22px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 20px;
+  color: var(--paper);
+
+  .micro { color: inherit; opacity: 0.75; }
+}
+
 @media (max-width: 900px) {
-  .catThumbMobile { display: block; }
+  .catTile,
+  .catTile:nth-of-type(even) {
+    grid-column: 1 / span 12 !important;
+    margin-top: 0;
+  }
+
+  .catFrame { aspect-ratio: 3 / 4; }
 }
 
 /* -------------------------------------------------------------- bespoke --- */
@@ -628,6 +610,7 @@
 
 .editCaption {
   display: flex;
+  padding-top: 2px;
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
@@ -638,12 +621,12 @@
 
 @media (max-width: 900px) {
   .editItem {
-    grid-column: span 6;
+    grid-column: 1 / span 12;
     grid-row: auto;
     margin-top: 0;
   }
 
-  .editItem:nth-of-type(even) { margin-top: clamp(24px, 8vw, 56px); }
+  .editItem + .editItem { margin-top: clamp(32px, 9vw, 64px); }
 }
 
 /* -------------------------------------------------------------- ateliers --- */
@@ -812,7 +795,6 @@
   .lineInner { transform: none; }
   .fade { opacity: 1; }
   .bespokeStep { opacity: 1; }
-  .catPlate { display: none; }
   .cursor { display: none; }
 }
 
@@ -826,7 +808,3 @@
   color: inherit;
 }
 
-@media (max-width: 900px) {
-  /* The mobile row is a two-column grid — the index numeral has no slot. */
-  .catIndex { display: none; }
-}

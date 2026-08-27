@@ -19,15 +19,16 @@ const COPY = {
 };
 
 /**
- * Three fixed column starts with three fixed vertical offsets, repeated per
- * row. Placement is explicit rather than left to auto-flow: a column start of
- * 1 after a start of 9 makes the grid open a new row, which silently turned
- * six items into six rows the first time this was built.
+ * Four large frames, two to a row, alternating 6/5 and 5/6 so the run never
+ * settles into a grid. Placement is explicit rather than left to auto-flow: a
+ * column start of 1 after a start of 8 makes the grid open a new row, which
+ * silently turned the items into one column each the first time this was built.
  */
 const PLACEMENT = [
-  { column: "1 / span 4", offset: "0px" },
-  { column: "6 / span 4", offset: "clamp(40px, 9vw, 120px)" },
-  { column: "9 / span 4", offset: "clamp(20px, 4.5vw, 60px)" },
+  { column: "1 / span 6", offset: "0px" },
+  { column: "8 / span 5", offset: "clamp(50px, 9vw, 140px)" },
+  { column: "1 / span 5", offset: "0px" },
+  { column: "7 / span 6", offset: "clamp(40px, 7vw, 110px)" },
 ] as const;
 export default function LxEdit({
   lang,
@@ -69,7 +70,7 @@ export default function LxEdit({
             style={
               {
                 "--lx-col": place.column,
-                "--lx-row": String(Math.floor(index / PLACEMENT.length) + 2),
+                "--lx-row": String(Math.floor(index / 2) + 2),
                 "--lx-top": place.offset,
               } as CSSProperties
             }
@@ -81,7 +82,7 @@ export default function LxEdit({
                     sources={[product.image]}
                     alt={product.title}
                     fill
-                    sizes="(max-width: 900px) 50vw, 33vw"
+                    sizes="(max-width: 900px) 100vw, 48vw"
                   />
                 </span>
                 {product.hoverImage ? (
@@ -90,7 +91,7 @@ export default function LxEdit({
                       sources={[product.hoverImage]}
                       alt=""
                       fill
-                      sizes="(max-width: 900px) 50vw, 33vw"
+                      sizes="(max-width: 900px) 100vw, 48vw"
                     />
                   </span>
                 ) : null}

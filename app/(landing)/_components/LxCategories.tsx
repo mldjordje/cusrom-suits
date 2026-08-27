@@ -1,8 +1,6 @@
-"use client";
-
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
+import Reveal from "./_fx/Reveal";
 import styles from "../landing.module.scss";
 
 export type LxCategory = {
@@ -13,15 +11,17 @@ export type LxCategory = {
 };
 
 const COPY = {
-  sr: { eyebrow: "(02) — Kolekcija", all: "Cela kolekcija" },
-  en: { eyebrow: "(02) — Collection", all: "View everything" },
+  sr: { eyebrow: "(02) — Kolekcija", all: "Cela kolekcija", shop: "Pogledajte" },
+  en: { eyebrow: "(02) — Collection", all: "View everything", shop: "Shop" },
 };
 
 /**
- * A list, not a grid of cards. The image is a plate that follows the pointer;
- * the rows themselves only shift and dim, so nothing on screen ever looks
- * like a clickable tile.
+ * Four large frames, alternating 7/5 and 5/7 across the twelve columns. The
+ * picture is the content: nothing here is hidden behind a hover, because on
+ * a fashion site the photograph is the only thing that sells.
  */
+const SPANS = ["1 / span 7", "8 / span 5", "1 / span 5", "6 / span 7"];
+
 export default function LxCategories({
   lang,
   categories,
@@ -31,48 +31,10 @@ export default function LxCategories({
   categories: LxCategory[];
   allHref: string;
 }) {
-  const plateRef = useRef<HTMLDivElement | null>(null);
-  const pos = useRef({ x: 0, y: 0, tx: 0, ty: 0 });
-  const raf = useRef(0);
-  const [active, setActive] = useState<string | null>(null);
   const copy = COPY[lang];
-
-  const loop = useCallback(() => {
-    const node = plateRef.current;
-    if (!node) return;
-    const p = pos.current;
-    // Trailing the pointer by a fixed fraction each frame is what separates a
-    // considered follow from a jittery one glued to the cursor.
-    p.x += (p.tx - p.x) * 0.12;
-    p.y += (p.ty - p.y) * 0.12;
-    node.style.transform = `translate3d(${p.x - 140}px, ${p.y - 186}px, 0)`;
-    raf.current = requestAnimationFrame(loop);
-  }, []);
-
-  useEffect(() => {
-    if (window.matchMedia("(pointer: coarse)").matches) return;
-
-    const onMove = (event: PointerEvent) => {
-      pos.current.tx = event.clientX;
-      pos.current.ty = event.clientY;
-    };
-
-    window.addEventListener("pointermove", onMove, { passive: true });
-    raf.current = requestAnimationFrame(loop);
-    return () => {
-      window.removeEventListener("pointermove", onMove);
-      cancelAnimationFrame(raf.current);
-    };
-  }, [loop]);
-
-  const activeCategory = categories.find((item) => item.id === active) || null;
 
   return (
     <section className={`${styles.section} ${styles.paper} ${styles.cats}`}>
-      <div className={styles.rails} aria-hidden>
-        <span /><span /><span /><span />
-      </div>
-
       <div className={styles.grid}>
         <div className={styles.catsHead}>
           <span className={styles.micro}>{copy.eyebrow}</span>
@@ -81,51 +43,31 @@ export default function LxCategories({
           </Link>
         </div>
 
-        <ul
-          className={`${styles.catList} ${active ? styles.catListHot : ""}`}
-          onPointerLeave={() => setActive(null)}
-        >
-          {categories.map((category, index) => (
-            <li
-              key={category.id}
-              className={styles.catRow}
-              onPointerEnter={() => setActive(category.id)}
-            >
-              <Link href={category.href} className={`${styles.dLg} ${styles.catName}`}>
-                {category.label}
-              </Link>
-              <span className={`${styles.micro} ${styles.catIndex}`}>
+        {categories.map((category, index) => (
+          <Link
+            key={category.id}
+            href={category.href}
+            className={styles.catTile}
+            style={{ gridColumn: SPANS[index % SPANS.length] }}
+          >
+            <Reveal delay={(index % 2) * 90} className={styles.catFrame}>
+              <StorefrontImage
+                sources={[category.image]}
+                alt={category.label}
+                fill
+                sizes="(max-width: 900px) 100vw, 55vw"
+              />
+              <span className={styles.catScrim} />
+              <span className={`${styles.micro} ${styles.catTileIndex}`}>
                 {String(index + 1).padStart(2, "0")}
               </span>
-              <span className={styles.catThumbMobile}>
-                <StorefrontImage
-                  sources={[category.image]}
-                  alt=""
-                  width={96}
-                  height={128}
-                  sizes="96px"
-                />
+              <span className={styles.catTileFoot}>
+                <span className={styles.dMd}>{category.label}</span>
+                <span className={styles.micro}>{copy.shop}</span>
               </span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div
-        aria-hidden
-        ref={plateRef}
-        className={`${styles.catPlate} ${activeCategory ? styles.catPlateOn : ""}`}
-      >
-        {activeCategory ? (
-          <StorefrontImage
-            key={activeCategory.id}
-            sources={[activeCategory.image]}
-            alt=""
-            width={280}
-            height={373}
-            sizes="280px"
-          />
-        ) : null}
+            </Reveal>
+          </Link>
+        ))}
       </div>
     </section>
   );
