@@ -6,6 +6,7 @@ import StorefrontAuthProvider from "@/app/components/storefront/StorefrontAuthPr
 import StorefrontCartProvider from "@/app/components/storefront/cart/StorefrontCartProvider";
 import StorefrontRuntimeShell from "@/app/components/storefront/StorefrontRuntimeShell";
 import MotionProvider from "@/app/components/motion/MotionProvider";
+import LuxuryCursorGlow from "@/app/components/motion/LuxuryCursorGlow";
 import { MOTION_BOOT_SCRIPT } from "@/lib/motion/bootScript";
 import CookieConsent from "@/app/components/storefront/CookieConsent";
 import PromoPopups from "@/app/components/storefront/PromoPopups";
@@ -44,6 +45,7 @@ export default async function StorefrontLayout({ children }: { children: ReactNo
           <StorefrontCartProvider>
             <MotionProvider>
               <StorefrontRuntimeShell />
+              <LuxuryCursorGlow />
               {children}
               <CookieConsent />
               <PromoPopups settings={popupSettings} />

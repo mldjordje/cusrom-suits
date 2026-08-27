@@ -493,7 +493,7 @@ export default function StorefrontHeaderClient({
               </ul>
             </nav>
 
-            <div className="header-tools ss-header-tools d-flex align-items-center">
+            <div className="header-tools ss-header-tools d-flex align-items-center gap-3">
               {headerSocialItems.length ? (
                 <div className="ss-header-socials d-none d-xxl-inline-flex" aria-label={isEn ? "Social links" : "Drustvene mreze"}>
                   {headerSocialItems.map((item) => (
@@ -511,20 +511,34 @@ export default function StorefrontHeaderClient({
                 </div>
               ) : null}
 
-              <span className="ss-header-tools__divider d-none d-xxl-inline-block" aria-hidden="true" />
+              {headerSocialItems.length ? (
+                <span className="ss-header-tools__divider d-none d-xxl-inline-block" aria-hidden="true" />
+              ) : null}
 
-              <div className="ss-header-tools__icons d-none d-md-inline-flex">
+              <div className="ss-header-tools__icons d-none d-md-inline-flex align-items-center gap-2">
                 <button
                   type="button"
                   className="header-tools__item ss-header-tool"
                   aria-label={isEn ? "Search" : "Pretraga"}
                   onClick={handleSearchTrigger}
                 >
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                    <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.5" />
-                    <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <circle cx="11" cy="11" r="8" />
+                    <line x1="21" y1="21" x2="16.65" y2="16.65" />
                   </svg>
                 </button>
+
+                <Link
+                  href={withLang(authUser ? "/nalog" : "/nalog/prijava")}
+                  className="header-tools__item ss-header-tool"
+                  aria-label={authUser ? (isEn ? "My Account" : "Moj Nalog") : (isEn ? "Sign In" : "Prijava")}
+                >
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </Link>
+
                 <StorefrontCartLink
                   className="header-tools__item ss-header-tool"
                   ariaLabel={isEn ? "Cart" : "Korpa"}
@@ -532,16 +546,6 @@ export default function StorefrontHeaderClient({
               </div>
 
               <span className="ss-header-tools__divider d-none d-md-inline-block" aria-hidden="true" />
-
-              <Link
-                href={withLang(authUser ? "/nalog" : "/nalog/prijava")}
-                className="ss-inline-link text-uppercase fw-medium d-none d-md-inline-flex"
-              >
-                {authLoading ? "…" : authUser ? (isEn ? "My orders" : "Moje porudzbine") : isEn ? "Sign in" : "Prijava"}
-              </Link>
-              <Link href={withLang("/kontakt")} className="ss-inline-link text-uppercase fw-medium d-none d-md-inline-flex">
-                {isEn ? "Contact" : "Kontakt"}
-              </Link>
 
               <StorefrontLanguageSwitcher lang={lang} className="d-none d-md-inline-flex ss-header-lang" />
             </div>

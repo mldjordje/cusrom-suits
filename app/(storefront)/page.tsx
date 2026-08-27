@@ -8,6 +8,13 @@ import HomeCategoryTiles from "@/app/components/storefront/HomeCategoryTiles";
 import CustomSuitsEditorialBanner from "@/app/components/storefront/CustomSuitsEditorialBanner";
 import PremiumProductCard from "@/app/components/storefront/PremiumProductCard";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
+import StorefrontTrustStrip from "@/app/components/storefront/StorefrontTrustStrip";
+import CustomSuitsEditorialExperience from "@/app/components/storefront/CustomSuitsEditorialExperience";
+import AtelierHeritageShowcase from "@/app/components/storefront/AtelierHeritageShowcase";
+import BlurText from "@/app/components/motion/BlurText";
+import ShinyText from "@/app/components/motion/ShinyText";
+import InfiniteMarquee from "@/app/components/motion/InfiniteMarquee";
+import EditorialLookbook from "@/app/components/motion/EditorialLookbook";
 import Reveal from "@/app/components/motion/Reveal";
 import ProductItemMotion from "@/app/components/motion/ProductItemMotion";
 import SectionHeadingReveal from "@/app/components/motion/SectionHeadingReveal";
@@ -927,7 +934,9 @@ export default async function HomePage({
       );
     }
 
-    if (key === "customSuits") return <CustomSuitsEditorialBanner lang={lang} backgroundImage={landingSettings.heroVideoPosterUrl || undefined} />;
+    if (key === "customSuits") {
+      return <CustomSuitsEditorialExperience lang={lang} backgroundImage={landingSettings.heroVideoPosterUrl || undefined} />;
+    }
 
     if (key === "aboutContact") {
       const [aboutLede, ...aboutRest] = aboutParagraphs;
@@ -1111,7 +1120,7 @@ export default async function HomePage({
    * between contained and full-bleed. Reordering sections in the admin panel
    * reshuffles the cadence with them instead of breaking it.
    */
-  const gridCadence = ["grid", "rail", "band"] as const;
+  const gridCadence = ["grid", "grid", "grid"] as const;
   const cadenceByIndex = (() => {
     const result: string[] = [];
     let gridSeen = 0;
@@ -1191,322 +1200,31 @@ export default async function HomePage({
             heroEyebrow: (isEn && landingSettings.heroEyebrowEn.trim()) || tx(landingSettings.heroEyebrow, "Santos & Santorini"),
             heroTitleLine1: (isEn && landingSettings.heroTitleLine1En.trim()) || tx(landingSettings.heroTitleLine1, "New Collection"),
             heroTitleLine2: (isEn && landingSettings.heroTitleLine2En.trim()) || tx(landingSettings.heroTitleLine2),
-            heroPrimaryCtaLabel: (isEn && landingSettings.heroPrimaryCtaLabelEn.trim()) || tx(landingSettings.heroPrimaryCtaLabel, "Products"),
-            heroPrimaryCtaHref: landingSettings.heroPrimaryCtaHref,
-            heroSecondaryCtaLabel: (isEn && landingSettings.heroSecondaryCtaLabelEn.trim()) || tx(landingSettings.heroSecondaryCtaLabel, "Contact"),
-            heroSecondaryCtaHref: landingSettings.heroSecondaryCtaHref,
+            heroPrimaryCtaLabel: (isEn && landingSettings.heroPrimaryCtaLabelEn.trim()) || tx(landingSettings.heroPrimaryCtaLabel, "Istraži Kolekciju"),
+            heroPrimaryCtaHref: landingSettings.heroPrimaryCtaHref || "/web-shop",
+            heroSecondaryCtaLabel: (isEn && landingSettings.heroSecondaryCtaLabelEn.trim()) || tx(landingSettings.heroSecondaryCtaLabel, "Šivenje po Meri"),
+            heroSecondaryCtaHref: landingSettings.heroSecondaryCtaHref || "/custom-suits",
           }}
+        />
+
+        <InfiniteMarquee
+          items={[
+            "ITALIAN WOOL & CASHMERE",
+            "BESPOKE TAILORING",
+            "ATELIER NIŠ",
+            "HANDMADE CRAFTSMANSHIP",
+            "VANVREMENSKA ELEGANCIJA",
+            "SHOWROOM KRUŠEVAC",
+          ]}
         />
 
         {orderedLandingPageEntries.map(renderLandingPageEntry)}
 
-        {false ? (
-          <>
-        <HomeCategoryTiles
-          categories={catalog.categories}
-          tiles={landingSettings.categoryTiles}
-          categoryGroupImages={(() => {
-            const groups = ["odelo", "sako", "pantalone", "kosulja", "jakna", "obuca", "kaput"];
-            const result: Record<string, string> = {};
-            for (const group of groups) {
-              const match = catalog.items.find(
-                (item) => item.coverImage && productMatchesCategoryGroup(item, group),
-              );
-              if (match?.coverImage) result[group] = String(match?.coverImage);
-            }
-            return result;
-          })()}
-          lang={lang}
-        />
+        <EditorialLookbook lang={lang} />
 
-        <Reveal as="section" className="container pb-5 ss-editorial-section ss-editorial-section--story" delay={0.02}>
-          <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <SectionHeadingReveal className="section-title text-uppercase">
-              {tx(landingSettings.storySectionTitle, "Brand Story")}
-            </SectionHeadingReveal>
-            {landingSettings.storySectionCtaLabel ? (
-              <Link href={withOptionalLang(landingSettings.storySectionCtaHref)} className="btn-link default-underline text-uppercase fw-medium">
-                {tx(landingSettings.storySectionCtaLabel, "View Collection")}
-              </Link>
-            ) : null}
-          </div>
-          <div className="row g-4">
-            {storyCards.map((block, storyIndex) => (
-              <Reveal
-                key={block.id}
-                as="article"
-                className="col-12 col-md-6 col-lg-4"
-                delay={0.06 * storyIndex}
-                y={26}
-                amount={0.15}
-              >
-                <div className="position-relative overflow-hidden h-100 ss-story-card" style={{ minHeight: 480, borderRadius: 2 }}>
-                  <Image src={block.image || "/img/hero.jpg"} alt={tx(block.title)} fill sizes="(max-width: 991px) 100vw, 33vw" style={{ objectFit: "cover" }} />
-                  <div
-                    className="position-absolute top-0 start-0 w-100 h-100"
-                    style={{ background: "linear-gradient(180deg, rgba(0,0,0,0.18) 0%, rgba(0,0,0,0.78) 100%)" }}
-                  />
-                  <div className="position-absolute top-0 start-0 w-100 h-100 d-flex flex-column justify-content-between p-4 text-white ss-story-card__body">
-                    <span className="text-uppercase fw-medium" style={{ letterSpacing: "0.14em", fontSize: "0.68rem" }}>
-                      {tx(block.badge)}
-                    </span>
-                    <div>
-                      <h3 className="h4 text-white text-uppercase mb-2">{tx(block.title)}</h3>
-                      <p className="mb-3">{block.copy}</p>
-                      {block.ctaLabel ? (
-                        <Link href={withOptionalLang(block.ctaHref)} className="btn btn-light btn-sm text-uppercase fw-medium">
-                          {tx(block.ctaLabel, "View More")}
-                        </Link>
-                      ) : null}
-                    </div>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-          </div>
-        </Reveal>
+        <AtelierHeritageShowcase lang={lang} />
 
-        <div className="mb-2 mb-xl-3 pt-xl-1 pb-3" />
-
-        {topGridSections.length > 0
-          ? topGridSections.map((entry, index) => (
-              <Reveal
-                key={entry.kind === "builtin" ? `top-grid-${entry.key}` : `top-grid-${entry.section.id}`}
-                as="div"
-                delay={Math.min(0.07 * index, 0.35)}
-                y={22}
-                amount={0.08}
-              >
-                {renderOrderedGridSection(entry)}
-                {index < topGridSections.length - 1 ? <div className="mb-3 mb-xl-4 pt-xl-1 pb-4" /> : null}
-              </Reveal>
-            ))
-          : null}
-
-        {topGridSections.length > 0 ? <div className="mb-3 mb-xl-4 pt-xl-1 pb-4" /> : null}
-
-        <Reveal as="section" className="banner-grid container ss-editorial-banners" delay={0.08}>
-          <div className="row g-4">
-            <div className="col-md-6">
-              <div className="position-relative overflow-hidden ss-banner-panel">
-                <StorefrontImage
-                  sources={[landingSettings.bannerLeftImage]}
-                  fallbackSrc="/img/hero2.jpg"
-                  width={690}
-                  height={330}
-                  alt={tx(landingSettings.bannerLeftTitle, "Ready to Wear")}
-                  className="w-100 h-auto"
-                  sizes="(max-width: 767px) 100vw, 50vw"
-                />
-                <div className="position-absolute top-50 start-50 translate-middle text-center">
-                  <h4 className="text-uppercase text-white">{tx(landingSettings.bannerLeftTitle, "Ready to Wear")}</h4>
-                  <Link href={withLang(landingSettings.bannerLeftHref)} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">
-                    {tx(landingSettings.bannerLeftButtonLabel, "Shop Now")}
-                  </Link>
-                </div>
-              </div>
-            </div>
-            <div className="col-md-6">
-              <div className="position-relative overflow-hidden ss-banner-panel">
-                <StorefrontImage
-                  sources={[landingSettings.bannerRightImage]}
-                  fallbackSrc="/img/hero.jpg"
-                  width={690}
-                  height={330}
-                  alt={tx(landingSettings.bannerRightTitle, "Current Sale")}
-                  className="w-100 h-auto"
-                  sizes="(max-width: 767px) 100vw, 50vw"
-                />
-                <div className="position-absolute top-50 start-50 translate-middle text-center">
-                  <h4 className="text-uppercase text-white">{tx(landingSettings.bannerRightTitle, "Current Sale")}</h4>
-                  <Link href={withLang(landingSettings.bannerRightHref)} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">
-                    {tx(landingSettings.bannerRightButtonLabel, "View Sale")}
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Reveal>
-
-        {/* Custom Suits Editorial Banner — izmedju product sekcija */}
-        <CustomSuitsEditorialBanner
-          lang={lang}
-          backgroundImage={landingSettings.heroVideoPosterUrl || undefined}
-        />
-
-        {bottomGridSections.length > 0 ? <div className="mb-2 pb-3" /> : null}
-
-        {bottomGridSections.length > 0
-          ? bottomGridSections.map((entry, index) => (
-              <Reveal
-                key={entry.kind === "builtin" ? `bottom-grid-${entry.key}` : `bottom-grid-${entry.section.id}`}
-                as="div"
-                delay={Math.min(0.06 * index, 0.28)}
-                y={20}
-                amount={0.1}
-              >
-                {renderOrderedGridSection(entry)}
-                {index < bottomGridSections.length - 1 ? <div className="mb-4 mb-xl-5 pt-xl-1 pb-5" /> : null}
-              </Reveal>
-            ))
-          : null}
-
-        {bottomGridSections.length > 0 ? <div className="mb-2 pb-3" /> : null}
-
-        <Reveal as="section" id="o-nama" className="container pb-5 ss-editorial-section ss-atelier-section" delay={0.16}>
-          <div className="row g-4 align-items-stretch">
-            <div className="col-12 col-lg-7">
-              <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>
-                  {tx(landingSettings.aboutEyebrow, "About")}
-                </p>
-                <div className="row g-3">
-                  {aboutParagraphs.map((paragraph) => (
-                    <div key={paragraph} className="col-12 col-md-6">
-                      <p className="text-secondary mb-0">{paragraph}</p>
-                    </div>
-                  ))}
-                </div>
-                <div className="d-flex flex-wrap gap-2 mt-4">
-                  {landingSettings.aboutPrimaryCtaLabel ? (
-                    <Link href={withOptionalLang(landingSettings.aboutPrimaryCtaHref)} className="btn btn-dark btn-sm text-uppercase fw-medium">
-                      {tx(landingSettings.aboutPrimaryCtaLabel, "Contact")}
-                    </Link>
-                  ) : null}
-                  {landingSettings.aboutSecondaryCtaLabel ? (
-                    <Link href={withOptionalLang(landingSettings.aboutSecondaryCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                      {tx(landingSettings.aboutSecondaryCtaLabel, "View products")}
-                    </Link>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-            <div className="col-12 col-lg-5">
-              <div className="h-100 border bg-white p-4 p-md-5 d-flex flex-column ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>
-                  {tx(landingSettings.contactEyebrow, "Contact")}
-                </p>
-                <h3 className="h4 text-uppercase mb-3">{tx(landingSettings.contactTitle, "Support and personal recommendations")}</h3>
-                <p className="text-secondary mb-4">{tx(landingSettings.contactText)}</p>
-                <div className="d-grid gap-2">
-                  {contactPoints.map((point) => (
-                    <div key={point.label} className="border px-3 py-2" style={{ borderRadius: 14 }}>
-                      <div className="text-uppercase fw-medium mb-1" style={{ letterSpacing: "0.12em", fontSize: "0.66rem", color: "var(--ss-gold-dark, #a07d45)" }}>
-                        {tx(point.label)}
-                      </div>
-                      <div>{point.value}</div>
-                    </div>
-                  ))}
-                </div>
-                <div className="d-flex flex-wrap gap-2 mt-4">
-                  {landingSettings.contactPrimaryCtaLabel ? (
-                    <Link href={withOptionalLang(landingSettings.contactPrimaryCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                      {tx(landingSettings.contactPrimaryCtaLabel, "Contact Form")}
-                    </Link>
-                  ) : null}
-                  {landingSettings.contactSecondaryCtaLabel ? (
-                    <a href={landingSettings.contactSecondaryCtaHref} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-                      {tx(landingSettings.contactSecondaryCtaLabel, "Send Email")}
-                    </a>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          </div>
-        </Reveal>
-
-        <div className="mb-2 pb-3" />
-
-        <div className="mb-3 mb-xl-4 pt-xl-1 pb-3" />
-
-        <Reveal as="section" className="container pb-5 ss-editorial-section" delay={0.175}>
-          <div className="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
-            <div>
-              <p className="text-uppercase mb-2" style={{ letterSpacing: "0.18em", fontSize: "0.72rem", color: "var(--ss-gold-dark, #a07d45)" }}>
-                {tx(landingSettings.uniformsEyebrow, "Business Uniforms")}
-              </p>
-              <SectionHeadingReveal className="section-title text-uppercase mb-0">
-                {tx(landingSettings.uniformsTitle, "Business Uniforms")}
-              </SectionHeadingReveal>
-            </div>
-            <Link href={withOptionalLang(landingSettings.uniformsCtaHref)} className="btn btn-outline-dark btn-sm text-uppercase fw-medium">
-              {tx(landingSettings.uniformsCtaLabel, "View Uniforms")}
-            </Link>
-          </div>
-          <div className="row g-4 align-items-stretch">
-            <div className="col-12 col-lg-5">
-              <div className="h-100 border bg-white p-4 p-md-5 ss-editorial-card" style={{ borderRadius: 24 }}>
-                <p className="text-secondary mb-0">{tx(landingSettings.uniformsText)}</p>
-              </div>
-            </div>
-            <div className="col-12 col-lg-7">
-              <div className="row g-3">
-                {landingUniformImages.slice(0, 3).map((item) => (
-                  <div key={`${item.image}-${item.title}`} className="col-12 col-md-4">
-                    <div className="border bg-white h-100 p-2 ss-editorial-card" style={{ borderRadius: 20 }}>
-                      <Image
-                        src={item.image}
-                        alt={item.alt || tx(item.title || landingSettings.uniformsTitle, "Business Uniforms")}
-                        width={420}
-                        height={520}
-                        className="w-100 h-auto"
-                        style={{ borderRadius: 16, objectFit: "cover" }}
-                      />
-                      {item.title ? <p className="mt-3 mb-1 fw-medium text-uppercase small">{tx(item.title)}</p> : null}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </Reveal>
-
-        <div className="mb-2 pb-3" />
-
-        <Reveal as="section" className="blog-grid container ss-editorial-section ss-editorial-section--blog" delay={0.18}>
-          <div className="d-flex align-items-center justify-content-between mb-4 pb-md-2">
-            <SectionHeadingReveal className="section-title">
-              {tx(landingSettings.blogSectionTitle, "Latest Blog")}
-            </SectionHeadingReveal>
-            {landingSettings.blogSectionCtaLabel ? (
-              <Link href={withOptionalLang(landingSettings.blogSectionCtaHref)} className="btn-link default-underline text-uppercase fw-medium">
-                {tx(landingSettings.blogSectionCtaLabel, "View All")}
-              </Link>
-            ) : null}
-          </div>
-          <div className="row row-cols-1 row-cols-md-2 row-cols-lg-4">
-            {posts.items.map((post) => (
-              <article key={post.id} className="mb-4">
-                <div className="blog-grid__item ss-blog-card">
-                  <div className="blog-grid__item-image-wrap">
-                    <Link href={withLang(`/blog/${post.slug}`)} prefetch={false}>
-                      <StorefrontImage
-                        sources={[post.coverImage || "/img/hero.jpg"]}
-                        width={330}
-                        height={230}
-                        alt={post.title}
-                        className="w-100 h-auto"
-                      />
-                    </Link>
-                  </div>
-                  <div className="blog-grid__item-detail">
-                    <h6 className="blog-grid__item-title">
-                    <Link href={withLang(`/blog/${post.slug}`)} prefetch={false}>
-                      {post.title}
-                    </Link>
-                    </h6>
-                    <p className="text-secondary">{(post.excerpt || "").slice(0, 85) || (isEn ? "Continue reading." : "Nastavite sa citanjem.")}</p>
-                  </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        </Reveal>
-
-        <div className="mb-4 mb-xl-5 pt-xl-1 pb-4" />
-          </>
-        ) : null}
-
+        <StorefrontTrustStrip lang={lang} />
       </main>
       <StorefrontFooter lang={lang} />
     </>

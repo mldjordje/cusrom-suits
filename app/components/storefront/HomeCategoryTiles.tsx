@@ -45,29 +45,43 @@ export default function HomeCategoryTiles({ categories: _categories, tiles: tile
   });
 
   return (
-    <section className="ss-category-strip" data-m-collection-rail="">
+    <section className="ss-category-strip py-5">
       <div className="container">
-        <p className="ss-category-strip__heading">
-          {tx("Istrazi kolekciju", "Explore the collection")}
-        </p>
-        <div className="ss-category-strip__track" data-m-collection-track="">
-          {tiles.map((tile) => (
-            <Link key={tile.id || tile.label} href={tile.href} prefetch={false} className="ss-category-tile">
-              <StorefrontImage
-                sources={[tile.image]}
-                fallbackSrc="/img/hero.jpg"
-                width={280}
-                height={390}
-                alt={tile.label}
-                className="ss-category-tile__img"
-                sizes="(max-width: 575px) 58vw, (max-width: 991px) 30vw, 20vw"
-              />
-              <div className="ss-category-tile__overlay" aria-hidden="true" />
-              <div className="ss-category-tile__label">
-                <span className="ss-category-tile__name">{tile.label}</span>
-                <span className="ss-category-tile__arrow">{tx("Pregledaj", "View")} -&gt;</span>
-              </div>
-            </Link>
+        <div className="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom">
+          <div>
+            <span className="lux-eyebrow mb-1">
+              {tx("Kolekcije & Kategorije", "Collections & Categories")}
+            </span>
+            <h2 className="section-title text-uppercase m-0">
+              {tx("Istražite Kolekciju", "Explore the Collection")}
+            </h2>
+          </div>
+          <Link href={withLang("/web-shop")} className="btn-link default-underline text-uppercase fw-medium d-none d-md-inline-block">
+            {tx("Svi Proizvodi", "All Products")} &rarr;
+          </Link>
+        </div>
+        <div className="row g-3 g-md-4">
+          {tiles.slice(0, 4).map((tile) => (
+            <div key={tile.id || tile.label} className="col-6 col-lg-3">
+              <Link href={tile.href} prefetch={false} className="ss-category-tile d-block position-relative overflow-hidden">
+                <div className="ss-category-tile__img-wrap position-relative">
+                  <StorefrontImage
+                    sources={[tile.image]}
+                    fallbackSrc="/img/hero.jpg"
+                    width={400}
+                    height={533}
+                    alt={tile.label}
+                    className="ss-category-tile__img w-100"
+                    sizes="(max-width: 575px) 50vw, (max-width: 991px) 50vw, 25vw"
+                  />
+                  <div className="ss-category-tile__overlay" aria-hidden="true" />
+                </div>
+                <div className="ss-category-tile__label d-flex align-items-center justify-content-between">
+                  <span className="ss-category-tile__name">{tile.label}</span>
+                  <span className="ss-category-tile__arrow">&rarr;</span>
+                </div>
+              </Link>
+            </div>
           ))}
         </div>
       </div>

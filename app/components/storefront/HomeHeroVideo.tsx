@@ -107,48 +107,8 @@ export default function HomeHeroVideo({ categories: _categories, showProductCard
           secondaryLabel={decodeHtmlEntities(content.heroSecondaryCtaLabel)}
           secondaryHref={withLang(content.heroSecondaryCtaHref)}
         />
-
-        {showProductCards ? (
-          <div className="ss-hero-rail" data-hero-rail>
-            <div className="ss-hero-rail__head">
-              <span className="ss-hero-rail__label">{isEn ? "Featured" : "Izdvojeno"}</span>
-              <Link href={withLang("/web-shop")} prefetch={false} className="ss-hero-rail__all">
-                {isEn ? "View all" : "Pogledaj sve"}
-              </Link>
-            </div>
-            <div className="ss-home18-hero__cards">
-              {cards.map((card) => (
-                <article key={card.id} className="ss-home18-hero__card-item ss-hero-card" data-hero-card>
-                  <Link href={card.href} prefetch={false} className="ss-home18-hero__card-link ss-hero-card__link">
-                    <span className="ss-hero-card__frame">
-                      <StorefrontImage
-                        sources={[card.image]}
-                        fallbackSrc="/img/hero.jpg"
-                        width={330}
-                        height={400}
-                        alt={card.title}
-                        className="ss-home18-hero__card-image ss-hero-card__image"
-                        sizes="(max-width: 767px) 62vw, (max-width: 1199px) 24vw, 220px"
-                      />
-                    </span>
-                    <span className="ss-hero-card__body">
-                      <span className="ss-hero-card__title">{card.title}</span>
-                      <span className="ss-hero-card__cta" aria-hidden="true">
-                        {isEn ? "View" : "Pogledaj"}
-                        <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                          <path d="M3 8h9M8.5 4.5L12 8l-3.5 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
-                        </svg>
-                      </span>
-                    </span>
-                  </Link>
-                </article>
-              ))}
-            </div>
-          </div>
-        ) : null}
       </div>
-      {/* Direction, not decoration: it says the page continues, and HeroFx
-          takes it away as soon as the visitor acts on it. */}
+      {/* Direction indicator */}
       <span className="ss-hero-cue" data-hero-cue aria-hidden="true">
         <span className="ss-hero-cue__line" />
       </span>

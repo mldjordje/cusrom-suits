@@ -1,2205 +1,260 @@
 /* =========================================================================
-   Santos & Santorini — "lux" layer
-   =========================================================================
-
-   Loaded last, after storefront-base.scss / storefront-webshop.scss /
-   santos-theme.scss. Everything here is scoped under `.ss-lux` (set on the
-   storefront wrapper in layout.tsx) so the admin panel and any legacy page
-   outside the storefront tree are untouched.
-
-   Why a layer instead of edits in place: storefront-base.scss is a 9k-line
-   purchased Bootstrap template. Three vocabularies overlap in it (Bootstrap
-   `--bs-*`, the template's `--theme-color`, and the hand-rolled `--ss-*`).
-   Rewriting it in place would mean auditing every one of ~20 storefront
-   routes at once. This layer restates the design decisions in one place and
-   lets the template underneath rot quietly.
-
-   Reading order:
-     1. Tokens
-     2. Neutralising the template
-     3. Shell + typography
-     4. Section rhythm
-     5. Surfaces, cards, product plates
-     6. Buttons and links
-     7. Header / footer
-     8. Forms
-     9. Layout + motion primitives used by the landing page
+   Luxury Awwwards / High-Fashion Editorial System
    ========================================================================= */
 
-/* ---------- 1. Tokens ---------------------------------------------------- */
-
-.ss-lux {
-  /* Ground. Warm near-black — a true #000 reads cheap on OLED and kills the
-     gold. Each step up is a surface the eye can separate at a glance. */
-  --lux-ink-0: #0a0908; /* page ground */
-  --lux-ink-1: #100e0c; /* raised band  */
-  --lux-ink-2: #17140f; /* card         */
-  --lux-ink-3: #211c16; /* card hover / input */
-
-  /* Type. Warm off-white, never #fff — pure white on near-black vibrates. */
-  --lux-fg: #f2eee7;
-  --lux-fg-soft: #a79e92;
-  --lux-fg-faint: #756b60;
-
-  /* Accent. Reuses the established brand gold. */
-  --lux-gold: #c9a96e;
-  --lux-gold-bright: #e3c88f;
-  --lux-gold-dim: rgba(201, 169, 110, 0.18);
-
-  /* Hairlines do the structural work in a dark layout — no heavy borders. */
-  --lux-line: rgba(242, 238, 231, 0.1);
-  --lux-line-strong: rgba(242, 238, 231, 0.2);
-
-  /* The plate behind product photography. Legacy catalog shots sit on white
-     backgrounds; floating them straight onto near-black makes every card a
-     glowing rectangle. A deliberate light plate reads as a gallery mat
-     instead of an accident. Change this one value to retune every card. */
-  --lux-plate: #ffffff;
-  --lux-plate-edge: rgba(10, 9, 8, 0.08);
-
-  /* Type scale — fluid, so the jump from phone to desktop is a real jump.
-     The template shipped a flat 14px body; premium reads at 16–17. */
-  --lux-fs-hero: clamp(2.9rem, 7.2vw, 7rem);
-  --lux-fs-display: clamp(2.25rem, 4.6vw, 4.25rem);
-  --lux-fs-section: clamp(1.75rem, 3vw, 3rem);
-  --lux-fs-lead: clamp(1.05rem, 1.35vw, 1.3rem);
-  --lux-fs-body: 1.0625rem;
-  --lux-fs-small: 0.875rem;
-  --lux-fs-eyebrow: 0.72rem;
-
-  --lux-track-eyebrow: 0.24em;
-  --lux-track-tight: -0.02em;
-  --lux-leading-body: 1.65;
-
-  /* Vertical rhythm. Sections need room to be separate ideas. */
-  --lux-section: clamp(5.5rem, 11vw, 11rem);
-  --lux-section-tight: clamp(3rem, 6vw, 6rem);
-  --lux-gutter: clamp(1.25rem, 4vw, 4rem);
-
-  /* Motion. One slow expo-out for reveals, one symmetric curve for state. */
-  --lux-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --lux-ease-io: cubic-bezier(0.65, 0, 0.35, 1);
-  --lux-dur-slow: 1.1s;
-  --lux-dur: 0.6s;
-  --lux-dur-fast: 0.28s;
+/* Hero CTA Buttons */
+.ss-cta-btn--primary {
+  background: var(--lux-gold, #c9a96e) !important;
+  color: #0a0908 !important;
+  border-radius: 2px !important;
+  font-size: 0.84rem !important;
+  letter-spacing: 0.16em !important;
+  box-shadow: 0 4px 20px rgba(201, 169, 110, 0.25);
+  transition: all 0.35s var(--lux-ease);
+}
+.ss-cta-btn--primary:hover {
+  background: var(--lux-gold-bright, #e3c88f) !important;
+  color: #0a0908 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(201, 169, 110, 0.4);
 }
 
-/* ---------- 2. Neutralising the template -------------------------------- */
-
-/* The purchased template ships a fire-engine red as its primary accent and a
-   cursive display face. Neither belongs to this brand; both leak into buttons,
-   badges, links and sale prices. Rebind rather than hunt every usage. */
-.ss-lux {
-  --theme-color: var(--lux-gold);
-  --theme-color-secondary: var(--lux-gold-bright);
-  --theme-color-third: var(--lux-gold);
-  --font-special: var(--font-display, "Playfair Display", serif);
-
-  --bs-body-bg: var(--lux-ink-0);
-  --bs-body-color: var(--lux-fg);
-  --bs-border-color: var(--lux-line);
-  --bs-emphasis-color: var(--lux-fg);
-  --bs-secondary-color: var(--lux-fg-soft);
+.ss-cta-btn--secondary {
+  background: rgba(10, 9, 8, 0.4) !important;
+  color: var(--lux-fg, #f2eee7) !important;
+  border: 1px solid rgba(242, 238, 231, 0.35) !important;
+  border-radius: 2px !important;
+  font-size: 0.84rem !important;
+  letter-spacing: 0.16em !important;
+  backdrop-filter: blur(10px);
+  transition: all 0.35s var(--lux-ease);
+}
+.ss-cta-btn--secondary:hover {
+  background: rgba(242, 238, 231, 0.15) !important;
+  color: #fff !important;
+  border-color: var(--lux-gold, #c9a96e) !important;
+  transform: translateY(-2px);
 }
 
-/* ---------- 3. Shell + typography --------------------------------------- */
+/* Category Strip Tiles */
+.ss-category-strip {
+  background: var(--lux-ink-0, #0a0908);
 
-/*
- * SCOPE — read this before adding anything below.
- *
- * The dark theme applies to the LANDING PAGE ONLY, keyed off `.ss-home-page`
- * (set on <main> in app/(storefront)/page.tsx).
- *
- * The first cut of this layer put the dark ground and the light type colours on
- * `.ss-lux`, which wraps the whole storefront. But the shop, category, product,
- * cart and checkout pages still paint their own light surfaces
- * (`.page-wrapper.ss-shop-page` is #f4f1ec, `.ss-shop-gallery__header` is white).
- * The result was near-white text on near-white panels — category titles and
- * product names were invisible in production. 47 elements failed a 3:1 contrast
- * check on one category page alone.
- *
- * So: anything that changes a COLOUR is scoped to the landing. Only things that
- * are safe on a light page (type size, leading, focus rings) stay global.
- * Converting the shop pages to dark is a deliberate job, not a side effect —
- * until then they keep the template's light theme and stay readable.
- */
-
-/* Safe everywhere: the template's 14px body is too small to read as premium. */
-.ss-lux {
-  font-size: var(--lux-fs-body);
-  line-height: var(--lux-leading-body);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: optimizeLegibility;
-}
-
-/* Ground, landing only. The literal is deliberate: --lux-ink-0 is declared on
-   .ss-lux, so it is out of scope on these ancestors and var() would resolve to
-   nothing. Keeping the palette off :root is what stops it leaking into /admin. */
-html:has(.ss-home-page),
-body:has(.ss-home-page) {
-  background: #0a0908;
-}
-
-.ss-lux .ss-home-page {
-  background: var(--lux-ink-0);
-  color: var(--lux-fg);
-
-  p,
-  li,
-  dd {
-    font-size: var(--lux-fs-body);
-    line-height: var(--lux-leading-body);
-    color: var(--lux-fg-soft);
+  .section-title {
+    color: var(--lux-fg, #f2eee7) !important;
   }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6,
-  .section-title,
-  .block-title {
-    color: var(--lux-fg);
-    letter-spacing: var(--lux-track-tight);
-    line-height: 1.06;
-    text-wrap: balance;
+  .lux-eyebrow {
+    color: var(--lux-gold, #c9a96e) !important;
   }
-
-  h1 {
-    font-size: var(--lux-fs-display);
-  }
-  h2,
-  .section-title,
-  .block-title {
-    font-size: var(--lux-fs-section);
-  }
-
-  /* Bootstrap text utilities assume a light page. */
-  .text-secondary,
-  .text-muted {
-    color: var(--lux-fg-soft) !important;
-  }
-  .text-dark,
-  .text-black {
-    color: var(--lux-fg) !important;
-  }
-  .bg-white,
-  .bg-light {
-    background: var(--lux-ink-1) !important;
-  }
-  .border,
-  .border-top,
-  .border-bottom,
-  .border-start,
-  .border-end {
-    border-color: var(--lux-line) !important;
-  }
-  hr {
-    border-color: var(--lux-line);
-    opacity: 1;
+  .btn-link {
+    color: var(--lux-gold, #c9a96e) !important;
   }
 }
-
-/* --- Template surfaces on the landing ---------------------------------------
- *
- * `.ss-editorial-section` carries a cream background AND is a Bootstrap
- * `.container`, so it is width-limited. Against the dark ground that rendered
- * as a cream band with black bars down both sides of the page. Every light
- * surface the landing paints has to be dealt with for the dark ground to read
- * as intentional — except the plates behind product photography, which stay
- * light on purpose (see --lux-plate).
- */
-.ss-lux .ss-home-page {
-  .ss-editorial-section,
-  .ss-category-strip,
-  .banner-grid,
-  .blog-grid,
-  .products-grid {
-    background: transparent !important;
-  }
-
-  .ss-story-card,
-  .ss-banner-panel,
-  .blog-grid__item {
-    background: var(--lux-ink-2) !important;
-  }
-
-  /* Featured tiles stay frameless — the dark plate + card padding read as a
-     black box around the product photo, which the client rejected. */
-  .ss-featured-tile {
-    background: transparent !important;
-    border: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    box-shadow: none !important;
-  }
-
-  /* Product photography keeps its light plate. */
-  .ss-premium-card__img-wrap,
-  .pc__img-wrapper {
-    background: var(--lux-plate) !important;
-  }
-
-  /* Turning those surfaces dark exposed the mirror-image problem: template text
-     that was authored dark for a cream ground (tile labels, prices) became dark
-     on dark. These classes are not headings or paragraphs, so the typography
-     block above does not reach them. The light pills over product images keep
-     their own dark text and are not inside .ss-premium-card__info. */
-  .menu-link,
-  .money,
-  .price,
-  .ss-premium-card__info,
-  .ss-premium-card__info *,
-  .ss-featured-tile,
-  .ss-featured-tile * {
-    color: var(--lux-fg);
-  }
-
-  /* These two carry the template's own ink colour at a specificity this layer
-     cannot outrank from here — the same trade-off documented at the top. */
-  .menu-link,
-  .menu-link_us-s {
-    color: var(--lux-fg) !important;
-  }
-
-  .btn-outline-dark {
-    color: var(--lux-fg) !important;
-    border-color: var(--lux-line-strong);
-  }
-
-  .btn-outline-dark:hover {
-    background: var(--lux-gold);
-    border-color: var(--lux-gold);
-    color: var(--lux-ink-0);
-  }
-}
-
-/* The eyebrow is the one place tracking is allowed to be loud. */
-.ss-lux .lux-eyebrow {
-  display: inline-block;
-  font-size: var(--lux-fs-eyebrow);
-  font-weight: 600;
-  letter-spacing: var(--lux-track-eyebrow);
-  text-transform: uppercase;
-  color: var(--lux-gold);
-  margin: 0 0 1.25rem;
-}
-
-.ss-lux .lux-lead {
-  font-size: var(--lux-fs-lead);
-  line-height: 1.55;
-  color: var(--lux-fg-soft);
-  max-width: 46ch;
-}
-
-/* ---------- 4. Section rhythm ------------------------------------------- */
-
-/* The landing shipped ten sections at identical container width with an
-   identical header block on each. The fix is contrast: some sections breathe,
-   some are edge-to-edge, and the type scale changes between them. */
-
-.ss-lux .lux-section {
-  position: relative;
-  padding-block: var(--lux-section);
-}
-
-.ss-lux .lux-section--tight {
-  padding-block: var(--lux-section-tight);
-}
-
-.ss-lux .lux-section--band {
-  background: var(--lux-ink-1);
-}
-
-.ss-lux .lux-bleed {
-  width: 100%;
-  padding-inline: var(--lux-gutter);
-}
-
-.ss-lux .lux-shell {
-  width: min(100% - (var(--lux-gutter) * 2), 1440px);
-  margin-inline: auto;
-}
-
-.ss-lux .lux-shell--narrow {
-  width: min(100% - (var(--lux-gutter) * 2), 980px);
-}
-
-/* Section header — deliberately asymmetric, not the template's
-   flex-space-between title/link pair repeated ten times. */
-.ss-lux .lux-head {
-  display: grid;
-  gap: clamp(1rem, 2vw, 2.5rem);
-  grid-template-columns: 1fr;
-  align-items: end;
-  margin-bottom: clamp(2.5rem, 5vw, 4.5rem);
-}
-
-@media (min-width: 992px) {
-  .ss-lux .lux-head {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-}
-
-.ss-lux .lux-head__title {
-  font-size: var(--lux-fs-display);
-  margin: 0;
-}
-
-.ss-lux .lux-head__note {
-  color: var(--lux-fg-soft);
-  max-width: 42ch;
-  margin: 1rem 0 0;
-}
-
-/* Hairline rule that draws itself when the section enters view. */
-.ss-lux .lux-rule {
-  display: block;
-  height: 1px;
-  background: var(--lux-line-strong);
-  transform-origin: left;
-  transition: transform var(--lux-dur-slow) var(--lux-ease);
-}
-
-.ss-lux.lux-fx-ready .lux-rule {
-  transform: scaleX(0);
-}
-
-.ss-lux .lux-rule.is-in {
-  transform: scaleX(1);
-}
-
-/* ---------- 5. Surfaces, cards, product plates -------------------------- */
-
-.ss-lux .lux-surface {
-  background: var(--lux-ink-2);
-  border: 1px solid var(--lux-line);
-  border-radius: 0; /* the template rounded everything to 24px; sharp reads dearer */
-}
-
-/* Product card — dark body, light plate behind the photograph. */
-.ss-lux .ss-home-page .product-card {
-  background: transparent;
-  border: 0;
-}
-
-.ss-lux .ss-home-page .product-card .pc__img-wrapper {
-  position: relative;
-  overflow: hidden;
-  background: var(--lux-plate);
-  box-shadow: inset 0 0 0 1px var(--lux-plate-edge);
-}
-
-.ss-lux .ss-home-page .product-card .pc__img {
-  transition: transform 1.1s var(--lux-ease), filter var(--lux-dur) var(--lux-ease);
-  will-change: transform;
-}
-
-.ss-lux .ss-home-page .product-card:hover .pc__img {
-  transform: scale(1.045);
-}
-
-.ss-lux .ss-home-page .product-card .pc__info {
-  background: transparent;
-  padding-top: 1.15rem;
-}
-
-.ss-lux .ss-home-page .product-card .pc__category {
-  font-size: var(--lux-fs-eyebrow);
-  letter-spacing: var(--lux-track-eyebrow);
-  text-transform: uppercase;
-  color: var(--lux-fg-faint);
-  margin-bottom: 0.4rem;
-}
-
-.ss-lux .ss-home-page .product-card .pc__title,
-.ss-lux .ss-home-page .product-card .pc__title a {
-  font-size: 0.98rem;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-  color: var(--lux-fg);
+.ss-category-tile {
   text-decoration: none;
-}
-
-.ss-lux .ss-home-page .product-card .product-card__price {
-  margin-top: 0.5rem;
-  gap: 0.6rem;
-  align-items: baseline;
-}
-
-.ss-lux .ss-home-page .product-card .money,
-.ss-lux .ss-home-page .product-card .price {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--lux-fg);
-}
-
-/* Struck-through original price must recede, not compete. */
-.ss-lux .ss-home-page .product-card .price-old,
-.ss-lux .ss-home-page .product-card .compare-at-price,
-.ss-lux .ss-home-page .product-card del {
-  color: var(--lux-fg-faint);
-  font-weight: 400;
-  text-decoration-thickness: 1px;
-}
-
-/* ---------- 6. Buttons and links ---------------------------------------- */
-
-.ss-lux .lux-btn {
-  --_bg: var(--lux-gold);
-  --_fg: var(--lux-ink-0);
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.7rem;
-  padding: 1.05rem 2.4rem;
-  border: 1px solid var(--_bg);
-  border-radius: 0;
-  background: var(--_bg);
-  color: var(--_fg);
-  font-size: var(--lux-fs-small);
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  text-decoration: none;
-  overflow: hidden;
-  transition: color var(--lux-dur-fast) var(--lux-ease-io),
-    border-color var(--lux-dur-fast) var(--lux-ease-io);
-}
-
-/* Fill wipes up from the baseline rather than a colour cross-fade. */
-.ss-lux .lux-btn::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: var(--lux-gold-bright);
-  transform: translateY(101%);
-  transition: transform var(--lux-dur) var(--lux-ease);
-  z-index: 0;
-}
-
-.ss-lux .lux-btn > * {
-  position: relative;
-  z-index: 1;
-}
-
-.ss-lux .lux-btn:hover::after,
-.ss-lux .lux-btn:focus-visible::after {
-  transform: translateY(0);
-}
-
-.ss-lux .lux-btn--ghost {
-  --_bg: transparent;
-  --_fg: var(--lux-fg);
-  border-color: var(--lux-line-strong);
-}
-
-.ss-lux .lux-btn--ghost:hover,
-.ss-lux .lux-btn--ghost:focus-visible {
-  color: var(--lux-ink-0);
-  border-color: var(--lux-gold-bright);
-}
-
-/* Underline that grows from the left instead of appearing all at once. */
-.ss-lux .lux-link {
-  position: relative;
-  display: inline-block;
-  padding-bottom: 0.35rem;
-  color: var(--lux-fg);
-  font-size: var(--lux-fs-small);
-  font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-decoration: none;
-}
-
-.ss-lux .lux-link::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: 0;
-  width: 100%;
-  height: 1px;
-  background: var(--lux-gold);
-  transform: scaleX(0);
-  transform-origin: right;
-  transition: transform var(--lux-dur) var(--lux-ease);
-}
-
-.ss-lux .lux-link:hover::after,
-.ss-lux .lux-link:focus-visible::after {
-  transform: scaleX(1);
-  transform-origin: left;
-}
-
-/* Template buttons that survive inside admin-authored content. Landing only —
-   on the light shop pages these same classes need the template's own colours. */
-.ss-lux .ss-home-page {
-  .btn-light,
-  .btn-outline-light {
-    background: transparent;
-    border-color: var(--lux-line-strong);
-    color: var(--lux-fg);
-  }
-  .btn-light:hover,
-  .btn-outline-light:hover {
-    background: var(--lux-gold);
-    border-color: var(--lux-gold);
-    color: var(--lux-ink-0);
-  }
-  .btn-dark {
-    background: var(--lux-gold);
-    border-color: var(--lux-gold);
-    color: var(--lux-ink-0);
-  }
-  .btn-dark:hover {
-    background: var(--lux-gold-bright);
-    border-color: var(--lux-gold-bright);
-    color: var(--lux-ink-0);
-  }
-  .btn-link,
-  a.default-underline {
-    color: var(--lux-fg);
-  }
-}
-
-/* ---------- 7. Header / footer ------------------------------------------ */
-
-/* Header colours only where the header actually sits on dark: over the landing
-   hero. Elsewhere it floats above light page surfaces and keeps the template's
-   dark-on-light treatment. */
-.ss-lux:has(.ss-home-page) .header {
-  --_pad: clamp(0.9rem, 1.6vw, 1.4rem);
-  color: var(--lux-fg);
-}
-
-/* Sticky state: not a solid bar, a blurred pane so the imagery keeps moving
-   behind it. */
-.ss-lux .header.header_sticky-bg_dark.is-stuck,
-.ss-lux .header.stuck {
-  background: rgba(10, 9, 8, 0.72);
-  backdrop-filter: blur(18px) saturate(1.1);
-  -webkit-backdrop-filter: blur(18px) saturate(1.1);
-  border-bottom: 1px solid var(--lux-line);
-}
-
-.ss-lux:has(.ss-home-page) .header a,
-.ss-lux:has(.ss-home-page) .header .navigation__link {
-  color: var(--lux-fg);
-}
-
-.ss-lux:has(.ss-home-page) .header a:hover {
-  color: var(--lux-gold);
-}
-
-.ss-lux .ss-footer {
-  background: var(--lux-ink-1);
-  border-top: 1px solid var(--lux-line);
-  color: var(--lux-fg-soft);
-}
-
-.ss-lux .ss-footer a {
-  color: var(--lux-fg-soft);
-  text-decoration: none;
-  transition: color var(--lux-dur-fast) var(--lux-ease-io);
-}
-
-.ss-lux .ss-footer a:hover {
-  color: var(--lux-gold);
-}
-
-/* ---------- 8. Forms ----------------------------------------------------- */
-
-/* Checkout lives on this. Dark inputs are where dark themes usually lose the
-   sale: the field has to read as obviously typeable. High-contrast text,
-   visible resting border, unmistakable focus ring.
-
-   Landing and footer only for now. The shop filter sidebar and the checkout
-   form still sit on light panels, so dark fields there would be the same
-   light-on-light mistake in reverse. They convert when those pages do. */
-.ss-lux .ss-home-page,
-.ss-lux .ss-footer {
-  .form-control,
-  .form-select,
-  input[type="text"],
-  input[type="email"],
-  input[type="tel"],
-  input[type="number"],
-  input[type="password"],
-  input[type="search"],
-  textarea,
-  select {
-    background: var(--lux-ink-2);
-    border: 1px solid var(--lux-line-strong);
-    border-radius: 0;
-    color: var(--lux-fg);
-    font-size: var(--lux-fs-body);
-    padding: 0.95rem 1.1rem;
-    transition: border-color var(--lux-dur-fast) var(--lux-ease-io),
-      background var(--lux-dur-fast) var(--lux-ease-io);
-  }
-
-  .form-control::placeholder,
-  textarea::placeholder {
-    color: var(--lux-fg-faint);
-  }
-
-  .form-control:focus,
-  .form-select:focus,
-  input:focus,
-  textarea:focus,
-  select:focus {
-    background: var(--lux-ink-3);
-    border-color: var(--lux-gold);
-    box-shadow: 0 0 0 3px var(--lux-gold-dim);
-    outline: none;
-    color: var(--lux-fg);
-  }
-
-  label,
-  .form-label {
-    color: var(--lux-fg-soft);
-    font-size: var(--lux-fs-small);
-    letter-spacing: 0.04em;
-    margin-bottom: 0.5rem;
-  }
-
-  /* Native select arrows and date pickers render black-on-black otherwise. */
-  select option {
-    background: var(--lux-ink-2);
-    color: var(--lux-fg);
-  }
-}
-
-/* Keyboard focus has to stay visible everywhere on a dark ground. */
-.ss-lux :focus-visible {
-  outline: 2px solid var(--lux-gold-bright);
-  outline-offset: 3px;
-}
-
-/* ---------- 8b. Preloader ------------------------------------------------ */
-
-/* Three beats: the mark is revealed, the rule tracks real load progress, the
-   curtain lifts. Markup in StorefrontPreloader.tsx. */
-
-.ss-lux .lux-preloader {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  display: grid;
-  place-items: center;
-  pointer-events: none;
-}
-
-.ss-lux .lux-preloader__panel {
-  position: absolute;
-  inset: 0;
-  transform: translateY(0);
-  transition: transform var(--lux-dur-slow) var(--lux-ease);
-}
-
-/* The back panel is a shade lighter and trails the front one, so the lift
-   reads as two layers of cloth rather than one flat rectangle sliding off. */
-.ss-lux .lux-preloader__panel--back {
-  background: var(--lux-ink-1);
-  transition-delay: 0.1s;
-}
-
-.ss-lux .lux-preloader__panel--front {
-  background: var(--lux-ink-0);
-}
-
-.ss-lux .lux-preloader.is-exiting .lux-preloader__panel {
-  transform: translateY(-100%);
-}
-
-.ss-lux .lux-preloader__mark {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.35rem;
-  transition: opacity 0.42s var(--lux-ease-io), transform 0.55s var(--lux-ease);
-}
-
-.ss-lux .lux-preloader.is-exiting .lux-preloader__mark {
-  opacity: 0;
-  transform: translateY(-18px);
-}
-
-/* The logo is wiped upward into view rather than faded — a fade on a
-   near-black ground just looks like a slow image decode. */
-.ss-lux .lux-preloader__logo {
-  display: block;
-  clip-path: inset(100% 0 0 0);
-  animation: lux-preloader-wipe 1.05s var(--lux-ease) 0.08s forwards;
-}
-
-.ss-lux .lux-preloader__logo img {
-  display: block;
-  width: clamp(180px, 34vw, 300px);
-  height: auto;
-}
-
-.ss-lux .lux-preloader__caption {
-  font-size: var(--lux-fs-eyebrow);
-  text-transform: uppercase;
-  color: var(--lux-fg-faint);
-  opacity: 0;
-  /* Tracking settles inward as it fades in — the letters arrive, then close up. */
-  letter-spacing: 0.5em;
-  padding-left: 0.5em; /* keeps the wide tracking optically centred */
-  animation: lux-preloader-caption 1.1s var(--lux-ease) 0.42s forwards;
-}
-
-.ss-lux .lux-preloader__rule {
-  display: block;
-  width: min(260px, 52vw);
-  height: 1px;
-  background: var(--lux-line);
-  overflow: hidden;
-}
-
-.ss-lux .lux-preloader__rule-fill {
-  display: block;
-  height: 100%;
-  background: var(--lux-gold);
-  transform-origin: left center;
-  transform: scaleX(0);
-  transition: transform 0.32s linear;
-}
-
-@keyframes lux-preloader-wipe {
-  from {
-    clip-path: inset(100% 0 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
-
-@keyframes lux-preloader-caption {
-  from {
-    opacity: 0;
-    letter-spacing: 0.5em;
-  }
-  to {
-    opacity: 1;
-    letter-spacing: 0.24em;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ss-lux .lux-preloader__logo,
-  .ss-lux .lux-preloader__caption {
-    animation: none;
-    clip-path: none;
-    opacity: 1;
-    letter-spacing: 0.24em;
-  }
-
-  .ss-lux .lux-preloader__panel,
-  .ss-lux .lux-preloader__mark,
-  .ss-lux .lux-preloader__rule-fill {
-    transition: none;
-  }
-}
-
-/* ---------- 9. Layout + motion primitives ------------------------------- */
-
-/* Horizontal product rail — replaces one of the three identical 4-up grids.
-   Scroll-snap so it feels deliberate rather than like an overflow accident. */
-.ss-lux .lux-rail {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(240px, 26vw);
-  gap: clamp(1rem, 2vw, 2rem);
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  padding-bottom: 0.5rem;
-}
-
-.ss-lux .lux-rail::-webkit-scrollbar {
-  display: none;
-}
-
-.ss-lux .lux-rail > * {
-  scroll-snap-align: start;
-}
-
-@media (min-width: 1200px) {
-  .ss-lux .lux-rail {
-    grid-auto-columns: minmax(280px, 22vw);
-  }
-}
-
-/* ---------- 9b. Landing cadence ----------------------------------------- */
-
-/*
- * The landing page renders ten admin-ordered sections through the same two
- * renderers, so every one arrived at identical container width with an
- * identical `title + link` header — and the three product sections were three
- * identical four-up grids stacked back to back.
- *
- * page.tsx now tags each entry with a cadence class. The variation lives here
- * so the section renderers stay untouched and admin reordering keeps working:
- *
- *   --grid   contained four-up, the baseline
- *   --rail   horizontal snap rail that runs off the right edge
- *   --band   raised band, fewer and larger cards
- *   --wide   contained editorial
- *   --bleed  edge-to-edge editorial
- */
-
-.ss-lux .lux-act {
-  position: relative;
-}
-
-/* The template's spacer divs plus each section's own padding double up. Own
-   the rhythm in one place. */
-.ss-lux .lux-act .ss-home-section-gap {
-  display: none;
-}
-
-.ss-lux .lux-act > section,
-.ss-lux .lux-act > div > section {
-  padding-block: var(--lux-section);
-}
-
-.ss-lux .lux-act + .lux-act > section {
-  padding-top: 0;
-}
-
-/* -- shared section header -- */
-
-/* Restyles the repeated `d-flex justify-content-between` header in place. */
-.ss-lux .lux-act .ss-editorial-section > .d-flex.justify-content-between,
-.ss-lux .lux-act .products-grid > .d-flex.justify-content-between {
-  display: grid !important;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: end;
-  gap: 1rem;
-  padding-bottom: clamp(1.25rem, 2vw, 2rem);
-  border-bottom: 1px solid var(--lux-line);
-  margin-bottom: clamp(2.25rem, 4vw, 3.75rem) !important;
-}
-
-@media (min-width: 768px) {
-  .ss-lux .lux-act .ss-editorial-section > .d-flex.justify-content-between,
-  .ss-lux .lux-act .products-grid > .d-flex.justify-content-between {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-}
-
-/* Large uppercase Playfair sets like a tombstone — the caps lose the serif's
-   contrast and the tracking fights the ligatures. Sentence case, big. */
-/* !important because santos-theme.scss already declares
-   `.ss-editorial-section .section-title { font-size: ... !important }`.
-   Specificity alone cannot reach past it from this layer. */
-.ss-lux .lux-act .section-title {
-  font-size: var(--lux-fs-display) !important;
-  text-transform: none !important;
-  letter-spacing: var(--lux-track-tight);
-  line-height: 1.02;
-  margin: 0;
-}
-
-.ss-lux .lux-act .btn-link,
-.ss-lux .lux-act .default-underline {
-  justify-self: start;
-  font-size: var(--lux-fs-small);
-  letter-spacing: 0.14em;
-  color: var(--lux-fg-soft);
-  text-decoration: none;
-  border-bottom: 1px solid var(--lux-line-strong);
-  padding-bottom: 0.3rem;
-  transition: color var(--lux-dur-fast) var(--lux-ease-io),
-    border-color var(--lux-dur-fast) var(--lux-ease-io);
-}
-
-@media (min-width: 768px) {
-  .ss-lux .lux-act .btn-link,
-  .ss-lux .lux-act .default-underline {
-    justify-self: end;
-  }
-}
-
-.ss-lux .lux-act .btn-link:hover,
-.ss-lux .lux-act .default-underline:hover {
-  color: var(--lux-gold);
-  border-color: var(--lux-gold);
-}
-
-/* -- --grid: contained baseline, just wider and airier -- */
-
-.ss-lux .lux-act--grid .container {
-  width: min(100% - (var(--lux-gutter) * 2), 1440px);
-  max-width: none;
-}
-
-/* -- --rail: horizontal, and visibly continuing past the right edge -- */
-
-.ss-lux .lux-act--rail .container {
-  width: min(100% - (var(--lux-gutter) * 2), 1440px);
-  max-width: none;
-}
-
-/* Bootstrap's .row is a negative-margin flex grid; every one of those
-   assumptions has to be undone before it can be a rail. */
-.ss-lux .lux-act--rail .products-grid .row {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: minmax(228px, 60vw);
-  gap: clamp(1rem, 1.6vw, 1.75rem);
-  margin: 0;
-  overflow-x: auto;
-  overscroll-behavior-x: contain;
-  scroll-snap-type: x proximity;
-  scrollbar-width: none;
-  /* Bleeds into the right gutter so the row is obviously cut off, not ended. */
-  margin-right: calc(var(--lux-gutter) * -1);
-  padding-right: var(--lux-gutter);
-}
-
-.ss-lux .lux-act--rail .products-grid .row::-webkit-scrollbar {
-  display: none;
-}
-
-.ss-lux .lux-act--rail .products-grid .row > * {
-  flex: none;
-  width: auto;
-  max-width: none;
-  padding: 0;
-  scroll-snap-align: start;
-}
-
-@media (min-width: 768px) {
-  .ss-lux .lux-act--rail .products-grid .row {
-    grid-auto-columns: minmax(260px, 28vw);
-  }
-}
-
-@media (min-width: 1200px) {
-  .ss-lux .lux-act--rail .products-grid .row {
-    grid-auto-columns: minmax(300px, 21vw);
-  }
-}
-
-/* -- --band: raised ground, larger cards, fewer per row -- */
-
-.ss-lux .lux-act--band {
-  background: var(--lux-ink-1);
-}
-
-.ss-lux .lux-act--band > section {
-  padding-block: var(--lux-section);
-}
-
-.ss-lux .lux-act--band .container {
-  width: min(100% - (var(--lux-gutter) * 2), 1280px);
-  max-width: none;
-}
-
-@media (min-width: 992px) {
-  /* Three up instead of four — the band is the page's slow moment. */
-  .ss-lux .lux-act--band .products-grid .row > * {
-    width: 33.3333%;
-  }
-}
-
-/* -- --wide / --bleed: editorial alternation -- */
-
-/* The three widths have to differ at the width people actually browse at.
-   Capping them at 1180/1440/1600 made all three collapse to the same value on
-   a 1280 laptop — the alternation only existed on an ultrawide. So the narrow
-   act is genuinely narrow, and the bleed act keeps only a half gutter. */
-.ss-lux .lux-act--wide .container {
-  width: min(100% - (var(--lux-gutter) * 2), 1020px);
-  max-width: none;
-}
-
-.ss-lux .lux-act--bleed .container {
-  width: calc(100% - var(--lux-gutter));
-  max-width: none;
-}
-
-/* Editorial imagery goes tall and edge-to-edge in the bleed acts — this is
-   where the page stops looking like a catalogue and starts looking like a
-   lookbook. */
-.ss-lux .lux-act--bleed .ss-story-card {
-  min-height: clamp(420px, 64vh, 720px) !important;
-}
-
-.ss-lux .lux-act--bleed .ss-banner-panel img {
-  aspect-ratio: 4 / 3;
-  object-fit: cover;
-  height: auto;
-}
-
-@media (min-width: 992px) {
-  .ss-lux .lux-act--bleed .ss-banner-panel img {
-    aspect-ratio: 16 / 10;
-  }
-}
-
-/* The template's white editorial cards punch holes in a dark page. */
-.ss-lux .lux-act .ss-editorial-card {
-  background: var(--lux-ink-2) !important;
-  border-color: var(--lux-line) !important;
-  border-radius: 0 !important;
-}
-
-.ss-lux .lux-act .ss-story-card,
-.ss-lux .lux-act .ss-banner-panel {
-  border-radius: 0 !important;
-}
-
-/* Scroll-linked reveal, applied by an IntersectionObserver adding `.is-in`.
- *
- * The hidden start state is gated behind `.lux-fx-ready`, which LuxScrollFx
- * sets on mount. If the script fails to load, errors, or is blocked, the
- * content simply renders — it is never left at opacity 0 with nothing coming
- * to reveal it. This project has been bitten by exactly that before (see the
- * note in StorefrontViewportEffects about the invisible desktop footer). */
-.ss-lux.lux-fx-ready [data-lux-reveal] {
-  opacity: 0;
-  transform: translate3d(0, var(--lux-reveal-y, 28px), 0);
-  transition: opacity var(--lux-dur-slow) var(--lux-ease),
-    transform var(--lux-dur-slow) var(--lux-ease);
-  transition-delay: var(--lux-reveal-delay, 0s);
-}
-
-.ss-lux.lux-fx-ready [data-lux-reveal].is-in {
-  opacity: 1;
-  transform: none;
-}
-
-/* Line-by-line headline reveal: each line rides up out of a clipped box. */
-.ss-lux .lux-lines {
-  display: block;
-}
-
-.ss-lux .lux-lines__line {
-  display: block;
-  overflow: hidden;
-}
-
-.ss-lux.lux-fx-ready .lux-lines__inner {
-  display: block;
-  transform: translate3d(0, 110%, 0);
-  transition: transform var(--lux-dur-slow) var(--lux-ease);
-  transition-delay: var(--lux-line-delay, 0s);
-}
-
-.ss-lux .lux-lines.is-in .lux-lines__inner {
-  transform: none;
-}
-
-/* Media that drifts slower than the page. Offset is written by JS as a
-   custom property so the browser only ever animates a transform. */
-.ss-lux [data-lux-parallax] {
-  will-change: transform;
-  transform: translate3d(0, var(--lux-parallax, 0px), 0);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ss-lux [data-lux-reveal],
-  .ss-lux .lux-lines__inner {
-    opacity: 1;
-    transform: none;
-    transition: none;
-  }
-
-  .ss-lux [data-lux-parallax] {
-    transform: none;
-  }
-
-  .ss-lux .lux-rule {
-    transform: scaleX(1);
-    transition: none;
-  }
-
-  .ss-lux .ss-home-page .product-card .pc__img,
-  .ss-lux .lux-btn::after,
-  .ss-lux .lux-link::after {
-    transition: none;
-  }
-}
-
-/* ============================================================
-   LANDING RHYTHM — spacing, type scale, responsive grid
-   ------------------------------------------------------------
-   The landing grew section by section, so each block carried its own
-   padding (`pb-5`, then a 5rem !important override), its own heading size and
-   its own grid gutter. Read top to bottom that produced no vertical rhythm and
-   headings that changed size between neighbouring sections. This block sets a
-   single scale for all of them. It is last in the last-loaded sheet, and the
-   base rules it replaces use !important, so these do too.
-   ============================================================ */
-
-.ss-lux .ss-home-page {
-  --ss-rhythm: clamp(3.25rem, 7vw, 6.5rem);
-  --ss-rhythm-tight: clamp(2rem, 4vw, 3.5rem);
-  --ss-gutter: clamp(0.75rem, 2vw, 1.5rem);
-}
-
-.ss-lux .ss-home-page .ss-editorial-section,
-.ss-lux .ss-home-page .ss-category-strip {
-  padding-top: var(--ss-rhythm) !important;
-  padding-bottom: var(--ss-rhythm) !important;
-}
-
-/* Consecutive product grids read as one run, so they get the tighter gap
-   between them rather than two full rhythms stacked. */
-.ss-lux .ss-home-page .ss-editorial-section + .ss-editorial-section {
-  padding-top: var(--ss-rhythm-tight) !important;
-}
-
-/* ---- Heading block ---- */
-
-.ss-lux .ss-home-page .section-title,
-.ss-lux .ss-home-page .ss-section-title--premium {
-  margin: 0;
-  font-size: clamp(1.5rem, 3.2vw, 2.5rem) !important;
-  line-height: 1.12 !important;
-  letter-spacing: var(--lux-track-tight) !important;
-}
-
-.ss-lux .ss-home-page .ss-editorial-section > .d-flex:first-child {
-  gap: 1rem;
-  margin-bottom: clamp(1.5rem, 3vw, 2.5rem) !important;
-  padding-bottom: 0 !important;
-}
-
-/* The "view all" link is secondary to the heading — size it like an eyebrow
-   instead of body copy so the two do not compete. */
-.ss-lux .ss-home-page .ss-editorial-section .btn-link {
-  flex: 0 0 auto;
-  font-size: var(--lux-fs-eyebrow);
-  letter-spacing: var(--lux-track-eyebrow);
-  white-space: nowrap;
-}
-
-.ss-lux .ss-home-page .ss-category-strip__heading {
-  margin-bottom: clamp(1.25rem, 2.5vw, 2rem);
-  font-size: var(--lux-fs-eyebrow);
-  letter-spacing: var(--lux-track-eyebrow);
-}
-
-/* ---- Product grids ---- */
-
-.ss-lux .ss-home-page .ss-feature-strip,
-.ss-lux .ss-home-page .products-grid .row {
-  --bs-gutter-x: var(--ss-gutter);
-  --bs-gutter-y: calc(var(--ss-gutter) * 1.4);
-}
-
-/* Tiles used the intrinsic ratio of whatever photo they got, so rows never
-   lined up. One ratio for every tile fixes the ragged baseline. */
-.ss-lux .ss-home-page .ss-featured-tile .ss-uniform-tile {
-  display: block;
-  width: 100%;
+  background: var(--lux-ink-1, #100e0c);
+  border: 1px solid var(--lux-line, rgba(242, 238, 231, 0.08));
+  border-radius: 2px;
+  transition: all 0.4s var(--lux-ease);
+}
+.ss-category-tile:hover {
+  transform: translateY(-4px);
+  border-color: rgba(201, 169, 110, 0.35);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.5);
+}
+.ss-category-tile__img-wrap {
   aspect-ratio: 3 / 4;
+  overflow: hidden;
+}
+.ss-category-tile__img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
   object-position: center top;
-  margin-bottom: 0 !important;
+  transition: transform 0.8s var(--lux-ease);
 }
-
-.ss-lux .ss-home-page .ss-featured-tile {
-  height: 100%;
-}
-
-/* ---- Small screens ---- */
-
-@media (max-width: 575.98px) {
-  .ss-lux .ss-home-page .ss-editorial-section,
-  .ss-lux .ss-home-page .ss-category-strip {
-    padding-inline: 1rem !important;
-  }
-
-  .ss-lux .ss-home-page .ss-editorial-section > .d-flex:first-child {
-    flex-wrap: wrap;
-    align-items: baseline;
-  }
-
-  /* Two columns at 375px leaves ~165px per tile: the overlay type has to come
-     down with it or the name wraps to three lines over the photo. */
-  .ss-lux .ss-home-page .ss-featured-tile__overlay {
-    padding: 0.9rem 0.7rem 0.7rem;
-  }
-
-  .ss-lux .ss-home-page .ss-featured-tile__overlay-category {
-    font-size: 0.55rem !important;
-    letter-spacing: 0.18em !important;
-  }
-
-  .ss-lux .ss-home-page .ss-featured-tile__overlay-title {
-    font-size: 0.82rem !important;
-    line-height: 1.25;
-  }
-
-  .ss-lux .ss-home-page .ss-featured-tile__overlay-price {
-    margin-top: 0.25rem !important;
-    font-size: 0.78rem;
-  }
-}
-
-/* ---- Ground is white, so on-ground type has to be dark ------------------
-   The lux layer painted the whole landing near-black and coloured every
-   heading, paragraph and label light to match. With the ground switched to
-   white, that same type is white on white. Flip the colours for anything that
-   sits directly on the ground, then re-assert light type inside the dark
-   surfaces (story cards, banner panels, blog cards, editorial cards), which
-   keep their near-black plate. Split this way there is exactly one rule per
-   direction instead of a :not() chain that has to list every dark class. */
-
-.ss-lux .ss-home-page {
-  background: #fff !important;
-  color: #0f0e0c;
-}
-
-/* Every surface on the landing that is dark by design. Type inside these keeps
-   the light palette; everything else sits on white and goes dark. Kept as one
-   list so the two directions can never drift apart. */
-$lux-dark-surfaces: ".ss-home18-hero, .ss-story-card, .ss-banner-panel, .blog-grid__item, .ss-editorial-card, .ss-featured-tile__overlay, .lux-act--band, .lux-atelier";
-
-/* Cadence classes live on the wrapper, so the generic :not() palette below
-   cannot reliably infer this dark surface through every generated wrapper. */
-.ss-lux .ss-home-page .lux-act--band :is(h1, h2, h3, h4, h5, h6, .section-title, .block-title) {
-  color: var(--lux-fg) !important;
-}
-
-@media (min-width: 1024px) {
-  .ss-lux .ss-home-page .ss-category-strip {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    overflow: hidden;
-  }
-
-  .ss-lux .ss-home-page .ss-category-strip__track {
-    display: flex;
-    width: max-content;
-    gap: clamp(1rem, 1.8vw, 2rem);
-    padding-right: 12vw;
-  }
-
-  .ss-lux .ss-home-page .ss-category-tile {
-    flex: 0 0 clamp(300px, 27vw, 430px);
-    width: clamp(300px, 27vw, 430px);
-    aspect-ratio: 0.72;
-    border-radius: 0;
-  }
-}
-
-.ss-lux .ss-home-page .ss-editorial-banner {
-  margin: 0;
-  min-height: 100svh;
-}
-
-.ss-lux .ss-home-page .ss-editorial-banner__steps {
-  display: grid;
-  gap: 0;
-  max-width: 34rem;
-  margin: clamp(2rem, 5vh, 4rem) 0 0;
-  padding: 0;
-  list-style: none;
-  border-top: 1px solid rgba(255, 255, 255, 0.18);
-}
-
-.ss-lux .ss-home-page .ss-editorial-banner__steps li {
-  display: grid;
-  grid-template-columns: 3.5rem 1fr;
-  align-items: center;
-  min-height: 3.25rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
-  color: rgba(240, 236, 228, 0.42) !important;
-  font-size: 0.72rem;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  transition: color 280ms ease, padding-left 280ms ease;
-}
-
-.ss-lux .ss-home-page .ss-editorial-banner__steps li span {
-  color: var(--lux-gold);
-  font-variant-numeric: tabular-nums;
-}
-
-.ss-lux .ss-home-page .ss-editorial-banner__steps li.is-active {
-  color: var(--lux-fg) !important;
-  padding-left: 0.75rem;
-}
-
-/* P3 banners: two editorial crops with a deliberate broken baseline instead
-   of matching Bootstrap cards with centred copy. */
-.ss-lux .ss-home-page .ss-editorial-banners .row {
-  align-items: start;
-  --bs-gutter-x: clamp(1.5rem, 4vw, 4.5rem);
-}
-
-.ss-lux .ss-home-page .ss-editorial-banners__item--2 {
-  margin-top: clamp(4rem, 10vw, 10rem);
-}
-
-.ss-lux .ss-home-page .ss-editorial-banners .ss-banner-panel {
-  min-height: clamp(32rem, 52vw, 50rem);
-  border-radius: 0;
-}
-
-.ss-lux .ss-home-page .ss-editorial-banners .ss-banner-panel img {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100% !important;
-  object-fit: cover;
-}
-
-.ss-lux .ss-home-page .ss-banner-panel__copy {
-  position: absolute;
-  z-index: 2;
-  inset: auto clamp(1.5rem, 4vw, 3.5rem) clamp(2rem, 5vw, 4.5rem);
-  max-width: 28rem;
-  text-align: left;
-}
-
-.ss-lux .ss-home-page .ss-banner-panel__copy h4 {
-  max-width: 10ch;
-  margin: 0;
-  font-family: var(--font-playfair-display), "Playfair Display", serif;
-  font-size: clamp(2.2rem, 4.2vw, 4.8rem);
-  line-height: 0.98;
-  letter-spacing: -0.035em;
-  text-transform: none !important;
-}
-
-.ss-lux .ss-home-page .ss-banner-panel__copy .btn {
-  margin-top: 1.75rem !important;
-  border-radius: 0;
-  background: transparent;
-  color: #fff;
-  border: 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
-  padding: 0 0 0.35rem;
-}
-
-@media (max-width: 767.98px) {
-  .ss-lux .ss-home-page .ss-editorial-banners__item--2 {
-    margin-top: 1.5rem;
-  }
-
-  .ss-lux .ss-home-page .ss-editorial-banners .ss-banner-panel {
-    min-height: 70svh;
-  }
-}
-
-/* Consent is necessary chrome, not a second navigation bar. Keep it as a
-   compact editorial note so the first visit still belongs to the campaign. */
-body:has(.ss-home-page) .ss-cookie-consent {
-  right: auto;
-  left: clamp(1rem, 2.5vw, 2.5rem);
-  bottom: clamp(1rem, 2.5vw, 2.5rem);
-  width: min(29rem, calc(100vw - 2rem));
-  padding: 1rem 1.1rem;
-  border: 1px solid rgba(201, 169, 110, 0.28);
-  border-radius: 0;
-  background: rgba(10, 9, 8, 0.94);
-  backdrop-filter: blur(18px);
-  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
-}
-
-body:has(.ss-home-page) .ss-cookie-consent__text {
-  font-size: 0.72rem;
-  line-height: 1.55;
-}
-
-body:has(.ss-home-page) .ss-cookie-consent__actions {
-  gap: 0;
-  margin-top: 0.85rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.14);
-}
-
-body:has(.ss-home-page) .ss-cookie-consent__button {
-  flex: 1;
-  min-height: 2.4rem;
-  padding: 0.55rem 0.75rem;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  font-size: 0.62rem;
-  letter-spacing: 0.15em;
-}
-
-body:has(.ss-home-page) .ss-cookie-consent__button--primary {
-  color: var(--lux-gold);
-  border-right: 1px solid rgba(255, 255, 255, 0.14);
-}
-
-/* =========================================================================
-   P4 visual cleanup — remove the purchased-template proportions
-   ========================================================================= */
-
-@media (min-width: 1024px) {
-  body:has(.ss-home-page) #header .header-desk {
-    display: grid;
-    grid-template-columns: 168px minmax(0, 1fr) auto;
-    align-items: center;
-    min-height: 96px;
-    gap: clamp(1.25rem, 2.4vw, 2.75rem);
-  }
-
-  body:has(.ss-home-page) #header .logo,
-  body:has(.ss-home-page) #header .navigation,
-  body:has(.ss-home-page) #header .header-tools {
-    position: static;
-    transform: none;
-  }
-
-  body:has(.ss-home-page) #header .logo__image {
-    width: 164px;
-    height: auto;
-  }
-
-  body:has(.ss-home-page) #header .navigation__list {
-    flex-wrap: nowrap;
-    justify-content: center;
-    gap: clamp(1rem, 1.65vw, 1.75rem);
-    margin: 0;
-  }
-
-  body:has(.ss-home-page) #header .navigation__item {
-    margin: 0;
-    white-space: nowrap;
-  }
-
-  body:has(.ss-home-page) #header .navigation__link {
-    font-size: 0.69rem;
-    letter-spacing: 0.12em;
-  }
-
-  body:has(.ss-home-page) #header .header-tools {
-    flex-wrap: nowrap;
-    gap: 0.55rem;
-  }
-
-  body:has(.ss-home-page) #header .ss-inline-link {
-    display: none !important;
-  }
-
-  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row {
-    display: grid;
-    grid-template-columns: repeat(12, minmax(0, 1fr));
-    gap: clamp(2rem, 4vw, 5rem) clamp(1.25rem, 2.4vw, 2.75rem);
-    margin: 0;
-  }
-
-  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > * {
-    width: auto;
-    max-width: none;
-    padding: 0;
-  }
-
-  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 1),
-  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 4) {
-    grid-column: span 7;
-  }
-
-  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 2),
-  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 3) {
-    grid-column: span 5;
-  }
-
-  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 2),
-  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 4) {
-    margin-top: clamp(4rem, 9vw, 9rem);
-  }
-}
-
-.ss-lux .ss-home-page .products-grid .ss-featured-tile {
-  background: transparent;
-  border: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-
-.ss-lux .ss-home-page .products-grid .ss-uniform-tile {
-  display: block;
-  aspect-ratio: 4 / 5;
-  height: auto !important;
-  object-fit: cover;
-  object-position: center top;
-  margin-bottom: 1rem !important;
-}
-
-.ss-lux .ss-home-page .products-grid .menu-link {
-  font-family: var(--font-geist-sans), sans-serif;
-  font-size: clamp(0.82rem, 1vw, 0.98rem) !important;
-  font-weight: 450 !important;
-  letter-spacing: 0.01em !important;
-  text-transform: none !important;
-}
-
-.ss-lux .ss-home-page .products-grid .ss-featured-tile__meta {
-  margin-top: 0.45rem;
-  font-size: 0.78rem;
-  letter-spacing: 0.05em;
-}
-
-.ss-lux .ss-home-page .ss-editorial-section > .d-flex:first-child,
-.ss-lux .ss-home-page .products-grid > .d-flex:first-child {
-  align-items: end !important;
-  padding-bottom: clamp(1.5rem, 3vw, 3rem) !important;
-  border-bottom: 1px solid rgba(15, 14, 12, 0.16);
-}
-
-.ss-lux .ss-home-page .section-title {
-  max-width: 12ch;
-  font-size: clamp(2.7rem, 5.4vw, 6.2rem) !important;
-  line-height: 0.94 !important;
-  letter-spacing: -0.045em !important;
-}
-
-@media (max-width: 767.98px) {
-  .ss-lux .ss-home-page .products-grid .ss-uniform-tile {
-    aspect-ratio: 3 / 4;
-  }
-
-  .ss-lux .ss-home-page .section-title {
-    font-size: clamp(2.15rem, 11vw, 3.5rem) !important;
-  }
-}
-
-.ss-lux .ss-home-page {
-  :is(h1, h2, h3, h4, h5, h6, .section-title, .block-title):not(
-      :is(#{$lux-dark-surfaces}) *
-    ) {
-    color: #0f0e0c !important;
-  }
-
-  :is(p, li, dd, .text-secondary, .text-muted):not(:is(#{$lux-dark-surfaces}) *) {
-    color: #56504a !important;
-  }
-
-  .ss-category-strip__heading:not(:is(#{$lux-dark-surfaces}) *),
-  .ss-editorial-section .btn-link:not(:is(#{$lux-dark-surfaces}) *) {
-    color: #7a7369 !important;
-  }
-
-  /* Product card type. The same card component renders on the white ground and
-     inside the dark band (.lux-act--band), so these cannot be coloured by class
-     alone — the exclusion is what keeps the band's cards readable. .menu-link,
-     .money and .price are covered because the template colours them for a light
-     page and the lux layer had flipped them light for the old dark ground. */
-  :is(
-      .ss-featured-tile .menu-link,
-      .ss-premium-card__info,
-      .ss-premium-card__info *,
-      .pc__title,
-      .pc__title a,
-      .menu-link,
-      .money,
-      .price
-    ):not(:is(#{$lux-dark-surfaces}) *) {
-    color: #0f0e0c !important;
-  }
-
-  :is(.ss-featured-tile__meta, .ss-featured-tile__meta *, .ss-premium-card__price):not(
-      :is(#{$lux-dark-surfaces}) *
-    ) {
-    color: #56504a !important;
-  }
-
-  /* The gold badge is a light chip on both grounds, so its type is dark ink
-     regardless of which surface the card is on. */
-  .ss-premium-card__badge,
-  .ss-premium-card__badge * {
-    color: var(--lux-ink-0) !important;
-  }
-
-  /* Card category chip — a 4%-black pill, so it needs ink darker than body copy
-     to clear 3:1 against its own fill. */
-  .pc__category:not(:is(#{$lux-dark-surfaces}) *) {
-    color: #3d3833 !important;
-  }
-
-  /* The outline button was recoloured light for the old dark ground; on white
-     that leaves an invisible label inside a visible border. */
-  .btn-outline-dark:not(:is(#{$lux-dark-surfaces}) *) {
-    color: #0f0e0c !important;
-    border-color: rgba(15, 14, 12, 0.35) !important;
-  }
-
-  .btn-outline-dark:not(:is(#{$lux-dark-surfaces}) *):hover {
-    background: #0f0e0c !important;
-    color: #fff !important;
-  }
-}
-
-/* Dark surfaces keep their own light type — including the pinned-open tile
-   overlay, whose gradient is dark by design. */
-.ss-lux .ss-home-page {
-  :is(#{$lux-dark-surfaces}),
-  :is(#{$lux-dark-surfaces}) :is(p, li, dd, h1, h2, h3, h4, h5, h6, span, a) {
-    color: var(--lux-fg);
-  }
-
-  /* Product cards inside the dark band: the template's own ink would be
-     near-black on near-black, so restate the light palette for them. */
-  :is(#{$lux-dark-surfaces}) :is(.ss-premium-card__info, .ss-premium-card__info *, .pc__title, .pc__title a, .menu-link, .money, .price) {
-    color: var(--lux-fg) !important;
-  }
-
-  :is(#{$lux-dark-surfaces}) .ss-premium-card__price {
-    color: var(--lux-fg-soft) !important;
-  }
-
-  .ss-featured-tile__overlay-title {
-    color: #fff !important;
-  }
-
-  .ss-featured-tile__overlay-category {
-    color: var(--lux-gold) !important;
-  }
-
-  .ss-featured-tile__overlay-price,
-  .ss-featured-tile__overlay-price * {
-    color: rgba(255, 255, 255, 0.92) !important;
-  }
-}
-
-/* =========================================================================
-   10. The closing three acts: atelier, uniforms, journal
-   -------------------------------------------------------------------------
-   These three shipped as Bootstrap cards — bordered, 24px-rounded panels with
-   paragraphs poured into a two-column `.row` and contact details stacked as
-   bordered pills. Nothing about them read as a tailoring house.
-   They are rebuilt here as editorial blocks: one dark full-bleed band for the
-   brand/contact pair, a text-and-collage diptych for the uniforms, and a
-   lead-plus-list journal. Shared vocabulary (`.lux-shell`, `.lux-eyebrow`,
-   `.lux-btn`, `.lux-link`, `.lux-head`) comes from the sections above.
-
-   The gold token is tuned for the near-black ground; on the white landing it
-   only reaches ~2:1, so the light acts use a darker gold for their eyebrows.
-   ========================================================================= */
-
-.ss-lux {
-  --lux-gold-ink: #8a6a33;
-  --lux-ink-line: rgba(15, 14, 12, 0.12);
-}
-
-/* The cadence rule zeroes the top padding of every consecutive act. These
-   sections own both edges — the dark band especially, which would otherwise
-   start flush against its own first line of type. */
-.ss-lux .lux-act > section.lux-atelier,
-.ss-lux .lux-act > section.lux-uniforms,
-.ss-lux .lux-act > section.lux-journal {
-  padding-block: var(--lux-section);
-}
-
-/* ---------- 10a. Atelier — brand story + contact, dark band -------------- */
-
-.ss-lux .ss-home-page .lux-atelier {
-  position: relative;
-  background: var(--lux-ink-0);
-  color: var(--lux-fg);
-}
-
-/* Hairline lid so the band reads as a deliberate plate, not a colour change. */
-.ss-lux .ss-home-page .lux-atelier::before {
-  content: "";
-  position: absolute;
-  inset: 0 0 auto;
-  height: 1px;
-  background: linear-gradient(90deg, transparent, var(--lux-gold-dim) 22%, var(--lux-gold-dim) 78%, transparent);
-}
-
-.ss-lux .ss-home-page .lux-atelier__inner {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: clamp(2.75rem, 5vw, 5.5rem);
-}
-
-@media (min-width: 992px) {
-  .ss-lux .ss-home-page .lux-atelier__inner {
-    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
-  }
-}
-
-/* The opening paragraph is the section's headline — there is no title field
-   for the about block, so the copy has to carry the weight itself. */
-.ss-lux .ss-home-page .lux-atelier__lede {
-  font-family: var(--font-display, "Playfair Display", serif);
-  font-size: clamp(1.4rem, 2.5vw, 2.25rem);
-  line-height: 1.28;
-  letter-spacing: var(--lux-track-tight);
-  color: var(--lux-fg);
-  margin: 0;
-  max-width: 24ch;
-}
-
-.ss-lux .ss-home-page .lux-atelier__copy {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: clamp(1rem, 1.6vw, 1.75rem);
-  margin-top: clamp(1.75rem, 3vw, 2.75rem);
-  padding-top: clamp(1.75rem, 3vw, 2.75rem);
-  border-top: 1px solid var(--lux-line);
-}
-
-@media (min-width: 768px) {
-  .ss-lux .ss-home-page .lux-atelier__copy {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: clamp(2rem, 3.5vw, 3.5rem);
-  }
-}
-
-.ss-lux .ss-home-page .lux-atelier__copy p {
-  margin: 0;
-  font-size: var(--lux-fs-body);
-  line-height: var(--lux-leading-body);
-  color: var(--lux-fg-soft);
-}
-
-/* Contact column: separated by a rule rather than a card border. */
-.ss-lux .ss-home-page .lux-atelier__contact {
-  position: relative;
-}
-
-@media (min-width: 992px) {
-  .ss-lux .ss-home-page .lux-atelier__contact {
-    padding-left: clamp(2rem, 3.5vw, 3.5rem);
-    border-left: 1px solid var(--lux-line);
-  }
-}
-
-.ss-lux .ss-home-page .lux-atelier__contact-title {
-  font-family: var(--font-display, "Playfair Display", serif);
-  font-size: clamp(1.35rem, 1.9vw, 1.75rem);
-  line-height: 1.2;
-  letter-spacing: var(--lux-track-tight);
-  margin: 0 0 1rem;
-  max-width: 22ch;
-}
-
-.ss-lux .ss-home-page .lux-atelier__contact-text {
-  margin: 0 0 clamp(1.5rem, 2.5vw, 2.25rem);
-  color: var(--lux-fg-soft);
-  line-height: var(--lux-leading-body);
-  max-width: 40ch;
-}
-
-.ss-lux .ss-home-page .lux-atelier__points {
-  margin: 0 0 clamp(1.75rem, 3vw, 2.5rem);
-  display: grid;
-}
-
-.ss-lux .ss-home-page .lux-atelier__point {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 0.3rem;
-  padding: 0.95rem 0;
-  border-top: 1px solid var(--lux-line);
-}
-
-@media (min-width: 480px) {
-  .ss-lux .ss-home-page .lux-atelier__point {
-    grid-template-columns: minmax(9rem, auto) minmax(0, 1fr);
-    align-items: baseline;
-    gap: 1.25rem;
-  }
-}
-
-.ss-lux .ss-home-page .lux-atelier__point:last-child {
-  border-bottom: 1px solid var(--lux-line);
-}
-
-.ss-lux .ss-home-page .lux-atelier__point dt {
-  font-size: var(--lux-fs-eyebrow);
-  font-weight: 600;
-  letter-spacing: var(--lux-track-eyebrow);
-  text-transform: uppercase;
-  color: var(--lux-gold);
-  margin: 0;
-}
-
-.ss-lux .ss-home-page .lux-atelier__point dd {
-  margin: 0;
-  font-size: 1.02rem;
-  color: var(--lux-fg);
-}
-
-.ss-lux .ss-home-page .lux-atelier__cta {
-  color: var(--lux-fg);
-}
-
-/* The dark-surface rule repaints every span inside the band in body ink, which
-   swallows the eyebrow's accent. Restate it at the same depth. */
-.ss-lux .ss-home-page .lux-atelier .lux-eyebrow {
-  color: var(--lux-gold);
-}
-
-/* ---------- 10b. Uniforms — copy + staggered collage -------------------- */
-
-.ss-lux .ss-home-page .lux-uniforms__inner {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: clamp(2.5rem, 4.5vw, 4.5rem);
-  align-items: center;
-}
-
-@media (min-width: 992px) {
-  .ss-lux .ss-home-page .lux-uniforms__inner {
-    grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
-  }
-}
-
-.ss-lux .ss-home-page .lux-uniforms .lux-eyebrow,
-.ss-lux .ss-home-page .lux-journal .lux-eyebrow {
-  color: var(--lux-gold-ink);
-}
-
-.ss-lux .ss-home-page .lux-uniforms__title {
-  font-size: var(--lux-fs-section);
-  line-height: 1.06;
-  letter-spacing: var(--lux-track-tight);
-  margin: 0 0 clamp(1rem, 1.8vw, 1.5rem);
-  max-width: 16ch;
-}
-
-.ss-lux .ss-home-page .lux-uniforms__copy {
-  font-size: var(--lux-fs-body);
-  line-height: var(--lux-leading-body);
-  max-width: 46ch;
-  margin: 0 0 clamp(1.75rem, 3vw, 2.5rem);
-}
-
-/* Collage: one tall plate carrying the column, two stacked beside it. No
-   frames, no radii — the photographs are the surface. */
-.ss-lux .ss-home-page .lux-uniforms__gallery {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(0.65rem, 1.2vw, 1.15rem);
-}
-
-.ss-lux .ss-home-page .lux-uniforms__shot {
-  position: relative;
-  margin: 0;
-  overflow: hidden;
-  aspect-ratio: 4 / 5;
-  background: #efebe5;
-}
-
-.ss-lux .ss-home-page .lux-uniforms__gallery[data-count="3"] .lux-uniforms__shot:first-child {
-  grid-row: span 2;
-  aspect-ratio: auto;
-}
-
-.ss-lux .ss-home-page .lux-uniforms__shot img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: transform 1.15s var(--lux-ease);
-  will-change: transform;
-}
-
-.ss-lux .ss-home-page .lux-uniforms__shot:hover img {
-  transform: scale(1.05);
-}
-
-.ss-lux .ss-home-page .lux-uniforms__shot figcaption {
-  position: absolute;
-  inset: auto 0 0;
-  padding: 2.5rem 1rem 0.9rem;
-  font-size: var(--lux-fs-eyebrow);
-  font-weight: 600;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-  color: #fff;
-  background: linear-gradient(180deg, rgba(10, 9, 8, 0) 0%, rgba(10, 9, 8, 0.72) 100%);
-}
-
-/* Solid ink button — the gold fill reads as a highlight on the dark band but
-   as a warning label on the white ground, so the light acts get ink instead. */
-.ss-lux .lux-btn--ink {
-  --_bg: #0f0e0c;
-  --_fg: #fff;
-}
-
-.ss-lux .lux-btn--ink:hover,
-.ss-lux .lux-btn--ink:focus-visible {
-  color: var(--lux-ink-0);
-}
-
-/* ---------- 10c. Journal — lead article + numbered list ----------------- */
-
-.ss-lux .ss-home-page .lux-journal__head {
-  padding-bottom: clamp(1.25rem, 2vw, 2rem);
-  border-bottom: 1px solid var(--lux-ink-line);
-}
-
-.ss-lux .ss-home-page .lux-journal .lux-link {
-  color: #0f0e0c;
-}
-
-.ss-lux .ss-home-page .lux-journal__grid {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: clamp(2.25rem, 4vw, 3.75rem);
-}
-
-@media (min-width: 992px) {
-  .ss-lux .ss-home-page .lux-journal__grid {
-    grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
-  }
-
-  /* One published post: the empty list column would leave the lead article
-     stranded against half a page of nothing. */
-  .ss-lux .ss-home-page .lux-journal__grid[data-rest="0"] {
-    grid-template-columns: minmax(0, 1fr);
-    max-width: 60ch;
-  }
-}
-
-.ss-lux .ss-home-page .lux-journal__media {
-  display: block;
-  overflow: hidden;
-  aspect-ratio: 16 / 10;
-  background: #efebe5;
-}
-
-.ss-lux .ss-home-page .lux-journal__media img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transition: transform 1.15s var(--lux-ease);
-  will-change: transform;
-}
-
-.ss-lux .ss-home-page .lux-journal__lead:hover .lux-journal__media img {
+.ss-category-tile:hover .ss-category-tile__img {
   transform: scale(1.04);
 }
-
-.ss-lux .ss-home-page .lux-journal__body {
-  padding-top: clamp(1.1rem, 1.8vw, 1.6rem);
+.ss-category-tile__overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(10, 9, 8, 0.75) 100%);
+  pointer-events: none;
 }
-
-.ss-lux .ss-home-page .lux-journal__meta {
-  display: block;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: #8a8279;
-  margin-bottom: 0.55rem;
+.ss-category-tile__label {
+  padding: 1rem 1.15rem;
+  background: var(--lux-ink-1, #100e0c);
+  border-top: 1px solid var(--lux-line, rgba(242, 238, 231, 0.08));
 }
-
-.ss-lux .ss-home-page .lux-journal__title {
+.ss-category-tile__name {
   font-family: var(--font-display, "Playfair Display", serif);
-  font-size: clamp(1.45rem, 2.2vw, 2.1rem);
-  line-height: 1.16;
-  letter-spacing: var(--lux-track-tight);
-  margin: 0 0 0.75rem;
+  font-size: clamp(0.95rem, 1.15vw, 1.12rem);
+  color: var(--lux-fg, #f2eee7);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.ss-category-tile__arrow {
+  color: var(--lux-gold, #c9a96e);
+  font-size: 1.1rem;
+  transition: transform 0.3s ease;
+}
+.ss-category-tile:hover .ss-category-tile__arrow {
+  transform: translateX(4px);
 }
 
-.ss-lux .ss-home-page .lux-journal__title a {
-  color: inherit;
-  text-decoration: none;
-  background-image: linear-gradient(currentColor, currentColor);
-  background-repeat: no-repeat;
-  background-size: 0% 1px;
-  background-position: 0 100%;
-  transition: background-size var(--lux-dur) var(--lux-ease);
+/* Premium Product Cards in Storefront */
+.ss-premium-card {
+  transition: transform 0.35s var(--lux-ease);
 }
-
-.ss-lux .ss-home-page .lux-journal__title a:hover {
-  background-size: 100% 1px;
+.ss-premium-card:hover {
+  transform: translateY(-3px);
 }
-
-.ss-lux .ss-home-page .lux-journal__excerpt {
-  line-height: var(--lux-leading-body);
-  max-width: 52ch;
-  margin: 0;
-}
-
-.ss-lux .ss-home-page .lux-journal__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  align-content: start;
-}
-
-.ss-lux .ss-home-page .lux-journal__item {
-  border-bottom: 1px solid var(--lux-ink-line);
-}
-
-.ss-lux .ss-home-page .lux-journal__item:first-child {
-  border-top: 1px solid var(--lux-ink-line);
-}
-
-.ss-lux .ss-home-page .lux-journal__item-link {
-  display: grid;
-  grid-template-columns: auto 72px minmax(0, 1fr);
-  align-items: center;
-  gap: clamp(0.85rem, 1.6vw, 1.4rem);
-  padding: clamp(0.9rem, 1.6vw, 1.35rem) 0;
-  text-decoration: none;
-  color: inherit;
-}
-
-@media (min-width: 576px) {
-  .ss-lux .ss-home-page .lux-journal__item-link {
-    grid-template-columns: auto 96px minmax(0, 1fr);
-  }
-}
-
-.ss-lux .ss-home-page .lux-journal__index {
-  font-size: var(--lux-fs-eyebrow);
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  color: var(--lux-gold-ink);
-}
-
-.ss-lux .ss-home-page .lux-journal__item-thumb {
-  display: block;
+.ss-premium-card__img-wrap {
+  aspect-ratio: 3 / 4;
+  background: #ffffff;
+  border-radius: 2px;
+  position: relative;
   overflow: hidden;
-  aspect-ratio: 1;
-  background: #efebe5;
 }
-
-.ss-lux .ss-home-page .lux-journal__item-thumb img {
+.ss-premium-card__img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  display: block;
-  transition: transform 1.15s var(--lux-ease);
+  object-position: center top;
+  transition: transform 0.7s var(--lux-ease), opacity 0.4s ease;
 }
-
-.ss-lux .ss-home-page .lux-journal__item-link:hover .lux-journal__item-thumb img {
-  transform: scale(1.06);
+.ss-premium-card:hover .ss-premium-card__img--primary {
+  transform: scale(1.03);
 }
-
-.ss-lux .ss-home-page .lux-journal__item-copy {
-  display: block;
-  min-width: 0;
-}
-
-.ss-lux .ss-home-page .lux-journal__item-title {
-  display: block;
-  font-size: clamp(0.98rem, 1.15vw, 1.1rem);
-  font-weight: 500;
-  line-height: 1.35;
-  color: #0f0e0c;
-  transition: color var(--lux-dur-fast) var(--lux-ease-io);
-}
-
-.ss-lux .ss-home-page .lux-journal__item-link:hover .lux-journal__item-title {
-  color: var(--lux-gold-ink);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ss-lux .ss-home-page .lux-uniforms__shot img,
-  .ss-lux .ss-home-page .lux-journal__media img,
-  .ss-lux .ss-home-page .lux-journal__item-thumb img {
-    transition: none;
-    transform: none;
-  }
-}
-
-/* ---------- 10. Chrome: progress, header retreat, hero cue --------------- */
-
-/* Scroll progress. One gold hairline across the top of the page — the whole
-   affordance, no percentage, no ring, no counter. ChromeFx writes scaleX. */
-.ss-progress {
-  position: fixed;
-  inset: 0 0 auto 0;
-  height: 2px;
-  z-index: 1080;
-  pointer-events: none;
-}
-
-.ss-progress__fill {
-  display: block;
-  height: 100%;
-  transform: scaleX(0);
-  transform-origin: 0 50%;
-  background: linear-gradient(90deg, var(--lux-gold), var(--lux-gold-bright));
-}
-
-/* Header retreats while the visitor is heading down and returns the moment
-   they turn around.
-
-   Scoped deliberately narrowly: the desktop header on the home page is
-   `position: absolute` over the hero (`.ss-header-home-floating`) and scrolls
-   away on its own, so translating it would fight the layout for no gain. Only
-   the genuinely sticky variants are moved. */
-.ss-lux #header.header_sticky-active,
-.ss-lux .header-mobile_sticky {
-  transition: transform var(--lux-dur) var(--lux-ease);
-  will-change: transform;
-}
-
-:root[data-scrolled][data-scroll-dir="down"] .ss-lux #header.header_sticky-active,
-:root[data-scrolled][data-scroll-dir="down"] .ss-lux .header-mobile_sticky {
-  transform: translateY(-100%);
-}
-
-/* A menu that is open must not ride away with the header. */
-.ss-lux #header.header_sticky-active:focus-within,
-.ss-lux .header-mobile_sticky:focus-within {
-  transform: none;
-}
-
-/* Hero scroll cue. A hairline that fills downward on a loop: it says the page
-   continues without asking for attention. HeroFx removes it once the visitor
-   has acted on it. */
-.ss-hero-cue {
+.ss-premium-card__img--hover {
   position: absolute;
-  left: 50%;
-  bottom: clamp(1.5rem, 4vh, 3rem);
-  z-index: 3;
-  display: block;
-  width: 1px;
-  height: 4rem;
-  overflow: hidden;
-  transform: translateX(-50%);
-  background: rgba(242, 238, 231, 0.16);
-  pointer-events: none;
+  inset: 0;
+  opacity: 0;
+}
+.ss-premium-card:hover .ss-premium-card__img--hover {
+  opacity: 1;
 }
 
-.ss-hero-cue__line {
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(180deg, transparent, var(--lux-gold-bright));
-  transform-origin: top center;
-  animation: ss-hero-cue-draw 2.4s var(--lux-ease-io) infinite;
+.ss-premium-card__badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+}
+.ss-premium-card__badge--new {
+  background: #111;
+  color: var(--lux-gold, #c9a96e);
+  border: 1px solid rgba(201, 169, 110, 0.4);
+}
+.ss-premium-card__badge--sale {
+  background: #8b1e1e;
+  color: #fff;
 }
 
-@keyframes ss-hero-cue-draw {
+.ss-premium-card__overlay {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 12px;
+  background: rgba(10, 9, 8, 0.85);
+  backdrop-filter: blur(8px);
+  transform: translateY(100%);
+  transition: transform 0.3s var(--lux-ease);
+  text-align: center;
+}
+.ss-premium-card:hover .ss-premium-card__overlay {
+  transform: translateY(0);
+}
+.ss-premium-card__overlay-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lux-gold, #c9a96e);
+}
+
+.ss-premium-card__category {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: var(--lux-gold, #c9a96e);
+}
+.ss-premium-card__title {
+  font-family: var(--font-display, "Playfair Display", serif);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+  color: #121110;
+}
+.ss-premium-card__price {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #121110;
+  letter-spacing: 0.02em;
+}
+
+.bg-dark .ss-premium-card__title,
+.bg-black .ss-premium-card__title,
+.ss-category-strip .ss-premium-card__title {
+  color: var(--lux-fg, #f2eee7) !important;
+}
+
+.bg-dark .ss-premium-card__price,
+.bg-black .ss-premium-card__price,
+.ss-category-strip .ss-premium-card__price {
+  color: var(--lux-fg, #f2eee7) !important;
+}
+
+/* Runway Marquee */
+.luxury-marquee {
+  background: var(--lux-ink-0, #0a0908);
+  border-color: rgba(242, 238, 231, 0.08) !important;
+}
+
+/* Custom Suits Experience */
+.luxury-custom-suits-experience {
+  background: var(--lux-ink-1, #100e0c);
+  border-top: 1px solid var(--lux-line, rgba(242, 238, 231, 0.08));
+  border-bottom: 1px solid var(--lux-line, rgba(242, 238, 231, 0.08));
+}
+
+/* Trust Strip */
+.luxury-trust-strip {
+  background: var(--lux-ink-0, #0a0908);
+  border-top: 1px solid var(--lux-line, rgba(242, 238, 231, 0.08));
+}
+
+/* Atelier Heritage Section */
+.luxury-atelier-heritage {
+  background: #080706 !important;
+  border-top: 1px solid rgba(242, 238, 231, 0.08);
+  border-bottom: 1px solid rgba(242, 238, 231, 0.08);
+}
+
+/* Hotspot Pulse Animation */
+@keyframes ss-pulse-hotspot {
   0% {
-    transform: translateY(-100%);
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(201, 169, 110, 0.7);
   }
-  55%,
+  70% {
+    transform: scale(1.05);
+    box-shadow: 0 0 0 10px rgba(201, 169, 110, 0);
+  }
   100% {
-    transform: translateY(100%);
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(201, 169, 110, 0);
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .ss-progress,
-  .ss-hero-cue {
-    display: none;
-  }
-
-  .ss-lux #header.header_sticky-active,
-  .ss-lux .header-mobile_sticky {
-    transition: none;
-    transform: none;
-  }
+/* Desktop Custom Cursor Aura */
+.luxury-cursor-container {
+  pointer-events: none !important;
+  z-index: 999999 !important;
 }
