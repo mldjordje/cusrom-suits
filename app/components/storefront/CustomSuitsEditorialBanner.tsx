@@ -16,7 +16,7 @@ export default function CustomSuitsEditorialBanner({ lang = "sr", backgroundImag
   const bgSrc = backgroundImage || "/img/hero.jpg";
 
   return (
-    <section className="ss-editorial-banner">
+    <section className="ss-editorial-banner" data-m-tailoring-story="">
       {/* Pozadinska slika */}
       <div className="ss-editorial-banner__media" aria-hidden="true">
         <Image
@@ -32,7 +32,7 @@ export default function CustomSuitsEditorialBanner({ lang = "sr", backgroundImag
 
       {/* Sadržaj */}
       <div className="container ss-editorial-banner__body">
-        <div className="ss-editorial-banner__inner">
+        <div className="ss-editorial-banner__inner" data-m-tailoring-copy="">
           <p className="ss-editorial-banner__eyebrow">
             {tx("Santos & Santorini", "Santos & Santorini")}
           </p>
@@ -54,6 +54,17 @@ export default function CustomSuitsEditorialBanner({ lang = "sr", backgroundImag
               {tx("Poslovne uniforme", "Business uniforms")}
             </Link>
           </div>
+          <ol className="ss-editorial-banner__steps" aria-label={tx("Proces izrade", "Tailoring process")}>
+            <li data-m-tailoring-step="" className="is-active">
+              <span>01</span>{tx("Izbor tkanine", "Choose the cloth")}
+            </li>
+            <li data-m-tailoring-step="">
+              <span>02</span>{tx("Kroj po vašoj meri", "Cut to your measure")}
+            </li>
+            <li data-m-tailoring-step="">
+              <span>03</span>{tx("Završni potpis", "The final signature")}
+            </li>
+          </ol>
         </div>
       </div>
     </section>

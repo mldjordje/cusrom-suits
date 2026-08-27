@@ -912,11 +912,11 @@ export default async function HomePage({
             {[
               [landingSettings.bannerLeftTitle, landingSettings.bannerLeftButtonLabel, landingSettings.bannerLeftHref, landingSettings.bannerLeftImage, "/img/hero2.jpg", "Ready to Wear", "Shop Now"],
               [landingSettings.bannerRightTitle, landingSettings.bannerRightButtonLabel, landingSettings.bannerRightHref, landingSettings.bannerRightImage, "/img/hero.jpg", "Current Sale", "View Sale"],
-            ].map(([title, button, href, image, fallback, fallbackTitle, fallbackButton]) => (
-              <div key={String(fallbackTitle)} className="col-md-6">
+            ].map(([title, button, href, image, fallback, fallbackTitle, fallbackButton], bannerIndex) => (
+              <div key={String(fallbackTitle)} className={`col-md-6 ss-editorial-banners__item ss-editorial-banners__item--${bannerIndex + 1}`}>
                 <div className="position-relative overflow-hidden ss-banner-panel">
                   <StorefrontImage sources={[String(image)]} fallbackSrc={String(fallback)} width={690} height={330} alt={tx(String(title), String(fallbackTitle))} className="w-100 h-auto" sizes="(max-width: 767px) 100vw, 50vw" />
-                  <div className="position-absolute top-50 start-50 translate-middle text-center">
+                  <div className="ss-banner-panel__copy">
                     <h4 className="text-uppercase text-white">{tx(String(title), String(fallbackTitle))}</h4>
                     <Link href={withLang(String(href))} className="btn btn-light btn-sm text-uppercase fw-medium mt-2">{tx(String(button), String(fallbackButton))}</Link>
                   </div>

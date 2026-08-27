@@ -1267,6 +1267,135 @@ body:has(.ss-home-page) {
    list so the two directions can never drift apart. */
 $lux-dark-surfaces: ".ss-home18-hero, .ss-story-card, .ss-banner-panel, .blog-grid__item, .ss-editorial-card, .ss-featured-tile__overlay, .lux-act--band, .lux-atelier";
 
+/* Cadence classes live on the wrapper, so the generic :not() palette below
+   cannot reliably infer this dark surface through every generated wrapper. */
+.ss-lux .ss-home-page .lux-act--band :is(h1, h2, h3, h4, h5, h6, .section-title, .block-title) {
+  color: var(--lux-fg) !important;
+}
+
+@media (min-width: 1024px) {
+  .ss-lux .ss-home-page .ss-category-strip {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+  }
+
+  .ss-lux .ss-home-page .ss-category-strip__track {
+    display: flex;
+    width: max-content;
+    gap: clamp(1rem, 1.8vw, 2rem);
+    padding-right: 12vw;
+  }
+
+  .ss-lux .ss-home-page .ss-category-tile {
+    flex: 0 0 clamp(300px, 27vw, 430px);
+    width: clamp(300px, 27vw, 430px);
+    aspect-ratio: 0.72;
+    border-radius: 0;
+  }
+}
+
+.ss-lux .ss-home-page .ss-editorial-banner {
+  margin: 0;
+  min-height: 100svh;
+}
+
+.ss-lux .ss-home-page .ss-editorial-banner__steps {
+  display: grid;
+  gap: 0;
+  max-width: 34rem;
+  margin: clamp(2rem, 5vh, 4rem) 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.ss-lux .ss-home-page .ss-editorial-banner__steps li {
+  display: grid;
+  grid-template-columns: 3.5rem 1fr;
+  align-items: center;
+  min-height: 3.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(240, 236, 228, 0.42) !important;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  transition: color 280ms ease, padding-left 280ms ease;
+}
+
+.ss-lux .ss-home-page .ss-editorial-banner__steps li span {
+  color: var(--lux-gold);
+  font-variant-numeric: tabular-nums;
+}
+
+.ss-lux .ss-home-page .ss-editorial-banner__steps li.is-active {
+  color: var(--lux-fg) !important;
+  padding-left: 0.75rem;
+}
+
+/* P3 banners: two editorial crops with a deliberate broken baseline instead
+   of matching Bootstrap cards with centred copy. */
+.ss-lux .ss-home-page .ss-editorial-banners .row {
+  align-items: start;
+  --bs-gutter-x: clamp(1.5rem, 4vw, 4.5rem);
+}
+
+.ss-lux .ss-home-page .ss-editorial-banners__item--2 {
+  margin-top: clamp(4rem, 10vw, 10rem);
+}
+
+.ss-lux .ss-home-page .ss-editorial-banners .ss-banner-panel {
+  min-height: clamp(32rem, 52vw, 50rem);
+  border-radius: 0;
+}
+
+.ss-lux .ss-home-page .ss-editorial-banners .ss-banner-panel img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100% !important;
+  object-fit: cover;
+}
+
+.ss-lux .ss-home-page .ss-banner-panel__copy {
+  position: absolute;
+  z-index: 2;
+  inset: auto clamp(1.5rem, 4vw, 3.5rem) clamp(2rem, 5vw, 4.5rem);
+  max-width: 28rem;
+  text-align: left;
+}
+
+.ss-lux .ss-home-page .ss-banner-panel__copy h4 {
+  max-width: 10ch;
+  margin: 0;
+  font-family: var(--font-playfair-display), "Playfair Display", serif;
+  font-size: clamp(2.2rem, 4.2vw, 4.8rem);
+  line-height: 0.98;
+  letter-spacing: -0.035em;
+  text-transform: none !important;
+}
+
+.ss-lux .ss-home-page .ss-banner-panel__copy .btn {
+  margin-top: 1.75rem !important;
+  border-radius: 0;
+  background: transparent;
+  color: #fff;
+  border: 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.7);
+  padding: 0 0 0.35rem;
+}
+
+@media (max-width: 767.98px) {
+  .ss-lux .ss-home-page .ss-editorial-banners__item--2 {
+    margin-top: 1.5rem;
+  }
+
+  .ss-lux .ss-home-page .ss-editorial-banners .ss-banner-panel {
+    min-height: 70svh;
+  }
+}
+
 .ss-lux .ss-home-page {
   :is(h1, h2, h3, h4, h5, h6, .section-title, .block-title):not(
       :is(#{$lux-dark-surfaces}) *

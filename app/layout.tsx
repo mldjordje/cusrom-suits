@@ -69,6 +69,7 @@ export default function RootLayout({
   return (
     <html
       lang="sr"
+      suppressHydrationWarning
       className={`${geistSans.variable} ${montserrat.variable} ${playfairDisplay.variable}`}
     >
       <body className="antialiased">

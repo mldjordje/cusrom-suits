@@ -45,12 +45,12 @@ export default function HomeCategoryTiles({ categories: _categories, tiles: tile
   });
 
   return (
-    <section className="ss-category-strip">
+    <section className="ss-category-strip" data-m-collection-rail="">
       <div className="container">
         <p className="ss-category-strip__heading">
           {tx("Istrazi kolekciju", "Explore the collection")}
         </p>
-        <div className="ss-category-strip__track">
+        <div className="ss-category-strip__track" data-m-collection-track="">
           {tiles.map((tile) => (
             <Link key={tile.id || tile.label} href={tile.href} prefetch={false} className="ss-category-tile">
               <StorefrontImage

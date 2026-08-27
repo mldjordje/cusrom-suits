@@ -7,7 +7,7 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { SplitText } from "gsap/SplitText";
 import { useGSAP } from "@gsap/react";
 import { useMotion } from "@/app/components/motion/MotionProvider";
-import { DIST, DUR, EASE, SCRUB, STAGGER, START } from "@/lib/motion/tokens";
+import { DIST, DUR, EASE, MQ, SCRUB, STAGGER, START } from "@/lib/motion/tokens";
 
 /**
  * The storefront's only scroll-driven animation runtime.
@@ -226,6 +226,51 @@ export default function SceneFx() {
         });
       });
 
+      /* ---- P3 editorial pins ------------------------------------------- */
+
+      const editorialMedia = gsap.matchMedia();
+      editorialMedia.add(MQ.desktop, () => {
+        gsap.utils.toArray<HTMLElement>("[data-m-collection-rail]").forEach((section) => {
+          const track = section.querySelector<HTMLElement>("[data-m-collection-track]");
+          if (!track) return;
+          const travel = () => Math.max(0, track.scrollWidth - section.clientWidth + 96);
+          gsap.to(track, {
+            x: () => -travel(),
+            ease: "none",
+            scrollTrigger: {
+              trigger: section,
+              start: START.pin,
+              end: () => `+=${Math.max(window.innerWidth, travel() * 1.15)}`,
+              pin: true,
+              scrub: SCRUB,
+              invalidateOnRefresh: true,
+              anticipatePin: 1,
+            },
+          });
+        });
+
+        gsap.utils.toArray<HTMLElement>("[data-m-tailoring-story]").forEach((section) => {
+          const image = section.querySelector<HTMLElement>(".ss-editorial-banner__img");
+          const copy = section.querySelector<HTMLElement>("[data-m-tailoring-copy]");
+          const steps = gsap.utils.toArray<HTMLElement>("[data-m-tailoring-step]", section);
+          const timeline = gsap.timeline({
+            scrollTrigger: {
+              trigger: section,
+              start: START.pin,
+              end: "+=180%",
+              pin: true,
+              scrub: SCRUB,
+              anticipatePin: 1,
+            },
+          });
+          if (image) timeline.fromTo(image, { scale: 1.08, xPercent: 0 }, { scale: 1.18, xPercent: 4, ease: "none" }, 0);
+          if (copy) timeline.fromTo(copy, { yPercent: 5 }, { yPercent: -5, ease: "none" }, 0);
+          steps.forEach((step, index) => {
+            timeline.call(() => steps.forEach((item, itemIndex) => item.classList.toggle("is-active", itemIndex === index)), [], index / Math.max(1, steps.length - 1));
+          });
+        });
+      });
+
       /* ---- panels that brought their own reveal ------------------------- */
 
       gsap.utils.toArray<HTMLElement>(PANEL_SELECTOR).forEach((el, index) => {
@@ -294,6 +339,7 @@ export default function SceneFx() {
         splitsRef.current.forEach((split) => split.revert());
         splitsRef.current = [];
         luxRoot?.classList.remove("lux-fx-ready");
+        editorialMedia.revert();
       };
     },
     { dependencies: [pathname, reduceMotion], revertOnUpdate: true },
