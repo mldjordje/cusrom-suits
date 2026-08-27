@@ -1,0 +1,561 @@
+/* =========================================================================
+   Santos & Santorini - High-Fashion Editorial Landing System
+   Pure, clean, lightweight, hardware-accelerated styling.
+   ========================================================================= */
+
+.ss-landing-root {
+  --lp-bg-deep: #080706;
+  --lp-bg-dark: #0e0d0b;
+  --lp-bg-card: #151412;
+  --lp-bg-light: #f7f4ee;
+  --lp-gold: #c9a96e;
+  --lp-gold-bright: #f3dc9e;
+  --lp-fg-dark: #f2eee7;
+  --lp-fg-muted: #9e978e;
+  --lp-fg-ink: #141210;
+  --lp-border-dark: rgba(242, 238, 231, 0.08);
+  --lp-border-gold: rgba(201, 169, 110, 0.3);
+  --lp-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --lp-font-display: "Playfair Display", Georgia, serif;
+
+  background-color: var(--lp-bg-deep);
+  color: var(--lp-fg-dark);
+  font-family: inherit;
+  overflow-x: hidden;
+}
+
+/* Typography Helpers */
+.ss-lp-eyebrow {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lp-gold);
+}
+
+.ss-lp-title {
+  font-family: var(--lp-font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.ss-lp-title--dark {
+  color: var(--lp-fg-dark);
+}
+
+.ss-lp-title--light {
+  color: var(--lp-fg-ink);
+}
+
+/* Luxury Buttons */
+.ss-lp-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: var(--lp-gold);
+  color: #080706 !important;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.9rem 2rem;
+  border-radius: 2px;
+  border: 1px solid var(--lp-gold);
+  text-decoration: none;
+  box-shadow: 0 4px 20px rgba(201, 169, 110, 0.25);
+  transition: all 0.35s var(--lp-ease);
+}
+.ss-lp-btn-primary:hover {
+  background: var(--lp-gold-bright);
+  border-color: var(--lp-gold-bright);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(201, 169, 110, 0.4);
+}
+
+.ss-lp-btn-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(14, 13, 11, 0.6);
+  color: var(--lp-fg-dark) !important;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  padding: 0.9rem 2rem;
+  border-radius: 2px;
+  border: 1px solid rgba(242, 238, 231, 0.25);
+  text-decoration: none;
+  backdrop-filter: blur(10px);
+  transition: all 0.35s var(--lp-ease);
+}
+.ss-lp-btn-outline:hover {
+  background: rgba(242, 238, 231, 0.15);
+  border-color: var(--lp-gold);
+  color: #fff !important;
+  transform: translateY(-2px);
+}
+
+.ss-lp-btn-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lp-gold);
+  text-decoration: none;
+  position: relative;
+  transition: color 0.3s ease;
+}
+.ss-lp-btn-link::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0.4);
+  transform-origin: left;
+  transition: transform 0.3s var(--lp-ease);
+}
+.ss-lp-btn-link:hover::after {
+  transform: scaleX(1);
+}
+
+/* =========================================================================
+   1. HERO SECTION
+   ========================================================================= */
+.ss-lp-hero {
+  position: relative;
+  min-height: 92vh;
+  display: flex;
+  align-items: center;
+  background-color: var(--lp-bg-deep);
+  overflow: hidden;
+}
+.ss-lp-hero__bg {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+.ss-lp-hero__overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: linear-gradient(180deg, rgba(8,7,6,0.3) 0%, rgba(8,7,6,0.7) 70%, rgba(8,7,6,0.95) 100%);
+}
+.ss-lp-hero__content {
+  position: relative;
+  z-index: 3;
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+}
+.ss-lp-hero__title {
+  font-size: clamp(2.4rem, 5.5vw, 4.8rem);
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.8);
+}
+.ss-lp-hero__subtitle {
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+  line-height: 1.6;
+  color: rgba(242, 238, 231, 0.85);
+  max-width: 560px;
+}
+
+/* =========================================================================
+   2. RUNWAY MARQUEE RIBBON
+   ========================================================================= */
+.ss-lp-marquee {
+  background: #050404;
+  border-top: 1px solid var(--lp-border-dark);
+  border-bottom: 1px solid var(--lp-border-dark);
+  overflow: hidden;
+  white-space: nowrap;
+  padding: 0.9rem 0;
+}
+.ss-lp-marquee__track {
+  display: inline-flex;
+  align-items: center;
+  gap: 2.5rem;
+  animation: ss-lp-marquee-scroll 24s linear infinite;
+}
+@keyframes ss-lp-marquee-scroll {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.ss-lp-marquee__item {
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lp-fg-muted);
+}
+.ss-lp-marquee__dot {
+  color: var(--lp-gold);
+  font-size: 0.8rem;
+}
+
+/* =========================================================================
+   3. CATEGORY RUNWAY TILES
+   ========================================================================= */
+.ss-lp-category-section {
+  background-color: var(--lp-bg-dark);
+  padding: 5rem 0;
+  border-bottom: 1px solid var(--lp-border-dark);
+}
+.ss-lp-cat-card {
+  text-decoration: none;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-dark);
+  border-radius: 3px;
+  overflow: hidden;
+  display: block;
+  transition: all 0.4s var(--lp-ease);
+}
+.ss-lp-cat-card:hover {
+  transform: translateY(-5px);
+  border-color: var(--lp-border-gold);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+.ss-lp-cat-card__img-wrap {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background-color: #121110;
+}
+.ss-lp-cat-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.8s var(--lp-ease);
+}
+.ss-lp-cat-card:hover .ss-lp-cat-card__img {
+  transform: scale(1.05);
+}
+.ss-lp-cat-card__label-bar {
+  padding: 1.1rem 1.25rem;
+  background: var(--lp-bg-card);
+  border-top: 1px solid var(--lp-border-dark);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.ss-lp-cat-card__name {
+  font-family: var(--lp-font-display);
+  font-size: 1.1rem;
+  color: var(--lp-fg-dark);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.ss-lp-cat-card__arrow {
+  color: var(--lp-gold);
+  font-size: 1.15rem;
+  transition: transform 0.3s ease;
+}
+.ss-lp-cat-card:hover .ss-lp-cat-card__arrow {
+  transform: translateX(4px);
+}
+
+/* =========================================================================
+   4. FEATURED PRODUCTS (3:4 PORTRAIT CARDS)
+   ========================================================================= */
+.ss-lp-products-section {
+  padding: 5rem 0;
+  background-color: #faf8f5;
+  color: var(--lp-fg-ink);
+}
+.ss-lp-product-card {
+  text-decoration: none;
+  display: block;
+  height: 100%;
+  transition: transform 0.35s var(--lp-ease);
+}
+.ss-lp-product-card:hover {
+  transform: translateY(-4px);
+}
+.ss-lp-product-card__img-wrap {
+  position: relative;
+  aspect-ratio: 3 / 4;
+  background-color: #f0ede8;
+  border-radius: 2px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+}
+.ss-lp-product-card__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  transition: transform 0.7s var(--lp-ease), opacity 0.35s ease;
+}
+.ss-lp-product-card:hover .ss-lp-product-card__img--primary {
+  transform: scale(1.03);
+}
+.ss-lp-product-card__img--hover {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+}
+.ss-lp-product-card:hover .ss-lp-product-card__img--hover {
+  opacity: 1;
+}
+
+.ss-lp-product-card__badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 2;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 2px;
+}
+.ss-lp-product-card__badge--new {
+  background: #111;
+  color: var(--lp-gold);
+  border: 1px solid var(--lp-border-gold);
+}
+.ss-lp-product-card__badge--sale {
+  background: #8b1e1e;
+  color: #fff;
+}
+
+.ss-lp-product-card__overlay {
+  position: absolute;
+  inset: auto 0 0;
+  padding: 10px;
+  background: rgba(14, 13, 11, 0.88);
+  backdrop-filter: blur(8px);
+  transform: translateY(100%);
+  transition: transform 0.3s var(--lp-ease);
+  text-align: center;
+}
+.ss-lp-product-card:hover .ss-lp-product-card__overlay {
+  transform: translateY(0);
+}
+.ss-lp-product-card__overlay-text {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lp-gold);
+}
+
+.ss-lp-product-card__info {
+  padding-top: 0.85rem;
+}
+.ss-lp-product-card__category {
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lp-gold);
+  margin-bottom: 0.2rem;
+}
+.ss-lp-product-card__title {
+  font-family: var(--lp-font-display);
+  font-size: 1rem;
+  font-weight: 600;
+  color: #121110;
+  margin-bottom: 0.3rem;
+  line-height: 1.35;
+}
+.ss-lp-product-card__price {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #121110;
+  letter-spacing: 0.02em;
+}
+
+/* =========================================================================
+   5. ATELIER BESPOKE & FABRIC SELECTOR
+   ========================================================================= */
+.ss-lp-atelier-section {
+  background-color: var(--lp-bg-deep);
+  color: var(--lp-fg-dark);
+  padding: 5.5rem 0;
+  border-top: 1px solid var(--lp-border-dark);
+  border-bottom: 1px solid var(--lp-border-dark);
+}
+.ss-lp-pillar-card {
+  padding: 1.5rem;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-dark);
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.35s var(--lp-ease);
+}
+.ss-lp-pillar-card.active {
+  background: #1c1a17;
+  border-color: var(--lp-gold);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+.ss-lp-pillar-card:hover:not(.active) {
+  border-color: rgba(242, 238, 231, 0.2);
+}
+
+.ss-lp-fabric-btn {
+  padding: 0.6rem 0.9rem;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-dark);
+  border-radius: 2px;
+  color: var(--lp-fg-dark);
+  font-size: 0.78rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.ss-lp-fabric-btn.active {
+  border-color: var(--lp-gold);
+  background: #000;
+}
+.ss-lp-fabric-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* =========================================================================
+   6. CAMPAIGN LOOKBOOK SPREAD
+   ========================================================================= */
+.ss-lp-lookbook-section {
+  background-color: var(--lp-bg-dark);
+  color: var(--lp-fg-dark);
+  padding: 5.5rem 0;
+  border-bottom: 1px solid var(--lp-border-dark);
+}
+.ss-lp-lookbook-stage {
+  position: relative;
+  aspect-ratio: 16 / 10;
+  min-height: 480px;
+  border-radius: 3px;
+  overflow: hidden;
+  background-color: #121110;
+}
+.ss-lp-lookbook-tab {
+  padding: 1rem 1.25rem;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-dark);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: all 0.3s var(--lp-ease);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+.ss-lp-lookbook-tab.active {
+  border-color: var(--lp-gold);
+  background: #1c1a17;
+}
+
+/* =========================================================================
+   7. HERITAGE METRICS & SHOWROOMS
+   ========================================================================= */
+.ss-lp-heritage-section {
+  background-color: #050404;
+  color: var(--lp-fg-dark);
+  padding: 5.5rem 0;
+  border-bottom: 1px solid var(--lp-border-dark);
+}
+.ss-lp-metric-card {
+  padding: 1.75rem 1.25rem;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-dark);
+  border-radius: 3px;
+  text-align: center;
+}
+.ss-lp-metric-number {
+  font-family: var(--lp-font-display);
+  font-size: clamp(2.2rem, 3.5vw, 3rem);
+  font-weight: 700;
+  color: var(--lp-gold);
+  line-height: 1.1;
+  margin-bottom: 0.25rem;
+}
+.ss-lp-metric-label {
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lp-fg-muted);
+}
+
+.ss-lp-showroom-card {
+  padding: 2.25rem;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-dark);
+  border-radius: 3px;
+  height: 100%;
+  display: flex;
+  flex-column: column;
+  justify-content: space-between;
+}
+
+/* =========================================================================
+   8. TRUST PILLARS
+   ========================================================================= */
+.ss-lp-trust-section {
+  background-color: var(--lp-bg-deep);
+  color: var(--lp-fg-dark);
+  padding: 3.5rem 0;
+  border-bottom: 1px solid var(--lp-border-dark);
+}
+.ss-lp-trust-card {
+  padding: 1.5rem;
+  background: var(--lp-bg-card);
+  border: 1px solid var(--lp-border-dark);
+  border-radius: 2px;
+  height: 100%;
+}
+.ss-lp-trust-icon {
+  color: var(--lp-gold);
+  margin-bottom: 0.75rem;
+}
+.ss-lp-trust-title {
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--lp-fg-dark);
+  margin-bottom: 0.35rem;
+}
+.ss-lp-trust-desc {
+  font-size: 0.85rem;
+  color: var(--lp-fg-muted);
+  line-height: 1.45;
+  margin: 0;
+}
+
+/* Responsive Rules */
+@media (max-width: 767px) {
+  .ss-lp-hero {
+    min-height: 80vh;
+  }
+  .ss-lp-hero__content {
+    padding-top: 3.5rem;
+    padding-bottom: 3.5rem;
+  }
+  .ss-lp-category-section,
+  .ss-lp-products-section,
+  .ss-lp-atelier-section,
+  .ss-lp-lookbook-section,
+  .ss-lp-heritage-section {
+    padding: 3.5rem 0;
+  }
+  .ss-lp-lookbook-stage {
+    min-height: 320px;
+  }
+}
