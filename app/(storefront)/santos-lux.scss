@@ -1805,3 +1805,96 @@ $lux-dark-surfaces: ".ss-home18-hero, .ss-story-card, .ss-banner-panel, .blog-gr
     transform: none;
   }
 }
+
+/* ---------- 10. Chrome: progress, header retreat, hero cue --------------- */
+
+/* Scroll progress. One gold hairline across the top of the page — the whole
+   affordance, no percentage, no ring, no counter. ChromeFx writes scaleX. */
+.ss-progress {
+  position: fixed;
+  inset: 0 0 auto 0;
+  height: 2px;
+  z-index: 1080;
+  pointer-events: none;
+}
+
+.ss-progress__fill {
+  display: block;
+  height: 100%;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  background: linear-gradient(90deg, var(--lux-gold), var(--lux-gold-bright));
+}
+
+/* Header retreats while the visitor is heading down and returns the moment
+   they turn around.
+
+   Scoped deliberately narrowly: the desktop header on the home page is
+   `position: absolute` over the hero (`.ss-header-home-floating`) and scrolls
+   away on its own, so translating it would fight the layout for no gain. Only
+   the genuinely sticky variants are moved. */
+.ss-lux #header.header_sticky-active,
+.ss-lux .header-mobile_sticky {
+  transition: transform var(--lux-dur) var(--lux-ease);
+  will-change: transform;
+}
+
+:root[data-scrolled][data-scroll-dir="down"] .ss-lux #header.header_sticky-active,
+:root[data-scrolled][data-scroll-dir="down"] .ss-lux .header-mobile_sticky {
+  transform: translateY(-100%);
+}
+
+/* A menu that is open must not ride away with the header. */
+.ss-lux #header.header_sticky-active:focus-within,
+.ss-lux .header-mobile_sticky:focus-within {
+  transform: none;
+}
+
+/* Hero scroll cue. A hairline that fills downward on a loop: it says the page
+   continues without asking for attention. HeroFx removes it once the visitor
+   has acted on it. */
+.ss-hero-cue {
+  position: absolute;
+  left: 50%;
+  bottom: clamp(1.5rem, 4vh, 3rem);
+  z-index: 3;
+  display: block;
+  width: 1px;
+  height: 4rem;
+  overflow: hidden;
+  transform: translateX(-50%);
+  background: rgba(242, 238, 231, 0.16);
+  pointer-events: none;
+}
+
+.ss-hero-cue__line {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(180deg, transparent, var(--lux-gold-bright));
+  transform-origin: top center;
+  animation: ss-hero-cue-draw 2.4s var(--lux-ease-io) infinite;
+}
+
+@keyframes ss-hero-cue-draw {
+  0% {
+    transform: translateY(-100%);
+  }
+  55%,
+  100% {
+    transform: translateY(100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ss-progress,
+  .ss-hero-cue {
+    display: none;
+  }
+
+  .ss-lux #header.header_sticky-active,
+  .ss-lux .header-mobile_sticky {
+    transition: none;
+    transform: none;
+  }
+}

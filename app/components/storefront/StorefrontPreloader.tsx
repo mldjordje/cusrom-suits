@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useMotion } from "@/app/components/motion/MotionProvider";
+import { CURTAIN_LIFT_EVENT, type CurtainLiftDetail } from "@/lib/motion/curtain";
 
 /**
  * Home-page intro.
@@ -24,6 +26,7 @@ const EXIT_MS = 1000; // curtain lift, overlaps the hero's own intro
 type Phase = "enter" | "exit" | "done";
 
 export default function StorefrontPreloader({ onExitComplete }: { onExitComplete?: () => void }) {
+  const { lenis } = useMotion();
   const [phase, setPhase] = useState<Phase>("enter");
   const [progress, setProgress] = useState(0);
   const finishedRef = useRef(false);
@@ -75,6 +78,13 @@ export default function StorefrontPreloader({ onExitComplete }: { onExitComplete
           timers.push(
             window.setTimeout(() => {
               setPhase("exit");
+              /* Hand off to the hero. Without this the hero's entrance runs on
+                 mount — behind a curtain that is still down — and is finished
+                 before anyone can see it. HeroFx starts its timeline against
+                 this event so the two overlap. */
+              window.dispatchEvent(
+                new CustomEvent<CurtainLiftDetail>(CURTAIN_LIFT_EVENT, { detail: { exitMs: EXIT_MS } }),
+              );
               timers.push(window.setTimeout(finish, EXIT_MS));
             }, 260),
           );
@@ -100,13 +110,21 @@ export default function StorefrontPreloader({ onExitComplete }: { onExitComplete
     if (typeof document === "undefined") return;
     if (phase === "done") return;
 
-    // Nothing should scroll underneath the curtain.
+    // Nothing should scroll underneath the curtain. When Lenis is driving,
+    // it has to be the one told to stop — `overflow: hidden` on the body
+    // leaves Lenis still animating a scroll position that no longer moves,
+    // and the page lurches when the curtain lifts.
+    if (lenis) {
+      lenis.stop();
+      return () => lenis.start();
+    }
+
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
       document.body.style.overflow = previous;
     };
-  }, [phase]);
+  }, [lenis, phase]);
 
   if (phase === "done") return null;
 

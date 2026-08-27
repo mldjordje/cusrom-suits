@@ -4,16 +4,14 @@ import dynamic from "next/dynamic";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import StorefrontPreloader from "@/app/components/storefront/StorefrontPreloader";
-// Imported statically, not via next/dynamic: this drives the first reveals a
-// visitor sees, so it must not wait on a separate chunk round-trip. It carries
-// no heavy dependencies — an IntersectionObserver and one scroll listener.
-import LuxScrollFx from "@/app/components/storefront/LuxScrollFx";
+// Static, not next/dynamic: this drives the first reveals a visitor sees, so
+// it must not wait on a separate chunk round-trip. GSAP itself already comes
+// down with the storefront layout via MotionProvider, so there is no second
+// payload to defer here — deferring only delayed the animation, which is what
+// made the old StorefrontViewportEffects look broken on slower machines.
+import SceneFx from "@/app/components/motion/SceneFx";
+import ChromeFx from "@/app/components/motion/ChromeFx";
 import { useCart } from "@/app/components/storefront/cart/StorefrontCartProvider";
-
-const StorefrontViewportEffects = dynamic(
-  () => import("@/app/components/storefront/StorefrontViewportEffects"),
-  { ssr: false },
-);
 
 const StorefrontCartDrawer = dynamic(
   () => import("@/app/components/storefront/cart/StorefrontCartDrawer"),
@@ -108,8 +106,8 @@ export default function StorefrontRuntimeShell() {
           }}
         />
       ) : null}
-      <LuxScrollFx />
-      <StorefrontViewportEffects />
+      <SceneFx />
+      <ChromeFx />
       {cartActivated ? <StorefrontCartDrawer /> : null}
       {searchActivated ? <StorefrontSearchOverlay /> : null}
       <StorefrontMobileShopNav />

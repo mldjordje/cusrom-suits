@@ -1,7 +1,18 @@
-"use client";
-
 import Link from "next/link";
-import { m, useReducedMotion } from "framer-motion";
+
+/**
+ * The hero's copy block.
+ *
+ * Markup only — HeroFx owns the animation. That split matters here more than
+ * anywhere else on the page: this used to animate on mount, which meant that
+ * on a first visit the whole entrance played *behind* the preloader curtain
+ * and was over before the curtain lifted. The visitor paid for an intro they
+ * never saw. HeroFx now holds the timeline paused and starts it against the
+ * curtain lift instead.
+ *
+ * The hidden start states live in santos-motion.scss behind `.motion-ready`,
+ * so with no JS the hero renders complete.
+ */
 
 type Props = {
   eyebrow: string;
@@ -13,8 +24,6 @@ type Props = {
   secondaryHref: string;
 };
 
-const ease = [0.22, 1, 0.36, 1] as const;
-
 const prefetchIfWebShop = (href: string) => href.includes("/web-shop");
 
 export default function HomeHeroIntroMotion({
@@ -23,101 +32,28 @@ export default function HomeHeroIntroMotion({
   titleLine2,
   primaryLabel,
   primaryHref,
-  secondaryLabel,
-  secondaryHref,
 }: Props) {
-  const prefersReduced = useReducedMotion();
-
-  if (prefersReduced) {
-    return (
-      <div className="ss-home18-hero__intro text-white" data-hero-intro>
-        <p className="fw-semi-bold mb-0 ss-home18-hero__eyebrow text-uppercase">{eyebrow}</p>
-        <span className="ss-hero-gold-line" aria-hidden="true" />
-        {/* The home page had no h1 at all — the hero headline is its primary topic. */}
-        <h1 className="hero-display fw-semi-bold lh-1 mb-5 text-white">
-          {titleLine1}
-          <br />
-          {titleLine2}
-        </h1>
-        <div className="d-flex align-items-center gap-3 flex-wrap ss-home18-hero__cta">
-          <Link
-            href={primaryHref}
-            prefetch={prefetchIfWebShop(primaryHref)}
-            className="btn border-0 fw-semi-bold text-uppercase px-5 ss-cta-btn"
-          >
-            {primaryLabel}
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <m.div
-      className="ss-home18-hero__intro text-white"
-      data-hero-intro
-      initial="hidden"
-      animate="visible"
-      variants={{
-        hidden: {},
-        visible: { transition: { staggerChildren: 0.13, delayChildren: 0.1 } },
-      }}
-    >
-      <m.p
-        className="fw-semi-bold mb-0 ss-home18-hero__eyebrow text-uppercase"
-        variants={{
-          hidden: { opacity: 0, y: 12 },
-          visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease } },
-        }}
-      >
+    <div className="ss-home18-hero__intro text-white" data-hero-intro>
+      <p className="fw-semi-bold mb-0 ss-home18-hero__eyebrow text-uppercase" data-hero-eyebrow>
         {eyebrow}
-      </m.p>
-
-      {/* Zlatna dekorativna linija */}
-      <m.span
-        className="ss-hero-gold-line"
-        aria-hidden="true"
-        variants={{
-          hidden: { scaleX: 0, opacity: 0 },
-          visible: { scaleX: 1, opacity: 1, transition: { duration: 0.7, ease, delay: 0.05 } },
-        }}
-        style={{ transformOrigin: "left" }}
-      />
-
-      <m.h1
-        className="hero-display fw-semi-bold lh-1 mb-5 text-white"
-        variants={{
-          hidden: { opacity: 0, y: 36 },
-          visible: { opacity: 1, y: 0, transition: { duration: 0.88, ease } },
-        }}
-      >
+      </p>
+      <span className="ss-hero-gold-line" aria-hidden="true" data-hero-rule />
+      {/* The home page had no h1 at all — the hero headline is its primary topic. */}
+      <h1 className="hero-display fw-semi-bold lh-1 mb-5 text-white" data-hero-title>
         {titleLine1}
         <br />
         {titleLine2}
-      </m.h1>
-
-      <m.div
-        className="d-flex align-items-center gap-3 flex-wrap ss-home18-hero__cta"
-        variants={{
-          hidden: { opacity: 0, y: 18 },
-          visible: { opacity: 1, y: 0, transition: { duration: 0.6, ease } },
-        }}
-      >
-        <m.span
-          className="d-inline-flex"
-          whileHover={{ y: -2 }}
-          whileTap={{ scale: 0.97 }}
-          transition={{ duration: 0.22 }}
+      </h1>
+      <div className="d-flex align-items-center gap-3 flex-wrap ss-home18-hero__cta" data-hero-cta>
+        <Link
+          href={primaryHref}
+          prefetch={prefetchIfWebShop(primaryHref)}
+          className="btn border-0 fw-semi-bold text-uppercase px-5 ss-cta-btn"
         >
-          <Link
-            href={primaryHref}
-            prefetch={prefetchIfWebShop(primaryHref)}
-            className="btn border-0 fw-semi-bold text-uppercase px-5 ss-cta-btn"
-          >
-            {primaryLabel}
-          </Link>
-        </m.span>
-      </m.div>
-    </m.div>
+          {primaryLabel}
+        </Link>
+      </div>
+    </div>
   );
 }

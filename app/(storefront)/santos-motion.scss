@@ -1,0 +1,151 @@
+/* =========================================================================
+   Santos & Santorini — motion layer
+   =========================================================================
+
+   Loaded after santos-lux.scss. Holds only what motion needs to exist:
+   the Lenis contract, the hidden start states, and the reduced-motion escape.
+   Anything that is a design decision belongs in santos-lux.scss instead.
+
+   The one rule that governs this file: hidden start states are gated behind
+   `.motion-ready` on <html>, set by the boot script before first paint. CSS
+   default is always the finished, visible state, so a page with no JS — or
+   with a motion chunk that never arrives — is a normal readable page rather
+   than a blank one. See lib/motion/bootScript.ts.
+   ========================================================================= */
+
+/* ---------- Lenis ---------------------------------------------------------
+   Vendored rather than imported from `lenis/dist/lenis.css` so the storefront
+   keeps one stylesheet order. Matches Lenis 1.3.
+   ------------------------------------------------------------------------ */
+
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+/* Nested scrollers — drawers, overlays, horizontal rails — keep their own
+   scroll instead of handing the overflow back to the page. */
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: clip;
+}
+
+/* An iframe swallowing pointer events mid-scroll desyncs Lenis from the
+   real scroll position. */
+.lenis.lenis-smooth iframe {
+  pointer-events: none;
+}
+
+/* ---------- Start states --------------------------------------------------
+   Opacity only. Transforms are GSAP's — declaring a transform here as well
+   means two owners for the same matrix and a visible fight on the first
+   frame of every tween.
+   ------------------------------------------------------------------------ */
+
+.motion-ready [data-m-rise],
+.motion-ready [data-m-fade],
+.motion-ready [data-m-card] {
+  opacity: 0;
+}
+
+/* Hero. Gated the same way, but worth spelling out separately: on a repeat
+   visit there is no preloader curtain to hide the gap between first paint and
+   hydration, so without these the hero would render complete and then blink
+   back to its start state the moment HeroFx builds its timeline. */
+.motion-ready [data-hero-eyebrow],
+.motion-ready [data-hero-title],
+.motion-ready [data-hero-cta],
+.motion-ready [data-hero-card],
+.motion-ready [data-hero-cue] {
+  opacity: 0;
+}
+
+.motion-ready [data-hero-rule] {
+  transform: scaleX(0);
+  transform-origin: left center;
+}
+
+/* A headline is split into masked lines by GSAP after the webfonts settle.
+   Until then it must not be hidden — a font that never loads would leave the
+   section untitled. The mask wrappers SplitText inserts do the hiding, and
+   they only exist once the split has actually happened. */
+.motion-ready [data-m-heading] {
+  opacity: 1;
+}
+
+/* A line of type that rides up out of a mask. The wrapper clips, the inner
+   span moves; both are needed, so the markup contract is explicit. */
+.m-line {
+  display: block;
+  overflow: hidden;
+}
+
+.m-line__inner {
+  display: block;
+  will-change: transform;
+}
+
+.motion-ready .m-line__inner {
+  transform: translateY(105%);
+}
+
+/* Photography that is revealed *through* an opening mask rather than faded
+   in behind one. The image inside is scaled by GSAP on the same tween. */
+.m-mask {
+  overflow: hidden;
+}
+
+.motion-ready .m-mask {
+  clip-path: inset(0 0 100% 0);
+}
+
+/* ---------- Compositing ---------------------------------------------------
+   Applied by ScrollTrigger on enter and removed on leave, never left on.
+   A dozen permanently promoted layers is jank, not optimisation.
+   ------------------------------------------------------------------------ */
+
+.is-animating {
+  will-change: transform, opacity;
+}
+
+/* ---------- Reduced motion ------------------------------------------------
+   The boot script never sets `.motion-ready` under this preference, so the
+   rules above are already inert. This block is the belt to that suspenders:
+   it also covers a class left behind by a stale cached document.
+   ------------------------------------------------------------------------ */
+
+@media (prefers-reduced-motion: reduce) {
+  .motion-ready [data-m-rise],
+  .motion-ready [data-m-fade],
+  .motion-ready [data-m-card],
+  .motion-ready [data-hero-eyebrow],
+  .motion-ready [data-hero-title],
+  .motion-ready [data-hero-cta],
+  .motion-ready [data-hero-card] {
+    opacity: 1;
+  }
+
+  .motion-ready [data-hero-rule] {
+    transform: scaleX(1);
+  }
+
+  /* The cue animates on a loop; under this preference it should not exist. */
+  .motion-ready [data-hero-cue] {
+    display: none;
+  }
+
+  .motion-ready .m-line__inner {
+    transform: none;
+  }
+
+  .motion-ready .m-mask {
+    clip-path: none;
+  }
+}

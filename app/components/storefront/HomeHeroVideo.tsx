@@ -6,7 +6,7 @@ import { localizeDynamicStorefrontText } from "@/lib/storefront/dynamicCopy";
 import HomeHeroMedia from "@/app/components/storefront/HomeHeroMedia";
 import HomeHeroIntroMotion from "@/app/components/storefront/HomeHeroIntroMotion";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
-import HeroParallaxFx from "@/app/components/storefront/HeroParallaxFx";
+import HeroFx from "@/app/components/storefront/HeroFx";
 
 type HomeCategory = {
   id: number;
@@ -86,8 +86,6 @@ export default function HomeHeroVideo({ categories: _categories, showProductCard
       {heroTextColor ? (
         <style>{`#ss-home-hero#ss-home-hero .ss-home18-hero__eyebrow, #ss-home-hero#ss-home-hero .hero-display { color: ${heroTextColor} !important; }`}</style>
       ) : null}
-      <div className="ss-home18-hero__ambient ss-home18-hero__ambient--one" data-hero-glow />
-      <div className="ss-home18-hero__ambient ss-home18-hero__ambient--two" data-hero-glow />
       <div className="ss-home18-hero__grid" aria-hidden="true" />
       <HomeHeroMedia
         desktopVideoId="18WbTwdI0Vs"
@@ -149,7 +147,12 @@ export default function HomeHeroVideo({ categories: _categories, showProductCard
           </div>
         ) : null}
       </div>
-      <HeroParallaxFx targetId="ss-home-hero" />
+      {/* Direction, not decoration: it says the page continues, and HeroFx
+          takes it away as soon as the visitor acts on it. */}
+      <span className="ss-hero-cue" data-hero-cue aria-hidden="true">
+        <span className="ss-hero-cue__line" />
+      </span>
+      <HeroFx targetId="ss-home-hero" />
     </section>
   );
 }
