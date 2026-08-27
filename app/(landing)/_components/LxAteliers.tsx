@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Rise from "./_fx/Rise";
 import SplitLines from "./_fx/SplitLines";
 import styles from "../landing.module.scss";
 
@@ -52,8 +53,8 @@ export default function LxAteliers({
           <SplitLines lines={copy.lines} className={styles.dLg} />
         </div>
 
-        {ateliers.map((atelier) => (
-          <div key={atelier.city} className={styles.atelier}>
+        {ateliers.map((atelier, index) => (
+          <Rise key={atelier.city} className={styles.atelier} delay={index * 120}>
             <h3 className={styles.dMd}>{atelier.city}</h3>
             <div className={`${styles.meta} ${styles.atelierLines}`}>
               {atelier.lines.map((line) => (
@@ -63,18 +64,18 @@ export default function LxAteliers({
             <Link href={atelier.href} className={styles.rule} style={{ marginTop: 10 }}>
               {copy.book}
             </Link>
-          </div>
+          </Rise>
         ))}
 
         {/* One row of small type. Four icons in four boxes is the single most
             recognisable piece of 2017 template furniture there is. */}
-        <div className={styles.guarantees}>
+        <Rise className={styles.guarantees} delay={140}>
           {copy.guarantees.map((item) => (
             <span key={item} className={styles.micro}>
               {item}
             </span>
           ))}
-        </div>
+        </Rise>
       </div>
     </section>
   );

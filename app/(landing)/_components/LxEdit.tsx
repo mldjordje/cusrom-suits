@@ -1,7 +1,8 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import StorefrontImage from "@/app/components/storefront/StorefrontImage";
+import LxImage from "./_fx/LxImage";
 import Reveal from "./_fx/Reveal";
+import Rise from "./_fx/Rise";
 import styles from "../landing.module.scss";
 
 export type LxProduct = {
@@ -11,6 +12,8 @@ export type LxProduct = {
   image: string;
   hoverImage?: string;
   href: string;
+  /** Bundled frame used when the legacy asset host is slow or down. */
+  fallback: string;
 };
 
 const COPY = {
@@ -49,7 +52,7 @@ export default function LxEdit({
       </div>
 
       <div className={styles.grid}>
-        <div className={styles.editHead}>
+        <Rise className={styles.editHead}>
           <div>
             <div className={styles.micro} style={{ marginBottom: 14 }}>
               {copy.eyebrow}
@@ -59,7 +62,7 @@ export default function LxEdit({
           <Link href={allHref} className={styles.rule}>
             {copy.all}
           </Link>
-        </div>
+        </Rise>
 
         {products.map((product, index) => {
           const place = PLACEMENT[index % PLACEMENT.length];
@@ -78,28 +81,28 @@ export default function LxEdit({
             <Link href={product.href}>
               <Reveal delay={(index % 3) * 80} className={styles.editFigure}>
                 <span className={styles.editShot}>
-                  <StorefrontImage
-                    sources={[product.image]}
+                  <LxImage
+                    src={product.image}
+                    fallback={product.fallback}
                     alt={product.title}
-                    fill
                     sizes="(max-width: 900px) 100vw, 48vw"
                   />
                 </span>
                 {product.hoverImage ? (
                   <span className={`${styles.editShot} ${styles.editShotAlt}`}>
-                    <StorefrontImage
-                      sources={[product.hoverImage]}
+                    <LxImage
+                      src={product.hoverImage}
+                      fallback={product.fallback}
                       alt=""
-                      fill
                       sizes="(max-width: 900px) 100vw, 48vw"
                     />
                   </span>
                 ) : null}
               </Reveal>
-              <div className={styles.editCaption}>
+              <Rise className={styles.editCaption} delay={260}>
                 <span className={`${styles.meta} ${styles.editName}`}>{product.title}</span>
                 <span className={`${styles.meta} ${styles.editPrice}`}>{product.price}</span>
-              </div>
+              </Rise>
             </Link>
           </article>
           );

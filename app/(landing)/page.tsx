@@ -22,6 +22,7 @@ import LxManifesto from "./_components/LxManifesto";
 import LxCategories, { type LxCategory } from "./_components/LxCategories";
 import LxBespoke from "./_components/LxBespoke";
 import LxEdit, { type LxProduct } from "./_components/LxEdit";
+import LxVideoBand from "./_components/LxVideoBand";
 import LxAteliers from "./_components/LxAteliers";
 import LxFooter from "./_components/LxFooter";
 
@@ -29,6 +30,22 @@ const FALLBACK_IMAGE = "/img/odela.jpg";
 
 /** Local editorial frames. Replaced by admin uploads the moment they exist. */
 const BESPOKE_SHOTS = ["/img/odela2.webp", "/img/hero2.webp", "/img/odela.jpg", "/img/hero.jpg"];
+
+/**
+ * Bundled stand-ins, one per slot, so the page never shows an empty frame
+ * while the legacy asset host is unreachable. They rotate rather than repeat
+ * so a total outage still reads as a composed page.
+ */
+const LOCAL_FRAMES = ["/img/odela.jpg", "/img/hero2.webp", "/img/obuca.jpg", "/img/odela2.webp"];
+
+/**
+ * Santos' own clips, bundled in public/. Only the small ones are used: the
+ * hero autoplays on load and the bands mount their video near the viewport,
+ * so the page ships about 2.4 MB of motion in total rather than 40.
+ */
+const HERO_VIDEO = "/fajlovi/uniforme/Santos uniforma pantalone jakna.mp4";
+const BAND_VIDEO_CRAFT = "/fajlovi/uniforme/Santos uniforma kosulja kratak rukav.mp4";
+const BAND_VIDEO_ATELIER = "/fajlovi/uniforme/Santos zenska uniforma mantil.mp4";
 
 export async function generateMetadata({
   searchParams,
@@ -66,7 +83,7 @@ const formatPrice = (value: number) =>
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
 
-function toProduct(item: CatalogProductView, lang: "sr" | "en"): LxProduct {
+function toProduct(item: CatalogProductView, lang: "sr" | "en", index: number): LxProduct {
   const sources = getCatalogProductImageSources(item);
   const title = getCatalogProductDisplayName(
     {
@@ -86,6 +103,7 @@ function toProduct(item: CatalogProductView, lang: "sr" | "en"): LxProduct {
     image: sources[0] || item.coverImage || FALLBACK_IMAGE,
     hoverImage: sources[1],
     href: lang === "en" ? `/web-shop/${item.legacyId}?lang=en` : `/web-shop/${item.legacyId}`,
+    fallback: LOCAL_FRAMES[index % LOCAL_FRAMES.length],
   };
 }
 
@@ -95,7 +113,8 @@ export default async function LandingPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const lang = await resolveStorefrontLanguage(await searchParams);
-  const suffix = lang === "en" ? "?lang=en" : "";
+  const isEn = lang === "en";
+  const suffix = isEn ? "?lang=en" : "";
 
   const brokenProductIds = await getBrokenProductIdSet();
   const excludeLegacyIds = brokenProductIds.size ? Array.from(brokenProductIds) : undefined;
@@ -118,7 +137,7 @@ export default async function LandingPage({
     (item) => item.coverImage && item.coverImage.trim().length > 0,
   );
 
-  const products: LxProduct[] = items.slice(0, 4).map((item) => toProduct(item, lang));
+  const products: LxProduct[] = items.slice(0, 4).map((item, index) => toProduct(item, lang, index));
 
   const categoryImage = (group: string, fallbackIndex: number) => {
     const found = items.find((item) => productMatchesCategoryGroup(item, group));
@@ -136,6 +155,7 @@ export default async function LandingPage({
     label: lang === "en" ? entry.en : entry.sr,
     href: `/web-shop?categoryGroup=${entry.group}${lang === "en" ? "&lang=en" : ""}`,
     image: categoryImage(entry.group, index),
+    fallback: LOCAL_FRAMES[index % LOCAL_FRAMES.length],
   }));
 
   const ateliers = [
@@ -151,10 +171,11 @@ export default async function LandingPage({
     },
   ];
 
-  const heroVideo =
-    typeof settings.heroVideoUrl === "string" && settings.heroVideoUrl.trim().length > 0
-      ? settings.heroVideoUrl.trim()
-      : null;
+  // An admin upload wins; the component falls back to the bundled clip if the
+  // configured one errors or never loads.
+  const configuredHeroVideo =
+    typeof settings.heroVideoUrl === "string" ? settings.heroVideoUrl.trim() : "";
+  const heroVideo = configuredHeroVideo.length > 0 ? configuredHeroVideo : HERO_VIDEO;
 
   return (
     <LxShell lang={lang}>
@@ -162,10 +183,36 @@ export default async function LandingPage({
         data={[buildOrganizationJsonLd(), buildWebSiteJsonLd(), buildLocalBusinessJsonLd()]}
       />
 
-      <LxHero lang={lang} image="/img/hero.jpg" video={heroVideo} poster="/img/hero.jpg" />
+      <LxHero
+        lang={lang}
+        image="/img/hero.jpg"
+        video={heroVideo}
+        videoFallback={HERO_VIDEO}
+        poster="/img/hero.jpg"
+      />
       <LxManifesto lang={lang} />
+
+      <LxVideoBand
+        video={BAND_VIDEO_CRAFT}
+        poster="/img/odela2.webp"
+        eyebrow={isEn ? "(—) — In the atelier" : "(—) — U ateljeu"}
+        lines={isEn ? ["Cut once,", "worn for years"] : ["Krojeno jednom,", "nošeno godinama"]}
+      />
+
       <LxCategories lang={lang} categories={categories} allHref={`/web-shop${suffix}`} />
       <LxBespoke lang={lang} shots={BESPOKE_SHOTS} />
+
+      <LxVideoBand
+        video={BAND_VIDEO_ATELIER}
+        poster="/img/hero2.webp"
+        eyebrow={isEn ? "(—) — Made to measure" : "(—) — Po meri"}
+        lines={isEn ? ["Sixty measurements.", "One pattern."] : ["Šezdeset mera.", "Jedan kroj."]}
+        cta={{
+          label: isEn ? "Configure your suit" : "Konfigurišite odelo",
+          href: `/custom-suits${suffix}`,
+        }}
+      />
+
       <LxEdit lang={lang} products={products} allHref={`/web-shop${suffix}`} />
       <LxAteliers lang={lang} ateliers={ateliers} />
       <LxFooter lang={lang} />

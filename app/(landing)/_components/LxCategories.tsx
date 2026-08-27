@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
-import StorefrontImage from "@/app/components/storefront/StorefrontImage";
+import { useEffect, useRef } from "react";
+import LxImage from "./_fx/LxImage";
 import Reveal from "./_fx/Reveal";
+import Rise from "./_fx/Rise";
 import styles from "../landing.module.scss";
 
 export type LxCategory = {
@@ -8,6 +12,8 @@ export type LxCategory = {
   label: string;
   href: string;
   image: string;
+  /** Bundled frame used when the legacy asset host is slow or down. */
+  fallback: string;
 };
 
 const COPY = {
@@ -32,16 +38,55 @@ export default function LxCategories({
   allHref: string;
 }) {
   const copy = COPY[lang];
+  const sectionRef = useRef<HTMLElement | null>(null);
+
+  // One scroll listener for the whole section rather than one per frame, and
+  // it only ever writes a custom property — layout is never read in the
+  // handler, so this cannot force a synchronous reflow.
+  useEffect(() => {
+    const root = sectionRef.current;
+    if (!root) return;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const frames = Array.from(root.querySelectorAll<HTMLElement>(`.${styles.catFrame}`));
+    if (!frames.length) return;
+
+    let ticking = false;
+    const draw = () => {
+      const viewport = window.innerHeight;
+      for (const frame of frames) {
+        const rect = frame.getBoundingClientRect();
+        if (rect.bottom < 0 || rect.top > viewport) continue;
+        const progress = (viewport - rect.top) / (viewport + rect.height);
+        frame.style.setProperty("--lx-drift", progress.toFixed(4));
+      }
+      ticking = false;
+    };
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(draw);
+    };
+
+    draw();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", onScroll);
+    };
+  }, []);
 
   return (
-    <section className={`${styles.section} ${styles.paper} ${styles.cats}`}>
+    <section ref={sectionRef} className={`${styles.section} ${styles.paper} ${styles.cats}`}>
       <div className={styles.grid}>
-        <div className={styles.catsHead}>
+        <Rise className={styles.catsHead}>
           <span className={styles.micro}>{copy.eyebrow}</span>
           <Link href={allHref} className={styles.rule}>
             {copy.all}
           </Link>
-        </div>
+        </Rise>
 
         {categories.map((category, index) => (
           <Link
@@ -51,20 +96,20 @@ export default function LxCategories({
             style={{ gridColumn: SPANS[index % SPANS.length] }}
           >
             <Reveal delay={(index % 2) * 90} className={styles.catFrame}>
-              <StorefrontImage
-                sources={[category.image]}
+              <LxImage
+                src={category.image}
+                fallback={category.fallback}
                 alt={category.label}
-                fill
                 sizes="(max-width: 900px) 100vw, 55vw"
               />
               <span className={styles.catScrim} />
-              <span className={`${styles.micro} ${styles.catTileIndex}`}>
+              <Rise as="span" className={`${styles.micro} ${styles.catTileIndex}`} delay={200}>
                 {String(index + 1).padStart(2, "0")}
-              </span>
-              <span className={styles.catTileFoot}>
+              </Rise>
+              <Rise as="span" className={styles.catTileFoot} delay={320}>
                 <span className={styles.dMd}>{category.label}</span>
                 <span className={styles.micro}>{copy.shop}</span>
-              </span>
+              </Rise>
             </Reveal>
           </Link>
         ))}

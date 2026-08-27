@@ -127,7 +127,17 @@
 
 /* --------------------------------------------------------------- layout --- */
 
-.section { position: relative; }
+/* Sits above the fixed hero so scrolling covers it rather than revealing
+   what is behind the page. */
+.section,
+.band,
+.footer,
+.heroSlot {
+  position: relative;
+  z-index: 1;
+}
+
+.heroSlot { z-index: 0; }
 .paper { background: var(--paper); }
 .paper2 { background: var(--paper-2); }
 
@@ -288,18 +298,48 @@
 
 /* ----------------------------------------------------------------- hero --- */
 
-.hero {
+/* The slot only reserves the scroll distance. The hero itself is fixed, so
+   the manifesto below does not scroll past it — it slides up over a frame
+   that is still playing. Everything after the hero carries z-index 1 to make
+   that cover happen. */
+.heroSlot {
   position: relative;
+  height: 100svh;
+  min-height: 560px;
+}
+
+.hero {
+  --lx-hero-progress: 0;
+  --lx-hero-fade: 0;
+  position: fixed;
+  inset: 0;
+  z-index: 0;
   height: 100svh;
   min-height: 560px;
   overflow: hidden;
   background: var(--ink);
+
+  /* Opens like a curtain on load. Clip-path, not scale — a zooming hero is
+     the single most dated move on a fashion site.
+
+     The inset travels through a custom property rather than through the
+     clip-path itself, because the narrow-screen override further down would
+     otherwise win on source order and hold the curtain shut on a phone. */
+  --lx-curtain: 6% 8%;
+  clip-path: inset(var(--lx-curtain));
+  transition: clip-path 1500ms var(--ease);
 }
+
+/* Two classes on purpose: the narrow-screen rule below sets --lx-curtain on
+   .hero alone, and an equally specific selector there would win on order. */
+.hero.heroOpen { --lx-curtain: 0% 0%; }
+.heroOpen .lineInner { transform: translateY(0); }
 
 .heroMedia {
   position: absolute;
   inset: -6% 0 -6% 0;
   will-change: transform;
+  transform: translate3d(0, calc(var(--lx-hero-progress) * 6%), 0);
 
   img, video {
     width: 100%;
@@ -309,23 +349,41 @@
   }
 }
 
-/* A flat 18% wash, not a gradient scrim. Gradients over fashion photography
-   are the single fastest way to look like a 2017 template. */
-/* Layered over the still, transparent until the clip can actually play, so a
-   missing or broken video URL costs one failed request and nothing else. */
-.heroVideo {
+/* A column of moving footage set into the still, opening after the curtain.
+   Sized so the square source is never scaled much past its native height. */
+.heroFilm {
   position: absolute;
-  inset: 0;
+  top: 0;
+  bottom: 0;
+  right: clamp(0px, 6vw, 120px);
+  z-index: 1;
+  width: clamp(240px, 30vw, 460px);
+  overflow: hidden;
+  clip-path: inset(100% 0 0 0);
+  transition: clip-path 1400ms var(--ease) 700ms;
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.heroOpen .heroFilm { clip-path: inset(0 0 0 0); }
+
+.heroVideo {
   opacity: 0;
-  transition: opacity 900ms var(--ease);
+  transition: opacity 1200ms var(--ease);
 }
 
 .heroVideoOn { opacity: 1; }
 
+/* A flat wash, not a gradient scrim. Gradients over fashion photography are
+   the fastest way to look like a template. */
 .heroWash {
   position: absolute;
   inset: 0;
-  background: rgba(10, 10, 10, 0.18);
+  background: rgba(10, 10, 10, 0.2);
 }
 
 .heroInner {
@@ -338,10 +396,13 @@
   align-content: end;
   padding: 0 var(--gutter) clamp(28px, 5vh, 64px);
   color: var(--paper);
+  opacity: calc(1 - var(--lx-hero-fade, 0));
 }
 
 .heroTitle {
   grid-column: 1 / span 9;
+  color: var(--paper);
+  mix-blend-mode: difference;
 }
 
 .heroCorner {
@@ -351,23 +412,144 @@
   z-index: 2;
   text-align: right;
   color: var(--paper);
-  opacity: 0.72;
+  mix-blend-mode: difference;
 }
 
 .heroFoot {
   grid-column: 10 / span 3;
   align-self: end;
   justify-self: end;
-  text-align: right;
+  display: flex;
+  align-items: center;
+  gap: 12px;
   color: var(--paper);
-  opacity: 0.72;
+  mix-blend-mode: difference;
+}
+
+/* A 1px rule that keeps drawing itself downward — the only looping animation
+   on the page, and the only thing telling you the page has more to give. */
+.heroTick {
+  display: block;
+  width: 1px;
+  height: 46px;
+  background: currentColor;
+  transform-origin: top;
+  animation: heroTick 2600ms var(--ease-in-out) infinite;
+}
+
+@keyframes heroTick {
+  0% { transform: scaleY(0); opacity: 0; }
+  30% { transform: scaleY(1); opacity: 1; }
+  70% { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(0) translateY(46px); opacity: 0; }
+}
+
+@media (max-width: 900px) {
+  /* The column would leave the type nowhere to sit, so on a phone the footage
+     takes the upper half of the frame and the title keeps the lower half. */
+  .heroFilm {
+    right: 0;
+    left: 0;
+    bottom: auto;
+    width: 100%;
+    height: 52svh;
+  }
 }
 
 @media (max-width: 720px) {
   .heroTitle { grid-column: 1 / span 12; }
-  .heroFoot { grid-column: 1 / span 12; justify-self: start; text-align: left; margin-top: 18px; }
+
+  .heroFoot {
+    grid-column: 1 / span 12;
+    justify-self: start;
+    margin-top: 18px;
+  }
+
   .heroCorner { top: 78px; }
+  .hero { --lx-curtain: 3% 4%; }
 }
+
+/* ------------------------------------------------------------------ band --- */
+
+/* Full-bleed moving frame. Same trick as the hero: type blended into the
+   picture rather than parked on top of it. */
+.band {
+  position: relative;
+  height: 92svh;
+  min-height: 520px;
+  overflow: hidden;
+  background: var(--ink);
+}
+
+.bandMedia {
+  position: absolute;
+  inset: 0;
+}
+
+/* Fills the frame out of focus so the sharp square in the middle reads as the
+   subject rather than as a video that failed to cover. */
+.bandBackdrop {
+  position: absolute;
+  inset: -6%;
+  width: 112%;
+  height: 112%;
+  object-fit: cover;
+  filter: blur(34px) saturate(0.7);
+  opacity: 0.55;
+}
+
+.bandFilm {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: min(66svh, 74vw);
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: rgba(10, 10, 10, 0.4);
+
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.bandVideo {
+  opacity: 0;
+  transition: opacity 1200ms var(--ease);
+}
+
+.bandVideoOn { opacity: 1; }
+
+.bandWash {
+  position: absolute;
+  inset: 0;
+  background: rgba(10, 10, 10, 0.3);
+}
+
+.bandInner {
+  position: relative;
+  z-index: 2;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 18px;
+  padding: 0 var(--gutter) clamp(40px, 7vh, 90px);
+  color: var(--paper);
+}
+
+.bandEyebrow { color: inherit; opacity: 0.75; }
+
+.bandTitle {
+  max-width: 18ch;
+  mix-blend-mode: difference;
+
+  span { display: block; }
+}
+
+.bandCta { align-self: flex-start; }
 
 /* ------------------------------------------------------------- manifesto --- */
 
@@ -417,13 +599,19 @@
 .catTile:nth-of-type(even) { margin-top: clamp(40px, 7vw, 110px); }
 
 .catFrame {
+  --lx-drift: 0;
   position: relative;
   width: 100%;
   aspect-ratio: 4 / 5;
   overflow: hidden;
   background: rgba(18, 18, 18, 0.05);
 
-  img { width: 100%; height: 100%; object-fit: cover; }
+  img {
+    width: 100%;
+    height: 106%;
+    object-fit: cover;
+    transform: translate3d(0, calc(var(--lx-drift) * -5%), 0);
+  }
 }
 
 /* A flat wash across the lower third, only as dark as the caption needs. */
@@ -773,6 +961,18 @@
 
 .linesOn .lineInner { transform: translateY(0); }
 
+.rise {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity var(--d-base) var(--ease), transform var(--d-base) var(--ease);
+  will-change: opacity, transform;
+}
+
+.riseOn {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .fade {
   opacity: 0;
   transition: opacity var(--d-base) var(--ease);
@@ -794,6 +994,9 @@
   .reveal { clip-path: inset(0 0 0 0); }
   .lineInner { transform: none; }
   .fade { opacity: 1; }
+  .rise { opacity: 1; transform: none; }
+  .hero { clip-path: inset(0 0 0 0); }
+  .heroTick { animation: none; }
   .bespokeStep { opacity: 1; }
   .cursor { display: none; }
 }

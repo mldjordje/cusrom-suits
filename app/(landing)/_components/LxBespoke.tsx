@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import StorefrontImage from "@/app/components/storefront/StorefrontImage";
+import LxImage from "./_fx/LxImage";
+import Rise from "./_fx/Rise";
 import styles from "../landing.module.scss";
 
 type BespokeStep = {
@@ -110,9 +111,9 @@ export default function LxBespoke({
   return (
     <section className={`${styles.section} ${styles.paper2} ${styles.bespoke}`}>
       <div className={styles.grid} style={{ paddingBottom: "clamp(40px, 7vh, 90px)" }}>
-        <span className={styles.micro} style={{ gridColumn: "1 / span 12" }}>
+        <Rise as="span" className={styles.micro} style={{ gridColumn: "1 / span 12" }}>
           {copy.eyebrow}
-        </span>
+        </Rise>
       </div>
 
       <div className={styles.bespokeGrid}>
@@ -125,10 +126,10 @@ export default function LxBespoke({
                   index === current ? styles.bespokeShotOn : ""
                 }`}
               >
-                <StorefrontImage
-                  sources={[shots[index] || shots[0]]}
+                <LxImage
+                  src={shots[index] || shots[0]}
+                  fallback={shots[0]}
                   alt=""
-                  fill
                   sizes="(max-width: 900px) 100vw, 50vw"
                 />
               </div>
