@@ -421,7 +421,6 @@ export default async function HomePage({
     salePool.slice(0, 16),
   );
   const landingSectionStateMap = buildLandingProductSectionMap(landingSettings.productSections);
-  const heroStripEnabled = landingSectionStateMap.get("heroStripProductIds")?.enabled !== false;
   const customGridSections = normalizeLandingCustomSections(landingSettings.customSections)
     .map((section) => ({
       section,
@@ -1182,7 +1181,7 @@ export default async function HomePage({
         <HomeHeroVideo
           lang={lang}
           categories={catalog.categories}
-          showProductCards={heroStripEnabled && heroCategoryCards.length > 0}
+          showProductCards={false}
           cards={heroCategoryCards}
           heroVideoUrl={landingSettings.heroVideoUrl || undefined}
           heroVideoMobileUrl={landingSettings.heroVideoMobileUrl || undefined}

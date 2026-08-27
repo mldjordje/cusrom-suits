@@ -1396,6 +1396,182 @@ $lux-dark-surfaces: ".ss-home18-hero, .ss-story-card, .ss-banner-panel, .blog-gr
   }
 }
 
+/* Consent is necessary chrome, not a second navigation bar. Keep it as a
+   compact editorial note so the first visit still belongs to the campaign. */
+body:has(.ss-home-page) .ss-cookie-consent {
+  right: auto;
+  left: clamp(1rem, 2.5vw, 2.5rem);
+  bottom: clamp(1rem, 2.5vw, 2.5rem);
+  width: min(29rem, calc(100vw - 2rem));
+  padding: 1rem 1.1rem;
+  border: 1px solid rgba(201, 169, 110, 0.28);
+  border-radius: 0;
+  background: rgba(10, 9, 8, 0.94);
+  backdrop-filter: blur(18px);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.28);
+}
+
+body:has(.ss-home-page) .ss-cookie-consent__text {
+  font-size: 0.72rem;
+  line-height: 1.55;
+}
+
+body:has(.ss-home-page) .ss-cookie-consent__actions {
+  gap: 0;
+  margin-top: 0.85rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+body:has(.ss-home-page) .ss-cookie-consent__button {
+  flex: 1;
+  min-height: 2.4rem;
+  padding: 0.55rem 0.75rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+}
+
+body:has(.ss-home-page) .ss-cookie-consent__button--primary {
+  color: var(--lux-gold);
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+/* =========================================================================
+   P4 visual cleanup — remove the purchased-template proportions
+   ========================================================================= */
+
+@media (min-width: 1024px) {
+  body:has(.ss-home-page) #header .header-desk {
+    display: grid;
+    grid-template-columns: 168px minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 96px;
+    gap: clamp(1.25rem, 2.4vw, 2.75rem);
+  }
+
+  body:has(.ss-home-page) #header .logo,
+  body:has(.ss-home-page) #header .navigation,
+  body:has(.ss-home-page) #header .header-tools {
+    position: static;
+    transform: none;
+  }
+
+  body:has(.ss-home-page) #header .logo__image {
+    width: 164px;
+    height: auto;
+  }
+
+  body:has(.ss-home-page) #header .navigation__list {
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: clamp(1rem, 1.65vw, 1.75rem);
+    margin: 0;
+  }
+
+  body:has(.ss-home-page) #header .navigation__item {
+    margin: 0;
+    white-space: nowrap;
+  }
+
+  body:has(.ss-home-page) #header .navigation__link {
+    font-size: 0.69rem;
+    letter-spacing: 0.12em;
+  }
+
+  body:has(.ss-home-page) #header .header-tools {
+    flex-wrap: nowrap;
+    gap: 0.55rem;
+  }
+
+  body:has(.ss-home-page) #header .ss-inline-link {
+    display: none !important;
+  }
+
+  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: clamp(2rem, 4vw, 5rem) clamp(1.25rem, 2.4vw, 2.75rem);
+    margin: 0;
+  }
+
+  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > * {
+    width: auto;
+    max-width: none;
+    padding: 0;
+  }
+
+  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 1),
+  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 4) {
+    grid-column: span 7;
+  }
+
+  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 2),
+  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 3) {
+    grid-column: span 5;
+  }
+
+  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 2),
+  .ss-lux .ss-home-page .lux-act--grid .products-grid > .row > :nth-child(4n + 4) {
+    margin-top: clamp(4rem, 9vw, 9rem);
+  }
+}
+
+.ss-lux .ss-home-page .products-grid .ss-featured-tile {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.ss-lux .ss-home-page .products-grid .ss-uniform-tile {
+  display: block;
+  aspect-ratio: 4 / 5;
+  height: auto !important;
+  object-fit: cover;
+  object-position: center top;
+  margin-bottom: 1rem !important;
+}
+
+.ss-lux .ss-home-page .products-grid .menu-link {
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: clamp(0.82rem, 1vw, 0.98rem) !important;
+  font-weight: 450 !important;
+  letter-spacing: 0.01em !important;
+  text-transform: none !important;
+}
+
+.ss-lux .ss-home-page .products-grid .ss-featured-tile__meta {
+  margin-top: 0.45rem;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+}
+
+.ss-lux .ss-home-page .ss-editorial-section > .d-flex:first-child,
+.ss-lux .ss-home-page .products-grid > .d-flex:first-child {
+  align-items: end !important;
+  padding-bottom: clamp(1.5rem, 3vw, 3rem) !important;
+  border-bottom: 1px solid rgba(15, 14, 12, 0.16);
+}
+
+.ss-lux .ss-home-page .section-title {
+  max-width: 12ch;
+  font-size: clamp(2.7rem, 5.4vw, 6.2rem) !important;
+  line-height: 0.94 !important;
+  letter-spacing: -0.045em !important;
+}
+
+@media (max-width: 767.98px) {
+  .ss-lux .ss-home-page .products-grid .ss-uniform-tile {
+    aspect-ratio: 3 / 4;
+  }
+
+  .ss-lux .ss-home-page .section-title {
+    font-size: clamp(2.15rem, 11vw, 3.5rem) !important;
+  }
+}
+
 .ss-lux .ss-home-page {
   :is(h1, h2, h3, h4, h5, h6, .section-title, .block-title):not(
       :is(#{$lux-dark-surfaces}) *
