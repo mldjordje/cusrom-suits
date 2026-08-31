@@ -81,7 +81,16 @@ export type LandingCategoryTile = {
 /** Jedan vizuelni hero blok na /web-shop (do 2 komada, jedan ispod drugog). */
 export type LandingShopHeroSection = {
   id: string;
+  /** "image" keeps the still; "video" plays a muted loop with the still as poster. */
+  mediaKind: "image" | "video";
   image: string;
+  videoUrl: string;
+  videoPoster: string;
+  /** Optional headline drawn over the block. Empty means no text at all. */
+  title: string;
+  titleEn: string;
+  lead: string;
+  leadEn: string;
   showPromo: boolean;
   promoLabel: string;
   promoHref: string;
@@ -97,10 +106,21 @@ function normalizeShopHeroSectionsInput(value: unknown): LandingShopHeroSection[
     if (!row || typeof row !== "object") continue;
     const r = row as Record<string, unknown>;
     const image = String(r.image || "").trim();
-    if (!image) continue;
+    const videoUrl = String(r.videoUrl || "").trim();
+    /* A block needs something to show. Video-only blocks are legitimate, so the
+       old "no image, skip it" rule would silently drop them on save. */
+    if (!image && !videoUrl) continue;
+    const mediaKind = String(r.mediaKind || "").trim() === "video" && videoUrl ? "video" : "image";
     out.push({
       id: String(r.id || `shop-hero-${out.length + 1}`).trim() || `shop-hero-${out.length + 1}`,
+      mediaKind,
       image,
+      videoUrl,
+      videoPoster: String(r.videoPoster || "").trim(),
+      title: decodeLandingText(r.title, ""),
+      titleEn: decodeLandingText(r.titleEn, ""),
+      lead: decodeLandingText(r.lead, ""),
+      leadEn: decodeLandingText(r.leadEn, ""),
       showPromo: Boolean(r.showPromo),
       promoLabel: decodeLandingText(r.promoLabel, ""),
       promoHref: String(r.promoHref || "/akcije").trim() || "/akcije",
@@ -317,7 +337,14 @@ const DEFAULT_SETTINGS: LandingSettings = {
   shopHeroSections: [
     {
       id: "shop-hero-1",
+      mediaKind: "image",
       image: "/img/hero2.jpg",
+      videoUrl: "",
+      videoPoster: "",
+      title: "",
+      titleEn: "",
+      lead: "",
+      leadEn: "",
       showPromo: false,
       promoLabel: "",
       promoHref: "/akcije",
@@ -420,7 +447,14 @@ export function normalizeShopHeroSectionsForSave(value: unknown): LandingShopHer
   return [
     {
       id: "shop-hero-1",
+      mediaKind: "image",
       image: DEFAULT_SETTINGS.shopHeroImage,
+      videoUrl: "",
+      videoPoster: "",
+      title: "",
+      titleEn: "",
+      lead: "",
+      leadEn: "",
       showPromo: false,
       promoLabel: "",
       promoHref: "/akcije",
@@ -434,7 +468,14 @@ function resolveShopHeroSections(settings: Partial<LandingSettings>): LandingSho
   return [
     {
       id: "shop-hero-1",
+      mediaKind: "image",
       image: String(settings.shopHeroImage || DEFAULT_SETTINGS.shopHeroImage),
+      videoUrl: "",
+      videoPoster: "",
+      title: "",
+      titleEn: "",
+      lead: "",
+      leadEn: "",
       showPromo: Boolean(settings.shopHeroShowPromo ?? DEFAULT_SETTINGS.shopHeroShowPromo),
       promoLabel: decodeLandingText(settings.shopHeroPromoLabel, DEFAULT_SETTINGS.shopHeroPromoLabel),
       promoHref: String(settings.shopHeroPromoHref || DEFAULT_SETTINGS.shopHeroPromoHref),

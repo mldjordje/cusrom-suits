@@ -4675,6 +4675,9 @@ export default function AdminWebshopPage() {
               <label className="flex flex-col gap-1 md:col-span-2">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Naziv proizvoda</span>
                 <input value={drafts[currentEditorItem.legacyId]?.name || ""} onChange={(e) => updateDraft(currentEditorItem.legacyId, { name: e.target.value })} placeholder="Naziv" className="rounded-xl border border-slate-200 px-3 py-2 text-sm" />
+                <span className="text-[11px] text-slate-500">
+                  Naziv koji ovde upisete prikazuje se na sajtu tacno tako, za celu sifru (sve velicine), i sync ga vise ne menja. Lager i cena i dalje dolaze iz mOffice-a preko SKU-a. Ostavite prazno da se vrati automatski naziv iz mOffice-a.
+                </span>
               </label>
               <label className="flex flex-col gap-1">
                 <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-500">Brend</span>

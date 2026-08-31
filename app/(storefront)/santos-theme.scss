@@ -2374,3 +2374,205 @@ body.mobile-menu-opened {
     display: none !important;
   }
 }
+
+
+/* ======================================================================
+   Desktop masthead — one row, tighter rhythm
+   ----------------------------------------------------------------------
+   The nav list used to wrap: `flex-wrap: wrap` plus a 992-1300px rule that
+   deliberately allowed two rows. With eight links, a 214px logo and a tool
+   cluster that carries three social chips, two inline links and a language
+   switch, the wrap fired well past 1900px too - "BLOG" sat alone on a second
+   line and the header stood ~150px tall.
+
+   The row now never wraps. Everything that competes for the middle column is
+   allowed to shrink instead: the logo scales down, link padding and tracking
+   tighten with the viewport, and the tool cluster drops its lowest-value
+   items (social chips, then the inline links) before the nav gives up a
+   single pixel. Height is set once, from the tallest thing in the row.
+   ====================================================================== */
+@media (min-width: 992px) {
+  #header .container {
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+    padding-left: clamp(1rem, 2vw, 2rem) !important;
+    padding-right: clamp(1rem, 2vw, 2rem) !important;
+  }
+
+  #header .header-desk_type_1 {
+    column-gap: clamp(0.6rem, 1.6vw, 2rem) !important;
+    /* The template ships 20px of vertical padding here; with a 37px logo that
+       alone made the bar 78px tall before the container's own padding. */
+    padding-top: 0.5rem !important;
+    padding-bottom: 0.5rem !important;
+    min-height: 0;
+  }
+
+  #header .header-desk_type_1 .ss-site-logo {
+    width: clamp(132px, 9.5vw, 168px) !important;
+    max-height: 2.35rem !important;
+  }
+
+  /* The one rule that kills the second row. */
+  #header .header-desk_type_1 .navigation__list {
+    flex-wrap: nowrap !important;
+    row-gap: 0 !important;
+    column-gap: clamp(0.05rem, 0.35vw, 0.45rem) !important;
+  }
+
+  #header .header-desk_type_1 .navigation__link {
+    min-height: 2.25rem !important;
+    padding-inline: clamp(0.4rem, 0.7vw, 0.85rem) !important;
+    font-size: clamp(0.76rem, 0.68vw, 0.86rem) !important;
+    letter-spacing: 0.055em !important;
+    white-space: nowrap;
+  }
+
+  #header .header-desk_type_1 .header-tools {
+    gap: clamp(0.15rem, 0.4vw, 0.45rem) !important;
+  }
+
+  #header .header-tools__item {
+    width: 2.1rem !important;
+    height: 2.1rem !important;
+  }
+
+  .ss-header-social-link {
+    width: 24px;
+    height: 24px;
+  }
+
+  .ss-header-social-link svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  #header .ss-inline-link {
+    font-size: 0.7rem !important;
+    letter-spacing: 0.1em !important;
+  }
+
+  .ss-header-tools__divider {
+    height: 1.1rem;
+  }
+}
+
+/* Below ~1600px the row is genuinely tight: shed the decorations rather than
+   shrink the type past legibility. */
+@media (min-width: 992px) and (max-width: 1599.98px) {
+  .ss-header-socials,
+  .ss-header-tools__divider {
+    display: none !important;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1299.98px) {
+  #header .header-desk_type_1 .navigation__link {
+    padding-inline: 0.3rem !important;
+    font-size: 0.74rem !important;
+    letter-spacing: 0.03em !important;
+  }
+
+  #header .header-desk_type_1 .ss-site-logo {
+    width: 124px !important;
+  }
+}
+
+/* The narrow end of "desktop". Eight nav labels, a logo and the tool cluster do
+   not fit here at any readable size, so the row keeps the navigation and drops
+   the inline links - both of which stay reachable: Prijava from the account
+   icon route and Kontakt from the footer and the nav itself. The nav is also
+   allowed to scroll rather than collide, which is the failure the wrap used to
+   hide. */
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  #header .header-desk_type_1 .ss-inline-link {
+    display: none !important;
+  }
+
+  #header .header-desk_type_1 .ss-site-logo {
+    width: 108px !important;
+  }
+
+  #header .header-desk_type_1 .navigation__link {
+    padding-inline: 0.22rem !important;
+    font-size: 0.7rem !important;
+    letter-spacing: 0.02em !important;
+  }
+
+  #header .header-desk_type_1 .navigation {
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  #header .header-desk_type_1 .navigation::-webkit-scrollbar {
+    display: none;
+  }
+
+  #header .header-desk_type_1 .navigation__list {
+    justify-content: flex-start !important;
+    column-gap: 0.15rem !important;
+  }
+}
+
+/* Scrolled state trims another few pixels, the way a modern sticky bar does. */
+@media (min-width: 992px) {
+  #header.ss-header-scrolled .container {
+    padding-top: 0.15rem !important;
+    padding-bottom: 0.15rem !important;
+  }
+
+  #header.ss-header-scrolled .header-desk_type_1 {
+    padding-top: 0.3rem !important;
+    padding-bottom: 0.3rem !important;
+  }
+
+  #header.ss-header-scrolled .header-desk_type_1 .ss-site-logo {
+    max-height: 2.1rem !important;
+  }
+}
+
+/* ======================================================================
+   Web shop hero - video background + admin-set headline
+   ====================================================================== */
+.ss-shop-hero__video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+}
+
+/* Anchors the brand label at the top and lets the title, lead and pills stack
+   at the bottom - the previous `space-between` spread four children evenly
+   once the headline existed. */
+.ss-shop-hero__ui {
+  justify-content: flex-start;
+}
+
+.ss-shop-hero__brand {
+  margin-bottom: auto;
+}
+
+.ss-shop-hero__title {
+  margin: 0;
+  max-width: 22ch;
+  color: #fff;
+  font-size: clamp(1.6rem, 3.2vw, 3rem);
+  line-height: 1.06;
+  letter-spacing: -0.01em;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, 0.35);
+}
+
+.ss-shop-hero__lead {
+  margin: 0.6rem 0 0;
+  max-width: 46ch;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: clamp(0.9rem, 1.1vw, 1.05rem);
+  line-height: 1.5;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.35);
+}
+
+.ss-shop-hero__title + .ss-shop-hero__inline-actions,
+.ss-shop-hero__lead + .ss-shop-hero__inline-actions {
+  margin-top: 1.1rem;
+}

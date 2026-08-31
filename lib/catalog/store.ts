@@ -84,6 +84,8 @@ export type CatalogProductView = {
   manufCode: string | null;
   ean: string | null;
   name: string;
+  /** True when the name was typed in the admin, so it must be shown verbatim. */
+  nameOverride?: boolean;
   nameEn: string | null;
   description: string | null;
   descriptionEn: string | null;
@@ -559,6 +561,7 @@ const normalizeCatalogRow = (
     manufCode: row.manuf_code ? String(row.manuf_code) : null,
     ean: row.ean ? String(row.ean) : null,
     name: String(row.name_sr || row.sku || legacyId),
+    nameOverride: rawPayloadSource.nameOverride === true,
     nameEn: row.name_en ? String(row.name_en) : null,
     description: row.description_sr ? String(row.description_sr) : null,
     descriptionEn: row.description_en ? String(row.description_en) : null,
@@ -597,6 +600,7 @@ const normalizeLegacyJson = (item: LegacyCatalogProduct): CatalogProductView => 
   manufCode: item.manufCode || null,
   ean: item.ean,
   name: item.names.sr || item.names.legacy || item.sku,
+  nameOverride: (item.raw as Record<string, unknown> | undefined)?.nameOverride === true,
   nameEn: item.names.en || null,
   description: item.descriptions.sr || null,
   descriptionEn: item.descriptions.en || null,
@@ -1419,6 +1423,7 @@ export const getCatalogProductModelKey = (item: CatalogProductView) => {
     normalizeModelKeyName(
       getCatalogProductDisplayName({
         name: item.name,
+        nameOverride: item.nameOverride,
         sku: item.sku,
         manufCode: item.manufCode,
         categories: item.categories,
@@ -1483,6 +1488,7 @@ const scoreCatalogImageQuality = (item: CatalogProductView) => {
 const scoreCollapsedRepresentative = (item: CatalogProductView) => {
   const displayName = getCatalogProductDisplayName({
     name: item.name,
+    nameOverride: item.nameOverride,
     sku: item.sku,
     manufCode: item.manufCode,
     categories: item.categories,
@@ -1646,6 +1652,14 @@ const collapseCatalogProductsByKey = (
       legacyId: representative.legacyId,
       ean: representative.ean || current.ean || item.ean,
       name: representative.name || current.name || item.name,
+      /* The collapsed card shows the representative's name, so it has to carry
+         the representative's override with it - otherwise a renamed model that
+         collapses onto a sibling row falls back to the guessed name. */
+      nameOverride: representative.name
+        ? representative.nameOverride
+        : current.name
+          ? current.nameOverride
+          : item.nameOverride,
       nameEn: representative.nameEn || current.nameEn || item.nameEn,
       description: representative.description || current.description || item.description,
       descriptionEn: representative.descriptionEn || current.descriptionEn || item.descriptionEn,
@@ -2201,6 +2215,7 @@ export async function getCatalogProductByLegacyId(
 const getProductStrictDisplayName = (item: CatalogProductView) => {
   const displayName = getCatalogProductDisplayName({
     name: item.name,
+    nameOverride: item.nameOverride,
     sku: item.sku,
     manufCode: item.manufCode,
     categories: item.categories,

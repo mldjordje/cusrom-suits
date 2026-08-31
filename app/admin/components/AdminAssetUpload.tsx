@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import AdminMediaLibraryPicker from "@/app/admin/components/AdminMediaLibraryPicker";
 
 /**
  * Pick a file from this computer and get back a URL.
@@ -36,6 +37,7 @@ export default function AdminAssetUpload({ value, onChange, kind, label, hint }:
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showLink, setShowLink] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const upload = async (file: File) => {
     setError(null);
@@ -91,6 +93,17 @@ export default function AdminAssetUpload({ value, onChange, kind, label, hint }:
           </button>
         ) : null}
 
+        {/* Offered before the link box on purpose: re-picking an existing file
+            is the common case, and pasting a URL is the escape hatch. */}
+        <button
+          type="button"
+          onClick={() => setPickerOpen(true)}
+          disabled={busy}
+          className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+        >
+          {kind === "video" ? "Vec otpremljeni video" : "Vec otpremljena slika"}
+        </button>
+
         <button
           type="button"
           onClick={() => setShowLink((open) => !open)}
@@ -115,6 +128,10 @@ export default function AdminAssetUpload({ value, onChange, kind, label, hint }:
 
       {error ? (
         <p className="mt-1.5 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-700">{error}</p>
+      ) : null}
+
+      {pickerOpen ? (
+        <AdminMediaLibraryPicker kind={kind} onPick={onChange} onClose={() => setPickerOpen(false)} />
       ) : null}
 
       {showLink ? (

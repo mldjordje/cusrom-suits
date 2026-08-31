@@ -748,6 +748,33 @@ export default async function WebShopView({
         image: lockedContent.heroImage,
       };
     }
+
+    /* Text without its own picture. "Hero tekst za kategoriju" has to work even
+       when the client has no separate photo for that category, so the shared
+       banner supplies the media and the category supplies the words. */
+    if (title || lead) {
+      const banner = landingSettings.shopHeroSections[0];
+      if (banner?.mediaKind === "video" && banner.videoUrl) {
+        return {
+          ...shared,
+          kind: "video" as const,
+          videoUrl: banner.videoUrl,
+          poster: banner.videoPoster,
+          image: "",
+        };
+      }
+      const bannerImage = banner?.image || banner?.videoPoster || "";
+      if (bannerImage) {
+        return {
+          ...shared,
+          kind: "image" as const,
+          videoUrl: "",
+          poster: "",
+          image: bannerImage,
+        };
+      }
+    }
+
     return null;
   })();
 
@@ -878,24 +905,48 @@ export default async function WebShopView({
               </div>
             ) : (
             <div className="ss-shop-hero-stack">
-              {landingSettings.shopHeroSections.map((section, heroIndex) => (
+              {landingSettings.shopHeroSections.map((section, heroIndex) => {
+                const sectionTitle = ((isEn && section.titleEn.trim()) || section.title).trim();
+                const sectionLead = ((isEn && section.leadEn.trim()) || section.lead).trim();
+                const isVideo = section.mediaKind === "video" && Boolean(section.videoUrl);
+                return (
                 <div key={section.id} className="ss-shop-hero__media">
                   <div className="background-img" style={{ backgroundColor: "#eeeeee" }}>
-                    <Image
-                      src={section.image || "/img/hero2.jpg"}
-                      width={1759}
-                      height={620}
-                      alt={heroIndex === 0 ? "Santos web shop hero" : `Santos web shop hero ${heroIndex + 1}`}
-                      className="slideshow-bg__img object-fit-cover"
-                      priority={heroIndex === 0}
-                      sizes="100vw"
-                    />
+                    {isVideo ? (
+                      /* Muted, looping and inline: it is wallpaper, not a clip
+                         anyone pressed play on, so it must never take over the
+                         screen on iOS or make noise. */
+                      <video
+                        className="slideshow-bg__img object-fit-cover ss-shop-hero__video"
+                        src={section.videoUrl}
+                        poster={section.videoPoster || undefined}
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                      />
+                    ) : (
+                      <Image
+                        src={section.image || "/img/hero2.jpg"}
+                        width={1759}
+                        height={620}
+                        alt={heroIndex === 0 ? "Santos web shop hero" : `Santos web shop hero ${heroIndex + 1}`}
+                        className="slideshow-bg__img object-fit-cover"
+                        priority={heroIndex === 0}
+                        sizes="100vw"
+                      />
+                    )}
                   </div>
                   <div className="ss-shop-hero__overlay" />
-                  {heroIndex === 0 ? (
+                  {heroIndex === 0 || sectionTitle || sectionLead ? (
                     <div className="ss-shop-hero__ui">
-                      <span className="ss-shop-hero__brand">Santos &amp; Santorini</span>
-                      {showSharedHeroActions ? (
+                      {heroIndex === 0 ? (
+                        <span className="ss-shop-hero__brand">Santos &amp; Santorini</span>
+                      ) : null}
+                      {sectionTitle ? <h2 className="ss-shop-hero__title">{sectionTitle}</h2> : null}
+                      {sectionLead ? <p className="ss-shop-hero__lead">{sectionLead}</p> : null}
+                      {heroIndex === 0 && showSharedHeroActions ? (
                       <div className="ss-shop-hero__inline-actions">
                         <Link href="#shop-products" className="ss-hero-pill">
                           {isEn ? "Collection" : "Kolekcija"}
@@ -917,7 +968,8 @@ export default async function WebShopView({
                     </Link>
                   ) : null}
                 </div>
-              ))}
+                );
+              })}
             </div>
             )}
             <div className="ss-shop-hero__categories">

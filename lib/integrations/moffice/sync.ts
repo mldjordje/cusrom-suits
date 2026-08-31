@@ -532,6 +532,14 @@ export function buildMofficeSyncPlan(params: {
   const byEan = new Map<string, MofficeExistingRow>();
   const bySkuSize = new Map<string, MofficeExistingRow>();
   const bySkuUnambiguous = new Map<string, MofficeExistingRow | null>();
+  /* Names typed in the admin, keyed by SKU.
+     An existing row already keeps its own name through a sync, but a size that
+     mOffice reports for the first time is created from the feed and would land
+     under the feed's name — and once the shop collapses the SKU onto that row,
+     the whole model appears to have reverted. Inheriting the SKU's name closes
+     that hole, which is the "renaming sticks on some products, not others"
+     complaint on the sync side. */
+  const overriddenNameBySku = new Map<string, string>();
 
   for (const row of params.existing) {
     const ean = normalizeLower(row.ean);
@@ -545,6 +553,10 @@ export function buildMofficeSyncPlan(params: {
         : {};
     const candidateSizes = [payload.size, moffice.size, ...sizes].map(normalizeSize).filter(Boolean);
     if (ean && !byEan.has(ean)) byEan.set(ean, row);
+    if (sku && payload.nameOverride === true) {
+      const overridden = String(row.name_sr || "").trim();
+      if (overridden && !overriddenNameBySku.has(sku)) overriddenNameBySku.set(sku, overridden);
+    }
     if (sku) {
       for (const size of candidateSizes) {
         const key = `${sku}:${size}`;
@@ -611,10 +623,13 @@ export function buildMofficeSyncPlan(params: {
       },
     };
 
+    const inheritedName = existingRow ? "" : overriddenNameBySku.get(skuKey) || "";
+
     if (!existingRow) {
       payload.source = "moffice";
       payload.category = item.ARTIKAL_GRUPA ?? "";
       payload.size = size;
+      if (inheritedName) payload.nameOverride = true;
     }
 
     if (existingRow) {
@@ -628,7 +643,9 @@ export function buildMofficeSyncPlan(params: {
       legacy_id: legacyId,
       sku,
       ean,
-      name_sr: existingRow ? String(existingRow.name_sr ?? cleanName(String(item.ARTIKAL_NAZIV ?? ""))) : cleanName(String(item.ARTIKAL_NAZIV ?? "")),
+      name_sr: existingRow
+        ? String(existingRow.name_sr ?? cleanName(String(item.ARTIKAL_NAZIV ?? "")))
+        : inheritedName || cleanName(String(item.ARTIKAL_NAZIV ?? "")),
       tax_percent: tax,
       stock_warehouse_1: stock,
       stock_total: stock,

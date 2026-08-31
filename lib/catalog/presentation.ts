@@ -74,6 +74,8 @@ type CatalogProductNameInput = {
   manufCode?: string | null;
   categories?: CatalogCategoryLike[] | null;
   brand?: string | null;
+  /** Set once someone typed this name in the admin editor. See below. */
+  nameOverride?: boolean | null;
 };
 
 const normalizeForMatch = (value: string) =>
@@ -376,6 +378,20 @@ export function getCatalogProductDisplayName(
   input: CatalogProductNameInput,
   lang: CatalogDisplayLanguage = "sr",
 ) {
+  /* A name a person typed is the answer, not a candidate.
+     Everything below this line is guesswork for feed-supplied names: it strips
+     what looks like a model code, title-cases shouty text and, when the result
+     still reads like a code, throws the name away for the category label. That
+     is right for "E601-4 BLACK  MOKASINE" straight out of mOffice and wrong for
+     the same string typed deliberately in the editor - which is exactly the
+     "renaming works on some products and not others" the client reported. The
+     admin sets `nameOverride` whenever the name field is saved, and from then
+     on the stored text is shown as-is. */
+  if (input.nameOverride) {
+    const typed = String(input.name || "").trim();
+    if (typed) return typed;
+  }
+
   const categoryLabel = getCatalogProductCategoryLabel(input, lang);
   const normalizedCategoryLabel = normalizeForMatch(categoryLabel);
   const genericPrefixPattern = /^(muska|zenska|decija|muski|zenski|deciji|musk[aioe]?|zensk[aioe]?)\b/u;

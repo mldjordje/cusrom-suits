@@ -134,6 +134,7 @@ const getProductDisplayName = (item: CatalogProductView, lang: "sr" | "en") =>
   getCatalogProductDisplayName(
     {
       name: item.name,
+      nameOverride: item.nameOverride,
       sku: item.sku,
       manufCode: item.manufCode,
       categories: item.categories,

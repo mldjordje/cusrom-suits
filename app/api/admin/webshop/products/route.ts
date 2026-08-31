@@ -418,6 +418,10 @@ const MODEL_LEVEL_COLUMNS = ["name_sr", "description_sr", "specification_sr", "b
 
 /** Which raw_payload keys a given patch field owns. */
 const MODEL_LEVEL_RAW_KEYS: Array<{ touched: (patch: ProductUpdatePayload) => boolean; key: string }> = [
+  /* The rename flag travels with the name itself, which is already a
+     model-level column - a SKU cannot have one size shown under a typed name
+     and the rest under the guessed one. */
+  { touched: (patch) => patch.name !== undefined, key: "nameOverride" },
   { touched: (patch) => patch.declaration !== undefined, key: "declaration" },
   { touched: (patch) => patch.packageWeightKg !== undefined, key: "packageWeightKg" },
   { touched: (patch) => patch.washCareIcons !== undefined, key: "washCareIcons" },
@@ -509,6 +513,7 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
   if (patch.isActive !== undefined) update.is_active = patch.isActive;
   if (patch.isExported !== undefined) update.is_exported = patch.isExported;
   if (
+    patch.name !== undefined ||
     patch.landingFeatured !== undefined ||
     patch.landingPriority !== undefined ||
     patch.videoUrl !== undefined ||
@@ -567,6 +572,13 @@ const applyUpdateToSupabase = async (patch: ProductUpdatePayload) => {
           ...(patch.videoUrl !== undefined ? { videoUrl: patch.videoUrl } : {}),
           ...(patch.mediaOrder !== undefined ? { mediaOrder: patch.mediaOrder } : {}),
         },
+        /* Saving the name field is the act of overriding it. There is no extra
+           checkbox on purpose: the client typed a name and expects that name,
+           and asking them to also tick something is how it ends up half-set.
+           Clearing the field hands the product back to the auto-formatter. */
+        ...(patch.name !== undefined
+          ? { nameOverride: String(patch.name).trim().length > 0 }
+          : {}),
         ...(patch.hiddenFromShop !== undefined ? { hiddenFromShop: patch.hiddenFromShop } : {}),
         ...(patch.ananasExport !== undefined ? { ananasExport: patch.ananasExport } : {}),
         ...(patch.declaration !== undefined

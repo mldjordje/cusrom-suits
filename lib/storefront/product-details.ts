@@ -409,6 +409,7 @@ export const getLocalizedCatalogProductName = (
     manufCode: product.manufCode,
     categories: product.categories,
     brand: product.brand,
+    nameOverride: product.nameOverride,
   };
 
   const localizedName = getCatalogProductDisplayName(

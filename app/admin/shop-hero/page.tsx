@@ -1,10 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AdminAssetUpload from "@/app/admin/components/AdminAssetUpload";
 
 type HeroSectionForm = {
   id: string;
+  mediaKind: "image" | "video";
   image: string;
+  videoUrl: string;
+  videoPoster: string;
+  title: string;
+  titleEn: string;
+  lead: string;
+  leadEn: string;
   showPromo: boolean;
   promoLabel: string;
   promoHref: string;
@@ -12,7 +20,14 @@ type HeroSectionForm = {
 
 const emptySection = (index: number): HeroSectionForm => ({
   id: `shop-hero-${index + 1}`,
+  mediaKind: "image",
   image: "/img/hero2.jpg",
+  videoUrl: "",
+  videoPoster: "",
+  title: "",
+  titleEn: "",
+  lead: "",
+  leadEn: "",
   showPromo: false,
   promoLabel: "",
   promoHref: "/akcije",
@@ -24,9 +39,17 @@ function sectionsFromApi(settings: Record<string, unknown>): HeroSectionForm[] {
     return raw.slice(0, 2).map((row, i) => {
       if (!row || typeof row !== "object") return emptySection(i);
       const r = row as Record<string, unknown>;
+      const videoUrl = String(r.videoUrl || "").trim();
       return {
         id: String(r.id || `shop-hero-${i + 1}`).trim() || `shop-hero-${i + 1}`,
-        image: String(r.image || "/img/hero2.jpg").trim() || "/img/hero2.jpg",
+        mediaKind: String(r.mediaKind || "") === "video" && videoUrl ? "video" : "image",
+        image: String(r.image || "").trim(),
+        videoUrl,
+        videoPoster: String(r.videoPoster || "").trim(),
+        title: String(r.title || ""),
+        titleEn: String(r.titleEn || ""),
+        lead: String(r.lead || ""),
+        leadEn: String(r.leadEn || ""),
         showPromo: Boolean(r.showPromo),
         promoLabel: String(r.promoLabel || ""),
         promoHref: String(r.promoHref || "/akcije").trim() || "/akcije",
@@ -35,7 +58,7 @@ function sectionsFromApi(settings: Record<string, unknown>): HeroSectionForm[] {
   }
   return [
     {
-      id: "shop-hero-1",
+      ...emptySection(0),
       image: String(settings.shopHeroImage || "/img/hero2.jpg"),
       showPromo: Boolean(settings.shopHeroShowPromo),
       promoLabel: String(settings.shopHeroPromoLabel || ""),
@@ -188,32 +211,100 @@ export default function AdminShopHeroPage() {
               </h2>
 
               <div>
-                <h3 className="mb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Slika</h3>
-                <div className="flex flex-col gap-3">
+                <h3 className="mb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">Pozadina</h3>
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {(["image", "video"] as const).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => updateSection(index, { mediaKind: option })}
+                      className={`rounded-xl border px-4 py-2 text-sm font-semibold ${
+                        sec.mediaKind === option
+                          ? "border-slate-800 bg-slate-800 text-white"
+                          : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {option === "image" ? "Slika" : "Video"}
+                    </button>
+                  ))}
+                </div>
+
+                {sec.mediaKind === "video" ? (
+                  <div className="flex flex-col gap-4">
+                    <AdminAssetUpload
+                      kind="video"
+                      label="Hero video"
+                      value={sec.videoUrl}
+                      onChange={(url) => updateSection(index, { videoUrl: url })}
+                      hint="MP4 ili WebM. Vrti se u petlji, bez zvuka. Preporuka: kratko (do 15s) i do 20MB."
+                    />
+                    <AdminAssetUpload
+                      kind="image"
+                      label="Poster (prva slika videa)"
+                      value={sec.videoPoster}
+                      onChange={(url) => updateSection(index, { videoPoster: url })}
+                      hint="Prikazuje se dok se video ucitava i na sporim vezama."
+                    />
+                  </div>
+                ) : (
+                  <AdminAssetUpload
+                    kind="image"
+                    label="Hero slika"
+                    value={sec.image}
+                    onChange={(url) => updateSection(index, { image: url })}
+                    hint="Preporuka: siroka panorama (npr. 1760x620px)."
+                  />
+                )}
+              </div>
+
+              <div>
+                <h3 className="mb-3 text-xs font-semibold text-slate-500 uppercase tracking-wider">
+                  Tekst preko hero-a
+                </h3>
+                <p className="mb-3 text-sm text-slate-500">
+                  Ostavi prazno i hero ostaje samo slika/video, bez teksta.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-slate-600">URL slike</label>
+                    <label className="mb-1 block text-sm font-medium text-slate-600">Naslov (SR)</label>
                     <input
                       type="text"
-                      value={sec.image}
-                      onChange={(e) => updateSection(index, { image: e.target.value })}
-                      placeholder="/img/hero2.jpg"
+                      value={sec.title}
+                      onChange={(e) => updateSection(index, { title: e.target.value })}
+                      placeholder="Nova kolekcija"
                       className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
                     />
-                    <p className="mt-1 text-xs text-slate-400">
-                      Relativna putanja ili pun URL. Preporuka: široka panorama (npr. 1760×620px).
-                    </p>
                   </div>
-                  {sec.image ? (
-                    <div className="overflow-hidden rounded-xl border border-slate-200 bg-slate-100">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={sec.image}
-                        alt={`Hero ${index + 1} preview`}
-                        className="h-32 w-full object-cover"
-                        onError={(e) => ((e.target as HTMLImageElement).style.display = "none")}
-                      />
-                    </div>
-                  ) : null}
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-600">Naslov (EN)</label>
+                    <input
+                      type="text"
+                      value={sec.titleEn}
+                      onChange={(e) => updateSection(index, { titleEn: e.target.value })}
+                      placeholder="New collection"
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-600">Opis (SR)</label>
+                    <textarea
+                      value={sec.lead}
+                      onChange={(e) => updateSection(index, { lead: e.target.value })}
+                      rows={3}
+                      placeholder="Kratak opis ispod naslova."
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-slate-600">Opis (EN)</label>
+                    <textarea
+                      value={sec.leadEn}
+                      onChange={(e) => updateSection(index, { leadEn: e.target.value })}
+                      rows={3}
+                      placeholder="Short description under the title."
+                      className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-slate-300"
+                    />
+                  </div>
                 </div>
               </div>
 
