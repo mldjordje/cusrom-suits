@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import styles from "../landing.module.scss";
 import LxConsent from "./LxConsent";
+import { getMotion } from "./_fx/motion";
 
 type LxShellProps = {
   lang: "sr" | "en";
@@ -43,42 +44,26 @@ export default function LxShell({ lang, basePath = "/landingv2", children }: LxS
   const [hidden, setHidden] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [introActive, setIntroActive] = useState(true);
+  const [introDismissed, setIntroDismissed] = useState(false);
   const cursorRef = useRef<HTMLDivElement | null>(null);
-  const [cursorOn, setCursorOn] = useState(false);
-  const [cursorWide, setCursorWide] = useState(false);
 
   const isEn = lang === "en";
 
-  // Smooth scroll, desktop only
+  // Preloader curtain dismiss sequence
   useEffect(() => {
-    const coarse = window.matchMedia("(pointer: coarse)").matches;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (coarse || reduced) return;
+    const timer = setTimeout(() => {
+      setIntroDismissed(true);
+      setTimeout(() => setIntroActive(false), 900);
+    }, 1100);
+    return () => clearTimeout(timer);
+  }, []);
 
-    let raf = 0;
-    let lenis: { raf: (t: number) => void; destroy: () => void } | null = null;
-    let cancelled = false;
-
-    import("lenis").then(({ default: Lenis }) => {
-      if (cancelled) return;
-      lenis = new Lenis({
-        lerp: 0.085,
-        wheelMultiplier: 0.9,
-        smoothWheel: true,
-        syncTouch: false,
-      });
-      const loop = (time: number) => {
-        lenis?.raf(time);
-        raf = requestAnimationFrame(loop);
-      };
-      raf = requestAnimationFrame(loop);
-    });
-
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf);
-      lenis?.destroy();
-    };
+  // Boot the shared motion core (Lenis + GSAP + ScrollTrigger) once, up front.
+  // Every section registers against this one instance; the shell no longer
+  // runs a Lenis of its own that nothing was subscribed to.
+  useEffect(() => {
+    void getMotion();
   }, []);
 
   // Header scroll detection with hysteresis
@@ -90,63 +75,63 @@ export default function LxShell({ lang, basePath = "/landingv2", children }: LxS
       if (ticking) return;
       ticking = true;
       requestAnimationFrame(() => {
-        const y = window.scrollY;
-        const delta = y - last;
-        setScrolled(y > 30);
-        if (delta > 10 && y > 160 && !mobileOpen) {
+        const current = window.scrollY;
+        setScrolled(current > 40);
+
+        // Hide on scroll down past 180px, show on scroll up
+        if (current > 180 && current > last + 8) {
           setHidden(true);
-        } else if (delta < -6 || y <= 160) {
+        } else if (current < last - 8 || current < 80) {
           setHidden(false);
         }
-        last = y;
+
+        last = current;
         ticking = false;
       });
     };
 
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [mobileOpen]);
+  }, []);
 
-  // Lock body scroll when mobile drawer is open
+  // Subtle magnetic cursor, desktop only
   useEffect(() => {
-    if (mobileOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [mobileOpen]);
-
-  // Custom cursor
-  useEffect(() => {
-    const node = cursorRef.current;
-    if (!node) return;
     if (window.matchMedia("(pointer: coarse)").matches) return;
+    const cursor = cursorRef.current;
+    if (!cursor) return;
 
-    let x = 0;
-    let y = 0;
+    let rx = 0;
+    let ry = 0;
+    let cx = 0;
+    let cy = 0;
     let raf = 0;
 
-    const draw = () => {
-      node.style.transform = `translate3d(${x}px, ${y}px, 0)`;
-      raf = 0;
+    // Class toggles, not React state: the old version called two setState
+    // hooks on every single pointermove, re-rendering the entire shell — and
+    // with it the whole page — dozens of times a second.
+    const onMove = (e: PointerEvent) => {
+      rx = e.clientX;
+      ry = e.clientY;
+      cursor.classList.add(styles.cursorOn);
+
+      const target = e.target as HTMLElement | null;
+      const interactive = target?.closest?.("a, button, [role='button'], input, select");
+      cursor.classList.toggle(styles.cursorWide, Boolean(interactive));
     };
 
-    const onMove = (event: PointerEvent) => {
-      x = event.clientX;
-      y = event.clientY;
-      setCursorOn(true);
-      const target = event.target as HTMLElement | null;
-      setCursorWide(Boolean(target?.closest("a, button")));
-      if (!raf) raf = requestAnimationFrame(draw);
-    };
+    const onLeave = () => cursor.classList.remove(styles.cursorOn);
 
-    const onLeave = () => setCursorOn(false);
+    const tick = () => {
+      cx += (rx - cx) * 0.18;
+      cy += (ry - cy) * 0.18;
+      cursor.style.transform = `translate3d(${cx}px, ${cy}px, 0)`;
+      raf = requestAnimationFrame(tick);
+    };
 
     window.addEventListener("pointermove", onMove, { passive: true });
     document.addEventListener("pointerleave", onLeave);
+    raf = requestAnimationFrame(tick);
+
     return () => {
       window.removeEventListener("pointermove", onMove);
       document.removeEventListener("pointerleave", onLeave);
@@ -159,22 +144,51 @@ export default function LxShell({ lang, basePath = "/landingv2", children }: LxS
 
   return (
     <>
+      {/* Intro / Preloader with Logo */}
+      {introActive && (
+        <div
+          className={`${styles.introLoader} ${
+            introDismissed ? styles.introLoaderDismissed : ""
+          }`}
+          aria-hidden="true"
+        >
+          <div className={styles.introContent}>
+            <img
+              src="/img/logo-header.png"
+              alt="Santos & Santorini"
+              className={styles.introLogo}
+              width={220}
+              height={44}
+            />
+            <div className={styles.introLine} />
+            <span className={styles.introTag}>SARTORIA ITALIANA • DAL 2007</span>
+          </div>
+        </div>
+      )}
+
+      {/* Main Luxury Header */}
       <header
         className={`${styles.header} ${scrolled ? styles.headerScrolled : ""} ${
           hidden ? styles.headerHidden : ""
         }`}
       >
         <div className={styles.headerInner}>
-          {/* Logo & Subtitle */}
+          {/* Official Brand Logo */}
           <Link href={isEn ? `${basePath}?lang=en` : basePath} className={styles.brandWrap}>
-            <span className={styles.wordmark}>Santos &amp; Santorini</span>
+            <img
+              src="/img/logo-header.png"
+              alt="Santos & Santorini"
+              className={styles.brandLogo}
+              width={168}
+              height={34}
+            />
             <span className={styles.brandTag}>
               {isEn ? "Italian Sartoria • Bespoke" : "Sartoria Italiana • Po Meri"}
             </span>
           </Link>
 
           {/* Desktop Nav */}
-          <nav className={styles.nav}>
+          <nav className={styles.nav} aria-label="Glavna navigacija">
             {items.map((item) => (
               <Link key={item.href} href={item.href} className={styles.navLink}>
                 {item.label}
@@ -208,7 +222,7 @@ export default function LxShell({ lang, basePath = "/landingv2", children }: LxS
               href={isEn ? "/custom-suits?lang=en" : "/custom-suits"}
               className={styles.headerCta}
             >
-              <span>{isEn ? "Configure Suit" : "Zakažite termin"}</span>
+              <span>{isEn ? "Book Fitting" : "Zakažite termin"}</span>
               <svg
                 className={styles.ctaArrow}
                 width="12"
@@ -220,7 +234,7 @@ export default function LxShell({ lang, basePath = "/landingv2", children }: LxS
                 <path
                   d="M2.5 9.5L9.5 2.5M9.5 2.5H4M9.5 2.5V8"
                   stroke="currentColor"
-                  strokeWidth="1.2"
+                  strokeWidth="1.3"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
@@ -234,8 +248,8 @@ export default function LxShell({ lang, basePath = "/landingv2", children }: LxS
               aria-label={isEn ? "Shopping Bag" : "Korpa"}
             >
               <svg
-                width="18"
-                height="18"
+                width="17"
+                height="17"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -250,12 +264,13 @@ export default function LxShell({ lang, basePath = "/landingv2", children }: LxS
               <span className={styles.cartLabel}>{isEn ? "Bag" : "Korpa"}</span>
             </Link>
 
-            {/* Mobile Menu Hamburger */}
+            {/* Mobile Burger */}
             <button
               type="button"
               className={`${styles.burger} ${mobileOpen ? styles.burgerOpen : ""}`}
-              onClick={() => setMobileOpen(!mobileOpen)}
+              onClick={() => setMobileOpen((prev) => !prev)}
               aria-label={mobileOpen ? "Zatvori meni" : "Otvori meni"}
+              aria-expanded={mobileOpen}
             >
               <span />
               <span />
@@ -264,36 +279,50 @@ export default function LxShell({ lang, basePath = "/landingv2", children }: LxS
         </div>
       </header>
 
-      {/* Mobile Drawer Overlay */}
-      <div
+      {/* Mobile Drawer */}
+      <aside
         className={`${styles.mobileDrawer} ${mobileOpen ? styles.mobileDrawerOpen : ""}`}
         aria-hidden={!mobileOpen}
       >
         <div className={styles.mobileDrawerBackdrop} onClick={() => setMobileOpen(false)} />
         <div className={styles.mobileDrawerPanel}>
           <div className={styles.mobileDrawerHead}>
-            <span className={styles.wordmark}>Santos &amp; Santorini</span>
+            <Link
+              href={isEn ? `${basePath}?lang=en` : basePath}
+              className={styles.brandWrap}
+              onClick={() => setMobileOpen(false)}
+            >
+              <img
+                src="/img/logo-header.png"
+                alt="Santos & Santorini"
+                className={styles.brandLogo}
+                width={150}
+                height={30}
+              />
+              <span className={styles.brandTag}>
+                {isEn ? "Italian Sartoria" : "Sartoria Italiana"}
+              </span>
+            </Link>
             <button
               type="button"
               className={styles.mobileCloseBtn}
               onClick={() => setMobileOpen(false)}
               aria-label="Zatvori"
             >
-              ✕
+              ×
             </button>
           </div>
 
           <nav className={styles.mobileNav}>
-            {items.map((item, idx) => (
+            {items.map((item, index) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={styles.mobileNavLink}
                 onClick={() => setMobileOpen(false)}
-                style={{ transitionDelay: `${idx * 40}ms` }}
               >
                 <span>{item.label}</span>
-                <span className={styles.mobileNavNum}>0{idx + 1}</span>
+                <span className={styles.mobileNavNum}>{`0${index + 1}`}</span>
               </Link>
             ))}
           </nav>
@@ -304,54 +333,54 @@ export default function LxShell({ lang, basePath = "/landingv2", children }: LxS
               className={styles.mobileCtaBtn}
               onClick={() => setMobileOpen(false)}
             >
-              {isEn ? "Book Bespoke Fitting" : "Konfigurišite odelo po meri"}
+              {isEn ? "Book Private Fitting" : "Zakažite privatni termin"}
             </Link>
 
             <div className={styles.mobileAteliers}>
-              <div className={styles.micro} style={{ marginBottom: 10, color: "rgba(255,255,255,0.5)" }}>
-                {isEn ? "Ateliers" : "Saloni & Konsultacije"}
-              </div>
               {ateliers.map((at) => (
                 <div key={at.city} className={styles.mobileAtelierItem}>
-                  <strong>{at.city}</strong>: {at.address} •{" "}
+                  <strong>{at.city}:</strong> {at.address} —{" "}
                   <a href={`tel:${at.phone.replace(/\s+/g, "")}`}>{at.phone}</a>
                 </div>
               ))}
             </div>
 
             <div className={styles.mobileLangRow}>
+              <span className={styles.meta} style={{ color: "var(--meta)" }}>
+                {isEn ? "Language:" : "Jezik:"}
+              </span>
               <Link
                 href={basePath}
                 className={`${styles.langBtn} ${!isEn ? styles.langActive : ""}`}
                 onClick={() => setMobileOpen(false)}
               >
-                SR Srpski
+                SR
               </Link>
-              <span className={styles.langDivider}>|</span>
+              <span className={styles.langDivider}>/</span>
               <Link
                 href={`${basePath}?lang=en`}
                 className={`${styles.langBtn} ${isEn ? styles.langActive : ""}`}
                 onClick={() => setMobileOpen(false)}
               >
-                EN English
+                EN
               </Link>
             </div>
           </div>
         </div>
-      </div>
+      </aside>
 
+      {/* Subtle Custom Cursor */}
       <div
         ref={cursorRef}
-        aria-hidden
-        className={`${styles.cursor} ${cursorOn ? styles.cursorOn : ""} ${
-          cursorWide ? styles.cursorWide : ""
-        }`}
+        className={styles.cursor}
+        aria-hidden="true"
       />
 
-      {children}
+      {/* Page Content */}
+      <main>{children}</main>
 
+      {/* GDPR Consent Bar */}
       <LxConsent lang={lang} />
     </>
   );
 }
-

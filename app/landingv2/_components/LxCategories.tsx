@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { useEffect, useRef } from "react";
 import StorefrontImage from "@/app/components/storefront/StorefrontImage";
-import Rise from "./_fx/Rise";
+import MaskLines from "./_fx/MaskLines";
+import { getMotion } from "./_fx/motion";
 import styles from "../landing.module.scss";
 
 export type LxCategory = {
@@ -11,22 +12,39 @@ export type LxCategory = {
   label: string;
   href: string;
   image: string;
-  /** Bundled frame used when the legacy asset host is slow or down. */
   fallback: string;
 };
 
 const COPY = {
-  sr: { eyebrow: "(02) — Kolekcija", all: "Cela kolekcija", shop: "Pogledajte" },
-  en: { eyebrow: "(02) — Collection", all: "View everything", shop: "Shop" },
+  sr: {
+    eyebrow: "(02) — Kolekcija & Krojevi",
+    title: ["Četiri kuće", "jednog kroja."],
+    all: "Pregledajte celu kolekciju",
+    shop: "Istražite",
+    endTitle: "Ostalo je u salonu.",
+    endCopy:
+      "Preko 500 italijanskih štofova, kompletna konfekcija i obuća — uživo u Nišu i Kruševcu, ili u web shopu.",
+  },
+  en: {
+    eyebrow: "(02) — Curated Collections",
+    title: ["Four houses,", "one cut."],
+    all: "View full collection",
+    shop: "Explore",
+    endTitle: "The rest is in the atelier.",
+    endCopy:
+      "Over 500 Italian cloths, the full ready-to-wear range and footwear — in Niš and Kruševac, or online.",
+  },
 };
 
 /**
- * Four large frames, alternating 7/5 and 5/7 across the twelve columns. The
- * picture is the content: nothing here is hidden behind a hover, because on
- * a fashion site the photograph is the only thing that sells.
+ * The collections read as a runway, not as a grid. On desktop the section pins
+ * and the wheel drives the track sideways; each frame's photograph drifts
+ * against the track at a different rate, so the panels sit in depth instead of
+ * sliding as one flat strip.
+ *
+ * On touch the same panels become a native snap rail — a faked horizontal pin
+ * on a 390px screen is the worst of both worlds.
  */
-const SPANS = ["1 / span 7", "8 / span 5", "1 / span 5", "6 / span 7"];
-
 export default function LxCategories({
   lang,
   categories,
@@ -38,81 +56,153 @@ export default function LxCategories({
 }) {
   const copy = COPY[lang];
   const sectionRef = useRef<HTMLElement | null>(null);
+  const trackRef = useRef<HTMLDivElement | null>(null);
+  const viewportRef = useRef<HTMLDivElement | null>(null);
 
-  // One scroll listener for the whole section rather than one per frame, and
-  // it only ever writes a custom property — layout is never read in the
-  // handler, so this cannot force a synchronous reflow.
   useEffect(() => {
-    const root = sectionRef.current;
-    if (!root) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const section = sectionRef.current;
+    const track = trackRef.current;
+    const viewport = viewportRef.current;
+    if (!section || !track || !viewport) return;
 
-    const frames = Array.from(root.querySelectorAll<HTMLElement>(`.${styles.catFrame}`));
-    if (!frames.length) return;
+    let ctx: { revert: () => void } | null = null;
+    let dead = false;
 
-    let ticking = false;
-    const draw = () => {
-      const viewport = window.innerHeight;
-      for (const frame of frames) {
-        const rect = frame.getBoundingClientRect();
-        if (rect.bottom < 0 || rect.top > viewport) continue;
-        const progress = (viewport - rect.top) / (viewport + rect.height);
-        frame.style.setProperty("--lx-drift", progress.toFixed(4));
-      }
-      ticking = false;
-    };
+    void getMotion().then((core) => {
+      if (dead || !core) return;
+      const { gsap, ScrollTrigger } = core;
 
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(draw);
-    };
+      ctx = gsap.context(() => {
+        const mm = gsap.matchMedia();
 
-    draw();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
+        mm.add("(min-width: 901px)", () => {
+          const distance = () => Math.max(0, viewport.scrollWidth - window.innerWidth);
+          const shots = gsap.utils.toArray<HTMLElement>(`.${styles.runwayShot}`);
+          const fill = section.querySelector<HTMLElement>(`.${styles.runwayProgressFill}`);
+
+          const timeline = gsap.timeline({
+            defaults: { ease: "none" },
+            scrollTrigger: {
+              trigger: track,
+              start: "top top",
+              end: () => `+=${distance() + window.innerHeight * 0.4}`,
+              pin: true,
+              scrub: 0.9,
+              anticipatePin: 1,
+              invalidateOnRefresh: true,
+            },
+          });
+
+          timeline.to(viewport, { x: () => -distance() }, 0);
+
+          // Counter-drift: the photograph inside each frame moves back against
+          // the track, which is what separates a runway from a slideshow.
+          shots.forEach((shot, index) => {
+            timeline.fromTo(
+              shot,
+              { xPercent: -6 - (index % 3) * 2 },
+              { xPercent: 6 + (index % 3) * 2 },
+              0,
+            );
+          });
+
+          if (fill) timeline.fromTo(fill, { scaleX: 0 }, { scaleX: 1 }, 0);
+        });
+
+        ScrollTrigger.refresh();
+      }, section);
+    });
+
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      dead = true;
+      ctx?.revert();
     };
-  }, []);
+  }, [categories.length]);
 
   return (
-    <section ref={sectionRef} className={`${styles.section} ${styles.paper} ${styles.cats}`}>
-      <div className={styles.grid}>
-        <Rise className={styles.catsHead}>
-          <span className={styles.micro}>{copy.eyebrow}</span>
-          <Link href={allHref} className={styles.rule}>
-            {copy.all}
-          </Link>
-        </Rise>
+    <section ref={sectionRef} className={styles.runway} id="kolekcija">
+      <div className={styles.runwayHead}>
+        <div>
+          <div className={styles.micro} style={{ marginBottom: 14 }}>
+            {copy.eyebrow}
+          </div>
+          <MaskLines lines={copy.title} className={styles.dLg} />
+        </div>
 
-        {categories.map((category, index) => (
-          <Link
-            key={category.id}
-            href={category.href}
-            className={styles.catTile}
-            style={{ gridColumn: SPANS[index % SPANS.length] }}
+        <Link href={allHref} className={styles.categoryAllLink}>
+          <span>{copy.all}</span>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 12 12"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
           >
-            <div className={styles.catFrame}>
-              <StorefrontImage
-                sources={[category.image]}
-                fallbackSrc={category.fallback || "/img/odela.jpg"}
-                alt={category.label}
-                fill
-                sizes="(max-width: 900px) 100vw, 55vw"
-              />
-              <span className={styles.catScrim} />
-              <Rise as="span" className={`${styles.micro} ${styles.catTileIndex}`} delay={200}>
-                {String(index + 1).padStart(2, "0")}
-              </Rise>
-              <Rise as="span" className={styles.catTileFoot} delay={320}>
-                <span className={styles.dMd}>{category.label}</span>
-                <span className={styles.micro}>{copy.shop}</span>
-              </Rise>
-            </div>
+            <path
+              d="M2.5 9.5L9.5 2.5M9.5 2.5H4M9.5 2.5V8"
+              stroke="currentColor"
+              strokeWidth="1.2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </Link>
+      </div>
+
+      <div ref={trackRef} className={styles.runwayTrack}>
+        <div ref={viewportRef} className={styles.runwayViewport}>
+          {categories.map((category, index) => (
+            <Link key={category.id} href={category.href} className={styles.runwayPanel}>
+              <div className={styles.runwayShot}>
+                <StorefrontImage
+                  sources={[category.image]}
+                  fallbackSrc={category.fallback || "/img/odela-luxury.jpg"}
+                  alt={category.label}
+                  fill
+                  sizes="(max-width: 900px) 78vw, 34vw"
+                />
+              </div>
+
+              <span className={styles.runwayScrim} />
+              <span className={styles.runwayIndex}>{`0${index + 1}`}</span>
+
+              <span className={styles.runwayFoot}>
+                <span className={styles.runwayName}>{category.label}</span>
+                <span className={styles.runwayRule} />
+                <span className={styles.runwayCue}>{copy.shop} →</span>
+              </span>
+            </Link>
+          ))}
+
+          {/* The runway resolves into an invitation rather than just ending. */}
+          <Link href={allHref} className={`${styles.runwayPanel} ${styles.runwayEnd}`}>
+            <span className={styles.micro}>{copy.eyebrow}</span>
+            <span className={styles.runwayEndTitle}>{copy.endTitle}</span>
+            <span className={styles.runwayEndCopy}>{copy.endCopy}</span>
+            <span className={styles.rule}>
+              {copy.all}
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 12 12"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M2.5 9.5L9.5 2.5M9.5 2.5H4M9.5 2.5V8"
+                  stroke="currentColor"
+                  strokeWidth="1.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
           </Link>
-        ))}
+        </div>
+
+        <div className={styles.runwayProgress} aria-hidden="true">
+          <span className={styles.runwayProgressFill} />
+        </div>
       </div>
     </section>
   );

@@ -23,7 +23,7 @@ const COPY = {
         ],
       },
       {
-        head: "Pomoć",
+        head: "Pomoć & Podrška",
         links: [
           { label: "Isporuka", href: "/isporuka" },
           { label: "Način plaćanja", href: "/nacinplacanja" },
@@ -32,7 +32,7 @@ const COPY = {
         ],
       },
     ],
-    tagline: "Italijanske tkanine. Srpska sartoria. Od 2007.",
+    tagline: "Italijanske tkanine. Vrhunska sartoria. Od 2007. godine.",
   },
   en: {
     columns: [
@@ -64,27 +64,39 @@ const COPY = {
         ],
       },
     ],
-    tagline: "Italian cloth. Serbian sartoria. Since 2007.",
+    tagline: "Italian cloth. Master sartoria. Established 2007.",
   },
 };
 
 export default function LxFooter({ lang }: { lang: "sr" | "en" }) {
   const copy = COPY[lang];
   const year = new Date().getFullYear();
+  const isEn = lang === "en";
 
   return (
     <footer className={styles.footer}>
       <div className={styles.grid}>
+        {/* Brand Column with Logo */}
         <div className={styles.footerBrand}>
-          <div className={styles.dMd} style={{ marginBottom: 18 }}>
-            Santos
-            <br />&amp; Santorini
-          </div>
-          <p className={styles.meta} style={{ color: "var(--meta)", maxWidth: "28ch" }}>
+          <Link href={isEn ? "/?lang=en" : "/"} className={styles.footerLogoLink}>
+            <img
+              src="/img/logo-header.png"
+              alt="Santos & Santorini"
+              className={styles.footerLogo}
+              width={180}
+              height={36}
+            />
+          </Link>
+          <p className={styles.footerTagline}>
             {copy.tagline}
           </p>
+          <div className={styles.footerAteliersSummary}>
+            <span>Niš: Obrenovićeva 9</span>
+            <span>Kruševac: Trg fontana bb</span>
+          </div>
         </div>
 
+        {/* Navigation Columns */}
         {copy.columns.map((column) => (
           <div key={column.head} className={styles.footerCol}>
             <div className={`${styles.micro} ${styles.footerColHead}`}>{column.head}</div>
@@ -96,11 +108,14 @@ export default function LxFooter({ lang }: { lang: "sr" | "en" }) {
           </div>
         ))}
 
+        {/* Base Copyright Strip */}
         <div className={styles.footerBase}>
           <span className={styles.micro}>
-            © {year} Santos &amp; Santorini
+            © {year} Santos &amp; Santorini. Sva prava zadržana.
           </span>
-          <span className={styles.micro}>Niš — Kruševac</span>
+          <span className={styles.micro}>
+            Sartoria Italiana — Niš & Kruševac
+          </span>
         </div>
       </div>
     </footer>

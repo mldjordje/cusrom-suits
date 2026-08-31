@@ -1,53 +1,51 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import Link from "next/link";
 import LxImage from "./_fx/LxImage";
+import MaskLines from "./_fx/MaskLines";
+import { getMotion, prefersReduced } from "./_fx/motion";
 import styles from "../landing.module.scss";
 
 type LxHeroProps = {
   lang: "sr" | "en";
   image: string;
   video?: string | null;
-  /** Bundled clip used when the configured one errors or never arrives. */
   videoFallback: string;
   poster?: string | null;
 };
 
-const VIDEO_PATIENCE_MS = 3000;
+const VIDEO_PATIENCE_MS = 2500;
 
 const COPY = {
   sr: {
-    badge: "Sartoria Italiana • Ručna Izrada • Niš & Kruševac",
-    lines: ["Odelo koje", "pamti", "vaše držanje"],
-    sub: "Vrhunski italijanski štofovi od čiste vune Loro Piana i Cerruti, preko 60 preciznih mera i besprekorna ručna izrada u našim ateljeima.",
-    primaryCta: "Istražite kolekciju",
-    secondaryCta: "Konfigurišite po meri",
-    badges: [
-      { num: "100%", label: "Italijanska vuna", detail: "Loro Piana & Cerruti" },
-      { num: "60+", label: "Unikatnih mera", detail: "Savršen kroj po telu" },
-      { num: "2", label: "Salona u Srbiji", detail: "Niš & Kruševac" },
-    ],
+    eyebrow: "Sartoria Italiana • Od 2007.",
+    headline: ["Odelo koje pamti", "vaše držanje."],
+    subline: "Italijanske tkanine. Ručni rad. Savršen kroj po vašem telu.",
+    cta: "Istražite kolekciju",
     scroll: "Skrolujte za više",
   },
   en: {
-    badge: "Italian Sartoria • Bespoke Atelier • Niš & Kruševac",
-    lines: ["A suit that", "remembers", "how you stand"],
-    sub: "Finest Italian pure wool fabrics from Loro Piana and Cerruti, over 60 bespoke measurements, and master tailoring refined in our ateliers.",
-    primaryCta: "Explore collection",
-    secondaryCta: "Configure bespoke suit",
-    badges: [
-      { num: "100%", label: "Italian wool", detail: "Loro Piana & Cerruti" },
-      { num: "60+", label: "Measurements", detail: "Anatomical bespoke fit" },
-      { num: "2", label: "Ateliers in Serbia", detail: "Niš & Kruševac" },
-    ],
+    eyebrow: "Italian Sartoria • Since 2007",
+    headline: ["A suit that", "remembers you."],
+    subline: "Finest Italian cloth. Master craft. Flawless bespoke fit.",
+    cta: "Explore collection",
     scroll: "Scroll to explore",
   },
 };
 
+/**
+ * Full-bleed cinematic opening. Three text elements and one CTA — everything
+ * else lives further down the page.
+ *
+ * The exit is scroll-driven rather than a fade: the footage pushes back and
+ * closes on itself while the copy lifts away, so the manifesto below appears
+ * to be revealed from underneath instead of scrolling over the top.
+ */
 export default function LxHero({ lang, image, video, videoFallback, poster }: LxHeroProps) {
   const heroRef = useRef<HTMLElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
   const [entered, setEntered] = useState(false);
   const [videoReady, setVideoReady] = useState(false);
   const [activeVideo, setActiveVideo] = useState(video || videoFallback);
@@ -59,6 +57,7 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
     setVideoReady(false);
   }, [video, videoFallback]);
 
+  // Fallback guard if the heavy production cut stalls on the legacy host.
   useEffect(() => {
     if (activeVideo === videoFallback) return;
 
@@ -70,12 +69,13 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
     return () => window.clearTimeout(timer);
   }, [activeVideo, videoFallback]);
 
+  // Curtain open.
   useEffect(() => {
     let second = 0;
     const first = requestAnimationFrame(() => {
       second = requestAnimationFrame(() => setEntered(true));
     });
-    const guard = window.setTimeout(() => setEntered(true), 200);
+    const guard = window.setTimeout(() => setEntered(true), 150);
 
     return () => {
       cancelAnimationFrame(first);
@@ -84,75 +84,116 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
     };
   }, []);
 
+  // Entrance stagger for the sub-line, CTA and scroll cue. The headline runs
+  // its own masked reveal; these follow it in.
+  useLayoutEffect(() => {
+    const content = contentRef.current;
+    if (!content || prefersReduced()) return;
+
+    const followers = Array.from(
+      content.querySelectorAll<HTMLElement>(`[data-hero-follow]`),
+    );
+    for (const node of followers) {
+      node.style.opacity = "0";
+      node.style.transform = "translate3d(0, 24px, 0)";
+    }
+
+    let dead = false;
+    let ctx: { revert: () => void } | null = null;
+
+    void getMotion().then((core) => {
+      if (dead || !core) return;
+      ctx = core.gsap.context(() => {
+        core.gsap.to(followers, {
+          opacity: 1,
+          y: 0,
+          duration: 1.1,
+          ease: "expo.out",
+          stagger: 0.12,
+          delay: 0.75,
+          clearProps: "transform,opacity",
+        });
+      }, content);
+    });
+
+    return () => {
+      dead = true;
+      ctx?.revert();
+    };
+  }, []);
+
+  // Scroll-driven exit, replacing the old hand-rolled scroll listener.
   useEffect(() => {
     const node = heroRef.current;
     if (!node) return;
 
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    let ticking = false;
-    let covered = false;
+    let dead = false;
+    let ctx: { revert: () => void } | null = null;
 
-    const draw = () => {
-      const progress = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
-      if (!reduced) {
-        node.style.setProperty("--lx-hero-progress", progress.toFixed(4));
-        node.style.setProperty("--lx-hero-fade", Math.min(1, progress * 1.6).toFixed(4));
-      }
+    void getMotion().then((core) => {
+      if (dead || !core) return;
+      const { gsap } = core;
 
-      const nowCovered = progress >= 1;
-      if (nowCovered !== covered) {
-        covered = nowCovered;
-        node.style.visibility = covered ? "hidden" : "";
-        const clip = videoRef.current;
-        if (clip) {
-          if (covered) clip.pause();
-          else void clip.play().catch(() => undefined);
-        }
-      }
-      ticking = false;
-    };
+      ctx = gsap.context(() => {
+        gsap
+          .timeline({
+            scrollTrigger: {
+              trigger: node.parentElement || node,
+              start: "top top",
+              end: "bottom top",
+              scrub: 0.8,
+              invalidateOnRefresh: true,
+              // The hero is position:fixed; once it is fully covered it must
+              // stop compositing or it costs frames for the whole page.
+              onToggle: (self) => {
+                node.style.visibility = self.isActive ? "" : "hidden";
+                const clip = videoRef.current;
+                if (!clip) return;
+                if (self.isActive) void clip.play().catch(() => undefined);
+                else clip.pause();
+              },
+            },
+          })
+          .to(`.${styles.heroFullVideo}`, { scale: 1.14, ease: "none" }, 0)
+          .to(`.${styles.heroMedia}`, { yPercent: 8, ease: "none" }, 0)
+          .to(`.${styles.heroInner}`, { yPercent: -14, opacity: 0, ease: "none" }, 0);
+      }, node);
+    });
 
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(draw);
-    };
-
-    draw();
-    window.addEventListener("scroll", onScroll, { passive: true });
-    window.addEventListener("resize", onScroll, { passive: true });
     return () => {
-      window.removeEventListener("scroll", onScroll);
-      window.removeEventListener("resize", onScroll);
+      dead = true;
+      ctx?.revert();
     };
   }, []);
 
   return (
     <div className={styles.heroSlot}>
       <section ref={heroRef} className={`${styles.hero} ${entered ? styles.heroOpen : ""}`}>
-        {/* Ambient video background covering full hero */}
+        {/* Still frame carries the LCP while the video streams in. */}
         <div className={styles.heroMedia}>
           <LxImage
             src={poster || image}
             fallback={image}
-            alt="Santos &amp; Santorini"
+            alt="Santos & Santorini Sartoria"
             sizes="100vw"
             priority
           />
         </div>
 
-        {/* Full cinematic video layer with smooth opacity entrance */}
         <div className={styles.heroFullVideo}>
           <video
             ref={videoRef}
             key={activeVideo}
             className={`${styles.heroVideo} ${videoReady ? styles.heroVideoOn : ""}`}
             src={activeVideo}
+            poster={poster || image}
             autoPlay
             muted
             loop
             playsInline
-            preload="auto"
+            // metadata, not auto: the production cut is 27 MB and preloading it
+            // in full competes with the LCP image for bandwidth.
+            preload="metadata"
             onCanPlay={() => setVideoReady(true)}
             onError={() => {
               setVideoReady(false);
@@ -161,45 +202,37 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
           />
         </div>
 
-        {/* Deep luxury radial wash for maximum readability and mood */}
+        {/* Filmic scrim — contrast comes from the gradient, never from dimming
+            the type itself, so the copy stays at full WCAG AA weight. */}
         <div className={styles.heroCinematicWash} />
 
-        {/* Content Container */}
         <div className={styles.heroInner}>
-          <div className={styles.heroMainContent}>
-            {/* Editorial Eyebrow Tag */}
-            <div className={styles.heroEyebrow}>
+          <div ref={contentRef} className={styles.heroMainContent}>
+            <div className={styles.heroEyebrow} data-hero-follow>
               <span className={styles.heroBadgeDot} />
-              <span>{copy.badge}</span>
+              <span>{copy.eyebrow}</span>
             </div>
 
-            {/* Display Headline */}
-            <h1 className={`${styles.heroTitle} ${styles.dXl} ${styles.lines}`}>
-              {copy.lines.map((line, index) => (
-                <span key={line} className={styles.line}>
-                  <span
-                    className={styles.lineInner}
-                    style={{ transitionDelay: `${400 + index * 120}ms` }}
-                  >
-                    {line}
-                  </span>
-                </span>
-              ))}
-            </h1>
+            <MaskLines
+              as="h1"
+              lines={copy.headline}
+              className={styles.heroTitle}
+              stagger={0.07}
+              start="top 95%"
+            />
 
-            {/* Subtitle description */}
-            <p className={styles.heroSubText}>
-              {copy.sub}
+            <p className={styles.heroSubText} data-hero-follow>
+              {copy.subline}
             </p>
 
-            {/* Dual CTAs */}
-            <div className={styles.heroCtaGroup}>
+            <div className={styles.heroCtaWrap} data-hero-follow>
               <Link
                 href={isEn ? "/web-shop?lang=en" : "/web-shop"}
                 className={styles.heroPrimaryBtn}
               >
-                <span>{copy.primaryCta}</span>
+                <span>{copy.cta}</span>
                 <svg
+                  className={styles.heroArrow}
                   width="14"
                   height="14"
                   viewBox="0 0 14 14"
@@ -207,31 +240,9 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
                   xmlns="http://www.w3.org/2000/svg"
                 >
                   <path
-                    d="M1.75 7H12.25M12.25 7L7 1.75M12.25 7L7 12.25"
+                    d="M3 7H11M11 7L7.5 3.5M11 7L7.5 10.5"
                     stroke="currentColor"
-                    strokeWidth="1.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </Link>
-
-              <Link
-                href={isEn ? "/custom-suits?lang=en" : "/custom-suits"}
-                className={styles.heroSecondaryBtn}
-              >
-                <span>{copy.secondaryCta}</span>
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 12 12"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M2.5 9.5L9.5 2.5M9.5 2.5H4M9.5 2.5V8"
-                    stroke="currentColor"
-                    strokeWidth="1.2"
+                    strokeWidth="1.4"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                   />
@@ -240,33 +251,14 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
             </div>
           </div>
 
-          {/* Floating Luxury Trust Badges */}
-          <div className={styles.heroTrustBadges}>
-            {copy.badges.map((b, idx) => (
-              <div
-                key={b.num}
-                className={styles.heroTrustCard}
-                style={{ animationDelay: `${700 + idx * 140}ms` }}
-              >
-                <div className={styles.heroTrustNum}>{b.num}</div>
-                <div className={styles.heroTrustInfo}>
-                  <span className={styles.heroTrustLabel}>{b.label}</span>
-                  <span className={styles.heroTrustDetail}>{b.detail}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Scroll Cue at Bottom */}
-          <div className={styles.heroScrollCue}>
-            <div className={styles.heroMouseIcon}>
-              <div className={styles.heroMouseWheel} />
-            </div>
+          <div className={styles.heroScrollCue} aria-hidden="true">
             <span className={styles.heroScrollText}>{copy.scroll}</span>
+            <div className={styles.heroScrollLine}>
+              <div className={styles.heroScrollDot} />
+            </div>
           </div>
         </div>
       </section>
     </div>
   );
 }
-

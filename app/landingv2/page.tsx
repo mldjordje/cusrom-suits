@@ -25,6 +25,7 @@ import LxEdit, { type LxProduct } from "./_components/LxEdit";
 import LxVideoBand from "./_components/LxVideoBand";
 import LxAteliers from "./_components/LxAteliers";
 import LxFooter from "./_components/LxFooter";
+import LxSeam from "./_components/LxSeam";
 
 const FALLBACK_IMAGE = "/img/odela-luxury.jpg";
 
@@ -249,12 +250,16 @@ export default async function LandingPage({
         }
       />
 
+      <LxSeam mark={isEn ? "II — Collections" : "II — Kolekcija"} />
+
       {/* 4. Curated Collections Runway */}
       <LxCategories
         lang={lang}
         categories={categories}
         allHref={`/web-shop${suffix}`}
       />
+
+      <LxSeam mark={isEn ? "III — The Making" : "III — Anatomija Kroja"} />
 
       {/* 5. Bespoke Craft Anatomy — Central Wow Moment */}
       <LxBespoke lang={lang} shots={BESPOKE_SHOTS} />
@@ -274,6 +279,8 @@ export default async function LandingPage({
           href: `/custom-suits${suffix}`,
         }}
       />
+
+      <LxSeam mark={isEn ? "IV — The Edit" : "IV — Kurirani Izbor"} />
 
       {/* 7. Curated Signature Product Edit */}
       <LxEdit lang={lang} products={products} allHref={`/web-shop${suffix}`} />

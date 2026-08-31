@@ -1,0 +1,42 @@
+// =============================================================================
+// SANTOS & SANTORINI — LUXURY LANDING V2 TOKENS
+// Strictly adheres to authentic brand palette. Zero yellow (#d4af37/#e2c158).
+// =============================================================================
+
+// Colors
+$lux-ink-0: #0a0908;
+$lux-ink-1: #100e0c;
+$lux-ink-2: #17140f;
+$lux-ink-3: #211c16;
+
+$lux-fg: #f2eee7;
+$lux-fg-soft: #a79e92;
+$lux-fg-faint: #756b60;
+
+$lux-gold: #c9a96e;
+$lux-gold-bright: #e3c88f;
+$lux-gold-dim: rgba(201, 169, 110, 0.15);
+
+$lux-line: rgba(242, 238, 231, 0.08);
+$lux-line-strong: rgba(242, 238, 231, 0.18);
+
+$lux-plate: #151310;
+$lux-plate-edge: rgba(201, 169, 110, 0.12);
+
+// Typography scale
+$font-display: var(--lx-display), "Marcellus", "Playfair Display", Georgia, serif;
+$font-sans: var(--lx-sans), "Inter Tight", system-ui, -apple-system, sans-serif;
+
+// Motion & Easing
+$ease-luxury: cubic-bezier(0.16, 1, 0.3, 1);
+$ease-smooth: cubic-bezier(0.25, 1, 0.5, 1);
+$ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+
+$d-fast: 350ms;
+$d-base: 650ms;
+$d-slow: 1100ms;
+
+// Spacing
+$gutter: clamp(16px, 3.5vw, 56px);
+$col-gap: clamp(12px, 2vw, 32px);
+$section-y: clamp(80px, 12vh, 160px);

@@ -1,0 +1,624 @@
+// =============================================================================
+// SANTOS & SANTORINI — SCROLL MOTION LAYER
+// Everything here is driven by one GSAP/ScrollTrigger timeline (see
+// _components/_fx/motion.ts). Markup renders in its finished state; the hidden
+// start states are applied by script only when motion is allowed, so no-JS and
+// reduced-motion visitors never see a blank section and never get layout shift.
+// =============================================================================
+
+// -----------------------------------------------------------------------------
+// Masked typography — word-level reveal
+// -----------------------------------------------------------------------------
+
+.maskLines {
+  display: block;
+}
+
+.maskLine {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.maskWord {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  padding-right: 0.26em;
+  padding-bottom: 0.12em;
+  margin-bottom: -0.12em;
+}
+
+.maskPart {
+  display: inline-block;
+  transform-origin: 0% 100%;
+  will-change: transform, opacity;
+}
+
+// -----------------------------------------------------------------------------
+// Manifesto backdrop — macro cloth drifting behind the statement
+// -----------------------------------------------------------------------------
+
+.manifestoBackdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.manifestoTexture {
+  position: absolute;
+  inset: -12% 0;
+  will-change: transform;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: grayscale(0.35) contrast(1.05);
+  }
+}
+
+// The statement has to stay readable at AA over any frame of that texture.
+.manifestoVeil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      120% 80% at 30% 40%,
+      rgba(10, 9, 8, 0.72) 0%,
+      rgba(10, 9, 8, 0.9) 60%,
+      rgba(10, 9, 8, 0.97) 100%
+    );
+}
+
+// -----------------------------------------------------------------------------
+// Collections runway — pinned horizontal scrub on desktop, snap rail on mobile
+// -----------------------------------------------------------------------------
+
+.runway {
+  position: relative;
+  background: var(--lux-ink-0, #0a0908);
+  overflow: hidden;
+}
+
+.runwayHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  padding: clamp(56px, 10vh, 120px) var(--gutter) clamp(24px, 4vh, 48px);
+  max-width: 1720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.runwayTrack {
+  position: relative;
+  overflow: hidden;
+}
+
+.runwayViewport {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: clamp(16px, 2vw, 34px);
+  padding-inline: var(--gutter);
+  padding-bottom: clamp(48px, 8vh, 90px);
+  width: max-content;
+  will-change: transform;
+}
+
+.runwayPanel {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(320px, 38vw, 620px);
+  height: clamp(420px, 70vh, 720px);
+  overflow: hidden;
+  text-decoration: none;
+  color: var(--lux-fg, #f2eee7);
+  background: var(--lux-ink-2, #17140f);
+}
+
+// Oversized so the counter-drift never exposes an edge.
+.runwayShot {
+  position: absolute;
+  inset: -9% -14%;
+  will-change: transform;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 900ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+.runwayPanel:hover .runwayShot img,
+.runwayPanel:focus-visible .runwayShot img {
+  transform: scale(1.05);
+}
+
+.runwayScrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 9, 8, 0.12) 0%,
+    rgba(10, 9, 8, 0.04) 40%,
+    rgba(10, 9, 8, 0.86) 100%
+  );
+}
+
+.runwayIndex {
+  position: absolute;
+  top: clamp(16px, 2vw, 26px);
+  left: clamp(16px, 2vw, 26px);
+  z-index: 2;
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  color: var(--lux-gold, #c9a96e);
+}
+
+.runwayFoot {
+  position: absolute;
+  z-index: 2;
+  left: clamp(16px, 2vw, 26px);
+  right: clamp(16px, 2vw, 26px);
+  bottom: clamp(18px, 2.4vw, 30px);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.runwayName {
+  font-family: var(--lx-display), "Marcellus", Georgia, serif;
+  font-size: clamp(1.2rem, 1.7vw, 1.9rem);
+  line-height: 1.1;
+}
+
+.runwayRule {
+  display: block;
+  height: 1px;
+  width: 0;
+  background: var(--lux-gold, #c9a96e);
+  transition: width 700ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.runwayPanel:hover .runwayRule,
+.runwayPanel:focus-visible .runwayRule {
+  width: 100%;
+}
+
+.runwayCue {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--lux-fg-soft, #a79e92);
+  opacity: 0;
+  transform: translateY(6px);
+  transition:
+    opacity 500ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.runwayPanel:hover .runwayCue,
+.runwayPanel:focus-visible .runwayCue {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+// End cap — the runway resolves into an invitation instead of just stopping.
+.runwayEnd {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+  padding: clamp(28px, 3vw, 52px);
+  width: clamp(280px, 26vw, 420px);
+  background: var(--lux-ink-1, #100e0c);
+  border: 1px solid rgba(242, 238, 231, 0.08);
+  transition: border-color 500ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    border-color: var(--lux-gold, #c9a96e);
+  }
+}
+
+.runwayEndTitle {
+  font-family: var(--lx-display), "Marcellus", Georgia, serif;
+  font-size: clamp(1.4rem, 2vw, 2.2rem);
+  line-height: 1.1;
+  color: var(--lux-fg, #f2eee7);
+}
+
+.runwayEndCopy {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--lux-fg-soft, #a79e92);
+}
+
+.runwayProgress {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  bottom: clamp(18px, 3vh, 36px);
+  height: 1px;
+  background: rgba(242, 238, 231, 0.1);
+  z-index: 3;
+}
+
+.runwayProgressFill {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--lux-gold, #c9a96e);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+}
+
+// A snapping rail beats a faked pinned timeline on a 390px screen.
+@media (max-width: 900px) {
+  .runwayViewport {
+    width: auto;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .runwayViewport::-webkit-scrollbar {
+    display: none;
+  }
+
+  .runwayPanel {
+    width: 78vw;
+    height: 58vh;
+    scroll-snap-align: center;
+  }
+
+  .runwayProgress {
+    display: none;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Bespoke craft — the pinned scrub stage (the wow moment)
+// -----------------------------------------------------------------------------
+
+.craft {
+  position: relative;
+  background: var(--lux-ink-0, #0a0908);
+}
+
+.craftHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  padding: clamp(56px, 10vh, 120px) var(--gutter) clamp(20px, 3vh, 40px);
+  max-width: 1720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.craftPin {
+  position: relative;
+  height: 100svh;
+  min-height: 600px;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  align-items: stretch;
+}
+
+.craftStage {
+  position: relative;
+  overflow: hidden;
+  background: #0a0908;
+}
+
+.craftShot {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  // Each phase wipes up from the bottom edge instead of cross-fading.
+  clip-path: inset(100% 0 0 0);
+  will-change: clip-path, opacity, transform;
+
+  img,
+  video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.craftShotFirst {
+  opacity: 1;
+  clip-path: inset(0 0 0 0);
+}
+
+.craftStageScrim {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    100deg,
+    rgba(10, 9, 8, 0.5) 0%,
+    rgba(10, 9, 8, 0) 45%,
+    rgba(10, 9, 8, 0.4) 100%
+  );
+}
+
+// The gold thread that draws itself across phase III.
+.craftThread {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18%;
+  height: 90px;
+  width: 100%;
+  pointer-events: none;
+  z-index: 2;
+  opacity: 0;
+}
+
+.craftThreadPath {
+  fill: none;
+  stroke: var(--lux-gold, #c9a96e);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgba(201, 169, 110, 0.45));
+}
+
+.craftPanel {
+  position: relative;
+  padding: clamp(40px, 8vh, 90px) 0;
+  background: var(--lux-ink-1, #100e0c);
+  border-left: 1px solid rgba(242, 238, 231, 0.08);
+}
+
+.craftPhase {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 1.8vh, 20px);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.craftPhaseFirst {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.craftPhaseNum {
+  font-size: 11px;
+  letter-spacing: 0.32em;
+  color: var(--lux-gold, #c9a96e);
+}
+
+.craftPhaseSub {
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--lux-fg-faint, #756b60);
+}
+
+.craftPhaseTitle {
+  font-family: var(--lx-display), "Marcellus", Georgia, serif;
+  font-size: clamp(1.7rem, 2.9vw, 3rem);
+  line-height: 1.05;
+  color: var(--lux-fg, #f2eee7);
+}
+
+.craftPhaseCopy {
+  max-width: 46ch;
+  font-size: clamp(14px, 1vw, 16px);
+  line-height: 1.68;
+  color: var(--lux-fg-soft, #a79e92);
+}
+
+.craftPhaseCta {
+  margin-top: 6px;
+}
+
+// Phase rail — the reader always knows how far into the making they are.
+.craftRail {
+  position: absolute;
+  right: calc(var(--gutter) * 0.4);
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 4;
+}
+
+.craftRailStep {
+  width: 1px;
+  height: 34px;
+  background: rgba(242, 238, 231, 0.16);
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+
+  &::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--lux-gold, #c9a96e);
+    transform: scaleY(0);
+    transform-origin: 0 0;
+    transition: transform 500ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  &:focus-visible {
+    outline: 1px solid var(--lux-gold, #c9a96e);
+    outline-offset: 4px;
+  }
+}
+
+.craftRailStepOn::after {
+  transform: scaleY(1);
+}
+
+// Stacked reading order below 900px — a pinned two-column scrub is unreadable
+// on a 390px screen, so the phases become an ordinary vertical sequence.
+@media (max-width: 900px) {
+  .craftPin {
+    height: auto;
+    min-height: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .craftStage {
+    height: 58vh;
+  }
+
+  .craftPanel {
+    border-left: 0;
+    border-top: 1px solid rgba(242, 238, 231, 0.08);
+    padding: 0 var(--gutter);
+  }
+
+  .craftPhase {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    transform: none;
+    opacity: 1;
+    pointer-events: auto;
+    padding-block: clamp(28px, 6vh, 48px);
+    border-bottom: 1px solid rgba(242, 238, 231, 0.06);
+  }
+
+  .craftRail {
+    display: none;
+  }
+}
+
+// -----------------------------------------------------------------------------
+// Seam — one section physically hands off to the next
+// -----------------------------------------------------------------------------
+
+.seam {
+  position: relative;
+  height: clamp(90px, 13vh, 170px);
+  background: var(--lux-ink-0, #0a0908);
+  overflow: hidden;
+}
+
+.seamRule {
+  position: absolute;
+  left: var(--gutter);
+  right: var(--gutter);
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    rgba(242, 238, 231, 0) 0%,
+    var(--lux-gold, #c9a96e) 50%,
+    rgba(242, 238, 231, 0) 100%
+  );
+  transform: scaleX(0);
+  transform-origin: 50% 50%;
+}
+
+.seamMark {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 10px;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--lux-fg-faint, #756b60);
+  background: var(--lux-ink-0, #0a0908);
+  padding-inline: 14px;
+}
+
+// -----------------------------------------------------------------------------
+// Reduced motion — finished state, no exceptions
+// -----------------------------------------------------------------------------
+
+@media (prefers-reduced-motion: reduce) {
+  .maskPart {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+
+  .craftPin {
+    height: auto;
+    min-height: 0;
+    grid-template-columns: 1fr;
+  }
+
+  .craftStage {
+    height: 58vh;
+  }
+
+  .craftShot {
+    opacity: 1 !important;
+    clip-path: inset(0 0 0 0) !important;
+  }
+
+  // Only the opening frame survives; stacked phases keep their own copy.
+  .craftShot + .craftShot {
+    display: none;
+  }
+
+  .craftThread {
+    display: none;
+  }
+
+  .craftPanel {
+    border-left: 0;
+    padding: 0 var(--gutter);
+  }
+
+  .craftPhase {
+    position: relative;
+    left: auto;
+    right: auto;
+    top: auto;
+    transform: none;
+    opacity: 1 !important;
+    pointer-events: auto;
+    padding-block: 28px;
+  }
+
+  .craftRail {
+    display: none;
+  }
+
+  .runwayViewport {
+    width: auto;
+    overflow-x: auto;
+    transform: none !important;
+  }
+
+  .runwayShot {
+    transform: none !important;
+  }
+
+  .runwayProgressFill {
+    transform: scaleX(1);
+  }
+
+  .seamRule {
+    transform: scaleX(1);
+  }
+}
