@@ -28,16 +28,34 @@ export default function LxImage({ src, fallback, alt, sizes, priority }: LxImage
 
   useEffect(() => {
     setSource(src);
-    if (src === fallback) return;
+    if (!src || src === fallback) return;
 
-    const timer = window.setTimeout(() => {
-      const img = wrapRef.current?.querySelector("img");
-      // naturalWidth stays 0 until pixels actually arrive, so it reports a
-      // hung request as reliably as it reports a finished one.
-      if (!img || img.naturalWidth === 0) setSource(fallback);
-    }, PATIENCE_MS);
+    let timer: number | undefined;
 
-    return () => window.clearTimeout(timer);
+    // Only start patience timer if the image is in or near the viewport
+    const checkHung = () => {
+      const node = wrapRef.current;
+      if (!node) return;
+      const rect = node.getBoundingClientRect();
+      const isNearViewport = rect.top < window.innerHeight * 1.5 && rect.bottom > -200;
+      
+      if (isNearViewport) {
+        timer = window.setTimeout(() => {
+          const img = wrapRef.current?.querySelector("img");
+          if (img && img.naturalWidth === 0 && !img.complete) {
+            setSource(fallback);
+          }
+        }, PATIENCE_MS);
+      }
+    };
+
+    checkHung();
+    window.addEventListener("scroll", checkHung, { passive: true });
+
+    return () => {
+      if (timer) window.clearTimeout(timer);
+      window.removeEventListener("scroll", checkHung);
+    };
   }, [src, fallback]);
 
   return (

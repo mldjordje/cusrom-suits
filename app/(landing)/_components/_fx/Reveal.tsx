@@ -21,7 +21,10 @@ export default function Reveal({
   className = "",
   style,
 }: RevealProps) {
-  const { ref, inView } = useInView<HTMLDivElement>();
+  const { ref, inView } = useInView<HTMLDivElement>({
+    threshold: 0.01,
+    rootMargin: "150px 0px 150px 0px",
+  });
 
   return (
     <Tag

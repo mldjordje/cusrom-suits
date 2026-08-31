@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import LxImage from "./_fx/LxImage";
 import styles from "../landing.module.scss";
 
@@ -13,19 +14,34 @@ type LxHeroProps = {
   poster?: string | null;
 };
 
-/** How long the configured clip gets before the bundled one takes over. */
 const VIDEO_PATIENCE_MS = 3000;
 
 const COPY = {
   sr: {
+    badge: "Sartoria Italiana • Ručna Izrada • Niš & Kruševac",
     lines: ["Odelo koje", "pamti", "vaše držanje"],
-    corner: ["(SS_'26)", "Niš — Kruševac"],
-    scroll: "Skrolujte",
+    sub: "Vrhunski italijanski štofovi od čiste vune Loro Piana i Cerruti, preko 60 preciznih mera i besprekorna ručna izrada u našim ateljeima.",
+    primaryCta: "Istražite kolekciju",
+    secondaryCta: "Konfigurišite po meri",
+    badges: [
+      { num: "100%", label: "Italijanska vuna", detail: "Loro Piana & Cerruti" },
+      { num: "60+", label: "Unikatnih mera", detail: "Savršen kroj po telu" },
+      { num: "2", label: "Salona u Srbiji", detail: "Niš & Kruševac" },
+    ],
+    scroll: "Skrolujte za više",
   },
   en: {
+    badge: "Italian Sartoria • Bespoke Atelier • Niš & Kruševac",
     lines: ["A suit that", "remembers", "how you stand"],
-    corner: ["(SS_'26)", "Niš — Kruševac"],
-    scroll: "Scroll",
+    sub: "Finest Italian pure wool fabrics from Loro Piana and Cerruti, over 60 bespoke measurements, and master tailoring refined in our ateliers.",
+    primaryCta: "Explore collection",
+    secondaryCta: "Configure bespoke suit",
+    badges: [
+      { num: "100%", label: "Italian wool", detail: "Loro Piana & Cerruti" },
+      { num: "60+", label: "Measurements", detail: "Anatomical bespoke fit" },
+      { num: "2", label: "Ateliers in Serbia", detail: "Niš & Kruševac" },
+    ],
+    scroll: "Scroll to explore",
   },
 };
 
@@ -36,11 +52,8 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
   const [videoReady, setVideoReady] = useState(false);
   const [activeVideo, setActiveVideo] = useState(video || videoFallback);
   const copy = COPY[lang];
+  const isEn = lang === "en";
 
-  // The admin-configured URL is honoured first, but a hero that silently falls
-  // back to a still because the media library points at a dead file is worse
-  // than no configuration at all. A 500 fires onError; a host that simply
-  // hangs never does, so the deadline covers that case too.
   useEffect(() => {
     setActiveVideo(video || videoFallback);
     setVideoReady(false);
@@ -57,13 +70,6 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
     return () => window.clearTimeout(timer);
   }, [activeVideo, videoFallback]);
 
-  // Two frames, not one: the first commits the closed curtain to the
-  // compositor, the second starts opening it. Firing both in one frame makes
-  // the browser skip straight to the end state.
-  //
-  // The timer is not belt and braces. A page opened in a background tab gets
-  // no animation frames at all, and without it the hero would still be sitting
-  // behind a half-closed curtain whenever the visitor switched to it.
   useEffect(() => {
     let second = 0;
     const first = requestAnimationFrame(() => {
@@ -78,10 +84,6 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
     };
   }, []);
 
-  // The hero is fixed and everything below slides up over it, so it is never
-  // scrolled away — it is covered. Scroll position, not an observer, decides
-  // when it is hidden: a fixed element always intersects the viewport, so an
-  // IntersectionObserver would leave the clip playing behind the whole page.
   useEffect(() => {
     const node = heroRef.current;
     if (!node) return;
@@ -94,8 +96,6 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
       const progress = Math.min(1, Math.max(0, window.scrollY / window.innerHeight));
       if (!reduced) {
         node.style.setProperty("--lx-hero-progress", progress.toFixed(4));
-        // The type is gone well before the section above it lands, so the two
-        // never overlap mid-fade.
         node.style.setProperty("--lx-hero-fade", Math.min(1, progress * 1.6).toFixed(4));
       }
 
@@ -130,28 +130,23 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
   return (
     <div className={styles.heroSlot}>
       <section ref={heroRef} className={`${styles.hero} ${entered ? styles.heroOpen : ""}`}>
+        {/* Ambient video background covering full hero */}
         <div className={styles.heroMedia}>
           <LxImage
             src={poster || image}
             fallback={image}
-            alt=""
+            alt="Santos &amp; Santorini"
             sizes="100vw"
             priority
           />
         </div>
 
-        {/* Santos' own clips are 640-720px square. Stretched across a 1440px
-            hero they would be visibly soft, so the footage runs as a column at
-            roughly its native height instead — sharp, and the display type
-            crosses it so the difference blend has something moving to invert
-            against. A 1920x1080 upload in the admin can take the full frame. */}
-        <div className={styles.heroFilm}>
+        {/* Full cinematic video layer with smooth opacity entrance */}
+        <div className={styles.heroFullVideo}>
           <video
             ref={videoRef}
             key={activeVideo}
             className={`${styles.heroVideo} ${videoReady ? styles.heroVideoOn : ""}`}
-            // src on the element, not a <source> child: error events from a
-            // <source> do not reliably reach the video's own onError.
             src={activeVideo}
             autoPlay
             muted
@@ -166,38 +161,112 @@ export default function LxHero({ lang, image, video, videoFallback, poster }: Lx
           />
         </div>
 
-        <div className={styles.heroWash} />
+        {/* Deep luxury radial wash for maximum readability and mood */}
+        <div className={styles.heroCinematicWash} />
 
-        <div className={styles.heroCorner}>
-          {copy.corner.map((line) => (
-            <div key={line} className={styles.micro} style={{ marginBottom: 6 }}>
-              {line}
-            </div>
-          ))}
-        </div>
-
+        {/* Content Container */}
         <div className={styles.heroInner}>
-          {/* Blended against the frame instead of laid over it: the letters
-              invert continuously as the clip moves underneath them. */}
-          <h1 className={`${styles.heroTitle} ${styles.dXl} ${styles.lines}`}>
-            {copy.lines.map((line, index) => (
-              <span key={line} className={styles.line}>
-                <span
-                  className={styles.lineInner}
-                  style={{ transitionDelay: `${520 + index * 110}ms` }}
-                >
-                  {line}
-                </span>
-              </span>
-            ))}
-          </h1>
+          <div className={styles.heroMainContent}>
+            {/* Editorial Eyebrow Tag */}
+            <div className={styles.heroEyebrow}>
+              <span className={styles.heroBadgeDot} />
+              <span>{copy.badge}</span>
+            </div>
 
-          <div className={`${styles.heroFoot} ${styles.micro}`}>
-            {copy.scroll}
-            <span className={styles.heroTick} aria-hidden />
+            {/* Display Headline */}
+            <h1 className={`${styles.heroTitle} ${styles.dXl} ${styles.lines}`}>
+              {copy.lines.map((line, index) => (
+                <span key={line} className={styles.line}>
+                  <span
+                    className={styles.lineInner}
+                    style={{ transitionDelay: `${400 + index * 120}ms` }}
+                  >
+                    {line}
+                  </span>
+                </span>
+              ))}
+            </h1>
+
+            {/* Subtitle description */}
+            <p className={styles.heroSubText}>
+              {copy.sub}
+            </p>
+
+            {/* Dual CTAs */}
+            <div className={styles.heroCtaGroup}>
+              <Link
+                href={isEn ? "/web-shop?lang=en" : "/web-shop"}
+                className={styles.heroPrimaryBtn}
+              >
+                <span>{copy.primaryCta}</span>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 14 14"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M1.75 7H12.25M12.25 7L7 1.75M12.25 7L7 12.25"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Link>
+
+              <Link
+                href={isEn ? "/custom-suits?lang=en" : "/custom-suits"}
+                className={styles.heroSecondaryBtn}
+              >
+                <span>{copy.secondaryCta}</span>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 12 12"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M2.5 9.5L9.5 2.5M9.5 2.5H4M9.5 2.5V8"
+                    stroke="currentColor"
+                    strokeWidth="1.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </Link>
+            </div>
+          </div>
+
+          {/* Floating Luxury Trust Badges */}
+          <div className={styles.heroTrustBadges}>
+            {copy.badges.map((b, idx) => (
+              <div
+                key={b.num}
+                className={styles.heroTrustCard}
+                style={{ animationDelay: `${700 + idx * 140}ms` }}
+              >
+                <div className={styles.heroTrustNum}>{b.num}</div>
+                <div className={styles.heroTrustInfo}>
+                  <span className={styles.heroTrustLabel}>{b.label}</span>
+                  <span className={styles.heroTrustDetail}>{b.detail}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Scroll Cue at Bottom */}
+          <div className={styles.heroScrollCue}>
+            <div className={styles.heroMouseIcon}>
+              <div className={styles.heroMouseWheel} />
+            </div>
+            <span className={styles.heroScrollText}>{copy.scroll}</span>
           </div>
         </div>
       </section>
     </div>
   );
 }
+
