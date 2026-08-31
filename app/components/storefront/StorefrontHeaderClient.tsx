@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, m } from "framer-motion";
 import useAnimationBudget from "@/app/components/motion/useAnimationBudget";
 import StorefrontLanguageSwitcher from "@/app/components/storefront/StorefrontLanguageSwitcher";
@@ -83,6 +84,7 @@ export default function StorefrontHeaderClient({
   navLinkColor?: string;
 }) {
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileShopExpanded, setMobileShopExpanded] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
@@ -104,6 +106,10 @@ export default function StorefrontHeaderClient({
     setIsScrolled((current) => (current === shouldBeScrolled ? current : shouldBeScrolled));
   };
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const withLang = (href: string) => {
     if (!isEn) return href;
     if (href.includes("?")) return `${href}&lang=en`;
@@ -116,23 +122,44 @@ export default function StorefrontHeaderClient({
   };
 
   useEffect(() => {
-    const { body, documentElement } = document;
-
-    const unlockScroll = () => {
-      body.classList.remove("mobile-menu-opened");
-      body.style.overflow = "";
-      window.scrollTo(0, lockedScrollY.current);
-    };
+    const { body } = document;
 
     if (mobileOpen) {
-      lockedScrollY.current = window.scrollY;
+      const scrollY = window.scrollY;
+      lockedScrollY.current = scrollY;
       body.classList.add("mobile-menu-opened");
+      body.style.position = "fixed";
+      body.style.top = `-${scrollY}px`;
+      body.style.left = "0";
+      body.style.right = "0";
+      body.style.width = "100%";
       body.style.overflow = "hidden";
     } else {
-      unlockScroll();
+      const scrollY = lockedScrollY.current;
+      body.classList.remove("mobile-menu-opened");
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      body.style.overflow = "";
+      if (scrollY) {
+        window.scrollTo(0, scrollY);
+      }
     }
 
-    return unlockScroll;
+    return () => {
+      body.classList.remove("mobile-menu-opened");
+      body.style.position = "";
+      body.style.top = "";
+      body.style.left = "";
+      body.style.right = "";
+      body.style.width = "";
+      body.style.overflow = "";
+      if (lockedScrollY.current) {
+        window.scrollTo(0, lockedScrollY.current);
+      }
+    };
   }, [mobileOpen]);
 
   useEffect(() => {
@@ -612,10 +639,13 @@ export default function StorefrontHeaderClient({
             </div>
           </div>
         </div>
+      </div>
 
-        <AnimatePresence initial={false}>
-          {mobileOpen ? (
-            <m.div
+      {mounted && typeof document !== "undefined"
+        ? createPortal(
+            <AnimatePresence initial={false}>
+              {mobileOpen ? (
+                <m.div
               className="ss-mobile-nav-layer"
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -925,8 +955,10 @@ export default function StorefrontHeaderClient({
               </m.nav>
             </m.div>
           ) : null}
-        </AnimatePresence>
-      </div>
+        </AnimatePresence>,
+            document.body,
+          )
+        : null}
     </>
   );
 }
