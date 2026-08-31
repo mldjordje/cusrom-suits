@@ -117,6 +117,16 @@ export default function ProductImageGallery({ images, name, videoUrl, media }: P
     setActiveIndex((current) => Math.min(current, Math.max(activeGallery.length - 1, 0)));
   }, [activeGallery.length]);
 
+  const goToNext = useCallback(() => {
+    if (activeGallery.length <= 1) return;
+    setActiveIndex((prev) => (prev + 1) % activeGallery.length);
+  }, [activeGallery.length]);
+
+  const goToPrev = useCallback(() => {
+    if (activeGallery.length <= 1) return;
+    setActiveIndex((prev) => (prev - 1 + activeGallery.length) % activeGallery.length);
+  }, [activeGallery.length]);
+
   const openLightbox = useCallback((index: number) => {
     const imageIndex = activeGallery.slice(0, index + 1).filter((item) => item.kind === "image").length - 1;
     if (imageIndex >= 0) setLightboxIndex(imageIndex);
@@ -244,27 +254,94 @@ export default function ProductImageGallery({ images, name, videoUrl, media }: P
     };
   }, [lightboxIndex, closeLightbox, lightboxPrev, lightboxNext]);
 
+  const touchStartXRef = useRef(0);
+  const touchStartYRef = useRef(0);
+  const touchDeltaXRef = useRef(0);
+  const touchDeltaYRef = useRef(0);
+  const isSwipingRef = useRef(false);
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (activeGallery.length <= 1) return;
+    const touch = e.touches[0];
+    touchStartXRef.current = touch.clientX;
+    touchStartYRef.current = touch.clientY;
+    touchDeltaXRef.current = 0;
+    touchDeltaYRef.current = 0;
+    isSwipingRef.current = false;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (activeGallery.length <= 1) return;
+    const touch = e.touches[0];
+    const deltaX = touch.clientX - touchStartXRef.current;
+    const deltaY = touch.clientY - touchStartYRef.current;
+    touchDeltaXRef.current = deltaX;
+    touchDeltaYRef.current = deltaY;
+
+    if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 10) {
+      isSwipingRef.current = true;
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (activeGallery.length <= 1) return;
+    const deltaX = touchDeltaXRef.current;
+    const deltaY = touchDeltaYRef.current;
+    const isHorizontal = Math.abs(deltaX) > Math.abs(deltaY);
+    const minDistance = 25;
+
+    if (isHorizontal && Math.abs(deltaX) >= minDistance) {
+      if (deltaX < 0) {
+        goToNext();
+      } else {
+        goToPrev();
+      }
+    }
+
+    setTimeout(() => {
+      isSwipingRef.current = false;
+    }, 120);
+  };
+
   if (!activeItem) return null;
 
   return (
     <div className="ss-product-gallery">
-      <div className="ss-product-gallery__main">
+      <div
+        className="ss-product-gallery__main"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+      >
         <AnimatePresence mode="wait">
           <m.div
             key={`${activeItem.kind}-${activeItem.src}`}
             className="w-100 h-100"
-            initial={reduceMotion ? false : { opacity: 0, scale: 1.01 }}
-            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.995 }}
-            transition={{ duration: reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
+            initial={reduceMotion ? false : { opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.16, 1, 0.3, 1] }}
           >
             {activeItem.kind === "image" ? (
               <button
                 type="button"
                 className="ss-product-gallery__main-image-btn"
-                onClick={() => openLightbox(activeIndex)}
+                onClick={() => {
+                  if (isSwipingRef.current) return;
+                  openLightbox(activeIndex);
+                }}
                 aria-label="Otvori sliku u punom ekranu"
-                style={{ display: "block", width: "100%", height: "100%", padding: 0, border: "none", background: "none", cursor: "zoom-in" }}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  height: "100%",
+                  padding: 0,
+                  border: "none",
+                  background: "none",
+                  cursor: "zoom-in",
+                  touchAction: "pan-y",
+                }}
               >
                 <StorefrontSmartImage
                   sources={[activeItem.src]}
@@ -302,6 +379,27 @@ export default function ProductImageGallery({ images, name, videoUrl, media }: P
             )}
           </m.div>
         </AnimatePresence>
+
+        {activeGallery.length > 1 ? (
+          <div className="ss-product-gallery__mobile-bar d-flex d-md-none">
+            <div className="ss-product-gallery__mobile-dots">
+              {activeGallery.map((_, idx) => (
+                <button
+                  key={`dot-${idx}`}
+                  type="button"
+                  className={`ss-product-gallery__mobile-dot ${activeIndex === idx ? "is-active" : ""}`}
+                  onClick={() => setActiveIndex(idx)}
+                  aria-label={`Slika ${idx + 1}`}
+                />
+              ))}
+            </div>
+            <div className="ss-product-gallery__mobile-counter">
+              <span>{activeIndex + 1}</span>
+              <span className="ss-product-gallery__mobile-counter-divider">/</span>
+              <span>{activeGallery.length}</span>
+            </div>
+          </div>
+        ) : null}
       </div>
 
       {lightboxIndex != null ? (
