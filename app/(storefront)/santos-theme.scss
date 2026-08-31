@@ -2393,24 +2393,25 @@ body.mobile-menu-opened {
    ====================================================================== */
 @media (min-width: 992px) {
   #header .container {
-    padding-top: 0.3rem !important;
-    padding-bottom: 0.3rem !important;
+    padding-top: 0.55rem !important;
+    padding-bottom: 0.55rem !important;
     padding-left: clamp(1rem, 2vw, 2rem) !important;
     padding-right: clamp(1rem, 2vw, 2rem) !important;
   }
 
   #header .header-desk_type_1 {
-    column-gap: clamp(0.6rem, 1.6vw, 2rem) !important;
-    /* The template ships 20px of vertical padding here; with a 37px logo that
-       alone made the bar 78px tall before the container's own padding. */
-    padding-top: 0.5rem !important;
-    padding-bottom: 0.5rem !important;
+    column-gap: clamp(0.75rem, 1.8vw, 2.25rem) !important;
+    /* The template ships 20px of vertical padding here. Zeroing it out made the
+       bar ~44px tall, which read as a thin strip on a 1920px screen; this keeps
+       the single row but gives it the presence a masthead needs. */
+    padding-top: 0.9rem !important;
+    padding-bottom: 0.9rem !important;
     min-height: 0;
   }
 
   #header .header-desk_type_1 .ss-site-logo {
-    width: clamp(132px, 9.5vw, 168px) !important;
-    max-height: 2.35rem !important;
+    width: clamp(158px, 11vw, 205px) !important;
+    max-height: 3rem !important;
   }
 
   /* The one rule that kills the second row. */
@@ -2421,39 +2422,39 @@ body.mobile-menu-opened {
   }
 
   #header .header-desk_type_1 .navigation__link {
-    min-height: 2.25rem !important;
-    padding-inline: clamp(0.4rem, 0.7vw, 0.85rem) !important;
-    font-size: clamp(0.76rem, 0.68vw, 0.86rem) !important;
+    min-height: 2.6rem !important;
+    padding-inline: clamp(0.5rem, 0.85vw, 1.05rem) !important;
+    font-size: clamp(0.84rem, 0.78vw, 0.95rem) !important;
     letter-spacing: 0.055em !important;
     white-space: nowrap;
   }
 
   #header .header-desk_type_1 .header-tools {
-    gap: clamp(0.15rem, 0.4vw, 0.45rem) !important;
+    gap: clamp(0.2rem, 0.5vw, 0.6rem) !important;
   }
 
   #header .header-tools__item {
-    width: 2.1rem !important;
-    height: 2.1rem !important;
+    width: 2.5rem !important;
+    height: 2.5rem !important;
   }
 
   .ss-header-social-link {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
   }
 
   .ss-header-social-link svg {
-    width: 17px;
-    height: 17px;
+    width: 19px;
+    height: 19px;
   }
 
   #header .ss-inline-link {
-    font-size: 0.7rem !important;
-    letter-spacing: 0.1em !important;
+    font-size: 0.78rem !important;
+    letter-spacing: 0.09em !important;
   }
 
   .ss-header-tools__divider {
-    height: 1.1rem;
+    height: 1.5rem;
   }
 }
 
@@ -2468,13 +2469,13 @@ body.mobile-menu-opened {
 
 @media (min-width: 992px) and (max-width: 1299.98px) {
   #header .header-desk_type_1 .navigation__link {
-    padding-inline: 0.3rem !important;
-    font-size: 0.74rem !important;
+    padding-inline: 0.36rem !important;
+    font-size: 0.79rem !important;
     letter-spacing: 0.03em !important;
   }
 
   #header .header-desk_type_1 .ss-site-logo {
-    width: 124px !important;
+    width: 146px !important;
   }
 }
 
@@ -2490,12 +2491,12 @@ body.mobile-menu-opened {
   }
 
   #header .header-desk_type_1 .ss-site-logo {
-    width: 108px !important;
+    width: 126px !important;
   }
 
   #header .header-desk_type_1 .navigation__link {
-    padding-inline: 0.22rem !important;
-    font-size: 0.7rem !important;
+    padding-inline: 0.26rem !important;
+    font-size: 0.75rem !important;
     letter-spacing: 0.02em !important;
   }
 
@@ -2517,17 +2518,17 @@ body.mobile-menu-opened {
 /* Scrolled state trims another few pixels, the way a modern sticky bar does. */
 @media (min-width: 992px) {
   #header.ss-header-scrolled .container {
-    padding-top: 0.15rem !important;
-    padding-bottom: 0.15rem !important;
+    padding-top: 0.35rem !important;
+    padding-bottom: 0.35rem !important;
   }
 
   #header.ss-header-scrolled .header-desk_type_1 {
-    padding-top: 0.3rem !important;
-    padding-bottom: 0.3rem !important;
+    padding-top: 0.6rem !important;
+    padding-bottom: 0.6rem !important;
   }
 
   #header.ss-header-scrolled .header-desk_type_1 .ss-site-logo {
-    max-height: 2.1rem !important;
+    max-height: 2.6rem !important;
   }
 }
 
