@@ -106,16 +106,38 @@ export default function ProductImageGallery({ images, name, videoUrl, media }: P
   }, [cleanImages, failedImageSrcs, media, videoUrl]);
 
   const [activeIndex, setActiveIndex] = useState(0);
+  const [direction, setDirection] = useState(0);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const { reduceMotion } = useAnimationBudget();
   const activeGallery = gallery;
   const activeItem = activeGallery[Math.min(activeIndex, Math.max(activeGallery.length - 1, 0))] || activeGallery[0];
+  const isDraggingRef = useRef(false);
 
   const imageItems = activeGallery.filter((item) => item.kind === "image");
 
   useEffect(() => {
     setActiveIndex((current) => Math.min(current, Math.max(activeGallery.length - 1, 0)));
   }, [activeGallery.length]);
+
+  const goToNext = useCallback(() => {
+    if (activeGallery.length <= 1) return;
+    setDirection(1);
+    setActiveIndex((prev) => (prev + 1) % activeGallery.length);
+  }, [activeGallery.length]);
+
+  const goToPrev = useCallback(() => {
+    if (activeGallery.length <= 1) return;
+    setDirection(-1);
+    setActiveIndex((prev) => (prev - 1 + activeGallery.length) % activeGallery.length);
+  }, [activeGallery.length]);
+
+  const handleSelectIndex = useCallback(
+    (index: number) => {
+      setDirection(index > activeIndex ? 1 : -1);
+      setActiveIndex(index);
+    },
+    [activeIndex],
+  );
 
   const openLightbox = useCallback((index: number) => {
     const imageIndex = activeGallery.slice(0, index + 1).filter((item) => item.kind === "image").length - 1;
@@ -244,27 +266,91 @@ export default function ProductImageGallery({ images, name, videoUrl, media }: P
     };
   }, [lightboxIndex, closeLightbox, lightboxPrev, lightboxNext]);
 
+  const handleDragStart = () => {
+    isDraggingRef.current = true;
+  };
+
+  const handleDragEnd = (
+    _event: MouseEvent | TouchEvent | PointerEvent,
+    info: { offset: { x: number; y: number }; velocity: { x: number; y: number } }
+  ) => {
+    setTimeout(() => {
+      isDraggingRef.current = false;
+    }, 80);
+
+    const swipeThreshold = 35;
+    const velocityThreshold = 250;
+
+    if (info.offset.x < -swipeThreshold || info.velocity.x < -velocityThreshold) {
+      goToNext();
+    } else if (info.offset.x > swipeThreshold || info.velocity.x > velocityThreshold) {
+      goToPrev();
+    }
+  };
+
+  const carouselVariants = {
+    enter: (dir: number) => ({
+      x: dir > 0 ? "100%" : dir < 0 ? "-100%" : 0,
+      opacity: reduceMotion ? 1 : 0.4,
+      scale: reduceMotion ? 1 : 0.98,
+    }),
+    center: {
+      x: 0,
+      opacity: 1,
+      scale: 1,
+    },
+    exit: (dir: number) => ({
+      x: dir > 0 ? "-100%" : dir < 0 ? "100%" : 0,
+      opacity: reduceMotion ? 1 : 0.4,
+      scale: reduceMotion ? 1 : 0.98,
+    }),
+  };
+
   if (!activeItem) return null;
 
   return (
     <div className="ss-product-gallery">
       <div className="ss-product-gallery__main">
-        <AnimatePresence mode="wait">
+        <AnimatePresence initial={false} custom={direction} mode="popLayout">
           <m.div
             key={`${activeItem.kind}-${activeItem.src}`}
-            className="w-100 h-100"
-            initial={reduceMotion ? false : { opacity: 0, scale: 1.01 }}
-            animate={reduceMotion ? { opacity: 1 } : { opacity: 1, scale: 1 }}
-            exit={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 0.995 }}
-            transition={{ duration: reduceMotion ? 0 : 0.34, ease: [0.22, 1, 0.36, 1] }}
+            className="w-100 h-100 ss-product-gallery__slide"
+            custom={direction}
+            variants={carouselVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            drag={activeGallery.length > 1 ? "x" : false}
+            dragConstraints={{ left: 0, right: 0 }}
+            dragElastic={0.24}
+            dragDirectionLock={true}
+            onDragStart={handleDragStart}
+            onDragEnd={handleDragEnd}
+            transition={{
+              x: { type: "spring", stiffness: 320, damping: 32 },
+              opacity: { duration: 0.28 },
+              scale: { duration: 0.28 },
+            }}
           >
             {activeItem.kind === "image" ? (
               <button
                 type="button"
                 className="ss-product-gallery__main-image-btn"
-                onClick={() => openLightbox(activeIndex)}
+                onClick={() => {
+                  if (isDraggingRef.current) return;
+                  openLightbox(activeIndex);
+                }}
                 aria-label="Otvori sliku u punom ekranu"
-                style={{ display: "block", width: "100%", height: "100%", padding: 0, border: "none", background: "none", cursor: "zoom-in" }}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  height: "100%",
+                  padding: 0,
+                  border: "none",
+                  background: "none",
+                  cursor: "zoom-in",
+                  touchAction: "pan-y",
+                }}
               >
                 <StorefrontSmartImage
                   sources={[activeItem.src]}
@@ -302,6 +388,56 @@ export default function ProductImageGallery({ images, name, videoUrl, media }: P
             )}
           </m.div>
         </AnimatePresence>
+
+        {activeGallery.length > 1 ? (
+          <>
+            <button
+              type="button"
+              className="ss-product-gallery__nav-btn ss-product-gallery__nav-btn--prev"
+              onClick={(e) => {
+                e.stopPropagation();
+                goToPrev();
+              }}
+              aria-label="Prethodna slika"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="15 18 9 12 15 6" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              className="ss-product-gallery__nav-btn ss-product-gallery__nav-btn--next"
+              onClick={(e) => {
+                e.stopPropagation();
+                goToNext();
+              }}
+              aria-label="Sledeća slika"
+            >
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </button>
+
+            <div className="ss-product-gallery__mobile-bar d-flex d-md-none">
+              <div className="ss-product-gallery__mobile-dots">
+                {activeGallery.map((_, idx) => (
+                  <button
+                    key={`dot-${idx}`}
+                    type="button"
+                    className={`ss-product-gallery__mobile-dot ${activeIndex === idx ? "is-active" : ""}`}
+                    onClick={() => handleSelectIndex(idx)}
+                    aria-label={`Slika ${idx + 1}`}
+                  />
+                ))}
+              </div>
+              <div className="ss-product-gallery__mobile-counter">
+                <span>{activeIndex + 1}</span>
+                <span className="ss-product-gallery__mobile-counter-divider">/</span>
+                <span>{activeGallery.length}</span>
+              </div>
+            </div>
+          </>
+        ) : null}
       </div>
 
       {lightboxIndex != null ? (
@@ -429,7 +565,7 @@ export default function ProductImageGallery({ images, name, videoUrl, media }: P
               key={`${item.kind}-${item.src}-${index}`}
               type="button"
               className={`ss-product-gallery__thumb ${activeIndex === index ? "is-active" : ""}`}
-              onClick={() => setActiveIndex(index)}
+              onClick={() => handleSelectIndex(index)}
               aria-label={item.kind === "video" ? `Show video ${index + 1}` : `Show image ${index + 1}`}
               aria-pressed={activeIndex === index}
               whileTap={reduceMotion ? undefined : { scale: 0.96 }}

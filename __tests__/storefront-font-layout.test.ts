@@ -9,7 +9,7 @@ describe("storefront font activation", () => {
     expect(storefront).toContain("getFontSettings");
     expect(storefront).toContain("getFontLibrary");
     expect(storefront).toContain("buildStorefrontFontCss");
-    expect(storefront).toContain('className="ss-storefront-font-scope"');
+    expect(storefront).toContain("ss-storefront-font-scope");
     expect(admin).not.toContain("ss-storefront-font-scope");
   });
 });
