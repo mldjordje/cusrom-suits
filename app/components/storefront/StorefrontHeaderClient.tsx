@@ -640,322 +640,214 @@ export default function StorefrontHeaderClient({
           </div>
         </div>
       </div>
-
       {mounted && typeof document !== "undefined"
         ? createPortal(
             <AnimatePresence initial={false}>
               {mobileOpen ? (
-                <m.div
-              className="ss-mobile-nav-layer"
-              initial={reduceMotion ? false : { opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: reduceMotion ? 0 : 0.22, ease: [0.22, 1, 0.36, 1] }}
-            >
-              <m.button
-                type="button"
-                className="ss-mobile-nav-backdrop"
-                aria-label={isEn ? "Close menu" : "Zatvori meni"}
-                onClick={closeMobileMenu}
-              />
-
-              <m.nav
-                id="ss-mobile-nav-panel"
-                className="ss-mobile-nav-panel"
-                initial={reduceMotion ? false : { opacity: 0, x: "-100%" }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: "-100%" }}
-                transition={{ duration: reduceMotion ? 0 : 0.35, ease: [0.16, 1, 0.3, 1] }}
-              >
-                {/* Fixed top bar with logo and close button */}
-                <div className="ss-mobile-nav-panel__header">
-                  <Link href={withLang("/")} className="ss-mobile-nav-brand__logo" onClick={closeMobileMenu}>
-                    <Image
-                      src="/img/logo-header.png"
-                      alt="Santos and Santorini"
-                      width={280}
-                      height={79}
-                      className="logo__image d-block ss-site-logo ss-site-logo--mobile"
-                      sizes="(max-width: 767.98px) min(208px, 54vw), 208px"
-                    />
-                  </Link>
-                  <button
-                    type="button"
-                    className="ss-mobile-nav-close"
-                    aria-label={isEn ? "Close menu" : "Zatvori meni"}
-                    onClick={closeMobileMenu}
-                  >
-                    <svg width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                      <path d="M4 4L14 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                      <path d="M14 4L4 14" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-                    </svg>
-                  </button>
-                </div>
-
-                {/* Smooth dedicated scroll viewport */}
-                <div className="ss-mobile-nav-panel__body">
-                  {/* Search Bar */}
+                <div className="ss-mobile-menu">
+                  {/* Backdrop */}
                   <m.div
-                    className="ss-mobile-nav-search-wrap"
-                    initial={reduceMotion ? false : { opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: reduceMotion ? 0 : 0.28, delay: 0.05, ease: [0.16, 1, 0.3, 1] }}
+                    className="ss-mobile-menu__backdrop"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.25 }}
+                    onClick={closeMobileMenu}
+                    aria-hidden="true"
+                  />
+
+                  {/* Drawer Panel */}
+                  <m.aside
+                    id="ss-mobile-menu-drawer"
+                    className="ss-mobile-menu__drawer"
+                    initial={{ x: "-100%" }}
+                    animate={{ x: 0 }}
+                    exit={{ x: "-100%" }}
+                    transition={{ type: "tween", duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+                    aria-label={isEn ? "Mobile menu" : "Mobilni meni"}
                   >
-                    <button
-                      type="button"
-                      className="ss-mobile-nav-search-btn"
-                      onClick={() => {
-                        closeMobileMenu();
-                        handleSearchTrigger();
-                      }}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-                        <circle cx="9" cy="9" r="5.75" stroke="currentColor" strokeWidth="1.5" />
-                        <path d="M13.5 13.5L17 17" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-                      </svg>
-                      <span>{isEn ? "Search collection..." : "Pretražite kolekciju..."}</span>
-                    </button>
-                  </m.div>
+                    {/* Fixed top bar with logo and close button */}
+                    <div className="ss-mobile-menu__header">
+                      <Link href={withLang("/")} className="ss-mobile-menu__logo" onClick={closeMobileMenu}>
+                        <Image
+                          src="/img/logo-header.png"
+                          alt="Santos and Santorini"
+                          width={200}
+                          height={56}
+                          className="ss-mobile-menu__logo-img"
+                          priority
+                        />
+                      </Link>
+                      <button
+                        type="button"
+                        className="ss-mobile-menu__close"
+                        onClick={closeMobileMenu}
+                        aria-label={isEn ? "Close menu" : "Zatvori meni"}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </button>
+                    </div>
 
-                  {/* Primary Navigation List */}
-                  <div className="ss-mobile-nav-section-label">
-                    <span>{isEn ? "Navigation" : "Meni"}</span>
-                  </div>
-
-                  <ul className="ss-mobile-nav-list list-unstyled">
-                    {navItems.map((item, index) => {
-                      const itemNum = String(index + 1).padStart(2, "0");
-                      const isShop = item.href === "/web-shop";
-                      const isItemOpen = isShop && mobileShopExpanded;
-                      const active = isItemActive(item.href);
-
-                      return (
-                        <m.li
-                          key={`mobile-${item.href}`}
-                          className={`ss-mobile-nav-item ${active ? "is-active" : ""}`}
-                          initial={reduceMotion ? false : { opacity: 0, x: -16 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{
-                            duration: reduceMotion ? 0 : 0.35,
-                            delay: reduceMotion ? 0 : 0.06 + index * 0.04,
-                            ease: [0.16, 1, 0.3, 1],
+                    {/* Dedicated Scroll Viewport */}
+                    <div className="ss-mobile-menu__body">
+                      {/* Search Bar */}
+                      <div className="ss-mobile-menu__search">
+                        <button
+                          type="button"
+                          className="ss-mobile-menu__search-btn"
+                          onClick={() => {
+                            closeMobileMenu();
+                            handleSearchTrigger();
                           }}
                         >
-                          {isShop && shopMenuLinks.length > 0 ? (
-                            <>
-                              <button
-                                type="button"
-                                className={`ss-mobile-nav-link ss-mobile-nav-link--toggle ${active ? "is-active" : ""} ${isItemOpen ? "is-open" : ""}`}
-                                aria-expanded={mobileShopExpanded}
-                                onClick={() => {
-                                  setShouldLoadShopCategories(true);
-                                  setMobileShopExpanded((prev) => !prev);
-                                }}
-                              >
-                                <div className="ss-mobile-nav-link__main">
-                                  <span className="ss-mobile-nav-link__num">{itemNum}</span>
-                                  <span className="ss-mobile-nav-link__text">{item.label}</span>
-                                </div>
-                                <span className={`ss-mobile-nav-link__icon-box ${isItemOpen ? "is-open" : ""}`}>
-                                  <svg
-                                    className="ss-mobile-nav-link__chevron"
-                                    width="14"
-                                    height="14"
-                                    viewBox="0 0 16 16"
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    aria-hidden="true"
-                                  >
-                                    <path d="M3.5 6L8 10.5L12.5 6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
-                                </span>
-                              </button>
-
-                              <AnimatePresence initial={false}>
-                                {mobileShopExpanded ? (
-                                  <m.div
-                                    className="ss-mobile-nav-submenu"
-                                    initial={reduceMotion ? false : { height: 0, opacity: 0 }}
-                                    animate={{ height: "auto", opacity: 1 }}
-                                    exit={reduceMotion ? { opacity: 0 } : { height: 0, opacity: 0 }}
-                                    transition={{ duration: reduceMotion ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
-                                    style={{ overflow: "hidden" }}
-                                  >
-                                    {shopMenuLinks.map((link) => {
-                                      const isSale = link.href.includes("categoryId=sale") || link.href.includes("akcije");
-                                      return (
-                                        <Link
-                                          key={`mobile-${link.href}`}
-                                          href={withLang(link.href)}
-                                          prefetch={link.href.startsWith("/web-shop")}
-                                          className={`ss-mobile-nav-submenu__link ${link.isChild ? "ss-mobile-nav-submenu__link--child" : ""} ${isSale ? "ss-mobile-nav-submenu__link--sale" : ""}`}
-                                          onClick={closeMobileMenu}
-                                        >
-                                          <span className="ss-mobile-nav-submenu__indicator" aria-hidden="true" />
-                                          <span className="ss-mobile-nav-submenu__label">{link.label}</span>
-                                          {isSale ? <span className="ss-mobile-nav-badge">SALE</span> : null}
-                                        </Link>
-                                      );
-                                    })}
-                                  </m.div>
-                                ) : null}
-                              </AnimatePresence>
-                            </>
-                          ) : (
-                            <>
-                              <Link
-                                href={withLang(item.href)}
-                                prefetch={item.href === "/web-shop" || item.href.startsWith("/web-shop")}
-                                className={`ss-mobile-nav-link ${active ? "is-active" : ""}`}
-                                onClick={closeMobileMenu}
-                              >
-                                <div className="ss-mobile-nav-link__main">
-                                  <span className="ss-mobile-nav-link__num">{itemNum}</span>
-                                  <span className="ss-mobile-nav-link__text">{item.label}</span>
-                                </div>
-                                <span className="ss-mobile-nav-link__arrow" aria-hidden="true">
-                                  <svg width="14" height="14" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                    <path d="M5.5 3.5L10 8L5.5 12.5" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
-                                  </svg>
-                                </span>
-                              </Link>
-
-                              {(() => {
-                                const groupKey = navItemGroupKey(item.href);
-                                const children = groupKey
-                                  ? shopCategories.find((category) => category.id === groupKey)?.children || []
-                                  : [];
-                                if (children.length === 0) return null;
-                                return (
-                                  <div className="ss-mobile-nav-submenu">
-                                    {children.map((child) => (
-                                      <Link
-                                        key={`mobile-${item.href}-${child.href}`}
-                                        href={withLang(child.href)}
-                                        prefetch={false}
-                                        className="ss-mobile-nav-submenu__link ss-mobile-nav-submenu__link--child"
-                                        onClick={closeMobileMenu}
-                                      >
-                                        <span className="ss-mobile-nav-submenu__indicator" aria-hidden="true" />
-                                        <span className="ss-mobile-nav-submenu__label">
-                                          {localizeDynamicCategoryLabel(child.name, isEn ? "en" : "sr")}
-                                        </span>
-                                      </Link>
-                                    ))}
-                                  </div>
-                                );
-                              })()}
-                            </>
-                          )}
-                        </m.li>
-                      );
-                    })}
-                  </ul>
-
-                  {/* Customer Portal & Quick Services */}
-                  <div className="ss-mobile-nav-section-label">
-                    <span>{isEn ? "Customer Services" : "Korisnički servis"}</span>
-                  </div>
-
-                  <div className="ss-mobile-nav-quick-grid">
-                    <Link
-                      href={withLang(authUser ? "/nalog" : "/nalog/prijava")}
-                      className="ss-mobile-nav-card"
-                      onClick={closeMobileMenu}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                        <circle cx="12" cy="7" r="4" />
-                      </svg>
-                      <span>
-                        {authLoading
-                          ? "…"
-                          : authUser
-                            ? isEn
-                              ? "My Account"
-                              : "Moj Nalog"
-                            : isEn
-                              ? "Sign In"
-                              : "Prijava"}
-                      </span>
-                    </Link>
-
-                    {authUser ? (
-                      <Link
-                        href={withLang("/nalog/porudzbine")}
-                        className="ss-mobile-nav-card"
-                        onClick={closeMobileMenu}
-                      >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z" />
-                          <line x1="3" y1="6" x2="21" y2="6" />
-                          <path d="M16 10a4 4 0 0 1-8 0" />
-                        </svg>
-                        <span>{isEn ? "My Orders" : "Porudžbine"}</span>
-                      </Link>
-                    ) : null}
-
-                    <Link
-                      href={withLang("/prodajna-mesta")}
-                      className="ss-mobile-nav-card"
-                      onClick={closeMobileMenu}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" />
-                        <circle cx="12" cy="10" r="3" />
-                      </svg>
-                      <span>{isEn ? "Ateliers" : "Saloni"}</span>
-                    </Link>
-
-                    <Link
-                      href={withLang("/kontakt")}
-                      className="ss-mobile-nav-card"
-                      onClick={closeMobileMenu}
-                    >
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z" />
-                      </svg>
-                      <span>{isEn ? "Contact" : "Kontakt"}</span>
-                    </Link>
-                  </div>
-
-                  {/* Footer segment: Language Switcher, Social links, Brand text */}
-                  <div className="ss-mobile-nav-footer">
-                    <div className="ss-mobile-nav-footer__top">
-                      <div className="ss-mobile-nav-lang">
-                        <span className="ss-mobile-nav-lang__label">{isEn ? "Language" : "Jezik"}</span>
-                        <StorefrontLanguageSwitcher lang={lang} compact />
+                          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                          </svg>
+                          <span>{isEn ? "Search collection..." : "Pretražite kolekciju..."}</span>
+                        </button>
                       </div>
 
-                      {headerSocialItems.length ? (
-                        <div className="ss-mobile-nav-socials" aria-label={isEn ? "Social links" : "Društvene mreže"}>
-                          {headerSocialItems.map((item) => (
-                            <a
-                              key={`mobile-social-${item.key}`}
-                              href={item.href}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="ss-mobile-nav-social-btn"
-                              aria-label={item.label}
-                              onClick={closeMobileMenu}
-                            >
-                              {renderHeaderSocialIcon(item.key, "mobile")}
-                            </a>
-                          ))}
-                        </div>
-                      ) : null}
-                    </div>
+                      {/* Navigation List */}
+                      <nav className="ss-mobile-menu__nav">
+                        <ul className="ss-mobile-menu__list">
+                          {navItems.map((item) => {
+                            const isShop = item.href === "/web-shop";
+                            const isItemOpen = isShop && mobileShopExpanded;
+                            const active = isItemActive(item.href);
 
-                    <div className="ss-mobile-nav-brand-stamp">
-                      <span>Santos &amp; Santorini</span>
-                      <span className="ss-mobile-nav-brand-dot">·</span>
-                      <span>Sartorial Luxury</span>
+                            return (
+                              <li key={`mob-${item.href}`} className="ss-mobile-menu__item">
+                                {isShop && shopMenuLinks.length > 0 ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      className={`ss-mobile-menu__link ss-mobile-menu__link--toggle ${active ? "is-active" : ""}`}
+                                      onClick={() => {
+                                        setShouldLoadShopCategories(true);
+                                        setMobileShopExpanded((prev) => !prev);
+                                      }}
+                                      aria-expanded={mobileShopExpanded}
+                                    >
+                                      <span className="ss-mobile-menu__link-text">{item.label}</span>
+                                      <span className={`ss-mobile-menu__chevron ${isItemOpen ? "is-open" : ""}`}>
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <polyline points="6 9 12 15 18 9" />
+                                        </svg>
+                                      </span>
+                                    </button>
+
+                                    <AnimatePresence initial={false}>
+                                      {mobileShopExpanded ? (
+                                        <m.div
+                                          className="ss-mobile-menu__submenu"
+                                          initial={{ height: 0, opacity: 0 }}
+                                          animate={{ height: "auto", opacity: 1 }}
+                                          exit={{ height: 0, opacity: 0 }}
+                                          transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
+                                        >
+                                          <div className="ss-mobile-menu__subgrid">
+                                            {shopMenuLinks.map((link) => {
+                                              const isSale = link.href.includes("categoryId=sale") || link.href.includes("akcije");
+                                              return (
+                                                <Link
+                                                  key={`sub-${link.href}`}
+                                                  href={withLang(link.href)}
+                                                  prefetch={link.href.startsWith("/web-shop")}
+                                                  className={`ss-mobile-menu__sublink ${link.isChild ? "ss-mobile-menu__sublink--child" : ""} ${isSale ? "ss-mobile-menu__sublink--sale" : ""}`}
+                                                  onClick={closeMobileMenu}
+                                                >
+                                                  <span>{link.label}</span>
+                                                  {isSale ? <span className="ss-mobile-menu__sale-tag">SALE</span> : null}
+                                                </Link>
+                                              );
+                                            })}
+                                          </div>
+                                        </m.div>
+                                      ) : null}
+                                    </AnimatePresence>
+                                  </>
+                                ) : (
+                                  <Link
+                                    href={withLang(item.href)}
+                                    prefetch={item.href === "/web-shop" || item.href.startsWith("/web-shop")}
+                                    className={`ss-mobile-menu__link ${active ? "is-active" : ""}`}
+                                    onClick={closeMobileMenu}
+                                  >
+                                    <span className="ss-mobile-menu__link-text">{item.label}</span>
+                                    <span className="ss-mobile-menu__arrow">
+                                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                                        <polyline points="9 18 15 12 9 6" />
+                                      </svg>
+                                    </span>
+                                  </Link>
+                                )}
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </nav>
+
+                      {/* Customer Services */}
+                      <div className="ss-mobile-menu__quick">
+                        <span className="ss-mobile-menu__quick-title">{isEn ? "Customer Service" : "Korisnički servis"}</span>
+                        <div className="ss-mobile-menu__quick-row">
+                          <Link href={withLang(authUser ? "/nalog" : "/nalog/prijava")} className="ss-mobile-menu__quick-pill" onClick={closeMobileMenu}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            <span>{authLoading ? "…" : authUser ? (isEn ? "Account" : "Moj Nalog") : (isEn ? "Sign In" : "Prijava")}</span>
+                          </Link>
+                          <Link href={withLang("/nalog/porudzbine")} className="ss-mobile-menu__quick-pill" onClick={closeMobileMenu}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+                            <span>{isEn ? "Orders" : "Porudžbine"}</span>
+                          </Link>
+                          <Link href={withLang("/prodajna-mesta")} className="ss-mobile-menu__quick-pill" onClick={closeMobileMenu}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                            <span>{isEn ? "Ateliers" : "Saloni"}</span>
+                          </Link>
+                          <Link href={withLang("/kontakt")} className="ss-mobile-menu__quick-pill" onClick={closeMobileMenu}>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07 19.5 19.5 0 01-6-6 19.79 19.79 0 01-3.07-8.67A2 2 0 014.11 2h3a2 2 0 012 1.72 12.84 12.84 0 00.7 2.81 2 2 0 01-.45 2.11L8.09 9.91a16 16 0 006 6l1.27-1.27a2 2 0 012.11-.45 12.84 12.84 0 002.81.7A2 2 0 0122 16.92z"/></svg>
+                            <span>{isEn ? "Contact" : "Kontakt"}</span>
+                          </Link>
+                        </div>
+                      </div>
+
+                      {/* Footer */}
+                      <div className="ss-mobile-menu__footer">
+                        <div className="ss-mobile-menu__lang">
+                          <span className="ss-mobile-menu__lang-label">{isEn ? "Language" : "Jezik"}:</span>
+                          <StorefrontLanguageSwitcher lang={lang} compact />
+                        </div>
+
+                        {headerSocialItems.length ? (
+                          <div className="ss-mobile-menu__socials">
+                            {headerSocialItems.map((item) => (
+                              <a
+                                key={`social-${item.key}`}
+                                href={item.href}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="ss-mobile-menu__social-link"
+                                aria-label={item.label}
+                                onClick={closeMobileMenu}
+                              >
+                                {renderHeaderSocialIcon(item.key, "mobile")}
+                              </a>
+                            ))}
+                          </div>
+                        ) : null}
+
+                        <div className="ss-mobile-menu__brand-copy">
+                          Santos &amp; Santorini · Sartorial Luxury
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  </m.aside>
                 </div>
-              </m.nav>
-            </m.div>
-          ) : null}
-        </AnimatePresence>,
+              ) : null}
+            </AnimatePresence>,
             document.body,
           )
         : null}
