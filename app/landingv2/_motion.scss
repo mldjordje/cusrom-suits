@@ -510,6 +510,157 @@
 }
 
 // -----------------------------------------------------------------------------
+// Ateliers — two monumental salon cards
+// -----------------------------------------------------------------------------
+
+.salonGrid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: clamp(20px, 3vw, 48px);
+  padding-inline: var(--gutter);
+  max-width: 1720px;
+  margin: 0 auto clamp(48px, 8vh, 96px);
+}
+
+.salon {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 2.4vh, 30px);
+  background: var(--lux-ink-2, #17140f);
+  border: 1px solid rgba(242, 238, 231, 0.08);
+  padding-bottom: clamp(24px, 3vw, 40px);
+  transition: border-color 500ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    border-color: var(--lux-gold, #c9a96e);
+  }
+}
+
+.salonFigure {
+  position: relative;
+  aspect-ratio: 10 / 9;
+  overflow: hidden;
+}
+
+// Bled so the scroll drift never exposes the frame edge.
+.salonShot {
+  position: absolute;
+  inset: -9% 0;
+  will-change: transform;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.salonScrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(10, 9, 8, 0.25) 0%,
+    rgba(10, 9, 8, 0.05) 40%,
+    rgba(10, 9, 8, 0.88) 100%
+  );
+}
+
+.salonIndex {
+  position: absolute;
+  top: clamp(16px, 2vw, 26px);
+  left: clamp(18px, 2.2vw, 30px);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--lux-gold, #c9a96e);
+}
+
+.salonCity {
+  position: absolute;
+  left: clamp(18px, 2.2vw, 30px);
+  bottom: clamp(18px, 2.2vw, 30px);
+  font-family: var(--lx-display), "Marcellus", Georgia, serif;
+  font-size: clamp(2rem, 3.6vw, 3.4rem);
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: -0.01em;
+  color: #ffffff;
+  text-shadow: 0 4px 22px rgba(0, 0, 0, 0.65);
+}
+
+.salonFacts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: clamp(12px, 1.6vw, 26px);
+  padding-inline: clamp(18px, 2.2vw, 30px);
+  margin: 0;
+
+  dt {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    color: var(--lux-fg-faint, #756b60);
+    margin-bottom: 6px;
+  }
+
+  dd {
+    margin: 0;
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--lux-fg, #f2eee7);
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
+    border-bottom: 1px solid rgba(201, 169, 110, 0.4);
+    transition: border-color 300ms cubic-bezier(0.16, 1, 0.3, 1);
+
+    &:hover {
+      border-bottom-color: var(--lux-gold, #c9a96e);
+    }
+  }
+}
+
+.salonActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18px;
+  padding-inline: clamp(18px, 2.2vw, 30px);
+}
+
+.salonMapLink {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--lux-fg-soft, #a79e92);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition:
+    color 300ms cubic-bezier(0.16, 1, 0.3, 1),
+    border-color 300ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  &:hover {
+    color: var(--lux-gold, #c9a96e);
+    border-bottom-color: var(--lux-gold, #c9a96e);
+  }
+}
+
+@media (max-width: 900px) {
+  .salonGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .salonFacts {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+// -----------------------------------------------------------------------------
 // Seam — one section physically hands off to the next
 // -----------------------------------------------------------------------------
 

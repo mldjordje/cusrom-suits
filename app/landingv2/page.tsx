@@ -1,7 +1,6 @@
 import JsonLd from "@/app/components/seo/JsonLd";
 import {
   listCatalogProducts,
-  productMatchesCategoryGroup,
   type CatalogProductView,
 } from "@/lib/catalog/store";
 import { getBrokenProductIdSet } from "@/lib/catalog/mediaHealth";
@@ -147,64 +146,69 @@ export default async function LandingPage({
     .slice(0, 4)
     .map((item, index) => toProduct(item, lang, index));
 
-  const categoryImage = (group: string, fallbackImage: string) => {
-    const found = items.find((item) =>
-      productMatchesCategoryGroup(item, group),
-    );
-    if (found) {
-      const src = getCatalogProductImageSources(found)[0];
-      if (src && !src.includes("obuca.jpg")) return src;
-    }
-    return fallbackImage;
-  };
-
+  /**
+   * Collection imagery is curated, not drawn from the catalogue. A category
+   * card showing whichever product happened to sort first gives four frames
+   * with four different backgrounds, crops and colour temperatures — the
+   * single loudest reason the old section read as a shop grid rather than a
+   * house. These four are Santos's own photography, cropped to one ratio and
+   * graded to one warm sartorial key.
+   */
   const categories: LxCategory[] = [
     {
       id: "odela",
       group: "odela",
       sr: "Muška Odela",
       en: "Bespoke Suits",
-      fallback: "/img/odela-luxury.jpg",
+      image: "/img/kolekcija-odela.jpg",
     },
     {
       id: "kosulje",
       group: "kosulje",
       sr: "Sartorial Košulje",
       en: "Fine Shirts",
-      fallback: "/img/hero2.webp",
+      image: "/img/kolekcija-kosulje.jpg",
     },
     {
       id: "obuca",
       group: "obuca",
       sr: "Ručno Rađena Obuća",
       en: "Handcrafted Footwear",
-      fallback: "/img/obuca-luxury.jpg",
+      image: "/img/kolekcija-obuca.jpg",
     },
     {
       id: "aksesoari",
       group: "aksesoari",
       sr: "Svileni Aksesoari",
       en: "Silk Accessories",
-      fallback: "/img/aksesoari-luxury.jpg",
+      image: "/img/kolekcija-aksesoari.jpg",
     },
   ].map((entry) => ({
     id: entry.id,
     label: lang === "en" ? entry.en : entry.sr,
     href: `/web-shop?categoryGroup=${entry.group}${lang === "en" ? "&lang=en" : ""}`,
-    image: categoryImage(entry.group, entry.fallback),
-    fallback: entry.fallback,
+    image: entry.image,
+    fallback: entry.image,
   }));
 
   const ateliers = [
     {
       city: "Niš",
-      lines: ["Obrenovićeva 9", "Pon — Sub, 09—21h", "+381 18 240 240"],
-      href: `/prodajna-mesta${suffix}`,
+      address: "Obrenovićeva 9",
+      hours: isEn ? "Mon — Sat, 09—21h" : "Pon — Sub, 09—21h",
+      phone: "+381 18 240 240",
+      image: "/img/atelier-nis.jpg",
+      href: `/kontakt${suffix}`,
+      mapHref: "https://www.google.com/maps/search/?api=1&query=Santos+Santorini+Obrenovi%C4%87eva+9+Ni%C5%A1",
     },
     {
       city: "Kruševac",
-      lines: ["Trg fontana bb", "Pon — Sub, 09—21h", "+381 37 420 420"],
-      href: `/prodajna-mesta${suffix}`,
+      address: "Trg fontana bb",
+      hours: isEn ? "Mon — Sat, 09—21h" : "Pon — Sub, 09—21h",
+      phone: "+381 37 420 420",
+      image: "/img/atelier-krusevac.jpg",
+      href: `/kontakt${suffix}`,
+      mapHref: "https://www.google.com/maps/search/?api=1&query=Santos+Santorini+Trg+fontana+Kru%C5%A1evac",
     },
   ];
 
