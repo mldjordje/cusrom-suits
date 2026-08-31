@@ -906,8 +906,18 @@ export default async function WebShopView({
             ) : (
             <div className="ss-shop-hero-stack">
               {landingSettings.shopHeroSections.map((section, heroIndex) => {
-                const sectionTitle = ((isEn && section.titleEn.trim()) || section.title).trim();
-                const sectionLead = ((isEn && section.leadEn.trim()) || section.lead).trim();
+                /* Read defensively: settings are served from a 5-minute
+                   unstable_cache, so right after a deploy this component can be
+                   handed an object written by the previous build, with none of
+                   these keys on it. */
+                const sectionTitle = (
+                  (isEn && String(section.titleEn || "").trim()) ||
+                  String(section.title || "")
+                ).trim();
+                const sectionLead = (
+                  (isEn && String(section.leadEn || "").trim()) ||
+                  String(section.lead || "")
+                ).trim();
                 const isVideo = section.mediaKind === "video" && Boolean(section.videoUrl);
                 return (
                 <div key={section.id} className="ss-shop-hero__media">

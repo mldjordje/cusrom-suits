@@ -807,7 +807,9 @@ async function readLandingSettingsUncached(): Promise<LandingSettings> {
 
 const getLandingSettingsCached = unstable_cache(
   async () => readLandingSettingsUncached(),
-  ["landing-settings-v3"],
+  /* v4: shop hero sections gained media kind, video and per-block copy. A v3
+     entry written by the previous deploy lacks those keys entirely. */
+  ["landing-settings-v4"],
   { revalidate: 300, tags: [LANDING_SETTINGS_CACHE_TAG] },
 );
 
