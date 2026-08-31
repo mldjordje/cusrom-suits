@@ -1,7 +1,6 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import LxImage from "./_fx/LxImage";
-import Reveal from "./_fx/Reveal";
+import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import Rise from "./_fx/Rise";
 import styles from "../landing.module.scss";
 
@@ -79,26 +78,28 @@ export default function LxEdit({
             }
           >
             <Link href={product.href}>
-              <Reveal delay={(index % 3) * 80} className={styles.editFigure}>
+              <div className={styles.editFigure}>
                 <span className={styles.editShot}>
-                  <LxImage
-                    src={product.image}
-                    fallback={product.fallback}
+                  <StorefrontImage
+                    sources={[product.image]}
+                    fallbackSrc={product.fallback || "/img/odela.jpg"}
                     alt={product.title}
+                    fill
                     sizes="(max-width: 900px) 100vw, 48vw"
                   />
                 </span>
                 {product.hoverImage ? (
                   <span className={`${styles.editShot} ${styles.editShotAlt}`}>
-                    <LxImage
-                      src={product.hoverImage}
-                      fallback={product.fallback}
+                    <StorefrontImage
+                      sources={[product.hoverImage]}
+                      fallbackSrc={product.fallback || "/img/odela.jpg"}
                       alt=""
+                      fill
                       sizes="(max-width: 900px) 100vw, 48vw"
                     />
                   </span>
                 ) : null}
-              </Reveal>
+              </div>
               <Rise className={styles.editCaption} delay={260}>
                 <span className={`${styles.meta} ${styles.editName}`}>{product.title}</span>
                 <span className={`${styles.meta} ${styles.editPrice}`}>{product.price}</span>

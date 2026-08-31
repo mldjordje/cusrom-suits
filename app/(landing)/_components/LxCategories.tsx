@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import LxImage from "./_fx/LxImage";
-import Reveal from "./_fx/Reveal";
+import StorefrontImage from "@/app/components/storefront/StorefrontImage";
 import Rise from "./_fx/Rise";
 import styles from "../landing.module.scss";
 
@@ -95,11 +94,12 @@ export default function LxCategories({
             className={styles.catTile}
             style={{ gridColumn: SPANS[index % SPANS.length] }}
           >
-            <Reveal delay={(index % 2) * 90} className={styles.catFrame}>
-              <LxImage
-                src={category.image}
-                fallback={category.fallback}
+            <div className={styles.catFrame}>
+              <StorefrontImage
+                sources={[category.image]}
+                fallbackSrc={category.fallback || "/img/odela.jpg"}
                 alt={category.label}
+                fill
                 sizes="(max-width: 900px) 100vw, 55vw"
               />
               <span className={styles.catScrim} />
@@ -110,7 +110,7 @@ export default function LxCategories({
                 <span className={styles.dMd}>{category.label}</span>
                 <span className={styles.micro}>{copy.shop}</span>
               </Rise>
-            </Reveal>
+            </div>
           </Link>
         ))}
       </div>
