@@ -12,6 +12,14 @@ Vercel deploys from this repository through the Vercel GitHub App installed on
 the organization. If a push stops triggering builds, check that the app still
 has access to the repo before touching anything else.
 
+## Local-only documentation
+
+`/docs/` is listed in `.gitignore`, so everything under it — runbooks, audits,
+transfer guides — lives only on the machine that wrote it and is never pushed.
+Do not assume a document referenced in conversation is in the repository, and
+do not "fix" a missing doc by re-creating it there; put anything that must
+survive a fresh clone somewhere that is actually tracked.
+
 ## Domain & Hosting Architecture
 
 ### Current setup (as of 2026-06)
