@@ -1,5 +1,17 @@
 # Santos & Santorini — Project Notes for AI Agents
 
+## Repository
+
+The canonical repository is `github.com/Santos-Santorini/santos` (organization
+`Santos-Santorini`, main branch `main`). It was transferred from the personal
+account `mldjordje/cusrom-suits` on 2026-09-02 and renamed in the same step;
+GitHub still redirects the old path, but new clones and any tooling that
+hardcodes a URL should use the new one.
+
+Vercel deploys from this repository through the Vercel GitHub App installed on
+the organization. If a push stops triggering builds, check that the app still
+has access to the repo before touching anything else.
+
 ## Domain & Hosting Architecture
 
 ### Current setup (as of 2026-06)
