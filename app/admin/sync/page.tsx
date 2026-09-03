@@ -64,8 +64,12 @@ const formatRunCounters = (run: SyncRun) => {
   const upsertRows = runCounter(run, "upsertRows");
   const hiddenRows = runCounter(run, "hiddenRows");
   const visibleMismatchRows = runCounter(run, "visibleMismatchRows");
+  const discountedFeedRows = runCounter(run, "discountedFeedRows");
   if (feedRows != null || upsertRows != null || hiddenRows != null || visibleMismatchRows != null) {
-    return `Feed:${feedRows ?? "-"} Upsert:${upsertRows ?? "-"} Hidden:${hiddenRows ?? "-"} Mismatch:${visibleMismatchRows ?? "-"}`;
+    const base = `Feed:${feedRows ?? "-"} Upsert:${upsertRows ?? "-"} Hidden:${hiddenRows ?? "-"} Mismatch:${visibleMismatchRows ?? "-"}`;
+    // Zero here is the answer to "the sale I set in mOffice is not on the site":
+    // the feed carried no discount for any article.
+    return discountedFeedRows != null ? `${base} Popust:${discountedFeedRows}` : base;
   }
   return `T:${run.counters.total} S:${run.counters.success} F:${run.counters.failed} K:${run.counters.skipped}`;
 };

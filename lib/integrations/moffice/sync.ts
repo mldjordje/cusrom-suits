@@ -19,6 +19,68 @@ export type MofficeItem = {
   ARTIKAL_ZALIHE?: number;
   ARTIKAL_GRUPA?: string;
   ARTIKAL_VELICINA?: string;
+  /* mOffice may extend the feed without telling us; extra keys are read
+     dynamically by the pricing helpers below. */
+  [key: string]: unknown;
+};
+
+/**
+ * Discount handling.
+ *
+ * The `LagerTekstil` endpoint currently exports ten fields and none of them
+ * carries a discount — verified against the full key union of the live feed and
+ * four months of price history (a SKU the client had put on -20% in mOffice kept
+ * arriving at its full MP price). So a discount entered in mOffice cannot reach
+ * the shop today, and the shop's own promotion rules are the only channel.
+ *
+ * The names below are the plausible spellings for the day mOffice does export
+ * one; the sync reads whichever appears and prices the row from it, instead of
+ * hardcoding "no discount" and silently dropping the field. Anything unknown is
+ * reported in the run meta (`unknownFeedFields`) so a new field is visible in
+ * the admin the first run after it appears, rather than being discovered by a
+ * customer.
+ */
+const DISCOUNT_PERCENT_KEYS = [
+  "ARTIKAL_RABAT",
+  "ARTIKAL_RABAT_PROCENAT",
+  "ARTIKAL_POPUST",
+  "ARTIKAL_POPUST_PROCENAT",
+  "ARTIKAL_AKCIJA_RABAT",
+  "ARTIKAL_AKCIJA_PROCENAT",
+] as const;
+
+const DISCOUNTED_PRICE_KEYS = [
+  "ARTIKAL_AKCIJSKA_CENA",
+  "ARTIKAL_AKCIJA_CENA",
+  "ARTIKAL_MP_CENA_AKCIJA",
+  "ARTIKAL_MP_AKCIJA",
+  "ARTIKAL_MP_CENA_SA_POPUSTOM",
+] as const;
+
+const KNOWN_FEED_KEYS = new Set<string>([
+  "ARTIKAL_ID",
+  "ARTIKAL_GRUPA",
+  "ARTIKAL_SIFRA",
+  "ARTIKAL_NAZIV",
+  "ARTIKAL_VELICINA",
+  "ARTIKAL_ZALIHE",
+  "ARTIKAL_BARKOD",
+  "ARTIKAL_PDV_STOPA",
+  "ARTIKAL_VP_CENA",
+  "ARTIKAL_MP_CENA",
+  ...DISCOUNT_PERCENT_KEYS,
+  ...DISCOUNTED_PRICE_KEYS,
+]);
+
+/** Feed keys we have never seen, so a silently added mOffice field is loud. */
+export const collectUnknownFeedFields = (items: MofficeItem[]): string[] => {
+  const unknown = new Set<string>();
+  for (const item of items) {
+    for (const key of Object.keys(item || {})) {
+      if (!KNOWN_FEED_KEYS.has(key)) unknown.add(key);
+    }
+  }
+  return Array.from(unknown).sort();
 };
 
 export type MofficeExistingRow = {
@@ -105,6 +167,50 @@ const safeNumber = (value: unknown, fallback: number) => {
   const parsed = Number(raw.includes(",") && !raw.includes(".") ? raw.replace(",", ".") : raw);
   return Number.isFinite(parsed) ? parsed : fallback;
 };
+const round2 = (value: number) => Math.round(value * 100) / 100;
+
+/**
+ * Retail price the customer sees, and the crossed-out price next to it.
+ *
+ * `priceGross` is the regular price, `priceFinalGross` what is actually charged;
+ * the storefront renders a discount exactly when the first is greater than the
+ * second (`resolveCardPrice`, `calcDiscountPercent`). A percent field wins over a
+ * discounted-price field when both are present, since the percent is what the
+ * client typed. Nonsense values (negative, ≥ regular price, ≥ 100%) fall back to
+ * "no discount" rather than inventing one.
+ */
+export const resolveFeedPricing = (
+  item: MofficeItem,
+  regularGross: number,
+): { priceGross: number; priceFinalGross: number; rebatePercent: number } => {
+  const noDiscount = { priceGross: round2(regularGross), priceFinalGross: round2(regularGross), rebatePercent: 0 };
+  if (!(regularGross > 0)) return noDiscount;
+
+  for (const key of DISCOUNT_PERCENT_KEYS) {
+    if (item[key] == null || item[key] === "") continue;
+    const percent = safeNumber(item[key], 0);
+    if (!(percent > 0) || percent >= 100) continue;
+    return {
+      priceGross: round2(regularGross),
+      priceFinalGross: round2(regularGross * (1 - percent / 100)),
+      rebatePercent: round2(percent),
+    };
+  }
+
+  for (const key of DISCOUNTED_PRICE_KEYS) {
+    if (item[key] == null || item[key] === "") continue;
+    const discounted = safeNumber(item[key], 0);
+    if (!(discounted > 0) || discounted >= regularGross) continue;
+    return {
+      priceGross: round2(regularGross),
+      priceFinalGross: round2(discounted),
+      rebatePercent: round2(((regularGross - discounted) / regularGross) * 100),
+    };
+  }
+
+  return noDiscount;
+};
+
 const normalizeLower = (value: unknown) => normalizeKey(value).toLowerCase();
 const normalizeSize = (value: unknown) => normalizeKey(value).toUpperCase().replace(/\s+/g, "");
 
@@ -532,6 +638,9 @@ export function buildMofficeSyncPlan(params: {
   const byEan = new Map<string, MofficeExistingRow>();
   const bySkuSize = new Map<string, MofficeExistingRow>();
   const bySkuUnambiguous = new Map<string, MofficeExistingRow | null>();
+  /* Whether the single row we hold for a SKU already carries a size. If it does,
+     it is one specific variant and must not absorb the SKU's other sizes. */
+  const skuUnambiguousHasSize = new Map<string, boolean>();
   /* Names typed in the admin, keyed by SKU.
      An existing row already keeps its own name through a sync, but a size that
      mOffice reports for the first time is created from the feed and would land
@@ -562,7 +671,12 @@ export function buildMofficeSyncPlan(params: {
         const key = `${sku}:${size}`;
         if (!bySkuSize.has(key)) bySkuSize.set(key, row);
       }
-      bySkuUnambiguous.set(sku, bySkuUnambiguous.has(sku) ? null : row);
+      if (!bySkuUnambiguous.has(sku)) {
+        bySkuUnambiguous.set(sku, row);
+        skuUnambiguousHasSize.set(sku, candidateSizes.length > 0);
+      } else {
+        bySkuUnambiguous.set(sku, null);
+      }
     }
   }
 
@@ -573,6 +687,22 @@ export function buildMofficeSyncPlan(params: {
   const feedVariantKeys = new Set<string>();
   let matched = 0;
   let created = 0;
+
+  /* EAN is the strongest key, so a row it points at is reserved for that barcode:
+     a weaker sku+size hit (often on a size left stale by an earlier collapse) must
+     not take the row first and push its real owner onto a fresh legacy id — that
+     would move the variant, and its product URL, on every run. */
+  const legacyIdOwnedByEan = new Map<number, string>();
+  for (const item of params.items) {
+    const eanKey = normalizeLower(normalizeKey(item.ARTIKAL_BARKOD));
+    const owner = eanKey ? byEan.get(eanKey) : undefined;
+    if (owner) legacyIdOwnedByEan.set(Number(owner.legacy_id), eanKey);
+  }
+  const takenByAnotherEan = (row: MofficeExistingRow | null | undefined, eanKey: string) => {
+    if (!row) return false;
+    const owner = legacyIdOwnedByEan.get(Number(row.legacy_id));
+    return owner != null && owner !== eanKey;
+  };
 
   for (const item of params.items) {
     const mofficeId = Number(item.ARTIKAL_ID ?? 0);
@@ -588,11 +718,28 @@ export function buildMofficeSyncPlan(params: {
     makeVariantKeys({ sku, ean, size }).forEach((key) => feedVariantKeys.add(key));
 
     const sizeKey = normalizeSize(size);
-    const existingRow =
+    /* The SKU fallback exists for rows imported before sizes were tracked, so it may
+       only fire when nothing identifies a size on either side. Letting a sized feed
+       row land on the SKU's one sized row made every size of that SKU resolve to the
+       same legacy id, and only the last one written survived the upsert — 50 models /
+       189 variants were silently missing from the shop (measured 2026-09-03). */
+    const skuFallbackRow = skuKey ? bySkuUnambiguous.get(skuKey) || null : null;
+    const skuFallbackAllowed = Boolean(skuFallbackRow) && (!sizeKey || !skuUnambiguousHasSize.get(skuKey));
+    const sizeRow = skuKey && sizeKey ? bySkuSize.get(`${skuKey}:${sizeKey}`) || null : null;
+    let existingRow =
       (eanKey && byEan.get(eanKey)) ||
-      (skuKey && sizeKey && bySkuSize.get(`${skuKey}:${sizeKey}`)) ||
-      (skuKey ? bySkuUnambiguous.get(skuKey) || null : null);
-    const legacyId = existingRow ? Number(existingRow.legacy_id) : resolveNewLegacyId({ mofficeId, sku, ean, size });
+      (takenByAnotherEan(sizeRow, eanKey) ? null : sizeRow) ||
+      (skuFallbackAllowed && !takenByAnotherEan(skuFallbackRow, eanKey) ? skuFallbackRow : null) ||
+      null;
+    let legacyId = existingRow ? Number(existingRow.legacy_id) : resolveNewLegacyId({ mofficeId, sku, ean, size });
+    /* Second guard: two feed variants must never share one legacy id even if the
+       lookups above both point at it. The later one becomes its own row instead of
+       overwriting the earlier one. */
+    if (rowsByLegacyId.has(legacyId)) {
+      existingRow = null;
+      legacyId = resolveNewLegacyId({ mofficeId, sku, ean, size });
+      if (rowsByLegacyId.has(legacyId)) continue;
+    }
     const existingPayload = getRawPayload(existingRow?.raw_payload);
     const attributes = getPayloadAttributes(existingPayload);
     if (size) attributes.size = [size];
@@ -604,6 +751,7 @@ export function buildMofficeSyncPlan(params: {
     const vpPrice = safeNumber(item.ARTIKAL_VP_CENA, 0);
     const tax = safeNumber(item.ARTIKAL_PDV_STOPA, 20);
     const stock = Math.max(0, Math.floor(safeNumber(item.ARTIKAL_ZALIHE, 0)));
+    const pricing = resolveFeedPricing(item, mpPrice);
     const keepManualPrice = hasManualPriceOverride(existingPayload);
 
     const payload: Record<string, unknown> = {
@@ -618,6 +766,8 @@ export function buildMofficeSyncPlan(params: {
         stock,
         priceGross: mpPrice,
         priceNet: vpPrice,
+        priceFinalGross: pricing.priceFinalGross,
+        rebatePercent: pricing.rebatePercent,
         syncedAt,
         syncedRunId: params.runId,
       },
@@ -661,10 +811,10 @@ export function buildMofficeSyncPlan(params: {
             rebate_percent: existingRow?.rebate_percent ?? 0,
           }
         : {
-            price_net: Math.round(vpPrice * 100) / 100,
-            price_gross: Math.round(mpPrice * 100) / 100,
-            price_final_gross: Math.round(mpPrice * 100) / 100,
-            rebate_percent: 0,
+            price_net: round2(vpPrice),
+            price_gross: pricing.priceGross,
+            price_final_gross: pricing.priceFinalGross,
+            rebate_percent: pricing.rebatePercent,
           }),
     };
 
@@ -890,6 +1040,12 @@ async function executeMofficeSync(input: {
     );
 
     const debugItems = buildDebugItems(items);
+    const unknownFeedFields = collectUnknownFeedFields(allItems);
+    /* How many rows arrived with a usable discount. Zero every run means mOffice
+       still exports no discount, which is the answer to "the sale is not showing". */
+    const discountedFeedRows = items.filter(
+      (feedItem) => resolveFeedPricing(feedItem, safeNumber(feedItem.ARTIKAL_MP_CENA, 0)).rebatePercent > 0,
+    ).length;
     const pulledRows = buildMofficePulledRows(items);
 
     const existingRaw = await loadAllCatalogRows<MofficeExistingRow>(
@@ -1093,6 +1249,8 @@ async function executeMofficeSync(input: {
         postSyncStale: postSyncStaleIds.length,
         deactivated,
         syncedVouchers,
+        unknownFeedFields,
+        discountedFeedRows,
         debugItems,
       },
     });
@@ -1114,6 +1272,8 @@ async function executeMofficeSync(input: {
       copiedModelMediaRows,
       deactivated,
       syncedVouchers,
+      unknownFeedFields,
+      discountedFeedRows,
       debugItems,
     };
   } catch (error) {

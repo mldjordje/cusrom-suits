@@ -216,6 +216,8 @@ const TUTORIAL_SECTIONS: TutorialSection[] = [
       "Environment/Production pravilo vazi i ovde — isto kao kod Ananas dugmadi u traci na vrhu strane.",
       "Lanac do Ananasa: mOffice -> nas katalog (do 2h) -> Ananas lager cron (na 30 min) = do 2.5h kasnjenja dok se promena u mOffice-u pojavi na Ananasu.",
       "Nasa prodaja na sajtu ne skida lager sama — mOffice ostaje jedini izvor istine za kolicine.",
+      "POPUSTI NE DOLAZE IZ mOffice-a. Njihov LagerTekstil izvoz salje samo VP i MP cenu — nema polja za rabat ni za akcijsku cenu, pa popust podesen u mOffice aplikaciji sajt ne moze da vidi. Popuste podesi u Admin > Web shop > Promocije (procenat ili fiksni iznos, po proizvodu/kategoriji/brendu, sa datumima).",
+      "U listi run-ova brojac \"Popust:\" pokazuje koliko artikala je u tom feed-u stiglo sa popustom. Ako mOffice jednog dana pocne da salje rabat, brojac postaje veci od 0 i sajt ga sam preuzima — do tada je uvek 0.",
     ],
   },
 ];

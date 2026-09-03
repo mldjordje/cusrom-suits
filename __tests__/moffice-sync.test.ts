@@ -3,6 +3,7 @@ import {
   buildMofficeExportRows,
   buildMofficeSyncPlan,
   buildPostSyncStaleIds,
+  collectUnknownFeedFields,
   excludeProtectedStaleIds,
   type MofficeExistingRow,
   type MofficeItem,
@@ -269,5 +270,133 @@ describe("mOffice sync planning", () => {
         expect.objectContaining({ sku: "133051", status: "VISIBLE_WITH_WRONG_STOCK" }),
       ]),
     );
+  });
+});
+
+describe("mOffice size collapse", () => {
+  it("gives every feed size its own row when the SKU has a single sized row in the catalog", () => {
+    const plan = buildMofficeSyncPlan({
+      runId: "run-collapse",
+      items: [
+        item({ ARTIKAL_ID: 1, ARTIKAL_SIFRA: "134274", ARTIKAL_BARKOD: "013427448", ARTIKAL_VELICINA: "48", ARTIKAL_ZALIHE: 4 }),
+        item({ ARTIKAL_ID: 2, ARTIKAL_SIFRA: "134274", ARTIKAL_BARKOD: "013427450", ARTIKAL_VELICINA: "50", ARTIKAL_ZALIHE: 1 }),
+        item({ ARTIKAL_ID: 3, ARTIKAL_SIFRA: "134274", ARTIKAL_BARKOD: "013427452", ARTIKAL_VELICINA: "52", ARTIKAL_ZALIHE: 2 }),
+      ],
+      existing: [
+        row({
+          legacy_id: 82084,
+          sku: "134274",
+          ean: "013427450",
+          name_sr: "Sako",
+          raw_payload: { moffice: { size: "50" }, attributes: { size: ["50"] } },
+        }),
+      ],
+    });
+
+    expect(plan.rows).toHaveLength(3);
+    expect(plan.rows.map((r) => r.ean).sort()).toEqual(["013427448", "013427450", "013427452"]);
+    expect(plan.rows.find((r) => r.ean === "013427450")?.legacy_id).toBe(82084);
+    expect(plan.rows.map((r) => r.stock_total).sort()).toEqual([1, 2, 4]);
+  });
+
+  it("still matches a sizeless legacy row by SKU alone", () => {
+    const plan = buildMofficeSyncPlan({
+      runId: "run-sizeless",
+      items: [item({ ARTIKAL_ID: 9, ARTIKAL_SIFRA: "100189", ARTIKAL_BARKOD: "010018999", ARTIKAL_VELICINA: "", ARTIKAL_ZALIHE: 5 })],
+      existing: [
+        row({
+          legacy_id: 20014,
+          sku: "100189",
+          ean: "",
+          name_sr: "Kapa",
+          raw_payload: { moffice: {}, attributes: { size: [] } },
+        }),
+      ],
+    });
+
+    expect(plan.rows).toHaveLength(1);
+    expect(plan.rows[0].legacy_id).toBe(20014);
+    expect(plan.rows[0].stock_total).toBe(5);
+  });
+});
+
+describe("mOffice feed discounts", () => {
+  it("prices a row at full MP when the feed carries no discount field", () => {
+    const plan = buildMofficeSyncPlan({
+      runId: "run-nodisc",
+      items: [item({ ARTIKAL_MP_CENA: 15900, ARTIKAL_VP_CENA: 13250 })],
+      existing: [],
+    });
+
+    expect(plan.rows[0].price_gross).toBe(15900);
+    expect(plan.rows[0].price_final_gross).toBe(15900);
+    expect(plan.rows[0].rebate_percent).toBe(0);
+  });
+
+  it("turns a percent discount field into a crossed-out price the storefront can render", () => {
+    const plan = buildMofficeSyncPlan({
+      runId: "run-percent",
+      items: [item({ ARTIKAL_MP_CENA: 15900, ARTIKAL_RABAT: 20 } as MofficeItem)],
+      existing: [],
+    });
+
+    expect(plan.rows[0].price_gross).toBe(15900);
+    expect(plan.rows[0].price_final_gross).toBe(12720);
+    expect(plan.rows[0].rebate_percent).toBe(20);
+  });
+
+  it("accepts a discounted-price field and derives the percent from it", () => {
+    const plan = buildMofficeSyncPlan({
+      runId: "run-akcija",
+      items: [item({ ARTIKAL_MP_CENA: 10000, ARTIKAL_AKCIJSKA_CENA: 7500 } as MofficeItem)],
+      existing: [],
+    });
+
+    expect(plan.rows[0].price_final_gross).toBe(7500);
+    expect(plan.rows[0].rebate_percent).toBe(25);
+  });
+
+  it("ignores a discount that is not a real reduction", () => {
+    for (const bogus of [{ ARTIKAL_RABAT: 0 }, { ARTIKAL_RABAT: 120 }, { ARTIKAL_AKCIJSKA_CENA: 20000 }, { ARTIKAL_AKCIJSKA_CENA: "" }]) {
+      const plan = buildMofficeSyncPlan({
+        runId: "run-bogus",
+        items: [item({ ARTIKAL_MP_CENA: 15900, ...bogus } as MofficeItem)],
+        existing: [],
+      });
+      expect(plan.rows[0].price_final_gross).toBe(15900);
+      expect(plan.rows[0].rebate_percent).toBe(0);
+    }
+  });
+
+  it("reports feed fields it does not know about", () => {
+    expect(collectUnknownFeedFields([item(), item({ ARTIKAL_RABAT: 10 } as MofficeItem)])).toEqual([]);
+    expect(collectUnknownFeedFields([item({ ARTIKAL_NESTO_NOVO: 1 } as MofficeItem)])).toEqual(["ARTIKAL_NESTO_NOVO"]);
+  });
+});
+
+describe("mOffice variant identity", () => {
+  it("leaves an existing row with the variant whose barcode it carries", () => {
+    const plan = buildMofficeSyncPlan({
+      runId: "run-identity",
+      items: [
+        // Size 43 is listed first and the stale payload.size still says "43",
+        // so without EAN priority it would take the row that belongs to size 41.
+        item({ ARTIKAL_ID: 82354, ARTIKAL_SIFRA: "134514", ARTIKAL_BARKOD: "013451443", ARTIKAL_VELICINA: "43" }),
+        item({ ARTIKAL_ID: 82354, ARTIKAL_SIFRA: "134514", ARTIKAL_BARKOD: "013451441", ARTIKAL_VELICINA: "41" }),
+      ],
+      existing: [
+        row({
+          legacy_id: 82354,
+          sku: "134514",
+          ean: "013451441",
+          name_sr: "E 601-3 SUGGERO",
+          raw_payload: { size: "43", moffice: { size: "41" }, attributes: { size: ["41"] } },
+        }),
+      ],
+    });
+
+    expect(plan.rows).toHaveLength(2);
+    expect(plan.rows.find((r) => r.legacy_id === 82354)?.ean).toBe("013451441");
+    expect(plan.rows.every((r) => Number(r.stock_total) === 2 && r.is_active === true)).toBe(true);
   });
 });
